@@ -94,7 +94,10 @@ public sealed record ServerListingDto(
 /// <item><see cref="GoalConquest"/>/<see cref="GoalDeathmatch"/>/<see cref="GoalProsperity"/>/<see cref="GoalCountdown"/>/<see cref="GoalArtifacts"/>/<see cref="GoalFlags"/>/<see cref="GoalTerritory"/> —
 /// the seven winning-condition bits (<c>igc.h:1511-1540</c>);</item>
 /// <item><see cref="MinRank"/>/<see cref="MaxRank"/> — <c>iMinRank</c>/<c>iMaxRank</c>
-/// (igc.h:1196-1197), the skill sort column.</item>
+/// (igc.h:1196-1197), the skill sort column;</item>
+/// <item><see cref="AllowFriendlyFire"/>/<see cref="AllowAlliedViz"/> — P856,
+/// <c>bAllowFriendlyFire</c>/<c>bAllowAlliedViz</c> (igc.h:1149,1127), the two
+/// create-game options the native Game Details summary prints.</item>
 /// </list>
 /// These are <b>native wire-carried</b> values: the native client gets them in
 /// the mission definition the lobby relays (<c>MissionInfo::GetMissionParams()</c>),
@@ -115,7 +118,14 @@ public sealed record GameParamsDto(
     bool GoalFlags,
     bool GoalTerritory,
     short MinRank,
-    short MaxRank);
+    short MaxRank,
+    /// <summary>P856 — <c>MissionParams.bAllowFriendlyFire</c>
+    /// (<c>Igc/igc.h:1149</c>). Optional trailing member: a pre-P856 host omits
+    /// it and the directory publishes native <c>Reset</c>'s off.</summary>
+    bool AllowFriendlyFire = false,
+    /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
+    /// (<c>Igc/igc.h:1127</c>). Optional trailing member, native default off.</summary>
+    bool AllowAlliedViz = false);
 
 /// <summary>
 /// P761b — one hit of the per-name find-player query (<c>GET /api/servers/findplayer?name=</c>):
@@ -208,6 +218,11 @@ public sealed class GameParamsRequest
     public int? MinRank { get; set; }
     /// <summary><c>iMaxRank</c>; omitted → native default 1000.</summary>
     public int? MaxRank { get; set; }
+    /// <summary>P856 — <c>bAllowFriendlyFire</c> (igc.h:1149); omitted → native
+    /// <c>Reset</c> default, off.</summary>
+    public bool? AllowFriendlyFire { get; set; }
+    /// <summary>P856 — <c>bAllowAlliedViz</c> (igc.h:1127); omitted → off.</summary>
+    public bool? AllowAlliedViz { get; set; }
 }
 
 /// <summary>

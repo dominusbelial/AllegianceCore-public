@@ -7,7 +7,7 @@ public sealed class SkirmishScreenModel
     public void ApplyDefaults(Benchmark.BenchmarkRecommendation settings) => Options = Options with
     { Size = settings.BattleSize, Difficulty = settings.Difficulty, ResearchSpeed = settings.ResearchSpeed, Speed = settings.Speed, SpectatorDefault = settings.SpectatorDefault };
     public int Selected { get; private set; }
-    public const int StartRow = 10, BackRow = 11, RowCount = 12;
+    public const int StartRow = 12, BackRow = 13, RowCount = 14;
     public void Move(int delta) => Selected = (Selected + delta + RowCount) % RowCount;
     public void Change(int delta)
     {
@@ -25,8 +25,12 @@ public sealed class SkirmishScreenModel
             7 => Options with { StartAsSpectator = !Options.StartAsSpectator },
             // P799 — the lives row cycles the unlimited sentinel and the finite budgets.
             8 => Options with { Lives = SkirmishOptions.LivesChoices[(Array.IndexOf(SkirmishOptions.LivesChoices, Options.Lives) + delta + SkirmishOptions.LivesChoices.Length) % SkirmishOptions.LivesChoices.Length] },
+            // P856 — the two native create-game options (Igc/igc.h:1149,1127):
+            // friendly fire off by default, allied visualization off by default.
+            9 => Options with { AllowFriendlyFire = !Options.AllowFriendlyFire },
+            10 => Options with { AllowAlliedViz = !Options.AllowAlliedViz },
             // P814 — the one switch that turns bot turret gunners off (default ON).
-            9 => Options with { BotGunners = !Options.BotGunners },
+            11 => Options with { BotGunners = !Options.BotGunners },
             _ => Options
         };
     }
@@ -41,6 +45,8 @@ public sealed class SkirmishScreenModel
         "Game speed: " + Options.Speed,
         "Start as spectator: " + (Options.StartAsSpectator ? "Yes" : "No"),
         "Lives: " + (Options.Lives == Allegiance.Core.Wire.MissionDef.UnlimitedLives ? "Unlimited" : Options.Lives.ToString()),
+        "Friendly fire: " + (Options.AllowFriendlyFire ? "On" : "Off"),
+        "Allied visibility: " + (Options.AllowAlliedViz ? "On" : "Off"),
         "Bot gunners: " + (Options.BotGunners ? "On" : "Off"),
         "Start Skirmish", "Back"
     ];

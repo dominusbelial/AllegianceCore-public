@@ -20,11 +20,10 @@ namespace Allegiance.Core.Tests;
 /// <item>a <b>cross-side</b> missile hit reduces <see cref="Probe.Fraction"/>
 /// by the exact decoded <c>Power·DamageConstant/maxHP</c> amount, and the probe
 /// survives (stays in the sector, not destroyed);</item>
-/// <item>a <b>same-side (friendly)</b> missile hit damages the probe just the
-/// same — a real, deliberately-asserted difference from every ship/mine combat
-/// test in this project, proving the "no friendly-fire gate for probes"
-/// finding (<c>probeigc.h:74-89</c>) is real and not just asserted in a
-/// comment;</item>
+/// <item>a <b>same-side (friendly)</b> missile hit obeys native's probe gate
+/// (<c>Igc/probeigc.h:74-89</c>): with friendly fire off an <b>armed</b> probe
+/// is immune (P856; before P856 this port damaged it), and once the mission
+/// option is on the identical damage lands;</item>
 /// <item>enough hits to cross <c>Fraction ≤ 0</c> really Killed the probe: it is
 /// removed from the sector and the same-side peer who saw it deploy receives a
 /// real <c>FM_S_PROBE_DESTROYED(85)</c> naming that same probe id — confirming
@@ -269,16 +268,16 @@ public sealed class ProbeCombatLiveTests
         Console.WriteLine($"P100-CROSS: probe {f0:F2}→{probe.Fraction:F3} (expect 1 − {delta:F3}); survived, still in sector");
     }
 
-    /// <summary>⭐ A SAME-SIDE (friendly) missile hit damages the probe exactly
-    /// the same as a cross-side one — a real, deliberately-asserted difference
-    /// from every ship/mine combat test in this project, proving the "no
-    /// friendly-fire gate for probes" finding (<c>probeigc.h:74-89</c>) is real,
-    /// not just asserted in a comment. The observer (same side as the deploying
+    /// <summary>⭐ A SAME-SIDE (friendly) missile hit follows native's probe gate
+    /// (<c>Igc/probeigc.h:74-89</c>): with friendly fire OFF an armed probe takes
+    /// no damage from a friendly launcher; with the mission option ON the
+    /// identical computed damage lands. The observer (same side as the deploying
     /// ship, hence same side as the probe it sits beside) fires its own missile
-    /// at the probe and the identical damage lands.</summary>
+    /// at the probe. Sensor and RescueAny probes stay damageable — proven in
+    /// <see cref="P856FriendlyFireAlliedVizTests"/>.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Same_side_friendly_missile_damages_the_probe_no_friendly_fire_gate()
+    public void Same_side_friendly_missile_obeys_native_armed_probe_gate()
     {
         Require.Artwork();
         var (missile, probeType, delta) = Nonlethal.Value;
@@ -299,18 +298,29 @@ public sealed class ProbeCombatLiveTests
         Assert.Equal(1f, probe.Fraction, 3);
 
         // The SAME-SIDE observer fires its own missile at the probe (side A ⇒
-        // side A). For a ship this would be gated away and pass through; for a
-        // probe there is NO gate — the damage must land identically.
+        // side A). The fixture's probe carries a projectile type, so native's
+        // armed-probe exception applies: with friendly fire off the round
+        // detonates without damaging the probe (probeigc.h:84-88).
+        Assert.True(probe.IsArmed, "fixture probe must be armed for the native exception");
+        Assert.False(mission.AllowFriendlyFire);
         observer.Position = probe.Position + new Vector3(0f, 0f, fireGap);
         float f0 = probe.Fraction;
         observer.FireMissile(missile, mission.LastUpdate);
+        PumpUntil(seat.Server, () => !observer.Sector!.Models.OfType<Missile>().Any(), 6000);
+        Assert.Equal(f0, probe.Fraction, 3);
+
+        // Turn the mission option on (P856 production config path): the same
+        // friendly hit now lands with the identical computed damage.
+        mission.AllowFriendlyFire = true;
+        observer.Position = probe.Position + new Vector3(0f, 0f, fireGap);
+        observer.FireMissile(missile, mission.LastUpdate);
 
         PumpUntil(seat.Server, () => probe.Fraction < f0 - 0.010f, 6000);
-        Assert.True(probe.Fraction < f0, "friendly fire must still damage the probe");
+        Assert.True(probe.Fraction < f0, "friendly fire ON must damage the probe");
         Assert.Equal(1f - ga * delta, probe.Fraction, 3);   // identical computed damage
         Assert.Contains(probe, probe.OwnerSector.Models);
-        Console.WriteLine($"P100-FRIENDLY: same-side missile still dealt {delta:F3} (probe {f0:F2}→{probe.Fraction:F3}); " +
-                          $"NO friendly-fire gate for a probe (ship path would pass through)");
+        Console.WriteLine($"P856-FRIENDLY: friendly armed probe immune with the option off, then took {delta:F3} " +
+                          $"with it on (probe {f0:F2}→{probe.Fraction:F3})");
     }
 
     /// <summary>⭐ Enough damage to cross <c>Fraction ≤ 0</c> really Killed the

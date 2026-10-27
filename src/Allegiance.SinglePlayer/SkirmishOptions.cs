@@ -33,6 +33,15 @@ public sealed record SkirmishOptions
     /// <see cref="Allegiance.Core.Wire.MissionDef.UnlimitedLives"/> — the native
     /// default and every pre-P799 skirmish's behaviour.</summary>
     public Allegiance.Core.Model.MissionGoals Goals { get; init; } = new();
+    /// <summary>P856 — native <c>MissionParams::bAllowFriendlyFire</c>
+    /// (igc.h:1149), the create-game option: same-side and allied damage when
+    /// on. Default off, exactly native <c>MissionParams::Reset</c>
+    /// (igc.h:1246 zeroes the bitfield).</summary>
+    public bool AllowFriendlyFire { get; init; }
+    /// <summary>P856 — native <c>MissionParams::bAllowAlliedViz</c>
+    /// (igc.h:1127): allied sides share models and scans. Default off, native
+    /// <c>Reset</c> (igc.h:1243).</summary>
+    public bool AllowAlliedViz { get; init; }
     public short Lives { get; init; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
     /// <summary>P799 — the values the setup screen's Lives row cycles through:
     /// the unlimited sentinel, then the finite budgets. Native's lobby option
@@ -147,6 +156,7 @@ public sealed record SkirmishOptions
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
                 Lives = Lives, Goals = Goals with { },
+                AllowFriendlyFire = AllowFriendlyFire, AllowAlliedViz = AllowAlliedViz,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
                 // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).
@@ -182,15 +192,19 @@ public sealed record SkirmishPrefs(
     bool SpectatorDefault = false,
     bool BotGunners = true,
     short Lives = Allegiance.Core.Wire.MissionDef.UnlimitedLives,
-    Allegiance.Core.Model.MissionGoals? Goals = null)
+    Allegiance.Core.Model.MissionGoals? Goals = null,
+    bool AllowFriendlyFire = false,
+    bool AllowAlliedViz = false)
 {
     public static SkirmishPrefs From(SkirmishOptions o) => new(o.Size, o.Difficulty, o.Commander, o.Speed,
-        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.BotGunners, o.Lives, o.Goals with { });
+        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.BotGunners, o.Lives, o.Goals with { },
+        o.AllowFriendlyFire, o.AllowAlliedViz);
 
     public SkirmishOptions ToOptions() => new()
     {
         Size = Size, Difficulty = Difficulty, Commander = Commander, Speed = Speed,
         PlayerCiv = PlayerCiv, EnemyCiv = EnemyCiv, TechMode = TechMode,
-        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, BotGunners = BotGunners, Lives = Lives, Goals = Goals is { } goals ? goals with { } : new()
+        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, BotGunners = BotGunners, Lives = Lives, Goals = Goals is { } goals ? goals with { } : new(),
+        AllowFriendlyFire = AllowFriendlyFire, AllowAlliedViz = AllowAlliedViz
     };
 }

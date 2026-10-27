@@ -1879,6 +1879,16 @@ public sealed partial class ClientWorld
     public Allegiance.Core.Model.MissionGoals MissionGoals => _mission is { } knownMission ? knownMission.Goals with { } : new();
     public short MissionLives => _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives;
 
+    /// <summary>P856 — <c>MissionParams.bAllowFriendlyFire</c>
+    /// (<c>Igc/igc.h:1149</c>) as advertised in <c>MISSIONDEF(38)</c>: the
+    /// create-game option the native client reads from the mission definition
+    /// (<c>clintlib/clintlib.h:557</c>). Off until a mission definition arrives.</summary>
+    public bool MissionAllowFriendlyFire => _mission?.AllowFriendlyFire ?? false;
+
+    /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c> (<c>Igc/igc.h:1127</c>)
+    /// from <c>MISSIONDEF(38)</c>. Off until a mission definition arrives.</summary>
+    public bool MissionAllowAlliedViz => _mission?.AllowAlliedViz ?? false;
+
     /// <summary>HUD-12 — the LOCAL player's mission kills/deaths, the native
     /// <c>PlayerInfo::MissionKills()/MissionDeaths()</c> pair
     /// (<c>clintlib.h:346-347</c>). Seeded from <c>PLAYERINFO(10)</c>
@@ -4961,6 +4971,10 @@ public sealed partial class ClientWorld
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
             LockGameOpen = def.BLockGameOpen,
+            // P856 — native bAllowFriendlyFire / bAllowAlliedViz from the same
+            // MissionParams bitfield block (igc.h:1127,1149).
+            AllowFriendlyFire = def.AllowFriendlyFire,
+            AllowAlliedViz = def.AllowAlliedViz,
         };
         _missionTimeStartMs = def.TimeStart;
     }
@@ -4994,6 +5008,10 @@ public sealed partial class ClientWorld
             ILives = _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
+            // P856 — the option flags survive a MISSION_STAGE refinement like
+            // the goal/lives fields do (they come only from MISSIONDEF).
+            AllowFriendlyFire = _mission?.AllowFriendlyFire ?? false,
+            AllowAlliedViz = _mission?.AllowAlliedViz ?? false,
         };
 
         if (enteringOver)

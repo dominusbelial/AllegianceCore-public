@@ -73,8 +73,8 @@ public sealed class P799LivesLimitTests
         menu.Change(1);                     // wraps back to the sentinel
         Assert.Equal(MissionDef.UnlimitedLives, menu.Options.Lives);
         Assert.Equal(SkirmishScreenModel.RowCount, menu.Rows.Length);
-        Assert.Equal(10, SkirmishScreenModel.StartRow);   // P814 Bot-gunners row pushed these down one
-        Assert.Equal(11, SkirmishScreenModel.BackRow);
+        Assert.Equal(12, SkirmishScreenModel.StartRow);   // P814 Bot-gunners + P856 FF/Viz rows pushed these down
+        Assert.Equal(13, SkirmishScreenModel.BackRow);
     }
 
     [Fact]

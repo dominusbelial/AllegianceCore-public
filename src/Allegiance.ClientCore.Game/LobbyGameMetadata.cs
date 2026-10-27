@@ -35,7 +35,12 @@ public sealed record GameParams(
     bool GoalFlags,
     bool GoalTerritory,
     short MinRank,
-    short MaxRank)
+    short MaxRank,
+    // P856 — the two native create-game options the Game Details summary prints
+    // ("Allow Friendly Fire: Yes/No", newgamescreen.cpp:347). Optional trailing
+    // members so a pre-P856 host/listing keeps its shape; native default off.
+    bool AllowFriendlyFire = false,
+    bool AllowAlliedViz = false)
 {
     /// <summary><c>c_cUnlimitedLives = 0x7fff</c> (<c>Igc/igc.h:1007</c>).</summary>
     public const int UnlimitedLives = 0x7fff;
@@ -43,6 +48,10 @@ public sealed record GameParams(
     /// <summary>Native <c>MissionInfo::LimitedLives()</c>
     /// (<c>clintlib/clintlib.h:549</c>: <c>iLives != 0x7fff</c>).</summary>
     public bool LimitedLives => Lives != UnlimitedLives;
+
+    /// <summary>P856 — native's Game Details wording for a boolean option
+    /// (<c>YesNo()</c>, <c>WinTrek/newgamescreen.cpp:347</c>).</summary>
+    public static string YesNo(bool value) => value ? "Yes" : "No";
 
     /// <summary>The lives line: the count, or "unlimited" for the sentinel.</summary>
     public string LivesLabel() => LimitedLives

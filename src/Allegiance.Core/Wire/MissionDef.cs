@@ -74,9 +74,16 @@ public sealed class MissionDef : IFedMessage
     // see the encode block below); MSVC packs bool:1 units LSB-first, so bit 18
     // is byte 108+2, bit 2. The gates that read it: Auto-Accept and Lock Lobby
     // are ENABLED only while it is false (teamscreen.cpp:1563-1569).
+    //
+    // P856 — the same 36-bit block carries the two options this task promotes:
+    // bit 6 = bAllowAlliedViz (igc.h:1127) and bit 28 = bAllowFriendlyFire
+    // (igc.h:1149). Counting the native declaration order from bEjectPods as
+    // bit 0 (igc.h:1120-1156) gives both indices directly; bit 18 matches the
+    // pre-existing bLockGameOpen constant, confirming the mapping.
     private const int BitfieldsOffset = MisparmsOffset + 108;
-    private const int BLockGameOpenByte = BitfieldsOffset + 18 / 8;
-    private const int BLockGameOpenMask = 1 << (18 % 8);
+    private const int AllowAlliedVizBit = 6;
+    private const int BLockGameOpenBit = 18;
+    private const int AllowFriendlyFireBit = 28;
     private const int DwCookieOffset = 460;
     private const int ISideMissionOwnerOffset = 464;
     private const int StageOffset = 468;
@@ -150,6 +157,17 @@ public sealed class MissionDef : IFedMessage
     /// config has no such flag yet), so it reads false from our own servers.</summary>
     public bool BLockGameOpen;
 
+    /// <summary>P856 — <c>MissionParams.bAllowFriendlyFire</c>
+    /// (<c>Igc/igc.h:1149</c>, bit 28 of the bitfield block). Native clients read
+    /// it straight out of the mission definition they were sent
+    /// (<c>MissionInfo::GetMissionParams()</c>, <c>clintlib/clintlib.h:557</c>).</summary>
+    public bool AllowFriendlyFire;
+
+    /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
+    /// (<c>Igc/igc.h:1127</c>, bit 6 of the bitfield block). See
+    /// <see cref="AllowFriendlyFire"/> for the client read path. </summary>
+    public bool AllowAlliedViz;
+
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
@@ -213,9 +231,11 @@ public sealed class MissionDef : IFedMessage
 
         // pad to exact total first, then stamp cbmsg = the full 864 (a message
         // length is the whole thing, not just the fields we happened to write).
-        // P761 — stamp bLockGameOpen (bit 18 of the bitfield block; decode-only
-        // field, zero for the port's own servers, but the codec round-trips it).
-        if (BLockGameOpen) buf[BLockGameOpenByte] |= BLockGameOpenMask;
+        // P856 — stamp the native bool:1 block (params offset 108, five bytes):
+        // bAllowAlliedViz bit 6, bLockGameOpen bit 18, bAllowFriendlyFire bit 28.
+        WriteBitfield(buf, AllowAlliedVizBit, AllowAlliedViz);
+        WriteBitfield(buf, BLockGameOpenBit, BLockGameOpen);
+        WriteBitfield(buf, AllowFriendlyFireBit, AllowFriendlyFire);
 
         if (w.Position < FixedSize) w.Advance(FixedSize - w.Position);
         if (w.Position != FixedSize)
@@ -233,6 +253,18 @@ public sealed class MissionDef : IFedMessage
             throw new InvalidOperationException("MISSIONDEF iLives mispositioned");
         return buf;
     }
+
+    /// <summary>Set one bit of the native <c>MissionParams</c> bool:1 block
+    /// (params offset 108 onward; MSVC packs LSB-first).</summary>
+    private static void WriteBitfield(byte[] buf, int bit, bool value)
+    {
+        if (!value) return;
+        buf[BitfieldsOffset + bit / 8] |= (byte)(1 << (bit % 8));
+    }
+
+    /// <summary>Read one bit of the native bool:1 block at params offset 108.</summary>
+    private static bool ReadBitfield(ReadOnlySpan<byte> buf, int bit)
+        => (buf[BitfieldsOffset + bit / 8] & (1 << (bit % 8))) != 0;
 
     private static string TruncatedFixedString(string s) =>
         s.Length <= StaticFileBufSize - 1 ? s : s[..(StaticFileBufSize - 1)];
@@ -257,7 +289,7 @@ public sealed class MissionDef : IFedMessage
         var leaders = new short[6];
         for (int i = 0; i < leaders.Length; i++)
             leaders[i] = BitConverter.ToInt16(buf.Slice(LeadersOffset + i * 2));
-        bool lockGameOpen = (buf[BLockGameOpenByte] & BLockGameOpenMask) != 0;
+        bool lockGameOpen = ReadBitfield(buf, BLockGameOpenBit);
 
         return new MissionDef
         {
@@ -266,6 +298,8 @@ public sealed class MissionDef : IFedMessage
             DwCookie = cookie,
             ISideMissionOwner = owner,
             Stage = stage,
+            AllowFriendlyFire = ReadBitfield(buf, AllowFriendlyFireBit),
+            AllowAlliedViz = ReadBitfield(buf, AllowAlliedVizBit),
             Goals = new()
             {
                 TeamMoney = BitConverter.ToSingle(buf.Slice(MisparmsOffset + 116)),

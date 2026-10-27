@@ -1,0 +1,15 @@
+P856 fast-tier run 1 (before fixing the P100 probe test contract):
+fast/main Allegiance.Update.Tests: {'Passed': 28} (1.6s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/fast/Allegiance.Update.Tests-main.log
+fast/main Allegiance.Lobby.Tests: {'Passed': 82} (2.2s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/fast/Allegiance.Lobby.Tests-main.log
+fast/main Allegiance.ClientCore.MonoGame.Tests: {'Passed': 3584, 'NotExecuted': 3} (38.8s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/fast/Allegiance.ClientCore.MonoGame.Tests-main.log
+fast/main Allegiance.ClientCore.Tests: {'Passed': 1832} (191.5s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/fast/Allegiance.ClientCore.Tests-main.log
+fast/main Allegiance.Core.Tests: {'Passed': 5451, 'Failed': 1} (308.0s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/fast/Allegiance.Core.Tests-main.log
+fast: 10993 tests, 317.2s, FAIL
+  ERROR: Allegiance.Core.Tests: main failed
+FAIL: /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120222.002757Z/summary.json
+
+Failing test detail:
+  Failed Allegiance.Core.Tests.ProbeCombatLiveTests.Same_side_friendly_missile_damages_the_probe_no_friendly_fire_gate [7 s]
+  Error Message:
+   friendly fire must still damage the probe
+  Stack Trace:

@@ -121,10 +121,11 @@ public sealed class P649CombatBlastParityTests
     }
 
     [Theory]
-    [InlineData(-1, 0)] // sensor
-    [InlineData(1, 0)] // armed: preserve the P100/P491 friendly-hit contract
-    [InlineData(1, 0x4000)] // RescueAny
-    public void Same_side_missile_damages_probe_with_friendly_fire_off(short projectileId, short capabilities)
+    [InlineData(-1, 0, .6f)] // sensor: always damageable (mmf/Xynth #98)
+    [InlineData(1, 0, 1f)]   // armed: P856 ports native's immunity (probeigc.h:84-88)
+    [InlineData(1, 0x4000, .6f)] // RescueAny: exempt from the gate, so damageable
+    public void Same_side_missile_probe_damage_matches_the_native_probe_gate(
+        short projectileId, short capabilities, float expected)
     {
         var (m, _) = Domain();
         var s = m.Sectors[0];
@@ -143,7 +144,10 @@ public sealed class P649CombatBlastParityTests
 
         Assert.False(m.AllowFriendlyFire);
         Assert.DoesNotContain(missile, s.Models);
-        Assert.Equal(.6f, probe.Fraction, 5); // Power 20 * loaded matrix 2 / HP 100
+        // Power 20 * loaded matrix 2 / HP 100 = .6 when the gate lets it through;
+        // an armed friendly probe keeps its full fraction with friendly fire off
+        // (probeigc.h:86-87 returns c_drNoDamage).
+        Assert.Equal(expected, probe.Fraction, 5);
         Assert.Contains(probe, s.Models);
     }
 
@@ -254,7 +258,7 @@ public sealed class P649CombatBlastParityTests
     [InlineData("station", true, .6)]
     [InlineData("missile", false, 1)]
     [InlineData("missile", true, .6)]
-    [InlineData("armedProbe", false, .6)] // P100/P491 contract: armed probes also take friendly hits
+    [InlineData("armedProbe", false, 1)]  // P856: native armed-probe immunity (probeigc.h:84-88)
     [InlineData("armedProbe", true, .6)]
     [InlineData("probe", false, .6)]
     [InlineData("rescueProbe", false, .6)]
@@ -299,7 +303,9 @@ public sealed class P649CombatBlastParityTests
         var fraction = Target(kind, m, s, owner, Vector3.Zero, armor: kind == "station");
         var launcher = Ship(m, s, 2, 2, new Vector3(1000, 0, 0));
         s.ResolveExplosion(new Explosion(3, 20, 100, 0, Vector3.Zero, launcher), 0);
-        Assert.Equal(kind == "armedProbe" ? .6f : 1f, fraction(), 5);
+        // P856 — an allied armed probe is protected too (native's AlliedSides
+        // leg of the same gate, probeigc.h:75).
+        Assert.Equal(1f, fraction(), 5);
         s.ResolveExplosion(new Explosion(3, kind == "station" ? 70 : 20, 100, 0, Vector3.Zero, null), 0);
         float damaged = fraction(); Assert.True(damaged < 1);
         s.ResolveExplosion(new Explosion(3, -10, 100, 0, Vector3.Zero, launcher), 0);

@@ -222,10 +222,12 @@ public sealed class Probe : Model, IProbeIgc
     public Model? Target { get => _target; set => _target = value; }
 
     /// <summary>
-    /// Native probeigc.h:65-146 damage/repair math, preserving the P100/P491
-    /// no-friendly-fire-gate contract for all probes. Native sensors and
-    /// RescueAny probes allow friendly damage (74-89); its armed-probe immunity
-    /// is deliberately omitted here, as before P649. Matrix
+    /// Native probeigc.h:65-146 damage/repair math. The friendly-fire gate is
+    /// native's (74-89): with <see cref="Mission.AllowFriendlyFire"/> off, a
+    /// friendly or allied launcher cannot damage an <b>armed</b> probe
+    /// (<c>GetProjectileType() != NULL</c>) while a sensor probe and a
+    /// <c>c_eabmRescueAny</c> probe stay damageable (mmf/Xynth #98: "Always
+    /// damage probes ... Only damage 'sensor' probes"). Matrix
     /// and ship-launcher experience scale damage/repair (95-99). Repairs cap
     /// at one (101-109); a first lethal crossing removes the probe and notifies
     /// its mission (116-139). Splash carries NoDebris (142-143).
@@ -238,9 +240,15 @@ public sealed class Probe : Model, IProbeIgc
         Vector3 position2,
         Model? launcher)
     {
-        // P649b: retain the P100/P491 friendly-hit contract for direct hits and
-        // splash alike. Native probeigc.h:74-89 exempts sensors/RescueAny but
-        // protects armed probes; that armed exception is deliberately not ported.
+        // Native probeigc.h:74-89 (P856 — previously only the ship/station/
+        // missile paths had the gate; native has it on probes too).
+        if (launcher is not null && amount >= 0 &&
+            Mission?.AllowFriendlyFire != true &&
+            Mission?.AreSidesFriendly(SideId, BlastDamage.SideOf(launcher)) == true &&
+            (ProbeType.EabmCapabilities & DataProbeTypeIGC.EabmRescueAny) == 0 &&
+            IsArmed)
+            return DamageResult.NoDamage;
+
         float maxHP = ProbeType.HitPoints;
         amount *= DamageConstant(type, ProbeType.DefenseType);   // probeigc.h:95
         if (launcher is Ship source) amount *= source.ExperienceMultiplier; // probeigc.h:97-99
@@ -623,15 +631,10 @@ public sealed class Probe : Model, IProbeIgc
         _ => false
     };
 
-    // Native Igc/igc.h:4297-4305: live alliance groups, in addition to
-    // the port's explicit side-pair relationships used by standalone hosts.
-    private bool IsFriendlySide(short? other)
-    {
-        if (Mission?.AreSidesFriendly(SideId, other) == true) return true;
-        if (SideId is not { } side || other is null) return false;
-        var group = Mission?.Sides.FirstOrDefault(s => s.Id == side)?.AllyGroup;
-        return group is not null && Mission!.Sides.Any(s => s.Id == other && s.AllyGroup == group);
-    }
+    // Native Igc/igc.h:4297-4305 AlliedSides, live alliance groups included
+    // (P856 — Mission.AreSidesFriendly reads Side.AllyGroup as well as the
+    // host/test AlliedSidePairs override).
+    private bool IsFriendlySide(short? other) => Mission?.AreSidesFriendly(SideId, other) == true;
 
     // Native probeigc.h:163-191: signature/side-GA range and asteroid LOS.
     private bool InScannerRange(object target, Vector3 position, float radius)

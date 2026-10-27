@@ -61,6 +61,10 @@ services:
     environment:
       # P832a: JSON goal override for every configured game (empty preserves games[].goals).
       ALLEGIANCE_GAME_GOALS: "${ALLEGIANCE_GAME_GOALS:-}"
+      # P856: native create-game options for every configured game
+      # (empty preserves games[].allowFriendlyFire / games[].allowAlliedViz; both default off).
+      ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE: "${ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE:-}"
+      ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ: "${ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ:-}"
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
       # P817 — native NPC travel (docs/reports/P817_NATIVE_GOTOPLAN.md).
       ALLEGIANCE_SIM_NATIVE_GOTOPLAN: "${ALLEGIANCE_SIM_NATIVE_GOTOPLAN:-0}"

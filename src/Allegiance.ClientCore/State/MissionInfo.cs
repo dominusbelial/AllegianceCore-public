@@ -44,4 +44,14 @@ public sealed class MissionInfo
     /// OFF in the team lobby (native: enabled only while the game-open lock is
     /// off, teamscreen.cpp:1563-1569).</summary>
     public bool LockGameOpen { get; init; }
+
+    /// <summary>P856 — <c>MissionParams.bAllowFriendlyFire</c>
+    /// (<c>src/Igc/igc.h:1149</c>), decoded from the MISSIONDEF bitfield block.
+    /// Native's client reads it from the mission definition itself
+    /// (<c>MissionInfo::GetMissionParams()</c>, <c>clintlib/clintlib.h:557</c>).</summary>
+    public bool AllowFriendlyFire { get; init; }
+
+    /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
+    /// (<c>src/Igc/igc.h:1127</c>), decoded from the MISSIONDEF bitfield block.</summary>
+    public bool AllowAlliedViz { get; init; }
 }
