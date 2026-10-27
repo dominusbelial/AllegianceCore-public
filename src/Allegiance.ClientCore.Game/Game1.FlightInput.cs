@@ -297,11 +297,17 @@ public sealed partial class Game1
         double ts = 1.0;
         if (_session.World is { } w) ts = w.TimeScale;
         _gameSeconds += gameTime.ElapsedGameTime.TotalSeconds * Math.Clamp(ts, 0.0, 1.0);
-        // P573 — frame-time over-budget fallback for the Volumetric tier (drop a
-        // tier once, logged). Skipped during --auto proof runs so a recording
-        // renders the requested tier consistently end to end.
+        // P573/P834 — frame-time budget for the Volumetric tier. The adaptive
+        // budget controller (bounded, smooth) always learns from the measured
+        // frame time so a slower GPU degrades the raymarch instead of stalling;
+        // the one-shot tier drop below is the last-resort fallback. During --auto
+        // proof runs both are skipped so a recording renders one configuration
+        // consistently end to end.
         if (_autoPlan is null)
+        {
+            _volumetricRenderer?.ObserveFrame(gameTime.ElapsedGameTime.TotalMilliseconds);
             EnsureVolumetricBudget(gameTime.ElapsedGameTime.TotalSeconds);
+        }
         // P508 — keep the own-ship server clock fed in every state so a
         // server-converted SHIP_UPDATE time is ready by undock. Bootstrap once
         // per connection; subsequent echoes come from the session keep-alive.

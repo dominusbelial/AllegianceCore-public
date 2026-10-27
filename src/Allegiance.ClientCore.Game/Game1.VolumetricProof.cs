@@ -43,6 +43,7 @@ public sealed partial class Game1
     private float[] _volProofStrip = Array.Empty<float>();
     private int _volProofStripConsumed;
     private (int Type, float Dist, int Count)[] _volProofSpec = Array.Empty<(int, float, int)>();
+    private double _volProofNextHeadingLog;
 
     private void ParseVolumetricProof()
     {
@@ -88,6 +89,21 @@ public sealed partial class Game1
 
         if (_volProofAnchorWallMs < 0) _volProofAnchorWallMs = Environment.TickCount64;
         double wallElapsed = (Environment.TickCount64 - _volProofAnchorWallMs) / 1000.0;
+
+        // P834b — log the camera's WORLD heading once a second while a proof is
+        // armed. The volumetric near/scene clamp is a function of that heading
+        // (the ray's view-axis cosine), so a proof frame is only meaningful if you
+        // know where the camera was pointing: this is what lets a scripted camera
+        // sweep (e.g. --camera orbitcam) pick the frame that looks toward world
+        // +Z. Inert unless ALLEGIANCE_VOL_PROOF is set.
+        if (wallElapsed >= _volProofNextHeadingLog)
+        {
+            _volProofNextHeadingLog = wallElapsed + 1.0;
+            var head = XnaVec.Normalize(new XnaVec(-view.M13, -view.M23, -view.M33));
+            Console.WriteLine($"[volproof] t={_nowSeconds:0.000}s wall={wallElapsed:0.0}s camera forward=" +
+                              $"({head.X:0.000},{head.Y:0.000},{head.Z:0.000}) yawFromMinusZ=" +
+                              $"{Math.Atan2(-head.X, -head.Z) * 180.0 / Math.PI:0.0}deg");
+        }
         if (wallElapsed < _volProofTriggerWallSec) return;
 
         if (_volProofStartSec < 0)
@@ -129,6 +145,12 @@ public sealed partial class Game1
         {
             while (_volProofStripConsumed < _volProofStrip.Length && age + 0.033 >= _volProofStrip[_volProofStripConsumed])
             {
+                // P834b — record the camera heading ON the frame being captured,
+                // next to the queue line, so the shot can be attributed to a world
+                // orientation.
+                var head = XnaVec.Normalize(new XnaVec(-view.M13, -view.M23, -view.M33));
+                Console.WriteLine($"[volproof] framestrip shot at age={age:0.00}s camera forward=" +
+                                  $"({head.X:0.000},{head.Y:0.000},{head.Z:0.000})");
                 ScheduleAutoshot(shotIndex: -1);
                 _volProofStripConsumed++;
             }

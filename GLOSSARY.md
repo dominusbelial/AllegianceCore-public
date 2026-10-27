@@ -194,6 +194,26 @@ list in **reverse**.
   `src/Allegiance.ClientCore/Session/`, `Replay/`, `State/`.
 - **Flight prediction / dead reckoning** — `src/Allegiance.ClientCore/Flight/`
   (`KinematicsDeadReckoner` etc.), reports `P447*/P448*`.
+- **Volumetric explosions (raymarch tier)** — Technique A (P573/P579) plus the
+  P834 near-cost policy: coverage is measured as a fraction of the viewport
+  height, volumes render at full/half/quarter resolution by coverage, the
+  per-frame pixel-step budget is per screen pixel (measured on the B50) with a
+  bounded adaptive fallback, and the shader clamps the march to the visible
+  depth range (near plane → scene depth). **View axis (`ViewForward`)** — the
+  camera's forward axis as a `float3` uniform the renderer derives from the view
+  matrix (`-(M13,M23,M33)`); the clamp's cosine is `dot(rayDir, ViewForward)`
+  (P834b: never `-rayDir.z`, which only holds for a camera looking down world
+  −Z, and never a matrix read from the pixel shader — that corrupts the PS
+  constant block, see the P834 report §9). Key:
+  `src/Allegiance.ClientCore/State/VolumetricQuality.cs`,
+  `State/VolumetricExplosionSampler.cs`, `State/VolumetricGeometry.cs`,
+  `src/Allegiance.ClientCore.Game/Rendering/VolumetricRenderer.cs`,
+  `src/Allegiance.ClientCore.Game/Shaders/Volumetric.fx`; cost harness
+  `tools/p834-vol-perf/` (has `--yaw`/`--pitch` orientation sweeps and pins the
+  `.mgfxo` under test with `--shader`). Reports
+  `docs/reports/P579_ADOPT_VOLUMETRIC_EXPLOSIONS.md`,
+  `docs/reports/P834_VOLUMETRIC_NEAR_COST.md`. *Native:* `effect/explosion.cpp`,
+  `WinTrek/trekigc.cpp:95-177`.
 - **HUD settings / styles** — `Rendering/HudSettings.cs` defines `HudStyle`
   Classic/Modern; **every HUD change must work in both styles**
   (`Rendering/ModernHudRenderer.cs`). *Native:* the original classic HUD layout.

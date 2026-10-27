@@ -147,13 +147,20 @@ public class P579VolumetricAdoptTests
     }
 
     [Fact]
-    public void Budget_never_degrades_below_low()
+    public void Budget_never_degrades_below_the_cheapest_level()
     {
-        // Even an enormous volume bottoms out at Low (64 steps) — never dropped
-        // below the cheapest level by the budget allocator.
+        // Even an enormous volume bottoms out at the cheapest compiled level —
+        // the budget allocator never invents a level the shader does not have.
+        // P834 — the cheapest level is now Minimal (32 steps, introduced for
+        // screen-filling / camera-inside volumes); P579's floor was Low (64).
         var vols = new (float DiameterPx, float AreaPx)[] { (2000f, 2000f * 2000f) };
         var levels = VolumeBudget.AllocateLevels(vols, 0f);
-        Assert.Equal(VolumeLod.Level.Low, levels[0]);
+        Assert.Equal(VolumeLod.Level.Minimal, levels[0]);
+
+        // A merely large (not screen-filling) volume starts at Low and is
+        // degraded to the same floor when the budget cannot fit it.
+        var low = VolumeBudget.AllocateLevels(new (float, float)[] { (500f, 500f * 500f) }, 0f);
+        Assert.Equal(VolumeLod.Level.Minimal, low[0]);
     }
 
     // The existing volume CAP (P573) still holds independent of the budget.

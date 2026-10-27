@@ -20,6 +20,25 @@
 //   * Brightness: a per-effect float param (set from code, default 10) boosts
 //     the march to read additively over space (the spike's march was ~10x too
 //     faint at game scale).
+//   * P834 near-cost: every pixel shader clamps the ray-sphere interval to the
+//     VISIBLE depth range before marching (start at the near plane, stop where
+//     the opaque scene's linear depth occludes the volume) — with the camera
+//     inside the sphere RaySphere returns t0 = 0, so P579 marched the whole
+//     chord in front of the lens (and behind hulls). A new RaymarchMinimal
+//     (1x48) technique is the "fewer, longer steps" rung for screen-filling /
+//     camera-inside volumes; the CPU picks the render scale (full / half /
+//     quarter) from screen coverage.
+//   * P834b: that clamp needs the ray's VIEW-AXIS cosine, and `rd` is a world
+//     direction, so it must be `dot(rd, ViewForward)` with `ViewForward` the
+//     camera's forward axis (a float3 the renderer derives from the view
+//     matrix). P834 tested `-rd.z` — only right for a camera looking down world
+//     -Z. Do NOT use `mul(float4(rd,0), WorldView)` here: a matrix referenced
+//     from this pixel shader makes mgfxc/MojoShader emit a PS constant block
+//     that MonoGame's ConstantBuffer uploads to the wrong registers (measured:
+//     `Near` then reads a WorldView column, so the clamp changes with camera
+//     yaw, and `Brightness` reads 0 — a black plume; referencing the whole
+//     matrix instead throws in ConstantBuffer.SetData). One float3 uniform
+//     keeps the PS layout identical to P834's.
 //
 // Compatibility (verified by P573 feasibility): DesktopGL AND Android run this
 // through MojoShader as ps_3_0 / vs_3_0. Static loops are NOT unrolled — they
@@ -44,6 +63,8 @@ float2 InvViewportSize;    // 0.5/VPx, 0.5/VPy
 float Near;
 float InvRange;
 float3 EyePos;             // camera eye (world)
+float3 ViewForward;        // P834b — camera forward axis (unit, world); the
+                           // view-axis cosine of a ray is dot(rd, ViewForward)
 float3 LightDir;           // world unit dir for the cheap self-shadow bias
 float Time;                // global seconds (drives churn/flow)
 float Brightness;          // P579 — additive-brightness scale (set from code)
@@ -172,7 +193,7 @@ float3 Ramp(float d, float cool, float3 tint)
 // factor needs (a tiny alpha suppressed the whole output ~8×).
 float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float life,
                 float3 tint, float seed, float dt, float t0, float t1, float span,
-                int slices, int inner)
+                int slices, int inner, float extScale)
 {
     float tn = saturate(age / max(0.045, life));   // life = FILM clock (P582b)
     // P582b — compress growth/cool to NATIVE FILM timing: reach full radius +
@@ -210,7 +231,10 @@ float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float l
                 float3 col = Ramp(saturate(dens), cool, tint);
                 float shade = 0.5 + 0.5 * saturate(dot(rd, LightDir) * 0.5 + 0.5);
                 acc += col * (dens * trans * shade) * dt;
-                trans *= exp(-dens * 3.2);
+                // P834 — extScale keeps the OPTICAL DEPTH per unit distance the
+                // same across step counts (the 48-step Minimal level matches the
+                // 64-step Low look: extinction per step is scaled by 64/48).
+                trans *= exp(-dens * 3.2 * extScale);
                 if (trans < 0.016) break;
             }
             if (trans < 0.016) break;
@@ -222,15 +246,41 @@ float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float l
 
 // Depth-soft intersection: fade where the opaque scene's linear depth is
 // closer than this fragment (melts the volume onto hulls instead of slicing).
-float DepthFade(VS_OUT i, float2 vpos)
+// P834 — the scene depth is fetched ONCE per fragment in the pixel shader and
+// passed here and to ClampVisible (P579's DepthFade used its own fetch).
+float DepthFadeScene(VS_OUT i, float scene)
 {
-    float2 duv = vpos * InvViewportSize;
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, duv)).x;
     float vol = (i.ViewDepth - Near) * InvRange;
     // Same normalized-depth slope as SoftParticle.fx (SoftnessInv = 1/0.004,
     // LinearDepth.SoftnessNormalized); P573's 1/8 faded every volume to ~0.
     float softInv = 250.0;
     return saturate((scene - vol) * softInv);
+}
+
+// P834 — clamp a ray-sphere interval to the VISIBLE depth range, in
+// camera-relative space: never start before the near plane, never march past the
+// opaque scene. `tNear`/`tScene` are ray distances (the depth is measured along
+// the view axis, so divide by cos = the ray's view-axis cosine). Returns false
+// when nothing survives (the shader clip()s — the volume is entirely inside the
+// near plane or behind geometry). Mirrors
+// VolumetricGeometry.ClampVisibleRange (P834/P834b tests).
+//
+// P834b — the cosine comes from the ViewForward uniform (the camera's forward
+// axis, derived on the CPU from the view matrix), NOT from rd.z: rd is a WORLD
+// direction (EyePos is the camera-relative origin but the camera rotation lives
+// in the view matrix), so `-rd.z` was only right for a camera looking down world
+// -Z and every other heading clipped the volume away. See the header note for
+// why the view matrix itself must not be read from this shader.
+bool ClampVisible(float3 rd, float scene, inout float t0, inout float t1)
+{
+    float cosView = dot(rd, ViewForward);
+    float invZ = 1.0 / max(1e-4, cosView);
+    float tNear = Near * invZ;
+    // scene is (viewDist - Near) * InvRange, so viewDist = scene / InvRange + Near.
+    float tScene = (scene / max(1e-6, InvRange) + Near) * invZ;
+    t0 = max(t0, tNear);
+    t1 = min(t1, tScene);
+    return t1 > t0;
 }
 
 // P579 coverage-LOD: Low(64) = biggest on-screen; Ultra(510) = smallest.
@@ -240,38 +290,64 @@ float4 PS_Low(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
-                    1.0/64.0, t0, t1, span, 1, 64) * DepthFade(i, vpos);
+                    1.0/64.0, t0, t1, span, 1, 64, 1.0) * DepthFadeScene(i, scene);
+}
+// P834 — screen-filling / camera-inside rung: 48 long steps. dt is normalised
+// (1/48) like every other level and the per-step extinction is scaled by
+// 64/48 (see MarchAcc extScale) so optical depth — and brightness — matches the
+// 64-step Low level; the bigger stride is masked by the quarter-res render
+// scale the CPU picks for volumes this large. 32 steps aliased the finest fBm
+// octave on a radius-165 volume (step ≈ cell size) and read visibly brighter.
+float4 PS_Minimal(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+{
+    float3 rd = normalize(i.WorldPos - EyePos);
+    float t0, t1;
+    if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
+    float span = max(t1 - t0, 1e-4);
+    return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
+                    1.0/48.0, t0, t1, span, 1, 48, 1.3333333) * DepthFadeScene(i, scene);
 }
 float4 PS_Med(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
-                    1.0/128.0, t0, t1, span, 1, 128) * DepthFade(i, vpos);
+                    1.0/128.0, t0, t1, span, 1, 128, 1.0) * DepthFadeScene(i, scene);
 }
 float4 PS_High(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
-                    1.0/255.0, t0, t1, span, 1, 255) * DepthFade(i, vpos);
+                    1.0/255.0, t0, t1, span, 1, 255, 1.0) * DepthFadeScene(i, scene);
 }
 float4 PS_Ultra(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
-                    1.0/510.0, t0, t1, span, 2, 255) * DepthFade(i, vpos);
+                    1.0/510.0, t0, t1, span, 2, 255, 1.0) * DepthFadeScene(i, scene);
 }
 
+technique RaymarchMinimal { pass Pass0 { VertexShader = compile VS_SHADERMODEL VS(); PixelShader = compile PS_SHADERMODEL PS_Minimal(); } }
 technique RaymarchLow   { pass Pass0 { VertexShader = compile VS_SHADERMODEL VS(); PixelShader = compile PS_SHADERMODEL PS_Low(); } }
 technique RaymarchMed   { pass Pass0 { VertexShader = compile VS_SHADERMODEL VS(); PixelShader = compile PS_SHADERMODEL PS_Med(); } }
 technique RaymarchHigh  { pass Pass0 { VertexShader = compile VS_SHADERMODEL VS(); PixelShader = compile PS_SHADERMODEL PS_High(); } }
