@@ -181,10 +181,21 @@ public class P480RotationKeepsPlayersLiveTests
                 $"bot got {bot.ClusterExports.Count} cluster exports, expected >= {newMission.Sectors.Count}");
             Assert.NotEmpty(bot.StationExports);
             var botSide = server.Ships.First(x => x.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship.SideId;
-            Assert.All(bot.StationExports, st => Assert.True(
-                newMission.Sectors.SelectMany(x => x.StationRuntimes)
-                    .Any(rt => rt.StationId == st.Station.StationId && rt.SeenBySide(botSide!.Value)),
-                $"station {st.Station.StationId} was exported to a side that had not seen it"));
+            var freshStations = newMission.Sectors.SelectMany(x => x.StationRuntimes).ToArray();
+            Assert.All(bot.StationExports, st =>
+            {
+                var runtime = freshStations.FirstOrDefault(rt => rt.StationId == st.Station.StationId);
+                string FreshState() => runtime is null
+                    ? "station absent from the new mission"
+                    : $"fresh station side {runtime.SideId} cluster {runtime.Data.ClusterId} seen=[" +
+                      string.Join(",", newMission.Sides.Select(s => $"{s.Id}:{(runtime.SeenBySide(s.Id) ? "yes" : "no")}")) + "]";
+                Assert.True(runtime is not null && runtime.SeenBySide(botSide!.Value),
+                    $"station {st.Station.StationId} was exported to a side that had not seen it " +
+                    $"(export: '{st.Station.Name}' side {st.Station.SideId} cluster {st.Station.ClusterId}; " +
+                    $"recipient side {botSide?.ToString() ?? "(none)"}, bot ship {bot.ShipAssignment?.Ship.ShipId}, " +
+                    $"stage {newMission.Stage}; {FreshState()}; " +
+                    $"received stations: {string.Join(" | ", bot.StationExports.Select(e => $"{e.Station.StationId}/side {e.Station.SideId}@{e.Station.ClusterId}"))})");
+            });
 
             // (3) The bot's ship is seated on its ORIGINAL side in the NEW mission.
             short newId = bot.ShipAssignment!.Ship.ShipId;
