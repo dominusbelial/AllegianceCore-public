@@ -234,6 +234,23 @@ list in **reverse**.
 
 - **Headless session** — the world-state tracker driving prediction/replay.
   `src/Allegiance.ClientCore/Session/`, `Replay/`, `State/`.
+- **Autopilot (G key / pod home / cluster goto)** — the native `GotoPlan` law:
+  same-sector steering, dodge, docking bays, pod pickup and cross-sector routing
+  through warps. Key: `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`
+  (`TryGetAutopilotControls`, `AllWarps`, `TryResolveClusterWaypoint`),
+  `Game1.Targeting.cs` (`TryResolveAutopilotGoal`),
+  `src/Allegiance.ClientCore.Game/Flight/StarmapGotoRouter.cs`,
+  `src/Allegiance.Core/Model/WarpDestinationResolver.cs`. **Routing is
+  discovery-gated** exactly like native `FindPath` (`Igc/common.cpp:894-1010`, the
+  `pship->CanSee(pwarp)` filter at `:920`/`:975`; `Igc/shipIGC.h:380-390`): since
+  P797 a side only receives alephs it has seen (`FedSrv/fsmission.cpp:4181`), so a
+  fixture that wants a multi-jump route must seed the map (`ShowMap`). Reports
+  P540b/P699; guard test `P859RegressionProofTests`.
+- **Lifepod home / rescue** — ejecting leaves a pod that flies home with the same
+  autopilot: target selection (`Game1.ChooseEjectRescueTarget`, native
+  `clintlib/appmsg.cpp:230-238` `FindTarget(… c_ttAnyCluster …, c_sabmRescue…)`),
+  oxygen budget and docking. Reports P699/P699c; live test
+  `P699HumanPodHomeLiveTests`.
 - **Flight prediction / dead reckoning** — `src/Allegiance.ClientCore/Flight/`
   (`KinematicsDeadReckoner` etc.), reports `P447*/P448*`.
 - **Volumetric explosions (raymarch tier)** — Technique A (P573/P579) plus the
@@ -259,6 +276,22 @@ list in **reverse**.
 - **HUD settings / styles** — `Rendering/HudSettings.cs` defines `HudStyle`
   Classic/Modern; **every HUD change must work in both styles**
   (`Rendering/ModernHudRenderer.cs`). *Native:* the original classic HUD layout.
+- **Modern HUD scale / text budget (P833, capped by P859)** — one scale for text,
+  glyph art, gauge ring, target pane and own-status grid, derived from the desktop
+  display density × the user `HudSettings.Size` (`Rendering/ModernHudScale.cs`:
+  `Core(displayScale, size)`), and **capped by the window-height budget**
+  `WindowFactor(height)` = 1.5 scale units per 1080 px (`Core(density, size, height)`,
+  the overload the renderer calls) so a small window / large Size cannot inflate the
+  HUD past the layout the HUD-2 proof verifies. Classic stays native fixed pixels.
+  Report `docs/reports/P833_HUD_SCALE.md`; regressions and the cap:
+  `docs/reports/P859_LIVE_MONOGAME_REGRESSIONS.md`.
+- **HUD text layout (de-overlap)** — `Rendering/HudTextLayout.cs`: fixed
+  instruments reserve their zones first, measured radar labels/blocks yield to
+  them, notices yield to labels, and a fully crowded screen falls back to the
+  native anchor instead of throwing. The centred ripcord countdown reserve is the
+  union of the native 150-px StringImage box (`Artwork/dialog.mdl:5145-5151`,
+  `:5429`) and the wider port glyph run (P859). Proof: `tools/hud2-proof`
+  (sweeps 1920×1080, 2560×1440, 1280×720, 1600×900, 1366×768 × Size × both skins).
 - **HUD renderer** — `Rendering/HudRenderer.cs` (shared model +
   Classic), `Rendering/ModernHudRenderer.cs` (Modern override). P786 report.
 - **Lead marker / aim predictor** — the client-solved lead and the native

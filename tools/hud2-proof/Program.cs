@@ -37,7 +37,14 @@ sealed class Proof : Game
         var classic = new HudRenderer(batch, white, small, big, gauges, statusTextures: status, indicators: indicators);
         var radar = new RadarBracketRenderer(batch, white);   // HUD-4 — classic radar path (the real client draws this separately)
         var summaries = new List<object>();
-        foreach (var (width, height) in new[] { (1920, 1080), (2560, 1440), (1280, 720) })
+        // P859 — 1600×900 and 1366×768 are the commonest 16:9 laptop windows and
+        // were the untested band where the Classic ripcord reservation (native
+        // 150-wide box) did not cover the wider port glyph run; the sweep keeps
+        // both so no measured text can be placed onto those centred glyphs again.
+        foreach (var (width, height) in new[]
+                 {
+                     (1920, 1080), (2560, 1440), (1280, 720), (1600, 900), (1366, 768),
+                 })
         foreach (float size in new[] { .75f, 1f, 1.5f })
         {
             settings.Size = size; settings.ColorBlindSafe = size == 1.5f;
@@ -104,7 +111,10 @@ sealed class Proof : Game
                         // (left = 960 - width/2), not left-aligned at 885.
                         RequireCentredBox(boxes, "Ripcord in: 9", 525, width / 2f);
                     }
-                    float renderScale = renderer == modern ? Math.Clamp(height / 1080f * settings.Size, .5f, 4) : 1f;
+                    // P859 — measure the inventory columns at the SAME scale the
+                    // renderer applies (density 1.0 on the proof desktop, capped by
+                    // the window-height budget), not the pre-P833 height heuristic.
+                    float renderScale = renderer == modern ? ModernHudScale.Core(1f, settings.Size, height) : 1f;
                     RequireInventoryColumnsFit(model, renderer == modern ? modernSmall : small, width, height, renderScale);
                     bool inventoryPaneUp = model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 };
                     if (inventoryPaneUp)
