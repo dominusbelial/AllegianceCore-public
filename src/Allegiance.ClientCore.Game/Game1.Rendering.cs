@@ -3897,6 +3897,40 @@ public sealed partial class Game1
             or CameraMode.ExternalBase or CameraMode.ExternalStation
             or CameraMode.ExternalOverride;
 
+    /// <summary>P836 — sample the in-sector ship count and resolve the Auto HUD
+    /// level. Runs at most once a second (wall-clock) so the resolver's
+    /// hysteresis hold is stable across frame rates. When a MANUAL level is set
+    /// this just keeps <see cref="HudSettings.ActiveLevel"/> agreeing with it.</summary>
+    private void UpdateHudAutoLevel(double now)
+    {
+        if (now < _nextHudAutoSample) return;
+        _nextHudAutoSample = now + 1.0;
+        var world = _session.World;
+        int ships = 0;
+        lock (_session.Gate)
+        {
+            if (RenderShipId(world) is not { } me)
+            { _hudSettings.ActiveLevel = _hudSettings.Level == HudLevel.Auto ? _hudAutoLevel.Level : _hudSettings.Level; return; }
+            if (!world.Ships.TryGetValue(me, out var ownEnt))
+            { _hudSettings.ActiveLevel = _hudSettings.Level == HudLevel.Auto ? _hudAutoLevel.Level : _hudSettings.Level; return; }
+            short mySector = RenderSector(ownEnt.SectorId);
+            // Count living, visible craft in MY sector (same filter the radar
+            // uses) — the brief's "ships in the player's sector".
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (id == me || ship.IsNotVisible || ship.Unknown || ship.ParentId >= 0) continue;
+                if (ship.SectorId != mySector) continue;
+                ships++;
+            }
+        }
+        if (_hudSettings.Level != HudLevel.Auto) { _hudSettings.ActiveLevel = _hudSettings.Level; return; }
+        bool changed = _hudAutoLevel.Advance(now, ships);
+        _hudSettings.ActiveLevel = _hudAutoLevel.Level;
+        if (changed)
+            Console.WriteLine($"[monogame] HUD AUTO → {HudLevels.Label(_hudAutoLevel.Level)} ({ships} ships in sector)");
+    }
+
+
     private void DrawRadar(Matrix view, Matrix proj, Vector3 cameraEye, double timeSeconds)
     {
         var world = _session.World;

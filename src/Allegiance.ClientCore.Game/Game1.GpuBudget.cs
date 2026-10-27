@@ -42,8 +42,8 @@ public sealed partial class Game1
     private int _graphicsRow;
     /// <summary>P828 — the number of rows in the Ctrl+F6 settings panel (13 → 16
     /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
-    /// declutter rows). Up/Down wrap on it.</summary>
-    private const int GraphicsRowCount = 19;
+    /// declutter rows, 19 → 20 with the P836 HUD level row). Up/Down wrap on it.</summary>
+    private const int GraphicsRowCount = 20;
     private Action<long, bool, double>? _receiveGpu;
     private long _budgetStart;
     private double _budgetDuration;
@@ -71,6 +71,14 @@ public sealed partial class Game1
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_CLIENT_PERF") == "1" || _upscaling.DynamicResolution)
             EnableFrameTelemetry();
     }
+    /// <summary>P836 — persist hud.json from the in-game cycle key without
+    /// surfacing an error (same swallow shape as the settings panel).</summary>
+    private void SaveHudSettingsQuietly()
+    {
+        try { _hudSettings.Save(HudSettings.DefaultPath); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Console.WriteLine($"[hud2] cannot save HUD preferences: {e.Message}"); }
+    }
+
     /// <summary>HD-5 — push the two player settings (HD textures, experimental HD
     /// lighting) into the shared <see cref="HdMaterialRenderer.Mode"/> so every
     /// renderer follows one coherent pack mode. Null-safe for menu unit tests that
@@ -155,6 +163,11 @@ public sealed partial class Game1
                 case 16: _hudSettings.RadarDeclutter = !_hudSettings.RadarDeclutterOn; break;
                 case 17: _hudSettings.RadarLabelMax = Math.Clamp(_hudSettings.RadarLabelMax + direction * 2, 0, RadarLabelDeclutter.MaxExtraLabelsLimit); break;
                 case 18: _hudSettings.RadarLabelTelemetry = !_hudSettings.RadarLabelTelemetry; break;
+                // P836 — the Modern-HUD density level (Classic ignores it). Left/
+                // right step through the five settable levels (Full/Tactical/
+                // Combat/Cinematic/Auto). Auto resolves from the in-sector ship
+                // count and never selects Cinematic.
+                case 19: _hudSettings.Level = Rendering.HudLevels.Step(_hudSettings.Level, direction); break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -215,7 +228,11 @@ public sealed partial class Game1
                 // P828 (Modern-HUD visual option; Classic stays exactly native).
                 $"Radar label declutter: {(_hudSettings.RadarDeclutterOn ? "On" : "Off")} (Modern default)",
                 $"Radar labels kept: {_hudSettings.RadarLabelMax} (nearest, after priority)",
-                $"Radar label telemetry: {(_hudSettings.RadarLabelTelemetry ? "On" : "Off")}" };
+                $"Radar label telemetry: {(_hudSettings.RadarLabelTelemetry ? "On" : "Off")}",
+                // P836 — the Modern-HUD density level (Full/Tactical/Combat/
+                // Cinematic/Auto; Classic ignores it). Shows the resolved level
+                // too when Auto is active.
+                $"HUD level: {_hudSettings.Level}{( _hudSettings.Level == Rendering.HudLevel.Auto ? $" → {_hudSettings.ActiveLevel}" : "")}" };
             int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 24);
             _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);

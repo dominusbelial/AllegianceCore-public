@@ -21,6 +21,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     /// construction; a 1.0 desktop behaves exactly as the pre-P833 client.</summary>
     private readonly float _displayScale;
     private readonly HashSet<string> _drawn = new(StringComparer.Ordinal);
+    // P836 — the active-level indicator: a small persistent tag plus a brief
+    // toast when the level changes (Auto switching between bands).
+    private HudLevel _shownLevel = HudLevel.Tactical;
+    private float _levelToastRemain;
     // HUD-12b — per-source-string chat clip cache: the old per-character loop
     // allocated a new rowText + "..." string for every removed glyph, every line,
     // every frame.
@@ -109,9 +113,17 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         _previous = now;
         // Contacts were already filtered using the native LOD keys upstream.
         // Keep their exact projections, silhouettes, selected/build-spot markers.
+        // P836 — the Modern levels shrink off-screen ordinary contacts to edge
+        // pips (or drop them); Classic (NativeBlock) is unchanged.
+        _radar.Offscreen = HudLevels.Preset(_settings.EffectiveLevel).Offscreen;
         _radar.Draw(model, viewport, _settings.ColorBlindSafe);
         base.Draw(model, viewport);
         if (!model.Visible) { _animated.Clear(); return; }
+        // P836 — detect a level change (Auto switching bands, or the player
+        // cycling) so a brief toast announces the active level.
+        var eff = _settings.EffectiveLevel;
+        if (eff != _shownLevel) { _shownLevel = eff; _levelToastRemain = 3f; }
+        _levelToastRemain = MathF.Max(0f, _levelToastRemain - _dt);
         if (model.FlightVisible)
             Mark("Radar viewport and round border", "Radar LOD modes", "Radar ship contacts", "Radar station contacts", "Radar warp contacts", "Radar asteroid contacts", "Radar missile contacts", "Radar probe and mine contacts", "Radar treasure and tech contacts");
         BeginBatch();
@@ -619,6 +631,32 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             var c = new Vector2(w / 2, h / 2);
             foreach (int x in new[] { -1, 1 }) foreach (int y in new[] { -1, 1 })
                 DrawLine(c + new Vector2(x * 19, y * 19) * _scale, c + new Vector2(x * 25, y * 25) * _scale, 2 * _scale, Color.White);
+        }
+        DrawHudLevelTag(model, viewport);
+    }
+
+    /// <summary>P836 — the active Modern HUD level: a small persistent tag under
+    /// the RADAR readout plus a brief prominent toast when it changes (the brief's
+    /// "show the active level briefly when it changes" — most useful for Auto,
+    /// whose band switches are otherwise silent).</summary>
+    private void DrawHudLevelTag(HudModel model, Viewport viewport)
+    {
+        if (!model.FlightVisible) return;
+        HudLevel eff = _settings.EffectiveLevel;
+        string name = HudLevels.Label(eff);
+        bool auto = _settings.Level == HudLevel.Auto;
+        float w = viewport.Width, h = viewport.Height;
+        string baseText = auto ? $"HUD {name} (AUTO)" : $"HUD {name}";
+        // Persistent small tag at the bottom-left, just under the RADAR line.
+        DrawMeasuredText(_small, baseText, new(20, h - 36 * _scale), Muted, centerAtScale: false);
+        Mark("HUD level");
+        // Transient toast while a change is fresh, centred above the gauges.
+        if (_levelToastRemain > 0f)
+        {
+            float alpha = Math.Clamp(_levelToastRemain, 0f, 1f);
+            string toast = auto ? $"AUTO HUD → {name}" : $"HUD LEVEL → {name}";
+            var ts = _small.MeasureString(toast);
+            DrawMeasuredText(_small, toast, new(w / 2f - ts.X / 2f, h * 0.30f), Accent * alpha, fixedAnchor: true);
         }
     }
     private void Arc(Vector2 center, float radius, float start, float sweep, Color color, float thickness)

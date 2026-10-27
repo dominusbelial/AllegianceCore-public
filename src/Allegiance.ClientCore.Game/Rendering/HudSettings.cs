@@ -76,13 +76,33 @@ public sealed class HudSettings
     /// <summary>P828 — draw the per-frame contacts / labelled / merged telemetry
     /// line (off by default; a tuning aid, not gameplay information).</summary>
     public bool RadarLabelTelemetry { get; set; }
-    /// <summary>P828 — the resolved declutter plan for one renderer at HUD scale
-    /// <paramref name="scale"/>. Classic and Modern both call this so the policy
-    /// lives in one place.</summary>
+    /// <summary>P836 — the Modern-HUD density level (Full / Tactical / Combat /
+    /// Cinematic / Auto), persisted in <c>hud.json</c> and set in the options
+    /// UI. Classic ignores it and keeps native <c>.</c> = <c>TK_CycleRadar</c>.
+    /// Default Tactical = P828's shipped Modern behaviour.</summary>
+    public HudLevel Level { get; set; } = HudLevel.Tactical;
+    /// <summary>P836 — the RESOLVED concrete level for this frame. When
+    /// <see cref="Level"/> is <see cref="HudLevel.Auto"/>, Game1 runs
+    /// <see cref="HudAutoLevel"/> on the in-sector ship count and writes the
+    /// resulting Full/Tactical/Combat here. Not persisted — it is recomputed
+    /// from <see cref="Level"/> and the live sector every time.</summary>
+    public HudLevel ActiveLevel { get; set; } = HudLevel.Tactical;
+    /// <summary>P836 — the resolved concrete level, honouring Auto.</summary>
+    public HudLevel EffectiveLevel => Level == HudLevel.Auto ? ActiveLevel : Level;
+    /// <summary>P828/P836 — the resolved declutter plan for one renderer at HUD
+    /// scale <paramref name="scale"/>. Classic and Modern both call this so the
+    /// policy lives in one place. Disabled (Classic, or the player switched the
+    /// declutter off) returns <see cref="RadarLabelDeclutterOptions.Off"/>, the
+    /// exact native loop.</summary>
     public RadarLabelDeclutterOptions RadarLabelPlan(float scale)
-        => RadarDeclutterOn
-            ? RadarLabelDeclutterOptions.Modern(RadarLabelMax, scale, RadarLabelTelemetry)
-            : RadarLabelDeclutterOptions.Off;
+    {
+        if (!RadarDeclutterOn) return RadarLabelDeclutterOptions.Off;
+        var preset = HudLevels.Preset(EffectiveLevel);
+        // The persisted nearest-N knob is the effective cap for a capped level
+        // (it defaults to P828's 12 = Tactical's suggestion); Full/Cinematic
+        // ignore it because they do not use the cap.
+        return RadarLabelDeclutterOptions.FromPreset(preset, scale, RadarLabelMax, RadarLabelTelemetry);
+    }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()
@@ -94,6 +114,10 @@ public sealed class HudSettings
         Size = float.IsFinite(Size) ? Math.Clamp(Size, ModernHudScale.MinSize, ModernHudScale.MaxSize) : 1;
         ChatLines = Math.Clamp(ChatLines, 1, 10);
         RadarLabelMax = Math.Clamp(RadarLabelMax, 0, RadarLabelDeclutter.MaxExtraLabelsLimit);
+        // P836 — Level persists any member incl. Auto; ActiveLevel is the runtime
+        // resolved concrete level and must never be Auto.
+        if (!Enum.IsDefined(Level)) Level = HudLevel.Tactical;
+        if (!Enum.IsDefined(ActiveLevel) || ActiveLevel == HudLevel.Auto) ActiveLevel = HudLevel.Tactical;
     }
     public static HudSettings Load(string path, bool existingPlayer)
     {

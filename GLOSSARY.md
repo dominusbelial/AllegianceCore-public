@@ -215,6 +215,15 @@ list in **reverse**.
   `HudSettings.RadarDeclutterOn` / `RadarLabelMax` / `RadarLabelTelemetry`, the
   Ctrl+F6 options rows 16-18). The native label tiers it filters stay in
   `Rendering/RadarLabelModel.cs`. Report `docs/reports/P828_LABEL_DECLUTTER.md`.
+- **HUD levels** (Modern-only, P836) — the Modern HUD density presets
+  Full / Tactical / Combat / Cinematic / Auto, each a data preset over the P828
+  declutter knobs plus a new off-screen contact rule: `Rendering/HudLevels.cs`
+  (the preset table + the Auto resolver with hysteresis), persisted as
+  `HudSettings.Level` in `hud.json`, set in the Ctrl+F6 options row 20 or cycled
+  with the `0` key (Modern only; Classic ignores it and keeps native `.` =
+  TK_CycleRadar). Off-screen ordinary contacts shrink to an edge pip
+  (`RadarBracketRenderer.Draw`, `OffscreenHidden`). Report
+  `docs/reports/P836_HUD_LEVELS.md`.
 - **Target pane / gauges** — `src/Allegiance.ClientCore.Game/Rendering/TargetPaneModel.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/ClassicGaugeSpec.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/GaugeKind.cs`. Reports HUD3/HUD6/HUD7.

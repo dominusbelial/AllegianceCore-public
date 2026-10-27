@@ -319,6 +319,10 @@ public static class InputActionCatalog
         // All→Default→Target→Minimal, WinTrek.cpp:9955-9975). Native binds the
         // period key (defaultinputmap.mdl line 111) — honored here.
         new("CycleRadar", "CAMERA / VIEW", "Cycle radar modes (All/Default/Target/Minimal) [TK_CycleRadar]", K(Keys.OemPeriod), K(Keys.OemPeriod)),
+        // P836 — Modern-HUD density level cycle (port extension; native has no
+        // HUD levels — Classic ignores it and keeps native '.' = TK_CycleRadar).
+        // Plain '0' (D0) is free: it is only used as Ctrl+0 chords elsewhere.
+        new("CycleHudLevel", "CAMERA / VIEW", "Cycle Modern HUD level (Full/Tactical/Combat/Cinematic) [P836]", K(Keys.D0), null),
         // These TKs have no keyboard defaults in Artwork/defaultinputmap.mdl.
         new("ViewMissile", "CAMERA / VIEW", "Toggle missile view [TK_ViewMissile]", U(), null),
         new("ViewChase", "CAMERA / VIEW", "Toggle chase view [TK_ViewChase]", U(), null),
