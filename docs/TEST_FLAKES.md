@@ -2959,3 +2959,12 @@ host-load artifact, not a product regression; the P830 report carries the full
 A/B series.
 Claude's re-run on an idle host after a reboot (2026-10-26 15:04–15:33, load 0.3–2.5): **5/5 pass** on the
 P830 tree — consistent with the load explanation.
+
+## P843 observation (2026-10-27)
+
+The P843 fast-tier gate (docs-only batch: sim-rules-matrix.csv + P843_CERTIFY.md, no server/core source change)
+recorded the same known load flake once in `Allegiance.Core`:
+`Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
+(Assert.Equal "goto Garrison" vs "goto" — a command-relay seating-order/timing race, the same signature as the
+HUD-19 and 2026-10-24 entries above). It passed **3/3** isolated invocations on this worktree. P843 changes no
+production code, so this is the existing live-network/load artifact, not a regression.
