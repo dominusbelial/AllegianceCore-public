@@ -5,7 +5,7 @@ using Allegiance.Core.Sim;
 
 namespace Allegiance.Core.Tests;
 
-public sealed class P663TreasureParityTests
+public sealed partial class P663TreasureParityTests
 {
     private sealed class Site : IIgcSite
     {

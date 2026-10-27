@@ -3054,3 +3054,30 @@ claimed. The maximum low-speed-with-target duration was 1.913 s on base,
 controller was stopped at a completed-trial boundary after repeated host
 interference; all outcomes remain in the P832c receipt. A quiet-host window
 is required for the remaining environmental confirmation.
+
+## P832d — existing spotter-cache test isolation (2026-10-27)
+
+`P835VisibilityCostTests.Spotter_cache_is_sticky_like_native_and_the_full_loop_re_picks`
+failed once in a combined 37-case server/visibility run: both stage-2 spotters
+were 9601. The exact case passes **3/3 alone**. The P835 class is not in the
+LiveNetwork collection and changes process-global `VisibilitySpotterCache.Enabled`.
+`P832cFlagVisibilityTests.Production_sweep_tracks_pickup_drop_and_sector_boundaries`
+also toggles/restores that global; the two classes have no shared collection
+and can run in parallel. This is a test-isolation race consistent with the
+failure, rather than a P832d scanner change. No scanner
+code or assertion was changed. Final qualification runs the visibility class
+separately from server boots; the combined failure and individual retries are
+retained in `.scratch/p832d/`. See the [P832d report](reports/P832D_ARTIFACT_BOTS.md).
+
+
+P832d Fast receipt (2026-10-27): the one sweep is **11,081 passed / 1 failed /
+3 optional skips**, with nine infrastructure checks passing and no timing
+offenders. The failure is the P775 exact case already recorded in the P841
+baseline-red entry above (announcement counter expected 1, actual 2). It fails
+3/3 alone on the changed tree and 3/3 with the captured dispatch product DLLs
+from `9caa4049cb8586811e443d45ec44c9edf1f74fb9`. The P775 test source is unchanged;
+the latter runs use the same unchanged test method/current test assembly with
+captured baseline Core/Server/ClientCore/Bot/Update DLLs (hashes in the P832d
+receipt). No PLAYERINFO code or assertion was changed. The broad run remains
+failed and was not repeated. Workspace-local XDG settings and a proc-fd alias
+for workspace scratch avoid the older path/profile environment failures.

@@ -15,12 +15,20 @@ public sealed partial class Server
         foreach (var (connection, live) in _peerShips)
             if (ReferenceEquals(live.Ship.Mission, treasure.OwnerMission) && live.Sector == treasure.OwnerSector)
             {
+                // Native predictable-object export follows side visibility
+                // (FedSrv.CPP:10750-10778; fsmission.cpp:4224-4231). A new
+                // artifact's random respawn position must be discovered again.
+                if (!ArtifactKnownToPeer(treasure, live.Ship)) continue;
                 SendPeer(connection, packet);
                 // P797 — latch the discovery mark: the sweep must never re-send a
                 // treasure this creation broadcast already delivered.
                 _crossSideDiscoverySent.Add((connection, (byte)IgcObjectType.Treasure, treasure.Id));
             }
     }
+
+    private static bool ArtifactKnownToPeer(Treasure treasure, Ship peer) =>
+        treasure.Code != TreasureCode.Flag || treasure.Data.TreasureId != Side.ArtifactSentinelFlag
+        || peer.SideId is { } side && treasure.SeenBySide(side);
 
     private void SendTreasureSnapshot(ConnectionId connection, Sector sector)
     {

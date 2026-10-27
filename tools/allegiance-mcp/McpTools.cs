@@ -77,7 +77,7 @@ internal static class McpTools
                         fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry requests `count` bots of the hull's capability-based role; actual purchases use side techs and the dock. Legacy tech is ignored." },
                         fleet_a = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE A specifically: array of { hull, count, tech? }. Overrides `fleet` for side A." },
                         fleet_b = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE B specifically: array of { hull, count, tech? }. Overrides `fleet` for side B." },
-                        preset = new { type = "string", @enum = new[] { "showcase", "flags" }, description = "P832c: flags requires a server flags goal and uses the showcase fleet with flag duties and no bomber finale. P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), selects legal equipment per role and enables native wingman UseMines/UseMissiles/Strafe." },
+                        preset = new { type = "string", @enum = new[] { "showcase", "flags", "artifacts" }, description = "P832d: artifacts requires a server artifacts goal, searches neutral sectors under fog, and shares flag quotas. P832c: flags requires a server flags goal and uses the showcase fleet with flag duties and no bomber finale. P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), selects legal equipment per role and enables native wingman UseMines/UseMissiles/Strafe." },
                         count_a = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side A bot count; overrides size_scale." },
                         count_b = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side B bot count; defaults to count_a." },
                         size_scale = new { type = "integer", @default = 1, minimum = 1, description = "P557: scales the showcase fleet size (15 × size_scale ships per side)." },
@@ -585,7 +585,9 @@ internal static class McpTools
         string? preset = OptStr(args, "preset");
         if (preset == "flags" && mgr.Probe.World.Mission?.Goals.IsFlagsGame != true)
             return Err("spawn_scenario preset flags requires games[].goals.flags > 0 on the server");
-        var finaleSettings = preset == "flags" ? new ShowcaseFinale.Settings(AfterMinutes: 0)
+        if (preset == "artifacts" && mgr.Probe.World.Mission?.Goals.IsArtifactsGame != true)
+            return Err("spawn_scenario preset artifacts requires games[].goals.artifacts > 0 on the server");
+        var finaleSettings = preset is "flags" or "artifacts" ? new ShowcaseFinale.Settings(AfterMinutes: 0)
             : ReadFinaleSettings(args, preset == "showcase");
         var finaleNames = new List<string>();
 
@@ -615,7 +617,7 @@ internal static class McpTools
         }
 
         // Fleet composition per side.
-        bool showcase = preset is "showcase" or "flags";
+        bool showcase = preset is "showcase" or "flags" or "artifacts";
         List<Showcase.FleetEntry> fleetA, fleetB;
         if (showcase)
         {

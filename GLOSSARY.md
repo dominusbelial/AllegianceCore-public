@@ -116,7 +116,10 @@ list in **reverse**.
   `MissileIntercept.cs`. *Native:* `missileigc.cpp`.
 - **Mine / probe / chaff** — deployable equipment.
   `src/Allegiance.Core/Sim/Mine.cs`, `Probe.cs`, `Chaff.cs`. *Native:*
-  `mineigc.cpp`, `probeigc.cpp`, `chaffigc.cpp`.
+  `mineigc.cpp`, `probeigc.cpp`, `chaffigc.cpp`. Native mine model radius is
+  `DataMineTypeIGC.MineRadius` (derived tail field); the shadowed inherited
+  `Radius` can contain uninitialized data and must not drive artifact clearance
+  (`src/Allegiance.Core/Model/Mission.Treasure.cs`, P832d).
 - **Asteroid** — ore-bearing rocks, mined for He3. `src/Allegiance.Core/Sim/Asteroid.cs`,
   `src/Allegiance.Core/Data/NativeAsteroidTypes.cs` (type table).
   *Native:* `asteroidigc.cpp`.
@@ -381,6 +384,13 @@ list in **reverse**.
   suppresses the bomber finale (ordinary showcase/skirmish also detects flags).
   Native pickup/secure/respawn remain server rules; report:
   `docs/reports/P832C_FLAG_BOTS.md`.
+- **Artifact hunting (P832d)** — `tools/allegiance-mcp/BotManager.Artifacts.cs`
+  searches neutral sectors in expanding bands, collects side-observed artifacts and reuses the
+  flag return/escort/intercept controller and worker quota. `ArtifactSighting`
+  in `tools/allegiance-mcp/SideIntel.cs` carries expiring observations and
+  pickup tombstones across workers. The `artifacts` scenario preset requires
+  a native artifacts goal; showcase/skirmish detect it automatically and
+  suppress the bomber finale. Report: `docs/reports/P832D_ARTIFACT_BOTS.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
 - **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are

@@ -1,0 +1,730 @@
+{
+  "baseHead": "9caa4049cb8586811e443d45ec44c9edf1f74fb9",
+  "branch": "codex/p832d",
+  "noCommitsOrPushes": true,
+  "noRemoteHostsContacted": true,
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolBuild": {
+    "projects": 91,
+    "warnings": 0,
+    "errors": 0
+  },
+  "serverLinuxX64Aot": {
+    "passed": true,
+    "il2026": 0,
+    "il3050": 0
+  },
+  "focused": [
+    {
+      "group": "policy",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "policy",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "policy",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "legacy-decisions",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 167,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "legacy-decisions",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 167,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "legacy-decisions",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 167,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-placement",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-placement",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-placement",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "server-rules-final",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "server-rules-final",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "server-rules-final",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "visibility-alone",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "visibility-alone",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "visibility-alone",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-live",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-live",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "artifact-live",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "flags-live",
+      "run": 1,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "flags-live",
+      "run": 2,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "group": "flags-live",
+      "run": 3,
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "baseDecisionInventory": 167,
+  "identicalDecisionOutcomes": [
+    true,
+    true,
+    true
+  ],
+  "artifactGames": [
+    {
+      "run": 1,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 50.3,
+      "winner": 0,
+      "reason": "Alpha wins with the artifact recovered by mcp-b012-5219",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-789428f3fe374a04829e00e1a2144ec9.log"
+    },
+    {
+      "run": 1,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 74.4,
+      "winner": 1,
+      "reason": "Bravo wins with the artifact recovered by mcp-b011-9098",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-44e3a9d393db4a5596d02b05b9389921.log"
+    },
+    {
+      "run": 1,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 92.7,
+      "winner": 1,
+      "reason": "Bravo wins with the artifact recovered by mcp-b011-4445",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 3,
+      "secures": 3,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-050c06f9f16c4a9c939be6bc51308d35.log"
+    },
+    {
+      "run": 2,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 94.6,
+      "winner": 1,
+      "reason": "Bravo wins with the artifact recovered by mcp-b005-9692",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-589101a553ce4c6397e383bc89d32718.log"
+    },
+    {
+      "run": 2,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 47.8,
+      "winner": 0,
+      "reason": "Alpha wins with the artifact recovered by mcp-b006-3163",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 2,
+      "secures": 2,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-eee46c3916534c888f862b3b0c8d6f23.log"
+    },
+    {
+      "run": 2,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 46.6,
+      "winner": 1,
+      "reason": "Bravo wins with the artifact recovered by mcp-b011-2312",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": false,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-183fecec4ef748b28ff092e93d1cdcc2.log"
+    },
+    {
+      "run": 3,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 59.2,
+      "winner": 0,
+      "reason": "Alpha wins with the artifact recovered by mcp-b008-3522",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 2,
+      "secures": 2,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-ef5144d9553b46348a3fe47ff9dcaffe.log"
+    },
+    {
+      "run": 3,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 38.5,
+      "winner": 0,
+      "reason": "Alpha wins with the artifact recovered by mcp-b006-2830",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 2,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-41a6ee74c0d04329964b6d61ede0464a.log"
+    },
+    {
+      "run": 3,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 22.0,
+      "winner": 0,
+      "reason": "Alpha wins with the artifact recovered by mcp-b012-8173",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832d-artifacts-27490c947f5f423b84abf5fe06288672.log"
+    }
+  ],
+  "flagsGames": [
+    {
+      "run": 1,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 45.1,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-5413",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-acdbb46cf8ac4214807dbaaae724c5f8.log"
+    },
+    {
+      "run": 1,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 99.8,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-7401",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 3,
+      "secures": 3,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-3377db990f8d41f893330defcbe8103c.log"
+    },
+    {
+      "run": 1,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 94.9,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-2525",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-665412bc8fd04693a58d5d06c88db18b.log"
+    },
+    {
+      "run": 2,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 141.7,
+      "winner": 0,
+      "reason": "Alpha wins with the flag recovered by mcp-b012-8674",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 3,
+      "secures": 2,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-86acfa33e1024523bff1ba6010777c2f.log"
+    },
+    {
+      "run": 2,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 95.2,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-7983",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-45c0a91d777a422aa43313dba2843e6d.log"
+    },
+    {
+      "run": 2,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 43.7,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-5135",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 1,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-fee4d406275344d99c4c5b0645b5ba8f.log"
+    },
+    {
+      "run": 3,
+      "topology": "SingleRing",
+      "goal": 1,
+      "wallSeconds": 141.3,
+      "winner": 0,
+      "reason": "Alpha wins with the flag recovered by mcp-b012-5474",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 2,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-3ff9a312e2b94b48b013a9d23bd28133.log"
+    },
+    {
+      "run": 3,
+      "topology": "Brawl",
+      "goal": 1,
+      "wallSeconds": 99.9,
+      "winner": 0,
+      "reason": "Alpha wins with the flag recovered by mcp-b012-9974",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 2,
+      "secures": 1,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-ce38af08ed2c40d2b2d1506b6e054005.log"
+    },
+    {
+      "run": 3,
+      "topology": "Brawl",
+      "goal": 2,
+      "wallSeconds": 162.7,
+      "winner": 1,
+      "reason": "Bravo wins with the flag recovered by mcp-b011-1291",
+      "pickedUp": true,
+      "stage": "Over",
+      "closingIntercept": true,
+      "pickups": 4,
+      "secures": 3,
+      "artifactDeathDrops": 0,
+      "rawLog": ".scratch/p832d/p832c-flags-812a455ea44a494db1cee3d141bbb2d0.log"
+    }
+  ],
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 82,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 3607,
+        "live": 11,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 1877,
+        "live": 104,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 5491,
+        "live": 60,
+        "perf": 62
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 308.9568274109988,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 82,
+            "outcomes": {
+              "Passed": 82
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 3607,
+            "outcomes": {
+              "Passed": 3604,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 1877,
+            "outcomes": {
+              "Passed": 1877
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 5491,
+            "outcomes": {
+              "Passed": 5490,
+              "Failed": 1
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9430503978779841,
+          "referenceMs": 3.5553,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [],
+        "errors": [
+          "Allegiance.Core.Tests: main failed"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.06121982699551154,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06121982699551154,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "neverParks": {
+    "status": "not run: brief busy-host exception",
+    "cpus": 24,
+    "samples": [
+      {
+        "at": 1793122680.4623916,
+        "load": [
+          27.43310546875,
+          15.4404296875,
+          7.54296875
+        ],
+        "cpuIdlePercent": 74.3489764656733
+      },
+      {
+        "at": 1793122683.4628878,
+        "load": [
+          25.47607421875,
+          15.23388671875,
+          7.5185546875
+        ],
+        "cpuIdlePercent": 87.85644735011823
+      },
+      {
+        "at": 1793122686.463294,
+        "load": [
+          25.47607421875,
+          15.23388671875,
+          7.5185546875
+        ],
+        "cpuIdlePercent": 77.03269069572507
+      },
+      {
+        "at": 1793122689.4636147,
+        "load": [
+          24.396484375,
+          15.18017578125,
+          7.54296875
+        ],
+        "cpuIdlePercent": 41.85688278952528
+      },
+      {
+        "at": 1793122692.463962,
+        "load": [
+          24.396484375,
+          15.18017578125,
+          7.54296875
+        ],
+        "cpuIdlePercent": 28.143459915611814
+      },
+      {
+        "at": 1793122695.4642975,
+        "load": [
+          25.48583984375,
+          15.55908203125,
+          7.70703125
+        ],
+        "cpuIdlePercent": 42.13112452618279
+      },
+      {
+        "at": 1793122698.464622,
+        "load": [
+          24.88623046875,
+          15.599609375,
+          7.7626953125
+        ],
+        "cpuIdlePercent": 44.633873672442704
+      },
+      {
+        "at": 1793122701.4650497,
+        "load": [
+          24.88623046875,
+          15.599609375,
+          7.7626953125
+        ],
+        "cpuIdlePercent": 44.60370994940978
+      },
+      {
+        "at": 1793122704.4654877,
+        "load": [
+          23.85400390625,
+          15.53955078125,
+          7.78564453125
+        ],
+        "cpuIdlePercent": 61.532021766429466
+      },
+      {
+        "at": 1793122707.4657905,
+        "load": [
+          23.85400390625,
+          15.53955078125,
+          7.78564453125
+        ],
+        "cpuIdlePercent": 82.72980501392757
+      }
+    ],
+    "load1MinRange": [
+      23.85400390625,
+      27.43310546875
+    ],
+    "idlePercentRange": [
+      28.143459915611814,
+      87.85644735011823
+    ],
+    "meanIdlePercent": 58.486899214504604,
+    "baselineBinaries": ".scratch/p832d/base-bin/"
+  },
+  "nativeAuditBodies": 351,
+  "glossaryPaths": 215,
+  "composeConfigValid": true,
+  "rawEvidence": ".scratch/p832d/",
+  "intermediateIssues": [
+    {
+      "issue": "Evidence-only enumeration race in initial live fixture",
+      "resolution": "Simulation lock; final games repeated"
+    },
+    {
+      "issue": "Fixed-ring Brawl/2 search exceeded 360-second play bound after one secure",
+      "resolution": "Expanding search bands; final games repeated",
+      "evidence": ".scratch/p832d/pre-expansion/"
+    },
+    {
+      "issue": "Native mine radius shadow field forced artifact 5607 hundreds of millions of units away",
+      "resolution": "Artifact-only runtime mine radius correction; poisoned-field regression and final games repeated",
+      "evidence": ".scratch/p832d/pre-mine-radius-fix/"
+    },
+    {
+      "issue": "P835 global spotter-cache race in combined server group",
+      "resolution": "Exact case 3/3 alone; final classes separated",
+      "ledger": "docs/TEST_FLAKES.md"
+    }
+  ],
+  "fastKnownBaselineFailure": {
+    "test": "P775PlayerInfoMomentsTests.Mid_game_sighting_of_a_joined_enemy_sends_no_playerinfo",
+    "expectedAnnouncements": 1,
+    "actualAnnouncements": 2,
+    "changedAlone": [
+      "Failed",
+      "Failed",
+      "Failed"
+    ],
+    "dispatchProductBaseline": [
+      "Failed",
+      "Failed",
+      "Failed"
+    ],
+    "testSourceUnchanged": true,
+    "baselineProductSha256": {
+      "Allegiance.ClientCore.dll": "95acf6087d375e0862d869a0023a32b7d4484467773876273e4809a37c0db02f",
+      "Allegiance.Bot.dll": "71c6ed6e39411d6fb9bbeed90086018c223544a57e3ca9cafc2a103cea1cd3ce",
+      "Allegiance.Core.dll": "c2827e2ec291d22e24d70c60bfd929240b44f088461edfc3bd9f57d491840a72",
+      "Allegiance.Server.dll": "01768076f570ef2ef629e571b2af4a6d8399fc96d7364dd6f67ce101e149e99e",
+      "Allegiance.Update.dll": "4c3ee5d3d048564a48115327a0ba44cc35cbcf0916cfd4b3d8b7601c78add18f"
+    },
+    "method": "Current unchanged P775 test assembly with captured dispatch product DLLs; no source test or PLAYERINFO changes",
+    "ledger": "docs/TEST_FLAKES.md",
+    "testSourceSha256": "4a02bc4fceb7eb875ad3582dc098c8ab0d5203c7bb1963e159d4531d5c828dc3"
+  },
+  "workingTreeHygiene": {
+    "files": 26,
+    "hits": [],
+    "media": [],
+    "trailingWhitespace": [],
+    "parityCarriageReturns": 0,
+    "assetBytes": 19063
+  }
+}

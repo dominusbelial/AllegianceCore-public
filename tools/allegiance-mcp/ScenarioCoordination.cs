@@ -8,7 +8,8 @@ internal sealed record DefensePopulation(uint? Cookie, long Generation, short Si
 internal sealed record DefenseThreat(DefenseKey Key, double AgeSeconds);
 internal sealed record DefenseDeployment(DefenseKey Key, string[] Names);
 internal sealed record FlagCandidate(uint Cookie, short Side, string Name, short ShipId, bool Scout,
-    bool Carrying, short? Thief, double Distance, bool CanCarry = true);
+    bool Carrying, short? Thief, double Distance, bool CanCarry = true, bool Artifacts = false, bool Flags = true,
+    short? Artifact = null, double ArtifactDistance = double.MaxValue);
 internal sealed record FlagDeployment(uint Cookie, short Side, string Name, BotManager.FlagDuty Duty, short? Anchor = null, int Post = 0);
 internal sealed record CoordinationState(StageTally[] Stages, DefenseKey[] Bases, DefensePopulation[] Population,
     DefenseCandidate[] Candidates, DefenseThreat[] Threats, long Epoch = 0, long PublishedAtMs = 0,
