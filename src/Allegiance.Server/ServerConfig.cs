@@ -39,6 +39,33 @@ public sealed class ShowcaseConfig
 /// </summary>
 public sealed class GameConfig
 {
+    /// <summary>Native MissionParams goal fields. Absent/empty = existing
+    /// dedicated-server policy (no event goal; optional legacy countdown).</summary>
+    public Allegiance.Core.Model.MissionGoals Goals { get; set; } = new();
+
+    public Allegiance.Core.Model.MissionGoals ResolveGoals()
+    {
+        if (Goals is null) throw new InvalidDataException($"game '{Name}': goals must be an object");
+        var goals = Goals with { };
+        if (GameLengthSeconds is { } duration)
+        {
+            if (!double.IsFinite(duration) || duration < 0 || duration > float.MaxValue)
+                throw new InvalidDataException($"game '{Name}': gameLengthSeconds must be finite and nonnegative");
+            if (goals.GameLengthSeconds != 0 && goals.GameLengthSeconds != (float)duration)
+                throw new InvalidDataException($"game '{Name}': gameLengthSeconds conflicts with goals.gameLengthSeconds");
+            goals.GameLengthSeconds = (float)duration;
+        }
+        goals.Validate($"game '{Name}'.goals");
+        if (goals.IsProsperityGame && !AllowDevelopments)
+            throw new InvalidDataException($"game '{Name}': prosperity requires allowDevelopments=true (Igc/igc.h:1484-1489)");
+        if (goals.IsTerritoryGame && MapGen is { } map &&
+            (string.Equals(map.Type, "Brawl", StringComparison.OrdinalIgnoreCase) ||
+             (Teams == 2 && (string.Equals(map.Type, "SingleRing", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(map.Type, "DoubleRing", StringComparison.OrdinalIgnoreCase)))))
+            throw new InvalidDataException($"game '{Name}': territory requires a larger generated map (Igc/igc.h:1494-1503)");
+        return goals;
+    }
+
     /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
     public bool AllowDevelopments { get; set; } = true;
 
@@ -1175,7 +1202,9 @@ public static class ServerConfigLoader
             throw new InvalidDataException($"failed to read config '{path}': {e.Message}");
         }
 
+        ApplyGoalEnvironment(config, Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_GOALS"));
         ApplyCli(config, cli);
+        foreach (var game in config.Games) _ = game.ResolveGoals();
         return config;
     }
 
@@ -1190,6 +1219,13 @@ public static class ServerConfigLoader
             ? "server.example.json"
             : name.Insert(name.LastIndexOf('.') is var i && i > 0 ? i : name.Length, ".example");
         return string.IsNullOrEmpty(dir) ? example : Path.Combine(dir, example);
+    }
+
+    /// <summary>Environment value supplied explicitly so precedence can be tested
+    /// without changing process-global environment during parallel tests.</summary>
+    public static void ApplyGoalEnvironment(ServerConfig config, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) ApplyCli(config, [("goals", value)]);
     }
 
     /// <summary>Return value: number of CLI keys actually recognized.</summary>
@@ -1219,6 +1255,23 @@ public static class ServerConfigLoader
                     if (!int.TryParse(value, out var up))
                         throw new InvalidDataException($"--updatespersec must be an integer, got '{value}'");
                     config.UpdatesPerSecond = up; recognized++; break;
+                case "goal":
+                    var preset = Allegiance.Core.Model.MissionGoals.Preset(value);
+                    if (config.Games.Count == 0) throw new InvalidDataException("--goal requires a configured game");
+                    foreach (var game in config.Games) { game.Goals = preset with { }; game.GameLengthSeconds = null; }
+                    recognized++; break;
+                case "goals":
+                    Allegiance.Core.Model.MissionGoals parsedGoals;
+                    try
+                    {
+                        parsedGoals = JsonSerializer.Deserialize(value, ServerJsonContext.Default.MissionGoals)
+                            ?? throw new InvalidDataException("--goals must be a JSON object");
+                        parsedGoals.Validate("--goals");
+                    }
+                    catch (JsonException ex) { throw new InvalidDataException($"--goals: {ex.Message}", ex); }
+                    if (config.Games.Count == 0) throw new InvalidDataException("--goals requires a configured game");
+                    foreach (var game in config.Games) { game.Goals = parsedGoals with { }; game.GameLengthSeconds = null; }
+                    recognized++; break;
                 case "civs":
                     var ids = value.Split(',');
                     if (config.Games.Count != 1 || ids.Length != config.Games[0].Teams

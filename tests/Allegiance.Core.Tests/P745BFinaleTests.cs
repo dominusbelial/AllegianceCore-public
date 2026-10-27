@@ -37,7 +37,7 @@ public sealed class P745BFinaleTests
     public void Finale_uses_native_order_and_restarts_ties_across_all_sides(string deciding)
     {
         Require.Artwork(); var m = World();
-        m.ConquestEnabled = m.TerritoryEnabled = m.ProsperityEnabled = m.ArtifactEnabled = m.FlagsEnabled = true;
+        m.Goals.ConquestPercentage = 65; m.Goals.TerritoryPercentage = 50; m.Goals.TeamMoney = 1; m.Goals.Artifacts = 1; m.Goals.Flags = 1;
         string[] order = ["conquest", "territory", "prosperity", "artifacts", "flags", "kills", "deaths", "draw"];
         int stop = Array.IndexOf(order, deciding);
         short id = 10000;

@@ -430,7 +430,7 @@ public static class BucketCatalog
         StaticCore core,
         IIgcSite site,
         TechTreeBitMask initialDevelopmentTechs,
-        GlobalAttributeSet civBaseAttributes)
+        GlobalAttributeSet civBaseAttributes, float teamMoneyMultiplier = 1)
     {
         if (core is null || !core.HullTypes.TryGetValue(SyntheticDroneHullId, out var hull))
             return Array.Empty<Bucket>();
@@ -459,8 +459,9 @@ public static class BucketCatalog
             // the owning side's GA at creation (bucketigc.cpp:70-74), exempting
             // the c_didTeamMoney development (id 1).
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
+            // Igc/missionigc.h:790: fGoalTeamMoney times loaded win-money constant.
             int price = teamMoney
-                ? (int)core.Constants.FloatConstants[12]
+                ? (int)(teamMoneyMultiplier * core.Constants.FloatConstants[12])
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild
@@ -555,10 +556,10 @@ public static class BucketCatalog
     public static IReadOnlyList<BucketView> Describe(
         StaticCore core,
         TechTreeBitMask initialDevelopmentTechs,
-        GlobalAttributeSet civBaseAttributes)
+        GlobalAttributeSet civBaseAttributes, float teamMoneyMultiplier = 1)
     {
         var list = new List<BucketView>();
-        foreach (var d in EnumerateDefs(core, initialDevelopmentTechs, civBaseAttributes))
+        foreach (var d in EnumerateDefs(core, initialDevelopmentTechs, civBaseAttributes, teamMoneyMultiplier))
             list.Add(new BucketView(d.Id, d.ItemType, d.Name, d.Description, d.Price,
                 d.TimeToBuildSec, d.HullIdDrone, d.DroneTypeId, d.DevelopmentId,
                 d.StationTypeId, d.Development, d.DroneType, d.StationType));
@@ -600,7 +601,7 @@ public static class BucketCatalog
     private static IEnumerable<Def> EnumerateDefs(
         StaticCore core,
         TechTreeBitMask initialDevelopmentTechs,
-        GlobalAttributeSet civBaseAttributes)
+        GlobalAttributeSet civBaseAttributes, float teamMoneyMultiplier = 1)
     {
         if (core is null || !core.HullTypes.TryGetValue(SyntheticDroneHullId, out var hull))
             yield break;
@@ -615,8 +616,9 @@ public static class BucketCatalog
             if (DevelopmentLogic.IsObsolete(dev, initialDevelopmentTechs))
                 continue;
             bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
+            // Igc/missionigc.h:790: fGoalTeamMoney times loaded win-money constant.
             int price = teamMoney
-                ? (int)core.Constants.FloatConstants[12]
+                ? (int)(teamMoneyMultiplier * core.Constants.FloatConstants[12])
                 : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
             uint timeToBuild = teamMoney
                 ? dev.TimeToBuild

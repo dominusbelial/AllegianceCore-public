@@ -1,0 +1,207 @@
+[
+  {
+    "revision": "base",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 340.65,
+    "maxStoppedSeconds": 0.0,
+    "idleSamples": [
+      {
+        "load1": 0.19580078125,
+        "cpus": 24,
+        "loadPerCpu": 0.008158365885416666
+      },
+      {
+        "load1": 0.19580078125,
+        "cpus": 24,
+        "loadPerCpu": 0.008158365885416666
+      }
+    ],
+    "finishedUtc": "2026-10-27T02:38:02.886738+00:00"
+  },
+  {
+    "revision": "final",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 391.0,
+    "maxStoppedSeconds": 1.919,
+    "idleSamples": [
+      {
+        "load1": 0.87060546875,
+        "cpus": 24,
+        "loadPerCpu": 0.036275227864583336
+      },
+      {
+        "load1": 0.87060546875,
+        "cpus": 24,
+        "loadPerCpu": 0.036275227864583336
+      }
+    ],
+    "finishedUtc": "2026-10-27T02:44:35.882605+00:00"
+  },
+  {
+    "revision": "base",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 321.54,
+    "maxStoppedSeconds": 0.0,
+    "idleSamples": [
+      {
+        "load1": 4.4404296875,
+        "cpus": 24,
+        "loadPerCpu": 0.18501790364583334
+      },
+      {
+        "load1": 4.5654296875,
+        "cpus": 24,
+        "loadPerCpu": 0.19022623697916666
+      }
+    ],
+    "finishedUtc": "2026-10-27T02:49:59.425245+00:00"
+  },
+  {
+    "revision": "final",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 397.38,
+    "maxStoppedSeconds": 0.104,
+    "idleSamples": [
+      {
+        "load1": 1.47509765625,
+        "cpus": 24,
+        "loadPerCpu": 0.06146240234375
+      },
+      {
+        "load1": 1.47509765625,
+        "cpus": 24,
+        "loadPerCpu": 0.06146240234375
+      }
+    ],
+    "finishedUtc": "2026-10-27T02:56:38.808682+00:00"
+  },
+  {
+    "revision": "base",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 282.66,
+    "maxStoppedSeconds": 2.012,
+    "idleSamples": [
+      {
+        "load1": 2.884765625,
+        "cpus": 24,
+        "loadPerCpu": 0.12019856770833333
+      },
+      {
+        "load1": 2.884765625,
+        "cpus": 24,
+        "loadPerCpu": 0.12019856770833333
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:01:23.470612+00:00"
+  },
+  {
+    "revision": "final",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 375.61,
+    "maxStoppedSeconds": 2.004,
+    "idleSamples": [
+      {
+        "load1": 3.59423828125,
+        "cpus": 24,
+        "loadPerCpu": 0.14975992838541666
+      },
+      {
+        "load1": 3.59423828125,
+        "cpus": 24,
+        "loadPerCpu": 0.14975992838541666
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:07:41.084938+00:00"
+  },
+  {
+    "revision": "base",
+    "run": 4,
+    "exitCode": 0,
+    "seconds": 354.22,
+    "maxStoppedSeconds": 0.0,
+    "idleSamples": [
+      {
+        "load1": 4.291015625,
+        "cpus": 24,
+        "loadPerCpu": 0.17879231770833334
+      },
+      {
+        "load1": 4.267578125,
+        "cpus": 24,
+        "loadPerCpu": 0.17781575520833334
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:13:37.307450+00:00"
+  },
+  {
+    "revision": "final",
+    "run": 4,
+    "exitCode": 0,
+    "seconds": 348.34,
+    "maxStoppedSeconds": 1.919,
+    "idleSamples": [
+      {
+        "load1": 2.9267578125,
+        "cpus": 24,
+        "loadPerCpu": 0.1219482421875
+      },
+      {
+        "load1": 2.8525390625,
+        "cpus": 24,
+        "loadPerCpu": 0.11885579427083333
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:19:27.650377+00:00"
+  },
+  {
+    "revision": "base",
+    "run": 5,
+    "exitCode": 0,
+    "seconds": 384.72,
+    "maxStoppedSeconds": 0.0,
+    "idleSamples": [
+      {
+        "load1": 6.2880859375,
+        "cpus": 24,
+        "loadPerCpu": 0.2620035807291667
+      },
+      {
+        "load1": 5.7841796875,
+        "cpus": 24,
+        "loadPerCpu": 0.24100748697916666
+      },
+      {
+        "load1": 5.7841796875,
+        "cpus": 24,
+        "loadPerCpu": 0.24100748697916666
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:25:56.369212+00:00"
+  },
+  {
+    "revision": "final",
+    "run": 5,
+    "exitCode": 0,
+    "seconds": 433.8,
+    "maxStoppedSeconds": 0.0,
+    "idleSamples": [
+      {
+        "load1": 3.0537109375,
+        "cpus": 24,
+        "loadPerCpu": 0.12723795572916666
+      },
+      {
+        "load1": 2.88916015625,
+        "cpus": 24,
+        "loadPerCpu": 0.12038167317708333
+      }
+    ],
+    "finishedUtc": "2026-10-27T03:33:12.173836+00:00"
+  }
+]

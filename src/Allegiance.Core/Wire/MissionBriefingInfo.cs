@@ -16,10 +16,10 @@ namespace Allegiance.Core.Wire;
 /// <c>teamscreen.cpp:636-639</c>), the briefing text (<c>trekClient.GetBriefingText()</c>),
 /// the civ list (<c>GetCivListString()</c>) and the mission win conditions — sent once
 /// in the side join-sync burst next to <c>SET_BRIEFING_TEXT(9)</c>. Native reads these
-/// from <c>MissionParams</c> and the live side/civilization objects; this port
-/// decodes no native mission parameters (documented Stage-1 substitutes on
-/// <see cref="Model.Mission"/>), so the server forwards its own authoritative
-/// win-condition flags instead of leaving the client to guess. Brotli-compressed
+/// from <c>MissionParams</c> and the live side/civilization objects. This port
+/// decodes goal parameters in <see cref="MissionDef"/> and also forwards their
+/// authoritative briefing projection with the side/civilization text inputs.
+/// Brotli-compressed
 /// source-generated JSON, AOT-safe (never reflection serialization).
 /// </summary>
 public sealed class MissionBriefingInfo : IFedMessage

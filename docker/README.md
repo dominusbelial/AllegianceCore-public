@@ -186,3 +186,20 @@ post-update schedule. The equivalent server JSON setting is
 profiler label record the resolved value. Keep the other broadcast settings the
 same when comparing the two modes. See
 [`P788C_NATIVE_TICK_ORDER_2.md`](../docs/reports/P788C_NATIVE_TICK_ORDER_2.md).
+
+### Native game goals (P832a)
+
+Set `games[].goals` in the mounted server JSON, for example
+`"goals": {"teamKills": 20}`. Fields are `conquestPercentage` (0 disables),
+`territoryPercentage` (100 disables), `teamKills`, `flags`, `artifacts`,
+`teamMoney` (0..9 times the core's economic-victory price), and
+`gameLengthSeconds`; all other zero values disable that goal. Goals may combine.
+Omitting `goals` preserves the existing countdown/finale endgame.
+
+`ALLEGIANCE_GAME_GOALS='{"teamKills":20}' docker compose up -d server` replaces
+all configured games' goals; an empty environment value preserves the JSON.
+Native server CLI alternatives are `--goal conquest|territory|kills|flags|artifacts|prosperity|countdown|none`
+or `--goals '{"teamMoney":2.5}'`. CLI overrides environment, which overrides JSON.
+These select the rules and initial objectives; showcase bots acquire goal-specific
+strategies in later P832 slices. See [P832a](../docs/reports/P832A_GAME_GOALS.md)
+for thresholds, presets and local/rig recipes.

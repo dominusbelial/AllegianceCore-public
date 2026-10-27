@@ -6,7 +6,11 @@ public sealed partial class Mission
 {
     /// <summary>Optional countdown match length and absolute start, in simulation seconds.
     /// Native FedSrv/fsmission.cpp:2339-2342.</summary>
-    public double? CountdownDuration { get; set; }
+    public double? CountdownDuration
+    {
+        get => Goals.IsCountdownGame ? Goals.GameLengthSeconds : null;
+        set => Goals.GameLengthSeconds = (float)(value ?? 0);
+    }
     public double CountdownStart { get; set; }
 
     /// <summary>Strict timeout guard shared with the economic tick. Native

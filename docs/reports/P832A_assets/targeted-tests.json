@@ -1,0 +1,569 @@
+[
+  {
+    "test_class": "P663TreasureLiveTests",
+    "test_filter": "FullyQualifiedName~P663TreasureLiveTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 3.54,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P663TreasureLiveTests",
+    "test_filter": "FullyQualifiedName~P663TreasureLiveTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 3.58,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P663TreasureLiveTests",
+    "test_filter": "FullyQualifiedName~P663TreasureLiveTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 3.56,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P682NextMatchCombatLiveTests",
+    "test_filter": "FullyQualifiedName~P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 30.53,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "P682NextMatchCombatLiveTests",
+    "test_filter": "FullyQualifiedName~P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 30.45,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "P682NextMatchCombatLiveTests",
+    "test_filter": "FullyQualifiedName~P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 30.39,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "P727SkirmishOptionsTests",
+    "test_filter": "FullyQualifiedName~P727SkirmishOptionsTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.11,
+    "passed": 29,
+    "total": 29
+  },
+  {
+    "test_class": "P727SkirmishOptionsTests",
+    "test_filter": "FullyQualifiedName~P727SkirmishOptionsTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.11,
+    "passed": 29,
+    "total": 29
+  },
+  {
+    "test_class": "P727SkirmishOptionsTests",
+    "test_filter": "FullyQualifiedName~P727SkirmishOptionsTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.12,
+    "passed": 29,
+    "total": 29
+  },
+  {
+    "test_class": "P745BLiveTests",
+    "test_filter": "FullyQualifiedName~P745BLiveTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 6.94,
+    "passed": 3,
+    "total": 3
+  },
+  {
+    "test_class": "P745BLiveTests",
+    "test_filter": "FullyQualifiedName~P745BLiveTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 6.94,
+    "passed": 3,
+    "total": 3
+  },
+  {
+    "test_class": "P745BLiveTests",
+    "test_filter": "FullyQualifiedName~P745BLiveTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 6.97,
+    "passed": 3,
+    "total": 3
+  },
+  {
+    "test_class": "ConquestTerritoryLiveTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryLiveTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.74,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ConquestTerritoryLiveTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryLiveTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.74,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ConquestTerritoryLiveTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryLiveTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.75,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ConquestTerritoryTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.45,
+    "passed": 10,
+    "total": 10
+  },
+  {
+    "test_class": "ConquestTerritoryTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.4,
+    "passed": 10,
+    "total": 10
+  },
+  {
+    "test_class": "ConquestTerritoryTests",
+    "test_filter": "FullyQualifiedName~ConquestTerritoryTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.44,
+    "passed": 10,
+    "total": 10
+  },
+  {
+    "test_class": "FlagsKillsLiveTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsLiveTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 5.31,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "FlagsKillsLiveTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsLiveTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 5.31,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "FlagsKillsLiveTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsLiveTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 5.36,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "FlagsKillsTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.4,
+    "passed": 6,
+    "total": 6
+  },
+  {
+    "test_class": "FlagsKillsTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.41,
+    "passed": 6,
+    "total": 6
+  },
+  {
+    "test_class": "FlagsKillsTests",
+    "test_filter": "FullyQualifiedName~FlagsKillsTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.41,
+    "passed": 6,
+    "total": 6
+  },
+  {
+    "test_class": "GameOverPlayersWireTests",
+    "test_filter": "FullyQualifiedName~GameOverPlayersWireTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.67,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "GameOverPlayersWireTests",
+    "test_filter": "FullyQualifiedName~GameOverPlayersWireTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.65,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "GameOverPlayersWireTests",
+    "test_filter": "FullyQualifiedName~GameOverPlayersWireTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.72,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "P674ParityScorecardTests",
+    "test_filter": "FullyQualifiedName~P674ParityScorecardTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.69,
+    "passed": 11,
+    "total": 11
+  },
+  {
+    "test_class": "P674ParityScorecardTests",
+    "test_filter": "FullyQualifiedName~P674ParityScorecardTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.65,
+    "passed": 11,
+    "total": 11
+  },
+  {
+    "test_class": "P674ParityScorecardTests",
+    "test_filter": "FullyQualifiedName~P674ParityScorecardTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.65,
+    "passed": 11,
+    "total": 11
+  },
+  {
+    "test_class": "P739PeriodicTests",
+    "test_filter": "FullyQualifiedName~P739PeriodicTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.61,
+    "passed": 18,
+    "total": 18
+  },
+  {
+    "test_class": "P739PeriodicTests",
+    "test_filter": "FullyQualifiedName~P739PeriodicTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.63,
+    "passed": 18,
+    "total": 18
+  },
+  {
+    "test_class": "P739PeriodicTests",
+    "test_filter": "FullyQualifiedName~P739PeriodicTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.61,
+    "passed": 18,
+    "total": 18
+  },
+  {
+    "test_class": "P745BFinaleTests",
+    "test_filter": "FullyQualifiedName~P745BFinaleTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.44,
+    "passed": 9,
+    "total": 9
+  },
+  {
+    "test_class": "P745BFinaleTests",
+    "test_filter": "FullyQualifiedName~P745BFinaleTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.47,
+    "passed": 9,
+    "total": 9
+  },
+  {
+    "test_class": "P745BFinaleTests",
+    "test_filter": "FullyQualifiedName~P745BFinaleTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.45,
+    "passed": 9,
+    "total": 9
+  },
+  {
+    "test_class": "P746KillCreditOnEjectionTests",
+    "test_filter": "FullyQualifiedName~P746KillCreditOnEjectionTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 2.03,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "P746KillCreditOnEjectionTests",
+    "test_filter": "FullyQualifiedName~P746KillCreditOnEjectionTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 2.0,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "P746KillCreditOnEjectionTests",
+    "test_filter": "FullyQualifiedName~P746KillCreditOnEjectionTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.96,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "P806LobbyGameParamsTests",
+    "test_filter": "FullyQualifiedName~P806LobbyGameParamsTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.62,
+    "passed": 2,
+    "total": 2
+  },
+  {
+    "test_class": "P806LobbyGameParamsTests",
+    "test_filter": "FullyQualifiedName~P806LobbyGameParamsTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.63,
+    "passed": 2,
+    "total": 2
+  },
+  {
+    "test_class": "P806LobbyGameParamsTests",
+    "test_filter": "FullyQualifiedName~P806LobbyGameParamsTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.61,
+    "passed": 2,
+    "total": 2
+  },
+  {
+    "test_class": "ProsperityArtifactLiveTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactLiveTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 8.77,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ProsperityArtifactLiveTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactLiveTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 8.82,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ProsperityArtifactLiveTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactLiveTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 8.8,
+    "passed": 4,
+    "total": 4
+  },
+  {
+    "test_class": "ProsperityArtifactTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.41,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "ProsperityArtifactTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.41,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "ProsperityArtifactTests",
+    "test_filter": "FullyQualifiedName~ProsperityArtifactTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.4,
+    "passed": 5,
+    "total": 5
+  },
+  {
+    "test_class": "MissionDefJoinedMissionWireTests",
+    "test_filter": "FullyQualifiedName~MissionDefJoinedMissionWireTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.32,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "MissionDefJoinedMissionWireTests",
+    "test_filter": "FullyQualifiedName~MissionDefJoinedMissionWireTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.27,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "MissionDefJoinedMissionWireTests",
+    "test_filter": "FullyQualifiedName~MissionDefJoinedMissionWireTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.29,
+    "passed": 12,
+    "total": 12
+  },
+  {
+    "test_class": "P832aMissionRulesInventoryTests",
+    "test_filter": "FullyQualifiedName~P832aMissionRulesInventoryTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.42,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P832aMissionRulesInventoryTests",
+    "test_filter": "FullyQualifiedName~P832aMissionRulesInventoryTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.41,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P832aMissionRulesInventoryTests",
+    "test_filter": "FullyQualifiedName~P832aMissionRulesInventoryTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.42,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P832aMissionGoalsTests",
+    "test_filter": "FullyQualifiedName~P832aMissionGoalsTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.3,
+    "passed": 20,
+    "total": 20
+  },
+  {
+    "test_class": "P832aMissionGoalsTests",
+    "test_filter": "FullyQualifiedName~P832aMissionGoalsTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.32,
+    "passed": 20,
+    "total": 20
+  },
+  {
+    "test_class": "P832aMissionGoalsTests",
+    "test_filter": "FullyQualifiedName~P832aMissionGoalsTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.33,
+    "passed": 20,
+    "total": 20
+  },
+  {
+    "test_class": "P832aGoalServerTests",
+    "test_filter": "FullyQualifiedName~P832aGoalServerTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 1.69,
+    "passed": 7,
+    "total": 7
+  },
+  {
+    "test_class": "P832aGoalServerTests",
+    "test_filter": "FullyQualifiedName~P832aGoalServerTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 1.69,
+    "passed": 7,
+    "total": 7
+  },
+  {
+    "test_class": "P832aGoalServerTests",
+    "test_filter": "FullyQualifiedName~P832aGoalServerTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 1.64,
+    "passed": 7,
+    "total": 7
+  },
+  {
+    "test_class": "P832aGoalInvestmentTests",
+    "test_filter": "FullyQualifiedName~P832aGoalInvestmentTests",
+    "run": 1,
+    "exitCode": 0,
+    "seconds": 2.67,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P832aGoalInvestmentTests",
+    "test_filter": "FullyQualifiedName~P832aGoalInvestmentTests",
+    "run": 2,
+    "exitCode": 0,
+    "seconds": 2.71,
+    "passed": 1,
+    "total": 1
+  },
+  {
+    "test_class": "P832aGoalInvestmentTests",
+    "test_filter": "FullyQualifiedName~P832aGoalInvestmentTests",
+    "run": 3,
+    "exitCode": 0,
+    "seconds": 2.66,
+    "passed": 1,
+    "total": 1
+  }
+]

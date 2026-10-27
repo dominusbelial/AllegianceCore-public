@@ -244,7 +244,7 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         var attacker = server.Ships.First(l => l.Ship.SideId == 0).Ship;
         // Accelerate the end condition with lethal base damage, following the
         // same remove/site/victory chain as Sector's projectile-impact path.
-        mission.ConquestEnabled = true;
+        mission.Goals.ConquestPercentage = 65;
         foreach (var sector in mission.Sectors)
             foreach (var station in sector.StationRuntimes.Where(s => s.SideId == 1).ToArray())
             {

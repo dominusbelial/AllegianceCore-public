@@ -1205,7 +1205,8 @@ internal sealed partial class BotManager : IDisposable
 
         var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
-        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
+        var goals = commander.World.MissionGoals;
+        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga, goals.IsProsperityGame ? goals.TeamMoney : 1);
         var view = ResolveBucket(views, bucketQuery);
 
         long already = 0;
@@ -1395,7 +1396,8 @@ internal sealed partial class BotManager : IDisposable
             return null;
         var techs = commander.World.InitialTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
-        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
+        var goals = commander.World.MissionGoals;
+        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga, goals.IsProsperityGame ? goals.TeamMoney : 1);
         (string, uint)? layerAny = null;
         (string, uint)? layerMinefield = null;
         foreach (var v in views)

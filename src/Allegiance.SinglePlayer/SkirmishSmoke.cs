@@ -29,7 +29,9 @@ public static class SkirmishSmoke
             double seconds = args.Length > 1 ? double.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture) : 60;
             if (!double.IsFinite(seconds) || seconds < 1 || seconds > 3600) throw new ArgumentException("Smoke duration must be 1..3600 seconds");
             var size = args.Length > 2 ? Enum.Parse<SkirmishSize>(args[2], true) : SkirmishSize.Small;
-            using var game = await SkirmishHost.StartAsync(new() { Size = size, TechMode = "unlocked" });
+            // Optional native goal preset, after the existing duration and size arguments.
+            var goals = args.Length > 3 ? MissionGoals.Preset(args[3]) : new MissionGoals();
+            using var game = await SkirmishHost.StartAsync(new() { Size = size, TechMode = "unlocked", Goals = goals });
             var result = await PlayAsync(game, TimeSpan.FromSeconds(seconds));
             Console.WriteLine("[skirmish-smoke] " + JsonSerializer.Serialize(result));
             return result.BotsAlive && result.Running && result.Bots == game.Options.TeamSize * 2 - 1

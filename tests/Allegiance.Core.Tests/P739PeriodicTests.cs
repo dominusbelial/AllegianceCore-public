@@ -95,8 +95,8 @@ public sealed class P739PeriodicTests
         Require.Artwork(); var m = World(); m.Stage = MissionStage.Started; m.CountdownDuration = 1;
         string[] order = ["conquest", "territory", "prosperity", "artifacts", "flags", "kills"];
         int start = Array.IndexOf(order, criterion);
-        m.ConquestEnabled = start <= 0; m.TerritoryEnabled = start <= 1;
-        m.ProsperityEnabled = start <= 2; m.ArtifactEnabled = start <= 3; m.FlagsEnabled = start <= 4;
+        m.Goals.ConquestPercentage = (short)(start <= 0 ? 65 : 0); m.Goals.TerritoryPercentage = (short)(start <= 1 ? 50 : 100);
+        m.Goals.TeamMoney = (short)(start <= 2 ? 1 : 0); m.Goals.Artifacts = (short)(start <= 3 ? 1 : 0); m.Goals.Flags = (short)(start <= 4 ? 1 : 0);
         var type = DataStationTypeIGC.Decode(new byte[DataStationTypeIGC.Size]) with
         { StationTypeId = 30000, SabmCapabilities = DataStationTypeIGC.SabmFlag, MaxArmorHitPoints = 100 };
         m.PlaceStation(new Station(DataStationIGC.Decode(new byte[DataStationIGC.Size]) with

@@ -33,6 +33,7 @@ namespace Allegiance.Server;
     AllowTrailingCommas = true)]
 [JsonSerializable(typeof(ServerConfig))]
 [JsonSerializable(typeof(GameConfig))]
+[JsonSerializable(typeof(Allegiance.Core.Model.MissionGoals))]
 [JsonSerializable(typeof(LobbyConfig))]
 [JsonSerializable(typeof(LiveSettingsConfig))]
 [JsonSerializable(typeof(TestHarnessConfig))]

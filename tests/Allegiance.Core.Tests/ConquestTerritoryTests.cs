@@ -83,7 +83,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ConquestEnabled = true;
+        m.Goals.ConquestPercentage = 65;
 
         // Baseline: the two real Flag stations → 50/50, no winner.
         var (w0, c0) = m.RecomputeConquestAndTerritory(null);
@@ -113,7 +113,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ConquestEnabled = true;
+        m.Goals.ConquestPercentage = 65;
 
         var side0Flag = m.Sectors.First(s => s.Id == 1053).StationRuntimes.First();  // #1051 side0
         var (w, _) = m.RecomputeConquestAndTerritory(side0Flag);
@@ -135,7 +135,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.TerritoryEnabled = true;
+        m.Goals.TerritoryPercentage = 50;
 
         var (w, c) = m.RecomputeConquestAndTerritory(null);
         Assert.Null(w);                                     // 1 < 6 threshold
@@ -155,7 +155,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.TerritoryEnabled = true;
+        m.Goals.TerritoryPercentage = 50;
 
         // Baseline: side0 owns Ceto (unanimous), side1 owns Quaoar.
         m.RecomputeConquestAndTerritory(null);
@@ -177,7 +177,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.TerritoryEnabled = true;
+        m.Goals.TerritoryPercentage = 50;
 
         // Put a lone side0 station into empty cluster 1051 (Arrokoth): it is
         // unanimous (only itself) → side0's count rises to 2 (Ceto + Arrokoth).
@@ -221,7 +221,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ConquestEnabled = true;
+        m.Goals.ConquestPercentage = 65;
         m.Stage = MissionStage.NotStarted;
 
         AddStation(m, 1051, 0, 7741, DataStationTypeIGC.SabmFlag);
@@ -284,7 +284,7 @@ public sealed class ConquestTerritoryTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ConquestEnabled = true;
+        m.Goals.ConquestPercentage = 65;
         m.RecomputeConquestAndTerritory(null);          // side0=50, side1=50
 
         var gs = GameState.ForMission(m);

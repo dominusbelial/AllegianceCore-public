@@ -333,7 +333,7 @@ public sealed class GameOverPlayersWireTests
             if (!placedA && ReferenceEquals(mission, server.Missions[0]))
             {
                 short a0 = mission.Sides[0].Id, a1 = mission.Sides[1].Id;
-                mission.ConquestEnabled = true;            // P191: conquest only on mission A
+                mission.Goals.ConquestPercentage = 65;            // P191: conquest only on mission A
                 mission.PlaceStation(FlagStation(core, sector.Id, a0, 8021, new Vector3(0, 0, -3000)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, a0, 8071, new Vector3(0, 0, -7000)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, a1, 8999, new Vector3(0, 0, -1000)), sector);
@@ -480,7 +480,7 @@ public sealed class GameOverPlayersWireTests
             {
                 seat.SideA = mission.Sides[0].Id;
                 seat.SideB = mission.Sides[1].Id;
-                mission.ConquestEnabled = true;         // P191: opt the conquest win condition in
+                mission.Goals.ConquestPercentage = 65;         // P191: opt the conquest win condition in
                 mission.PlaceStation(FlagStation(core, sector.Id, seat.SideA, 8211, new Vector3(0, 0, -3000)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, seat.SideA, 8299, new Vector3(0, 0, -7600)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, seat.SideB, 8333, new Vector3(0, 0, -1000)), sector);

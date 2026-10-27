@@ -1,0 +1,20 @@
+[
+  {
+    "run": 1,
+    "exitCode": 1,
+    "seconds": 310.2,
+    "reproducedSameTimeout": true
+  },
+  {
+    "run": 2,
+    "exitCode": 1,
+    "seconds": 310.34,
+    "reproducedSameTimeout": true
+  },
+  {
+    "run": 3,
+    "exitCode": 1,
+    "seconds": 311.61,
+    "reproducedSameTimeout": true
+  }
+]

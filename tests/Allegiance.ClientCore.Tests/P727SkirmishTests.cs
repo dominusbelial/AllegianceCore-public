@@ -17,6 +17,19 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P727SkirmishOptionsTests
 {
     [Theory]
+    [InlineData("conquest")] [InlineData("territory")] [InlineData("kills")]
+    [InlineData("flags")] [InlineData("artifacts")] [InlineData("prosperity")] [InlineData("countdown")]
+    public void Goal_presets_reach_skirmish_config_and_remembered_options(string preset)
+    {
+        var goals = Allegiance.Core.Model.MissionGoals.Preset(preset);
+        var options = new SkirmishOptions { Goals = goals };
+        Assert.Equal(goals, options.CreateConfig().Games[0].ResolveGoals());
+        var restored = SkirmishPrefs.From(options).ToOptions();
+        Assert.Equal(goals, restored.CreateConfig().Games[0].ResolveGoals());
+        Assert.NotSame(goals, restored.Goals);
+    }
+
+    [Theory]
     [InlineData("pilot  ", "pilot")]
     [InlineData("pilotΩ", "pilot?")]
     [InlineData("Gä", "Gä")]

@@ -1,0 +1,96 @@
+{
+  "base": "62a5b50fe0b1d300a0086632dbb98ff6a4fe408b",
+  "branch": "codex/p832a",
+  "commitsOrPushes": false,
+  "remoteHostsContacted": false,
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "built": 88
+  },
+  "serverAot": {
+    "passed": true,
+    "IL2026": false,
+    "IL3050": false
+  },
+  "targeted": {
+    "invocations": 63,
+    "passedCases": 504,
+    "failedInvocations": 0
+  },
+  "fast": {
+    "sweeps": 1,
+    "passed": 10860,
+    "failed": 5,
+    "optionalSkips": 3,
+    "infrastructurePassed": 9,
+    "seconds": 304.6721365829999,
+    "originalGatePassed": false,
+    "reason": "Known worktree-local TMPDIR/local.env path-fixture context; unchanged assertions passed all 27 isolated recovery cases"
+  },
+  "baseFinaleDiagnosis": [
+    {
+      "run": 1,
+      "exitCode": 1,
+      "seconds": 310.2,
+      "reproducedSameTimeout": true
+    },
+    {
+      "run": 2,
+      "exitCode": 1,
+      "seconds": 310.34,
+      "reproducedSameTimeout": true
+    },
+    {
+      "run": 3,
+      "exitCode": 1,
+      "seconds": 311.61,
+      "reproducedSameTimeout": true
+    }
+  ],
+  "parking": {
+    "base": {
+      "passed": 5,
+      "total": 5,
+      "durationsSeconds": [
+        340.65,
+        321.54,
+        282.66,
+        354.22,
+        384.72
+      ],
+      "maxObservedStoppedSeconds": 2.012
+    },
+    "final": {
+      "passed": 5,
+      "total": 5,
+      "durationsSeconds": [
+        391.0,
+        397.38,
+        375.61,
+        348.34,
+        433.8
+      ],
+      "maxObservedStoppedSeconds": 2.004
+    }
+  },
+  "screenshotsVisuallyInspected": [
+    "briefing-goals-classic.png",
+    "briefing-goals-modern.png"
+  ],
+  "checks": [
+    "glossary links",
+    "native inventory reconciliation",
+    "both parity matrices",
+    "docker compose config",
+    "git diff --check",
+    "LF CSV",
+    "public source path/email scan"
+  ],
+  "limitations": [
+    "Original Fast sweep remains failed, despite 27/27 isolated path-fixture recovery cases",
+    "Expanded P682b scenario fails on unchanged base; no assertion, timeout, rearm setting, strategy or quarantine changed"
+  ]
+}

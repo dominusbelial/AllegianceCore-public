@@ -903,7 +903,8 @@ public sealed partial class Game1
         if (world.InitialTechsFor(mySide) is not { } techs) return null;   // bucket seed unknown — retry later
         var ga = world.ResearchBriefing is { } briefing && core.Civilizations.TryGetValue(briefing.Plan.CivId, out var civ)
             ? Allegiance.Core.Model.GlobalAttributeSet.FromArray(civ.GasBaseAttributes) : world.GlobalAttributesFor(mySide);
-        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
+        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga,
+            world.MissionGoals.IsProsperityGame ? world.MissionGoals.TeamMoney : 1);
         var list = new List<Rendering.InvestmentBucket>(views.Count);
         foreach (var v in views)
         {

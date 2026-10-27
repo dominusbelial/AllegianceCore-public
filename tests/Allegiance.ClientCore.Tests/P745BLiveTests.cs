@@ -23,7 +23,7 @@ public sealed class P745BLiveTests
         using var a = P660NextMatchLiveTests.Connect(server, "P745B-A", 745001);
         using var b = P660NextMatchLiveTests.Connect(server, "P745B-B", 745002);
         var mission = server.Missions[0]; mission.Stage = MissionStage.Started;
-        mission.ConquestEnabled = mission.TerritoryEnabled = mission.ProsperityEnabled = mission.ArtifactEnabled = mission.FlagsEnabled = false;
+        mission.Goals.ConquestPercentage = 0; mission.Goals.TerritoryPercentage = 100; mission.Goals.TeamMoney = 0; mission.Goals.Artifacts = 0; mission.Goals.Flags = 0;
         short armed = a.World.MySideId!.Value;
         short expected = draw ? GameOver.NA : (short)(1 - armed);
         mission.Sides.Single(s => s.Id != armed).Kills = (short)(draw ? 0 : 9);

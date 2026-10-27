@@ -1,0 +1,2810 @@
+[
+  {
+    "key": "FedSrv/fsmission.cpp:33 CFSMission::InitSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 33,
+    "end_line": 62,
+    "method": "CFSMission::InitSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:79 CFSMission::CFSMission",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 79,
+    "end_line": 255,
+    "method": "CFSMission::CFSMission",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:258 CFSMission::~CFSMission",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 258,
+    "end_line": 358,
+    "method": "CFSMission::~CFSMission",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:369 CFSMission::AddPlayerToMission",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 369,
+    "end_line": 449,
+    "method": "CFSMission::AddPlayerToMission",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:460 CFSMission::RemovePlayerFromMission",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 460,
+    "end_line": 525,
+    "method": "CFSMission::RemovePlayerFromMission",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:539 CFSMission::AddPlayerToSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 539,
+    "end_line": 834,
+    "method": "CFSMission::AddPlayerToSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:848 CFSMission::RemovePlayerFromSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 848,
+    "end_line": 1165,
+    "method": "CFSMission::RemovePlayerFromSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1168 CFSMission::AddInvitation",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1168,
+    "end_line": 1174,
+    "method": "CFSMission::AddInvitation",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1182 CFSMission::IsInvited",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1182,
+    "end_line": 1192,
+    "method": "CFSMission::IsInvited",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1199 CFSMission::AddBallot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1199,
+    "end_line": 1202,
+    "method": "CFSMission::AddBallot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1209 CFSMission::TallyVote",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1209,
+    "end_line": 1219,
+    "method": "CFSMission::TallyVote",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1225 CFSMission::HasBallots",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1225,
+    "end_line": 1233,
+    "method": "CFSMission::HasBallots",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1248 CFSMission::RemovePlayerByName",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1248,
+    "end_line": 1273,
+    "method": "CFSMission::RemovePlayerByName",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1289 CFSMission::RemovePlayerByCDKey",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1289,
+    "end_line": 1314,
+    "method": "CFSMission::RemovePlayerByCDKey",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1329 CFSMission::GetCountOfPlayers",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1329,
+    "end_line": 1339,
+    "method": "CFSMission::GetCountOfPlayers",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1353 CFSMission::GetSideRankSum",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1353,
+    "end_line": 1369,
+    "method": "CFSMission::GetSideRankSum",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1380 CFSMission::GetRankThreshold",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1380,
+    "end_line": 1407,
+    "method": "CFSMission::GetRankThreshold",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1422 CFSMission::HasPlayers",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1422,
+    "end_line": 1431,
+    "method": "CFSMission::HasPlayers",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1433 CFSMission::GetBase",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1433,
+    "end_line": 1447,
+    "method": "CFSMission::GetBase",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1452 CFSMission::GetLeader",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1452,
+    "end_line": 1459,
+    "method": "CFSMission::GetLeader",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1464 CFSMission::SetLeaderID",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1464,
+    "end_line": 1483,
+    "method": "CFSMission::SetLeaderID",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1486 CFSMission::GetOwner",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1486,
+    "end_line": 1492,
+    "method": "CFSMission::GetOwner",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1495 CFSMission::SetOwner",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1495,
+    "end_line": 1508,
+    "method": "CFSMission::SetOwner",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1510 CFSMission::SetLeader",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1510,
+    "end_line": 1553,
+    "method": "CFSMission::SetLeader",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1564 CFSMission::SetSideName",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1564,
+    "end_line": 1600,
+    "method": "CFSMission::SetSideName",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1612 CFSMission::SetSideSquad",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1612,
+    "end_line": 1670,
+    "method": "CFSMission::SetSideSquad",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1683 CFSMission::MaintainSquadLeadership",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1683,
+    "end_line": 1739,
+    "method": "CFSMission::MaintainSquadLeadership",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1750 CFSMission::SetStage",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1750,
+    "end_line": 1768,
+    "method": "CFSMission::SetStage",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1777 CFSMission::GiveSideMoney",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1777,
+    "end_line": 1787,
+    "method": "CFSMission::GiveSideMoney",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1796 CFSMission::SetMissionParams",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1796,
+    "end_line": 1895,
+    "method": "CFSMission::SetMissionParams",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1904 CFSMission::DelayCountdown",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1904,
+    "end_line": 1917,
+    "method": "CFSMission::DelayCountdown",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:1926 CFSMission::StartCountdown",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 1926,
+    "end_line": 2221,
+    "method": "CFSMission::StartCountdown",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2229 CFSMission::StartGame",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2229,
+    "end_line": 2280,
+    "method": "CFSMission::StartGame",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2282 CFSMission::DoPayday",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2282,
+    "end_line": 2292,
+    "method": "CFSMission::DoPayday",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2294 CFSMission::DoPayday",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2294,
+    "end_line": 2326,
+    "method": "CFSMission::DoPayday",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2328 CFSMission::DoTick",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2328,
+    "end_line": 2593,
+    "method": "CFSMission::DoTick",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2604 CFSMission::Vacate",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2604,
+    "end_line": 2622,
+    "method": "CFSMission::Vacate",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2624 CFSMission::SaveAsOldPlayer",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2624,
+    "end_line": 2680,
+    "method": "CFSMission::SaveAsOldPlayer",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2691 CFSMission::GameOver",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2691,
+    "end_line": 2711,
+    "method": "CFSMission::GameOver",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2718 CFSMission::MakeOverrideTechBits",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2718,
+    "end_line": 2733,
+    "method": "CFSMission::MakeOverrideTechBits",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2757 CFSMission::RecordGameResults",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2757,
+    "end_line": 2836,
+    "method": "CFSMission::RecordGameResults",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2845 CFSMission::RecordTeamResults",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2845,
+    "end_line": 2915,
+    "method": "CFSMission::RecordTeamResults",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:2924 CFSMission::RecordPlayerResults",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 2924,
+    "end_line": 3047,
+    "method": "CFSMission::RecordPlayerResults",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3059 CFSMission::QueueGameoverMessage",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3059,
+    "end_line": 3142,
+    "method": "CFSMission::QueueGameoverMessage",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3170 CFSMission::ProcessGameOver",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3170,
+    "end_line": 3549,
+    "method": "CFSMission::ProcessGameOver",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3558 CFSMission::CheckForVictoryByStationBuild",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3558,
+    "end_line": 3561,
+    "method": "CFSMission::CheckForVictoryByStationBuild",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3563 CFSMission::CheckForVictoryByStationCapture",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3563,
+    "end_line": 3566,
+    "method": "CFSMission::CheckForVictoryByStationCapture",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3568 CFSMission::CheckForVictoryByStationKill",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3568,
+    "end_line": 3747,
+    "method": "CFSMission::CheckForVictoryByStationKill",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3749 CFSMission::CheckForVictoryByKills",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3749,
+    "end_line": 3764,
+    "method": "CFSMission::CheckForVictoryByKills",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3767 CFSMission::CheckForVictoryByInactiveSides",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3767,
+    "end_line": 3858,
+    "method": "CFSMission::CheckForVictoryByInactiveSides",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3861 CFSMission::CheckForVictoryByFlags",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3861,
+    "end_line": 3899,
+    "method": "CFSMission::CheckForVictoryByFlags",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3911 CFSMission::CreateDPGroups",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3911,
+    "end_line": 3923,
+    "method": "CFSMission::CreateDPGroups",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3936 CFSMission::SendLobbyMissionInfo",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3936,
+    "end_line": 3972,
+    "method": "CFSMission::SendLobbyMissionInfo",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3983 CFSMission::QueueLobbyMissionInfo",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3983,
+    "end_line": 4096,
+    "method": "CFSMission::QueueLobbyMissionInfo",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4108 CFSMission::SendMissionInfo",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4108,
+    "end_line": 4341,
+    "method": "CFSMission::SendMissionInfo",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4344 CFSMission::GetMission",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4344,
+    "end_line": 4353,
+    "method": "CFSMission::GetMission",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4356 CFSMission::GetMissionFromIGCMissionID",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4356,
+    "end_line": 4365,
+    "method": "CFSMission::GetMissionFromIGCMissionID",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4375 CFSMission::FAllReady",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4375,
+    "end_line": 4445,
+    "method": "CFSMission::FAllReady",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4454 CFSMission::PickNewSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4454,
+    "end_line": 4524,
+    "method": "CFSMission::PickNewSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4575 CFSMission::CheckPositionRequest",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4575,
+    "end_line": 4727,
+    "method": "CFSMission::CheckPositionRequest",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4729 CFSMission::RequestPosition",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4729,
+    "end_line": 4774,
+    "method": "CFSMission::RequestPosition",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4783 CFSMission::VacateStation",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4783,
+    "end_line": 4850,
+    "method": "CFSMission::VacateStation",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4860 CFSMission::AddJoinRequest",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4860,
+    "end_line": 4869,
+    "method": "CFSMission::AddJoinRequest",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4881 CFSMission::NotifyPlayerBoot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4881,
+    "end_line": 4891,
+    "method": "CFSMission::NotifyPlayerBoot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4903 CFSMission::RejectSideJoinRequests",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4903,
+    "end_line": 4922,
+    "method": "CFSMission::RejectSideJoinRequests",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4938 CFSMission::RemoveJoinRequest",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4938,
+    "end_line": 4960,
+    "method": "CFSMission::RemoveJoinRequest",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:4974 CFSMission::SetAutoAccept",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 4974,
+    "end_line": 5011,
+    "method": "CFSMission::SetAutoAccept",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5024 CFSMission::SetLockLobby",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5024,
+    "end_line": 5029,
+    "method": "CFSMission::SetLockLobby",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5041 CFSMission::SetLockSides",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5041,
+    "end_line": 5045,
+    "method": "CFSMission::SetLockSides",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5057 CFSMission::SetMaxTeamImbalance",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5057,
+    "end_line": 5061,
+    "method": "CFSMission::SetMaxTeamImbalance",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5069 CFSMission::FlushSides",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5069,
+    "end_line": 5119,
+    "method": "CFSMission::FlushSides",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5127 CFSMission::GetLockSides",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5127,
+    "end_line": 5130,
+    "method": "CFSMission::GetLockSides",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5139 CFSMission::RandomizeSides",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5139,
+    "end_line": 5266,
+    "method": "CFSMission::RandomizeSides",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5268 CFSMission::SetSideCiv",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5268,
+    "end_line": 5284,
+    "method": "CFSMission::SetSideCiv",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5288 CFSMission::SetSideAllies",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5288,
+    "end_line": 5291,
+    "method": "CFSMission::SetSideAllies",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5292 CFSMission::GetSideAllies",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5292,
+    "end_line": 5295,
+    "method": "CFSMission::GetSideAllies",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5300 CFSMission::SetSideActive",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5300,
+    "end_line": 5303,
+    "method": "CFSMission::SetSideActive",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5304 CFSMission::GetSideActive",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5304,
+    "end_line": 5307,
+    "method": "CFSMission::GetSideActive",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5318 CFSMission::DeactivateSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5318,
+    "end_line": 5430,
+    "method": "CFSMission::DeactivateSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5441 CFSMission::SetForceReady",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5441,
+    "end_line": 5448,
+    "method": "CFSMission::SetForceReady",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5461 CFSMission::SetReady",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5461,
+    "end_line": 5472,
+    "method": "CFSMission::SetReady",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5485 CFSMission::PlayerReadyChange",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5485,
+    "end_line": 5489,
+    "method": "CFSMission::PlayerReadyChange",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5498 CFSMission::CheckForSideAllReady",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5498,
+    "end_line": 5529,
+    "method": "CFSMission::CheckForSideAllReady",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5538 CFSMission::CreateCluster",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5538,
+    "end_line": 5543,
+    "method": "CFSMission::CreateCluster",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5552 CFSMission::DeleteCluster",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5552,
+    "end_line": 5566,
+    "method": "CFSMission::DeleteCluster",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5576 CFSMission::CreateSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5576,
+    "end_line": 5581,
+    "method": "CFSMission::CreateSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5590 CFSMission::DeleteSide",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5590,
+    "end_line": 5604,
+    "method": "CFSMission::DeleteSide",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5606 CFSMission::UpdateLobby",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5606,
+    "end_line": 5622,
+    "method": "CFSMission::UpdateLobby",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5624 CFSMission::SetLobbyIsDirty",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5624,
+    "end_line": 5628,
+    "method": "CFSMission::SetLobbyIsDirty",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5639 CFSMission::UpdateAlliances",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5639,
+    "end_line": 5811,
+    "method": "CFSMission::UpdateAlliances",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5817 Ballot::Update",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5817,
+    "end_line": 5833,
+    "method": "Ballot::Update",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5836 Ballot::Cancel",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5836,
+    "end_line": 5844,
+    "method": "Ballot::Cancel",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5847 Ballot::CastVote",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5847,
+    "end_line": 5866,
+    "method": "Ballot::CastVote",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5869 Ballot::GetBallotID",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5869,
+    "end_line": 5872,
+    "method": "Ballot::GetBallotID",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5876 Ballot::GetType",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5876,
+    "end_line": 5879,
+    "method": "Ballot::GetType",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5882 Ballot::Init",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5882,
+    "end_line": 5938,
+    "method": "Ballot::Init",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5941 Ballot::Init",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5941,
+    "end_line": 5996,
+    "method": "Ballot::Init",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:5999 Ballot::GetTallyString",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 5999,
+    "end_line": 6034,
+    "method": "Ballot::GetTallyString",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6037 Ballot::OnPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6037,
+    "end_line": 6043,
+    "method": "Ballot::OnPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6046 Ballot::OnFailed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6046,
+    "end_line": 6052,
+    "method": "Ballot::OnFailed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6055 Ballot::HasPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6055,
+    "end_line": 6071,
+    "method": "Ballot::HasPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6074 Ballot::AllVotesAreIn",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6074,
+    "end_line": 6083,
+    "method": "Ballot::AllVotesAreIn",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6089 MutinyBallot::MutinyBallot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6089,
+    "end_line": 6096,
+    "method": "MutinyBallot::MutinyBallot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6098 MutinyBallot::OnPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6098,
+    "end_line": 6143,
+    "method": "MutinyBallot::OnPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6146 ResignBallot::ResignBallot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6146,
+    "end_line": 6152,
+    "method": "ResignBallot::ResignBallot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6154 ResignBallot::OnPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6154,
+    "end_line": 6163,
+    "method": "ResignBallot::OnPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6166 OfferDrawBallot::OfferDrawBallot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6166,
+    "end_line": 6172,
+    "method": "OfferDrawBallot::OfferDrawBallot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6174 OfferDrawBallot::OnPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6174,
+    "end_line": 6180,
+    "method": "OfferDrawBallot::OnPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6183 AcceptDrawBallot::AcceptDrawBallot",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6183,
+    "end_line": 6188,
+    "method": "AcceptDrawBallot::AcceptDrawBallot",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:6190 AcceptDrawBallot::OnPassed",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 6190,
+    "end_line": 6194,
+    "method": "AcceptDrawBallot::OnPassed",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4478 FedSrvSiteBase::OnMessageBox",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4478,
+    "end_line": 4481,
+    "method": "FedSrvSiteBase::OnMessageBox",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4484 FedSrvSiteBase::OnMessageBox",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4484,
+    "end_line": 4491,
+    "method": "FedSrvSiteBase::OnMessageBox",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4494 FedSrvSiteBase::OnSysMessage",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4494,
+    "end_line": 4502,
+    "method": "FedSrvSiteBase::OnSysMessage",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4506 FedSrvSiteBase::OnSQLErrorRecord",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4506,
+    "end_line": 4516,
+    "method": "FedSrvSiteBase::OnSQLErrorRecord",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4519 FedSrvSiteBase::OnOLEDBErrorRecord",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4519,
+    "end_line": 4533,
+    "method": "FedSrvSiteBase::OnOLEDBErrorRecord",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4536 FedSrvSiteBase::OnNewConnection",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4536,
+    "end_line": 4546,
+    "method": "FedSrvSiteBase::OnNewConnection",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4549 FedSrvSiteBase::OnDestroyConnection",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4549,
+    "end_line": 4566,
+    "method": "FedSrvSiteBase::OnDestroyConnection",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4569 FedSrvSiteBase::OnSessionLost",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4569,
+    "end_line": 4575,
+    "method": "FedSrvSiteBase::OnSessionLost",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4591 FedSrvSiteBase::OnBadCRC",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4591,
+    "end_line": 4603,
+    "method": "FedSrvSiteBase::OnBadCRC",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4613 FedSrvSiteBase::OnMessageSent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4613,
+    "end_line": 4651,
+    "method": "FedSrvSiteBase::OnMessageSent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4798 FedSrvSiteBase::OnAppMessage",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4798,
+    "end_line": 7827,
+    "method": "FedSrvSiteBase::OnAppMessage",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4851 OnAppMessage/FM_C_SHIP_UPDATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4851,
+    "end_line": 4868,
+    "method": "OnAppMessage/FM_C_SHIP_UPDATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4868 OnAppMessage/FM_C_ACTIVE_TURRET_UPDATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4868,
+    "end_line": 4882,
+    "method": "OnAppMessage/FM_C_ACTIVE_TURRET_UPDATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4882 OnAppMessage/FM_C_INACTIVE_TURRET_UPDATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4882,
+    "end_line": 4897,
+    "method": "OnAppMessage/FM_C_INACTIVE_TURRET_UPDATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4897 OnAppMessage/FM_CS_PING",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4897,
+    "end_line": 4913,
+    "method": "OnAppMessage/FM_CS_PING",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4913 OnAppMessage/FM_CS_CHATMESSAGE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4913,
+    "end_line": 5295,
+    "method": "OnAppMessage/FM_CS_CHATMESSAGE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5295 OnAppMessage/FM_CS_CHATBUOY",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5295,
+    "end_line": 5312,
+    "method": "OnAppMessage/FM_CS_CHATBUOY",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5312 OnAppMessage/FM_CS_SET_WINGID",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5312,
+    "end_line": 5349,
+    "method": "OnAppMessage/FM_CS_SET_WINGID",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5349 OnAppMessage/FM_C_VOTE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5349,
+    "end_line": 5361,
+    "method": "OnAppMessage/FM_C_VOTE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5361 OnAppMessage/FM_CS_REQUEST_MONEY",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5361,
+    "end_line": 5408,
+    "method": "OnAppMessage/FM_CS_REQUEST_MONEY",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5408 OnAppMessage/FM_CS_FIRE_MISSILE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5408,
+    "end_line": 5516,
+    "method": "OnAppMessage/FM_CS_FIRE_MISSILE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5516 OnAppMessage/FM_C_AUTODONATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5516,
+    "end_line": 5615,
+    "method": "OnAppMessage/FM_C_AUTODONATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5615 OnAppMessage/FM_C_FIRE_EXPENDABLE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5615,
+    "end_line": 5787,
+    "method": "OnAppMessage/FM_C_FIRE_EXPENDABLE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5787 OnAppMessage/FM_CS_LOGOFF",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5787,
+    "end_line": 5805,
+    "method": "OnAppMessage/FM_CS_LOGOFF",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:5805 OnAppMessage/FM_C_LOGONREQ",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 5805,
+    "end_line": 6094,
+    "method": "OnAppMessage/FM_C_LOGONREQ",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6094 OnAppMessage/FM_C_TREASURE_ACK",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6094,
+    "end_line": 6151,
+    "method": "OnAppMessage/FM_C_TREASURE_ACK",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6151 OnAppMessage/FM_C_BUY_LOADOUT",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6151,
+    "end_line": 6296,
+    "method": "OnAppMessage/FM_C_BUY_LOADOUT",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6296 OnAppMessage/FM_CS_DROP_PART",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6296,
+    "end_line": 6335,
+    "method": "OnAppMessage/FM_CS_DROP_PART",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6335 OnAppMessage/FM_C_SUICIDE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6335,
+    "end_line": 6353,
+    "method": "OnAppMessage/FM_C_SUICIDE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6353 OnAppMessage/FM_C_PROMOTE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6353,
+    "end_line": 6385,
+    "method": "OnAppMessage/FM_C_PROMOTE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6385 OnAppMessage/FM_C_BOARD_SHIP",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6385,
+    "end_line": 6420,
+    "method": "OnAppMessage/FM_C_BOARD_SHIP",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6420 OnAppMessage/FM_C_VIEW_CLUSTER",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6420,
+    "end_line": 6459,
+    "method": "OnAppMessage/FM_C_VIEW_CLUSTER",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6459 OnAppMessage/FM_CS_SWAP_PART",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6459,
+    "end_line": 6504,
+    "method": "OnAppMessage/FM_CS_SWAP_PART",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6504 OnAppMessage/FM_CS_RELOAD",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6504,
+    "end_line": 6658,
+    "method": "OnAppMessage/FM_CS_RELOAD",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6658 OnAppMessage/FM_C_POSITIONREQ",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6658,
+    "end_line": 6709,
+    "method": "OnAppMessage/FM_C_POSITIONREQ",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6709 OnAppMessage/FM_C_POSITIONACK",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6709,
+    "end_line": 6749,
+    "method": "OnAppMessage/FM_C_POSITIONACK",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6749 OnAppMessage/FM_CS_QUIT_MISSION",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6749,
+    "end_line": 6823,
+    "method": "OnAppMessage/FM_CS_QUIT_MISSION",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6823 OnAppMessage/FM_CS_QUIT_SIDE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6823,
+    "end_line": 6908,
+    "method": "OnAppMessage/FM_CS_QUIT_SIDE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6908 OnAppMessage/FM_CS_AUTO_ACCEPT",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6908,
+    "end_line": 6938,
+    "method": "OnAppMessage/FM_CS_AUTO_ACCEPT",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6938 OnAppMessage/FM_CS_LOCK_LOBBY",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6938,
+    "end_line": 6953,
+    "method": "OnAppMessage/FM_CS_LOCK_LOBBY",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6953 OnAppMessage/FM_CS_LOCK_SIDES",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6953,
+    "end_line": 6964,
+    "method": "OnAppMessage/FM_CS_LOCK_SIDES",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6964 OnAppMessage/FM_C_RANDOMIZE_TEAMS",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6964,
+    "end_line": 6987,
+    "method": "OnAppMessage/FM_C_RANDOMIZE_TEAMS",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6987 OnAppMessage/FM_CS_PLAYER_READY",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6987,
+    "end_line": 6988,
+    "method": "OnAppMessage/FM_CS_PLAYER_READY",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:6988 OnAppMessage/FM_CS_FORCE_TEAM_READY",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 6988,
+    "end_line": 7031,
+    "method": "OnAppMessage/FM_CS_FORCE_TEAM_READY",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7031 OnAppMessage/FM_C_DOCKED",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7031,
+    "end_line": 7137,
+    "method": "OnAppMessage/FM_C_DOCKED",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7137 OnAppMessage/FM_C_BUCKET_DONATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7137,
+    "end_line": 7213,
+    "method": "OnAppMessage/FM_C_BUCKET_DONATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7213 OnAppMessage/FM_C_PLAYER_DONATE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7213,
+    "end_line": 7264,
+    "method": "OnAppMessage/FM_C_PLAYER_DONATE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7264 OnAppMessage/FM_CS_ORDER_CHANGE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7264,
+    "end_line": 7344,
+    "method": "OnAppMessage/FM_CS_ORDER_CHANGE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7344 OnAppMessage/FM_CS_CHANGE_TEAM_CIV",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7344,
+    "end_line": 7370,
+    "method": "OnAppMessage/FM_CS_CHANGE_TEAM_CIV",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7370 OnAppMessage/FM_CS_HIGHLIGHT_CLUSTER",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7370,
+    "end_line": 7379,
+    "method": "OnAppMessage/FM_CS_HIGHLIGHT_CLUSTER",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7379 OnAppMessage/FM_CS_SIDE_INACTIVE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7379,
+    "end_line": 7430,
+    "method": "OnAppMessage/FM_CS_SIDE_INACTIVE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7430 OnAppMessage/FM_CS_SET_TEAM_INFO",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7430,
+    "end_line": 7469,
+    "method": "OnAppMessage/FM_CS_SET_TEAM_INFO",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7469 OnAppMessage/FM_C_CHANGE_ALLIANCE",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7469,
+    "end_line": 7484,
+    "method": "OnAppMessage/FM_C_CHANGE_ALLIANCE",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7484 OnAppMessage/FM_CS_DELPOSITIONREQ",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7484,
+    "end_line": 7518,
+    "method": "OnAppMessage/FM_CS_DELPOSITIONREQ",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7518 OnAppMessage/FM_CS_MISSIONPARAMS",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7518,
+    "end_line": 7597,
+    "method": "OnAppMessage/FM_CS_MISSIONPARAMS",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7597 OnAppMessage/FM_C_START_GAME",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7597,
+    "end_line": 7624,
+    "method": "OnAppMessage/FM_C_START_GAME",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7624 OnAppMessage/FM_CS_SET_TEAM_LEADER",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7624,
+    "end_line": 7690,
+    "method": "OnAppMessage/FM_CS_SET_TEAM_LEADER",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7690 OnAppMessage/FM_CS_SET_MISSION_OWNER",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7690,
+    "end_line": 7715,
+    "method": "OnAppMessage/FM_CS_SET_MISSION_OWNER",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7715 OnAppMessage/FM_C_RIPCORD_REQUEST",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7715,
+    "end_line": 7743,
+    "method": "OnAppMessage/FM_C_RIPCORD_REQUEST",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7743 OnAppMessage/FM_C_REQPINGDATA",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7743,
+    "end_line": 7826,
+    "method": "OnAppMessage/FM_C_REQPINGDATA",
+    "kind": "handler"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11223 FedSrvSiteBase::CreateThingSite",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11223,
+    "end_line": 11226,
+    "method": "FedSrvSiteBase::CreateThingSite",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11228 FedSrvSiteBase::CreateClusterSite",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11228,
+    "end_line": 11232,
+    "method": "FedSrvSiteBase::CreateClusterSite",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11234 FedSrvSiteBase::UpgradeDrones",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11234,
+    "end_line": 11257,
+    "method": "FedSrvSiteBase::UpgradeDrones",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11259 FedSrvSiteBase::DevelopmentCompleted",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11259,
+    "end_line": 11280,
+    "method": "FedSrvSiteBase::DevelopmentCompleted",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11282 FedSrvSiteBase::SideDevelopmentTechChange",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11282,
+    "end_line": 11314,
+    "method": "FedSrvSiteBase::SideDevelopmentTechChange",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11316 FedSrvSiteBase::SideGlobalAttributeChange",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11316,
+    "end_line": 11325,
+    "method": "FedSrvSiteBase::SideGlobalAttributeChange",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11327 FedSrvSiteBase::HullTypeCompleted",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11327,
+    "end_line": 11332,
+    "method": "FedSrvSiteBase::HullTypeCompleted",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11334 FedSrvSiteBase::PartTypeCompleted",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11334,
+    "end_line": 11341,
+    "method": "FedSrvSiteBase::PartTypeCompleted",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11343 FedSrvSiteBase::StationTypeCompleted",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11343,
+    "end_line": 11372,
+    "method": "FedSrvSiteBase::StationTypeCompleted",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11374 FedSrvSiteBase::BuildStation",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11374,
+    "end_line": 11516,
+    "method": "FedSrvSiteBase::BuildStation",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11518 FedSrvSiteBase::DroneTypeCompleted",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11518,
+    "end_line": 11552,
+    "method": "FedSrvSiteBase::DroneTypeCompleted",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11554 FedSrvSiteBase::UpgradeShip",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11554,
+    "end_line": 11628,
+    "method": "FedSrvSiteBase::UpgradeShip",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11630 FedSrvSiteBase::TerminateModelEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11630,
+    "end_line": 11632,
+    "method": "FedSrvSiteBase::TerminateModelEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11634 FedSrvSiteBase::KillShipEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11634,
+    "end_line": 12087,
+    "method": "FedSrvSiteBase::KillShipEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12089 FedSrvSiteBase::DamageShipEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12089,
+    "end_line": 12181,
+    "method": "FedSrvSiteBase::DamageShipEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12183 FedSrvSiteBase::DamageStationEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12183,
+    "end_line": 12235,
+    "method": "FedSrvSiteBase::DamageStationEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12237 FedSrvSiteBase::KillStationEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12237,
+    "end_line": 12409,
+    "method": "FedSrvSiteBase::KillStationEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12411 FedSrvSiteBase::KillAsteroidEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12411,
+    "end_line": 12421,
+    "method": "FedSrvSiteBase::KillAsteroidEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12423 FedSrvSiteBase::KillAsteroidEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12423,
+    "end_line": 12431,
+    "method": "FedSrvSiteBase::KillAsteroidEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12433 FedSrvSiteBase::KillAsteroidEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12433,
+    "end_line": 12441,
+    "method": "FedSrvSiteBase::KillAsteroidEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12443 FedSrvSiteBase::DrainAsteroidEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12443,
+    "end_line": 12452,
+    "method": "FedSrvSiteBase::DrainAsteroidEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12454 FedSrvSiteBase::MineAsteroidEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12454,
+    "end_line": 12472,
+    "method": "FedSrvSiteBase::MineAsteroidEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12474 FedSrvSiteBase::KillProbeEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12474,
+    "end_line": 12483,
+    "method": "FedSrvSiteBase::KillProbeEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12484 FedSrvSiteBase::KillBuildingEffectEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12484,
+    "end_line": 12492,
+    "method": "FedSrvSiteBase::KillBuildingEffectEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12493 FedSrvSiteBase::KillTreasureEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12493,
+    "end_line": 12510,
+    "method": "FedSrvSiteBase::KillTreasureEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12512 FedSrvSiteBase::KillMissileEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12512,
+    "end_line": 12529,
+    "method": "FedSrvSiteBase::KillMissileEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12531 FedSrvSiteBase::KillMineEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12531,
+    "end_line": 12540,
+    "method": "FedSrvSiteBase::KillMineEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12543 FedSrvSiteBase::WarpBombEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12543,
+    "end_line": 12587,
+    "method": "FedSrvSiteBase::WarpBombEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12655 FedSrvSiteBase::AlliedRearm",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12655,
+    "end_line": 12812,
+    "method": "FedSrvSiteBase::AlliedRearm",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12814 FedSrvSiteBase::LandOnCarrierEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12814,
+    "end_line": 13031,
+    "method": "FedSrvSiteBase::LandOnCarrierEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13033 FedSrvSiteBase::RescueShipEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13033,
+    "end_line": 13077,
+    "method": "FedSrvSiteBase::RescueShipEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13080 FedSrvSiteBase::CaptureStationEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13080,
+    "end_line": 13084,
+    "method": "FedSrvSiteBase::CaptureStationEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13087 FedSrvSiteBase::DockWithStationEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13087,
+    "end_line": 13177,
+    "method": "FedSrvSiteBase::DockWithStationEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13179 FedSrvSiteBase::ChangeStation",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13179,
+    "end_line": 13311,
+    "method": "FedSrvSiteBase::ChangeStation",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13313 FedSrvSiteBase::GetDroneFromShip",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13313,
+    "end_line": 13317,
+    "method": "FedSrvSiteBase::GetDroneFromShip",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13319 FedSrvSiteBase::RequestRipcord",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13319,
+    "end_line": 13378,
+    "method": "FedSrvSiteBase::RequestRipcord",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13379 FedSrvSiteBase::ContinueRipcord",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13379,
+    "end_line": 13438,
+    "method": "FedSrvSiteBase::ContinueRipcord",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13440 FedSrvSiteBase::UseRipcord",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13440,
+    "end_line": 13505,
+    "method": "FedSrvSiteBase::UseRipcord",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13506 FedSrvSiteBase::HitWarpEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13506,
+    "end_line": 13511,
+    "method": "FedSrvSiteBase::HitWarpEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13513 FedSrvSiteBase::ChangeCluster",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13513,
+    "end_line": 13528,
+    "method": "FedSrvSiteBase::ChangeCluster",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13530 FedSrvSiteBase::LoadoutChangeEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13530,
+    "end_line": 13556,
+    "method": "FedSrvSiteBase::LoadoutChangeEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13558 FedSrvSiteBase::HitTreasureEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13558,
+    "end_line": 13645,
+    "method": "FedSrvSiteBase::HitTreasureEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13647 FedSrvSiteBase::PaydayEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13647,
+    "end_line": 13650,
+    "method": "FedSrvSiteBase::PaydayEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13652 FedSrvSiteBase::SendChat",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13652,
+    "end_line": 13692,
+    "method": "FedSrvSiteBase::SendChat",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13694 FedSrvSiteBase::ClusterUpdateEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13694,
+    "end_line": 13697,
+    "method": "FedSrvSiteBase::ClusterUpdateEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13699 FedSrvSiteBase::CommandChangedEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13699,
+    "end_line": 13732,
+    "method": "FedSrvSiteBase::CommandChangedEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13733 FedSrvSiteBase::CreateBuildingEffect",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13733,
+    "end_line": 13767,
+    "method": "FedSrvSiteBase::CreateBuildingEffect",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13769 FedSrvSiteBase::LayExpendable",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13769,
+    "end_line": 13840,
+    "method": "FedSrvSiteBase::LayExpendable",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13842 FedSrvSiteBase::RespawnFlag",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13842,
+    "end_line": 13944,
+    "method": "FedSrvSiteBase::RespawnFlag",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13953 FedSrvSiteBase::CreateSideEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13953,
+    "end_line": 13956,
+    "method": "FedSrvSiteBase::CreateSideEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13965 FedSrvSiteBase::DestroySideEvent",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13965,
+    "end_line": 13968,
+    "method": "FedSrvSiteBase::DestroySideEvent",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13976 FedSrvSiteBase::Destroy",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13976,
+    "end_line": 13979,
+    "method": "FedSrvSiteBase::Destroy",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10707 ThingSiteImpl::Terminate",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10707,
+    "end_line": 10709,
+    "method": "ThingSiteImpl::Terminate",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10711 ThingSiteImpl::SetCluster",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10711,
+    "end_line": 10748,
+    "method": "ThingSiteImpl::SetCluster",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10750 ThingSiteImpl::ShowObject",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10750,
+    "end_line": 10857,
+    "method": "ThingSiteImpl::ShowObject",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10859 ThingSiteImpl::HideObject",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10859,
+    "end_line": 10876,
+    "method": "ThingSiteImpl::HideObject",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10878 ThingSiteImpl::UpdateSideVisibility",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10878,
+    "end_line": 11132,
+    "method": "ThingSiteImpl::UpdateSideVisibility",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11133 ThingSiteImpl::GetSideVisibility",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11133,
+    "end_line": 11137,
+    "method": "ThingSiteImpl::GetSideVisibility",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11140 ThingSiteImpl::GetCurrentEye",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11140,
+    "end_line": 11144,
+    "method": "ThingSiteImpl::GetCurrentEye",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11146 ThingSiteImpl::SetSideVisibility",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11146,
+    "end_line": 11169,
+    "method": "ThingSiteImpl::SetSideVisibility",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11188 ClusterSiteImpl::AddScanner",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11188,
+    "end_line": 11195,
+    "method": "ClusterSiteImpl::AddScanner",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11196 ClusterSiteImpl::DeleteScanner",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11196,
+    "end_line": 11203,
+    "method": "ClusterSiteImpl::DeleteScanner",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11204 ClusterSiteImpl::GetScanners",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11204,
+    "end_line": 11210,
+    "method": "ClusterSiteImpl::GetScanners",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11212 ClusterSiteImpl::Terminate",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11212,
+    "end_line": 11216,
+    "method": "ClusterSiteImpl::Terminate",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10695 ThingSiteImpl::ThingSiteImpl",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10695,
+    "end_line": 10702,
+    "method": "ThingSiteImpl::ThingSiteImpl",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:10703 ThingSiteImpl::~ThingSiteImpl",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 10703,
+    "end_line": 10705,
+    "method": "ThingSiteImpl::~ThingSiteImpl",
+    "kind": "inline-method"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:11181 ClusterSiteImpl::ClusterSiteImpl",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 11181,
+    "end_line": 11186,
+    "method": "ClusterSiteImpl::ClusterSiteImpl",
+    "kind": "inline-method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:115 CmissionIGC::TechBitFromToken",
+    "file": "Igc/missionigc.cpp",
+    "line": 115,
+    "end_line": 125,
+    "method": "CmissionIGC::TechBitFromToken",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:128 CmissionIGC::TechsListToBits",
+    "file": "Igc/missionigc.cpp",
+    "line": 128,
+    "end_line": 149,
+    "method": "CmissionIGC::TechsListToBits",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:152 CmissionIGC::PartMaskFromToken",
+    "file": "Igc/missionigc.cpp",
+    "line": 152,
+    "end_line": 206,
+    "method": "CmissionIGC::PartMaskFromToken",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:361 CmissionIGC::PartsListToMask",
+    "file": "Igc/missionigc.cpp",
+    "line": 361,
+    "end_line": 374,
+    "method": "CmissionIGC::PartsListToMask",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:377 CmissionIGC::BitsToTechsList",
+    "file": "Igc/missionigc.cpp",
+    "line": 377,
+    "end_line": 413,
+    "method": "CmissionIGC::BitsToTechsList",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:417 CmissionIGC::BitsToPartsList",
+    "file": "Igc/missionigc.cpp",
+    "line": 417,
+    "end_line": 449,
+    "method": "CmissionIGC::BitsToPartsList",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:451 CmissionIGC::LoadTechBitsList",
+    "file": "Igc/missionigc.cpp",
+    "line": 451,
+    "end_line": 486,
+    "method": "CmissionIGC::LoadTechBitsList",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:487 CmissionIGC::LoadPartsBitsList",
+    "file": "Igc/missionigc.cpp",
+    "line": 487,
+    "end_line": 526,
+    "method": "CmissionIGC::LoadPartsBitsList",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:547 CmissionIGC::ImportStaticIGCObjs",
+    "file": "Igc/missionigc.cpp",
+    "line": 547,
+    "end_line": 2313,
+    "method": "CmissionIGC::ImportStaticIGCObjs",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3033 CmissionIGC::~CmissionIGC",
+    "file": "Igc/missionigc.cpp",
+    "line": 3033,
+    "end_line": 3053,
+    "method": "CmissionIGC::~CmissionIGC",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3055 CmissionIGC::Initialize",
+    "file": "Igc/missionigc.cpp",
+    "line": 3055,
+    "end_line": 3072,
+    "method": "CmissionIGC::Initialize",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3074 CmissionIGC::Terminate",
+    "file": "Igc/missionigc.cpp",
+    "line": 3074,
+    "end_line": 3125,
+    "method": "CmissionIGC::Terminate",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3127 CmissionIGC::Update",
+    "file": "Igc/missionigc.cpp",
+    "line": 3127,
+    "end_line": 3185,
+    "method": "CmissionIGC::Update",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3219 CmissionIGC::Export",
+    "file": "Igc/missionigc.cpp",
+    "line": 3219,
+    "end_line": 3267,
+    "method": "CmissionIGC::Export",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3269 CmissionIGC::Import",
+    "file": "Igc/missionigc.cpp",
+    "line": 3269,
+    "end_line": 3297,
+    "method": "CmissionIGC::Import",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3299 CmissionIGC::CreateObject",
+    "file": "Igc/missionigc.cpp",
+    "line": 3299,
+    "end_line": 3384,
+    "method": "CmissionIGC::CreateObject",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3386 CmissionIGC::GetModel",
+    "file": "Igc/missionigc.cpp",
+    "line": 3386,
+    "end_line": 3416,
+    "method": "CmissionIGC::GetModel",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3422 CmissionIGC::GetBase",
+    "file": "Igc/missionigc.cpp",
+    "line": 3422,
+    "end_line": 3504,
+    "method": "CmissionIGC::GetBase",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3506 CmissionIGC::AddWarp",
+    "file": "Igc/missionigc.cpp",
+    "line": 3506,
+    "end_line": 3509,
+    "method": "CmissionIGC::AddWarp",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3510 CmissionIGC::DeleteWarp",
+    "file": "Igc/missionigc.cpp",
+    "line": 3510,
+    "end_line": 3513,
+    "method": "CmissionIGC::DeleteWarp",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3514 CmissionIGC::GetWarp",
+    "file": "Igc/missionigc.cpp",
+    "line": 3514,
+    "end_line": 3517,
+    "method": "CmissionIGC::GetWarp",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3518 CmissionIGC::GetWarps",
+    "file": "Igc/missionigc.cpp",
+    "line": 3518,
+    "end_line": 3521,
+    "method": "CmissionIGC::GetWarps",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3523 CmissionIGC::AddStation",
+    "file": "Igc/missionigc.cpp",
+    "line": 3523,
+    "end_line": 3526,
+    "method": "CmissionIGC::AddStation",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3527 CmissionIGC::DeleteStation",
+    "file": "Igc/missionigc.cpp",
+    "line": 3527,
+    "end_line": 3530,
+    "method": "CmissionIGC::DeleteStation",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3531 CmissionIGC::GetStation",
+    "file": "Igc/missionigc.cpp",
+    "line": 3531,
+    "end_line": 3534,
+    "method": "CmissionIGC::GetStation",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3535 CmissionIGC::GetStations",
+    "file": "Igc/missionigc.cpp",
+    "line": 3535,
+    "end_line": 3538,
+    "method": "CmissionIGC::GetStations",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3540 CmissionIGC::AddTreasure",
+    "file": "Igc/missionigc.cpp",
+    "line": 3540,
+    "end_line": 3543,
+    "method": "CmissionIGC::AddTreasure",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3544 CmissionIGC::DeleteTreasure",
+    "file": "Igc/missionigc.cpp",
+    "line": 3544,
+    "end_line": 3547,
+    "method": "CmissionIGC::DeleteTreasure",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3548 CmissionIGC::GetTreasure",
+    "file": "Igc/missionigc.cpp",
+    "line": 3548,
+    "end_line": 3551,
+    "method": "CmissionIGC::GetTreasure",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3552 CmissionIGC::GetTreasures",
+    "file": "Igc/missionigc.cpp",
+    "line": 3552,
+    "end_line": 3555,
+    "method": "CmissionIGC::GetTreasures",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3557 CmissionIGC::AddAsteroid",
+    "file": "Igc/missionigc.cpp",
+    "line": 3557,
+    "end_line": 3560,
+    "method": "CmissionIGC::AddAsteroid",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3561 CmissionIGC::DeleteAsteroid",
+    "file": "Igc/missionigc.cpp",
+    "line": 3561,
+    "end_line": 3564,
+    "method": "CmissionIGC::DeleteAsteroid",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3565 CmissionIGC::GetAsteroid",
+    "file": "Igc/missionigc.cpp",
+    "line": 3565,
+    "end_line": 3568,
+    "method": "CmissionIGC::GetAsteroid",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3569 CmissionIGC::GetAsteroids",
+    "file": "Igc/missionigc.cpp",
+    "line": 3569,
+    "end_line": 3572,
+    "method": "CmissionIGC::GetAsteroids",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3574 CmissionIGC::AddProbe",
+    "file": "Igc/missionigc.cpp",
+    "line": 3574,
+    "end_line": 3577,
+    "method": "CmissionIGC::AddProbe",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3578 CmissionIGC::DeleteProbe",
+    "file": "Igc/missionigc.cpp",
+    "line": 3578,
+    "end_line": 3581,
+    "method": "CmissionIGC::DeleteProbe",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3582 CmissionIGC::GetProbe",
+    "file": "Igc/missionigc.cpp",
+    "line": 3582,
+    "end_line": 3585,
+    "method": "CmissionIGC::GetProbe",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3586 CmissionIGC::GetProbes",
+    "file": "Igc/missionigc.cpp",
+    "line": 3586,
+    "end_line": 3589,
+    "method": "CmissionIGC::GetProbes",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3591 CmissionIGC::AddMine",
+    "file": "Igc/missionigc.cpp",
+    "line": 3591,
+    "end_line": 3594,
+    "method": "CmissionIGC::AddMine",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3595 CmissionIGC::DeleteMine",
+    "file": "Igc/missionigc.cpp",
+    "line": 3595,
+    "end_line": 3598,
+    "method": "CmissionIGC::DeleteMine",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3599 CmissionIGC::GetMine",
+    "file": "Igc/missionigc.cpp",
+    "line": 3599,
+    "end_line": 3602,
+    "method": "CmissionIGC::GetMine",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3603 CmissionIGC::GetMines",
+    "file": "Igc/missionigc.cpp",
+    "line": 3603,
+    "end_line": 3606,
+    "method": "CmissionIGC::GetMines",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3608 CmissionIGC::AddSide",
+    "file": "Igc/missionigc.cpp",
+    "line": 3608,
+    "end_line": 3637,
+    "method": "CmissionIGC::AddSide",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3638 CmissionIGC::DeleteSide",
+    "file": "Igc/missionigc.cpp",
+    "line": 3638,
+    "end_line": 3641,
+    "method": "CmissionIGC::DeleteSide",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3642 CmissionIGC::GetSide",
+    "file": "Igc/missionigc.cpp",
+    "line": 3642,
+    "end_line": 3648,
+    "method": "CmissionIGC::GetSide",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3649 CmissionIGC::GetSides",
+    "file": "Igc/missionigc.cpp",
+    "line": 3649,
+    "end_line": 3652,
+    "method": "CmissionIGC::GetSides",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3658 CmissionIGC::GetSeenSides",
+    "file": "Igc/missionigc.cpp",
+    "line": 3658,
+    "end_line": 3681,
+    "method": "CmissionIGC::GetSeenSides",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3683 CmissionIGC::AddCluster",
+    "file": "Igc/missionigc.cpp",
+    "line": 3683,
+    "end_line": 3686,
+    "method": "CmissionIGC::AddCluster",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3687 CmissionIGC::DeleteCluster",
+    "file": "Igc/missionigc.cpp",
+    "line": 3687,
+    "end_line": 3690,
+    "method": "CmissionIGC::DeleteCluster",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3691 CmissionIGC::GetCluster",
+    "file": "Igc/missionigc.cpp",
+    "line": 3691,
+    "end_line": 3694,
+    "method": "CmissionIGC::GetCluster",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3695 CmissionIGC::GetClusters",
+    "file": "Igc/missionigc.cpp",
+    "line": 3695,
+    "end_line": 3698,
+    "method": "CmissionIGC::GetClusters",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3700 CmissionIGC::AddShip",
+    "file": "Igc/missionigc.cpp",
+    "line": 3700,
+    "end_line": 3703,
+    "method": "CmissionIGC::AddShip",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3704 CmissionIGC::DeleteShip",
+    "file": "Igc/missionigc.cpp",
+    "line": 3704,
+    "end_line": 3707,
+    "method": "CmissionIGC::DeleteShip",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3708 CmissionIGC::GetShip",
+    "file": "Igc/missionigc.cpp",
+    "line": 3708,
+    "end_line": 3711,
+    "method": "CmissionIGC::GetShip",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3712 CmissionIGC::GetShips",
+    "file": "Igc/missionigc.cpp",
+    "line": 3712,
+    "end_line": 3715,
+    "method": "CmissionIGC::GetShips",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3717 CmissionIGC::AddBuoy",
+    "file": "Igc/missionigc.cpp",
+    "line": 3717,
+    "end_line": 3720,
+    "method": "CmissionIGC::AddBuoy",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3721 CmissionIGC::DeleteBuoy",
+    "file": "Igc/missionigc.cpp",
+    "line": 3721,
+    "end_line": 3724,
+    "method": "CmissionIGC::DeleteBuoy",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3725 CmissionIGC::GetBuoy",
+    "file": "Igc/missionigc.cpp",
+    "line": 3725,
+    "end_line": 3728,
+    "method": "CmissionIGC::GetBuoy",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3729 CmissionIGC::GetBuoys",
+    "file": "Igc/missionigc.cpp",
+    "line": 3729,
+    "end_line": 3732,
+    "method": "CmissionIGC::GetBuoys",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3734 CmissionIGC::UpdateSides",
+    "file": "Igc/missionigc.cpp",
+    "line": 3734,
+    "end_line": 3793,
+    "method": "CmissionIGC::UpdateSides",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3795 CmissionIGC::UpdateAllies",
+    "file": "Igc/missionigc.cpp",
+    "line": 3795,
+    "end_line": 3803,
+    "method": "CmissionIGC::UpdateAllies",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3804 CmissionIGC::ResetMission",
+    "file": "Igc/missionigc.cpp",
+    "line": 3804,
+    "end_line": 3828,
+    "method": "CmissionIGC::ResetMission",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3830 CmissionIGC::GenerateMission",
+    "file": "Igc/missionigc.cpp",
+    "line": 3830,
+    "end_line": 4123,
+    "method": "CmissionIGC::GenerateMission",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:4125 CmissionIGC::GenerateTreasure",
+    "file": "Igc/missionigc.cpp",
+    "line": 4125,
+    "end_line": 4208,
+    "method": "CmissionIGC::GenerateTreasure",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:4211 CmissionIGC::GetReplayCount",
+    "file": "Igc/missionigc.cpp",
+    "line": 4211,
+    "end_line": 4214,
+    "method": "CmissionIGC::GetReplayCount",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:4217 CmissionIGC::GetContextName",
+    "file": "Igc/missionigc.cpp",
+    "line": 4217,
+    "end_line": 4238,
+    "method": "CmissionIGC::GetContextName",
+    "kind": "method"
+  },
+  {
+    "key": "Igc/missionigc.cpp:5396 CmissionIGC::ExportStaticIGCObjs",
+    "file": "Igc/missionigc.cpp",
+    "line": 5396,
+    "end_line": 5706,
+    "method": "CmissionIGC::ExportStaticIGCObjs",
+    "kind": "method"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:64 InitializeCivList",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 64,
+    "end_line": 77,
+    "method": "InitializeCivList",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/fsmission.cpp:3144 GetExpMult",
+    "file": "FedSrv/fsmission.cpp",
+    "line": 3144,
+    "end_line": 3158,
+    "method": "GetExpMult",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:31 DoDecrypt",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 31,
+    "end_line": 41,
+    "method": "DoDecrypt",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:74 GetStateID",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 74,
+    "end_line": 82,
+    "method": "GetStateID",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:282 SetSessionDetails",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 282,
+    "end_line": 302,
+    "method": "SetSessionDetails",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:1045 SetCharStats",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 1045,
+    "end_line": 1187,
+    "method": "SetCharStats",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:1198 RecordSquadGame",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 1198,
+    "end_line": 1300,
+    "method": "RecordSquadGame",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:1307 GetInvitations",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 1307,
+    "end_line": 1318,
+    "method": "GetInvitations",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2004 GetGroupSectorFlying",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2004,
+    "end_line": 2008,
+    "method": "GetGroupSectorFlying",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2022 ExportObj",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2022,
+    "end_line": 2043,
+    "method": "ExportObj",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2056 SendPlayerInfo",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2056,
+    "end_line": 2140,
+    "method": "SendPlayerInfo",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2220 CreateStockDrone",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2220,
+    "end_line": 2275,
+    "method": "CreateStockDrone",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2277 LeaveShip",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2277,
+    "end_line": 2320,
+    "method": "LeaveShip",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2322 BoardShip",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2322,
+    "end_line": 2477,
+    "method": "BoardShip",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2814 DoCheatCode",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2814,
+    "end_line": 3072,
+    "method": "DoCheatCode",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:3355 ForwardChatMessage",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 3355,
+    "end_line": 3600,
+    "method": "ForwardChatMessage",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4324 CreateTreasure",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4324,
+    "end_line": 4355,
+    "method": "CreateTreasure",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4357 CreateTreasure",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4357,
+    "end_line": 4371,
+    "method": "CreateTreasure",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4374 CreateTreasure",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4374,
+    "end_line": 4396,
+    "method": "CreateTreasure",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4668 DisplaceProbe",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4668,
+    "end_line": 4682,
+    "method": "DisplaceProbe",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:4684 DisplaceProbe",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 4684,
+    "end_line": 4710,
+    "method": "DisplaceProbe",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:7914 DisconnectFromLobby",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 7914,
+    "end_line": 7929,
+    "method": "DisconnectFromLobby",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12589 RefillPart",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12589,
+    "end_line": 12621,
+    "method": "RefillPart",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12637 ErasePart",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12637,
+    "end_line": 12653,
+    "method": "ErasePart",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:13981 PickNewLeader",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 13981,
+    "end_line": 14026,
+    "method": "PickNewLeader",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:64 DoDecrypt",
+    "file": "Igc/missionigc.cpp",
+    "line": 64,
+    "end_line": 74,
+    "method": "DoDecrypt",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:94 LoadIGCFile",
+    "file": "Igc/missionigc.cpp",
+    "line": 94,
+    "end_line": 111,
+    "method": "LoadIGCFile",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:209 AbilitiesListToMask",
+    "file": "Igc/missionigc.cpp",
+    "line": 209,
+    "end_line": 357,
+    "method": "AbilitiesListToMask",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:530 readCSV",
+    "file": "Igc/missionigc.cpp",
+    "line": 530,
+    "end_line": 545,
+    "method": "readCSV",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:2334 LoadIGCFile",
+    "file": "Igc/missionigc.cpp",
+    "line": 2334,
+    "end_line": 2350,
+    "method": "LoadIGCFile",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:2390 LoadIGCStaticCore",
+    "file": "Igc/missionigc.cpp",
+    "line": 2390,
+    "end_line": 2678,
+    "method": "LoadIGCStaticCore",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3016 TerminateStatic",
+    "file": "Igc/missionigc.cpp",
+    "line": 3016,
+    "end_line": 3031,
+    "method": "TerminateStatic",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:3187 ExportList",
+    "file": "Igc/missionigc.cpp",
+    "line": 3187,
+    "end_line": 3217,
+    "method": "ExportList",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:4246 ConstantsDamageComment",
+    "file": "Igc/missionigc.cpp",
+    "line": 4246,
+    "end_line": 4299,
+    "method": "ConstantsDamageComment",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:4302 Obj2Txt",
+    "file": "Igc/missionigc.cpp",
+    "line": 4302,
+    "end_line": 5313,
+    "method": "Obj2Txt",
+    "kind": "helper"
+  },
+  {
+    "key": "Igc/missionigc.cpp:5316 ConstantsGlobalComment",
+    "file": "Igc/missionigc.cpp",
+    "line": 5316,
+    "end_line": 5363,
+    "method": "ConstantsGlobalComment",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:67 GetNextCharacterID",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 67,
+    "end_line": 71,
+    "method": "GetNextCharacterID",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:262 AddNamedValue",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 262,
+    "end_line": 270,
+    "method": "AddNamedValue",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:1998 GetGroupSectorDocked",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 1998,
+    "end_line": 2002,
+    "method": "GetGroupSectorDocked",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2491 CheatCreateDrones",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2491,
+    "end_line": 2592,
+    "method": "CheatCreateDrones",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2649 CheatDPGroups",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2649,
+    "end_line": 2666,
+    "method": "CheatDPGroups",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2679 CheatJPD",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2679,
+    "end_line": 2746,
+    "method": "CheatJPD",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:2749 LogTrapHack",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 2749,
+    "end_line": 2798,
+    "method": "LogTrapHack",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:3093 HandleCOMChatEvents",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 3093,
+    "end_line": 3172,
+    "method": "HandleCOMChatEvents",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:3175 CommandToDrone",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 3175,
+    "end_line": 3325,
+    "method": "CommandToDrone",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:3327 ForwardChatMessageToWing",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 3327,
+    "end_line": 3353,
+    "method": "ForwardChatMessageToWing",
+    "kind": "helper"
+  },
+  {
+    "key": "FedSrv/FedSrv.CPP:12623 MatchPT",
+    "file": "FedSrv/FedSrv.CPP",
+    "line": 12623,
+    "end_line": 12635,
+    "method": "MatchPT",
+    "kind": "helper"
+  }
+]

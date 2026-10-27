@@ -1876,6 +1876,7 @@ public sealed partial class ClientWorld
 
     /// <summary>HUD-12 — the native <c>MissionParams::iLives</c> from
     /// <c>MISSIONDEF(38)</c>, or the unlimited sentinel until it arrives.</summary>
+    public Allegiance.Core.Model.MissionGoals MissionGoals => _mission is { } knownMission ? knownMission.Goals with { } : new();
     public short MissionLives => _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives;
 
     /// <summary>HUD-12 — the LOCAL player's mission kills/deaths, the native
@@ -4955,7 +4956,7 @@ public sealed partial class ClientWorld
             StaticCoreFile = def.SzIGCStaticFile,
             StaticCoreVersion = def.VerIgcCore,
             Cookie = def.DwCookie,
-            GameLengthSeconds = def.GameLengthSeconds,
+            Goals = def.Goals with { },
             ILives = def.ILives,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
@@ -4989,7 +4990,7 @@ public sealed partial class ClientWorld
             StaticCoreFile = _mission?.StaticCoreFile ?? "",
             StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
             Cookie = _mission?.Cookie ?? 0,
-            GameLengthSeconds = _mission?.GameLengthSeconds ?? 0,
+            Goals = _mission is { } knownMission ? knownMission.Goals with { } : new(),
             ILives = _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,

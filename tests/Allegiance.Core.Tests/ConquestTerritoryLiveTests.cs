@@ -58,7 +58,7 @@ public sealed class ConquestTerritoryLiveTests
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "Conquest Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Goals = new() { ConquestPercentage = 65 }, Name = "Conquest Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -70,7 +70,7 @@ public sealed class ConquestTerritoryLiveTests
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "Game A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Goals = new() { ConquestPercentage = 65 }, Name = "Game A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
             new Gm { Name = "Game B", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Gamma", "Delta"] },
         ],
     };
@@ -96,7 +96,6 @@ public sealed class ConquestTerritoryLiveTests
             if (!placedA && ReferenceEquals(mission, server.Missions[0]))
             {
                 short a0 = mission.Sides[0].Id, a1 = mission.Sides[1].Id;
-                mission.ConquestEnabled = true;            // P191: conquest only on mission A
                 mission.PlaceStation(FlagStation(core, sector.Id, a0, 8011, new Vector3(0, 0, -3000)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, a0, 8098, new Vector3(0, 0, -9000)), sector);
                 mission.PlaceStation(FlagStation(core, sector.Id, a1, 8899, new Vector3(0, 0, -1000)), sector);
@@ -257,7 +256,7 @@ public sealed class ConquestTerritoryLiveTests
 
     private sealed record Spec(bool Boardable, Vector3 Pos);
 
-    private static Seated Seat(params Spec[] specs)
+    private static Seated Seat(MissionGoals goals, params Spec[] specs)
     {
         var seat = new Seated();
         var core = Core();
@@ -274,7 +273,6 @@ public sealed class ConquestTerritoryLiveTests
             {
                 seat.SideA = mission.Sides[0].Id;
                 seat.SideB = mission.Sides[1].Id;
-                mission.ConquestEnabled = true;         // P191: opt the conquest win condition in
                 // 2 side-A + 1 side-B Flag stations in this sector. With the real
                 // map's #1051(side0)+#1052(side1) also Flag, totals = A:3, B:2 (60/40).
                 var stA1 = FlagStation(core, sector.Id, seat.SideA, 7911, new Vector3(0, 0, -3000));
@@ -297,7 +295,9 @@ public sealed class ConquestTerritoryLiveTests
             placed++;
             return (ship, sector);
         };
-        seat.Server.Boot(Config());
+        var config = Config();
+        config.Games[0].Goals = goals;
+        seat.Server.Boot(config);
         foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass ready-up
         var port = seat.Server.BoundPort;
 
@@ -346,18 +346,16 @@ public sealed class ConquestTerritoryLiveTests
     public void Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over()
     {
         Require.Artwork();
-        using var seat = Seat(new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
+        using var seat = Seat(new() { ConquestPercentage = 65 }, new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
         var capturer = seat.Ships[0];      // slot 0 = side A, boardable
         var target = seat.Target;          // the side-B Flag station
         var mission = seat.Server.Missions[0];
 
         foreach (var b in seat.Bots) { b.ResetGameStates(); b.ResetGameOvers(); b.ResetStationCaptures(); }
 
-        // Pre-capture: no station event has fired yet, so the recompute has never
-        // run and every side's ConquestPercent is its default 0 (native likewise
-        // only recomputes inside the capture/kill handler — fsmission.cpp:3568 —
-        // never at mission start). No premature win.
-        Assert.Equal((byte)0, mission.Sides[0].ConquestPercent);
+        // Native starts each side at 100/nTeams (missionigc.cpp:3859-3896),
+        // then station events recompute actual ownership. No premature win.
+        Assert.Equal((byte)50, mission.Sides[0].ConquestPercent);
         Assert.Equal(MissionStage.Started, mission.Stage);
 
         // Fly the boardable capturer into the target's dock radius — the next
@@ -399,6 +397,30 @@ public sealed class ConquestTerritoryLiveTests
                           $"GAME_OVER(62) winner={seat.SideA}, stage Over");
     }
 
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Configured_territory_goal_wins_on_a_real_station_capture()
+    {
+        Require.Artwork();
+        // 13 sectors: native rounded threshold is (50 + 13*15)/100 = 2.
+        // Each side initially owns one home sector. The injected contested
+        // sector becomes our second territory only after the real capture.
+        using var seat = Seat(new() { TerritoryPercentage = 15 },
+            new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
+        var mission = seat.Server.Missions[0];
+        Assert.False(mission.ConquestEnabled);
+        Assert.Equal((short)15, mission.Goals.TerritoryPercentage);
+        Assert.Equal((byte)1, mission.Sides[0].TerritoryCount);
+        DropShield(seat.Target);
+        seat.Ships[0].Position = AtTarget;
+        Assert.True(PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over, 9000) < 9000);
+        Assert.Equal((byte)2, mission.Sides[0].TerritoryCount);
+        Assert.Equal(seat.SideA, seat.Target.SideId);
+        PumpUntil(seat.Server, () => AllGameOvers(seat).Length > 0, 4000);
+        Assert.All(AllGameOvers(seat), result => Assert.Equal(seat.SideA, result.SideWinner));
+        Assert.NotEmpty(AllGameOvers(seat));
+    }
+
     /// <summary>⭐ Regression: with <c>ConquestEnabled</c>/<c>TerritoryEnabled</c>
     /// both false (the default), a real capture produces NO GAME_STATE broadcast,
     /// NO GAME_OVER, and the mission stays Started — existing missions are
@@ -408,10 +430,8 @@ public sealed class ConquestTerritoryLiveTests
     public void Flags_disabled_capture_broadcasts_nothing_and_does_not_end()
     {
         Require.Artwork();
-        // Reuse the Seat harness but disable the flags on the mission it created.
-        using var seat = Seat(new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
-        seat.Server.Missions[0].ConquestEnabled = false;
-        seat.Server.Missions[0].TerritoryEnabled = false;
+        // Select the default disabled goals through configuration before boot.
+        using var seat = Seat(new(), new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
         var capturer = seat.Ships[0];
         var mission = seat.Server.Missions[0];
 

@@ -71,6 +71,8 @@ public class MissionDefJoinedMissionWireTests
         // dwCookie at 460
         Assert.Equal(new byte[] { 0xEF, 0xBE, 0xAD, 0xDE }, b.Skip(460).Take(4).ToArray());
 
+        Assert.Equal(new byte[] { 100, 0, 100, 0 }, b.Skip(186).Take(4).ToArray());
+
         // Everything except the populated cells and the header must be zero
         // (proves we did not scribble a stray offset from hand-composed maths).
         for (int i = 4; i < b.Length; i++)
@@ -78,6 +80,7 @@ public class MissionDefJoinedMissionWireTests
             bool isPopulated =
                 (i >= 69 && i < 82) ||     // szIGCStaticFile
                 (i >= 124 && i < 128) ||   // verIGCcore
+                (i >= 186 && i < 190) ||   // territory disabled + unused artifact percentage (native Reset 100)
                 (i >= 208 && i < 210) ||   // HUD-12 iLives (default unlimited 0x7fff)
                 (i >= 460 && i < 464);     // dwCookie
             if (!isPopulated)

@@ -65,12 +65,12 @@ public sealed class P806LobbyGameParamsTests
         Assert.False(defaults.InProgress);
 
         // The P191/P302/P303 mission flags map one-to-one onto the native goals.
-        m.ConquestEnabled = true;
-        m.KillsEnabled = true;
-        m.ProsperityEnabled = true;
-        m.ArtifactEnabled = true;
-        m.FlagsEnabled = true;
-        m.TerritoryEnabled = true;
+        m.Goals.ConquestPercentage = 65;
+        m.Goals.TeamKills = 1;
+        m.Goals.TeamMoney = 1;
+        m.Goals.Artifacts = 1;
+        m.Goals.Flags = 1;
+        m.Goals.TerritoryPercentage = 50;
         m.CountdownDuration = 600;
         m.Lives = 4;
         m.AllowDevelopments = false;

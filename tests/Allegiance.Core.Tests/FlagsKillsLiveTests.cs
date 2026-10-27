@@ -38,7 +38,7 @@ public sealed class FlagsKillsLiveTests
     private static readonly Vector3 StationSpot = new(0f, 0f, -950f);   // at the friendly station (dock radius)
     private static readonly Vector3 Outside = new(0f, 850f, 920f);      // well outside DockRadius
 
-    private static Cfg Config(int ups = 20) => new()
+    private static Cfg Config(int ups = 20, MissionGoals? goals = null) => new()
     {
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
@@ -46,7 +46,7 @@ public sealed class FlagsKillsLiveTests
         UpdatesPerSecond = ups,
         Games =
         [
-            new Gm { Name = "Flags/Kills Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Goals = goals ?? new(), Name = "Flags/Kills Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -89,7 +89,7 @@ public sealed class FlagsKillsLiveTests
         public void Dispose() { Bot?.Dispose(); Server?.Dispose(); }
     }
 
-    private static FlagHarness SeatFlagCarrier()
+    private static FlagHarness SeatFlagCarrier(MissionGoals? goals = null)
     {
         var h = new FlagHarness();
         short own = 0, enemy = 0;
@@ -112,7 +112,7 @@ public sealed class FlagsKillsLiveTests
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
-        h.Server.Boot(Config());
+        h.Server.Boot(Config(goals: goals));
         foreach (var __m in h.Server.Missions) __m.Stage = MissionStage.Started;
         var port = h.Server.BoundPort;
         h.Bot = new FltBot();
@@ -138,10 +138,9 @@ public sealed class FlagsKillsLiveTests
     public void Securing_enemy_flag_to_the_goal_wins_the_game_for_that_side()
     {
         Require.Artwork();
-        using var h = SeatFlagCarrier();
+        using var h = SeatFlagCarrier(new() { Flags = 1 });
         var mission = h.Server.Missions[0];
-        mission.FlagsEnabled = true;
-        mission.FlagsWinGoal = 1;
+        Assert.Equal((short)1, mission.Goals.Flags);
 
         // The own base (where the carrier secures) is the injected CapLand home,
         // which lives in Sectors[0] alongside the spawned carrier.
@@ -193,8 +192,7 @@ public sealed class FlagsKillsLiveTests
         Require.Artwork();
         using var h = SeatFlagCarrier();
         var mission = h.Server.Missions[0];
-        mission.FlagsEnabled = false;             // the default
-        mission.FlagsWinGoal = 1;
+        mission.Goals.Flags = 0;
 
         // Direct possession (the P201 secure-test shape): carry the enemy flag
         // into the own station.
@@ -233,11 +231,11 @@ public sealed class FlagsKillsLiveTests
         public void Dispose() { Bot?.Dispose(); Server?.Dispose(); }
     }
 
-    private static KillHarness SeatKiller()
+    private static KillHarness SeatKiller(MissionGoals? goals = null)
     {
         var h = new KillHarness();
         h.Server = new Srv();
-        h.Server.Boot(Config());
+        h.Server.Boot(Config(goals: goals));
         foreach (var __m in h.Server.Missions) __m.Stage = MissionStage.Started;
         h.Mission = h.Server.Missions[0];
         var port = h.Server.BoundPort;
@@ -277,9 +275,8 @@ public sealed class FlagsKillsLiveTests
     public void Scoring_kill_to_the_team_goal_wins_the_game_for_that_side()
     {
         Require.Artwork();
-        using var h = SeatKiller();
-        h.Mission.KillsEnabled = true;
-        h.Mission.KillsWinGoal = 1;
+        using var h = SeatKiller(new() { TeamKills = 1 });
+        Assert.Equal((short)1, h.Mission.Goals.TeamKills);
 
         var victim = SpawnEnemyVictim(h);
         h.Bot.ResetGameOvers();
@@ -311,8 +308,7 @@ public sealed class FlagsKillsLiveTests
     {
         Require.Artwork();
         using var h = SeatKiller();
-        h.Mission.KillsEnabled = false;             // the default
-        h.Mission.KillsWinGoal = 1;
+        h.Mission.Goals.TeamKills = 0;
 
         var victim = SpawnEnemyVictim(h);
         h.Bot.ResetGameOvers();

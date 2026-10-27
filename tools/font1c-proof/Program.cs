@@ -63,7 +63,7 @@ var mission = server.Missions[0];
 // badge only in a deathmatch (console.cpp:812-821); configure a finite mission
 // so both are real MISSIONDEF/MISSIONBRIEFING values on the wire.
 mission.Lives = 5;
-mission.KillsEnabled = true;
+mission.Goals.TeamKills = 1;
 mission.Stage = MissionStage.Started;
 using var stop = new CancellationTokenSource();
 // Pause switch for injected HUD states: the per-tick own-ship status would

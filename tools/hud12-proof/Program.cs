@@ -45,8 +45,7 @@ var mission = server.Missions[0];
 // lives badge (shown only while remaining < 10) is exercised, and deathmatch
 // kills (IsDeathMatchGame) so the kills badge is shown.
 mission.Lives = 5;
-mission.KillsEnabled = true;
-mission.KillsWinGoal = 50;
+mission.Goals.TeamKills = 50;
 mission.Stage = MissionStage.Started;
 using var stop = new CancellationTokenSource();
 var ticker = new Thread(() => { while (!stop.IsCancellationRequested) { server.TickSim(); Thread.Sleep(5); } });

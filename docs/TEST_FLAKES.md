@@ -4,6 +4,30 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P832a verification observations (2026-10-26)
+
+- The one Fast-tier sweep retained five `PlayerBundlePathsTests` failures caused
+  by worktree-local TMPDIR exposing the real checkout's `local.env`. All nine
+  cases passed **3/3 isolated invocations (27/27 cases)** through an open-directory
+  `/proc` alias to the same NVMe scratch, with assertions unchanged. This repeats
+  the documented environment-context issue; it is not a load flake.
+- `P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts`
+  timed out waiting for the second match's fresh finale in the expanded
+  diagnostic. The unchanged dispatch base `62a5b50f` reproduces that same timeout in
+  **3/3 isolated invocations** of the `port, pipeline=false` case. The fixture's
+  240-second fresh-finale wait is shorter than the existing 300-second default
+  rearm grace, and its two bombers do not establish fresh enemy-base discovery.
+  ShowMap reveals warps, not enemy bases. This is a baseline fixture/behavior
+  mismatch, not evidence of a P832a regression or a timing flake. No strategy,
+  rearm setting, assertion, wait budget or quarantine was changed. Exact counts
+  and original failed-run logs are retained in the
+  [P832a report](reports/P832A_GAME_GOALS.md).
+
+P832a's final-source P700 parking cohort passed **5/5**, matching unchanged
+base **5/5** on the idle host, with sequential alternating revisions. Maximum
+observed stopped-with-target intervals were 2.004 s final and 2.012 s base.
+The five-second assertion and scouting/arrival window were unchanged.
+
 ## P828 verification observation (2026-10-25) — P699HumanPodHomeLiveTests on the dispatch base
 
 `P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn`

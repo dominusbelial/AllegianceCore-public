@@ -21,7 +21,8 @@ public sealed class MissionInfo
     public uint Cookie { get; init; }
 
     /// <summary>Native dtGameLength; zero means no timed-game countdown.</summary>
-    public float GameLengthSeconds { get; init; }
+    public Allegiance.Core.Model.MissionGoals Goals { get; init; } = new();
+    public float GameLengthSeconds { get => Goals.GameLengthSeconds; init => Goals.GameLengthSeconds = value; }
 
     /// <summary>HUD-12 — native <c>MissionParams::iLives</c>
     /// (<c>src/Igc/igc.h:1185</c>; unlimited = 0x7fff). The lives badge shows

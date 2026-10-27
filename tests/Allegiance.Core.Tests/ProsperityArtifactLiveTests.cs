@@ -40,7 +40,7 @@ public sealed class ProsperityArtifactLiveTests
     private static readonly Vector3 StationSpot = new(0f, 0f, -950f);   // at the friendly station (dock radius)
     private static readonly Vector3 Outside = new(0f, 850f, 920f);      // well outside DockRadius
 
-    private static Cfg Config(int ups = 20) => new()
+    private static Cfg Config(int ups = 20, MissionGoals? goals = null) => new()
     {
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
@@ -48,7 +48,7 @@ public sealed class ProsperityArtifactLiveTests
         UpdatesPerSecond = ups,
         Games =
         [
-            new Gm { Name = "Prosperity/Artifact Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Goals = goals ?? new(), Name = "Prosperity/Artifact Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -91,11 +91,11 @@ public sealed class ProsperityArtifactLiveTests
     {
         Require.Artwork();
         using var server = new Srv();
-        server.Boot(Config(ups: 2));
+        server.Boot(Config(ups: 2, goals: new() { TeamMoney = 2 }));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
 
         var mission = server.Missions[0];
-        mission.ProsperityEnabled = true;
+        Assert.Equal(2, mission.Goals.TeamMoney);
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "rich");
@@ -149,7 +149,7 @@ public sealed class ProsperityArtifactLiveTests
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
 
         var mission = server.Missions[0];
-        mission.ProsperityEnabled = false;              // the default
+        mission.Goals.TeamMoney = 0;              // the default
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "modest");
@@ -199,7 +199,7 @@ public sealed class ProsperityArtifactLiveTests
         public void Dispose() { Bot?.Dispose(); Server?.Dispose(); }
     }
 
-    private static ArtifactHarness SeatArtifactCarrier()
+    private static ArtifactHarness SeatArtifactCarrier(MissionGoals? goals = null)
     {
         var h = new ArtifactHarness();
         short own = 0, enemy = 0;
@@ -224,7 +224,7 @@ public sealed class ProsperityArtifactLiveTests
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
-        h.Server.Boot(Config());
+        h.Server.Boot(Config(goals: goals));
         foreach (var __m in h.Server.Missions) __m.Stage = MissionStage.Started;
         var port = h.Server.BoundPort;
         h.Bot = new FltBot();
@@ -251,10 +251,9 @@ public sealed class ProsperityArtifactLiveTests
     public void Possessing_and_returning_an_artifact_wins_the_game_for_that_side()
     {
         Require.Artwork();
-        using var h = SeatArtifactCarrier();
+        using var h = SeatArtifactCarrier(new() { Artifacts = 1 });
         var mission = h.Server.Missions[0];
-        mission.ArtifactEnabled = true;
-        mission.ArtifactWinGoal = 1;
+        Assert.Equal((short)1, mission.Goals.Artifacts);
 
         // The own base (where the carrier secures) is the injected CapLand home,
         // which lives in Sectors[0] alongside the spawned carrier.
@@ -306,8 +305,7 @@ public sealed class ProsperityArtifactLiveTests
         Require.Artwork();
         using var h = SeatArtifactCarrier();
         var mission = h.Server.Missions[0];
-        mission.ArtifactEnabled = false;             // the default
-        mission.ArtifactWinGoal = 1;
+        mission.Goals.Artifacts = 0;
 
         // Direct possession (the P201 secure-test shape): carry the neutral
         // artifact sentinel into the own station.

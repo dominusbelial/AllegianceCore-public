@@ -52,6 +52,14 @@ list in **reverse**.
   `src/Allegiance.Core/Model/Mission.cs` (`Mission.Assemble`),
   `src/Allegiance.Core/Model/Sector.cs`, `src/Allegiance.Core/Model/Side.cs`,
   `src/Allegiance.Core/Sim/Ship.cs`. *Native:* `igc.h`, `missionigc.cpp`.
+- **Mission goals (P832a)** — native numeric MissionParams goal fields and
+  predicates in `src/Allegiance.Core/Model/MissionGoals.cs`; per-game
+  `games[].goals` resolves in `src/Allegiance.Server/ServerConfig.cs` and flows
+  through assembly, `src/Allegiance.Core/Wire/MissionDef.cs`, lobby metadata and
+  shared briefing text. `src/Allegiance.Core/Model/Mission.GoalObjects.cs`
+  creates native initial flag pedestals/flags and neutral artifacts. Absent goals
+  preserve the port's countdown/finale policy; `NativeDefaults()` explicitly
+  selects native Reset's 100% conquest. Report: `docs/reports/P832A_GAME_GOALS.md`.
 - **Static core** — the parsed `PCore001.igc` asset: civilizations, hulls,
   parts, stations, asteroids, float constants. Key:
   `src/Allegiance.Core/Model/StaticCore.cs`,
@@ -422,6 +430,12 @@ list in **reverse**.
 - **`docs/parity/parity-matrix.csv`** — the master native-behaviour parity
   matrix (rows closed with `done` / `done-visual` / `n/a` per the lane rules).
 - **`docs/parity/sim-rules-matrix.csv`** — sim-rule equivalence rows.
+- **Rule reachability (P832a)** — every sim row is `production`, `config-only`
+  (experimental opt-in), or `test-only` (including missing executable paths).
+  `scripts/parity-scorecard.py` credits completed production rows only, retaining
+  other eligible rows in the denominator. The **FedSrv mission rules
+  (event-driven)** family inventories full native mission/handler bodies;
+  `tools/p832a-mission-rules-audit.py` reconciles their source inventory.
 - **`docs/parity/fedmsg-wiring.csv`** — wire-message wiring audit.
 - **`docs/parity/p650-core-constants.csv`** — native float/constant tuning.
 - Wave reports: `docs/reports/P664_PARITY_WAVE3.md` … `P7xx_PARITY_WAVE*.md`.

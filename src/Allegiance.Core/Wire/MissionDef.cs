@@ -103,9 +103,11 @@ public sealed class MissionDef : IFedMessage
     /// <summary><c>MISSIONDEF.stage</c> (enum STAGE, int) — not read by the join flow, zeroed.</summary>
     public int Stage;
 
+    /// <summary>Numeric native goal parameters (Igc/igc.h:1158-1179).</summary>
+    public Allegiance.Core.Model.MissionGoals Goals = new();
     /// <summary>MissionParams.dtGameLength, seconds; zero disables the timed game
-    /// (igc.h:1162,1526-1529,1557-1560).</summary>
-    public float GameLengthSeconds;
+    /// (Igc/igc.h:1162,1526-1529,1557-1560).</summary>
+    public float GameLengthSeconds { get => Goals.GameLengthSeconds; set => Goals.GameLengthSeconds = value; }
 
     /// <summary>MissionParams.timeStart, server-clock milliseconds (igc.h:1169).
     /// Also replaced by SET_START_TIME (clintlib/appmsg.cpp:2702-2711).</summary>
@@ -165,10 +167,12 @@ public sealed class MissionDef : IFedMessage
         // ... see placement comments; Advance arithmetic is validated at the end.
         // After szIGCStaticFile (offset 65+13=78), szCustomMapFile[13] and
         // strGamePassword[17] fill 78..107, then the 37 bool:1 bitfields pack
-        // 108..112 (6 bytes), KBlevel short 114, fGoalTeamMoney float 116
-        // (4-aligned), verIGCcore int at 124. All untouched by this codec
-        // (zeros) except verIGCcore; so we Advance from 78 to 124 directly and
-        // set the version.
+        // params 108..112 (five bytes), KBlevel short at 114, fGoalTeamMoney
+        // float at 116, verIGCcore int at 120 (absolute 124). Populate the
+        // money multiplier and version below; the other cells remain zero.
+        // Native MissionParams.fGoalTeamMoney at 116 (Igc/igc.h:1158).
+        w.Advance(MisparmsOffset + 116 - w.Position);
+        w.WriteI32(BitConverter.SingleToInt32Bits(Goals.TeamMoney));
         w.Advance(VerIgcCoreOffset - w.Position);   // 78 -> 124 (gap: custom map + password + bitfields + money etc.)
         w.WriteI32(VerIgcCore);                     // verIGCcore (int) at 124
         w.Advance(GameLengthOffset - w.Position);
@@ -180,6 +184,13 @@ public sealed class MissionDef : IFedMessage
         w.Advance(RgCivIdOffset - w.Position);      // 160 -> 172
         for (int i = 0; i < 6; i++)                 // rgCivID[c_cSidesMax] = short[6]
             w.WriteI16(i < RgCivId.Length ? RgCivId[i] : (short)0);
+        // Native shorts following rgCivID[6] (Igc/igc.h:1174-1179).
+        w.WriteI16(Goals.ConquestPercentage);   // params +180
+        w.WriteI16(Goals.TerritoryPercentage);  // +182; 100 disables
+        w.WriteI16(100);                       // +184 unused artifacts percentage, Reset default
+        w.WriteI16(Goals.Flags);               // +186
+        w.WriteI16(Goals.Artifacts);           // +188
+        w.WriteI16(Goals.TeamKills);           // +190
         // HUD-12 — iLives (short) at absolute 208 (params offset 204), the native
         // MissionParams slot the lives badge reads (console.cpp:812-817).
         w.Advance(LivesOffset - w.Position);        // 184 -> 208
@@ -255,7 +266,16 @@ public sealed class MissionDef : IFedMessage
             DwCookie = cookie,
             ISideMissionOwner = owner,
             Stage = stage,
-            GameLengthSeconds = BitConverter.ToSingle(buf.Slice(GameLengthOffset)),
+            Goals = new()
+            {
+                TeamMoney = BitConverter.ToSingle(buf.Slice(MisparmsOffset + 116)),
+                GameLengthSeconds = BitConverter.ToSingle(buf.Slice(GameLengthOffset)),
+                ConquestPercentage = BitConverter.ToInt16(buf.Slice(MisparmsOffset + 180)),
+                TerritoryPercentage = BitConverter.ToInt16(buf.Slice(MisparmsOffset + 182)),
+                Flags = BitConverter.ToInt16(buf.Slice(MisparmsOffset + 186)),
+                Artifacts = BitConverter.ToInt16(buf.Slice(MisparmsOffset + 188)),
+                TeamKills = BitConverter.ToInt16(buf.Slice(MisparmsOffset + 190)),
+            },
             TimeStart = BitConverter.ToUInt32(buf.Slice(TimeStartOffset)),
             ILives = BitConverter.ToInt16(buf.Slice(LivesOffset)),
             NTems = nTems,

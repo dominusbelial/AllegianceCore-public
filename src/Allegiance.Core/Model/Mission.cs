@@ -313,88 +313,18 @@ public sealed partial class Mission : IMissionIgc
     /// </summary>
     public bool AllowEmptyTeams { get; set; }
 
-    /// <summary>
-    /// P191 — Stage-1 flag enabling the <b>conquest</b> win condition for this
-    /// mission: on every station capture/kill the mission recomputes each side's
-    /// <see cref="Side.ConquestPercent"/> from its share of <c>Flag</c>-capable
-    /// stations and declares a winner when one side crosses
-    /// <see cref="ConquestWinThreshold"/>. Defaults <c>false</c>, so existing
-    /// missions/tests are unaffected unless explicitly opted in. This is a
-    /// <b>stated Stage-1 substitute</b> for the still-missing native
-    /// <c>MissionParams::IsConquestGame()</c> field (this port parses no
-    /// mission parameters) — not a recovered value; the native
-    /// <c>iGoalConquestPercentage</c> is likewise unrecoverable, so the win
-    /// threshold uses the stated default <see cref="ConquestWinThreshold"/>.</summary>
-    public bool ConquestEnabled { get; set; }
-
-    /// <summary>
-    /// P191 — Stage-1 flag enabling the <b>territory</b> win condition for this
-    /// mission: on every station capture/kill the mission recomputes each side's
-    /// <see cref="Side.TerritoryCount"/> under the strict unanimous-ownership
-    /// rule and declares a winner when a side owns at least
-    /// <see cref="TerritoryWinThresholdPercent"/> of the clusters. Defaults
-    /// <c>false</c>. This is a <b>stated Stage-1 substitute</b> for the missing
-    /// native <c>MissionParams::IsTerritoryGame()</c> (see
-    /// <see cref="ConquestEnabled"/>); <c>iGoalTerritoryPercentage</c> likewise
-    /// uses the stated default <see cref="TerritoryWinThresholdPercent"/>.</summary>
-    public bool TerritoryEnabled { get; set; }
-
-    /// <summary>
-    /// P302 — flag enabling the <b>prosperity</b> win condition for this
-    /// mission. In native the prosperity win is realised as a special
-    /// economic <b>development</b>: on entering the game each side is handed a
-    /// bucket wrapping the <c>c_didTeamMoney</c> (<see cref="TeamMoneyDevelopmentId"/>=1)
-    /// development priced at <c>fGoalTeamMoney × WinTheGameMoney</c>
-    /// (<c>missionigc.h:770-794</c>), and completing it ends the game for that
-    /// side (<c>FedSrv.CPP:11274-11279</c>, "…has proven the economic value of
-    /// their outpost."). Defaults <c>false</c>, so existing missions/tests are
-    /// unaffected unless explicitly opted in — the same stated Stage-1
-    /// substitute shape P191 established for <see cref="ConquestEnabled"/> /
-    /// <see cref="TerritoryEnabled"/> (this port parses no win-mode mission
-    /// parameters; see <see cref="ConquestEnabled"/>'s rationale).</summary>
-    public bool ProsperityEnabled { get; set; }
-
-    /// <summary>
-    /// P302 — flag enabling the <b>artifact</b> win condition for this mission:
-    /// a side wins once it has secured at least <see cref="ArtifactWinGoal"/>
-    /// neutral artifacts (<see cref="Side.Artifacts"/>) — the port of the
-    /// artifact leg of native <c>CFSMission::CheckForVictoryByFlags</c>
-    /// (<c>fsmission.cpp:3888-3894</c>: <c>psideTest-&gt;GetArtifacts() &gt;=
-    /// nGoalArtifactsCount</c>, reached when a secured treasure carries the
-    /// <see cref="Side.ArtifactSentinelFlag"/> value). Defaults <c>false</c>,
-    /// same stated-Stage-1-substitute shape as <see cref="ProsperityEnabled"/>;
-    /// the goal threshold is the native <c>nGoalArtifactsCount</c> (no win-mode
-    /// params parsed here, so <see cref="ArtifactWinGoal"/> defaults to the
-    /// caller's chosen value).</summary>
-    public bool ArtifactEnabled { get; set; }
-
-    /// <summary>
-    /// P302 — the artifact win goal (<c>nGoalArtifactsCount</c>, igc.h:1178): the
-    /// number of neutral artifacts a side must secure to win an
-    /// <see cref="ArtifactEnabled"/> game (<c>fsmission.cpp:3890</c>).
-    /// Consulted only when <see cref="ArtifactEnabled"/> is true.</summary>
-    public short ArtifactWinGoal { get; set; }
-
-    /// <summary>
-    /// P303 — flag enabling the <b>flags</b> win condition for this mission: a
-    /// side wins once it has secured at least <see cref="FlagsWinGoal"/> enemy
-    /// flags (<see cref="Side.Flags"/>) — the port of the flag leg of native
-    /// <c>CFSMission::CheckForVictoryByFlags</c> (<c>fsmission.cpp:3883-3887</c>:
-    /// <c>psideTest-&gt;GetFlags() &gt;= nGoalFlagsCount</c>, reached when a
-    /// ship docks a captured enemy flag at its own side's station,
-    /// <c>FedSrv.CPP:13136,13149</c>). Defaults <c>false</c>, same
-    /// stated-Stage-1-substitute shape as <see cref="ProsperityEnabled"/>;
-    /// the goal threshold is the native <c>nGoalFlagsCount</c> (no win-mode
-    /// params parsed here, so <see cref="FlagsWinGoal"/> defaults to the
-    /// caller's chosen value).</summary>
-    public bool FlagsEnabled { get; set; }
-
-    /// <summary>
-    /// P303 — the flags win goal (<c>nGoalFlagsCount</c>, igc.h:1310): the
-    /// number of enemy flags a side must secure to win a
-    /// <see cref="FlagsEnabled"/> game (<c>fsmission.cpp:3883</c>). Consulted
-    /// only when <see cref="FlagsEnabled"/> is true.</summary>
-    public short FlagsWinGoal { get; set; }
+    /// <summary>Authoritative native goal parameters; selection and thresholds
+    /// share one source (Igc/igc.h:1511-1554).</summary>
+    public MissionGoals Goals { get; set; } = new();
+    public bool ConquestEnabled => Goals.IsConquestGame;
+    public bool TerritoryEnabled => Goals.IsTerritoryGame;
+    public bool ProsperityEnabled => Goals.IsProsperityGame;
+    public bool ArtifactEnabled => Goals.IsArtifactsGame;
+    public bool FlagsEnabled => Goals.IsFlagsGame;
+    public bool KillsEnabled => Goals.IsDeathMatchGame;
+    public short ArtifactWinGoal => Goals.Artifacts;
+    public short FlagsWinGoal => Goals.Flags;
+    public short KillsWinGoal => Goals.TeamKills;
 
     /// <summary>
     /// HUD-12 — the native <c>MissionParams::iLives</c> per-player life budget
@@ -409,27 +339,6 @@ public sealed partial class Mission : IMissionIgc
     public short Lives { get; set; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
 
     /// <summary>
-    /// P303 — flag enabling the <b>kills</b> (deathmatch) win condition for this
-    /// mission: a side wins once it has scored at least
-    /// <see cref="KillsWinGoal"/> kills (<see cref="Side.Kills"/>) — the port of
-    /// native <c>CFSMission::CheckForVictoryByKills</c>
-    /// (<c>fsmission.cpp:3749-3760</c>: <c>psideTest-&gt;GetKills() &gt;=
-    /// nGoalTeamKills</c>, reached when a side earns a credited kill,
-    /// <c>FedSrv.CPP:11868-11880</c>). This is the real everyday deathmatch
-    /// trigger (native <c>IsDeathMatchGame()</c> ⇔ <c>nGoalTeamKills != 0</c>,
-    /// igc.h:1521-1523); it is distinct from the countdown-expiry tie-break
-    /// fallback (<c>fsmission.cpp:2468-2492</c>), which is not built here.
-    /// Defaults <c>false</c>, same shape as <see cref="FlagsEnabled"/>.</summary>
-    public bool KillsEnabled { get; set; }
-
-    /// <summary>
-    /// P303 — the kills win goal (<c>nGoalTeamKills</c>, igc.h:1292): the number
-    /// of team kills a side must score to win a <see cref="KillsEnabled"/>
-    /// deathmatch game (<c>fsmission.cpp:3756</c>). Consulted only when
-    /// <see cref="KillsEnabled"/> is true.</summary>
-    public short KillsWinGoal { get; set; }
-
-    /// <summary>
     /// P302 — the native <c>c_didTeamMoney</c> development id (<c>src/Igc/igc.h:512</c>):
     /// the special economic-victory development whose completion ends a
     /// <see cref="ProsperityEnabled"/> game (<c>FedSrv.CPP:11274-11279</c>;
@@ -437,25 +346,10 @@ public sealed partial class Mission : IMissionIgc
     /// <c>developmentigc.cpp:32-47</c>).</summary>
     public const short TeamMoneyDevelopmentId = 1;   // c_didTeamMoney (igc.h:512)
 
-    /// <summary>
-    /// P191 — the stated Stage-1 default for the native conquest win threshold
-    /// <c>pmp-&gt;iGoalConquestPercentage</c> (unknown — lives in the missing
-    /// MissionParams; the brief directs a stated default, same pattern as
-    /// P188's countdown-length default). A side wins the conquest game once its
-    /// <see cref="Side.ConquestPercent"/> reaches this value
-    /// (<c>fsmission.cpp:3615-3618</c>: <c>conquest &gt;= iGoalConquestPercentage</c>).
-    /// 65% of <c>Flag</c>-capable stations.</summary>
-    public const byte ConquestWinThreshold = 65;
-
-    /// <summary>
-    /// P191 — the stated Stage-1 default for the native territory win threshold
-    /// <c>pmp-&gt;iGoalTerritoryPercentage</c> (unknown — MissionParams).
-    /// Combined into the native formula <c>nThreshold =
-    /// (50 + nClusters·iGoalTerritoryPercentage) / 100</c>
-    /// (<c>fsmission.cpp:3664-3666</c>), so with 50% the threshold for an
-    /// n-cluster game is <c>(50 + 50n)/100</c> — i.e. ownership of just over
-    /// half the clusters.</summary>
-    public const byte TerritoryWinThresholdPercent = 50;
+    /// <summary>Configured native conquest threshold (FedSrv/fsmission.cpp:3624).</summary>
+    public short ConquestWinThreshold => Goals.ConquestPercentage;
+    /// <summary>Configured native territory threshold (FedSrv/fsmission.cpp:3663).</summary>
+    public short TerritoryWinThresholdPercent => Goals.TerritoryPercentage;
 
     /// <summary>
     /// The chunk-size upper bound, faithful to <c>c_fTimeIncrement = 0.25f</c>
@@ -502,8 +396,9 @@ public sealed partial class Mission : IMissionIgc
     /// machinery does not exist there (sideigc.cpp has no such functions), and the
     /// original source bearing the real default could not be retrieved. The value is
     /// therefore a <b>stated default</b>, following this repo's established
-    /// honesty-about-unrecoverable-native-values convention (cf.
-    /// <see cref="ConquestWinThreshold"/>). Because the cross-cluster distance
+    /// honesty-about-unrecoverable-native-values convention. This strategic
+    /// visibility fallback is separate from the recovered goal parameters.
+    /// Because the cross-cluster distance
     /// proxy measures the strategic-map screen space (normalized coordinates,
     /// <see cref="DataClusterIGC.ScreenX"/>/<see cref="DataClusterIGC.ScreenY"/>,
     /// ~0..1), the default is expressed in that space: 0.5 reveals an owned
@@ -636,7 +531,8 @@ public sealed partial class Mission : IMissionIgc
         IReadOnlyList<SideSpec> sides,
         IIgcSite site,
         double initialTime = 0,
-        ResearchSettings? research = null)
+        ResearchSettings? research = null,
+        MissionGoals? goals = null)
     {
         if (!double.IsFinite(initialTime) || initialTime < 0)
             throw new ArgumentOutOfRangeException(nameof(initialTime));
@@ -645,6 +541,8 @@ public sealed partial class Mission : IMissionIgc
         ArgumentNullException.ThrowIfNull(sides);
         ArgumentNullException.ThrowIfNull(site);
 
+        goals = goals is null ? new() : goals with { };
+        goals.Validate();
         research ??= new ResearchSettings();
         research.Validate();
         // 1. Resolve the sides' civilizations from the core.
@@ -660,7 +558,8 @@ public sealed partial class Mission : IMissionIgc
                     // P478 — the side's GA at bucket creation is the civ's base
                     // attribute set (no development has completed yet), exactly
                     // what native reads while CreateBuckets runs.
-                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes)) : Array.Empty<Bucket>()));
+                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes),
+                    goals.IsProsperityGame ? goals.TeamMoney : 1) : Array.Empty<Bucket>()));
             sideList[^1].DevelopmentTechs = research.StartingTechs(civ);
             sideList[^1].InitialTechs = sideList[^1].DevelopmentTechs;
             // P363 — seed each side's colour from the native per-side-id palette
@@ -729,7 +628,7 @@ public sealed partial class Mission : IMissionIgc
         // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
         // Seed BEFORE any ship placement or countdown can observe this world.
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
-        { LastUpdate = initialTime, Research = research, AllowDevelopments = research.AllowDevelopments };
+        { LastUpdate = initialTime, Goals = goals, Research = research, AllowDevelopments = research.AllowDevelopments };
         mission.DamageClock.Initialize(initialTime);
         foreach (var sector in sectors)
         {
@@ -1099,8 +998,7 @@ public sealed partial class Mission : IMissionIgc
     /// decides whether the host broadcasts GAME_STATE at all.</para>
     /// <para><b>Stage/idempotency gate.</b> Native gates the whole function on
     /// <c>STAGE_STARTED</c> (or <c>STAGE_STARTING</c> with <c>bAllowEmptyTeams</c> —
-    /// a mission param this port doesn't decode, so both Starting and Started are
-    /// accepted) and on no winner yet decided (<c>m_psideWon == NULL</c>,
+    /// a separate empty-team policy) and on no winner yet decided (<c>m_psideWon == NULL</c>,
     /// <c>fsmission.cpp:3575-3578</c>). The host flips <see cref="Stage"/> to
     /// <see cref="MissionStage.Over"/> when it declares a winner, so the Started/
     /// Starting gate is also the idempotency guard: an ended mission never
@@ -1184,7 +1082,7 @@ public sealed partial class Mission : IMissionIgc
                     {
                         bChange = true;                                // fsmission.cpp:3614
                         side.ConquestPercent = conquest;               // fsmission.cpp:3615
-                        if (conquest >= ConquestWinThreshold)          // fsmission.cpp:3616-3618
+                        if (conquest >= ConquestWinThreshold)          // fsmission.cpp:3624
                             psideWon = side;
                     }
                 }
@@ -1210,7 +1108,7 @@ public sealed partial class Mission : IMissionIgc
                     nTerritories[psideOwner.Id] = nTerritories.GetValueOrDefault(psideOwner.Id) + 1;
             }
 
-            byte threshold = (byte)((50 + Sectors.Count * TerritoryWinThresholdPercent) / 100);  // fsmission.cpp:3664-3666
+            byte threshold = (byte)((50 + Sectors.Count * TerritoryWinThresholdPercent) / 100);  // fsmission.cpp:3663
             foreach (var side in Sides)
             {
                 byte t = (byte)nTerritories.GetValueOrDefault(side.Id);
@@ -1233,7 +1131,7 @@ public sealed partial class Mission : IMissionIgc
     /// shape: a stage-gated recompute that returns <c>(Side? Winner, bool
     /// Changed)</c> for the host to broadcast and, on a winner, declare over via
     /// the shared P178 GameOver path. <b>Selection wiring:</b> like the P191
-    /// flags, each branch runs only when its enable flag is set — prosperity
+    /// flags, each branch runs only when its native goal parameter enables it — prosperity
     /// never fires alongside conquest/territory unless opted in, and artifacts
     /// likewise. The caller (the Server's development-completion and
     /// artifact-secure handlers) invokes this at the two real native trigger
@@ -1310,7 +1208,7 @@ public sealed partial class Mission : IMissionIgc
     /// shape: a stage-gated recompute that returns <c>(Side? Winner, bool
     /// Changed)</c> for the host to broadcast and, on a winner, declare over via
     /// the shared P178 GameOver path. <b>Selection wiring:</b> like the P191/P302
-    /// flags, each branch runs only when its enable flag is set — flags never
+    /// flags, each branch runs only when its native goal parameter enables it — flags never
     /// fires alongside conquest/territory unless opted in, and kills likewise.
     /// The caller (the Server's flag-secure and kill-credit handlers) invokes
     /// this at the two real native trigger events.

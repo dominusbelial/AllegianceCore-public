@@ -32,6 +32,7 @@ public sealed record SkirmishOptions
     /// <see cref="GameConfig.Lives"/>. Default
     /// <see cref="Allegiance.Core.Wire.MissionDef.UnlimitedLives"/> — the native
     /// default and every pre-P799 skirmish's behaviour.</summary>
+    public Allegiance.Core.Model.MissionGoals Goals { get; init; } = new();
     public short Lives { get; init; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
     /// <summary>P799 — the values the setup screen's Lives row cycles through:
     /// the unlimited sentinel, then the finite budgets. Native's lobby option
@@ -133,7 +134,7 @@ public sealed record SkirmishOptions
                 // no longer needs the bShowMap reveal (igc.h:1123, default off).
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
-                Lives = Lives,
+                Lives = Lives, Goals = Goals with { },
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
                 // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).
@@ -168,15 +169,16 @@ public sealed record SkirmishPrefs(
     bool StartAsSpectator = false,
     bool SpectatorDefault = false,
     bool BotGunners = true,
-    short Lives = Allegiance.Core.Wire.MissionDef.UnlimitedLives)
+    short Lives = Allegiance.Core.Wire.MissionDef.UnlimitedLives,
+    Allegiance.Core.Model.MissionGoals? Goals = null)
 {
     public static SkirmishPrefs From(SkirmishOptions o) => new(o.Size, o.Difficulty, o.Commander, o.Speed,
-        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.BotGunners, o.Lives);
+        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.BotGunners, o.Lives, o.Goals with { });
 
     public SkirmishOptions ToOptions() => new()
     {
         Size = Size, Difficulty = Difficulty, Commander = Commander, Speed = Speed,
         PlayerCiv = PlayerCiv, EnemyCiv = EnemyCiv, TechMode = TechMode,
-        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, BotGunners = BotGunners, Lives = Lives
+        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, BotGunners = BotGunners, Lives = Lives, Goals = Goals is { } goals ? goals with { } : new()
     };
 }

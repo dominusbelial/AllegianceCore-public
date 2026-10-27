@@ -12,6 +12,7 @@ MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv")
 STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n/a"}
 COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
+REACHABILITY = {"production", "config-only", "test-only"}
 
 
 def read_matrix(path):
@@ -25,6 +26,8 @@ def read_matrix(path):
                 "port_cite_or_reason", "weight",
             } <= set(header):
                 raise ValueError(f"{path}: invalid or duplicate columns")
+            if (Path(path).name == "sim-rules-matrix.csv" or "native_rule" in header) and "reachability" not in header:
+                raise ValueError(f"{path}: sim rows require a reachability column")
             rows = []
             identities = set()
             for fields in reader:
@@ -32,6 +35,8 @@ def read_matrix(path):
                 if len(fields) != len(header):
                     raise ValueError(f"{location}: expected {len(header)} columns, got {len(fields)}")
                 row = dict(zip(header, fields))
+                if "reachability" in header and row["reachability"] not in REACHABILITY:
+                    raise ValueError(f"{location}: invalid reachability {row['reachability']!r}")
                 if row["port_status"] not in STATUSES:
                     raise ValueError(f"{location}: invalid status {row['port_status']!r}")
                 if row["port_status"] == "done-visual":
@@ -58,7 +63,8 @@ def read_matrix(path):
 
 def score(rows):
     eligible = [row for row in rows if row["port_status"] not in EXCLUDED]
-    completed = [row for row in eligible if row["port_status"] in COMPLETE]
+    completed = [row for row in eligible if row["port_status"] in COMPLETE
+                 and row.get("reachability", "production") == "production"]
     visual = [row for row in completed if row["port_status"] == "done-visual"]
     weight = sum((Decimal(row["weight"]) for row in eligible), Decimal(0))
     credit = sum((Decimal(row["weight"]) for row in completed), Decimal(0))
@@ -92,6 +98,15 @@ def main(argv=None):
         for area, (done, count, credit, weight, visual_weight) in scorecard(rows):
             print(f"{area} | {percentage(credit, weight)} ({credit}/{weight}) | "
                   f"{percentage(done, count)} ({done}/{count}) | visual {visual_weight}")
+        if rows and "reachability" in rows[0]:
+            print("Reachability (non-production stays in the denominator; earns no headline credit):")
+            for reachability in sorted(REACHABILITY):
+                group = [row for row in rows if row["reachability"] == reachability]
+                eligible = [row for row in group if row["port_status"] not in EXCLUDED]
+                implemented = [row for row in eligible if row["port_status"] in COMPLETE]
+                print(f"{reachability}: {len(group)} rows; {len(eligible)} eligible; "
+                      f"{len(implemented)} implemented; implemented weight "
+                      f"{sum((Decimal(row['weight']) for row in implemented), Decimal(0))}")
     return 0
 
 

@@ -115,4 +115,25 @@ public class P674ParityScorecardTests
         }
         finally { File.Delete(path); }
     }
+    [Fact]
+    public void Nonproduction_implementations_remain_in_denominator_without_credit()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "area,native_item,native_cite,port_status,port_cite_or_reason,weight,reachability\n" +
+                "area,one,native,implemented,reason,2,production\n" +
+                "area,two,native,implemented,reason,3,config-only\n" +
+                "area,three,native,implemented,reason,5,test-only\n");
+            var result = Run(path);
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("TOTAL | 20.00% (2/10) | 33.33% (1/3)", result.Output);
+            Assert.Contains("config-only: 1 rows; 1 eligible; 1 implemented; implemented weight 3", result.Output);
+            Assert.Contains("test-only: 1 rows; 1 eligible; 1 implemented; implemented weight 5", result.Output);
+            File.AppendAllText(path, "area,four,native,implemented,reason,1,unknown\n");
+            Assert.Contains("invalid reachability", Run(path).Output);
+        }
+        finally { File.Delete(path); }
+    }
+
 }

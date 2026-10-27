@@ -985,7 +985,7 @@ public sealed partial class Server
     /// <see cref="MapGenType"/>. Throws on an unknown topology name so a typo'd
     /// config fails loudly at boot rather than silently falling back to a file.
     /// </summary>
-    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds)
+    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds, MissionGoals? goals = null)
     {
         if (!Enum.TryParse<MapGenType>(cfg.Type, ignoreCase: true, out var type))
             throw new InvalidDataException(
@@ -1014,8 +1014,8 @@ public sealed partial class Server
             NeutralSectorAsteroids = (short)(cfg.NeutralSectorAsteroids ?? 8),
             NeutralSectorTreasures = (short)(cfg.NeutralSectorTreasures ?? 0),
             He3Density = (float)(cfg.He3Density ?? 1.0),
-            FlagsGame = cfg.FlagsGame ?? false,
-            ArtifactsGame = cfg.ArtifactsGame ?? false,
+            FlagsGame = goals?.IsFlagsGame == true || (cfg.FlagsGame ?? false),
+            ArtifactsGame = goals?.IsArtifactsGame == true || (cfg.ArtifactsGame ?? false),
         };
     }
 
@@ -1223,6 +1223,7 @@ public sealed partial class Server
         // file when g.MapGen is set. The generator path is a pure addition:
         // with MapGen null (every existing config), the byte-for-byte
         // file-load path below runs unchanged.
+        var goals = g.ResolveGoals();
         int civSeed = NextCivSeed(g);
         var civIds = MatchCivilizations.Resolve(g, core, civSeed);
         MissionMap map;
@@ -1230,7 +1231,7 @@ public sealed partial class Server
         bool fromMapGen = mg is not null;
         if (fromMapGen)
         {
-            var pmp = ToCoreParams(mg!, g.Teams, civIds);
+            var pmp = ToCoreParams(mg!, g.Teams, civIds, goals);
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
@@ -1273,7 +1274,7 @@ public sealed partial class Server
             AllowShipyardPath = g.AllowShipyardPath, AllowExpansionPath = g.AllowExpansionPath,
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
-        });
+        }, goals);
         mission.Skills = new SkillTelemetry(++_skillMatchNumber, mission.Sides.Select(s => s.Id));
         foreach (var (side, selection) in researchPlans)
         {
@@ -1306,11 +1307,12 @@ public sealed partial class Server
         Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (experimental NPC travel)");
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
-        mission.CountdownDuration = g.GameLengthSeconds;
+        mission.PopulateGoalObjects(_simNow);
+
         if (mg is not null)
         {
             mission.PopulateTreasures(_simNow, mg.PlayerSectorTreasures ?? 0,
-                mg.NeutralSectorTreasures ?? 0, mg.ArtifactsGame ?? false);
+                mg.NeutralSectorTreasures ?? 0, !goals.IsArtifactsGame && (mg.ArtifactsGame ?? false));
         }  // site bound; core resolved
         // P402 — remember whether this mission's map came from MapGen so the
         // debug-topology machinery below (and the join/death/respawn paths that

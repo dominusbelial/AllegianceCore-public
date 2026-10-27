@@ -62,7 +62,7 @@ public sealed class ProsperityArtifactTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ProsperityEnabled = true;
+        m.Goals.TeamMoney = 1;
         var tm = TeamMoneyBucket(m, 0);
 
         // Below goal: bucket still building → no winner.
@@ -93,7 +93,7 @@ public sealed class ProsperityArtifactTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ProsperityEnabled = false;
+        m.Goals.TeamMoney = 0;
         var tm = TeamMoneyBucket(m, 0);
 
         tm.AddMoney(tm.Price);
@@ -118,8 +118,7 @@ public sealed class ProsperityArtifactTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ArtifactEnabled = true;
-        m.ArtifactWinGoal = 2;
+        m.Goals.Artifacts = 2;
 
         // Below goal: 1 < 2 → no winner.
         m.Sides[0].Artifacts = 1;
@@ -145,14 +144,13 @@ public sealed class ProsperityArtifactTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.ArtifactEnabled = false;
-        m.ArtifactWinGoal = 1;
+        m.Goals.Artifacts = 0;
         m.Sides[0].Artifacts = 5;
 
         var (w, c) = m.RecomputeProsperityAndArtifacts();
         Assert.Null(w);
         Assert.False(c);
-        Console.WriteLine("ARTIFACT-DOMAIN-DISABLED: artifacts 5/1 with ArtifactEnabled=false -> no winner");
+        Console.WriteLine("ARTIFACT-DOMAIN-DISABLED: artifacts 5, goal 0 (disabled) -> no winner");
     }
 
     /// <summary>⭐ Native stage gate: only a Started/Starting mission recomputes —
@@ -165,8 +163,7 @@ public sealed class ProsperityArtifactTests
         Require.Artwork();
         var m = Assembly();
         m.Stage = MissionStage.Over;
-        m.ArtifactEnabled = true;
-        m.ArtifactWinGoal = 1;
+        m.Goals.Artifacts = 1;
         m.Sides[0].Artifacts = 9;
 
         var (w, _) = m.RecomputeProsperityAndArtifacts();

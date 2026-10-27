@@ -47,8 +47,7 @@ public sealed class FlagsKillsTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.FlagsEnabled = true;
-        m.FlagsWinGoal = 2;
+        m.Goals.Flags = 2;
 
         // Below goal: 1 < 2 → no winner.
         m.Sides[0].Flags = 1;
@@ -74,14 +73,13 @@ public sealed class FlagsKillsTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.FlagsEnabled = false;
-        m.FlagsWinGoal = 1;
+        m.Goals.Flags = 0;
         m.Sides[0].Flags = 5;
 
         var (w, c) = m.RecomputeFlagsAndKills();
         Assert.Null(w);
         Assert.False(c);
-        Console.WriteLine("FLAGS-DOMAIN-DISABLED: flags 5/1 with FlagsEnabled=false -> no winner");
+        Console.WriteLine("FLAGS-DOMAIN-DISABLED: flags 5, goal 0 (disabled) -> no winner");
     }
 
     // ── kills ────────────────────────────────────────────────────────────
@@ -96,8 +94,7 @@ public sealed class FlagsKillsTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.KillsEnabled = true;
-        m.KillsWinGoal = 3;
+        m.Goals.TeamKills = 3;
 
         // Below goal: 2 < 3 → no winner.
         m.Sides[0].Kills = 2;
@@ -123,14 +120,13 @@ public sealed class FlagsKillsTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.KillsEnabled = false;
-        m.KillsWinGoal = 1;
+        m.Goals.TeamKills = 0;
         m.Sides[0].Kills = 9;
 
         var (w, c) = m.RecomputeFlagsAndKills();
         Assert.Null(w);
         Assert.False(c);
-        Console.WriteLine("KILLS-DOMAIN-DISABLED: kills 9/1 with KillsEnabled=false -> no winner");
+        Console.WriteLine("KILLS-DOMAIN-DISABLED: kills 9, goal 0 (disabled) -> no winner");
     }
 
     /// <summary>⭐ Branch priority mirrors native's cascade: when both flags and
@@ -144,10 +140,8 @@ public sealed class FlagsKillsTests
     {
         Require.Artwork();
         var m = Assembly();
-        m.FlagsEnabled = true;
-        m.FlagsWinGoal = 1;
-        m.KillsEnabled = true;
-        m.KillsWinGoal = 1;
+        m.Goals.Flags = 1;
+        m.Goals.TeamKills = 1;
         m.Sides[0].Flags = 1;   // qualifies on flags
         m.Sides[1].Kills = 1;   // also qualifies on kills
 
@@ -168,10 +162,8 @@ public sealed class FlagsKillsTests
         Require.Artwork();
         var m = Assembly();
         m.Stage = MissionStage.Over;
-        m.FlagsEnabled = true;
-        m.FlagsWinGoal = 1;
-        m.KillsEnabled = true;
-        m.KillsWinGoal = 1;
+        m.Goals.Flags = 1;
+        m.Goals.TeamKills = 1;
         m.Sides[0].Flags = 9;
         m.Sides[0].Kills = 9;
 

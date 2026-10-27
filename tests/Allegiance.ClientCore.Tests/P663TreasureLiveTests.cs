@@ -58,8 +58,7 @@ public sealed class P663TreasureLiveTests
         m.Stage = MissionStage.Started;
         // Map population does not opt into a zero-goal victory condition.
         Assert.False(m.ArtifactEnabled);
-        m.ArtifactEnabled = true;
-        m.ArtifactWinGoal = 99;
+        m.Goals.Artifacts = 99;
         m.ApplyStartingMoneyAndInitialPayday(0);
         using var one = new ConnectionSession();
         using var two = new ConnectionSession();

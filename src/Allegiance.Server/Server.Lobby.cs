@@ -3586,6 +3586,9 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// (<c>req.DwCookie &amp; 0xFF</c>).</summary>
     private void CompleteJoinAndLaunch(ConnectionId from, LogonRequest req, short shipId, byte cookie, LiveShip live, bool announceToMission = true, bool resumed = false)
     {
+        // Native CFSMission::SendMissionInfo is scoped to the joining player's
+        // mission (FedSrv/fsmission.cpp:4108-4341), including goals/briefing.
+        var goalMission = live.Ship.Mission ?? _missions[0];
         // P813c — a RESUMED seat (reconnect grace) keeps its ship and its
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
@@ -3708,7 +3711,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // (igc.h:1526-1564). The field already exists on the wire; the
                 // server now fills it from the configured game length so the
                 // client's game-state clock can show countdown remaining.
-                GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
+                Goals = goalMission.Goals with { },
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,
@@ -3784,7 +3787,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
-                GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
+                Goals = goalMission.Goals with { },
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,
@@ -4029,7 +4032,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 string briefingCluster = "";
                 if (friendlyStation is { } briefStation)
                 {
-                    var clusterName = _missions[0].Sectors
+                    var clusterName = goalMission.Sectors
                         .FirstOrDefault(s => s.Id == briefStation.ClusterId)?.Name;
                     if (clusterName is not null)
                     {
@@ -4056,7 +4059,8 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // P759 — send the client-side civ-briefing inputs (native
                 // GetCivMissionBriefing reads these live: teamscreen.cpp:732-793).
                 // Sent to the joining peer only, right after SET_BRIEFING_TEXT.
-                SendMissionBriefingInfo(from, _missions[0], smSide, briefingCluster);
+                SendMissionBriefingInfo(from, goalMission,
+                    goalMission.Sides.FirstOrDefault(s => s.Id == setMoneySideId) ?? smSide, briefingCluster);
             }
         }
 
@@ -4538,8 +4542,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// </summary>
     private void SendMissionBriefingInfo(ConnectionId to, Mission mission, Side side, string briefingText)
     {
-        bool noWin = !mission.ConquestEnabled && !mission.ArtifactEnabled && !mission.FlagsEnabled
-                     && !mission.KillsEnabled && !mission.ProsperityEnabled;
+        bool noWin = mission.Goals.IsNoWinningConditionsGame;
         var info = new MissionBriefingInfo
         {
             SideName = side.Name ?? $"side{side.Id}",
@@ -4553,7 +4556,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             CivList = mission.Sides.Select(s => s.Civilization.Name).ToList(),
             NoWin = noWin,
             Conquest = mission.ConquestEnabled,
-            ConquestPercent = mission.ConquestEnabled ? Mission.ConquestWinThreshold : 0,
+            ConquestPercent = mission.Goals.ConquestPercentage,
             Artifacts = mission.ArtifactEnabled,
             ArtifactGoal = mission.ArtifactWinGoal,
             Flags = mission.FlagsEnabled,
@@ -4564,11 +4567,8 @@ private void CompleteStartCountdown(Mission mission, double now)
             // the client divides by 60 for the minutes shown (teamscreen.cpp:773-777).
             CountdownSeconds = mission.CountdownDuration ?? 0,
             Prosperity = mission.ProsperityEnabled,
-            // The native prosperity amount is fGoalTeamMoney × c_fcidWinTheGameMoney
-            // (teamscreen.cpp:790-793); this port prices the team-money bucket but
-            // does not carry fGoalTeamMoney, so the amount is left 0 and the client
-            // omits the number for a prosperity objective.
-            ProsperityMoney = 0,
+            // Native WinTrek/teamscreen.cpp:790-793; same price as the bucket.
+            ProsperityMoney = (int)(mission.Goals.TeamMoney * mission.Core.Constants.FloatConstants[12]),
         };
         SendPeer(to, FedPacket.Pack(new[] { info.Encode() }));
         Console.WriteLine($"[briefing] peer {to} -> MISSION_BRIEFING_INFO(996) side='{info.SideName}' civ='{info.CivName}' noWin={info.NoWin}");

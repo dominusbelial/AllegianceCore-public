@@ -183,8 +183,8 @@ public sealed class P746KillCreditOnEjectionTests
         Assert.Equal((short)0, h.VictimSide.Deaths);
         Assert.True(h.Victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod));
         // The ranking consumes actual earned kills; earlier objectives disabled.
-        h.Mission.ConquestEnabled = h.Mission.TerritoryEnabled = h.Mission.ProsperityEnabled = false;
-        h.Mission.ArtifactEnabled = h.Mission.FlagsEnabled = false;
+        h.Mission.Goals.ConquestPercentage = 0; h.Mission.Goals.TerritoryPercentage = 100; h.Mission.Goals.TeamMoney = 0;
+        h.Mission.Goals.Artifacts = 0; h.Mission.Goals.Flags = 0;
         var result = h.Mission.EvaluateCountdown(h.Mission.LastUpdate, deadlineReached: true);
         Assert.Same(h.KillerSide, result.Winner); Assert.Equal("kills", result.Criterion);
         Assert.Contains($"{h.KillerSide.Id}:kills=1", h.Mission.CountdownValues("kills"));
@@ -281,7 +281,7 @@ public sealed class P746KillCreditOnEjectionTests
     public void Winning_kill_finishes_wire_and_victim_score_before_mission_rotation(float amount, bool death)
     {
         Require.Artwork(); using var h = new Harness();
-        h.Mission.KillsEnabled = true; h.Mission.KillsWinGoal = 1;
+        h.Mission.Goals.TeamKills = 1;
         h.Fire(h.Killer, amount);
         h.Wait(() => h.Clients[0].Results is not null);
         Assert.Equal(MissionStage.Over, h.Mission.Stage);
@@ -324,7 +324,7 @@ public sealed class P746KillCreditOnEjectionTests
             h.Mission.PlaceShip(parent, h.Killer.Sector!);
             h.Killer.ParentShip = parent; h.Killer.TurretId = 0; parent.AddChildShip(h.Killer);
         }
-        h.Mission.KillsEnabled = true; h.Mission.KillsWinGoal = 1;
+        h.Mission.Goals.TeamKills = 1;
         h.Fire(credit);
         h.Wait(() => h.Clients[0].Kills.Count == 1);
         var k = Assert.Single(h.Clients[0].Kills);
