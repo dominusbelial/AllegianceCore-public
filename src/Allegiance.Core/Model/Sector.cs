@@ -4989,6 +4989,16 @@ public sealed class Sector : IClusterIgc
             }
         }
 
+        // P851 — ships that native keeps OUT of its cluster's model list, so
+        // the sweep never scores them: a docked ship leaves the cluster
+        // (CstationIGC::AddShip → pship->SetCluster(NULL), stationIGC.cpp:282-285)
+        // and a boarded/turreted ship is re-loaded with c_mtNotPickable, which
+        // drops c_mtSeenBySide and unregisters it as a scanner
+        // (CshipIGC::SetParentShip, shipIGC.cpp:3632-3643). Managed memory keeps
+        // both in _models for bookkeeping (the same reason
+        // Probe.RevealOnFiring filters them, Probe.cs:594-599), so they are
+        // collected here and reconciled to "unseen" below.
+        var detached = new List<Ship>();
         foreach (var m in _models)
         {
             switch (m)
@@ -5000,6 +5010,9 @@ public sealed class Sector : IClusterIgc
                 // GetSignature() = base·GetCloaking(), shipIGC.h:268-270) so a
                 // cloaked ship shrinks its own detection radius in this sweep —
                 // the same per-object mechanic native's InScannerRange applies.
+                case Ship s when s.StationId is not null || s.ParentShip is not null:
+                    detached.Add(s);
+                    break;
                 case Ship s:
                     Add(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
                         s.EffectiveScannerRange(), s.EffectiveSignature,
@@ -5107,6 +5120,24 @@ public sealed class Sector : IClusterIgc
         // scan-sharing) is visible but did not scout it.
         var scanResults = new (bool Seen, VisibilityParticipant Spotter, bool Allied)[sideIds.Count];
         bool alliedViz = Mission?.AllowAlliedViz == true;
+
+        // P851 — the port of the hide half of ThingSiteImpl::SetCluster
+        // (FedSrv.CPP:10711-10728): "you always lose contact when a non-static,
+        // non-allied object switches sectors". A docked/boarded ship has left the
+        // cluster (or its ThingSite was rebuilt without c_mtSeenBySide), so every
+        // side that is neither its own nor (with bAllowAlliedViz) an ally drops
+        // its visible flag here. Predictable models are exempt natively
+        // (`if (!m_bPredictable)`) and ships are the only non-predictable kind.
+        foreach (var ship in detached)
+        {
+            if (ship.SideId is not { } ownSide) continue;   // sideless: nothing to hide from itself
+            foreach (var sideId in sideIds)
+            {
+                if (sideId == ownSide) continue;
+                if (alliedViz && Mission!.AreSidesFriendly(ownSide, sideId)) continue;
+                ship.SideVisibility.SetSideVisibility(sideId, false);
+            }
+        }
 
         foreach (var t in targets)
         {
@@ -5219,6 +5250,10 @@ public sealed class Sector : IClusterIgc
                     short sideId = sideIds[si];
                     if (sideId == t.SideId) continue;
                     var (seen, spotter, allied) = results[si];
+                    // P851 — native's `bool seenBefore = sv.fVisible()` snapshot,
+                    // taken before the flag write (FedSrv.CPP:10896). It is what
+                    // gates BOTH ShowObject and its score/territory tail.
+                    bool seenBefore = t.Body.SideVisibility.SeenBySide(sideId);
                     if (seen && !allied && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
                     t.Body.SideVisibility.SetSideVisibility(sideId, seen);
                     // P797 — record (or clear) the side's last spotter, native's
@@ -5229,6 +5264,12 @@ public sealed class Sector : IClusterIgc
                         t.Body.SideVisibility.SetLastSpotter(spotter.Ot, spotter.Oid);
                     else
                         t.Body.SideVisibility.ClearLastSpotter();
+                    // P851 — the tail native runs only inside its scanner loop, on
+                    // the false→true edge, for a scanner of the side's own (not the
+                    // own-side rule, not an allied leg — those call ShowObject
+                    // without the tail, FedSrv.CPP:10986-11054 vs :11078-11111).
+                    if (seen && !seenBefore && !allied && spotter.Ot >= 0)
+                        FirstSightEffects(t, sideId, spotter);
                 }
             }
         }
@@ -5251,6 +5292,222 @@ public sealed class Sector : IClusterIgc
                 partner.SideVisibility.RevealToSide(sideId);
             }
         }
+    }
+
+    /// <summary>
+    /// P851 — the score / territory / miner tail native runs inside its scanner
+    /// loop on the frame a side's <b>own</b> scanner first sees a model
+    /// (<c>ThingSiteImpl::UpdateSideVisibility</c>, <c>FedSrv/FedSrv.CPP:10944-11111</c>):
+    /// <list type="bullet">
+    /// <item><b>High-value target spot</b> (<c>:10952-10982</c>) — an enemy
+    /// miner/builder/capital/carrier/bomber/APC/teleport ship first seen credits
+    /// the spotting player's <c>AddTargetSpot</c>, at most once per
+    /// <see cref="Ship.RecentlySpotted"/> window across every side, and stamps
+    /// the target with <see cref="Ship.MarkPreviouslySpotted"/>.</item>
+    /// <item><b>Station</b> (<c>:11083-11098</c>) — <c>UpdateTerritory</c> (the
+    /// port computes territory on the fly, <see cref="IsTerritory"/>) and
+    /// <c>HandleNewEnemyCluster</c>: the seeing side's miners abandon orders that
+    /// point into the freshly discovered cluster
+    /// (<c>Igc/sideigc.cpp:361-419</c>). The <c>ASTEROID_DESTROYED</c> silent pop
+    /// of a station's source rock is the host's stale-rock path
+    /// (<c>Station.StaleRockSides</c>).</item>
+    /// <item><b>Aleph / special asteroid</b> (<c>:11103-11111</c>) — a ship
+    /// spotter earns <c>SpotWarp</c> / <c>SpotSpecialAsteroid</c>.</item>
+    /// </list>
+    /// The <c>c_achmGarrSpot</c> Steam achievement (<c>:11072-11082</c>) has no
+    /// port counterpart (no achievement backend — era).
+    /// </summary>
+    private void FirstSightEffects(in VisibilityParticipant target, short sideId, in VisibilityParticipant spotter)
+    {
+        // ShowObject's own gate: only an ACTIVE side on a Started/Starting
+        // mission exports, and `bSent` (which gates the station/aleph/asteroid
+        // tail) is only ever true inside that block (FedSrv.CPP:10756-10759).
+        bool sideActive = MissionSides?.FirstOrDefault(s => s.Id == sideId)?.Active
+            ?? Mission?.Sides.FirstOrDefault(s => s.Id == sideId)?.Active
+            ?? true;
+
+        if (target.Body is Ship spotted)
+        {
+            // FedSrv.CPP:10952-10982 — inside `if (!seenBefore)`, before any
+            // bSent use, and NOT gated on the side being active.
+            HighValueTargetSpot(spotted, spotter);
+            return;
+        }
+
+        if (!sideActive) return;
+
+        switch (target.Body)
+        {
+            // FedSrv.CPP:11083-11098 (Imago #121).
+            case Station:
+                HandleNewEnemyCluster(sideId);
+                break;
+
+            // FedSrv.CPP:11103-11111: `(otModel == OT_warp) || (otModel == OT_asteroid)`.
+            case ResolvedWarp:
+                CreditShipSpotter(spotter, SpotCredit.Warp);
+                break;
+            case Asteroid rock when (rock.Data.AabmCapabilities & ~DataAsteroidIGC.AabmBuildable) != 0:
+                CreditShipSpotter(spotter, SpotCredit.SpecialAsteroid);
+                break;
+
+            // A treasure / mine first sight has no score and is not in native's
+            // OBJECT_SPOTTED gate (FedSrv.CPP:11051-11054) — nothing to book.
+        }
+    }
+
+    /// <summary>P851 — native <c>FedSrv.CPP:10952-10982</c>: a newly spotted
+    /// high-value enemy hull credits its spotter once per 50 s window, "no matter
+    /// by whom" — the latch lives on the target
+    /// (<see cref="Ship.MarkPreviouslySpotted"/>) and is stamped even when the
+    /// spotter earns nothing (a probe with no launcher, a station, an NPC).</summary>
+    private void HighValueTargetSpot(Ship spotted, in VisibilityParticipant spotter)
+    {
+        const short hvMask = ClusterWarnings.AmEnemyMiner | ClusterWarnings.AmEnemyBuilder
+            | ClusterWarnings.AmEnemyCapital | ClusterWarnings.AmEnemyCarrier
+            | ClusterWarnings.AmEnemyBomber | ClusterWarnings.AmEnemyAPC
+            | ClusterWarnings.AmEnemyTeleportShip;
+
+        // `GetAssetMask(pSpottedShip, hull, false)` then `spottedMask & hvMask`.
+        if ((ClusterWarnings.GetAssetMask(spotted, friendly: false) & hvMask) == 0) return;
+        if (spotted.RecentlySpotted()) return;
+
+        // `s->GetObjectType() == OT_probe → pProbe->GetProbeLauncherShip()` /
+        // `OT_ship → spottingShip`; both then require `GetPilotType() >= c_ptPlayer`
+        // (a human — c_ptPlayer = 10, NPC pilots are lower, <c>igc.h:686-692</c>),
+        // which the port's <see cref="Ship.IsNpc"/> encodes.
+        Ship? credit = spotter.Body switch
+        {
+            Probe probe => probe.Launcher as Ship,
+            Ship ship => ship,
+            _ => null,
+        };
+        if (credit is { IsNpc: false } spotterShip)
+            Mission?.Site.SpotterCreditEvent(spotterShip, SpotCredit.Target);
+
+        // `pSpottedShip->MarkPreviouslySpotted()` — unconditionally, "no matter by whom".
+        spotted.MarkPreviouslySpotted();
+    }
+
+    /// <summary>P851 — native <c>FedSrv.CPP:11103-11111</c>: only a <b>ship</b>
+    /// spotter books the aleph / special-asteroid credit
+    /// (<c>if (otSpotter == OT_ship)</c>), and native dereferences that ship's
+    /// <c>CFSShip</c> private data unconditionally — the port credits only a real
+    /// player ship (an NPC owns no <c>PlayerScore</c>; a null-deref avoided, not
+    /// reproduced).</summary>
+    private void CreditShipSpotter(in VisibilityParticipant spotter, SpotCredit credit)
+    {
+        if (spotter.Body is Ship ship && !ship.IsNpc)
+            Mission?.Site.SpotterCreditEvent(ship, credit);
+    }
+
+    /// <summary>
+    /// P851 — <c>CsideIGC::HandleNewEnemyCluster</c> (<c>Igc/sideigc.cpp:361-419</c>),
+    /// called by <c>ThingSiteImpl::UpdateSideVisibility</c> the moment a side's
+    /// scanner first sees a station in a cluster: stop that side's <b>miners</b>
+    /// from suiciding there. For every miner of the seeing side native drops any
+    /// order whose target sits in the newly discovered cluster:
+    /// <list type="bullet">
+    /// <item>the <b>queued</b> slot is always cleared (<c>SetCommand(c_cmdQueued,
+    /// NULL, c_cidNone)</c>);</item>
+    /// <item>with the miner <b>already in</b> that cluster and an accepted order
+    /// there, the plan order is promoted into the accepted slot ("finish the
+    /// current action (plan), but think of something better afterwards");</item>
+    /// <item>elsewhere: clear the accepted order (both slots bad), else clear the
+    /// plan, else promote the plan into the accepted slot.</item>
+    /// </list>
+    /// Native's <c>SetCommand</c> cascade writes one slot array; the port keeps
+    /// typed per-slot members, so the same net effect is written slot by slot
+    /// (<see cref="Ship.QueuedShipTarget"/>/<see cref="Ship.QueuedTarget"/>,
+    /// <see cref="Ship.AcceptedShipTarget"/>/<see cref="Ship.AcceptedTarget"/>,
+    /// <see cref="Ship.PlanTarget"/>). The native <c>OT_buoy</c>
+    /// <c>AddConsumer</c> pair is reference-counting, which managed memory does
+    /// not need.
+    /// </summary>
+    private void HandleNewEnemyCluster(short seeingSideId)
+    {
+        var mission = Mission;
+        if (mission is null) return;
+        foreach (var sector in mission.Sectors)
+            foreach (var model in sector.Models)
+            {
+                if (model is not Ship miner || miner.PilotType != Ship.PilotTypeMiner) continue;
+                if (miner.SideId != seeingSideId) continue;
+
+                // `s->GetCommandTarget(c_cmdQueued)->GetCluster() == pcluster`.
+                if (TargetClusterOf(miner.QueuedShipTarget) == Id
+                    || (miner.QueuedTarget is { } queuedStation && queuedStation.ClusterId == Id))
+                {
+                    miner.QueuedShipTarget = null;
+                    miner.QueuedShipWireType = (IgcObjectType)(-1);
+                    miner.QueuedShipWireId = -1;
+                    miner.QueuedTarget = null;
+                    miner.QueuedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+                }
+
+                bool acceptedBad = TargetClusterOf(miner.AcceptedShipTarget) == Id
+                    || (miner.AcceptedTarget is { } acceptedStation && acceptedStation.ClusterId == Id);
+                bool planBad = miner.PlanTarget is { } planStation && planStation.ClusterId == Id;
+                if (!acceptedBad && !planBad) continue;
+
+                short planCid = miner.PlanCommandId;
+                var planTarget = miner.PlanTarget;
+
+                if (miner.Sector is { } minerSector && minerSector.Id == Id)
+                {
+                    // If already there, finish the current action (plan), but
+                    // think of something better afterwards.
+                    if (!acceptedBad) continue;
+                    ClearAccepted(miner);
+                    if (planTarget is { } keep)
+                    {
+                        miner.PlanTarget = keep;
+                        miner.PlanCommandId = planCid;
+                    }
+                }
+                else if (acceptedBad && planBad)
+                {
+                    ClearAccepted(miner);
+                }
+                else if (planBad)
+                {
+                    miner.PlanTarget = null;
+                    miner.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+                }
+                else
+                {
+                    // Promote the plan order into the accepted slot.
+                    ClearAccepted(miner);
+                    if (planTarget is { } promote)
+                    {
+                        miner.AcceptedTarget = promote;
+                        miner.AcceptedCommandId = planCid;
+                        miner.PlanTarget = promote;
+                        miner.PlanCommandId = planCid;
+                    }
+                }
+            }
+
+        static void ClearAccepted(Ship ship)
+        {
+            ship.AcceptedShipTarget = null;
+            ship.AcceptedShipWireType = (IgcObjectType)(-1);
+            ship.AcceptedShipWireId = -1;
+            ship.AcceptedShipCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+            ship.AcceptedTarget = null;
+            ship.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        }
+
+        // `GetCommandTarget(...)->GetCluster()` for the port's typed slots: a
+        // station record carries its ClusterId, a Model's cluster is its owning
+        // sector. A null slot matches nothing.
+        short? TargetClusterOf(Model? target) => target switch
+        {
+            Ship s => s.Sector?.Id,
+            Probe p => p.OwnerSector.Id,
+            EquipmentTarget t => t.OwnerSector.Id,
+            _ => null,
+        };
     }
 
     /// <summary>Unlink an interrupted effect once, leaving its asteroid intact.
@@ -5353,7 +5610,9 @@ public sealed class Sector : IClusterIgc
     }
 
     // Igc/missionigc.cpp:3658-3681: an eye on the builder AND knowledge of the rock.
-    private bool[] ConstructionSeenSides(Ship builder, Asteroid rock)
+    // Internal (rather than private) so P851's test can pin the flag-carrier
+    // bypass without driving a whole build to completion.
+    internal bool[] ConstructionSeenSides(Ship builder, Asteroid rock)
     {
         var mission = builder.Mission!;
         var result = new bool[Math.Max(6, mission.Sides.Max(s => s.Id) + 1)];
@@ -5361,11 +5620,17 @@ public sealed class Sector : IClusterIgc
             new Vector3(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius)).ToArray();
         var target = new VisibilityMath.SightBody(builder.Position, builder.HullType.Length * .5f);
         float resistance = mission.Sides.First(s => s.Id == builder.SideId).GlobalAttributes.Get(GlobalAttributeSet.Signature);
+        // P851 — native's GetSeenSides calls the builders' InScannerRange, which
+        // short-circuits to true for a model whose GetFlag() != NA
+        // (shipIGC.h:351-369; stationIGC.h:316-331; probeigc.h:171-186): a
+        // flag/artifact carrier is seen by any side with a scanner in the sector,
+        // range and occlusion bypassed. The port passes that flag through.
+        bool builderCarriesFlag = builder.Flag is not null;
         void Scan(short id, short? sideId, Vector3 position, float radius, float range)
         {
             if (id == builder.Id || sideId is not { } side || side == builder.SideId || !rock.SeenBySide(side)) return;
             if (VisibilityMath.InScannerRange(new(position, radius), range, Id,
-                target, builder.EffectiveSignature / resistance, Id, obstacles)) result[side] = true;
+                target, builder.EffectiveSignature / resistance, Id, obstacles, builderCarriesFlag)) result[side] = true;
         }
         foreach (var ship in _models.OfType<Ship>())
             if (ship.ParentShip is null && ship.StationId is null)

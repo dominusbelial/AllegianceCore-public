@@ -133,7 +133,7 @@ public sealed class ProbeCombatTests
         var launcher = NewShooter(core.HullTypes.Values.OrderBy(h => h.HitPoints).First());
         launcher.SideId = 0;
         mission.PlaceShip(launcher, sector);                    // gives it Mission (DamageConstant's route) and a Sector
-        var probe = launcher.DeployProbe(pType, mission.LastUpdate);
+        var probe = launcher.DeployProbe(pType, mission.LastUpdate)!;
         Assert.Contains(probe, sector.Models);
         Assert.Equal(1.0f, probe.Fraction, 3);
         Assert.Equal(0, site.ProbeDestroys);
@@ -234,7 +234,7 @@ public sealed class ProbeCombatTests
 
         var shooter = NewShooter(hull); shooter.SideId = 0;
         mission.PlaceShip(shooter, sector);
-        var probe = shooter.DeployProbe(probeType, mission.LastUpdate);   // probe at the shooter's origin, side 0
+        var probe = shooter.DeployProbe(probeType, mission.LastUpdate)!;   // probe at the shooter's origin, side 0
         Assert.Equal(shooter.SideId, probe.SideId);
         // Park the probe ahead of the shooter on the beam, so the round fires
         // straight into it (DeployProbe placed it at the shooter's origin, which

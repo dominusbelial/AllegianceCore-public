@@ -105,7 +105,7 @@ public class ProbeClusterVisibilityTests
     /// probe.</summary>
     private static Probe ReconProbe(Ship scout, Sector sector)
     {
-        var probe = scout.DeployProbe(RealProbeType, scout.Mission!.LastUpdate);
+        var probe = scout.DeployProbe(RealProbeType, scout.Mission!.LastUpdate)!;
         sector.Remove(scout);   // the scout departs; the probe stays
         return probe;
     }

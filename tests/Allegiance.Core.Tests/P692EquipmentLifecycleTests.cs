@@ -209,7 +209,7 @@ public sealed class P692EquipmentLifecycleTests
         Require.Artwork(); var (mission, ship, host) = World(); int active = 0, destroyed = 0;
         host.TeleportProbeActivated = _ => active++; host.TeleportProbeDestroyed = _ => destroyed++;
         var type = mission.Core.ProbeTypes.Values.First() with { DtRipcord = delay, Lifespan = lifespan, ProjectileTypeId = -1 };
-        var probe = ship.DeployProbe(type, 0);
+        var probe = ship.DeployProbe(type, 0)!;
         probe.Update(1.99); Assert.Equal(delay == 0 ? 1 : 0, active);
         probe.Update(2); probe.Update(2); Assert.Equal(activations, active);
         probe.Update(100); probe.Update(101); ship.Sector!.Remove(probe);
@@ -225,7 +225,7 @@ public sealed class P692EquipmentLifecycleTests
         Require.Artwork(); var (mission, ship, host) = World(); int count = 0;
         host.TeleportProbeDestroyed = _ => count++;
         var type = mission.Core.ProbeTypes.Values.First() with { DtRipcord = 50, Lifespan = 100, HitPoints = 1, ProjectileTypeId = -1 };
-        var probe = ship.DeployProbe(type, 0);
+        var probe = ship.DeployProbe(type, 0)!;
         if (cause == "damage") probe.ReceiveDamage(0, 10000, 1, probe.Position, Vector3.Zero, null);
         else ship.Sector!.Remove(probe);
         ship.Sector!.Remove(probe); probe.Update(101);

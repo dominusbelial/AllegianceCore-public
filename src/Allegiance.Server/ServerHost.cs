@@ -1370,6 +1370,21 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     }
 
     /// <summary>
+    /// P851 — optional hook for <see cref="IIgcSite.SpotterCreditEvent"/>, the
+    /// score half of native's spotting rules (<c>FedSrv.CPP:10952-10982</c>,
+    /// <c>:11103-11111</c>). <see cref="Model.Sector.ResolveCrossSideVisibility"/>
+    /// raises it on the false→true edge of a side's own scanner, having already
+    /// applied every native gate (a human spotter, the 50 s high-value latch,
+    /// the special-asteroid bit test); the owning <see cref="Server"/> books the
+    /// credit on the spotter's <c>PlayerScore</c>.
+    /// </summary>
+    public Action<Ship, SpotCredit>? SpotterCredit;
+    public void SpotterCreditEvent(IShipIgc spotter, SpotCredit credit)
+    {
+        if (spotter is Ship ship) SpotterCredit?.Invoke(ship, credit);
+    }
+
+    /// <summary>
     /// P754b — the production port of <c>FedSrvSiteBase::LandOnCarrierEvent</c>
     /// (<c>FedSrv.CPP:12814-13031</c>). The native body IS the landing (refill the
     /// lander's expendables, buy back the missing loadout parts, place it on a

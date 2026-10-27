@@ -205,7 +205,7 @@ public sealed class ProbesUpdateLiveTests
         var deployer = seat.Deployer;
         var mission = deployer.Mission!;
         var pType = RealProbeType(mission.Core);
-        var probe = deployer.DeployProbe(pType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(pType, mission.LastUpdate)!;
         short pId = probe.Id;
 
         // The probe is the deployer's own side's, so it is visible to side A by
@@ -265,7 +265,7 @@ public sealed class ProbesUpdateLiveTests
         var deployer = seat.Deployer;
         var mission = deployer.Mission!;
         var pType = RealProbeType(mission.Core);
-        var probe = deployer.DeployProbe(pType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(pType, mission.LastUpdate)!;
         short pId = probe.Id;
 
         seat.DeployerBot.ResetProbesUpdates();

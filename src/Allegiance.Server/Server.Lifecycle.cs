@@ -801,6 +801,7 @@ public sealed partial class Server
         _host.ShipChangedCluster = OnShipChangedCluster; // P760: ChangeCluster -> SDR_LEFTSECTOR
         _host.GainFlagSent = OnGainFlagSent;    // P760: ChangeStation tech recovery -> side group
         _host.TechsRecovered = OnTechsRecovered;// P760: score/achievement hook for tech recovery
+        _host.SpotterCredit = OnSpotterCredit;  // P851: first-sight score credits (native ShowObject/UpdateSideVisibility tail)
         _host.CommandChanged = OnCommandChanged;// P760: CommandChangedEvent -> ORDER_CHANGE broadcast
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         _host.StationConstructed = OnStationConstructed;

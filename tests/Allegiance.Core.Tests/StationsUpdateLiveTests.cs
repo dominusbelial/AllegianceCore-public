@@ -232,11 +232,26 @@ public sealed class StationsUpdateLiveTests
     {
         Require.Artwork();
         using var seat = SeatTwoBases(1000, 9401, 9501);
-        var station = new Station(seat.Sb.Data with { StationId = 9601, Name = "new siege target" }, seat.Sb.Type);
+        // P851 — a docked ship is not in a cluster natively (CstationIGC::AddShip →
+        // SetCluster(NULL), stationIGC.cpp:282-285), so it registers no cluster
+        // scanner (clusterIGC.h:145-148) and cannot spot anything. Fly the seat
+        // first (drop the dock latch — a BuyLoadout launch would rebuild the ship
+        // object this test drives), so the spotting below is the real flying-hull
+        // scanner, exactly as native.
+        seat.A.StationId = null;
+        Assert.True(PumpUntil(seat.Server, () => seat.A.Sector is not null && seat.A.StationId is null, 4000) < 4000,
+            "the spotting ship must be flying");
+        // The new enemy base starts well outside every side-0 sensor in the sector.
+        var at = seat.A.Position;
+        var station = new Station(
+            seat.Sb.Data with { StationId = 9601, Name = "new siege target", Position = [at.X + 5000f, at.Y, at.Z] },
+            seat.Sb.Type);
         seat.B.Mission!.PlaceStation(station, seat.Sector);
         for (int tick = 0; tick < 30; tick++) { seat.Server.TickSim(); Thread.Sleep(1); }
         Assert.DoesNotContain(seat.ABot.StationExports, e => e.Station.StationId == station.StationId);
-        seat.A.Position = station.Center + new Vector3(0,0,-100);
+        // Close to within the bare-hull detection radius (hull radius + station
+        // radius; the seat's hull contributes no scanner range at this point).
+        seat.A.Position = station.Center + new Vector3(0, 0, 30);
         seat.A.Velocity = Vector3.Zero;
         Assert.True(PumpUntil(seat.Server,
             () => seat.ABot.StationsUpdates.Any(up => HasEntry(up, station.StationId)), 2000) < 2000);
