@@ -181,17 +181,36 @@ internal sealed class ClashBench
         double t = _m.LastUpdate;
         // Warmup (JIT, detector caches) — not measured.
         for (int i = 0; i < 60; i++) { t += 0.053; _m.Update(t); TopUpProjectiles(); }
+        // P838 — baseline the GC counters AFTER warmup so the deltas below cover
+        // exactly the measured loop. `step:update` is wrapped around
+        // Mission.Update with the server's own bucket name so the profiler's
+        // P838 per-step allocation attribution fills and the top-alloc table is
+        // comparable with a real server run.
+        long a0 = GC.GetTotalAllocatedBytes(precise: false);
+        double p0 = GC.GetTotalPauseDuration().TotalMilliseconds;
+        long g00 = GC.CollectionCount(0), g10 = GC.CollectionCount(1), g20 = GC.CollectionCount(2);
         for (int i = 0; i < ticks; i++)
         {
             var sw = Stopwatch.StartNew();
             TickProfiler.EnterTick();
             t += 0.053;
-            _m.Update(t);
+            using (TickProfiler.Enter("step:update"))
+                _m.Update(t);
             TickProfiler.EndTick();
             TopUpProjectiles();
             sw.Stop();
             walls.Add(sw.Elapsed.TotalMilliseconds);
         }
+        long allocBytes = GC.GetTotalAllocatedBytes(precise: false) - a0;
+        double pauseMs = GC.GetTotalPauseDuration().TotalMilliseconds - p0;
+        long dg0 = GC.CollectionCount(0) - g00, dg1 = GC.CollectionCount(1) - g10, dg2 = GC.CollectionCount(2) - g20;
+        double wallSum = walls.Sum();
+        Console.WriteLine(
+            $"P838-GC: alloc={allocBytes / 1048576.0:0.0}MB ({allocBytes / 1024.0 / ticks:0.0}KB/tick) " +
+            $"pause={pauseMs:0.0}ms ({pauseMs / ticks:0.000}ms/tick, {100.0 * pauseMs / wallSum:0.0}% of measured wall) " +
+            $"gc gen0={dg0} gen1={dg1} gen2={dg2} ticks={ticks}");
+        foreach (var (bucket, bytes) in TickProfiler.SnapshotAlloc().OrderByDescending(kv => kv.Value).Take(8))
+            Console.WriteLine($"P838-GC: step-alloc {bucket,-34} {bytes / 1048576.0,8:0.0}MB total  {bytes / 1024.0 / ticks,8:0.0}KB/tick");
         var snap = TickProfiler.Snapshot()
             .ToDictionary(kv => kv.Key, kv => (kv.Value.Count, kv.Value.MeanMs, kv.Value.P95Ms, kv.Value.MaxMs, kv.Value.TotalMs));
         TickProfiler.Configure(enabled: false, reportIntervalSeconds: 1000, csvPath: null);

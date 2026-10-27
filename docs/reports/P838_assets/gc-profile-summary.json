@@ -1,0 +1,108 @@
+{
+  "bench_400ships_500ticks_3runs": {
+    "alloc_kb_per_tick": [
+      875.0,
+      874.7,
+      873.9
+    ],
+    "pause_ms_per_tick": [
+      0.11,
+      0.105,
+      0.109
+    ],
+    "pause_pct_of_measured_wall": [
+      5.0,
+      4.4,
+      5.3
+    ],
+    "gc_per_run": {
+      "gen0": 27,
+      "gen1": 19,
+      "gen2": 14
+    },
+    "mission_update_mean_ms": [
+      2.23,
+      2.37,
+      2.04
+    ],
+    "step_update_alloc_share_pct": 99.3
+  },
+  "bench_200ships_500ticks_2runs": {
+    "alloc_kb_per_tick": [
+      660.3,
+      660.4
+    ],
+    "pause_ms_per_tick": [
+      0.056,
+      0.053
+    ],
+    "pause_pct_of_measured_wall": [
+      3.0,
+      3.4
+    ]
+  },
+  "local_showcase_120bots_server_gc": {
+    "windows": 331,
+    "window_secs": 5,
+    "ships_in_1052": "40-50",
+    "baseline_lower_half": {
+      "tick_wall_mean_ms": 4.47,
+      "pause_share_pct": 4.26,
+      "pause_ms_per_tick": 0.193,
+      "alloc_kb_per_tick": 1165,
+      "gen0_per_s": 4.9,
+      "worst_pause_ms": 9.33
+    },
+    "clash_peak_top_decile": {
+      "tick_wall_mean_ms": 7.24,
+      "pause_share_pct": 3.37,
+      "pause_ms_per_tick": 0.237,
+      "alloc_kb_per_tick": 1337,
+      "gen0_per_s": 5.2,
+      "worst_pause_ms": 6.64
+    },
+    "whole_run_pause_share_pct": 4.03,
+    "whole_run_alloc_mb_per_s": 24,
+    "top_alloc_steps_peak_mb_per_window": {
+      "step:update": 38,
+      "step:broadcastShipsUpdate": 29,
+      "step:broadcastShipStates": 23.5,
+      "step:drain": 8.4,
+      "step:broadcastMissiles": 5
+    }
+  },
+  "aot_publish_idle_check": {
+    "ticks": 93,
+    "tick_wall_mean_ms": 0.13,
+    "alloc_kb_per_tick": 277.9,
+    "worst_pause_ms": 2.14,
+    "gcprof_emitted": true
+  },
+  "trace_top_allocation_types_mb": {
+    "Dictionary<Geometry,int> backing arrays (CollisionDetector.cs:75)": 112.0,
+    "Collider per-model rebuild (Sector.cs:2246-2282)": 87.3,
+    "Func<Weapon,bool> + weapon LINQ (Ship.cs:9205,9207)": 82.1,
+    "Predicate<(int,float)> BroadPhase.cs:105": 28.7,
+    "Model[] snapshot (Sector.cs:956)": 26.4,
+    "Detector grouping arrays (CollisionDetector.cs:76-148)": 36.3,
+    "Autopilot/dodge closures (Ship.cs nav region)": 29.0,
+    "Orientation.Copy() (Ship.cs:9211)": 16.5,
+    "VisibilityParticipant[] sweep (Sector.cs:4995)": 7.6
+  },
+  "rig_projection": {
+    "rig_alloc_mb_per_s": 220,
+    "rig_gen0_per_s": 10,
+    "rig_gen1_per_s": 1.5,
+    "rig_peak_tick_wall_ms": 85,
+    "method1_ms_per_mb": 0.177,
+    "projected_pause_ms_per_tick": [
+      3.2,
+      3.3
+    ],
+    "projected_pause_share_pct": [
+      3.8,
+      3.9
+    ],
+    "headline": "\u22484%"
+  }
+}

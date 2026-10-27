@@ -120,6 +120,12 @@ list in **reverse**.
   `src/Allegiance.Server/Server.Periodic.cs`,
   `src/Allegiance.Core/Sim/TimeDilationController.cs`. *Native:* the
   20/60 updates-per-second heartbeat.
+- **Tick profiler** — the feature-flagged per-window profiler for the server
+  tick: `[tickprof]` per-bucket mean/p95/max lines, P619 `[slowtick]` capture,
+  P838 `[gcprof]` per-window GC pause/collection/allocation line with per-step
+  allocation attribution. `src/Allegiance.Core/Profiling/TickProfiler.cs`;
+  env `ALLEGIANCE_TICK_PROFILER`, `ALLEGIANCE_TICK_PROFILER_INTERVAL`,
+  `ALLEGIANCE_SLOW_TICK_MS`. Report: `docs/reports/P838_GC_PROFILE.md`.
 - **Random / determinism** — the seeded RNG abstraction behind reproducible
   generation. `src/Allegiance.Core/MapGen/MapRandom.cs`.
 

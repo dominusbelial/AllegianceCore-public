@@ -68,6 +68,25 @@ public sealed class TickProfiler
     private double _workerMaxMs;
     private int _workerCount;
 
+    // P838 — per-window GC accounting for the [gcprof] line. All counters are
+    // baselined once per report window (not per tick) and differenced in
+    // Report(); the only per-tick work is one GC.CollectionCount(0) read plus
+    // (only on ticks where a collection actually happened, ~10/s on the rig)
+    // one GC.GetGCMemoryInfo call to sample the last GC's pauses + heap. No
+    // per-object cost anywhere.
+    private long _gcWindowStartAlloc;        // GC.GetTotalAllocatedBytes(false) at window start
+    private double _gcWindowStartPauseMs;    // GC.GetTotalPauseDuration() at window start
+    private long _gcWindowStartGen0, _gcWindowStartGen1, _gcWindowStartGen2;
+    private long _lastGen0Sample;            // gen0 count seen at the previous FinishTick (pause sampler)
+    private double _gcWorstPauseMs;          // worst single pause observed in this window
+    private long _heapAfterGcBytes;          // heap size as of the most recent GC (GCMemoryInfo.HeapSizeBytes)
+    // P838 — per-window allocation attribution per `step:` bucket (bytes).
+    // Filled by ProfilerScope.Dispose for top-level step scopes only; steps run
+    // sequentially on the sim thread, so the GLOBAL counter delta is the honest
+    // per-step number (it includes the parallel broadcast/sector workers that
+    // run inside the step). Cleared at each Report().
+    private readonly Dictionary<string, long> _allocByStep = new();
+
     // P600 — the profiler's mutable state is guarded by a single lock. In
     // production everything runs on the server's one simulation thread and the
     // lock is uncontended; it exists so that a unit test that enables the global
@@ -116,6 +135,14 @@ public sealed class TickProfiler
         _slowTickMs = slowTickMs;
         _slowTickCapture = slowTickCapture;
         _windowStartUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // P838 — baseline the window GC counters so the first Report()'s deltas
+        // cover exactly the profiler's own lifetime.
+        _gcWindowStartAlloc = GC.GetTotalAllocatedBytes(precise: false);
+        _gcWindowStartPauseMs = GC.GetTotalPauseDuration().TotalMilliseconds;
+        _gcWindowStartGen0 = GC.CollectionCount(0);
+        _gcWindowStartGen1 = GC.CollectionCount(1);
+        _gcWindowStartGen2 = GC.CollectionCount(2);
+        _lastGen0Sample = _gcWindowStartGen0;
         if (csvPath is { Length: > 0 })
         {
             _csv = new StreamWriter(csvPath, append: true);
@@ -242,6 +269,28 @@ public sealed class TickProfiler
             if (wall > _tickWallMax) _tickWallMax = wall;
             _ticksInWindow++;
 
+            // P838 — sample the worst single GC pause cheaply: only when a
+            // collection happened during this tick do we call
+            // GC.GetGCMemoryInfo(GCKind.Any), whose PauseDurations hold the LAST
+            // GC's pause durations (a blocking GC has one pause; a background
+            // gen2 can have several) and whose HeapSizeBytes is the heap size
+            // after that GC. On the rig that is ~10 info calls/s, zero otherwise
+            // (no pause → nothing to sample). Verified working under NativeAOT
+            // (the published server binary emits the sampled values).
+            long gen0Now = GC.CollectionCount(0);
+            if (gen0Now != _lastGen0Sample)
+            {
+                _lastGen0Sample = gen0Now;
+                var info = GC.GetGCMemoryInfo(GCKind.Any);
+                var pauses = info.PauseDurations;
+                for (int i = 0; i < pauses.Length; i++)
+                {
+                    double p = pauses[i].TotalMilliseconds;
+                    if (p > _gcWorstPauseMs) _gcWorstPauseMs = p;
+                }
+                if (info.HeapSizeBytes > 0) _heapAfterGcBytes = info.HeapSizeBytes;
+            }
+
             // P619 — emit the slow-tick capture line the moment a tick exceeds
             // the threshold, from this tick's still-intact bucket accumulator
             // (_cur is folded + cleared just below) and the GC baselines taken at
@@ -318,6 +367,34 @@ public sealed class TickProfiler
         }
     }
 
+    /// <summary>
+    /// P838 — accumulate one <c>step:</c> scope's allocated-bytes delta (global
+    /// counter, all threads) into the window's per-step table, reported as the
+    /// top allocating steps on the <c>[gcprof]</c> line. Called from
+    /// <see cref="ProfilerScope.Dispose"/> for step scopes only.
+    /// </summary>
+    internal void RecordAlloc(string bucket, long bytes)
+    {
+        if (bytes <= 0) return;
+        lock (_lock)
+        {
+            _allocByStep.TryGetValue(bucket, out var cur);
+            _allocByStep[bucket] = cur + bytes;
+        }
+    }
+
+    /// <summary>P838 test/bench seam — snapshot the current window's per-step
+    /// allocation table (bytes per <c>step:</c> bucket) without rolling the
+    /// window. Empty when the profiler is off or no step scope has run. Public
+    /// like <see cref="Snapshot"/> so the proof benches (outside the solution,
+    /// no InternalsVisibleTo) can read it.</summary>
+    public static Dictionary<string, long> SnapshotAlloc()
+    {
+        var p = Instance;
+        if (p is null) return new Dictionary<string, long>();
+        lock (p._lock) return new Dictionary<string, long>(p._allocByStep);
+    }
+
     /// <summary>Record a sector's object/ship population for the next report.
     /// No-op when disabled.</summary>
     public static void RecordSectorCounts(int sectorId, int objects, int ships)
@@ -388,6 +465,44 @@ public sealed class TickProfiler
                     $"{startUnix},{seconds:0.###},{bucket},{list.Count},{mean:0.####},{p95:0.####},{max:0.####},{total:0.####}");
             }
 
+            // P838 — the per-window GC line. Emitted AFTER the bucket lines so
+            // the existing [tickprof] header + step: format stay byte-identical
+            // (the rig's filter scripts parse those first). All values are
+            // window deltas: pause total (and its share of the tick-wall sum),
+            // collections per generation, bytes allocated per tick (global
+            // counter — all threads), heap size after the most recent GC, and
+            // the worst single pause sampled at collection boundaries.
+            double pauseMs = GC.GetTotalPauseDuration().TotalMilliseconds - _gcWindowStartPauseMs;
+            long allocBytes = GC.GetTotalAllocatedBytes(precise: false) - _gcWindowStartAlloc;
+            long dg0 = GC.CollectionCount(0) - _gcWindowStartGen0;
+            long dg1 = GC.CollectionCount(1) - _gcWindowStartGen1;
+            long dg2 = GC.CollectionCount(2) - _gcWindowStartGen2;
+            int ticks = (int)_ticksInWindow;
+            double pausePerTick = ticks > 0 ? pauseMs / ticks : 0;
+            double pauseShare = totSum > 0 ? 100.0 * pauseMs / totSum : 0.0;
+            double kbPerTick = ticks > 0 ? allocBytes / 1024.0 / ticks : 0;
+            Console.WriteLine(
+                $"[gcprof] window {seconds:0.##}s ticks={ticks} " +
+                $"pause={pauseMs:0.0}ms ({pausePerTick:0.000}ms/tick, {pauseShare:0.0}% of tick-wall) " +
+                $"gc gen0={dg0} gen1={dg1} gen2={dg2} " +
+                $"alloc={allocBytes / 1048576.0:0.0}MB ({kbPerTick:0.0}KB/tick) " +
+                $"heapAfterGc={(_heapAfterGcBytes > 0 ? _heapAfterGcBytes : GC.GetGCMemoryInfo(GCKind.Any).HeapSizeBytes) / 1048576.0:0.0}MB worstPause={_gcWorstPauseMs:0.00}ms");
+            if (_allocByStep.Count > 0)
+            {
+                string top = string.Join(", ", _allocByStep.OrderByDescending(kv => kv.Value).Take(5)
+                    .Select(kv => $"{kv.Key}={kv.Value / 1048576.0:0.0}MB"));
+                Console.WriteLine($"  [gcprof] top-alloc steps (global counter, incl. parallel workers): {top}");
+            }
+
+            // Re-baseline the window GC counters for the next window.
+            _gcWindowStartAlloc = GC.GetTotalAllocatedBytes(precise: false);
+            _gcWindowStartPauseMs = GC.GetTotalPauseDuration().TotalMilliseconds;
+            _gcWindowStartGen0 = GC.CollectionCount(0);
+            _gcWindowStartGen1 = GC.CollectionCount(1);
+            _gcWindowStartGen2 = GC.CollectionCount(2);
+            _gcWorstPauseMs = 0;
+            _allocByStep.Clear();
+
             if (_sectorCounts.Count > 0)
             {
                 Console.WriteLine("  [sector populations]");
@@ -434,13 +549,34 @@ public readonly struct ProfilerScope : IDisposable
     private readonly TickProfiler? _p;
     private readonly string _bucket;
     private readonly long _start;
+    private readonly long _allocStart;   // P838 — global allocated bytes at enter (step: buckets only)
+    private readonly bool _trackAlloc;   // P838 — default false = the disabled no-op form
 
     internal ProfilerScope(TickProfiler p, string bucket, long start)
     {
         _p = p;
         _bucket = bucket;
         _start = start;
+        // P838 — allocation attribution for the TOP-LEVEL step scopes only.
+        // Steps run sequentially on the sim thread, so the GLOBAL counter delta
+        // (GC.GetTotalAllocatedBytes — all threads, including the parallel
+        // broadcast/sector workers that run inside a step) is the honest
+        // per-step number. Inner buckets stay time-only: the per-thread counter
+        // (GC.GetAllocatedBytesForCurrentThread) would double-count nested
+        // scopes and miss the workers entirely. Cost: one counter read at
+        // enter + one at dispose per step (~20 per tick), nothing per object.
+        if (bucket.StartsWith("step:", StringComparison.Ordinal))
+        {
+            _trackAlloc = true;
+            _allocStart = GC.GetTotalAllocatedBytes(precise: false);
+        }
     }
 
-    public void Dispose() => _p?.Record(_bucket, Stopwatch.GetTimestamp() - _start);
+    public void Dispose()
+    {
+        if (_p is null) return;
+        _p.Record(_bucket, Stopwatch.GetTimestamp() - _start);
+        if (_trackAlloc)
+            _p.RecordAlloc(_bucket, GC.GetTotalAllocatedBytes(precise: false) - _allocStart);
+    }
 }
