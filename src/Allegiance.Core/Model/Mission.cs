@@ -1319,12 +1319,16 @@ public sealed partial class Mission : IMissionIgc
     /// sentinel increments <see cref="Side.Artifacts"/>, then
     /// <c>CFSMission::CheckForVictoryByFlags</c> awards the game to the first
     /// side with <c>GetArtifacts() &gt;= nGoalArtifactsCount</c>
-    /// (<c>fsmission.cpp:3888-3894</c>). This branch recomputes that threshold
+    /// (<c>fsmission.cpp:3888-3894</c>) — the artifact leg of
+    /// <c>CheckForVictoryByFlags</c>, whose stage gate is STAGE_STARTED only
+    /// (<c>fsmission.cpp:3864</c>, P844/SIM-0534). This branch recomputes that threshold
     /// against <see cref="ArtifactWinGoal"/>.</para>
-    /// <para>Both branches are guarded by the same stage gate as the P191
-    /// recompute (<c>Started</c>/<c>Starting</c> only — the host flips the
-    /// mission <see cref="MissionStage.Over"/> on a win, and an Over mission
-    /// never re-enters).</para>
+    /// <para>The prosperity branch is guarded by the P191 stage gate
+    /// (<c>Started</c>/<c>Starting</c>); the artifact leg is
+    /// <c>Started</c>-only, per native CheckForVictoryByFlags
+    /// (<c>fsmission.cpp:3864</c>) — the host flips the mission
+    /// <see cref="MissionStage.Over"/> on a win, and an Over mission never
+    /// re-enters.</para>
     /// </remarks>
     public (Side? Winner, bool Changed) RecomputeProsperityAndArtifacts()
     {
@@ -1350,8 +1354,12 @@ public sealed partial class Mission : IMissionIgc
             }
         }
 
-        // Artifacts (fsmission.cpp:3890): first side to secure the goal count.
-        if (ArtifactEnabled && psideWon is null)
+        // Artifacts (fsmission.cpp:3890): first side to secure the goal count —
+        // the artifact leg of CheckForVictoryByFlags, whose stage gate is
+        // STAGE_STARTED only (fsmission.cpp:3864, P844/SIM-0534): unlike the
+        // Starting-tolerant station-kill recompute (:3575-3578), a Starting
+        // mission never wins by flags/artifacts in native.
+        if (ArtifactEnabled && psideWon is null && Stage == MissionStage.Started)
         {
             foreach (var side in Sides)
                 if (side.Artifacts >= ArtifactWinGoal)
@@ -1396,14 +1404,19 @@ public sealed partial class Mission : IMissionIgc
     /// (The countdown-expiry tie-break fallback that also uses kills,
     /// <c>fsmission.cpp:2468-2492</c>, is a separate time-expired decider, not
     /// this win condition.)</para>
-    /// <para>Both branches are guarded by the same stage gate as the P191/P302
-    /// recomputes (<c>Started</c>/<c>Starting</c> only — the host flips the
+    /// <para>Both branches are guarded by native's STAGE_STARTED-only gate
+    /// (fsmission.cpp:3751/3864 — P844/SIM-0532/0534): the host flips the
     /// mission <see cref="MissionStage.Over"/> on a win, and an Over mission
-    /// never re-enters).</para>
+    /// never re-enters.</para>
     /// </remarks>
     public (Side? Winner, bool Changed) RecomputeFlagsAndKills()
     {
-        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+        // Native stage gate: STAGE_STARTED only, with no Starting allowance —
+        // CheckForVictoryByKills (fsmission.cpp:3751) and CheckForVictoryByFlags
+        // (fsmission.cpp:3864) both test `STAGE_STARTED == GetStage()` plus
+        // `m_psideWon == NULL`; the port's Over flip in DeclareGameOver covers
+        // the no-winner-yet half. (P844/SIM-0532/0534.)
+        if (Stage != MissionStage.Started)
             return (null, false);
 
         Side? psideWon = null;

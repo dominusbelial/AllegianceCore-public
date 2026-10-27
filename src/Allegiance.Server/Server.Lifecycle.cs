@@ -2094,6 +2094,24 @@ public sealed partial class Server
             // "ship X quit the mission" — a real, live gap now closed.
             BroadcastQuitMission(mission, live.Ship.Id, reason);
 
+            // P841 — the remaining RemovePlayerFromSide departure effects,
+            // which native applies after its succession block:
+            // donation re-pointing (fsmission.cpp:1046-1057) needs the
+            // promoted leader, and the payday-to-treasury + old-player save
+            // (fsmission.cpp:1042-1063, 2624-2680) round the body out.
+            // P847 — the donation leg is stage-gated inside the helper, matching
+            // native's `if (STAGE_STARTED || STAGE_STARTING)` wrapper.
+            // P844 — these run BEFORE the deactivation below, exactly as
+            // native: SaveAsOldPlayer is called in RemovePlayerFromMission
+            // (fsmission.cpp:467-471) and GiveSideMoney in RemovePlayerFromSide
+            // (fsmission.cpp:1141) BEFORE the fDeactivate → DeactivateSide call
+            // (fsmission.cpp:1147-1149), so the old-player cache (and its
+            // stamped time played) is already in place when DeactivateSide's
+            // victory check ends the game and builds the game-over roster
+            // (fsmission.cpp:3123-3135 walks m_oldPlayers).
+            RePointDonationsAfterDeparture(mission, live, departedSide);
+            ApplyDeparturePaydayAndOldPlayer(mission, live, departedSide, playerName);
+
             // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
             // CheckForVictoryByInactiveSides). P548 gates it with native's
             // peer-departure deactivation condition (fsmission.cpp:1147-1149):
@@ -2102,22 +2120,10 @@ public sealed partial class Server
             // departing player's side just lost its last player
             // (HasPlayers(psideOld, false)). In a NotStarted lobby a drop must
             // never deactivate/end the mission; in Starting/Started it
-            // deactivates only a side left empty. LAST so the succession + QUIT
-            // broadcasts above reach the original-mission peers before any
-            // rotation + migration re-seats them.
+            // deactivates only a side left empty.
             bool departingSideEmpty = CountPlayersOnSideExcluding(mission, departedSide, live.Ship) == 0;
             if (mission.Stage != MissionStage.NotStarted && departingSideEmpty)
                 DeactivateSideForPeerDeparture(mission, mission.Sides.FirstOrDefault(s => s.Id == departedSide));
-
-            // P841 — the remaining RemovePlayerFromSide departure effects,
-            // which native applies after its succession block:
-            // donation re-pointing (fsmission.cpp:1046-1057) needs the
-            // promoted leader, and the payday-to-treasury + old-player save
-            // (fsmission.cpp:1042-1063, 2624-2680) round the body out.
-            // P847 — the donation leg is stage-gated inside the helper, matching
-            // native's `if (STAGE_STARTED || STAGE_STARTING)` wrapper.
-            RePointDonationsAfterDeparture(mission, live, departedSide);
-            ApplyDeparturePaydayAndOldPlayer(mission, live, departedSide, playerName);
         }
     }
 
@@ -2168,9 +2174,18 @@ public sealed partial class Server
     /// </summary>
     private void ApplyDeparturePaydayAndOldPlayer(Mission mission, LiveShip live, short departedSideId, string? playerName)
     {
-        // Old-player save (fsmission.cpp:2624).
+        // Old-player save (fsmission.cpp:2624). Native copies the live
+        // PlayerScoreObject — whose TimePlayed the Connect/Disconnect pairs
+        // keep current (igc.h:5602-5613); the port's collapsed accounting
+        // stamps the seat-time delta here so the departed player's cached
+        // score carries a truthful time played (P844/SIM-0527: the game-over
+        // roster's TimePlayed != 0 gate, fsmission.cpp:3124, must pass).
         if (playerName is { Length: > 0 } name)
+        {
+            live.PlayerScore.SetTimePlayed((float)Math.Max(0.0, _simNow - live.ConnectSimTime));
             _oldPlayerScores[(mission, name)] = live.PlayerScore;
+            _oldPlayerSideIds[(mission, name)] = departedSideId;   // P844/SIM-0527 — OldPlayerInfo.sideID
+        }
 
         var ship = live.Ship;
         long payday = 0;
