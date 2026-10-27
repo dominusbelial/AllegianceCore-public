@@ -182,4 +182,17 @@ public sealed class P855TrapHackTests
         Assert.Contains("ship=" + ship0, events[0]);
         Assert.Contains("player=\"p855_hack0\"", events[0]);
     }
+
+    /// <summary>P855 review (Claude): connection-id keys never recur, so expired
+    /// buckets are dropped once the table passes 1024 entries.</summary>
+    [Fact]
+    public void Rate_limiter_drops_expired_buckets_when_the_table_grows()
+    {
+        long now = 0;
+        var limiter = new global::Allegiance.Server.TrapHackRateLimiter(3, 1000, () => now);
+        for (int i = 0; i < 1024; i++) Assert.True(limiter.TryAcquire($"old{i}"));
+        now = 5000;
+        Assert.True(limiter.TryAcquire("fresh"));
+        Assert.Equal(1, limiter.BucketCount);
+    }
 }

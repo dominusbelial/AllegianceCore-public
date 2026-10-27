@@ -88,6 +88,8 @@ internal sealed class TrapHackRateLimiter
 
     /// <summary>Try to spend one event budget for <paramref name="source"/>.
     /// true = emit the event; false = suppress it (the count accumulates).</summary>
+    internal int BucketCount { get { lock (_buckets) return _buckets.Count; } }
+
     public bool TryAcquire(string source)
     {
         long now = _nowMs();
@@ -95,6 +97,11 @@ internal sealed class TrapHackRateLimiter
         {
             if (!_buckets.TryGetValue(source, out var b))
             {
+                // Keys are connection ids, which never recur: drop expired buckets
+                // so a long-running server's table stays bounded.
+                if (_buckets.Count >= 1024)
+                    foreach (var (key, old) in _buckets)
+                        if (now - old.Start >= _windowMs) _buckets.Remove(key);
                 _buckets[source] = new Bucket { Start = now, Count = 1 };
                 return true;
             }
