@@ -16,7 +16,7 @@ public sealed class BroadcastEncodeOnceFlagTests
     [InlineData(false, " TRUE ", true, true)]
     [InlineData(true, "false", false, false)]
     [InlineData(true, "0", true, false)]
-    public void Flag_defaults_off_and_environment_wins(bool configured, string? env, bool snapshot, bool expected)
+    public void Flag_follows_config_and_environment_wins(bool configured, string? env, bool snapshot, bool expected)
         => Assert.Equal(expected, Srv.ResolveEncodeOnceFlag(configured, env, snapshot));
 
     [Theory]
@@ -26,16 +26,16 @@ public sealed class BroadcastEncodeOnceFlagTests
         => Assert.Throws<InvalidDataException>(() => Srv.ResolveEncodeOnceFlag(false, env, snapshot));
 
     [Fact]
-    public void Json_binds_both_flags_and_defaults_off()
+    public void Json_binds_both_flags_and_defaults_on()
     {
-        Assert.False(new BroadcastConfig().EncodeOnce);
+        Assert.True(new BroadcastConfig().EncodeOnce);   // default on since the 2026-10-27 rig A/B
         string path = Path.Combine(Path.GetTempPath(), $"p669-config-{Guid.NewGuid():N}.json");
         try
         {
-            File.WriteAllText(path, """{"broadcast":{"immutableSnapshot":true,"encodeOnce":true}}""");
+            File.WriteAllText(path, """{"broadcast":{"immutableSnapshot":false,"encodeOnce":false}}""");
             var config = ServerConfigLoader.Load(path, []);
-            Assert.True(config.Broadcast!.EncodeOnce);
-            Assert.True(config.Broadcast.ImmutableSnapshot);
+            Assert.False(config.Broadcast!.EncodeOnce);
+            Assert.False(config.Broadcast.ImmutableSnapshot);
         }
         finally { File.Delete(path); }
     }

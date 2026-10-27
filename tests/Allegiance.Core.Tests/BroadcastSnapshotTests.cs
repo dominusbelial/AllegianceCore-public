@@ -21,20 +21,56 @@ public sealed class BroadcastPublisherTests
     [InlineData(false, "1", true)]
     [InlineData(true, "false", false)]
     [InlineData(false, "TRUE", true)]
-    public void Flag_is_opt_in_and_environment_wins(bool configured, string? env, bool expected)
+    public void Flag_follows_config_and_environment_wins(bool configured, string? env, bool expected)
         => Assert.Equal(expected, Srv.ResolveSnapshotFlag(configured, env));
 
     [Fact]
-    public void Json_setting_binds_and_default_is_off()
+    public void Json_setting_binds_and_default_is_on()
     {
-        Assert.False(new BroadcastConfig().ImmutableSnapshot);
+        // 2026-10-27 rig A/B (b42 vs b39): snapshot + encode-once are the default.
+        Assert.True(new BroadcastConfig().ImmutableSnapshot);
+        Assert.True(new BroadcastConfig().EncodeOnce);
         string path = Path.Combine(Path.GetTempPath(), $"p668-config-{Guid.NewGuid():N}.json");
         try
         {
-            File.WriteAllText(path, """{"broadcast":{"immutableSnapshot":true}}""");
-            Assert.True(ServerConfigLoader.Load(path, []).Broadcast!.ImmutableSnapshot);
+            File.WriteAllText(path, """{"broadcast":{"immutableSnapshot":false}}""");
+            Assert.False(ServerConfigLoader.Load(path, []).Broadcast!.ImmutableSnapshot);
         }
         finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Default_encode_once_follows_a_disabled_snapshot_but_an_explicit_request_is_rejected()
+    {
+        Assert.False(Srv.ResolveEncodeOnceFlag(true, null, snapshot: false));
+        Assert.True(Srv.ResolveEncodeOnceFlag(true, null, snapshot: true));
+        Assert.False(Srv.ResolveEncodeOnceFlag(true, "0", snapshot: true));
+        Assert.Throws<InvalidDataException>(() => Srv.ResolveEncodeOnceFlag(false, "1", snapshot: false));
+    }
+
+    [Fact]
+    public void After_publish_actions_run_after_their_deliveries_even_when_coalesced()
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var log = new ConcurrentQueue<string>();
+        using var publisher = new BroadcastPublisher((delivery, bytes) => log.Enqueue($"send{bytes[0]}"), 2);
+        int calls = 0;
+        publisher.BeforeEncode = () => { if (Interlocked.Increment(ref calls) == 1) { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); } };
+        BroadcastSnapshot Tick(int tick, string? after)
+        {
+            var snapshot = publisher.Rent(tick);
+            snapshot.Deliveries.Add(new(new(1), new BroadcastPacket([(byte)tick]), 0, true));
+            if (after is not null) snapshot.AfterPublish.Add(() => log.Enqueue(after));
+            return snapshot;
+        }
+        publisher.Submit(Tick(1, null));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));   // tick 1 is publishing
+        publisher.Submit(Tick(2, "close2"));                      // pending
+        publisher.Submit(Tick(3, "close3"));                      // coalesced into the pending one
+        release.Set();
+        publisher.Flush();
+        Assert.Equal(new[] { "send1", "send2", "send3", "close2", "close3" }, log.ToArray());
     }
 
     [Fact]

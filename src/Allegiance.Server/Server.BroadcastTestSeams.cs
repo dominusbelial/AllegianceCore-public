@@ -198,6 +198,10 @@ public sealed partial class Server
         foreach (var peer in _peerShips.Keys) SendPeerCoalescing(peer, packet, int.MaxValue, guaranteed: true);
     }
 
+    /// <summary>Encode/send failures the broadcast publisher contained (0 when
+    /// the snapshot pipeline is off).</summary>
+    internal long BroadcastPublishFailures => _broadcastPublisher is { } p ? Interlocked.Read(ref p.EncodeFailures) : 0;
+
     // Replays the complete broadcast suffix against a recorded tick's world.
     // No Mission.Update or socket timing changes the supplied inputs.
     internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false)

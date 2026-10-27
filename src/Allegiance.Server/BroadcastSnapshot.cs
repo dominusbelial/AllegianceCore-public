@@ -57,7 +57,11 @@ internal sealed class BroadcastSnapshot
 {
     internal long Tick;
     internal readonly List<BroadcastDelivery> Deliveries = new();
-    internal void Reset(long tick) { Tick = tick; Deliveries.Clear(); }
+    // Run on the publisher thread after every delivery of this snapshot was
+    // handed to the transport (e.g. LOGOFF's close-after-echo), so a socket
+    // close can never overtake a message captured before it in the same tick.
+    internal readonly List<Action> AfterPublish = new();
+    internal void Reset(long tick) { Tick = tick; Deliveries.Clear(); AfterPublish.Clear(); }
 }
 
 /// <summary>One active publication and at most one pending snapshot. Encoding
@@ -132,8 +136,10 @@ internal sealed class BroadcastPublisher : IDisposable
                 }
                 previous.Deliveries.RemoveRange(keep, previous.Deliveries.Count - keep);
                 previous.Deliveries.AddRange(snapshot.Deliveries);
+                previous.AfterPublish.AddRange(snapshot.AfterPublish);
                 previous.Tick = snapshot.Tick;
                 snapshot.Deliveries.Clear(); // ownership transferred to previous
+                snapshot.AfterPublish.Clear();
                 Return(snapshot);
                 Interlocked.Increment(ref CoalescedSnapshots);
             }
@@ -146,6 +152,7 @@ internal sealed class BroadcastPublisher : IDisposable
     {
         foreach (var delivery in snapshot.Deliveries) delivery.Packet.Release();
         snapshot.Deliveries.Clear();
+        snapshot.AfterPublish.Clear();
         _pool.Add(snapshot);
     }
 
@@ -212,6 +219,11 @@ internal sealed class BroadcastPublisher : IDisposable
                         continue;
                     }
                     try { _send(delivery, delivery.Packet.EncodeMemory()); }
+                    catch (Exception e) { Failed(e); }
+                }
+                foreach (var after in snapshot.AfterPublish)
+                {
+                    try { after(); }
                     catch (Exception e) { Failed(e); }
                 }
                 Interlocked.Increment(ref PublishedSnapshots);

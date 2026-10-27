@@ -711,12 +711,15 @@ public sealed class ProfilerConfig
 public sealed class BroadcastConfig
 {
     /// <summary>Capture owned wire data on the sim thread and encode/publish it
-    /// off-thread. Default off. ALLEGIANCE_BROADCAST_SNAPSHOT overrides this.</summary>
-    public bool ImmutableSnapshot { get; set; }
+    /// off-thread. Default ON since the 2026-10-27 rig A/B (b42 vs control b39:
+    /// clash-peak tick 44 ms vs 71–80 ms, TiDi min 0.87 vs 0.48, same egress).
+    /// ALLEGIANCE_BROADCAST_SNAPSHOT=0 turns it off.</summary>
+    public bool ImmutableSnapshot { get; set; } = true;
 
-    /// <summary>Share ship record encodings within a snapshot. Default off;
-    /// requires ImmutableSnapshot. ALLEGIANCE_BROADCAST_ENCODE_ONCE overrides.</summary>
-    public bool EncodeOnce { get; set; }
+    /// <summary>Share ship record encodings within a snapshot. Default ON (with
+    /// ImmutableSnapshot, same rig A/B); requires ImmutableSnapshot.
+    /// ALLEGIANCE_BROADCAST_ENCODE_ONCE=0 turns it off.</summary>
+    public bool EncodeOnce { get; set; } = true;
 
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>

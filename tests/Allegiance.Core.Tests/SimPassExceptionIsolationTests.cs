@@ -116,9 +116,14 @@ public class SimPassExceptionIsolationTests
     /// private <c>_parts</c> list — the legacy exploit state — and confirm the
     /// server logs the failure and KEEPS TICKING instead of exiting.
     /// Before P314 this escaped and killed the whole process.</summary>
+    /// With the broadcast snapshot pipeline (default since the 2026-10-27 rig
+    /// A/B) the poisoned record is encoded on the publisher thread, so the
+    /// containment is the publisher's failure counter rather than the sim pass's.
     [Trait("Requires", "Artwork")]
-    [SkippableFact]
-    public void SimPass_contains_a_throwing_export_stage_and_keeps_running()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SimPass_contains_a_throwing_export_stage_and_keeps_running(bool snapshot)
     {
         Require.Artwork();
         using var server = new Srv();
@@ -134,8 +139,11 @@ public class SimPassExceptionIsolationTests
             mission.PlaceShip(ship, spawnSector);
             return (ship, spawnSector);
         };
-        server.Boot(Config());
+        var config = Config();
+        config.Broadcast = new() { ImmutableSnapshot = snapshot, EncodeOnce = snapshot };
+        server.Boot(config);
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        long Failures() => snapshot ? server.BroadcastPublishFailures : server.SimPassStageFailures;
 
         using var a = new FltBot();
         using var b = new FltBot();
@@ -170,11 +178,11 @@ public class SimPassExceptionIsolationTests
             .Invoke(teammate, null);
 
         long tick0 = server.LoopIterations;
-        long fail0 = server.SimPassStageFailures;
+        long fail0 = Failures();
 
         // Pump until the poisoned export throws and is contained. Before P314
         // this ESCAPED TickSim and killed the process.
-        int pumped = PumpUntil(server, () => server.SimPassStageFailures > fail0, 200);
+        int pumped = PumpUntil(server, () => Failures() > fail0, 200);
         Assert.True(pumped < 200, "the over-limit teammate export should have thrown and been contained, not died");
 
         // The server is STILL ALIVE and ticking after the contained exception.
@@ -184,11 +192,11 @@ public class SimPassExceptionIsolationTests
         // It keeps simulating normally on subsequent cycles (the poisoned
         // teammate is still there, so failures keep being logged — but the
         // server never dies).
-        long fail1 = server.SimPassStageFailures;
+        long fail1 = Failures();
         server.TickSim();
         server.TickSim();
         Assert.True(server.LoopIterations > tick1, "server did not continue ticking on the next cycle");
-        Assert.True(server.SimPassStageFailures >= fail1, "failure counter regressed unexpectedly");
+        Assert.True(Failures() >= fail1, "failure counter regressed unexpectedly");
     }
 
     // ── 3) The Notable spectator-subscriber policy ───────────────────────────

@@ -1828,7 +1828,11 @@ public sealed partial class Server
                     // later frame on it ineligible; the transport's OnPeerLeft
                     // fires and ReleasePeer runs again as an idempotent no-op.
                     RemoveChatBudget(from);
-                    (_host.Transport as TcpTransport)?.ClosePeerAfterFlush(from);
+                    // The echo may still sit in the broadcast snapshot being
+                    // built (default since the 2026-10-27 rig A/B): close only
+                    // after it reaches the transport, or the client never sees it.
+                    var tcp = _host.Transport as TcpTransport;
+                    if (tcp is not null) AfterQueuedSends(() => tcp.ClosePeerAfterFlush(from));
                     Console.WriteLine($"[logoff] peer {from} logged off (echo queued, released, close after drain — H-14)");
                 }
                 catch (Exception e)

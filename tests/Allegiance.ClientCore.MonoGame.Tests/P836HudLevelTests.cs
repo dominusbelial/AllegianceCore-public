@@ -385,9 +385,16 @@ public class P836HudLevelTests
             var cache = new RadarLabelCache();
             var plan = Plan(level);
             for (int warm = 0; warm < 20; warm++) model.Select(contacts, RadarMode.Default, false, plan, cache);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int f = 0; f < 120; f++) model.Select(contacts, RadarMode.Default, false, plan, cache);
-            Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+            // Best of 5 windows: JIT tier-up under a loaded test host can land in
+            // one window; a real per-frame allocation shows in all of them.
+            long best = long.MaxValue;
+            for (int window = 0; window < 5 && best != 0; window++)
+            {
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int f = 0; f < 120; f++) model.Select(contacts, RadarMode.Default, false, plan, cache);
+                best = Math.Min(best, GC.GetAllocatedBytesForCurrentThread() - before);
+            }
+            Assert.Equal(0, best);
         }
     }
 

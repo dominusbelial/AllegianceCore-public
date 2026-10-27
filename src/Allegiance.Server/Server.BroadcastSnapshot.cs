@@ -35,7 +35,9 @@ public sealed partial class Server
     {
         bool enabled = environment?.Trim().ToLowerInvariant() switch
         {
-            null or "" => configured,
+            // Default-on (2026-10-27): with the snapshot turned off, the config
+            // value quietly follows it; only an explicit env "1" is an error.
+            null or "" => configured && snapshot,
             "1" or "true" => true,
             "0" or "false" => false,
             _ => throw new InvalidDataException("ALLEGIANCE_BROADCAST_ENCODE_ONCE must be 0/1 or false/true"),
@@ -49,9 +51,9 @@ public sealed partial class Server
     {
         _broadcastInterestTiersEnabled = ResolveInterestTiersFlag(_config.Broadcast?.InterestTiers ?? false,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_TIERS"));
-        _broadcastSnapshotEnabled = ResolveSnapshotFlag(_config.Broadcast?.ImmutableSnapshot ?? false,
+        _broadcastSnapshotEnabled = ResolveSnapshotFlag(_config.Broadcast?.ImmutableSnapshot ?? true,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SNAPSHOT")) || _broadcastInterestTiersEnabled;
-        _broadcastEncodeOnceEnabled = ResolveEncodeOnceFlag(_config.Broadcast?.EncodeOnce ?? false,
+        _broadcastEncodeOnceEnabled = ResolveEncodeOnceFlag(_config.Broadcast?.EncodeOnce ?? true,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_ENCODE_ONCE"), _broadcastSnapshotEnabled) || _broadcastInterestTiersEnabled;
         Console.WriteLine($"[boot] broadcast.interestTiers = {_broadcastInterestTiersEnabled}");
         Console.WriteLine($"[boot] broadcast.immutableSnapshot = {_broadcastSnapshotEnabled}");
@@ -174,6 +176,21 @@ public sealed partial class Server
     }
 
     internal void FlushBroadcastSnapshots() => _broadcastPublisher?.Flush();
+
+    /// <summary>Run <paramref name="action"/> once everything already queued for
+    /// the wire has been handed to the transport: after the snapshot being built
+    /// is published when one is open, otherwise after draining the publisher.
+    /// LOGOFF uses it so its close-after-flush cannot overtake its own echo.</summary>
+    private void AfterQueuedSends(Action action)
+    {
+        if (_buildingBroadcastSnapshot is { } snapshot)
+        {
+            lock (_snapshotCaptureGate) snapshot.AfterPublish.Add(action);
+            return;
+        }
+        FlushBroadcastSnapshots();
+        action();
+    }
 
     private void SendPeer(ConnectionId peer, BroadcastPacket packet) => QueueBroadcast(peer, packet, 0, true);
     private void SendPeerCoalescing(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed = false)
