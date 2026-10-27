@@ -1,0 +1,72 @@
+{
+  "task": "P831",
+  "base": "f3e5148f (public master at dispatch)",
+  "change_scope": [
+    "tools/allegiance-mcp/BotManager.Lifecycle.cs",
+    "tools/allegiance-mcp/BotManager.Finale.cs",
+    "tools/allegiance-mcp/BotManager.cs",
+    "tests/Allegiance.ClientCore.Tests/P831FallbackBomberRearmTests.cs"
+  ],
+  "gate": {
+    "solution_build": "0 warnings / 0 errors",
+    "build_tools": "87/87 projects, 0 warnings / 0 errors",
+    "aot_publish": "not required (no src/Allegiance.Server or src/Allegiance.Core change)",
+    "new_tests_3x_alone": "6/6, 6/6, 6/6",
+    "affected_tests_3x_alone": "187/187, 187/187, 187/187 (P656ShowcaseFinaleTests, BotFixRegressionTests, P819FinaleOrderTests, P801StrikeMassTests, P745SiegeDutyTests)",
+    "fast_tier": {
+      "result": "PASS",
+      "tests": 10838,
+      "wall_seconds": 306.2,
+      "summary": "TestResults/tiers-20261026T233312.200194Z/summary.json",
+      "earlier_run_on_final_tree": {
+        "result": "FAIL (1 ledgered load flake)",
+        "tests": 10838,
+        "failure": "Allegiance.Core.Tests.AsteroidsUpdateLiveTests.Mining_depletion_reflected_in_next_update_while_health_fraction_stays_full",
+        "flake_3x_alone": "3/3 pass",
+        "note": "src/ untouched by this task"
+      }
+    },
+    "showcase_never_parks_5x": {
+      "result": "5/5 PASS (final tree)",
+      "base_rate": "5/5 (P830, idle host)",
+      "longest_parked_with_target_seconds": [
+        1.919,
+        1.203,
+        1.115,
+        0.0,
+        2.014
+      ],
+      "host_load_at_start": [
+        1.8,
+        3.17,
+        1.89,
+        1.12,
+        1.33
+      ],
+      "limit_seconds": 5
+    }
+  },
+  "local_rotation_repro": {
+    "harness": "in-process server + BotManager, m2xspiderw, CivIds [1 Dreghklar, 201 Rixian] (no starting bomber hull in either civ), native fog (no ShowMap, no target_sector), showcase size_scale 3, 200 s then a forced game over + the auto next match",
+    "master": {
+      "result": "FAIL (reproduced)",
+      "bots": 61,
+      "objectives_pending_after_rotation": 61,
+      "bots_that_moved": "0 of 61 (all still docked, LifeGeneration advanced, target sector still the previous match's clash sector)",
+      "rearm": "re-armed=False, '[finale] re-arm blocked: 61 participating bots; objectives-pending=61 \u2026' once a minute for the whole 525 s window"
+    },
+    "fix": {
+      "result": "PASS",
+      "bots": 61,
+      "objectives_pending_after_rotation": 0,
+      "bots_that_engaged_or_flew": "55 of 61 moved > 200 m inside a 20 s sample; the rest were 2 lifepods and 3 in-sector dogfight loiters (86-115 m)",
+      "rearm": "re-armed=True at t=556 s: the fresh per-side fog gate held ('no enemy station observed by side(s) [0]'), then the P831 grace armed the next match's finale at 300 s past the rotation and logged it"
+    },
+    "evidence": "~/allegiance-evidence/P831/repro-{master,fix}-dotnet-output.txt (+ -summary.txt); trimmed copies in docs/reports/P831_assets/"
+  },
+  "rig_evidence_rechecked": {
+    "batch34_worker1": "no '[finale] re-armed' line anywhere (the FIRST rotation already failed); finale trigger at line 77331",
+    "batch36_worker1": "rotation 1 re-readied at 207738, next-match purchases at 208814, re-arm only at 289769 (82k lines later); rotation 2 re-readied at 342730, last [p682] at 344598, then 22 requested-Bomber bots log exactly 3 lines each and nothing for the remaining 139103 lines; 174 of the 196 bots stay active",
+    "batch35_worker1_2": "7 re-arms (3 + 4) WITH the same 22/26 requested-Bomber fallback slots (187/230 fallback loadout lines) \u2014 so the failure is a knowledge/timing state, not a matchup property"
+  }
+}

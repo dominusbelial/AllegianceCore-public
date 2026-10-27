@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
@@ -142,6 +143,7 @@ internal sealed partial class BotManager
         bot.LastBoostAt = double.NegativeInfinity;
         bot.CloakHeld = false;
         bot.AttackAfterburnerHeld = false;
+        bot.ObjectiveFallbackLogged = false;
         bot.HasPos = false;
         bot.LastMoveAt = now;
         bot.WorldNotReadyUntil = double.NegativeInfinity;
@@ -287,7 +289,20 @@ internal sealed partial class BotManager
             if (bot.TargetSector is not null && target is null && bot.ObjectiveName is { } name)
                 target = world.Clusters.Values.Where(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
                     .Select(c => (short?)c.ClusterId).FirstOrDefault();
-            if (bot.TargetSector is not null && target is null) return false;
+            // P831 — the fresh life must ALWAYS resolve here. The old code stayed
+            // pending (`return false`) until the fogged world could name the
+            // objective, which parked the bot: a pending bot is never driven, so
+            // it never flies, so it never observes the station/home the
+            // resolution waits for — a self-deadlock (rig batches 34/36: the 48
+            // requested-Bomber bots on a P821 fallback hull sat in the hangar for
+            // hours, and with every bot carrying a clash target from the previous
+            // map the whole fleet could park). A stale sector id from the previous
+            // mission must never outlive the reset either. Falling back to "no
+            // fixed objective yet" is a RESOLVABLE state: the bot fights where it
+            // is and AssignClashTargets (which re-derives a bomber's enemy home
+            // from the side's own intel) hands it a fresh objective as soon as the
+            // side has one. The requested duty is untouched (P821).
+            if (bot.TargetSector is not null && target is null) LogObjectiveFallback(bot, world);
             bot.TargetSector = target;
             if (target is { } goal && bot.RouteIndex >= 0 && world.Ships.TryGetValue(ship, out var own))
             {
@@ -302,6 +317,33 @@ internal sealed partial class BotManager
             bot.ObjectivesPending = false;
             return true;
         }
+    }
+
+    /// <summary>P831 — one bounded line per fresh life when the new mission's
+    /// objective is not derivable from this bot's own (fogged) world, naming what
+    /// the world was missing so a recurrence is diagnosable from the log alone.
+    /// The bot proceeds with no fixed objective (a resolvable state) instead of
+    /// staying pending; the clash assignment in <c>BotManager.Exploration.cs</c>
+    /// re-issues the duty once the side has resolved its target.</summary>
+    private static void LogObjectiveFallback(ActiveBot bot, ClientWorld world)
+    {
+        if (bot.ObjectiveFallbackLogged) return;
+        bot.ObjectiveFallbackLogged = true;
+        int enemyStations = world.Stations.Values.Count(s => s.SideId >= 0 && s.SideId != bot.Side);
+        int ownStations = world.Stations.Values.Count(s => s.SideId == bot.Side);
+        var ownHomes = world.Stations.Values.Where(s => s.SideId == bot.Side).Select(s => s.ClusterId).ToHashSet();
+        int enemyHomes = world.Graph?.Clusters.Count(c => c.HomeSector && !ownHomes.Contains(c.Id)) ?? 0;
+        var core = Catalog.RepresentativeCore();
+        bool known = core.HullTypes.TryGetValue(ActualHullId(bot), out var hullType);
+        var hullRole = known ? Showcase.ClassifyHull(hullType) : (Showcase.HullRole?)null;
+        bool bomberDuty = string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase);
+        Console.WriteLine($"[p831] {bot.Name} (side {bot.Side}, requested role={bot.Role}, "
+            + $"flying {(known ? $"{hullType.Name} [{hullRole}]" : "unknown hull")}"
+            + (bomberDuty && known && hullRole != Showcase.HullRole.Bomber ? ", P821 fallback hull" : "") + "): "
+            + $"no new-mission objective derivable yet (stale sector {bot.TargetSector}, enemyStations={enemyStations}, "
+            + $"ownStations={ownStations}, candidate enemy homes={enemyHomes}, "
+            + $"objectiveName={(bot.ObjectiveName is { } name ? $"'{name}'" : "unset")}); "
+            + "engaging in place until this side resolves a target");
     }
 
     // Native reseats players in a hangar (FedSrv/fsmission.cpp:791-796),

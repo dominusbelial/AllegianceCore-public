@@ -287,6 +287,15 @@ list in **reverse**.
   report: `docs/reports/P821_ROLE_RESOLUTION.md`.
 - **Scenario spawning** — `tools/allegiance-mcp/BotManager.Scenarios.cs`,
   `SkirmishDriver.cs`, `Showcase.cs`, `ScenarioPlanner.cs`.
+- **Finale re-arm / new-mission objectives (P656, P831)** — after a rotation the
+  next match's finale is re-armed only from fresh per-bot state; a fresh life
+  always resolves its objectives (an objective the fogged world cannot derive yet
+  becomes "no fixed objective" and the clash assignment re-issues it), and a bot
+  blocked past a bounded grace is excluded and named instead of holding the
+  deadline forever. `tools/allegiance-mcp/BotManager.Finale.cs`
+  (`RearmRotatedFinales`, `LogRearmGrace`), `tools/allegiance-mcp/BotManager.Lifecycle.cs`
+  (`RefreshLife`, `LogObjectiveFallback`), `tools/allegiance-mcp/BotManager.Exploration.cs`
+  (`AssignClashTargets`); report: `docs/reports/P831_FALLBACK_BOMBER_REARM.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
 

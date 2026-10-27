@@ -1,0 +1,76 @@
+ [p831] first match started at t=0s
+ [p831] match 1 ran to t=215s, bots=61
+ [p831] forced game over at t=215s
+ [p831] next match started at t=217s
+ [p831] re-armed=False blockedLines=10 at t=741s
+ [p831-move] mcp-b002-9256 side=1 role=support pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b004-2578 side=0 role=support pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b005-7771 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b006-6213 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b007-1435 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b008-1715 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b009-6150 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b010-7502 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b011-2428 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b012-4880 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b013-3179 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b014-9227 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b015-3860 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b016-9144 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b017-6375 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b018-7663 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b019-4584 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b020-3562 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b021-3622 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b022-4449 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b023-1692 side=1 role=support pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b024-1894 side=0 role=support pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b025-8116 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b026-2465 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b027-4947 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b028-7334 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b029-9441 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b030-5457 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b031-9146 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b032-8644 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b033-3571 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b034-3620 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b035-1714 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b036-3833 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b037-9784 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b038-2472 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b039-9731 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b040-2339 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b041-3433 side=1 role=Fighter pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b042-7984 side=0 role=Fighter pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b043-7876 side=1 role=support pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b044-7859 side=0 role=support pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b045-6840 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b046-5070 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b047-7159 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b048-7263 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b049-2448 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b050-2505 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b051-3101 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b052-1016 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b053-9479 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b054-8835 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b055-7207 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b056-5584 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b057-6003 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b058-7122 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b059-6610 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b060-8862 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b061-8967 side=1 role=Interceptor pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b062-8179 side=0 role=Interceptor pending=True target=1052 sec=1050->1050 station=4328 pod=False gen=3->3 moved=0m
+ [p831-move] mcp-b063-9126 side=1 role=support pending=True target=1052 sec=1051->1051 station=4329 pod=False gen=3->3 moved=0m
+ [finale] re-arm blocked: 61 participating bots; reset-not-observed=24 [mcp-b040-2339/side0/Fighter/target1052,mcp-b041-3433/side1/Fighter/target1052,mcp-b042-7984/side0/Fighter/target1052,mcp-b043-7876/side1/support/target1052,mcp-b044-7859/side0/support/target1052]; objectives-pending=35 [mcp-b002-
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=59 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]
+ [finale] re-arm blocked: 61 participating bots; objectives-pending=61 [mcp-b002-9256/side1/support/target1052,mcp-b004-2578/side0/support/target1052,mcp-b005-7771/side1/Fighter/target1052,mcp-b006-6213/side0/Fighter/target1052,mcp-b007-1435/side1/Fighter/target1052]

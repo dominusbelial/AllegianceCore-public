@@ -6022,6 +6022,9 @@ bool isThreat =
         public uint? LifeCookie;
         public string? ObjectiveName;
         public bool ObjectivesPending;
+        // P831 — the one-shot "new-mission objective not derivable yet" log for
+        // this life (bounded: one line per life, never per pass).
+        public bool ObjectiveFallbackLogged;
         public int RelaunchAttempts;
         public double RelaunchAt = double.NegativeInfinity;
         public bool RelaunchAckHandled;

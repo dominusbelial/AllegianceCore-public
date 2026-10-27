@@ -1,0 +1,131 @@
+ [p831] first match started at t=0s
+ [p831] match 1 ran to t=215s, bots=61
+ [p831] forced game over at t=215s
+ [p831] next match started at t=217s
+ [p831] re-armed=True blockedLines=5 at t=556s
+ [p831-move] mcp-b002-3701 side=1 role=support pending=False target=1052 sec=1051->1054 station=-1 pod=False gen=2->2 moved=5948m
+ [p831-move] mcp-b004-7101 side=0 role=support pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=2934m
+ [p831-move] mcp-b005-2183 side=1 role=Fighter pending=False target=1050 sec=1061->1055 station=-1 pod=False gen=2->2 moved=1921m
+ [p831-move] mcp-b006-9380 side=0 role=Fighter pending=False target=1051 sec=1050->1050 station=-1 pod=False gen=2->2 moved=13020m
+ [p831-move] mcp-b007-6571 side=1 role=Fighter pending=False target=1052 sec=1051->1051 station=-1 pod=False gen=2->2 moved=0m
+ [p831-move] mcp-b008-9214 side=0 role=Fighter pending=False target=1052 sec=1050->1050 station=-1 pod=False gen=2->2 moved=6m
+ [p831-move] mcp-b009-5698 side=1 role=Fighter pending=False target=1050 sec=1061->1051 station=-1 pod=False gen=2->2 moved=1880m
+ [p831-move] mcp-b010-6014 side=0 role=Fighter pending=False target=1051 sec=1059->1054 station=-1 pod=False gen=2->2 moved=1123m
+ [p831-move] mcp-b011-5278 side=1 role=Fighter pending=False target=1052 sec=1052->1052 station=-1 pod=True gen=2->2 moved=0m
+ [p831-move] mcp-b012-1890 side=0 role=bomber pending=False target=1051 sec=1050->1050 station=-1 pod=False gen=2->2 moved=4326m
+ [p831-move] mcp-b013-4139 side=1 role=bomber pending=False target=1050 sec=1051->1051 station=-1 pod=False gen=2->2 moved=4376m
+ [p831-move] mcp-b014-8353 side=0 role=Fighter pending=False target=1051 sec=1059->1050 station=-1 pod=False gen=2->2 moved=5226m
+ [p831-move] mcp-b015-1694 side=1 role=bomber pending=False target=1050 sec=1051->1055 station=-1 pod=False gen=2->2 moved=2613m
+ [p831-move] mcp-b016-9914 side=0 role=Fighter pending=False target=1051 sec=1059->1054 station=-1 pod=False gen=2->2 moved=1010m
+ [p831-move] mcp-b017-3915 side=1 role=Fighter pending=False target=1050 sec=1061->1051 station=-1 pod=False gen=2->2 moved=1706m
+ [p831-move] mcp-b018-8950 side=0 role=bomber pending=False target=1051 sec=1050->1057 station=-1 pod=False gen=2->2 moved=6031m
+ [p831-move] mcp-b019-9205 side=1 role=Fighter pending=False target=1050 sec=1061->1055 station=-1 pod=False gen=2->2 moved=3117m
+ [p831-move] mcp-b020-8680 side=0 role=Fighter pending=False target=1052 sec=1052->1050 station=-1 pod=False gen=2->2 moved=2328m
+ [p831-move] mcp-b021-8929 side=1 role=Fighter pending=False target=1050 sec=1061->1051 station=-1 pod=False gen=2->2 moved=3743m
+ [p831-move] mcp-b022-1190 side=0 role=Fighter pending=False target=1051 sec=1059->1054 station=-1 pod=False gen=2->2 moved=580m
+ [p831-move] mcp-b023-4913 side=1 role=support pending=False target=1052 sec=1061->1054 station=-1 pod=False gen=2->2 moved=2649m
+ [p831-move] mcp-b024-9345 side=0 role=support pending=False target=1052 sec=1052->1052 station=-1 pod=True gen=2->2 moved=0m
+ [p831-move] mcp-b025-6537 side=1 role=bomber pending=False target=1050 sec=1051->1055 station=-1 pod=False gen=2->2 moved=3247m
+ [p831-move] mcp-b026-4423 side=0 role=Fighter pending=False target=1051 sec=1059->1050 station=-1 pod=False gen=2->2 moved=5226m
+ [p831-move] mcp-b027-1638 side=1 role=Fighter pending=False target=1050 sec=1061->1051 station=-1 pod=False gen=2->2 moved=4100m
+ [p831-move] mcp-b028-7400 side=0 role=Fighter pending=False target=1051 sec=1059->1054 station=-1 pod=True gen=2->2 moved=5209m
+ [p831-move] mcp-b029-8126 side=1 role=Fighter pending=False target=1050 sec=1051->1055 station=-1 pod=False gen=2->2 moved=2759m
+ [p831-move] mcp-b030-3647 side=0 role=Fighter pending=False target=1051 sec=1052->1050 station=-1 pod=False gen=2->2 moved=8373m
+ [p831-move] mcp-b031-8713 side=1 role=Fighter pending=False target=1052 sec=1061->1061 station=-1 pod=True gen=2->2 moved=522m
+ [p831-move] mcp-b032-5573 side=0 role=Fighter pending=False target=1052 sec=1052->1059 station=-1 pod=True gen=2->2 moved=8817m
+ [p831-move] mcp-b033-5828 side=1 role=Fighter pending=False target=1050 sec=1051->1054 station=-1 pod=False gen=2->2 moved=4485m
+ [p831-move] mcp-b034-2656 side=0 role=Fighter pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=2144m
+ [p831-move] mcp-b035-7039 side=1 role=Fighter pending=False target=1052 sec=1052->1051 station=-1 pod=False gen=2->2 moved=7598m
+ [p831-move] mcp-b036-9186 side=0 role=Fighter pending=False target=1052 sec=1052->1052 station=-1 pod=True gen=2->2 moved=1243m
+ [p831-move] mcp-b037-1153 side=1 role=Fighter pending=False target=1052 sec=1061->1051 station=-1 pod=True gen=2->2 moved=4043m
+ [p831-move] mcp-b038-6740 side=0 role=Fighter pending=False target=1051 sec=1059->1050 station=-1 pod=False gen=2->2 moved=5122m
+ [p831-move] mcp-b039-7854 side=1 role=Fighter pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=1773m
+ [p831-move] mcp-b040-3200 side=0 role=Fighter pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=3703m
+ [p831-move] mcp-b041-2602 side=1 role=Fighter pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=2009m
+ [p831-move] mcp-b042-4464 side=0 role=Fighter pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=2397m
+ [p831-move] mcp-b043-8368 side=1 role=support pending=False target=1052 sec=1051->1054 station=-1 pod=False gen=2->2 moved=6442m
+ [p831-move] mcp-b044-8926 side=0 role=support pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=1443m
+ [p831-move] mcp-b045-1062 side=1 role=Interceptor pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=4078m
+ [p831-move] mcp-b046-8098 side=0 role=Interceptor pending=False target=1052 sec=1052->1059 station=-1 pod=True gen=2->2 moved=7777m
+ [p831-move] mcp-b047-6033 side=1 role=Interceptor pending=False target=1052 sec=1051->1051 station=-1 pod=False gen=2->2 moved=115m
+ [p831-move] mcp-b048-2459 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=1946m
+ [p831-move] mcp-b049-5190 side=1 role=Interceptor pending=False target=1052 sec=1051->1051 station=-1 pod=False gen=2->2 moved=1583m
+ [p831-move] mcp-b050-4869 side=0 role=Interceptor pending=False target=1052 sec=1059->1052 station=-1 pod=False gen=2->2 moved=6541m
+ [p831-move] mcp-b051-5322 side=1 role=Interceptor pending=False target=1052 sec=1051->1051 station=-1 pod=False gen=2->2 moved=86m
+ [p831-move] mcp-b052-5916 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=5684m
+ [p831-move] mcp-b053-1927 side=1 role=Interceptor pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=1605m
+ [p831-move] mcp-b054-8890 side=0 role=Interceptor pending=False target=1052 sec=1059->1052 station=-1 pod=False gen=2->2 moved=7966m
+ [p831-move] mcp-b055-4927 side=1 role=Interceptor pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=1710m
+ [p831-move] mcp-b056-9269 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=450m
+ [p831-move] mcp-b057-5646 side=1 role=Interceptor pending=False target=1050 sec=1051->1055 station=-1 pod=False gen=2->2 moved=5950m
+ [p831-move] mcp-b058-7764 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=1385m
+ [p831-move] mcp-b059-1972 side=1 role=Interceptor pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=3139m
+ [p831-move] mcp-b060-2287 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=1751m
+ [p831-move] mcp-b061-7297 side=1 role=Interceptor pending=False target=1052 sec=1061->1061 station=-1 pod=False gen=2->2 moved=1862m
+ [p831-move] mcp-b062-8318 side=0 role=Interceptor pending=False target=1052 sec=1052->1052 station=-1 pod=False gen=2->2 moved=2023m
+ [p831-move] mcp-b063-5631 side=1 role=support pending=False target=1052 sec=1051->1054 station=-1 pod=False gen=2->2 moved=6317m
+ [p831] mcp-b002-3701 (side 1, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b004-7101 (side 0, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b005-2183 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b006-9380 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b007-6571 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b008-9214 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b009-5698 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b010-6014 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b011-5278 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b012-1890 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b013-4139 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b014-8353 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b015-1694 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b016-9914 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b017-3915 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b018-8950 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b019-9205 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b020-8680 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b021-8929 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b022-1190 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b023-4913 (side 1, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b024-9345 (side 0, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b025-6537 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b026-4423 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b027-1638 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b028-7400 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b029-8126 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b030-3647 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b031-8713 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [finale] re-arm blocked: 61 participating bots; reset-not-observed=32 [mcp-b032-5573/side0/Fighter/pod,mcp-b033-5828/side1/Fighter/target1052,mcp-b034-2656/side0/Fighter/target1052,mcp-b035-7039/side1/Fighter/target1052,mcp-b036-9186/side0/Fighter/target1051]; same-generation=32 [mcp-b032-5573/side0
+ [p831] mcp-b034-2656 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b035-7039 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b033-5828 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b036-9186 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b038-6740 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b039-7854 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b040-3200 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b041-2602 (side 1, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b042-4464 (side 0, requested role=Fighter, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b043-8368 (side 1, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b044-8926 (side 0, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b045-1062 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b046-8098 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b047-6033 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b048-2459 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b050-4869 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b051-5322 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b052-5916 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b053-1927 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b054-8890 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b055-4927 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b056-9269 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b057-5646 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b058-7764 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b059-1972 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b060-2287 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b061-7297 (side 1, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b062-8318 (side 0, requested role=Interceptor, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [p831] mcp-b063-5631 (side 1, requested role=support, flying Adv Scout [Scout]): no new-mission objective derivable yet (stale sector 1052, enemyStations=0, ownStations=1, candidate enemy homes=1, objectiveName=unset); engaging in place until this side resolves a target
+ [finale] re-arm blocked: no enemy station observed by side(s) [0,1] (61 participating bots)
+ [finale] re-arm blocked: no enemy station observed by side(s) [0,1] (61 participating bots)
+ [finale] re-arm blocked: no enemy station observed by side(s) [0,1] (61 participating bots)
+ [finale] re-arm blocked: no enemy station observed by side(s) [0] (61 participating bots)
+ [finale] re-arm grace (300s past the rotation): no enemy station observed by side(s) [0]; arming the next match's finale anyway with 61 bots — the showcase must always have a deadline
+ [finale] re-armed for next mission with 61 bots and fresh station objectives

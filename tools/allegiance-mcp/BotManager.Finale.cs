@@ -31,7 +31,11 @@ internal sealed partial class BotManager
         internal double LastUpdate = double.NegativeInfinity;
         internal double LastReadinessLog = double.NegativeInfinity;
         internal double LastRearmBlockedLog = double.NegativeInfinity;
-        internal bool Rotated, NextRunCreated;
+        internal double? RotatedAt;
+        internal bool Rotated, NextRunCreated, GraceLogged, FogGraceLogged;
+        // P831 — per-bot "blocked since" so the bounded grace excludes only a bot
+        // that has been stuck continuously, and never one that just relaunched.
+        internal readonly Dictionary<ActiveBot, double> RearmBlockedSince = new();
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
         // P778a — bomber push telemetry, aggregated across the wing for the
@@ -314,6 +318,19 @@ internal sealed partial class BotManager
     // The old run remains available as the finished game's report. Re-arm only
     // after EVERY participating bot has reset and resolved the fresh world; old
     // station ids and the old maturity/kill window must never drive a new strike.
+    //
+    // P831 — "EVERY" is bounded in TIME, never forever. The re-arm is the only
+    // thing that arms the next match's finale, and the finale is the showcase's
+    // only deadline: one class of stuck bot (rig batches 34/36: requested-Bomber
+    // bots on a P821 fallback hull) therefore left a 200v200 match without a
+    // deadline for hours. Bots still blocked when the bounded grace expires are
+    // EXCLUDED (named in the log) and the re-arm proceeds with the rest. The grace
+    // never relaxes any other rule: a bot inside it still blocks, and the fresh
+    // station/objective derivation is unchanged.
+    internal static readonly double RearmGraceSeconds =
+        double.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P831_REARM_GRACE"), out double grace)
+            && grace >= 0 ? grace : 300;
+
     private void RearmRotatedFinales(double now)
     {
         FinaleRun[] runs;
@@ -323,34 +340,147 @@ internal sealed partial class BotManager
             lock (run.Sync)
                 if (!run.Rotated || run.NextRunCreated) continue;
             var bots = run.Bots.Where(IsParticipating).ToArray();
-            if (bots.Length == 0 || bots.Any(b => !b.FinaleResetObserved || b.ObjectivesPending
-                || !ReferenceEquals(b.Finale, run) || b.LifeGeneration <= run.Generations[b]))
+            if (bots.Length == 0)
             {
                 LogRearmBlocked(run, bots, now);
                 continue;
             }
-            DataStationIGC[] stations = [];
-            bool ready = true;
+            bool grace = run.RotatedAt is { } rotatedAt && now - rotatedAt >= RearmGraceSeconds;
+            // The grace is PER BOT and counts from when it was FIRST seen blocked: a
+            // bot that only becomes blocked as the grace expires (a normal relaunch
+            // in flight) is never excluded for it.
+            var blocked = BlocksRearmSince(run, bots, now);
+            if (blocked.Count > 0)
+            {
+                var stuck = blocked.Where(e => now - e.Since >= RearmGraceSeconds).Select(e => e.Bot).ToArray();
+                if (!grace || stuck.Length == 0)
+                {
+                    LogRearmBlocked(run, bots, now);
+                    continue;
+                }
+                var kept = bots.Where(b => !stuck.Contains(b)).ToArray();
+                LogRearmGrace(run, now, stuck, kept.Length);
+                bots = kept;
+                if (bots.Length == 0)
+                {
+                    LogRearmBlocked(run, bots, now, "every participating bot is still blocked past the P831 grace");
+                    continue;
+                }
+            }
+            // Fresh station objectives from the participants' OWN worlds (never one
+            // bot's window for everybody): the union of what the fleet has observed.
+            var stations = new Dictionary<short, DataStationIGC>();
+            string? gate = null;
             foreach (var bot in bots)
             {
-                if (bot.Cs is not { } cs) { ready = false; break; }
+                if (bot.Cs is not { } cs) { gate = "world not ready/started"; break; }
                 lock (cs.Gate)
                 {
                     if (!cs.World.WorldReady || cs.World.GameOverResult is not null
                         || cs.World.Mission?.Stage != MissionStageMessage.StageStarted)
-                    { ready = false; break; }
-                    if (stations.Length == 0) stations = cs.World.Stations.Values.ToArray();
+                    { gate = "world not ready/started"; break; }
+                    foreach (var station in cs.World.Stations.Values) stations[station.StationId] = station;
                 }
             }
-            if (!ready || bots.Any(b => !stations.Any(s => s.SideId >= 0 && s.SideId != b.Side)))
+            if (gate is null)
             {
-                LogRearmBlocked(run, bots, now, ready ? "no enemy station in the first bot's world" : "world not ready/started");
+                // P797 honesty: a side may only receive a target IT has observed, so
+                // every side must have seen an enemy station in one of its own worlds.
+                var blind = bots.GroupBy(b => b.Side).Where(g => !SideObservedEnemyStation(g.ToArray()))
+                    .Select(g => g.Key).Order().ToArray();
+                if (blind.Length > 0)
+                {
+                    gate = $"no enemy station observed by side(s) [{string.Join(",", blind)}]";
+                    if (grace)
+                    {
+                        // The deadline must exist; the strike itself still only targets
+                        // stations somebody observed (logged above by P827/P831).
+                        LogRearmGrace(run, now, [], bots.Length, gate);
+                        gate = null;
+                    }
+                }
+            }
+            if (gate is not null)
+            {
+                LogRearmBlocked(run, bots, now, gate);
                 continue;
             }
-            RegisterFinale(run.Settings, bots.Select(b => b.Name).ToArray(), stations);
+            RegisterFinale(run.Settings, bots.Select(b => b.Name).ToArray(), stations.Values.ToArray());
             lock (run.Sync) run.NextRunCreated = true;
             Console.WriteLine($"[finale] re-armed for next mission with {bots.Length} bots and fresh station objectives");
         }
+    }
+
+    private static bool BlocksRearm(ActiveBot bot, FinaleRun run) => !bot.FinaleResetObserved
+        || bot.ObjectivesPending || !ReferenceEquals(bot.Finale, run)
+        || bot.LifeGeneration <= run.Generations[bot];
+
+    /// <summary>P831 — the bots blocked right now, stamping when each was FIRST seen
+    /// blocked in this rotated run (the per-bot grace clock).</summary>
+    private static List<(ActiveBot Bot, double Since)> BlocksRearmSince(FinaleRun run, ActiveBot[] bots, double now)
+    {
+        var blocked = new List<(ActiveBot, double)>();
+        lock (run.Sync)
+        {
+            var since = run.RearmBlockedSince;
+            foreach (var bot in bots)
+            {
+                if (!BlocksRearm(bot, run)) { since.Remove(bot); continue; }
+                if (!since.TryGetValue(bot, out double first)) since[bot] = first = now;
+                blocked.Add((bot, first));
+            }
+            foreach (var bot in since.Keys.Where(b => !bots.Contains(b)).ToArray()) since.Remove(bot);
+        }
+        return blocked;
+    }
+
+    private static bool SideObservedEnemyStation(ActiveBot[] bots)
+    {
+        foreach (var bot in bots)
+        {
+            if (bot.Cs is not { } cs) continue;
+            lock (cs.Gate)
+                if (cs.World.Stations.Values.Any(s => s.SideId >= 0 && s.SideId != bot.Side)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>P831 — the bounded-grace line: name the bots excluded from the new
+    /// run, once per run, so an excluded bot is never silent.</summary>
+    private static void LogRearmGrace(FinaleRun run, double now, ActiveBot[] stuck, int kept, string? gate = null)
+    {
+        lock (run.Sync)
+        {
+            // One line EACH per run for the two kinds of relaxation: the excluded
+            // bots and the fog-gate release.
+            if (gate is null ? run.GraceLogged : run.FogGraceLogged) return;
+            if (gate is null) run.GraceLogged = true; else run.FogGraceLogged = true;
+        }
+        string elapsed = run.RotatedAt is { } rotatedAt ? $"{now - rotatedAt:F0}s" : "n/a";
+        if (gate is not null)
+        {
+            Console.WriteLine($"[finale] re-arm grace ({elapsed} past the rotation): {gate}; arming the next match's finale anyway "
+                + $"with {kept} bots — the showcase must always have a deadline");
+            return;
+        }
+        var reasons = new (string Reason, Func<ActiveBot, bool> Blocks)[]
+        {
+            ("reset-not-observed", b => !b.FinaleResetObserved),
+            ("objectives-pending", b => b.ObjectivesPending),
+            ("other-run", b => !ReferenceEquals(b.Finale, run)),
+            ("same-generation", b => b.LifeGeneration <= run.Generations[b]),
+        };
+        var parts = reasons.Select(r => (r.Reason, Bots: stuck.Where(r.Blocks).ToArray())).Where(r => r.Bots.Length > 0)
+            .Select(r => $"{r.Reason}={r.Bots.Length} [{string.Join(",", r.Bots.Take(8).Select(b => Reason(b, run)))}]");
+        Console.WriteLine($"[finale] re-arm grace ({elapsed} past the rotation): excluding {stuck.Length} still-stuck bot(s) "
+            + $"from the next finale run ({string.Join("; ", parts)}); re-arming with {kept} bots");
+
+        static string Reason(ActiveBot b, FinaleRun run) => $"{b.Name}/side{b.Side}/{b.Role}"
+            + (b.IsPod ? "/pod" : "")
+            + (b.TargetSector is { } t ? $"/target{t}" : "")
+            + (b.ObjectivesPending ? "/pending" : "")
+            + (!b.FinaleResetObserved ? "/noreset" : "")
+            + (b.LifeGeneration <= run.Generations[b] ? "/samegen" : "");
     }
 
     // P827 — the re-arm waits for EVERY participating bot; one stuck bot held
@@ -612,6 +742,7 @@ internal sealed partial class BotManager
         lock (run.Sync)
         {
             run.Rotated = true;
+            run.RotatedAt ??= now;
             if (over is not null)
             {
                 run.GameOverAt ??= now;
