@@ -3004,3 +3004,12 @@ The broad Fast result remains failed; it was run once. No test assertion or
 product code in either area changed. See
 [the P832b report](reports/P832B_PROSPERITY_BOTS.md) for the receipt and
 prosperity/parking verification.
+
+## P843 observation (2026-10-27)
+
+The P843 fast-tier gate (docs-only batch: sim-rules-matrix.csv + P843_CERTIFY.md, no server/core source change)
+recorded the same known load flake once in `Allegiance.Core`:
+`Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
+(Assert.Equal "goto Garrison" vs "goto" — a command-relay seating-order/timing race, the same signature as the
+HUD-19 and 2026-10-24 entries above). It passed **3/3** isolated invocations on this worktree. P843 changes no
+production code, so this is the existing live-network/load artifact, not a regression.
