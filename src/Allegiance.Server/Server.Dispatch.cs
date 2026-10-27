@@ -1549,6 +1549,7 @@ public sealed partial class Server
                     else if (aa.SideId != aaSideId)
                     {
                         ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
+                        ReportTrapHack(TrapHackKind.Boot, from, aaLive.Ship.Id, "pfmAutoAccept->iSide == sid", "FedSrv.CPP:6926");
                     }
                     else
                     {
@@ -1633,6 +1634,11 @@ public sealed partial class Server
                         else if (!TryResolveTeamCiv(mission, cc, out var targetCiv, out var resolvedCivId))
                         {
                             ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {(cc.Random ? "random (no legal civ in core)" : cc.CivId.ToString())} not in core — CHANGE_TEAM_CIV ignored");
+                            // Only a DIRECT request naming an unknown civ is the native
+                            // trap (TrapHackBoot(pciv), FedSrv.CPP:7362); a random
+                            // request with an empty legal pool is an ordinary refusal.
+                            if (!cc.Random)
+                                ReportTrapHack(TrapHackKind.Boot, from, ccLive.Ship.Id, "pciv", "FedSrv.CPP:7362");
                         }
                         else
                         {

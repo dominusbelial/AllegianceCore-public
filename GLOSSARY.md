@@ -242,6 +242,14 @@ list in **reverse**.
   `docs/reports/P813C_RECONNECT_GRACE.md`. Client opt-in:
   `$ALLEGIANCE_RECONNECT_GRACE_SECONDS`.
 
+- **Trap-hack operator events (P855/SIM-0809)** — every message-validation
+  failure that stands in for a native `TrapHack*` check emits one structured
+  operator-log line (kind log/boot/boot-no-player, failed check text, native
+  source site, player/ship/connection), rate-limited per connection. The port
+  keeps log-and-ignore (native boots, `FedSrv.CPP:2749-2798`); the event
+  records what native would have done. Key: `src/Allegiance.Server/TrapHack.cs`.
+  Report `docs/reports/P855_REPORT.md`.
+
 ## 4. Client & HUD (`src/Allegiance.ClientCore`, `ClientCore.Game/Rendering`)
 
 - **Headless session** — the world-state tracker driving prediction/replay.
@@ -664,6 +672,15 @@ list in **reverse**.
 
 ## 13. Career / leaderboard (P808b/P808c)
 
+- **Squad store + squad game results (P820a/P855/SIM-0765)** — persistent
+  squads with native role membership (`src/Allegiance.Lobby/Squad/SquadStore.cs`);
+  a finished qualifying squad game (native `RecordSquadGame`,
+  `FedSrv/FedSrv.CPP:1198-1300`, gated at `fsmission.cpp:3421-3427`) rides the
+  career match report (`/api/career/results`) and credits the winner squad one
+  win, each loser squad one loss, idempotent per server+match.
+  `src/Allegiance.Server/Server.Lobby.cs` (`ReportMissionResultsToLobby`),
+  `src/Allegiance.Lobby/Career/CareerStore.cs`. Report
+  `docs/reports/P855_REPORT.md`.
 - **Career store + HTTP** — per-account per-civ career statistics, rank rules,
   leaderboard and profile descriptions on the lobby:
   `src/Allegiance.Lobby/Career/CareerStore.cs`,

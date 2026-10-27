@@ -1209,12 +1209,21 @@ public sealed partial class Server
     /// <see cref="DeclareGameOver"/> path right after
     /// <see cref="FinalizeMissionScores"/> so the results reflect the final scores
     /// before ships migrate to the rotated mission. Never blocks the sim.
+    /// <para>P855/SIM-0765 — the report also carries the finished squad game's
+    /// standings facts (native <c>RecordSquadGame</c>, gated at
+    /// fsmission.cpp:3421-3427, body FedSrv.CPP:1198-1300) when the mission
+    /// qualifies — a squad game, scores counting, a decisive winner, two teams,
+    /// sides 0 and 1 in different squads.</para>
     /// </summary>
     private void ReportMissionResultsToLobby(Mission mission, short winnerId)
     {
         if (_heartbeat is null) return;
         var entries = new List<LobbyMatchResultEntry>();
-        string? matchId = null;
+        // P855 — the match id is minted for the whole report, not per player:
+        // native posts the squad-game query independent of the per-player
+        // SetCharStats output, so a squad game with no verified players must
+        // still reach the lobby.
+        string matchId = $"m{_careerReportSeq++:D6}-{(long)_simNow}";
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
@@ -1239,11 +1248,34 @@ public sealed partial class Server
                 Minutes: (int)(score.TimePlayed / 60.0),
                 Win: score.Win, Loss: winnerId != GameOver.NA && sid != winnerId,
                 CommanderWin: false, CommanderLoss: false, ScoresCount: true));
-            matchId ??= $"m{_careerReportSeq++:D6}-{(long)_simNow}";
         }
-        if (entries.Count == 0 || matchId is null) return;
-        Console.WriteLine($"[lobby] career report: {entries.Count} verified player(s), match {matchId}");
-        _ = _heartbeat.ReportResultsAsync(new LobbyMatchReport(matchId, entries));
+
+        // P855/SIM-0765 — the native squad-game gate, verbatim
+        // (fsmission.cpp:3421-3427): a squad game whose scores count, with a
+        // winner (no draws), exactly two teams, and side 0's squad different
+        // from side 1's. (bScoresCount has no port equivalent — every port
+        // mission counts scores, LobbyGameParams.FromMission.) RecordSquadGame
+        // itself (FedSrv.CPP:1198-1300) then walks the sides collecting the
+        // losing squads — every side with a squad that is not the winner's,
+        // in side order (the port keeps the walk general; native unrolls it
+        // into squadIDLost1..5 and asserts at most 5). No stage, minimum-player
+        // or minimum-time condition exists in native.
+        LobbySquadGameResult? squadGame = null;
+        if (mission.SquadGame && winnerId != GameOver.NA && mission.Sides.Count == 2
+            && !string.Equals(mission.Sides[0].SquadId, mission.Sides[1].SquadId, StringComparison.Ordinal))
+        {
+            string? winnerSquad = mission.Sides.FirstOrDefault(s => s.Id == winnerId)?.SquadId;
+            var losers = mission.Sides
+                .Where(s => s.SquadId is not null && !string.Equals(s.SquadId, winnerSquad, StringComparison.Ordinal))
+                .Select(s => s.SquadId!)
+                .ToList();
+            squadGame = new LobbySquadGameResult(winnerSquad, losers);
+        }
+
+        if (entries.Count == 0 && squadGame is null) return;
+        Console.WriteLine($"[lobby] career report: {entries.Count} verified player(s), match {matchId}"
+                          + (squadGame is null ? "" : $", squad game: winner {(squadGame.WinnerSquadId ?? "NA")} vs {squadGame.LoserSquadIds.Count} loser squad(s)"));
+        _ = _heartbeat.ReportResultsAsync(new LobbyMatchReport(matchId, entries, SquadGame: squadGame));
     }
 
     /// <summary>Build the per-player endgame roster for a mission (the port's
@@ -2087,7 +2119,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         // Native :6867-6870 — a boot targets someone else; the reason must be
         // exactly QSR_LeaderBooted (boot) or QSR_Quit (self) (TrapHackBoot).
         bool bIsBoot = senderShip.Id != request.ShipId;
-        if (request.Reason != (bIsBoot ? QuitSideReason.LeaderBooted : QuitSideReason.Quit)) return;
+        if (request.Reason != (bIsBoot ? QuitSideReason.LeaderBooted : QuitSideReason.Quit))
+        {
+            ReportTrapHack(TrapHackKind.Boot, from, senderShip.Id, "pfmQuitSide->reason == (bIsBoot ? QSR_LeaderBooted : QSR_Quit)", "FedSrv.CPP:6870");
+            return;
+        }
 
         // Native :6886-6901 — move to the team lobby unless a locked team's
         // settings forbid a boot (:6889: !bIsBoot || !bLockTeamSettings).

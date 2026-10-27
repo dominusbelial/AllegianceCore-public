@@ -375,12 +375,25 @@ public sealed record LobbyMatchResultEntry(
     bool ScoresCount);
 
 /// <summary>A finished match's results for one server (see
-/// <see cref="LobbyMatchResultEntry"/>).</summary>
+/// <see cref="LobbyMatchResultEntry"/>). <see cref="SquadGame"/> — P855 —
+/// carries the finished squad game's standings facts (the mirror of
+/// Allegiance.Lobby's <c>SquadGameResult</c>); null for non-squad or
+/// non-qualifying games (native never calls RecordSquadGame then,
+/// fsmission.cpp:3421-3427).</summary>
 public sealed record LobbyMatchReport(
     string MatchId,
     IReadOnlyList<LobbyMatchResultEntry> Players,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerId = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerSecret = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerSecret = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] LobbySquadGameResult? SquadGame = null);
+
+/// <summary>P855/SIM-0765 — the server's mirror of the lobby contract's
+/// <c>SquadGameResult</c>: the winning side's squad id (native
+/// <c>squadIDWon</c>, null when the winning side had no squad — native posts
+/// NA) and every losing side's squad id (native <c>squadIDLost1..5</c>;
+/// sides without a squad are skipped exactly as the native loser loop skips
+/// <c>GetSquadID() == NA</c>, FedSrv.CPP:1206-1290).</summary>
+public sealed record LobbySquadGameResult(string? WinnerSquadId, IReadOnlyList<string> LoserSquadIds);
 
 /// <summary>
 /// Mirror of <c>Allegiance.Lobby</c>'s <c>RegisterRequest</c> wire shape, promoted from

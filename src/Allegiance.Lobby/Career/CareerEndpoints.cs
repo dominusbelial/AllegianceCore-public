@@ -23,11 +23,11 @@ public static class CareerEndpoints
         // register endpoint's server proof (LobbyEndpoints.cs:25-27): the
         // enrolled-server id+secret must match, or the report is rejected.
         // Rate-limited: a public write path.
-        group.MapPost("/results", (CareerContracts.MatchReport report, CareerStore career, IdentityStore identities) =>
+        group.MapPost("/results", (CareerContracts.MatchReport report, CareerStore career, IdentityStore identities, Allegiance.Lobby.Squad.SquadStore squads) =>
         {
             var context = identities.VerifyServer(report.ServerId, report.ServerSecret);
             if (context is null) return Results.Unauthorized();
-            return Results.Ok(career.ApplyMatchReport(report, context, identities.Now));
+            return Results.Ok(career.ApplyMatchReport(report, context, identities.Now, squads));
         }).RequireRateLimiting(RateLimiting.RegisterPolicy);
 
         // Public read: a player's full character info (per-civ career lines).
