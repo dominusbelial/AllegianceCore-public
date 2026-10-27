@@ -350,6 +350,23 @@ list in **reverse**.
   (`AssignClashTargets`); report: `docs/reports/P831_FALLBACK_BOMBER_REARM.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
+- **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are
+  scaled down for a small fleet: the clash fallback delay and the commit delay
+  scale with the side's combat bots, a side's own home is never the clash
+  objective, and with nothing contested known both sides commit to the same
+  balanced topology midpoint between the homes. A small skirmish (≤ 12 bots) is a
+  "meeting engagement" (`spawn_scenario meeting_engagement`, sent by
+  `SkirmishDriver.cs`): it fights what it meets while travelling, skips the P539d
+  staging barrier and keeps a single scout. The re-arm grace scales the same way.
+  Key: `tools/allegiance-mcp/SideIntel.cs` (`ClashScoring.Choose`,
+  `ClashScoring.Midpoint`, `ScoutOpening.ClashDelaySecondsFor`,
+  `ClashFallbackSecondsFor`, `MeetingEngagementCombatBots`),
+  `tools/allegiance-mcp/BotManager.Exploration.cs` (`AssignClashTargets`,
+  `AssignExplorers`, `TryDriveExploration`), `tools/allegiance-mcp/BotManager.cs`
+  (`DriveCombat`), `tools/allegiance-mcp/BotManager.Finale.cs`
+  (`FinaleAwaitingRearm`, `RearmGraceSecondsFor`),
+  `src/Allegiance.SinglePlayer/SkirmishOptions.cs` (skirmish `ShowMap` by size);
+  report: `docs/reports/P837_BOT_LIVE_REGRESSIONS.md`.
 
 ## 6. Lobby (`src/Allegiance.Lobby`)
 

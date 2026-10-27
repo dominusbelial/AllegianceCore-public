@@ -134,6 +134,30 @@ internal sealed partial class BotManager
         return false;
     }
 
+    /// <summary>P837 — a finished match's finale is rotated and still waiting for
+    /// its re-arm (<see cref="RearmRotatedFinales"/>), which needs every
+    /// participating side to have observed an enemy station in the NEW mission.
+    /// A small side that the clash assignment leaves alone (below
+    /// <c>MinFleetForExploration</c>) then has no objective at all, never flies and
+    /// never obtains that sighting — the re-arm can only wait out P831's whole
+    /// grace. Treating this exactly like a PENDING finale (the P798b small-fleet
+    /// recon exception) hands the side its recon/clash duty again after a
+    /// rotation. The fresh objectives are unchanged: only what this side has seen
+    /// is ever used.</summary>
+    private bool FinaleAwaitingRearm(IEnumerable<ActiveBot> group)
+    {
+        ActiveBot[] members = group as ActiveBot[] ?? group.ToArray();
+        FinaleRun[] runs;
+        lock (_gate) runs = _finales?.ToArray() ?? [];
+        foreach (var run in runs)
+        {
+            bool waiting;
+            lock (run.Sync) waiting = run.Rotated && !run.NextRunCreated;
+            if (waiting && members.Any(run.Bots.Contains)) return true;
+        }
+        return false;
+    }
+
     private void RegisterPendingFinales()
     {
         (ShowcaseFinale.Settings Settings, string[] Names)[] pending;
@@ -331,6 +355,21 @@ internal sealed partial class BotManager
         double.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P831_REARM_GRACE"), out double grace)
             && grace >= 0 ? grace : 300;
 
+    /// <summary>P837 — the grace is a RIG-scale number and the deadline release it
+    /// bounds must scale with the fleet. Measured on master: after a rotation a
+    /// one-bomber-per-side finale under native fog needed ~150-210 s just to fly to
+    /// and observe the other side's base, so P831's 300 s release arrived AFTER a
+    /// 240 s window and the next match never got a deadline (live test P682b
+    /// `match 2 automatic start and fresh finale timed out`). The grace is the rig
+    /// figure scaled by the participating bots, floored at 120 s (a real pod
+    /// relaunch plus one sector of flight) and never above the rig figure, so the
+    /// 200v200 rig keeps 300 s and a two-bot finale gets its deadline in time.</summary>
+    internal const int RigScaleRearmBots = 48;
+    internal const double MinRearmGraceSeconds = 120;
+    internal static double RearmGraceSecondsFor(int participating) =>
+        Math.Clamp(RearmGraceSeconds * Math.Max(1, participating) / RigScaleRearmBots,
+            Math.Min(MinRearmGraceSeconds, RearmGraceSeconds), RearmGraceSeconds);
+
     private void RearmRotatedFinales(double now)
     {
         FinaleRun[] runs;
@@ -345,14 +384,15 @@ internal sealed partial class BotManager
                 LogRearmBlocked(run, bots, now);
                 continue;
             }
-            bool grace = run.RotatedAt is { } rotatedAt && now - rotatedAt >= RearmGraceSeconds;
+            double graceSeconds = RearmGraceSecondsFor(bots.Length);
+            bool grace = run.RotatedAt is { } rotatedAt && now - rotatedAt >= graceSeconds;
             // The grace is PER BOT and counts from when it was FIRST seen blocked: a
             // bot that only becomes blocked as the grace expires (a normal relaunch
             // in flight) is never excluded for it.
             var blocked = BlocksRearmSince(run, bots, now);
             if (blocked.Count > 0)
             {
-                var stuck = blocked.Where(e => now - e.Since >= RearmGraceSeconds).Select(e => e.Bot).ToArray();
+                var stuck = blocked.Where(e => now - e.Since >= graceSeconds).Select(e => e.Bot).ToArray();
                 if (!grace || stuck.Length == 0)
                 {
                     LogRearmBlocked(run, bots, now);

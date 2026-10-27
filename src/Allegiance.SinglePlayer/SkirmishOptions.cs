@@ -129,9 +129,21 @@ public sealed record SkirmishOptions
                 // Worker probes and the research commander may occupy additional seats.
                 MaxPlayersPerTeam = TeamSize + 10, MaxTeamImbalance = 0x7fff,
                 ResearchPlans = new() { [0] = "auto", [1] = "auto" },
-                // P798 — native fog stays on: the bot scouts unveil the map and
-                // the clash forms around the resources they find, so a skirmish
-                // no longer needs the bShowMap reveal (igc.h:1123, default off).
+                // P798 — native fog on the rig scale: the bot scouts unveil the map
+                // and the clash forms around the resources they find.
+                // P837 — the reveal scales with the match. Native bShowMap reveals
+                // the WARPS only, never stations or rocks (Igc/igc.h:1123,
+                // Igc/mapmakerigc.cpp:1002-1017 RevealMap), and a Small/Medium game
+                // is a quick single-player fight on the authored 13-sector map with
+                // two-to-five scouts: measured on master, the first aleph out of the
+                // home sector alone costs 100-160 s of sweeping, so a 9-bot skirmish
+                // had fired ZERO shots after 210 s (P727 live test) — bots that never
+                // meet never fight, and bot offence is a single-player feature.
+                // Revealing the warps lets both fleets route and meet in about a
+                // minute while the objects they fight over stay per-side discovery;
+                // Large and up (the 30v30+ showcase/rig scale P798/P830/P831 were
+                // designed and measured on) keep native fog exactly as shipped.
+                ShowMap = TeamSize < 30,
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
                 Lives = Lives, Goals = Goals with { },

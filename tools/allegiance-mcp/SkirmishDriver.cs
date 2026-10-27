@@ -25,7 +25,14 @@ internal static class SkirmishDriver
             // P798 — no hard-coded rendezvous: the fleet's scouts find the map
             // and the clash sector is computed per side from the resources seen
             // (the showcase `target_sector` override is intentionally omitted).
-            preset = "showcase", count_a = counts[0], count_b = counts[1], staging = true
+            preset = "showcase", count_a = counts[0], count_b = counts[1], staging = true,
+            // P837 — a nine-bot skirmish is a MEETING ENGAGEMENT: with native fog
+            // (P798) its two scouts cannot route a 13-sector map inside a short
+            // battle, so the small fleet fights what it meets while it travels, does
+            // not wait for a wing that four ships will never assemble, and commits to
+            // its clash as soon as its scaled opening window allows. Larger skirmishes
+            // (Large/Epic/Grand) keep the rig's staging/transit discipline.
+            meeting_engagement = counts[0] + counts[1] <= 12
         }))!;
         var result = WorkerReply.FromTool(await supervisor.HandleAsync("spawn_scenario", args, ct));
         if (result.IsError) throw new IOException(result.Data.ToString());

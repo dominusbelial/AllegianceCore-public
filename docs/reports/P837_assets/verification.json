@@ -1,0 +1,56 @@
+{
+  "task": "P837",
+  "base": "04b860ae",
+  "failures": {
+    "P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes": {
+      "first_bad_commit": "a8896574",
+      "first_bad_title": "P798: scouts first under native fog — … skirmish no longer reveals the map",
+      "boundary": [
+        {"commit": "ba6f7a66", "note": "parent of P798", "result": "PASS", "seconds": 222},
+        {"commit": "a8896574", "note": "P798", "result": "FAIL", "seconds": 212,
+         "failure": "Skirmish condition timed out at the 150 s combat wait, Shots=0 Hits=0"}
+      ],
+      "reproduction_on_dispatch_base": [
+        {"run": 1, "result": "FAIL", "seconds": 212, "failure": "combat wait at P727SkirmishTests.cs:217, Shots=0 Hits=0"},
+        {"run": 2, "result": "FAIL", "seconds": 212, "failure": "same"}
+      ],
+      "final_code_alone": [
+        {"run": 1, "result": "PASS", "seconds": 187},
+        {"run": 2, "result": "PASS", "seconds": 187},
+        {"run": 3, "result": "PASS", "seconds": 187}
+      ],
+      "post_fix_observation": {"clash": "both sides pick the midpoint sector 1052", "first_shots": "between sim 60 s and 163 s",
+        "coverage_at_163s": "fired=3 triggerEvents=4 hits=13 damage=308"}
+    },
+    "P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts": {
+      "first_bad_commit": "62a5b50f",
+      "first_bad_title": "P831: fallback-hull bombers always finish their new-mission setup; the finale re-arm is bounded and fog-aware",
+      "boundary": [
+        {"commit": "8f7dda9d", "note": "parent of P831, cases port+native pipeline=false", "result": "PASS", "seconds": 419},
+        {"commit": "62a5b50f", "note": "P831, cases port+native pipeline=false", "result": "FAIL", "seconds": 618,
+         "failure": "match 2 automatic start and fresh finale timed out"}
+      ],
+      "reproduction_on_dispatch_base": [{"rows_failed": 4, "seconds": 1237, "failure": "match 2 automatic start and fresh finale timed out"}],
+      "diagnosis_trace": "gate=no enemy station observed by side(s) [0] grace=False; bot[s0] reset=True pending=False sameRun=True gen=2/1 (not bot-blocked; P831 fog gate only)",
+      "final_code_alone": [
+        {"run": 1, "cases": 2, "result": "PASS", "seconds": 620},
+        {"run": 2, "cases": 2, "result": "PASS", "seconds": 621},
+        {"run": 3, "cases": 2, "result": "PASS", "seconds": 620}
+      ],
+      "final_code_all_rows": {"cases": 4, "result": "PASS", "seconds": 1242}
+    }
+  },
+  "related_suites_alone_x3": [
+    {"filter": "P837BotEngagementScaleTests|P798ScoutOpeningTests|P831FallbackBomberRearmTests", "runs": 3, "total": 34, "result": "PASS"}
+  ],
+  "showcase_never_parks": {"test": "P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds", "runs": 5, "result": "PASS",
+    "seconds": [341, 287, 294, 329, 346]},
+  "light_gate": {
+    "solution_build": "0 warnings, 0 errors",
+    "build_tools": "89/89 tool projects built",
+    "fast_tier": {"tests": 10972, "seconds": 305, "failed": 1,
+      "failed_test": "CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors",
+      "disposition": "ledgered load flake (TEST_FLAKES :803, :2546, :2845); passed 3/3 alone after the sweep"}
+  },
+  "aot_publish": "not run: no src/Allegiance.Core or src/Allegiance.Server file changed (Allegiance.Server references Core + Update only, not SinglePlayer)"
+}

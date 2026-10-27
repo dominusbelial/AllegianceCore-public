@@ -393,18 +393,66 @@ internal static class ClashScoring
             return best;
         }
 
+        // P837 — the side's OWN HOME is never a clash objective: the fleet is
+        // already there, so a "clash" on it parks the whole fleet at home. Under
+        // P798/P797 fog the only "resource" a small side has seen for the first
+        // minutes is its own miners on its own base, and both sides then sat on
+        // their own base for the rest of the opening (P727 live test: 9-bot
+        // skirmish, 0 shots in 210 s; `[clash] side 1 chose sector 1051
+        // (ownMiners=1, hops own=0 enemy=3)`). Own miners in FORWARD sectors still
+        // mark a contested area — only home is excluded.
         var resourced = rockList.Where(r => known.Contains(r.Sector) && r.Value > 0).Select(r => r.Sector)
             .Concat(ownList.Where(m => known.Contains(m.Sector)).Select(m => m.Sector))
             .Concat(enemyList.Where(m => known.Contains(m.Sector)).Select(m => m.Sector))
             .Concat(stationList.Where(s => known.Contains(s.Sector)).Select(s => s.Sector))
+            .Where(s => s != ownHome)
             .ToHashSet();
         var picked = Best(resourced, false);
         if (picked is not null) return picked;
         if (!topologyFallback) return null;
-        // Nothing with resources known yet: fall back to the most central known
-        // sector (topology only — the map preview every side has).
-        var central = known.Count > 0 ? known : ExplorationPlanner.Reachable(graph, ownHome);
+        // P837 — nothing contested is known: commit both fleets to the BALANCED
+        // meeting point between the two homes instead of a central KNOWN
+        // sector. The topology and the home flags are global knowledge for every
+        // side (fsmission.cpp:4122-4174, the same source ResolveEnemyHome uses),
+        // so the pick is identical on both sides and the two fleets meet there
+        // rather than each waiting on an empty frontier.
+        if (enemyHome >= 0 && enemyHome != ownHome && Midpoint(graph, ownHome, enemyHome) is { } midpoint)
+        {
+            int hopsOwn = ExplorationPlanner.Hops(graph, ownHome, midpoint);
+            int hopsEnemy = ExplorationPlanner.Hops(graph, enemyHome, midpoint);
+            return new ClashChoice(midpoint, 0.5,
+                $"topology fallback: midpoint between the homes (hops own={hopsOwn} enemy={hopsEnemy}; no contested resource seen yet)",
+                Resource: 0, OwnMiners: 0, EnemyMiners: 0, EnemyStation: false, OwnHops: hopsOwn, EnemyHops: hopsEnemy);
+        }
+        // No enemy home known (a map without home flags): fall back to the most
+        // central known sector (topology only — the map preview every side has).
+        var central = known.Where(s => s != ownHome).ToHashSet();
+        if (central.Count == 0) central = ExplorationPlanner.Reachable(graph, ownHome).Where(s => s != ownHome).ToHashSet();
         return Best(central, true);
+    }
+
+    /// <summary>P837 — the sector where the two fleets must meet when neither side
+    /// has seen a contested resource: the sector on the home-to-home topology with
+    /// the most balanced hop count. Symmetric between the two sides (swapping the
+    /// homes cannot change |own − enemy|), so both sides target the SAME sector;
+    /// ties break on the shorter total route, then the lowest sector id, keeping
+    /// the choice deterministic and side-independent. Null when no sector is
+    /// reachable from both homes.</summary>
+    internal static short? Midpoint(ClusterGraph graph, short ownHome, short enemyHome)
+    {
+        short? best = null;
+        int bestBalance = int.MaxValue, bestTotal = int.MaxValue;
+        foreach (var cluster in graph.Clusters.Select(c => c.Id).Order())
+        {
+            int own = ExplorationPlanner.Hops(graph, ownHome, cluster);
+            int enemy = ExplorationPlanner.Hops(graph, enemyHome, cluster);
+            if (own < 0 || enemy < 0) continue;
+            int balance = Math.Abs(own - enemy);
+            int total = own + enemy;
+            if (balance < bestBalance || (balance == bestBalance && total < bestTotal))
+            { best = cluster; bestBalance = balance; bestTotal = total; }
+        }
+        return best;
     }
 }
 
@@ -663,6 +711,40 @@ internal static class ScoutOpening
     internal static readonly int SweepWaypoints = 10;
     internal static readonly double ClashDelaySeconds = ReadDouble("ALLEGIANCE_P798_CLASH_DELAY", 75);
     internal static readonly double ClashFallbackSeconds = 420;
+    /// <summary>P837 — the side's combat-bot count at which the rig-scale opening
+    /// numbers apply (the 200v200 showcase sides run ~48 combat bots each).</summary>
+    internal const int RigScaleCombatBots = 48;
+    /// <summary>P837 — at or below this many combat bots on a side the opening is a
+    /// MEETING ENGAGEMENT: the fleet fights what it meets while it travels instead
+    /// of holding wing discipline (the P539d staging barrier) for a fight that a
+    /// handful of ships will never assemble. A rig side (~48 combat bots) is far
+    /// above it, so no rig behaviour changes.</summary>
+    internal const int MeetingEngagementCombatBots = 8;
+    /// <summary>P837 — the opening's "let the scouts look first" delay is a rig
+    /// number too. A nine-bot skirmish cannot spend 75 s of its three-minute battle
+    /// waiting before ANY ship is given a destination: both fleets then reach the
+    /// midpoint at ~150 s and the fixture's window closes while the first pair is
+    /// still closing to weapon range. A small fleet commits almost immediately.
+    /// </summary>
+    internal const double SmallFleetClashDelaySeconds = 20;
+    /// <summary>P837 — the clash delay for a side of <paramref name="combatBots"/>
+    /// combat bots: the rig-scale opening window, or the meeting-engagement delay
+    /// for a small fleet (never longer than the configured rig value, so
+    /// ALLEGIANCE_P798_CLASH_DELAY still throttles everything).</summary>
+    internal static double ClashDelaySecondsFor(int combatBots) =>
+        combatBots < MeetingEngagementCombatBots
+            ? Math.Min(SmallFleetClashDelaySeconds, ClashDelaySeconds) : ClashDelaySeconds;
+    /// <summary>P837 — the topology-midpoint fallback delay scales with the side's
+    /// combat fleet. On the rig a side fields ~48 combat bots and ~50 scouts, which
+    /// find a contested sector long before 420 s; a 9-bot skirmish fields one or two
+    /// scouts and can see nothing but its own base for minutes, so waiting the
+    /// rig-scale 420 s leaves both fleets parked at home with no contact at all
+    /// (P727 live test, 0 shots in 210 s). The delay is the rig figure scaled by the
+    /// side's combat bots, never below that fleet's own opening window
+    /// (<see cref="ClashDelaySecondsFor"/>), so the rig keeps its 420 s.</summary>
+    internal static double ClashFallbackSecondsFor(int combatBots) =>
+        Math.Clamp(ClashFallbackSeconds * Math.Max(0, combatBots) / RigScaleCombatBots,
+            ClashDelaySecondsFor(combatBots), ClashFallbackSeconds);
     internal static readonly double OpeningSeconds = 600;
     /// <summary>P830 — lane-switch hysteresis: a scout holds its current lane
     /// while the lane stays valid; it only releases it when a free lane scores

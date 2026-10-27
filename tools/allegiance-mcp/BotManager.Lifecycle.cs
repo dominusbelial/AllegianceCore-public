@@ -403,6 +403,33 @@ internal sealed partial class BotManager
                 && (!IgnoreMinerTargets || CombatTargetSelector.ClassifyTargetId(enemy.HullId) != BotTargetClass.MinerDrone));
     }
 
+    /// <summary>P837 — the nearest DIFFERENT-side ship this bot can see in its own
+    /// sector, or null. A small fleet fights what it meets while travelling: with
+    /// a handful of ships there is no wing to keep assembled, and two nine-bot
+    /// fleets otherwise cross the map on their way to the same clash sector without
+    /// a single shot (live test P727: 0 shots in 210 s). The big-fleet staging
+    /// discipline (P539d) is untouched — it only applies above
+    /// <see cref="ScoutOpening.MeetingEngagementCombatBots"/> combat bots.</summary>
+    private static short? VisibleEnemyInSector(ActiveBot bot, ConnectionSession cs, short sector)
+    {
+        lock (cs.Gate)
+        {
+            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own) || own.Latest is not { } mine) return null;
+            short? best = null;
+            float bestD = float.MaxValue;
+            foreach (var ship in cs.World.Ships.Values)
+            {
+                if (ship.ShipId == bot.ShipId || ship.IsNotVisible) continue;
+                if (ship.SideId < 0 || ship.SideId == bot.Side) continue;
+                if (ship.SectorId != sector || ship.Latest is not { } lu) continue;
+                if (IgnoreMinerTargets && CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.MinerDrone) continue;
+                float d = (lu.Position - mine.Position).Length();
+                if (d < bestD) { bestD = d; best = ship.ShipId; }
+            }
+            return best;
+        }
+    }
+
     public long DecisionOverruns => _cadence.OverrunCount;
 
     internal static short? ResolveScenarioTarget(Showcase.HullRole role, short? rendezvous, short enemyHome)
