@@ -86,7 +86,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         // density (desktop scale) × the user Size, NOT from window height, so a
         // large high-DPI monitor no longer inflates every glyph. A 1.0 desktop
         // keeps exactly the pre-P833 behaviour.
-        float scale = ModernHudScale.Core(_displayScale, _settings.Size);
+        // P859 — capped by the window-height budget (ModernHudScale.WindowFactor):
+        // a small window with a large Size used to overflow the authored layout
+        // and drop a radar label onto the centred ripcord countdown.
+        float scale = ModernHudScale.Core(_displayScale, _settings.Size, viewport.Height);
         if (scale != _scale) { _smallSdf.ResetRasterCache(); _bigSdf.ResetRasterCache(); }
         _scale = scale;
         var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);

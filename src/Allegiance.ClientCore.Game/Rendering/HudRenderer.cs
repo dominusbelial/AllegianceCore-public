@@ -709,14 +709,25 @@ public class HudRenderer
         // 150-wide box (dialog.mdl:5145-5151,5429), so reserve the whole box,
         // not just the left-aligned text run; otherwise a measured radar label
         // can slide into the centred glyphs (Modern at >1× scale).
-        if (model.FlightVisible && model.Context.Ripcord is not null)
+        // P859 — the reservation is the UNION of that native box and the glyph run
+        // actually drawn: the port's LgBoldVerdana bake is wider than native's
+        // 150 px box, and the run is centred on the box centre
+        // (HudConsoleFormat.RipcordTextLeft), so a reserve of only the native box
+        // left the overflowing glyphs unprotected — a free-zone placement (an
+        // ordinary tip, a radar label) could land on them. Classic at 1600×900 hit
+        // exactly that (`Welcome to the sector` placed at 923,422 vs the glyphs at
+        // 644..956, 435..482).
+        if (model.FlightVisible && model.Context.Ripcord is { } ripcordText)
         {
             float ripcordTop = viewport.Height / 2f - HudConsoleFormat.RipcordTop * scale;
+            var ripcordFont = NativeFontAt(NativeFont.LgBoldVerdana);
+            float half = MathF.Max(HudConsoleFormat.RipcordLeft * scale,
+                ripcordFont.MeasureString(HudFormat.Printable(ripcordText)).X * scale / 2f);
             Layout.Reserve(new Rectangle(
-                (int)MathF.Floor(w / 2f - HudConsoleFormat.RipcordLeft * scale),
+                (int)MathF.Floor(w / 2f - half),
                 (int)MathF.Floor(ripcordTop),
-                (int)MathF.Ceiling(HudConsoleFormat.RipcordWidth * scale),
-                (int)MathF.Ceiling(NativeFontAt(NativeFont.LgBoldVerdana).LineSpacing * scale)));
+                (int)MathF.Ceiling(half * 2f),
+                (int)MathF.Ceiling(ripcordFont.LineSpacing * scale)));
         }
         int criticalCount = console.CriticalTips.Count;
         for (int slot = 0; slot < criticalCount; slot++)

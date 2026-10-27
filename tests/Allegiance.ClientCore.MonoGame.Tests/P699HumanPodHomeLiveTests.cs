@@ -67,7 +67,19 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
         {
             ArtPath = art, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
             SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
-            Games = [new() { Name = "P699 human", Map = "XXV_simple.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
+            Games = [new()
+            {
+                Name = "P699 human", Map = "XXV_simple.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"],
+                // P859 — the pod's two-jump route home is flown by the real G-key
+                // autopilot, which (native FindPath, Igc/common.cpp:894-1009) only
+                // expands hops through alephs the side can SEE (shipIGC.h:380-390;
+                // fsmission.cpp:4175-4186). Since P797 native map discovery this
+                // unscouted fixture received only its start sector's aleph pair, so
+                // the autopilot correctly refused the second hop and the test failed
+                // at AutopilotControls. Seed the known map exactly as the sibling
+                // P540b cross-sector pod fixture does (P540b test, 2026-10-25).
+                ShowMap = true,
+            }],
         });
         var mission = server.Missions[0]; mission.Stage = MissionStage.Started;
         using var session = new ConnectionSession();

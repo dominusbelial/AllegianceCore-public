@@ -3603,8 +3603,17 @@ public sealed partial class Game1
     /// is the destination sector, exactly the resolution the server's transit
     /// performs and the MCP bot's <c>TryBuildWarpDestMap</c> uses. The same shape
     /// P541's <see cref="TryResolveClusterWaypoint"/> used; shared so the cluster-
-    /// goto and the cross-sector autopilot route over the SAME data.</summary>
-    private static List<Flight.StarmapGotoRouter.AllWarp> AllWarps(ClientWorld world)
+    /// goto and the cross-sector autopilot route over the SAME data.
+    ///
+    /// <para>P797/P859 — the input is the DISCOVERED aleph table, so this is the
+    /// port's <c>pship-&gt;CanSee(pwarp)</c> filter: since native map discovery a
+    /// side only receives the alephs it has seen (<c>fsmission.cpp:4175-4186</c>,
+    /// <c>shipIGC.h:380-390</c>), and native <c>FindPath</c>
+    /// (<c>Igc/common.cpp:894-1009</c>) only expands hops through warps the ship
+    /// can see. An aleph whose partner record has not arrived is therefore an
+    /// edge the route may not use. Internal so the fast tier can pin that rule
+    /// (<c>P859RegressionProofTests</c>).</para></summary>
+    internal static List<Flight.StarmapGotoRouter.AllWarp> AllWarps(ClientWorld world)
     {
         var warps = new List<Flight.StarmapGotoRouter.AllWarp>();
         foreach (var w in world.Warps.Values)

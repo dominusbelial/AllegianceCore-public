@@ -46,6 +46,42 @@ public static class ModernHudScale
         return Math.Clamp(density * s, MinScale, MaxScale);
     }
 
+    /// <summary>P859 — the authored layout budget: the largest text scale the HUD
+    /// proofs have ever verified at the 1080-tall reference window (the pre-P833
+    /// Size ceiling). The HUD-2 / HUD-5 / P833 sweeps were all authored against
+    /// <c>scale = 1.5</c> at <c>height = 1080</c>, so the invariant the geometry
+    /// keeps is "1.5 scale units per 1080 px of window height".</summary>
+    public const float MaxAuthoredScale = 1.5f;
+
+    /// <summary>P859 — the largest scale this WINDOW can hold: the authored ratio
+    /// above, i.e. <see cref="MaxAuthoredScale"/> × <c>height/1080</c>.
+    ///
+    /// <para>P833 correctly stopped <em>inflating</em> the HUD from window height
+    /// (a 2160-tall window used to give 2× on a 1.0 desktop), but dropping the
+    /// height term entirely lost the ceiling a SMALL window relied on: at
+    /// 1280×720 with the widened Size 1.5 the Modern radar label block measured
+    /// 582×83 px, no free zone was left between the six gauge rings, the target
+    /// pane and the centred ripcord countdown (dialog.mdl:5145-5151), and
+    /// <see cref="HudTextLayout"/> fell through to its native-anchor overflow —
+    /// drawing the label on top of the ripcord glyphs. Native cannot collide this
+    /// way: its fonts are fixed bitmaps (<c>Artwork/dialog.mdl</c>
+    /// <c>smVerdana</c>/<c>lgBoldVerdana</c>), so 720p text is exactly as large as
+    /// 1080p text and never grows with a user text-size setting. Restoring the
+    /// ratio as a one-sided CAP keeps P833's density rule wherever the window has
+    /// room for it (a 1.25 desktop still gets 1.25× on a 1080p or taller window),
+    /// while a small window keeps exactly the layout it was authored for.</para></summary>
+    public static float WindowFactor(float viewportHeight)
+        => Math.Clamp(MathF.Max(viewportHeight, 1f) / 1080f * MaxAuthoredScale, MinScale, MaxScale);
+
+    /// <summary>P859 — the core scale the RENDERER uses: the density rule
+    /// (<see cref="Core(float,float)"/>, P833) capped by what the window can hold
+    /// (<see cref="WindowFactor"/>), so no (window, density, Size) combination can
+    /// inflate the HUD past the layout the proofs verified. At 1080p the cap is the
+    /// pre-P833 1.5 ceiling, reached only by Size 2.0 or a 1.5+ desktop — never by
+    /// the reference configuration, which stays exactly 1.0.</summary>
+    public static float Core(float displayScale, float size, float viewportHeight)
+        => Math.Clamp(Math.Min(Core(displayScale, size), WindowFactor(viewportHeight)), MinScale, MaxScale);
+
     /// <summary>The gauge-cluster / own-status grid spread: the authored ring
     /// spread at reference density scaled by the core scale, clamped to the
     /// same band the classic skin's spread uses (1.15–2.1 at reference). The

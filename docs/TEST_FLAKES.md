@@ -67,6 +67,14 @@ base failure for whoever owns pod autopilot, not a P828 regression and not a
 flake. The same full MonoGame run had 3 503 passed / 3 failed / 3 skipped, those
 being the only failures.
 
+**Resolved (P859, 2026-10-27):** bisected to `7734a197` (P797 native map
+discovery) — the autopilot is native-correct (it only routes through alephs the
+side has seen: `Igc/common.cpp:894-1010`, `FedSrv/fsmission.cpp:4181`), but this
+fixture never seeded the map, so its client knew one aleph pair and the
+two-jump route home was genuinely unroutable. The fixture now sets `ShowMap`
+(exactly as the sibling P540b pod fixture was fixed in `7cf119e1`); 2/2 rows pass
+3× alone. Full analysis: `docs/reports/P859_LIVE_MONOGAME_REGRESSIONS.md`.
+
 ## P788c verification observations (2026-10-25)
 
 - `BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes`:
@@ -2915,6 +2923,7 @@ for which build the closing series covered.
 | 2026-10-25 | P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane | Fails in ~85 ms with "dotnet-…/tools/p800-hull-proof/bin/Debug/net10.0/p800-hull-proof.dll does not exist" on any checkout where `tools/build-tools.sh` has not run (fresh worktrees; also the mini runner's 2026-10-25 nightly and P788c runs). Environment, not product: passes after `tools/build-tools.sh`. |
 | 2026-10-25 | P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame | P699b-fix fast tier under parallel load (GLM P824 + Codex P821 on the host); per-frame allocation assertion, same family as Hud12b. 3/3 alone. |
 | 2026-10-25 | P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7) | P699b-fix fast tier under the same load; 3/3 alone. |
+| 2026-10-27 | RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads | P859 fast tier under the concurrent lanes' load (three other tiers running on the host): the socket/thread-count assertion read 19 where it expects 20 (`RetryCleanupTests.cs:263`). P859 only touches the Modern HUD text scale, the Classic ripcord reserve, `Game1.AllWarps`' accessibility and a MonoGame test fixture — no socket, thread or reconnect path. | 3/3 exact-method alone (~40-53 ms each) — load flake |
 
 ## P821 — corrected P704 capture fixture (2026-10-25)
 

@@ -319,9 +319,11 @@ public sealed partial class Game1
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         // P833 — the Modern HUD scale is driven by the display's physical density
-        // (desktop scale), not window height; detect it once at boot.
+        // (desktop scale), not window height; detect it once at boot. P859 — the
+        // per-frame scale is this value capped by the window-height budget
+        // (ModernHudScale.WindowFactor), so the boot line reports the density rule.
         _displayScale = Rendering.DisplayDensity.DetectDesktopScale();
-        Console.WriteLine($"[monogame] HUD display density (desktop scale): {_displayScale:F2} -> Modern scale {Rendering.ModernHudScale.Core(_displayScale, _hudSettings.Size):F2}");
+        Console.WriteLine($"[monogame] HUD display density (desktop scale): {_displayScale:F2} -> Modern density scale {Rendering.ModernHudScale.Core(_displayScale, _hudSettings.Size):F2} (capped per frame by the window height budget)");
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
             Content.Load<SpriteFont>("HUDModern"), nativeArt: _statusTextures, nativeHudTextures: _hudNativeTextures,
             displayScale: _displayScale);

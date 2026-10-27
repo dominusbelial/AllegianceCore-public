@@ -1,0 +1,84 @@
+{
+  "task": "P859",
+  "title": "Bisect and fix two Live-tier MonoGame regressions (P699 pod autopilot, ModernHud overlap)",
+  "base_commit": "f4d9263d489410e3282cd00a2978b7c85951c00f",
+  "worktree": "allegiance-pi-p859 (changes left uncommitted)",
+  "date": "2026-10-27",
+  "fail_first": {
+    "p699_human_pod_home": {
+      "reproduced_on_dispatch_base": "2/2 timeScale rows fail in ~1 s at P699HumanPodHomeLiveTests.cs:41 (TryGetAutopilotControls), called from :142",
+      "bisect_good": "1a8be792 (P699 test added)",
+      "bisect_bad": "f4d9263d (dispatch base)",
+      "first_bad_commit": "7734a197",
+      "first_bad_subject": "P797: native map discovery — alephs, asteroids (+building effects), stations, probes, mines, treasures reach a side only once SeenBySide",
+      "parent_passes": "fdd70154 (P795)",
+      "classification": "test fixture wrong, product native-correct",
+      "fix": "tests/.../P699HumanPodHomeLiveTests.cs: ShowMap = true in the game config"
+    },
+    "modern_hud_overlap": {
+      "reproduced_on_dispatch_base": "1/1 fails in ~10 s: 'flight 1280 1.5 overlap: radar:Enemy fighter with a long pilot name {X:4 Y:344 W:582 H:83} / Ripcord in: 9 {X:551 Y:338 W:179 H:33}'",
+      "bisect_good": "151dc2d0 (HUD-2 test added)",
+      "bisect_bad": "f4d9263d (dispatch base)",
+      "first_bad_commit": "aec8de11",
+      "first_bad_subject": "P833: Modern HUD scale from display density — text, layout and art on one scale, no overlaps at 4K/5K2K",
+      "parent_passes": "62a5b50f (P831)",
+      "classification": "product regression (Modern text scale lost its window-height ceiling)",
+      "fix": "ModernHudScale.WindowFactor + Core(density,size,viewportHeight); ModernHudRenderer passes the viewport height"
+    }
+  },
+  "bisect_steps": {
+    "p699": ["PASS 7017b7a6", "FAIL ba6f7a66", "PASS bbf78fb5", "PASS 1a189217", "PASS fdd70154", "FAIL 887ab4c3", "FAIL 0eca1fa2", "FAIL 7734a197"],
+    "hud": ["PASS 238cc887", "PASS 72322030", "PASS 102f8940", "FAIL 31bff892", "PASS f3e5148f", "FAIL aec8de11", "PASS 62a5b50f"],
+    "method": "manual midpoint selection (git rev-list --bisect), full solution build + one test per step; scripts and raw logs in ~/allegiance-evidence/P859/"
+  },
+  "gate": {
+    "solution_build": "0 warnings, 0 errors",
+    "build_tools": "all 91 tool projects built",
+    "new_fast_tests_3x_alone": ["6/6", "6/6", "6/6"],
+    "p699_human_pod_home_3x_alone": ["2/2 (34 s)", "2/2 (35 s)", "2/2 (35 s)"],
+    "modern_hud_proof_3x_alone": ["1/1 (11 s, 480 frames)", "1/1 (9 s, 480 frames)", "1/1 (9 s, 480 frames)"],
+    "p833_scale_tests_plus_modernhud": "13/13 passed",
+    "fast_tier_once": {
+      "log": "~/allegiance-evidence/P859/fast-tier.log",
+      "tests": 11043,
+      "seconds": 309.7,
+      "verdict": "FAIL on one load flake only",
+      "failure": "RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads (expected 20, actual 19 at RetryCleanupTests.cs:263)",
+      "failure_isolation": "3/3 pass alone (53/40/43 ms) — load flake, ledgered in docs/TEST_FLAKES.md"
+    },
+    "monogame_live_tier_once": {
+      "log": "~/allegiance-evidence/P859/monogame-live.log",
+      "trx": "~/allegiance-evidence/P859/trx/monogame-live.trx",
+      "result": "11/11 passed, 15 m 46 s"
+    },
+    "aot_publish": "not run: no src/Allegiance.Server or src/Allegiance.Core change"
+  },
+  "hud_proof_frames": {
+    "viewports": ["1920x1080", "2560x1440", "1280x720", "1600x900", "1366x768"],
+    "sizes": [0.75, 1.0, 1.5],
+    "scenarios": 16,
+    "skins": ["Classic", "Modern"],
+    "frames_per_run": 480
+  },
+  "classic_unchanged_proof": {
+    "method": "md5 of the 1280x720 Size 1.5 Classic captures with P859's fix applied and reverted",
+    "flight": "30bbca2bd409bf181661a3998b908c67 == 30bbca2bd409bf181661a3998b908c67",
+    "radar_all": "a33ee6829498618cd128e139c8978707 == a33ee6829498618cd128e139c8978707"
+  },
+  "media": {
+    "dir": "docs/reports/P859_assets/",
+    "files": [
+      "P859_1280x720_size1.5_flight_Modern_before.png",
+      "P859_1280x720_size1.5_flight_Modern_after.png",
+      "P859_1280x720_size1.5_radarAll_Modern_before.png",
+      "P859_1280x720_size1.5_radarAll_Modern_after.png",
+      "P859_1280x720_size1.5_radarAll_Classic.png"
+    ],
+    "bytes_total": 1299525,
+    "review": "new media — needs Domingo's approval before the push"
+  },
+  "unfixed_findings": [
+    "1024x600 (any Size): the top-right native 'Current location:' console anchor overlaps the AFTERBURNER warning band (pre-existing, out of scope; evidence ~/allegiance-evidence/P859/hud-stress-1024x600.txt)",
+    "Size 2.0 at 1080p is now bounded by the 1.5 window budget but never proven collision-free (no sweep row)"
+  ]
+}
