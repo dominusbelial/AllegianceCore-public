@@ -3026,6 +3026,13 @@ MISSION_STAGE(Started) — a message-interleaving timing dependency, consistent
 with the ledgered P775 siblings above. Not fixed here (outside the P841 batch
 surface; the P775 owner should re-derive the expected announcement count).
 
+**Claude correction (2026-10-27, merge gate):** not a base failure on current master. At `f4d9263d` the test
+passes 4/4 even under load 23; at P841 it fails 3/4, and reverting only `Side.AutoAccept = true` makes it pass
+4/4. Cause: the port config-seats a joiner, so the fixture's `Seat()` POSITIONREQ names the side the ship
+already holds; with auto-accept that re-seats the ship (native `RequestPosition`, fsmission.cpp:4747-4760)
+and the extra own JOIN_SIDE changes the replay's count. Fixed in the test: both sides set `AutoAccept = false`
+before seating (5/5 pass).
+
 | 2026-10-27 | P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds | P841 showcase 5×: run 3 failed with no `Parked >5s` sample and no assertion text captured (-v q); runs 1/2/4/5 and two immediate retries of the same test passed — load window while other lanes ran suites on the shared host | 2/2 immediate re-runs alone; P841 changed no bot flight/decision code (join-flow default + departure bookkeeping only) | load flake |
 ## P832c — sandbox environment receipt (2026-10-27)
 

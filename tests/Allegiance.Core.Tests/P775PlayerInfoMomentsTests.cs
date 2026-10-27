@@ -270,6 +270,14 @@ public sealed class P775PlayerInfoMomentsTests
         var mission = server.Missions[0];
         var side0 = mission.Sides[0].Id;
         var side1 = mission.Sides[1].Id;
+        // P841: sides now start auto-accepting (native InitSide, fsmission.cpp:58).
+        // The port config-seats a joiner, so Seat()'s POSITIONREQ names the side the
+        // ship already holds; with auto-accept native would re-seat it
+        // (RequestPosition, fsmission.cpp:4747-4760) and the extra own JOIN_SIDE
+        // changes this replay's announcement count. Keep the request pending, as
+        // before P841; this test is about the PLAYERINFO moments, not re-seating.
+        mission.Sides[0].AutoAccept = false;
+        mission.Sides[1].AutoAccept = false;
 
         using var a = Seat(server, "Ace", side0);
         using var b = Seat(server, "Bee", side1);
