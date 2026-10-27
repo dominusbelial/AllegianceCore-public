@@ -117,10 +117,13 @@ public sealed partial class Server
         bool changed = !string.Equals(side.SquadId, squadId, StringComparison.Ordinal);
         side.SquadId = squadId;
         side.SquadName = squadName;
-        if (!changed) return;
+        if (!changed) return;   // native: "if the squad doesn't need to be changed, don't touch it" (fsmission.cpp:1617-1619)
         if (mission.SquadGame && squadId is not null)
         {
-            // fsmission.cpp:1623-1641 — boot seated players not on the squad.
+            // fsmission.cpp:1623-1641 — boot seated players not on the squad
+            // (native guards only on squadID != NA; the port adds the P820c
+            // SquadGame gate, which is unreachable-equivalent because every
+            // native call site that passes a non-NA squad is squad-game-only).
             // Only verified peers with a non-empty squad list can be judged
             // non-members; anonymous/bots keep their seat (no squad ⇒ no
             // behaviour change). Snapshot first: the boot mutates state.
@@ -135,6 +138,83 @@ public sealed partial class Server
             }
         }
         RelaySideSquad(mission, side);
+    }
+
+/// <summary>P842 — native <c>CFSMission::MaintainSquadLeadership</c>
+    /// (fsmission.cpp:1683-1739), transcribed: make sure the team has a squad
+    /// and the current leader can lead it; if not, first try the leader's
+    /// preferred squad, then a teammate's (making that teammate the leader via
+    /// the full <see cref="SetLeader"/> primitive — native calls
+    /// <c>SetLeader</c>, fsmission.cpp:1717), re-point the side's squad via
+    /// <see cref="ApplySideSquad"/> (fsmission.cpp:1722), and — when no squad
+    /// could be found at all — boot every player on the side
+    /// (fsmission.cpp:1724-1737, <c>RemovePlayerFromSide(QSR_SquadChange)</c>).
+    /// Guards: settings-locked sides are never touched (fsmission.cpp:1693-1695)
+    /// and a leaderless side is a no-op (native's <c>if (pfsLeader &amp;&amp; …)</c>).
+    /// <paramref name="departedLeader"/> is the leader whose departure triggered
+    /// the call — native runs this AFTER RemovePlayerFromSide has already taken
+    /// the leaver off the side (fsmission.cpp:1143 vs :1154), so the port
+    /// excludes them from the teammate scan and the boot loop (the port's
+    /// succession hook runs while the leaver is still seated).
+    /// Native call sites: the pre-start leader-quit tail of
+    /// <c>RemovePlayerFromSide</c> (fsmission.cpp:1154-1155 — hooked from
+    /// <see cref="HandleLeaderSuccession"/>), the bSquadGame-change loop
+    /// (fsmission.cpp:1889-1892 — the port has no mid-mission settings change,
+    /// so unreachable) and mission restart (fsmission.cpp:3497-3499 — the port
+    /// re-assembles fresh sides on rotation, P439, so unreachable).</summary>
+    private void MaintainSquadLeadership(Mission mission, Side side, Ship? departedLeader = null)
+    {
+        if (GameSettings(mission).LockTeamSettings) return;   // fsmission.cpp:1693-1695
+        var leaderShip = LeaderShip(mission, side.Id);
+        if (leaderShip is null) return;                       // native: only acts when a leader exists
+        var leaderConn = ConnOf(leaderShip);
+        bool leaderCanLeadSquad = leaderConn is { } lc && PeerCanLeadSquad(lc, side.SquadId);
+        if (side.SquadId is not null && leaderCanLeadSquad) return;   // leader fits the squad — nothing to maintain
+
+        // See which squad the current leader would prefer to lead (1698-1703).
+        string? squadId = null;
+        string? squadName = null;
+        if (leaderConn is { } conn)
+        {
+            var preferred = PeerPreferredSquad(conn);
+            squadId = preferred?.Id;
+            squadName = preferred?.Name;
+        }
+
+        // Failing that, try to find a new leader: the first teammate (in side
+        // ship order) whose preferred squad exists becomes the leader with that
+        // squad (native's ship scan + SetLeader, fsmission.cpp:1704-1720).
+        if (squadId is null)
+        {
+            foreach (var kv in _peerShips.Where(kv => !ReferenceEquals(kv.Value.Ship, departedLeader)
+                                                   && ReferenceEquals(kv.Value.Ship.Mission, mission)
+                                                   && kv.Value.Ship.SideId == side.Id)
+                                         .OrderBy(kv => kv.Value.Ship.Id))
+            {
+                var preferred = PeerPreferredSquad(kv.Key);
+                if (preferred?.Id is null) continue;
+                squadId = preferred.Value.Id;
+                squadName = preferred.Value.Name;
+                SetLeader(mission, side, kv.Value.Ship);
+                break;
+            }
+        }
+
+        // Set the team to its new squad (fsmission.cpp:1722) — a null squad
+        // clears it (native SetSideSquad(sid, NA): no boots).
+        ApplySideSquad(mission, side, squadId, squadName);
+
+        // If we couldn't find a squad leader, boot everyone on the team
+        // (fsmission.cpp:1724-1737). Snapshot first: each boot runs leader
+        // succession (MoveToTeamLobby) which mutates the roster.
+        if (squadId is not null) return;
+        foreach (var kv in _peerShips.Where(kv => !ReferenceEquals(kv.Value.Ship, departedLeader)
+                                               && ReferenceEquals(kv.Value.Ship.Mission, mission)
+                                               && kv.Value.Ship.SideId == side.Id)
+                                     .Select(kv => (kv.Key, kv.Value.Ship)).ToList())
+        {
+            MoveToTeamLobby(mission, kv.Item2, QuitSideReason.SquadChange);
+        }
     }
 
     /// <summary>P820c — native <c>SetSideSquad(sid, NA)</c> (fsmission.cpp:
@@ -180,11 +260,18 @@ public sealed partial class Server
     /// </summary>
     private void RelaySideSquad(Mission mission, Side side, ConnectionId? to = null)
     {
+        // SIM-0509 — native SetSideSquad's name rule (fsmission.cpp:1645-1668):
+        // when bLockTeamSettings is set the team NAME is preserved (native passes
+        // m_misdef.rgszName[sid] to SetSideName) even though the squad id still
+        // changes; otherwise a squad side carries the squad name and a squadless
+        // side the plain side name.
+        bool locked = GameSettings(mission).LockTeamSettings;
         var msg = new SetTeamInfo
         {
             SquadId = SquadWireId(side.SquadId),
             SideId = side.Id,
-            SideName = side.SquadId is not null ? (side.SquadName ?? "") : (side.Name ?? ""),
+            SideName = locked ? (side.Name ?? "")
+                     : side.SquadId is not null ? (side.SquadName ?? "") : (side.Name ?? ""),
         };
         var packet = FedPacket.Pack(new[] { msg.Encode() });
         if (to is { } single)

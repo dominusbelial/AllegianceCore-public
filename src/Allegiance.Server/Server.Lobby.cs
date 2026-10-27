@@ -2149,6 +2149,10 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
             if (kv.Value.Ship.SideId is not { } sid) continue;
             if (sid == offeringSideId) continue;   // native: sideIDPlayer != sideIDInitiator
+            // native: pside->GetActiveF() (fsmission.cpp:5977) — a DEACTIVATED
+            // side (e.g. resigned mid-game, its players dead but still connected)
+            // never gets voters on a mission-wide ballot.
+            if (mission.Sides.FirstOrDefault(s => s.Id == sid) is not { Active: true }) continue;
             ballot.AddEligibleVoter(kv.Value.Ship.Id, sid);
         }
 
@@ -2237,10 +2241,10 @@ private void CompleteStartCountdown(Mission mission, double now)
 /// <summary>Mutiny passing transfers the side's leadership to the ballot's
     /// initiator — re-validated: the initiator must still be on that side when
     /// the vote closes (leadership could have changed mid-vote). Port of native
-    /// MutinyBallot::OnPassed (fsmission.cpp:6117-6168), reusing the P183
-    /// <c>Side.LeaderShipId</c> mutation + <c>BroadcastSetTeamLeader</c>. The
-    /// native donation-transfer/wing bookkeeping is N/A here (no donations,
-    /// no squads in this port).</summary>
+    /// MutinyBallot::OnPassed (fsmission.cpp:6098-6143): the P197
+    /// donation/wallet transfer (fsmission.cpp:6121-6136), then the full
+    /// <see cref="SetLeader"/> primitive (wing 0 + side-group SET_WINGID +
+    /// SET_TEAM_LEADER, fsmission.cpp:1510-1553, called at :6139).</summary>
     private void ApplyMutiny(Mission mission, PendingBallot ballot)
     {
         if (mission.Stage != MissionStage.Started) return;
@@ -2288,8 +2292,53 @@ private void CompleteStartCountdown(Mission mission, double now)
                 SendPeer(oldConn, FedPacket.Pack(new[] { new MoneyChange { DMoney = -money, SidTo = oldLeaderShip!.Id, SidFrom = Na }.Encode() }));
         }
 
-        side.LeaderShipId = initiator.Id;
-        BroadcastSetTeamLeader(mission, sideId, initiator.Id);
+        SetLeader(mission, side, initiator);
+    }
+
+/// <summary>The leadership-change primitive — the port of native
+/// <c>CFSMission::SetLeader</c> (fsmission.cpp:1510-1553), used by every native
+/// caller that needs the FULL leadership change (mutiny
+/// <c>MutinyBallot::OnPassed</c>, fsmission.cpp:6139; squad re-fit
+/// <c>MaintainSquadLeadership</c>, fsmission.cpp:1717):
+/// <list type="number">
+/// <item>Put the new leader on the COMMAND WING (0) and broadcast
+/// <c>SET_WINGID(106) {wingID=0, shipID, bCommanded=true}</c> to the side's
+/// group (fsmission.cpp:1533-1541; the old-leader wing block above it is
+/// commented out upstream — Imago #91 — so it is a no-op and is not ported).</item>
+/// <item>Change the leader (<c>SetLeaderID</c>, fsmission.cpp:1545) and
+/// broadcast <c>SET_TEAM_LEADER(121)</c> to the whole mission
+/// (fsmission.cpp:1547-1553).</item>
+/// </list>
+/// Native's <c>SetLeaderID</c> additionally stops/starts the deposed/new
+/// leader's command-time score bookkeeping (<c>PlayerScoreObject::
+/// StopCommand/StartCommand</c>, fsmission.cpp:1470/1480); this port's
+/// <see cref="PlayerScore"/> tracks no command-time counter, so that stat
+/// branch has no port counterpart (documented gap on SIM-0504).</summary>
+    private void SetLeader(Mission mission, Side side, Ship newLeader)
+    {
+        short sideId = side.Id;
+
+        // Command wing 0 + side-group SET_WINGID (fsmission.cpp:1533-1541;
+        // the side-group analogue HandleSetWingId broadcasts, Server.
+        // ShipCommands.cs — _peerShips filtered to this side, not the sector).
+        newLeader.WingId = 0;
+        byte[] wingPacket = FedPacket.Pack(new[]
+        {
+            new SetWingId { ShipID = newLeader.Id, WingId = 0, BCommanded = true }.Encode(),
+        });
+        int nWing = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId != sideId) continue;
+            SendPeer(kv.Key, wingPacket);
+            nWing++;
+        }
+        Console.WriteLine($"[lead] side {sideId} new leader ship {newLeader.Id}: SET_WINGID(106) wing 0 (commanded) to {nWing} side peer(s)");
+
+        // SetLeaderID + SET_TEAM_LEADER whole-mission (fsmission.cpp:1545-1553).
+        side.LeaderShipId = newLeader.Id;
+        BroadcastSetTeamLeader(mission, sideId, newLeader.Id);
     }
 
 // ════════════════════ P197 — per-player money & auto-donate ════════════════════
@@ -2352,62 +2401,26 @@ private void CompleteStartCountdown(Mission mission, double now)
         return pshipMax;
     }
 
-/// <summary>Resign passing — the stated P187 substitution for native
-    /// ResignBallot::OnPassed → DeactivateSide (fsmission.cpp:6170-6180), which
-    /// is OUT OF SCOPE (this port has no side deactivation). Instead every
-    /// remaining player on the resigning side is withdrawn from the mission,
-    /// reusing the P183 BroadcastQuitMission broadcast and the empty-side
-    /// leader/owner release: each leaver's ship is removed from its sector (it
-    /// stops flying), its side cleared, QUIT_MISSION broadcast whole-mission,
-    /// and the peer dropped from the roster; the side's leadership and — if it
-    /// owned the mission — the mission-owner role are released exactly as an
-    /// emptying side does. This is a deliberate, honest approximation of "this
-    /// side is out of the fight". The QUIT_MISSION reason is reused as
-    /// <see cref="QuitSideReason.LinkDead"/> because native has no vote-based
-    /// resign signal at all (it deactivates, emitting nothing).</summary>
+/// <summary>Resign passing — the port of native ResignBallot::OnPassed
+    /// (fsmission.cpp:6154-6163): announce (already done by
+    /// <see cref="ResolveBallots"/>), then — when the mission has STARTED —
+    /// deactivate the resigning side through the shared P455 port of native
+    /// <c>CFSMission::DeactivateSide</c> (fsmission.cpp:5318-5427): the side
+    /// goes inactive, every ship on it is stripped and killed (players lose the
+    /// ability to respawn), SIDE_INACTIVE(68) + "&lt;name&gt; is no more." go
+    /// out whole-mission, and the win-by-elimination check runs (a lone
+    /// surviving side wins; none → "All sides were destroyed"). This replaces
+    /// P187's old "withdraw every player" substitution, which is now redundant:
+    /// P455 built the faithful DeactivateSide. Native's guard is
+    /// <c>sideID &gt;= 0 &amp;&amp; STAGE_STARTED == GetStage()</c>
+    /// (fsmission.cpp:6158).</summary>
     private void ApplyResign(Mission mission, PendingBallot ballot)
     {
-        if (mission.Stage != MissionStage.Started) return;
+        if (mission.Stage != MissionStage.Started) return;   // native STAGE_STARTED gate, fsmission.cpp:6158
         short sideId = ballot.VotingSideId;
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
         if (side is null) return;
-
-        // Snapshot the leavers first (removing them below mutates _peerShips).
-        var leavers = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
-            .Select(kv => kv.Key)
-            .ToList();
-
-        foreach (var conn in leavers)
-        {
-            if (!_peerShips.TryGetValue(conn, out var live)) continue;
-            if (live.Ship.Sector is { } sec) sec.Remove(live.Ship);
-            live.Ship.Sector = null;
-            live.Ship.SideId = null;
-            BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
-            _peerShips.Remove(conn);
-            RetireViewerUpdateCadence(conn);
-            _peerNames.Remove(conn);
-            _playerReady.Remove(conn);
-        }
-
-        // The side is now empty of players: clear its leader; if it owned the
-        // mission, migrate the owner role to another occupied side's leader (or
-        // null if none) — the same resolution HandleLeaderSuccession reaches for
-        // an emptying side.
-        side.LeaderShipId = null;
-        if (mission.MissionOwnerSideId != sideId) return;
-        mission.MissionOwnerSideId = null;
-        foreach (var other in mission.Sides)
-        {
-            if (other.Id == sideId) continue;
-            if (other.LeaderShipId is not { } otherLeaderId) continue;
-            bool occupied = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == other.Id);
-            if (!occupied) continue;
-            mission.MissionOwnerSideId = other.Id;
-            BroadcastSetMissionOwner(mission, other.Id, otherLeaderId);
-            return;
-        }
+        DeactivateSide(mission, side);
     }
 
 /// <summary>An OfferDraw passing announces the offer and immediately creates
@@ -2447,12 +2460,12 @@ private void CompleteStartCountdown(Mission mission, double now)
     }
 
 /// <summary>Announce a ballot's outcome — the port of native Ballot::OnPassed
-    /// / OnFailed (fsmission.cpp:6045-6055): "&lt;proposal&gt; has passed /
-    /// been defeated. &lt;tally&gt;", sent to the ballot's audience.</summary>
+    /// / OnFailed (fsmission.cpp:6037-6052): "&lt;proposal&gt; has passed /
+    /// been defeated.  &lt;tally&gt;", sent to the ballot's audience.</summary>
     private void AnnounceBallotResult(Mission mission, PendingBallot ballot, bool passed)
     {
         string verdict = passed ? "has passed." : "has been defeated.";
-        SendChatAnnouncement(mission, ballot, $"{ballot.Proposal} {verdict}  {TallyString(ballot)}");
+        SendChatAnnouncement(mission, ballot, $"{ballot.Proposal} {verdict}  {TallyString(mission, ballot)}");
     }
 
 /// <summary>Send a chat announcement to a ballot's audience — CHAT_TEAM for
@@ -2464,6 +2477,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             Message = text,
             ChatTarget = (int)(ballot.IsMissionWide ? ChatTarget.Everyone : ChatTarget.Team),
+            // Native SendChat(NULL, chattarget, m_groupID, NA, ...) sets
+            // cd.oidRecipient = m_groupID (fsmission.cpp:6041/6050/6059 via
+            // FedSrvSiteBase::SendChat, FedSrv.CPP) — the voting side for a
+            // side-scoped ballot, NA for the mission-wide AcceptDraw.
+            OidRecipient = ballot.IsMissionWide ? Na : ballot.VotingSideId,
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
@@ -2487,21 +2505,30 @@ private void CompleteStartCountdown(Mission mission, double now)
     }
 
 /// <summary>The port of native Ballot::GetTallyString (fsmission.cpp:
-    /// 5970-6007): a per-side summary of in-favor/opposed/abstained counts.
-    /// Compact form "(sideName: N for, M against, K abstained)".</summary>
-    private string TallyString(PendingBallot ballot)
+    /// 5999-6034), transcribed exactly: ONE opening "(" before the first side
+    /// with any votes, sides separated by ", ", ONE closing ")" at the end;
+    /// within a side the segments " N for" / " M against" / " K abstained" are
+    /// appended space-separated (no comma). The side NAME + ":" prefix is
+    /// included only when the ballot's chat target is not CHAT_TEAM — i.e. for
+    /// the mission-wide AcceptDraw (native m_chattarget, fsmission.cpp:5905 vs
+    /// 5960); side-scoped ballots name no side.</summary>
+    private string TallyString(Mission mission, PendingBallot ballot)
     {
-        var parts = new List<string>();
+        var sb = new System.Text.StringBuilder();
+        bool first = true;
         for (int s = 0; s < PendingBallot.SideSlots; s++)
         {
             if (ballot.Abstaining[s] + ballot.InFavor[s] + ballot.Opposed[s] == 0) continue;
-            var bits = new List<string>();
-            if (ballot.InFavor[s] > 0) bits.Add($"{ballot.InFavor[s]} for");
-            if (ballot.Opposed[s] > 0) bits.Add($"{ballot.Opposed[s]} against");
-            if (ballot.Abstaining[s] > 0) bits.Add($"{ballot.Abstaining[s]} abstained");
-            parts.Add($"({string.Join(", ", bits)})");
+            sb.Append(first ? "(" : ", ");
+            first = false;
+            if (ballot.IsMissionWide)   // native: m_chattarget != CHAT_TEAM
+                sb.Append(mission.Sides.FirstOrDefault(x => x.Id == s)?.Name ?? $"side{s}").Append(':');
+            if (ballot.InFavor[s] > 0) sb.Append(' ').Append(ballot.InFavor[s]).Append(" for");
+            if (ballot.Opposed[s] > 0) sb.Append(' ').Append(ballot.Opposed[s]).Append(" against");
+            if (ballot.Abstaining[s] > 0) sb.Append(' ').Append(ballot.Abstaining[s]).Append(" abstained");
         }
-        return string.Join(", ", parts);
+        if (!first) sb.Append(')');
+        return sb.ToString();
     }
 
 /// <summary>P184 — broadcast <c>POSITIONREQ(40)</c> announcing a pending
@@ -2994,6 +3021,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             // bSend=false and one side-group flush; passing bSend:true for each
             // reproduces the identical net AUTODONATE(116) side-group broadcast.)
             RetargetDonorsOffLeaver(mission, oldSideId, ship, newLeader);
+            // SIM-0510 — native RemovePlayerFromSide's tail (fsmission.cpp:
+            // 1154-1155): when the leader quit a NOT-STARTED mission whose side
+            // still has a squad, re-fit the squad and (if needed) the leader.
+            if (mission.Stage == MissionStage.NotStarted && side.SquadId is not null)
+                MaintainSquadLeadership(mission, side, ship);
             return;
         }
 

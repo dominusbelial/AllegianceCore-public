@@ -20,7 +20,7 @@ namespace Allegiance.Core.Tests;
 /// triggers (non-leader mutiny creates + broadcasts; own-leader mutiny refused;
 /// duplicate-mutiny refused), mutiny passing/failing leadership transfer, the
 /// end-to-end #draw → OfferDraw → AcceptDraw → draw/game-over chain, the
-/// resign-ballot per-player withdrawal substitution (must-fail-if-removed), a
+/// resign-ballot side deactivation (must-fail-if-removed), a
 /// VOTE from a non-eligible ship being ignored, and multi-mission + multi-side
 /// scoping of the BALLOT broadcast. The native tally rule (verified from
 /// <c>Ballot::HasPassed</c>/<c>AllVotesAreIn</c>/<c>Update</c>,
@@ -57,6 +57,19 @@ public class BallotVotingLiveTests
         [
             new Gm { Name = "Ballot A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
             new Gm { Name = "Ballot B", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Gamma", "Delta"] },
+        ],
+    };
+
+    private static Cfg ConfigThreeGames() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,
+        Games =
+        [
+            new Gm { Name = "Ballot 3T", Map = "XXV_simple.igc", Teams = 3, CivIds = [1, 3, 1], SideNames = ["Alpha", "Bravo", "Charlie"] },
         ],
     };
 
@@ -302,9 +315,11 @@ public class BallotVotingLiveTests
     }
 
     /// <summary>⭐ A passing mutiny transfers leadership to the initiator,
-    /// broadcasting SET_TEAM_LEADER; a failing mutiny leaves leadership
-    /// unchanged. Driven through the real all-votes-in resolution (native
-    /// MutinyBallot::OnPassed, fsmission.cpp:6117-6168).</summary>
+    /// broadcasting side-group SET_WINGID(106, wing 0, commanded) + whole-
+    /// mission SET_TEAM_LEADER (native SetLeader, fsmission.cpp:1510-1553); a
+    /// failing mutiny leaves leadership unchanged. Driven through the real
+    /// all-votes-in resolution (native MutinyBallot::OnPassed,
+    /// fsmission.cpp:6098-6143).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Mutiny_passing_transfers_leadership_failing_keeps_it()
@@ -329,6 +344,8 @@ public class BallotVotingLiveTests
             short ballotId = b.Ballots[0].BallotId;
 
             // A (the only other eligible voter) votes YES → all votes in → passes.
+            a.ResetSetWingIdsReceived();
+            b.ResetSetWingIdsReceived();
             a.SendVote(ballotId, true);
             int transferred = PumpUntil(
                 server,
@@ -337,6 +354,12 @@ public class BallotVotingLiveTests
                 800);
             Assert.True(transferred < 800, "passing mutiny did not transfer leadership to the initiator");
             Assert.Equal(bId, SideOf(server, side0).LeaderShipId);
+            // SIM-0507/SIM-0800 — native SetLeader puts the new commander on the
+            // COMMAND WING (0) and tells the side via SET_WINGID(106)
+            // (fsmission.cpp:1533-1541, called at :6139).
+            Assert.Contains(a.SetWingIds, w => w.ShipID == bId && w.WingId == 0 && w.BCommanded);
+            Assert.Contains(b.SetWingIds, w => w.ShipID == bId && w.WingId == 0 && w.BCommanded);
+            Assert.Equal(0, ShipOf(server, bId).WingId);   // server-side mutation (SetWingID)
         }
 
         // Failing case.
@@ -359,6 +382,12 @@ public class BallotVotingLiveTests
 
             // A votes AGAINST → 1 for / 1 against → not a majority → fails.
             a.SendVote(ballotId, false);
+            // SIM-0814 — the OnFailed announcement carries native GetTallyString's
+            // EXACT format: one "(" … ")", space-separated segments, no side
+            // names on a side-scoped ballot (fsmission.cpp:6046-6052, 5999-6034).
+            int announced = PumpUntil(server, () =>
+                a.Chats.Any(c => c.Message.Contains("has been defeated.  ( 1 for 1 against)")), 800);
+            Assert.True(announced < 800, $"defeat announcement with native tally format missing; got: {string.Join(" | ", a.Chats.Select(c => c.Message))}");
             b.ResetBallotSignals();
             // Resolution is asynchronous (next SimPass). Poll by re-issuing a
             // fresh #mutiny: it is refused ("already in progress") until the
@@ -455,14 +484,18 @@ public class BallotVotingLiveTests
 
     // ── #resign ─────────────────────────────────────────────────────────────
 
-    /// <summary>⭐ A passing #resign removes EVERY remaining player on that
-    /// side from the mission — the stated P187 substitution for native
-    /// DeactivateSide (out of scope). Must-fail-if-removed: after resolution the
-    /// side is empty, both players are gone from the roster, the leader is
-    /// cleared, and the survivor observes QUIT_MISSION for the other.</summary>
+    /// <summary>⭐ A passing #resign DEACTIVATES the side — the port of native
+    /// ResignBallot::OnPassed → DeactivateSide (fsmission.cpp:6154-6163 →
+    /// 5318-5427): SIDE_INACTIVE(68) + "&lt;name&gt; is no more." go out
+    /// whole-mission, every ship on the side is force-killed (KILL_SHIP), the
+    /// win-by-elimination check runs (with both players on the resigning side
+    /// and side1 empty, zero sides remain alive → "All sides were destroyed"
+    /// draw), and the mission ends. Must-fail-if-removed: before the fix the
+    /// side stayed active and its players were merely withdrawn from the
+    /// roster.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Resign_passing_removes_every_player_on_side()
+    public void Resign_passing_deactivates_the_side_and_ends_the_mission()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -470,11 +503,12 @@ public class BallotVotingLiveTests
         using var a = new FltBot();
         using var b = new FltBot();
         var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "RS1", "RS2");
-        server.Missions[0].Stage = MissionStage.Started;
+        var missionUnderTest = server.Missions[0];
+        var sideUnderTest = SideOf(server, side0);   // the ORIGINAL side object (P439 rotates _missions[0] on game over)
+        missionUnderTest.Stage = MissionStage.Started;
 
         Flush(server, a, b);
         b.ResetBallotSignals();
-        b.ResetLeadershipSignals();
 
         b.SendChat("#resign");
         int got = PumpUntil(server, () => b.Ballots.Count >= 1, 800);
@@ -483,21 +517,18 @@ public class BallotVotingLiveTests
 
         // A (the only other eligible voter) agrees → all votes in → passes.
         a.SendVote(ballotId, true);
-        int removed = PumpUntil(server,
-            () => !server.Ships.Any(s => s.Ship.Id == aId || s.Ship.Id == bId)
-               && b.QuitMissions.Any(q => q.ShipId == aId),
+        int deactivated = PumpUntil(server,
+            () => missionUnderTest.Stage == MissionStage.Over
+               && b.SideInactiveBroadcasts.Any(si => si.SideId == side0),
             800);
-        Assert.True(removed < 800, "passed resign did not remove both players from the mission");
+        Assert.True(deactivated < 800, "passed resign did not deactivate the side and end the mission");
 
-        // Both players are gone from the roster; the side is empty of players.
-        Assert.DoesNotContain(server.Ships, s => s.Ship.Id == aId || s.Ship.Id == bId);
-        Assert.Null(SideOf(server, side0).LeaderShipId);
-        // The side was the mission owner (A established it); with no other
-        // occupied side, ownership reverts to null.
-        Assert.Null(server.Missions[0].MissionOwnerSideId);
-        // B survived long enough to observe A's QUIT_MISSION (B is removed
-        // second; whole-mission broadcast reaches the still-present B).
-        Assert.Contains(b.QuitMissions, q => q.ShipId == aId);
+        Assert.False(sideUnderTest.Active);                             // side inactive (fsmission.cpp:5325)
+        Assert.Equal(MissionStage.Over, missionUnderTest.Stage);        // win-by-elimination → draw (0 alive sides)
+        Assert.Contains(b.SideInactiveBroadcasts, si => si.SideId == side0 && !si.BActive);
+        Assert.Contains(b.Chats, c => c.Message.Contains("is no more."));   // fsmission.cpp:5377
+        Assert.Contains(a.Kills.Concat(b.Kills), k => k.ShipId == aId); // players force-killed, not withdrawn
+        Assert.Contains(a.Kills.Concat(b.Kills), k => k.ShipId == bId);
     }
 
     // ── #draw end-to-end ────────────────────────────────────────────────────
@@ -565,6 +596,10 @@ public class BallotVotingLiveTests
         int over = PumpUntil(server, () => missionUnderTest.Stage == MissionStage.Over, 800);
         Assert.True(over < 800, "accepted draw did not end the mission");
         Assert.Equal(MissionStage.Over, missionUnderTest.Stage);
+        // SIM-0814 — the mission-wide AcceptDraw announcement carries side NAMES
+        // (native: chattarget != CHAT_TEAM → "<name>:" prefix, fsmission.cpp:
+        // 6018-6020). Only Alpha was eligible to vote on the accept ballot.
+        Assert.Contains(a.Chats, c => c.Message.Contains("(Alpha: 1 for)"));
 
         // The accepting side's voter cannot double-vote / the offering side is
         // not eligible — both captured by the accept ballot's eligibility being
@@ -576,7 +611,116 @@ public class BallotVotingLiveTests
         Assert.Equal(MissionStage.Over, missionUnderTest.Stage);   // still Over — ignored, not a regression
     }
 
-    // ── multi-mission scoping ───────────────────────────────────────────────
+    // ── cancelled ballots ───────────────────────────────────────────────────
+
+    /// <summary>⭐ A CANCELLED ballot is dropped unresolved, silently — the
+    /// port of native Ballot::Cancel (fsmission.cpp:5836-5844, m_bCanceled)
+    /// + Ballot::Update's cancellation discard (fsmission.cpp:5819-5821),
+    /// applied in ResolveBallots. Native's Cancel itself is DEAD CODE in
+    /// FedSrv (no caller — verified by grep), so the flag's only producer is
+    /// this test seed; the contract pinned here is that a cancelled ballot
+    /// never announces and never applies its effect. Must-fail-if-removed:
+    /// a cancelled ballot would otherwise resolve (announce pass/fail) like
+    /// any other.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Cancelled_ballot_is_dropped_without_announcing_or_resolving()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        using var a = new FltBot();
+        using var b = new FltBot();
+        var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "CX1", "CX2");
+        var mission = server.Missions[0];
+        mission.Stage = MissionStage.Started;
+
+        Flush(server, a, b);
+        b.ResetBallotSignals();
+        b.ResetChatReceived();
+
+        b.SendChat("#mutiny");
+        int got = PumpUntil(server, () => b.Ballots.Count >= 1, 800);
+        Assert.True(got < 800, "mutiny ballot not created");
+
+        // Cancel it server-side (native has no live producer — m_bCanceled).
+        var ballotsField = typeof(Srv).GetField("_ballots", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var ballots = (Dictionary<Mission, List<PendingBallot>>)ballotsField.GetValue(server)!;
+        var list = ballots[mission];
+        Assert.Single(list);
+        list[0].Canceled = true;
+
+        // Even with every vote in, a cancelled ballot never announces.
+        a.SendVote(b.Ballots[0].BallotId, true);
+        int settled = PumpUntil(server,
+            () => list.Count == 0,                     // dropped on the next resolution pass
+            800);
+        Assert.True(settled < 800, "cancelled ballot was never dropped");
+        Assert.DoesNotContain(b.Chats, c => c.Message.Contains("has passed") || c.Message.Contains("has been defeated"));
+        Assert.Equal(aId, SideOf(server, side0).LeaderShipId);   // no mutiny effect applied
+    }
+
+    /// <summary>⭐ SIM-0795 — native Ballot::Init(CFSSide*) enrolls only players
+    /// on ACTIVE sides (pside->GetActiveF(), fsmission.cpp:5977): after a
+    /// side resigns (DeactivateSide, its players dead but still connected), a
+    /// later mission-wide AcceptDraw ballot must NOT enroll its dead players —
+    /// the sole remaining eligible voter's yes vote resolves it immediately.
+    /// Must-fail-if-removed: with the dead player wrongly enrolled the ballot
+    /// waits for a vote that never comes and only expires.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void AcceptDraw_excludes_players_of_a_deactivated_side()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(ConfigThreeGames());
+        using var a = new FltBot();   // Alpha — will resign
+        using var b = new FltBot();   // Bravo — offers the draw
+        using var c = new FltBot();   // Charlie — the only eligible accept voter
+        short aId = Seat(server, a, "XA1");
+        short side0 = server.Missions[0].Sides[0].Id;
+        Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        short bId = Seat(server, b, "XB1");
+        short side1 = server.Missions[0].Sides[1].Id;
+        Assert.True(server.TryJoinSide(ShipOf(server, bId), side1));
+        short cId = Seat(server, c, "XC1");
+        short side2 = server.Missions[0].Sides[2].Id;
+        Assert.True(server.TryJoinSide(ShipOf(server, cId), side2));
+        var missionUnderTest = server.Missions[0];
+        var alphaSide = SideOf(server, side0);
+        missionUnderTest.Stage = MissionStage.Started;
+
+        Flush(server, a, b, c);
+        a.ResetBallotSignals();
+        b.ResetBallotSignals();
+        c.ResetBallotSignals();
+
+        // A resigns: sole voter, auto-yes → passes → Alpha deactivated; two
+        // other sides stay alive, so the game CONTINUES.
+        a.SendChat("#resign");
+        int resigned = PumpUntil(server, () => !alphaSide.Active && missionUnderTest.Stage == MissionStage.Started, 800);
+        Assert.True(resigned < 800, "resign did not deactivate Alpha while the game continued");
+
+        // B offers a draw → AcceptDraw ballot whole-mission; eligible = Charlie only.
+        b.SendChat("#draw");
+        int acceptSeen = PumpUntil(server, () => c.Ballots.Count >= 1, 800);
+        Assert.True(acceptSeen < 800, "accept-draw ballot not created");
+        var accept = c.Ballots[0];
+        ReceiveThroughCurrentTick(server, a, b, c);
+        // A heard the accept broadcast (whole mission) — his own resign BALLOT is
+        // the other one he saw (side-scoped to Alpha).
+        var aAccept = a.Ballots.Single(x => x.OtInitiator == (short)Allegiance.Core.IgcObjectType.Side);
+        Assert.Equal(accept.BallotId, aAccept.BallotId);
+
+        // …but A is on a DEACTIVATED side: his vote is refused and does not block
+        // resolution (native GetActiveF() guard, fsmission.cpp:5977).
+        a.SendVote(accept.BallotId, false);
+        c.SendVote(accept.BallotId, true);
+        int over = PumpUntil(server, () => missionUnderTest.Stage == MissionStage.Over, 800);
+        Assert.True(over < 800, "C's lone yes vote did not resolve the accept ballot — a deactivated-side player was wrongly enrolled");
+    }
+
+    // ── multi-mission scoping ───────────────────────────────────────────────────────
 
     /// <summary>⭐ Multi-mission scoping of the BALLOT broadcast: a #mutiny on
     /// mission A side0 must reach only mission A side0's peers — not a peer on
