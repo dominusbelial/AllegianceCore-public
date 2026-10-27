@@ -256,6 +256,10 @@ public sealed partial class Game1
         // record per frame in every match (pilot and spectator). No locks, no
         // I/O — see Game1.SessionPerformance.cs for the threading contract.
         UpdateSessionPerformance();
+        // P836 — sample the in-sector ship count and resolve the Auto HUD level
+        // (once a second; hysteresis prevents flicker). Also refreshes
+        // ActiveLevel when a manual level is set so the options row/toast agree.
+        UpdateHudAutoLevel(gameTime.TotalGameTime.TotalSeconds);
         if (LocalSpectating)
         {
             UpdateLocalSpectator(gameTime, Keyboard.GetState());
@@ -821,6 +825,8 @@ public sealed partial class Game1
         // so a key held across the pre-flight→flight transition can't fire once.
         _lockVectorKeyWasDown       = ActionDown(ks, "LockVector");
         _cycleRadarKeyWasDown       = ActionDown(ks, "CycleRadar");
+        // P836 — prime the Modern-HUD level cycle latch the same way.
+        _cycleHudLevelKeyWasDown     = ActionDown(ks, "CycleHudLevel");
         // P626 — prime the chat-scroll edge latches too (ChatPageUp/Down,
         // PrevCommMsg/NextCommMsg) so a held page key can't fire on the first frame.
         _chatPgUpWasDown            = ActionDown(ks, "ChatPageUp");
@@ -1875,6 +1881,23 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] radar mode: {Rendering.RadarLod.Label(_radarMode)}");
         }
         _cycleRadarKeyWasDown = cycRadar;
+
+        // P836 — MODERN-HUD DENSITY LEVEL (port extension; native has no HUD
+        // levels). Classic ignores it (keeps native '.' = TK_CycleRadar above).
+        // The key advances Full → Tactical → Combat → Cinematic → Auto → Full;
+        // Auto then resolves from the in-sector ship count.
+        if (!composing && _hudSettings.Style == HudStyle.Modern)
+        {
+            bool cycLevel = ActionDown(ks, "CycleHudLevel");
+            if (cycLevel && !_cycleHudLevelKeyWasDown)
+            {
+                _hudSettings.Level = Rendering.HudLevels.Next(_hudSettings.Level);
+                SaveHudSettingsQuietly();
+                Console.WriteLine($"[monogame] HUD level: {Rendering.HudLevels.Label(_hudSettings.Level)}");
+            }
+            _cycleHudLevelKeyWasDown = cycLevel;
+        }
+        else _cycleHudLevelKeyWasDown = ActionDown(ks, "CycleHudLevel");
 
         // P541 — left-click a sector on the star map (mini or expanded) to act on
         // it: ripcord target / teleport / docked view / own-sector no-op / goto.

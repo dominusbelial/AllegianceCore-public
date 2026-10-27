@@ -39,11 +39,18 @@ public sealed partial class Game1
     // P624 — radar mode (All/Default/Target/Minimal), cycled by TK_CycleRadar;
     // applied as a per-contact filter in DrawRadar (Rendering/RadarLod.cs).
     private RadarMode _radarMode;
+    // P836 — the Auto-HUD-level resolver (Full/Tactical/Combat from the
+    // in-sector ship count, with hysteresis) and its 1 Hz sampling latch.
+    private readonly Rendering.HudAutoLevel _hudAutoLevel = new();
+    private double _nextHudAutoSample;
 
     // P624 — the latched vector-lock (TK_LockVector) toggle and its edge latch.
     private bool _coastToggled;
     private bool _lockVectorKeyWasDown;
     private bool _cycleRadarKeyWasDown;
+    // P836 — the Modern-HUD density-level cycle key latch (edge-detected like
+    // the radar cycle so a held key cannot fire repeatedly).
+    private bool _cycleHudLevelKeyWasDown;
 
     // P580 — director state.
     private readonly Director _director = new(unchecked((int)DateTime.Now.Ticks ^ 0x5EED));  // seeded at construction

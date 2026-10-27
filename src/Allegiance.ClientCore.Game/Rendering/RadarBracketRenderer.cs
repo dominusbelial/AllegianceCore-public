@@ -305,17 +305,26 @@ public sealed class RadarBracketRenderer
     /// <summary>Draw every contact straight from the model's contact list,
     /// mapping each struct on the stack — no per-frame <c>RadarContact[]</c>
     /// copy (HUD-5b: the former LINQ <c>Select…ToArray</c> allocated once per
-    /// frame per contact at 107v107).</summary>
+    /// frame per contact at 107v107). P836 — <see cref="Offscreen"/> applies the
+    /// off-screen rule: an off-screen ORDINARY contact (never a priority one)
+    /// becomes an edge pip (<see cref="OffscreenRule.EdgeDot"/>) or nothing
+    /// (<see cref="OffscreenRule.None"/>).</summary>
     public void Draw(IReadOnlyList<HudContact> contacts, Viewport viewport, float highlightPulse, bool colorBlindSafe)
     {
         if (contacts.Count == 0)
             return;
+        OffscreenRule offscreen = Offscreen;
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
             for (int i = 0; i < contacts.Count; i++)
             {
                 var c = contacts[i];
+                if (OffscreenHidden(c, offscreen))
+                {
+                    if (offscreen == OffscreenRule.EdgeDot) DrawEdgeDot(c, colorBlindSafe);
+                    continue;
+                }
                 Color? side = c.SideColor is { } color
                     ? (colorBlindSafe
                         ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A))
@@ -337,6 +346,35 @@ public sealed class RadarBracketRenderer
         // Reuse the mapped contact array view: DrawNativeIcons maps the same
         // struct on the stack, so there is no per-frame copy.
         DrawNativeIcons(contacts, viewport, colorBlindSafe);
+    }
+
+    /// <summary>P836 — the per-frame off-screen rule. Classic leaves this
+    /// <see cref="OffscreenRule.NativeBlock"/> (unchanged native behaviour);
+    /// Modern sets it from the active HUD level before drawing. Set once per
+    /// frame, so the overload signatures stay identical to pre-P836.</summary>
+    public OffscreenRule Offscreen { get; set; } = OffscreenRule.NativeBlock;
+
+    /// <summary>P836 — whether an OFF-SCREEN ordinary contact is suppressed by
+    /// the level's off-screen rule. Priority contacts (target/wingmen/attackers,
+    /// <see cref="RadarLabelDeclutter.IsAlwaysLabelled"/>) always keep their
+    /// native edge block, so only the ordinary ones can become a pip or vanish.
+    /// Pure so the rule is unit-testable.</summary>
+    public static bool OffscreenHidden(in HudContact c, OffscreenRule rule)
+        => !c.OnScreen && rule != OffscreenRule.NativeBlock && !RadarLabelDeclutter.IsAlwaysLabelled(c);
+
+    /// <summary>P836 — the small side-coloured edge pip for an off-screen
+    /// ordinary contact under <see cref="OffscreenRule.EdgeDot"/>.</summary>
+    private void DrawEdgeDot(in HudContact c, bool colorBlindSafe)
+    {
+        Color col = c.SideColor is { } sc
+            ? (colorBlindSafe ? HudPalette.Side(new Color(sc.R, sc.G, sc.B, sc.A)) : new Color(sc.R, sc.G, sc.B, sc.A))
+            : ContactColour((RadarContactType)c.Kind, null);
+        float a = Math.Clamp(c.Opacity, 0f, 1f);
+        var p = new Vector2(c.Position.X, c.Position.Y);
+        // 5x5 pip centred on the clamped edge point; slightly transparent so it
+        // reads as a direction cue, not a ship.
+        _sb.Draw(_white, new Rectangle((int)MathF.Round(p.X - 2.5f), (int)MathF.Round(p.Y - 2.5f), 5, 5),
+            col * (0.55f * a));
     }
 
     /// <summary>HUD-4 — native optional round radar border (radarimage.cpp:1130-1177):
@@ -507,15 +545,18 @@ public sealed class RadarBracketRenderer
     }
 
     /// <summary>HUD-16 — the HudContact view of <see cref="DrawNativeIcons"/>,
-    /// mapping the colour-blind-safe side colour on the stack (no copy).</summary>
+    /// mapping the colour-blind-safe side colour on the stack (no copy). P836 —
+    /// skips the same off-screen ordinary contacts the block pass suppressed.</summary>
     private void DrawNativeIcons(IReadOnlyList<HudContact> contacts, Viewport viewport, bool colorBlindSafe)
     {
         var icons = _icons;
         if (icons is null) return;
+        OffscreenRule offscreen = Offscreen;
         bool any = false;
         for (int i = 0; i < contacts.Count; i++)
         {
             var c = contacts[i];
+            if (OffscreenHidden(c, offscreen)) continue;
             if (icons.EnsureLoaded(c.IconStem) is not null) any = true;
         }
         if (!any) return;
@@ -525,6 +566,7 @@ public sealed class RadarBracketRenderer
             for (int i = 0; i < contacts.Count; i++)
             {
                 var c = contacts[i];
+                if (OffscreenHidden(c, offscreen)) continue;
                 Color? side = c.SideColor is { } color
                     ? (colorBlindSafe
                         ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A))

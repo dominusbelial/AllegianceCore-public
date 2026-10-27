@@ -223,36 +223,38 @@ public class P828RadarLabelDeclutterTests
     // ── 3. distance fade ──────────────────────────────────────────────────
 
     [Fact]
-    public void Fade_is_full_near_faint_far_and_monotonic()
+    public void Fade_near_faints_from_native_ceiling_far_to_floor_and_is_monotonic()
     {
         const float near = RadarLabelDeclutter.DefaultFadeNear;
         const float far = RadarLabelDeclutter.DefaultFadeFar;
         const float floor = RadarLabelDeclutter.DefaultMinAlpha;
+        const float ceiling = RadarLabelDeclutter.NativeNearAlpha;
 
-        Assert.Equal(1f, RadarLabelDeclutter.Fade(0f, near, far, floor));
-        Assert.Equal(1f, RadarLabelDeclutter.Fade(near, near, far, floor));
-        Assert.Equal(floor, RadarLabelDeclutter.Fade(far, near, far, floor), 5);
-        Assert.Equal(floor, RadarLabelDeclutter.Fade(far * 1000f, near, far, floor), 5);
+        Assert.Equal(ceiling, RadarLabelDeclutter.Fade(0f, near, far, floor, ceiling));
+        Assert.Equal(ceiling, RadarLabelDeclutter.Fade(near, near, far, floor, ceiling));
+        Assert.Equal(floor, RadarLabelDeclutter.Fade(far, near, far, floor, ceiling), 5);
+        Assert.Equal(floor, RadarLabelDeclutter.Fade(far * 1000f, near, far, floor, ceiling), 5);
 
-        float previous = 1f;
+        float previous = ceiling;
         for (float d = 0f; d <= far * 1.5f; d += 50f)
         {
-            float alpha = RadarLabelDeclutter.Fade(d, near, far, floor);
+            float alpha = RadarLabelDeclutter.Fade(d, near, far, floor, ceiling);
             Assert.True(alpha <= previous + 1e-6f, $"fade rose at {d}: {alpha} > {previous}");
-            Assert.InRange(alpha, floor, 1f);
+            Assert.InRange(alpha, floor, ceiling);
             previous = alpha;
         }
         // Halfway is strictly between (a real ramp, not a step).
-        float mid = RadarLabelDeclutter.Fade((near + far) / 2f, near, far, floor);
-        Assert.True(mid < 1f && mid > floor);
+        float mid = RadarLabelDeclutter.Fade((near + far) / 2f, near, far, floor, ceiling);
+        Assert.True(mid < ceiling && mid > floor);
 
-        // A far contact's label is fainter than a near one's.
+        // A far contact's label is fainter than a near one's; the near one is
+        // native's 0.75 closeAlpha (P836b — the Modern fade honours the ceiling).
         var nearContact = Contact(0, x: 300f, y: 200f, cameraDistance: 250f);
         var farContact = Contact(1, x: 900f, y: 200f, cameraDistance: far);
         var model = new RadarLabelDeclutter();
         model.Select(new[] { nearContact, farContact }, RadarMode.Default, false,
             RadarLabelDeclutterOptions.Modern(12, 1f));
-        Assert.Equal(1f, model.Alpha(0), 5);
+        Assert.Equal(ceiling, model.Alpha(0), 5);
         Assert.Equal(floor, model.Alpha(1), 5);
     }
 

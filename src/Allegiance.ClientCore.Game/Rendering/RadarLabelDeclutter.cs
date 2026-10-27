@@ -33,7 +33,13 @@ public readonly record struct RadarLabelDeclutterOptions(
     float MergeCellWidth,
     float MergeCellHeight,
     int MergeMinCount,
-    bool Telemetry)
+    bool Telemetry,
+    // P836 — the Modern HUD-level label-policy knobs. Kept with defaults so the
+    // pre-P836 factories (Off / Modern) and tests compile and behave unchanged.
+    bool AllAllowed = false,
+    bool LabelFriendlies = true,
+    bool OnlyTarget = false,
+    OffscreenRule Offscreen = OffscreenRule.NativeBlock)
 {
     /// <summary>Native draw order, untouched: the option is inert.</summary>
     public static readonly RadarLabelDeclutterOptions Off =
@@ -58,6 +64,29 @@ public readonly record struct RadarLabelDeclutterOptions(
             Telemetry: telemetry);
 
     private static float GridScale(float scale) => float.IsFinite(scale) && scale > 0f ? scale : 1f;
+
+    /// <summary>P836 — build the renderer options from a HUD-level preset.
+    /// <paramref name="extraLabels"/> is the effective nearest-N (the level's
+    /// suggestion, overridden by the player's persisted <c>RadarLabelMax</c> for
+    /// a capped level); ignored by Full/Cinematic which do not use the cap.</summary>
+    public static RadarLabelDeclutterOptions FromPreset(in HudLevelPreset preset, float scale, int extraLabels, bool telemetry = false)
+        => new(
+            Enabled: true,
+            MaxExtraLabels: preset.AllAllowed || preset.OnlyTarget
+                ? 0 : Math.Clamp(extraLabels, 0, RadarLabelDeclutter.MaxExtraLabelsLimit),
+            FadeNear: preset.FadeNear,
+            FadeFar: preset.FadeFar,
+            MinAlpha: RadarLabelDeclutter.DefaultMinAlpha,
+            MaxAlpha: RadarLabelDeclutter.DefaultMaxAlpha,
+            MergeCellWidth: RadarLabelDeclutter.DefaultMergeCellWidth * GridScale(scale),
+            MergeCellHeight: RadarLabelDeclutter.DefaultMergeCellHeight * GridScale(scale),
+            MergeMinCount: preset.Merge ? 2 : int.MaxValue,
+            Telemetry: telemetry,
+            AllAllowed: preset.AllAllowed,
+            LabelFriendlies: preset.LabelFriendlies,
+            OnlyTarget: preset.OnlyTarget,
+            Offscreen: preset.Offscreen);
+
 }
 
 /// <summary>P828 — one compact "N labels collapsed here" tag. <see cref="Point"/>
@@ -290,28 +319,59 @@ public sealed class RadarLabelDeclutter
         float cellHeight = Cell(options.MergeCellHeight, DefaultMergeCellHeight);
         int clusterMin = Math.Max(2, options.MergeMinCount);
 
-        // Pass 1 — priority contacts draw immediately; the rest compete for the
-        // N nearest slots (enemies first, then distance, then contact order).
+        // Pass 1 — per-contact draw decision. The priority set (target,
+        // accepted/queued order, threat, subjects/wingmen, own ship) always
+        // draws; the rest compete for the N nearest slots unless the level's
+        // policy overrides (Full labels everything, Combat drops friendlies,
+        // Cinematic keeps only the target, and an off-screen contact follows
+        // the level's off-screen rule).
         for (int i = 0; i < n; i++)
         {
             var contact = contacts[i];
             if (!HasLabel(contact, mode, commandCamera, i, cache)) continue;
             float distance = Distance(contact);
             _distance[i] = distance;
-            byte rank = (byte)Rank(contact);
-            if (IsAlwaysLabelled(contact))
+            // Cinematic — no contact label except the selected target.
+            if (options.OnlyTarget)
             {
-                _draw[i] = (byte)RadarLabelDraw.Label;
-                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha);
+                if (contact.Selected)
+                {
+                    _draw[i] = (byte)RadarLabelDraw.Label;
+                    _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
+                }
                 continue;
             }
+            bool priority = IsAlwaysLabelled(contact);
+            // P836 — an OFF-SCREEN ordinary contact obeys the level's off-screen
+            // rule: EdgeDot suppresses its label (the bracket renderer draws a
+            // pip instead) and None drops it entirely. Priority contacts always
+            // keep their native block on the edge.
+            if (!priority && !contact.OnScreen && options.Offscreen != OffscreenRule.NativeBlock)
+                continue;   // stays IconOnly
+            if (priority)
+            {
+                _draw[i] = (byte)RadarLabelDraw.Label;
+                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
+                continue;
+            }
+            // Full — every native-allowed label draws (faded, no cap, no merge).
+            if (options.AllAllowed)
+            {
+                _draw[i] = (byte)RadarLabelDraw.Label;
+                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
+                continue;
+            }
+            // Combat — friendlies are icon-only and never eat the cap.
+            if (!options.LabelFriendlies && contact.Kind == HudContactKind.Ship && !contact.IsEnemy)
+                continue;
+            byte rank = (byte)Rank(contact);
             Offer(i, rank, distance, cap);
         }
         for (int b = 0; b < _bestCount; b++)
         {
             int i = _best[b];
             _draw[i] = (byte)RadarLabelDraw.Label;
-            _alpha[i] = Fade(_distance[i], options.FadeNear, options.FadeFar, options.MinAlpha);
+            _alpha[i] = Fade(_distance[i], options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
         }
 
         // Pass 2 — bucket the ordinary labels into the deterministic screen grid.
