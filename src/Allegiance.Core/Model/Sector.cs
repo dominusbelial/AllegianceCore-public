@@ -1306,20 +1306,6 @@ public sealed class Sector : IClusterIgc
                 ships.Add(s);
         if (ships.Count < 2) return;
 
-        // P667 — parallel detection path. The expensive part is the read-only
-        // O(n²) per-pair qualification (side / lifepod↔rescue capability /
-        // proximity). Qualifying (i,j) pairs are collected in parallel, sorted
-        // back into the serial scan order, then the one-rescue-per-ship latch
-        // (which decides WHICH pair wins and mutates _pendingRescues) runs serially
-        // in that exact order — so the result is byte-identical to the serial loop
-        // below for any thread count. Ships' positions are not mutated during
-        // qualification, so the concurrent reads are safe.
-        if (ParallelSectorSim.Enabled && ParallelSectorSim.ThreadCount > 1)
-        {
-            ResolveRescueEventsParallel(ships);
-            return;
-        }
-
         var done = _shipRescueDone;                  // one rescue per ship per tick (P790, shared with the contact trigger)
         for (int i = 0; i < ships.Count; i++)
         {
@@ -1354,60 +1340,6 @@ public sealed class Sector : IClusterIgc
                 if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
                     QueueRescue(rescuee, rescuer);
             }
-        }
-    }
-
-    /// <summary>
-    /// P667 — the parallel form of <see cref="ResolveRescueEvents"/>' detection
-    /// phase. Qualifies every (i,j) ship pair (read-only) on up to
-    /// <see cref="ParallelSectorSim.ThreadCount"/> workers, collects the
-    /// qualifying pairs, sorts them back into the exact serial scan order
-    /// (ascending i, ascending j), then applies the one-rescue-per-ship latch
-    /// (<see cref="_shipRescueDone"/>, shared with the contact trigger) and the
-    /// <c>_pendingRescues</c> accumulation serially in that order. The accepted
-    /// rescue set — and the order they land in <c>_pendingRescues</c> — is
-    /// therefore identical to the serial loop for any thread count, satisfying
-    /// the P667 determinism gate. Ship positions are never mutated during
-    /// qualification (a rescue only latches and drains later), so the concurrent
-    /// reads are safe.
-    /// </summary>
-    private void ResolveRescueEventsParallel(List<Ship> ships)
-    {
-        int n = ships.Count;
-        var qualifying = new System.Collections.Concurrent.ConcurrentBag<(int I, int J)>();
-        Parallel.For(0, n, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, ParallelSectorSim.ThreadCount) }, i =>
-        {
-            var a = ships[i];
-            for (int j = i + 1; j < n; j++)
-            {
-                var b = ships[j];
-
-                // Friendly gate + symmetric capability match (shipIGC.cpp:1023-1035).
-                if (!IsRescueCapablePair(a, b, out _, out _)) continue;
-
-                float ra = 0.5f * a.HullType.Length;
-                float rb = 0.5f * b.HullType.Length;
-                float threshold = ra + rb;
-                float dx = a.Position.X - b.Position.X;
-                float dy = a.Position.Y - b.Position.Y;
-                float dz = a.Position.Z - b.Position.Z;
-                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
-
-                qualifying.Add((i, j));
-            }
-        });
-
-        // Serial latch in the identical (i,j) scan order the serial loop uses.
-        var done = _shipRescueDone;
-        foreach (var (i, j) in qualifying.OrderBy(p => p.I).ThenBy(p => p.J))
-        {
-            var a = ships[i];
-            var b = ships[j];
-            if (done.Contains(a) || done.Contains(b)) continue;
-
-            if (!IsRescueCapablePair(a, b, out var rescuee, out var rescuer)) continue;
-            if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
-                QueueRescue(rescuee, rescuer);
         }
     }
 
@@ -2292,7 +2224,7 @@ public sealed class Sector : IClusterIgc
 
         buildScope.Dispose();
         IReadOnlyList<CollisionEvent> events;
-        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, CombatPair);
+        using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, CombatPair);
         using var dispatchScope = TickProfiler.Enter("combat.dispatch");
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
@@ -2851,7 +2783,7 @@ public sealed class Sector : IClusterIgc
         }
 
         IReadOnlyList<CollisionEvent> events;
-        using (TickProfiler.Enter("collision.asteroid.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
+        using (TickProfiler.Enter("collision.asteroid.detect")) events = detector.Detect(dt, static (a, b) =>
             (a.Data is Ship && b.Data is Asteroid) || (b.Data is Ship && a.Data is Asteroid));
         using var dispatchScope = TickProfiler.Enter("collision.asteroid.dispatch");
         foreach (var ev in events)
@@ -3150,7 +3082,7 @@ public sealed class Sector : IClusterIgc
         })) return;
 
         IReadOnlyList<CollisionEvent> events;
-        using (TickProfiler.Enter("collision.ship.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount);
+        using (TickProfiler.Enter("collision.ship.detect")) events = detector.Detect(dt);
         using var dispatchScope = TickProfiler.Enter("collision.ship.dispatch");
         var probeCache = new Separate.ProbeCache();
         LastShipShipResolved = 0;
@@ -3401,7 +3333,7 @@ public sealed class Sector : IClusterIgc
         }
 
         IReadOnlyList<CollisionEvent> events;
-        using (TickProfiler.Enter("collision.station.detect")) events = detector.Detect(dt, ParallelSectorSim.Enabled, ParallelSectorSim.ThreadCount, static (a, b) =>
+        using (TickProfiler.Enter("collision.station.detect")) events = detector.Detect(dt, static (a, b) =>
             (a.Data is Ship && b.Data is Station) || (b.Data is Ship && a.Data is Station));
         using var dispatchScope = TickProfiler.Enter("collision.station.dispatch");
         foreach (var ev in events)
@@ -4953,17 +4885,19 @@ public sealed class Sector : IClusterIgc
     /// a per-sector pass) and strictly simpler, the same
     /// "query instead of maintain an index" substitution this port already
     /// makes by reusing existing collections elsewhere.</para>
-    /// <para><b>"Last spotter" short-circuit behind a flag.</b> The
+    /// <para><b>"Last spotter" short-circuit (native, always on).</b> The
     /// native <c>sv.pLastSpotter()</c> short-circuit (<c>FedSrv.CPP:10896-10903</c>)
     /// skips re-scanning every scanner when the same one that saw the target
     /// last sweep still can — the dominant cost at the 200v200 clash peak
-    /// (P835). Pre-P835 the full scanner loop re-ran every sweep (spotter
-    /// identity re-picked in enumeration order); the short-circuit is now
-    /// implemented behind <see cref="Sim.VisibilitySpotterCache"/>
-    /// (<c>sim.visibilitySpotterCache</c>, default OFF — spotter identity is
-    /// wire-observable in OBJECT_SPOTTED, so the rig A/B gates the flip; seen
-    /// flags are identical either way, SIM-0840). What the port DOES keep
-    /// (P797) is the native side effect of the same field — the spotting scanner's
+    /// (P835) — and it is what makes the recorded spotter identity sticky
+    /// (<c>FedSrv.CPP:11026</c>, "Keep track of who spotted it"). The short-circuit
+    /// ships UNCONDITIONALLY (P858): the rig A/B rejected the experimental
+    /// on/off flag (<c>sim.visibilitySpotterCache</c> gave no measurable gain
+    /// over the full loop), but the identity rule itself is native behaviour —
+    /// the recorded spotter feeds <c>OBJECT_SPOTTED(6)</c>'s
+    /// <c>otSpotter/oidSpotter</c> — so the port keeps the native rule without
+    /// the flag. What the port ALSO keeps (P797) is the native side effect of
+    /// the same field — the spotting scanner's
     /// <c>(ObjectType, ObjectID)</c>, written with
     /// <see cref="SideVisibilityState.SetLastSpotter"/> so the discovery sweep can
     /// fill <c>OBJECT_SPOTTED</c>'s <c>otSpotter/oidSpotter</c> exactly as native
@@ -5208,26 +5142,23 @@ public sealed class Sector : IClusterIgc
                     }
                     else if (sideId != t.SideId && scannersBySide.TryGetValue(sideId, out var scns))
                     {
-                        // P835 — the native last-spotter short-circuit
-                        // (FedSrv.CPP:10896-10903): when the target's recorded
-                        // spotter for this side is still a live scanner in this
-                        // sector and still sees the target, the side sees it —
-                        // skip the full scanner loop. Seen flags identical to
-                        // the full loop; spotter identity is the native sticky
-                        // one (FedSrv.CPP:11026). Default-off.
-                        if (VisibilitySpotterCache.Enabled)
+                        // P835/P858 — the native last-spotter short-circuit
+                        // (FedSrv.CPP:10896-10903), unconditional exactly as native
+                        // runs it: when the target's recorded spotter for this side
+                        // is still a live scanner in this sector and still sees the
+                        // target, the side sees it — skip the full scanner loop.
+                        // Seen flags identical to the full loop; spotter identity is
+                        // the native sticky one (FedSrv.CPP:11026).
+                        participantsById ??= BuildParticipantsIndex(scannersBySide);
+                        var (lot, loid) = t.Body.SideVisibility.LastSpotter;
+                        if (lot >= 0 && participantsById.TryGetValue((lot, loid), out var last))
                         {
-                            participantsById ??= BuildParticipantsIndex(scannersBySide);
-                            var (lot, loid) = t.Body.SideVisibility.LastSpotter;
-                            if (lot >= 0 && participantsById.TryGetValue((lot, loid), out var last))
+                            if (VisibilityMath.InScannerRange(
+                                    new VisibilityMath.SightBody(last.Position, last.Radius), last.ScannerRange, Id,
+                                    new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders, carriesFlag))
                             {
-                                if (VisibilityMath.InScannerRange(
-                                        new VisibilityMath.SightBody(last.Position, last.Radius), last.ScannerRange, Id,
-                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders, carriesFlag))
-                                {
-                                    seen = true;
-                                    spotter = last;
-                                }
+                                seen = true;
+                                spotter = last;
                             }
                         }
                         if (!seen)

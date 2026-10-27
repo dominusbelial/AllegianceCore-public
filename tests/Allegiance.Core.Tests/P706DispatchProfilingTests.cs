@@ -58,31 +58,27 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
     public void Dispatch_budget(string scenario, int count)
     {
         Require.Artwork();
-        try
+        // Force the machine-speed calibration once, OUTSIDE the timed region.
+        _ = PerfCalibration.CpuSpeedFactor;
+        double budget = PerfCalibration.Scale(DispatchBudgetMs);
+        output.WriteLine($"P744 calibration: ref={PerfCalibration.RawReferenceMs:F3}ms speedFactor={PerfCalibration.CpuSpeedFactor:F3} baseBudget={DispatchBudgetMs}ms -> scaledBudget={budget:F2}ms");
+        var warmup = Stopwatch.StartNew();
+        int warmupWorlds = 0;
+        do
         {
-            // Force the machine-speed calibration once, OUTSIDE the timed region.
-            _ = PerfCalibration.CpuSpeedFactor;
-            double budget = PerfCalibration.Scale(DispatchBudgetMs);
-            output.WriteLine($"P744 calibration: ref={PerfCalibration.RawReferenceMs:F3}ms speedFactor={PerfCalibration.CpuSpeedFactor:F3} baseBudget={DispatchBudgetMs}ms -> scaledBudget={budget:F2}ms");
-            var warmup = Stopwatch.StartNew();
-            int warmupWorlds = 0;
-            do
-            {
-                Measure(scenario, count);
-                warmupWorlds++;
-            }
-            while (warmup.Elapsed < TimeSpan.FromSeconds(3) || warmupWorlds < 3);
-
-            var samples = new double[5];
-            for (int s = 0; s < samples.Length; s++)
-                samples[s] = Measure(scenario, count);
-            Array.Sort(samples);
-            double median = samples[samples.Length / 2];
-            output.WriteLine($"P706 [{scenario}] count={count} worst-dispatch median={median:F3}ms samples=[{string.Join(", ", samples.Select(v => $"{v:F3}"))}] budget={budget:F2}ms");
-            Assert.True(median < budget,
-                $"P706 [{scenario}] worst-dispatch median={median:F3}ms >= scaledBudget={budget:F2}ms (five fresh worlds; speedFactor={PerfCalibration.CpuSpeedFactor:F3})");
+            Measure(scenario, count);
+            warmupWorlds++;
         }
-        finally { ParallelSectorSim.Reset(); }
+        while (warmup.Elapsed < TimeSpan.FromSeconds(3) || warmupWorlds < 3);
+
+        var samples = new double[5];
+        for (int s = 0; s < samples.Length; s++)
+            samples[s] = Measure(scenario, count);
+        Array.Sort(samples);
+        double median = samples[samples.Length / 2];
+        output.WriteLine($"P706 [{scenario}] count={count} worst-dispatch median={median:F3}ms samples=[{string.Join(", ", samples.Select(v => $"{v:F3}"))}] budget={budget:F2}ms");
+        Assert.True(median < budget,
+            $"P706 [{scenario}] worst-dispatch median={median:F3}ms >= scaledBudget={budget:F2}ms (five fresh worlds; speedFactor={PerfCalibration.CpuSpeedFactor:F3})");
     }
 
     private double Measure(string scenario, int count)
@@ -110,7 +106,6 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
         server.Boot(new Allegiance.Server.ServerConfig
         {
             ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0,
-            Sim = new Allegiance.Server.SimConfig { ParallelSectorCells = true, ParallelSectorCellThreads = 4 },
             Games = [new Allegiance.Server.GameConfig
             { Name = "P706", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }]
         });

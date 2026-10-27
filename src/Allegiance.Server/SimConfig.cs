@@ -28,35 +28,4 @@ public sealed class SimConfig
         "off" => false,
         _ => throw new ArgumentException("sim.crowdingPenalty must be native|off")
     };
-
-    /// <summary>
-    /// Master switch. <c>false</c> (the default, and the meaning of an absent
-    /// <c>sim</c> section) leaves the sector sim exactly as it ran before P667.
-    /// <c>true</c> enables the parallel detection path (gated per detect).
-    /// Overridable at boot by <c>ALLEGIANCE_SIM_PARALLEL_CELLS</c> (env wins).
-    /// </summary>
-    public bool ParallelSectorCells { get; set; }
-
-    /// <summary>
-    /// P835 — the cross-side visibility sweep's native last-spotter
-    /// short-circuit (FedSrv.CPP:10896-10903). Default OFF: the sweep runs the
-    /// pre-P835 full scanner loop byte-for-byte. ON: the sweep first re-tests
-    /// the target's recorded spotter for the side and skips the O(scanners)
-    /// loop when it still sees the target — seen flags identical to the full
-    /// loop, spotter identity the native sticky one (wire-observable in
-    /// OBJECT_SPOTTED when several scanners see one target, so default-off
-    /// pending a rig A/B). Overridable at boot by
-    /// <c>ALLEGIANCE_VIS_SPOTTER_CACHE</c> (env wins).
-    /// </summary>
-    public bool VisibilitySpotterCache { get; set; }
-
-    /// <summary>
-    /// Cap on the parallel detection phase's degree of parallelism
-    /// (<see cref="System.Threading.Tasks.Parallel.For"/> <c>MaxDegreeOfParallelism</c>).
-    /// When set, it is clamped to <c>[1, ProcessorCount]</c>; when null, the
-    /// <see cref="Allegiance.Core.Sim.ParallelSectorSim.ThreadCount"/> default
-    /// (about half the logical processors) is used. Diagnostic only — it never
-    /// changes which bytes are produced, only how fast.
-    /// </summary>
-    public int? ParallelSectorCellThreads { get; set; }
 }

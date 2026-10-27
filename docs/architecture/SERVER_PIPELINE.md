@@ -421,11 +421,12 @@ phase. Recommended order (cheapest / lowest-risk / highest-leverage first):
   the ~2 s aligned-inbound-burst stall: bound the drain per tick (P646 already
   bounds it) and/or split receive processing off the sim thread. Rollback: off.
   Metric: `[slowtick]` aligned-drain stalls disappear; p95 stable under server GC.
-- **Ph.6 Intra-sector parallel sim** (`sim.parallelSectorCells`) for the
-  crowded sector: spatial partition + deterministic merge. Rollback: off.
-  Metric (the real 200v200 limit): one-sector 387-bot `step:update` ~35 ms →
-  ≤15 ms on 221-equivalent local HW; determinism A/B (same seed → same tick
-  output) must pass.
+- **Ph.6 Intra-sector parallel sim** (`sim.parallelSectorCells`) — TRIED AND
+  REMOVED (P858): the collision-detection parallel path was implemented (P667,
+  byte-identical determinism proven) but the 200v200 rig A/B (2026-10-27) showed
+  no gain over the serial path at the clash peak, so the flag, env var, config
+  keys and P667Bench were dropped. The `CollisionDetector` parallel API itself
+  remains, exercised by the detector-level tests.
 - **Ph.7 Warp hand-off + per-sector threads** (`sim.perSectorThreads`) for the
   1,024 multi-sector target. Rollback: off. Metric: distributes `step:update`
   across S sectors; 1,024 multi-sector tick ≥ 40 Hz.

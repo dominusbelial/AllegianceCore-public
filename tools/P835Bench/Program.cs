@@ -12,7 +12,8 @@ using Allegiance.Core.Sim;
 // per-sub-bucket breakdown, at several ship counts, so the phase that grows at
 // the clash peak can be attributed and optimised.
 //
-// Unlike P667Bench (a tightly-packed static cloud, maximal collision load),
+// Unlike P667Bench (a tightly-packed static cloud, maximal collision load —
+// itself removed with its flag in P858),
 // this bench spreads the ships across a fixed-radius sphere so the per-pass mix
 // matches a real dogfight: ship-ship overlaps are rare, projectile-ship
 // detection is continuous, the every-10th-pass cross-side visibility sweep
@@ -29,8 +30,7 @@ if (!Directory.Exists(artRoot)) { Console.WriteLine("no artwork; set ALLEGIANCE_
 int shipCount = args.Length > 0 ? int.Parse(args[0]) : 400;
 int projectileCount = args.Length > 1 ? int.Parse(args[1]) : 240;
 int mineCount = args.Length > 2 ? int.Parse(args[2]) : 60;
-bool spotterCache = args.Length > 4 && args[4] is "1" or "true";
-Console.WriteLine($"P835-BENCH: ships={shipCount} projectiles={projectileCount} mines={mineCount} spotterCache={spotterCache} cpu={Environment.ProcessorCount}");
+Console.WriteLine($"P835-BENCH: ships={shipCount} projectiles={projectileCount} mines={mineCount} cpu={Environment.ProcessorCount}");
 
 var (core, map) = LoadCoreAndMap(artRoot, args.Length > 3 ? args[3] : "m2xspiderw.igc");
 Console.WriteLine($"P835-BENCH: core={core.HullTypes.Count} hulls, {core.ProjectileTypes.Count} projectiles, {core.MineTypes.Count} mines; map clusters={map.Clusters.Count}");
@@ -39,10 +39,8 @@ var hull = PickHull(core, artRoot);
 Console.WriteLine($"P835-BENCH: hull={hull.ModelName} scannerRange={hull.ScannerRange}");
 
 var bench = new ClashBench(core, map, artRoot, hull, shipCount, projectileCount, mineCount);
-VisibilitySpotterCache.Enabled = spotterCache;
 var (walls, snap) = bench.Measure(ticks: 500);
-VisibilitySpotterCache.Reset();
-PrintStats($"ships={shipCount}{(spotterCache ? " +spotterCache" : "")}", walls);
+PrintStats($"ships={shipCount}", walls);
 double wallSum = walls.Sum();
 Console.WriteLine("P835-BENCH: per-bucket breakdown (amortised mean ms per tick / conditional mean / p95 / share of tick wall):");
 foreach (var (bucket, v) in snap.OrderByDescending(kv => kv.Value.TotalMs))

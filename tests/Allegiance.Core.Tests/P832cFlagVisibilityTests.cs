@@ -18,9 +18,9 @@ public sealed class P832cFlagVisibilityTests
         Assert.False(VisibilityMath.InScannerRange(eye, 1, 0, target, 0, 1, rocks, targetCarriesFlag: true));
         Assert.False(VisibilityMath.InScannerRange(eye, 1, null, target, 0, null, rocks, targetCarriesFlag: true));
     }
-    [SkippableTheory]
-    [InlineData(false)] [InlineData(true)]
-    public void Production_sweep_tracks_pickup_drop_and_sector_boundaries(bool cache)
+    // P858 — the last-spotter short-circuit is unconditional now (no cache flag).
+    [SkippableFact]
+    public void Production_sweep_tracks_pickup_drop_and_sector_boundaries()
     {
         Require.Artwork();
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
@@ -33,9 +33,6 @@ public sealed class P832cFlagVisibilityTests
         var ship = new Ship(30000, core.HullTypes.Values.First(), new Vector3(100_000, 0, 0),
             Vector3.Zero, Orientation.Identity) { SideId = 1 };
         mission.PlaceShip(ship, sector);
-        bool previous = VisibilitySpotterCache.Enabled;
-        VisibilitySpotterCache.Enabled = cache;
-        try
         {
             sector.ResolveCrossSideVisibility();
             Assert.False(ship.SeenBySide(0));
@@ -52,7 +49,6 @@ public sealed class P832cFlagVisibilityTests
             empty.ResolveCrossSideVisibility();
             Assert.False(ship.SeenBySide(0));
         }
-        finally { VisibilitySpotterCache.Enabled = previous; }
     }
 
 }
