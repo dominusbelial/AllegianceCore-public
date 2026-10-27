@@ -836,7 +836,9 @@ public sealed partial class Server
         {
             BroadcastTreasureDestroyed(treasure);
             // Expiry, unlike pickup, retains the flag payload (FedSrv.CPP:12504-12506).
-            if (treasure.Code == TreasureCode.Flag && treasure.OwnerMission is { } owner)
+            // P846 — like the announcement, the respawn sits inside native's
+            // STAGE_STARTED block (FedSrv.CPP:12495-12507).
+            if (treasure.Code == TreasureCode.Flag && treasure.OwnerMission is { Stage: MissionStage.Started } owner)
                 RespawnCarriedFlag(owner, treasure.Data.TreasureId);
         };  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast

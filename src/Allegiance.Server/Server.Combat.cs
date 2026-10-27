@@ -1136,20 +1136,30 @@ public sealed partial class Server
             // voice line. Critical once the PRE-hit hull fraction drops below 0.30
             // (the raise precedes the damage mutation, so ArmorFraction is pre-hit,
             // exactly as native reads GetFraction() from line 169 before line 171).
+            // P846 — the native #ALLY branches (FedSrv.CPP:12192-12229): an ALLIED
+            // launcher still triggers the alert (pside != psideLauncher) but the
+            // text carries the "(Ally)" prefix, the chat target becomes CHAT_ALLIES
+            // when the defending side has allies, the audience includes those
+            // allies, and an allied PLAYER launcher also gets the private
+            // "Watch your fire" (FedSrv.CPP:12222-12228).
+            bool allied = AlliedSides(mission, pside, launcherSide);
+            bool hasAllies = StationSideHasAllies(mission, pside);
             bool critical = station.ArmorFraction < 0.30f;
             short voice = critical ? station.Type.CriticalSound : station.Type.UnderAttackSound;
 
             string stationName = station.Data.Name ?? $"station {station.StationId}";
             string sectorName = mission.Sectors.FirstOrDefault(s => s.Id == station.ClusterId)?.Name ?? "?";
             string launcherName = PeerName(ls) ?? $"Ship {ls.Id}";
+            string allyPrefix = allied ? "(Ally) " : "";
             string text = critical
-                ? $"{stationName} in {sectorName} critically damaged and under attack by {launcherName}"
-                : $"{stationName} in {sectorName} under attack by {launcherName}";
+                ? $"{stationName} in {sectorName} critically damaged and under attack by {allyPrefix}{launcherName}"
+                : $"{stationName} in {sectorName} under attack by {allyPrefix}{launcherName}";
 
             var msg = new ChatMessage
             {
                 Message = text,
-                ChatTarget = (int)ChatTarget.Team,
+                ChatTarget = (int)(hasAllies ? ChatTarget.Allies : ChatTarget.Team),
+                OidRecipient = pside,   // the defending side id (SendChatf's oidRecipient)
                 VoiceOver = voice,
             };
             byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
@@ -1158,36 +1168,60 @@ public sealed partial class Server
             foreach (var kv in _peerShips)
             {
                 if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
-                if (kv.Value.Ship.SideId != pside) continue;
+                if (kv.Value.Ship.SideId is not { } peerSide) continue;
+                // Defending side, plus every side allied to it when the alert is
+                // addressed to CHAT_ALLIES (Server.Callbacks' own audience rule).
+                if (peerSide != pside && !(hasAllies && AlliedSides(mission, pside, peerSide))) continue;
                 SendPeer(kv.Key, packet);
                 n++;
             }
-            Console.WriteLine($"[station] '{text}' (voice {voice}) -> side {pside} [{n} peer(s)] [under attack]");
+            Console.WriteLine($"[station] '{text}' (voice {voice}, target {(hasAllies ? "ALLIES" : "TEAM")}) -> side {pside} [{n} peer(s)] [under attack]");
+
+            // Allied player launcher: the private friendly-fire whisper, sender
+            // NULL (the station), exactly like the same-side branch below.
+            if (allied) SendStationWatchYourFire(ls);
         }
         else
         {
             // Same-side launcher: private "Watch your fire" to that pilot alone
             // (FedSrv.CPP:12221-12228), only when the launcher is a player (an
             // ownerless NPC has no _peerShips entry).
-            foreach (var kv in _peerShips)
-            {
-                if (!ReferenceEquals(kv.Value.Ship, ls)) continue;
-                var msg = new ChatMessage
-                {
-                    Message = "Watch your fire",
-                    SidSender = -1, // native station warning has NULL sender (FedSrv.CPP:12226)
-                    ChatTarget = (int)ChatTarget.Individual,
-                    OidRecipient = ls.Id,
-                    VoiceOver = DroneWatchFireSound,
-                };
-                SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-                Console.WriteLine($"[station] 'Watch your fire' -> ship {ls.Id} [same-side launcher]");
-                break;
-            }
+            SendStationWatchYourFire(ls);
         }
 
         station.LastDamageReport = now;
     }
+
+    /// <summary>P846 — the station-damage private friendly-fire whisper
+    /// (<c>SendChat(NULL, CHAT_INDIVIDUAL, launcher-&gt;GetObjectID(),
+    /// droneWatchFireSound, "Watch your fire")</c>, <c>FedSrv.CPP:12226,12264</c>).
+    /// The station is the sender, so <c>sidSender</c> is NA. Only a peer launcher
+    /// has a connection to receive it.</summary>
+    private void SendStationWatchYourFire(Ship launcher)
+    {
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, launcher)) continue;
+            var msg = new ChatMessage
+            {
+                Message = "Watch your fire",
+                SidSender = -1, // native station warning has NULL sender (FedSrv.CPP:12226)
+                ChatTarget = (int)ChatTarget.Individual,
+                OidRecipient = launcher.Id,
+                VoiceOver = DroneWatchFireSound,
+            };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            Console.WriteLine($"[station] 'Watch your fire' -> ship {launcher.Id} [(allied) launcher]");
+            break;
+        }
+    }
+
+    /// <summary>P846 — native's <c>station-&gt;GetSide()-&gt;GetAllies() != NA</c>
+    /// test (<c>FedSrv.CPP:12196</c>): the defending side belongs to an ally
+    /// group, so the alert goes out as <c>CHAT_ALLIES</c> (whether or not another
+    /// member is online — native reads the group id, not the membership).</summary>
+    private static bool StationSideHasAllies(Mission mission, short sideId)
+        => mission.Sides.FirstOrDefault(s => s.Id == sideId)?.AllyGroup is not null;
 
     /// <summary>
     /// P751b — handle a damaging hit on a ship (<see cref="ServerHost.DamageShipEvent"/>,
@@ -1225,8 +1259,13 @@ public sealed partial class Server
         if (now - ship.LastDamageReport <= 10.0) return;
 
         bool sameSide = pside == launcherSide;
+        // P846 — native's allied test is `pside->AlliedSides(pside, psideLauncher)`
+        // (FedSrv.CPP:12116,12178), i.e. the PRODUCTION alliance model
+        // (Side.AllyGroup, fed by the lobby). The port's skirmish/test pairs are
+        // also honoured so a harness can express the same alliance.
         bool allied = !sameSide &&
-            (mission.AlliedSidePairs.Contains((pside, launcherSide)) ||
+            (AlliedSides(mission, pside, launcherSide) ||
+             mission.AlliedSidePairs.Contains((pside, launcherSide)) ||
              mission.AlliedSidePairs.Contains((launcherSide, pside)));
         var launcherShip = launcher as Ship;
 
@@ -1754,11 +1793,18 @@ public sealed partial class Server
                         Console.WriteLine("[scoring] combat rating adjusted on both sides");
                     }
 
-                    // Existing single-contributor approximation of native's
-                    // damage-share KillShip credit (FedSrv.CPP:11826-11861).
-                    killerScore.KillShip(ClassifyVictim(victim), 1.0f);
-                    Console.WriteLine($"[scoring] killer ship {attackingShip.Id} class kill +1 (victim {ClassifyVictim(victim)})");
+                    // Native partial-kill shares (FedSrv.CPP:11826-11861) are
+                    // awarded below, for every enemy bucket — the killer's own
+                    // share included — not a flat 1.0 here.
                 }
+
+                // P846 — native's partial-kill loop: after the credited ship's
+                // AddKill/rating, EVERY enemy ship bucket of the victim's damage
+                // track earns `KillShip(pship, bucketTotal/totalDamage)`
+                // (FedSrv.CPP:11841-11861), so a shared kill splits the class
+                // counter by damage share. Pre-P846 the port credited only the
+                // top dealer with a flat 1.0 and left the helper dealers at 0.
+                AwardPartialKillShares(victim, killMission!);
 
                 // Experience is ship-owned; allied kills do not raise it
                 // (FedSrv.CPP:11823-11824), even though they earn AddKill.
@@ -1978,6 +2024,53 @@ public sealed partial class Server
         {
             if (killsChanged || killsWinner is not null)
                 killMission!.Site.FlagsKillsComputed(killMission, killsChanged, killsWinner);
+        }
+    }
+
+    /// <summary>
+    /// P846 — native's partial-kill share credit (<c>FedSrv.CPP:11826-11861</c>).
+    /// Once a ship dies, native walks EVERY bucket of the victim's damage track
+    /// (not only the credit bucket) and calls
+    /// <c>pfsShip-&gt;GetPlayerScoreObject()-&gt;KillShip(pship, bucketTotal / totalDamage)</c>
+    /// for each enemy ship in the same mission, where <c>totalDamage</c> is the
+    /// sum of all buckets whose side differs from the victim's. The credited
+    /// killer's own class counter therefore receives its <b>damage share</b>, not
+    /// a flat +1, and every other enemy contributor receives theirs.
+    /// <para>Port adaptations, stated plainly: (1) only <see cref="Ship"/> launchers
+    /// are recorded in this port's track (<c>Ship.ReceiveDamage</c>, P549), so a
+    /// bucket is always an <c>OT_ship</c> model — native's missile-launcher buckets
+    /// (which suppress player credit entirely) are a native quirk this port does
+    /// not reproduce; (2) score objects exist only for peers here, so a
+    /// damage-dealing NPC has no scoreboard to credit (native's
+    /// <c>GetPlayerScoreObject()</c> exists for drones but is never persisted);
+    /// (3) native's parent-ship divisor branch
+    /// (<c>pfsParent-&gt;...KillShip(pship, share/divisor)</c>) has no counterpart
+    /// because this port has no child/turret ships.</para>
+    /// </summary>
+    private void AwardPartialKillShares(Ship victim, Mission mission)
+    {
+        if (victim.DamageTrack is not { } track || victim.SideId is not { } victimSide) return;
+        var buckets = track.Buckets;
+        float totalDamage = 0f;
+        foreach (var (model, damage) in buckets)
+            if (model is Ship dealer && dealer.SideId is { } dealerSide && dealerSide != victimSide)
+                totalDamage += damage;
+        if (totalDamage <= 0f) return;   // native's `if (totalDamage != 0.0f)` guard
+
+        var victimClass = ClassifyVictim(victim);
+        foreach (var (model, damage) in buckets)
+        {
+            if (model is not Ship dealer || dealer.SideId is not { } dealerSide) continue;
+            if (!ReferenceEquals(dealer.Mission, mission)) continue;            // pmodel->GetMission() == pmission
+            if (dealerSide == victimSide) continue;                             // pmodel->GetSide() != pside
+            if (AlliedSides(mission, victimSide, dealerSide)) continue;        // #ALLY
+            ConnectionId? owner = null;
+            foreach (var kv in _peerShips)
+                if (ReferenceEquals(kv.Value.Ship, dealer)) { owner = kv.Key; break; }
+            if (owner is null) continue;                                       // no score object for NPCs
+            float share = damage / totalDamage;
+            _peerShips[owner.Value].PlayerScore.KillShip(victimClass, share);
+            Console.WriteLine($"[scoring] partial-kill share {share:0.###} ({damage:0.#}/{totalDamage:0.#}) for ship {dealer.Id} (victim class {victimClass})");
         }
     }
 

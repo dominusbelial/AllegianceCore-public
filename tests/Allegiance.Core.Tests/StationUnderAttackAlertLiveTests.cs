@@ -300,4 +300,49 @@ public sealed class StationUnderAttackAlertLiveTests
         Assert.Contains("critically damaged", crit.Message);
         Console.WriteLine($"P451-CRITICAL: defender got critical alert '{crit.Message}' (voice {crit.VoiceOver})");
     }
+
+    /// <summary>⭐ P846 — the native #ALLY branches of
+    /// <c>DamageStationEvent</c> (<c>FedSrv.CPP:12192-12229</c>). When the
+    /// launcher's side is ALLIED with the station's side (a DIFFERENT side, so the
+    /// alert still fires) native:
+    /// <list type="number">
+    /// <item>prefixes the launcher with <c>(Ally)</c> in the alert text;</item>
+    /// <item>sends it as <c>CHAT_ALLIES</c> (the defending side's ally group), so
+    /// the attacker's side receives it too;</item>
+    /// <item>whispers the private <c>"Watch your fire"</c> to the allied player
+    /// launcher.</item>
+    /// </list>
+    /// Pre-P846 the port had no allied leg at all: no prefix, no whisper, and the
+    /// alert stayed a plain defending-side team line.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Allied_cross_side_station_hit_adds_ally_prefix_and_watch_your_fire()
+    {
+        Require.Artwork();
+        using var seat = Seat();
+        var mission = seat.Server.Missions[0];
+        mission.AllowFriendlyFire = true;                 // native allied damage lands with FF on
+        foreach (var side in mission.Sides) side.AllyGroup = 1;   // production alliance model (Side.AllyGroup)
+        seat.AttackerBot.ResetChatReceived();
+        seat.DefenderBot.ResetChatReceived();
+
+        FireAtStation(seat);
+
+        int got = PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Any(c => c.Message.Contains("under attack")), 6000);
+        Assert.True(got < 6000, "defender never received the allied under-attack alert");
+
+        var alert = seat.DefenderBot.Chats.Single(c => c.Message.Contains("under attack"));
+        Assert.Equal((int)ChatTarget.Allies, alert.ChatTarget);      // ct = CHAT_ALLIES when the side has allies
+        Assert.Contains("under attack by (Ally) ", alert.Message);
+        // CHAT_ALLIES audience: the allied attacker's side sees the alert too.
+        PumpUntil(seat.Server, () => seat.AttackerBot.Chats.Any(c => c.Message.Contains("under attack")), 3000);
+        Assert.Contains(seat.AttackerBot.Chats, c => c.Message.Contains("under attack by (Ally) "));
+
+        PumpUntil(seat.Server, () => seat.AttackerBot.Chats.Any(c => c.Message.Contains("Watch your fire")), 3000);
+        var warn = seat.AttackerBot.Chats.Single(c => c.Message.Contains("Watch your fire"));
+        Assert.Equal((int)ChatTarget.Individual, warn.ChatTarget);
+        Assert.Equal(seat.Attacker.Id, warn.OidRecipient);
+        Assert.Equal(-1, warn.SidSender);                 // the station is the sender (NA)
+        Console.WriteLine($"P846-ALLY-BASE: '{alert.Message}' (ALLIES) + '{warn.Message}' to the allied launcher");
+    }
 }

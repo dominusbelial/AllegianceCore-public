@@ -259,9 +259,20 @@ public class LivePlayerScoringFeedsTests
         { SideId = otherSide };
         mission.PlaceShip(victim, sector);
 
+        // P846 — the victim-class credit is now native's damage SHARE
+        // (FedSrv.CPP:11841-11861), so the kill needs a real damage-track bucket.
+        // A ship that dies in the game always has one (ReceiveDamage populated
+        // it); apply a non-lethal real hit first, exactly as native's track does.
+        var core = RepresentativeCore();
+        byte dmg = 0;
+        while (dmg < 20 && core.Constants.DamageConstants[dmg][minerHull.DefenseType] <= 0.01f) dmg++;
+        float dtm = core.Constants.DamageConstants[dmg][minerHull.DefenseType];
+        float hit = 0.25f * victim.EffectiveMaxHitPoints() / dtm;
+        victim.ReceiveDamage(dmg, hit, mission.LastUpdate, victim.Position, killer.Position, killer);
+
         FireKill(server, victim, killer, 10f);
 
-        Assert.Equal(1f, ScoreOf(server, killer).MinerKills);
+        Assert.Equal(1f, ScoreOf(server, killer).MinerKills);   // sole dealer → 100% share
         Assert.Equal(1, ScoreOf(server, killer).Kills);
     }
 

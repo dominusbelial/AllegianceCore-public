@@ -75,6 +75,20 @@ public sealed class DamageTrack
         get { Synchronize(); return _buckets.Count <= 1 ? [] : _buckets.Skip(1).Select(b => b.Model).ToArray(); }
     }
 
+    /// <summary>
+    /// P846 — the whole bucket list (model + running total damage) in the track's
+    /// sorted order: the native <c>DamageTrack::GetDamageBuckets()</c> walk
+    /// (<c>igc.h:4960-4980</c>) the kill-credit code iterates. The kill path needs
+    /// EVERY dealer's total, not just the leader, to award the native
+    /// partial-kill share <c>totalDamage_i / totalDamage</c>
+    /// (<c>FedSrv.CPP:11826-11861</c>). Snapshotted so a caller can credit while
+    /// the track may still be mutated.
+    /// </summary>
+    public IReadOnlyList<(Model Model, float TotalDamage)> Buckets
+    {
+        get { Synchronize(); return _buckets.Select(b => (b.Model, b.TotalDamage)).ToArray(); }
+    }
+
     /// <summary>Advance slot retirement — the port of
     /// <c>DamageTrackSet::Update</c> + <c>DamageTrack::SwitchSlots</c>
     /// (<c>igc.h:5080-5095</c>, <c>common.cpp:2571-2581</c>): every 5 sim-seconds

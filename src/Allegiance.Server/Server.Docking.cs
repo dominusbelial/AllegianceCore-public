@@ -1191,11 +1191,24 @@ public sealed partial class Server
     /// port of <c>KillTreasureEvent</c>'s wire half (<c>FedSrv.CPP:12498-12503</c>,
     /// <c>GetGroupRealSides()</c>). The treasure's <c>objectID</c> and its
     /// sector id go on the wire. Expiry's site handler separately respawns flags;
-    /// pickup consumes the payload without respawning (FedSrv.CPP:13576).</summary>
+    /// pickup consumes the payload without respawning (FedSrv.CPP:13576).
+    /// <para>P846 — the native <c>STAGE_STARTED</c> gate (<c>FedSrv.CPP:12495</c>):
+    /// the announcement (and the expiry's flag respawn, which the caller gates the
+    /// same way) happens only while the mission is STARTED; the
+    /// <c>ptreasure-&gt;Terminate()</c> at <c>FedSrv.CPP:12509</c> is OUTSIDE that
+    /// gate and always runs, exactly as here.</para></summary>
     private void BroadcastTreasureDestroyed(Treasure treasure)
     {
         var sector = treasure.OwnerSector;
         sector.Terminate(treasure);            // P754b: KillTreasureEvent → ptreasure->Terminate() (FedSrv.CPP:12509)
+        // The stage gate needs the mission; a treasure may carry only its sector
+        // (synthetic/domain drops), so fall back to the owning sector's mission.
+        var gateMission = treasure.OwnerMission ?? sector.Mission;
+        if (gateMission is { Stage: not MissionStage.Started })
+        {
+            Console.WriteLine($"[treasure] destroyed {treasure.Id} in sector {sector.Id} before STAGE_STARTED — terminated, no DESTROY_TREASURE (FedSrv.CPP:12495)");
+            return;
+        }
         var msg = new DestroyTreasure { TreasureId = treasure.Id, SectorId = sector.Id };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = 0;
