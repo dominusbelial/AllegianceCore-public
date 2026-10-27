@@ -444,6 +444,7 @@ public sealed partial class Server
         if (ship.ParentShip is not null)
         {
             ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — SWAP_PART ignored (FedSrv.CPP:6464)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetIGCShip()->GetParentShip() == NULL", "FedSrv.CPP:6464");
             return;
         }
 
@@ -537,6 +538,7 @@ public sealed partial class Server
         if (ship.ParentShip is not null)
         {
             ConsoleLog.Write($"[reload] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — RELOAD ignored (FedSrv.CPP:6509)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetIGCShip()->GetParentShip() == NULL", "FedSrv.CPP:6509");
             return;
         }
 
@@ -554,6 +556,7 @@ public sealed partial class Server
         if (nReloads <= 0 || nReloads > 5)
         {
             ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "(nReloads > 0) && (nReloads <= 5)", "FedSrv.CPP:6523");
             return;
         }
 
@@ -582,6 +585,7 @@ public sealed partial class Server
             // established convention softens it to log-and-refuse-the-rest,
             // no broadcast, no disconnect (see remarks).
             ConsoleLog.Write($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "!bBoot", "FedSrv.CPP:6647");
             return;
         }
 
@@ -664,6 +668,7 @@ public sealed partial class Server
         if (ship.ParentShip is not null)
         {
             ConsoleLog.Write($"[droppart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — DROP_PART ignored (FedSrv.CPP:6300)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetIGCShip()->GetParentShip() == NULL", "FedSrv.CPP:6301");
             return;
         }
 
@@ -795,6 +800,7 @@ public sealed partial class Server
         if (ship.ParentShip is not null)
         {
             ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_EXPENDABLE ignored (FedSrv.CPP:5644)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pShip->GetParentShip() == NULL", "FedSrv.CPP:5625");
             return;
         }
 
@@ -815,6 +821,7 @@ public sealed partial class Server
         if (part.Amount <= 0)
         {
             ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pdispenser->GetAmount() > 0", "FedSrv.CPP:5630");
             return;
         }
 
@@ -893,6 +900,7 @@ public sealed partial class Server
         if (ship.ParentShip is not null)
         {
             ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_MISSILE ignored (FedSrv.CPP:5423)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "dm.pLauncher->GetParentShip() == NULL", "FedSrv.CPP:5418");
             return;
         }
         var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
@@ -904,6 +912,7 @@ public sealed partial class Server
         if (part.Amount <= 0)
         {
             ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pmagazine->GetAmount() > 0", "FedSrv.CPP:5423");
             return;
         }
 
@@ -944,6 +953,7 @@ public sealed partial class Server
         if (req.WingId < 0 || req.WingId >= SetWingId.WidMax)
         {
             ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfmSW->wingID < c_widMax", "FedSrv.CPP:5324");
             return;
         }
 
@@ -2551,6 +2561,7 @@ public sealed partial class Server
             if (!ship.HullType.CanMountPart(partType, unchecked((sbyte)mount)))
             {
                 Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mount {mount} cannot mount part {offer.PartTypeId} — dropped (native TrapHackBoot !CanMount, FedSrv.CPP:6100)");
+                ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetIGCShip()->GetHullType()->CanMount(ppt, pfmTA->mountID)", "FedSrv.CPP:6115");
                 return;
             }
 
@@ -2806,6 +2817,7 @@ public sealed partial class Server
         if (cost > live.Wallet.Money || live.Wallet.Money < 0 || (long)live.Wallet.Money - cost > int.MaxValue)
         {
             Refuse($"cost {cost} > wallet {live.Wallet.Money}");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetMoney() >= cost", "FedSrv.CPP:6198");
             return;
         }
 

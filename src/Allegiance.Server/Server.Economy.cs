@@ -255,6 +255,7 @@ public sealed partial class Server
         if (req.Amount <= 0)
         {
             ConsoleLog.Write($"[requestmoney] {from} ship {ship.Id}: amount {req.Amount} <= 0 — REQUEST_MONEY ignored (no forward)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfmRequest->amount > 0", "FedSrv.CPP:5368");
             return;
         }
 
@@ -333,6 +334,7 @@ public sealed partial class Server
         if (req.MoneyGiven <= 0)
         {
             ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: moneyGiven {req.MoneyGiven} <= 0 — PLAYER_DONATE ignored (no forward)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfmPlayerDonate->moneyGiven > 0", "FedSrv.CPP:7220");
             return;
         }
         // Softened TrapHackBoot(sender money >= moneyGiven) (FedSrv.CPP:7221) — the
@@ -340,6 +342,7 @@ public sealed partial class Server
         if (live.Wallet.Money < req.MoneyGiven)
         {
             ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: wallet {live.Wallet.Money} < given {req.MoneyGiven} — PLAYER_DONATE ignored (no forward)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfsPlayer->GetMoney() >= pfmPlayerDonate->moneyGiven", "FedSrv.CPP:7221");
             return;
         }
 

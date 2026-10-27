@@ -83,6 +83,11 @@ public sealed class IdentityStore
             -- operator-managed, player read-only.
             CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, date TEXT NOT NULL, time TEXT NOT NULL, name TEXT NOT NULL, description TEXT NOT NULL, signup_url TEXT NOT NULL, files TEXT NOT NULL, created_at BIGINT NOT NULL);
             INSERT INTO identity_migrations(version) VALUES(4) ON CONFLICT(version) DO NOTHING;
+            -- P855/SIM-0765 — one row per ingested squad game (the port of what
+            -- the club DB's SquadReportGame proc records, FedSrv/srvqueries.h:173-194):
+            -- the idempotence key that keeps a replayed match report from
+            -- double-crediting standings; loser ids are ','-joined squad ids.
+            CREATE TABLE IF NOT EXISTS squad_game_results (match_key TEXT PRIMARY KEY, winner_squad_id TEXT, loser_squad_ids TEXT NOT NULL, reported_at BIGINT NOT NULL);
             """);
         migration.Transaction = tx; migration.ExecuteNonQuery(); tx.Commit();
     }

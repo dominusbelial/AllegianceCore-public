@@ -47,7 +47,11 @@ public sealed partial class Server
         }
 
         // Native TrapHackBoot (:6797): only the exact reason for the operation.
-        if (request.Reason != (self ? QuitSideReason.Quit : QuitSideReason.LeaderBooted)) return;
+        if (request.Reason != (self ? QuitSideReason.Quit : QuitSideReason.LeaderBooted))
+        {
+            ReportTrapHack(TrapHackKind.Boot, from, sender.Ship.Id, "pfmQuitMission->reason == (bIsBoot ? QSR_LeaderBooted : QSR_Quit)", "FedSrv.CPP:6799");
+            return;
+        }
         if (!self)
         {
             if (sender.Ship.SideId is not { } side

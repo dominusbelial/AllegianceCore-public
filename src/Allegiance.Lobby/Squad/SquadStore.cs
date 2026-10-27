@@ -262,6 +262,57 @@ public sealed class SquadStore
         return rows;
     }
 
+    /// <summary>
+    /// P855/SIM-0765 — apply one finished squad game's standings: the winner
+    /// squad +1 win, each loser squad +1 loss. The port of what the native
+    /// club DB's <c>SquadReportGame</c> stored procedure does with
+    /// <c>CQReportSquadGame</c>'s payload (<c>squadIDWon</c> +
+    /// <c>squadIDLost1..5</c>, <c>FedSrv/srvqueries.h:173-194</c>, posted by
+    /// <c>RecordSquadGame</c>, <c>FedSrv/FedSrv.CPP:1198-1300</c>). The SQL
+    /// shape is era plumbing; the stored facts — one win for the winning
+    /// squad, one loss per losing squad, once per (server, match) — are the
+    /// behaviour. Idempotent via <c>squad_game_results.match_key</c>: a
+    /// replayed report is skipped, and match keys are scoped per reporting
+    /// server so two servers reusing an id never merge.
+    /// </summary>
+    /// <returns>true if the game was applied now; false if it was already on
+    /// record (duplicate).</returns>
+    public bool ApplyGameResult(DbConnection c, DbTransaction tx, string matchKey,
+        string? winnerSquadId, IReadOnlyList<string> loserSquadIds, long now)
+    {
+        using (var dup = Command(c, "SELECT 1 FROM squad_game_results WHERE match_key=@p0", matchKey))
+        {
+            dup.Transaction = tx;
+            using var dr = dup.ExecuteReader();
+            if (dr.Read()) return false;
+        }
+        using (var ins = Command(c,
+            "INSERT INTO squad_game_results(match_key,winner_squad_id,loser_squad_ids,reported_at) VALUES(@p0,@p1,@p2,@p3)",
+            matchKey, winnerSquadId, string.Join(',', loserSquadIds), now))
+        { ins.Transaction = tx; ins.ExecuteNonQuery(); }
+        if (winnerSquadId is not null)
+        {
+            using var w = Command(c, "UPDATE squads SET wins = wins + 1 WHERE id=@p0", winnerSquadId);
+            w.Transaction = tx; w.ExecuteNonQuery();
+        }
+        foreach (var loser in loserSquadIds)
+        {
+            using var l = Command(c, "UPDATE squads SET losses = losses + 1 WHERE id=@p0", loser);
+            l.Transaction = tx; l.ExecuteNonQuery();
+        }
+        return true;
+    }
+
+    /// <summary>Standalone form of <see cref="ApplyGameResult(DbConnection,DbTransaction,string,string?,System.Collections.Generic.IReadOnlyList{string},long)"/>
+    /// with its own transaction.</summary>
+    public bool ApplyGameResult(string matchKey, string? winnerSquadId, IReadOnlyList<string> loserSquadIds, long now)
+    {
+        using var c = Open(); using var tx = c.BeginTransaction();
+        bool applied = ApplyGameResult(c, tx, matchKey, winnerSquadId, loserSquadIds, now);
+        tx.Commit();
+        return applied;
+    }
+
     /// <summary>Full squad details + membership — native <c>SQUAD_DETAILS_REQ</c>→
     /// <c>SQUAD_DETAILS</c>/<c>SQUAD_DETAILS_PLAYER</c> (<c>SquadsScreen.cpp:1332-1463</c>,
     /// <c>Inc/ClubMessages.h:202-205,278-292</c>).</summary>

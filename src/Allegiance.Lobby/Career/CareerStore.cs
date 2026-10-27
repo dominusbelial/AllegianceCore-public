@@ -64,11 +64,15 @@ public sealed class CareerStore
     /// scores counted are applied (native's <c>if (GetScoresCount())</c> gate,
     /// <c>FedSrv.CPP:1065</c>) and only players with time played
     /// (<c>0.0f == GetTimePlayed() ⇒ return</c>, <c>FedSrv.CPP:1052-1055</c>).
+    /// <para>P855/SIM-0765 — when the report carries a squad-game section
+    /// (native <c>RecordSquadGame</c>, FedSrv.CPP:1198-1300), the squad
+    /// standings ride the SAME transaction through <see cref="Squad.SquadStore.ApplyGameResult"/>:
+    /// winner +1 win, each loser +1 loss, once per (server, match).</para>
     /// </summary>
-    public CareerContracts.MatchReportOutcome ApplyMatchReport(CareerContracts.MatchReport report, string serverId, long now)
+    public CareerContracts.MatchReportOutcome ApplyMatchReport(CareerContracts.MatchReport report, string serverId, long now, Squad.SquadStore? squads = null)
     {
         int applied = 0, duplicates = 0, skipped = 0;
-        if (report.Players.Count == 0) return new(applied, duplicates, skipped);
+        if (report.Players.Count == 0 && report.SquadGame is null) return new(applied, duplicates, skipped);
         // A server's match ids are its own: scope them per server, so two servers
         // reusing an id never block (or merge with) each other's results.
         string matchKey = $"{serverId}:{report.MatchId}";
@@ -138,6 +142,17 @@ public sealed class CareerStore
 
             applied++;
         }
+
+        // P855/SIM-0765 — the squad-game section rides the same transaction and
+        // the same per-(server,match) idempotence discipline as the player rows
+        // (matchKey is already server-scoped). A replayed report is skipped.
+        if (report.SquadGame is { } sg)
+        {
+            if (squads is null)
+                throw new InvalidOperationException("a squad-game section requires the lobby's SquadStore");
+            if (!squads.ApplyGameResult(c, tx, matchKey, sg.WinnerSquadId, sg.LoserSquadIds, now)) duplicates++;
+        }
+
         tx.Commit();
         return new(applied, duplicates, skipped);
     }

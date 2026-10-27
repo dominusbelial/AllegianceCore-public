@@ -56,8 +56,21 @@ public static class CareerContracts
     /// unique identifier for the finished match (anti-abuse: one result per
     /// player per match). <c>ServerId</c>/<c>ServerSecret</c> prove the report
     /// came from an enrolled (operator-approved) game server, mirroring the
-    /// register payload (<c>LobbyEndpoints.cs:25-27</c>).</summary>
-    public sealed record MatchReport(string MatchId, IReadOnlyList<MatchResultEntry> Players, string? ServerId = null, string? ServerSecret = null);
+    /// register payload (<c>LobbyEndpoints.cs:25-27</c>). <c>SquadGame</c> —
+    /// P855/SIM-0765 — carries the finished squad game's result (native
+    /// <c>RecordSquadGame</c>, FedSrv.CPP:1198-1300, gated at
+    /// fsmission.cpp:3421-3427); absent for non-squad or non-qualifying games.</summary>
+    public sealed record MatchReport(string MatchId, IReadOnlyList<MatchResultEntry> Players,
+        string? ServerId = null, string? ServerSecret = null,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] SquadGameResult? SquadGame = null);
+
+    /// <summary>P855/SIM-0765 — one finished squad game's standings facts: the
+    /// winning side's squad id (native <c>squadIDWon</c>, may be NA/null when
+    /// the winning side had no squad) and every losing side's squad id
+    /// (native <c>squadIDLost1..5</c>; sides without a squad are skipped,
+    /// FedSrv.CPP:1206-1290). The lobby credits the winner squad one win and
+    /// each loser squad one loss.</summary>
+    public sealed record SquadGameResult(string? WinnerSquadId, IReadOnlyList<string> LoserSquadIds);
 
     /// <summary>Result of ingesting one <see cref="MatchReport"/>.</summary>
     public sealed record MatchReportOutcome(int Applied, int Duplicates, int Skipped);
