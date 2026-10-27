@@ -60,6 +60,22 @@ list in **reverse**.
   creates native initial flag pedestals/flags and neutral artifacts. Absent goals
   preserve the port's countdown/finale policy; `NativeDefaults()` explicitly
   selects native Reset's 100% conquest. Report: `docs/reports/P832A_GAME_GOALS.md`.
+- **Friendly fire / allied visualization options (P856)** — the two native
+  create-game `MissionParams` booleans, default off: `bAllowFriendlyFire`
+  (`Igc/igc.h:1149`) and `bAllowAlliedViz` (`Igc/igc.h:1127`). Per-game
+  `games[].allowFriendlyFire` / `games[].allowAlliedViz` resolve in
+  `src/Allegiance.Server/ServerConfig.cs` (env
+  `ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE` / `ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ`,
+  CLI `--friendly-fire` / `--allied-viz`) and land on
+  `Mission.AllowFriendlyFire` / `Mission.AllowAlliedViz` at assembly. Consumers:
+  `src/Allegiance.Core/Sim/BlastDamage.cs` (ship/station/missile/probe damage),
+  `src/Allegiance.Core/Sim/Probe.cs` (native armed-probe immunity + firing
+  reveal), `src/Allegiance.Core/Model/Sector.cs` (allied visibility/scans) and
+  `src/Allegiance.Core/Model/Mission.cs` (`RevealAlliedClusters`,
+  `AreSidesFriendly` over live `Side.AllyGroup`). Advertised in
+  `src/Allegiance.Core/Wire/MissionDef.cs` bits 28/6 and in the lobby directory
+  game settings (client GAME DETAILS panel). Report:
+  `docs/reports/P856_GAME_OPTIONS_FF_ALLIEDVIZ.md`.
 - **Static core** — the parsed `PCore001.igc` asset: civilizations, hulls,
   parts, stations, asteroids, float constants. Key:
   `src/Allegiance.Core/Model/StaticCore.cs`,

@@ -1,0 +1,18 @@
+parts | 100.00% (161/161) | 100.00% (42/42) | visual 0
+screens | 100.00% (121.000/121.000) | 100.00% (96/96) | visual 0
+TOTAL | 99.91% (1856.332/1858.000) | 99.85% (648/649) | visual 75
+sim-rules-matrix.csv: validated 840 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight
+FedSrv mission rules (event-driven) | 2.53% (15/592) | 1.97% (5/254) | visual 0
+callbacks | 98.46% (192/195) | 98.46% (64/65) | visual 0
+constants | 100.00% (135/135) | 100.00% (39/39) | visual 0
+periodic | 86.67% (39/45) | 85.71% (12/14) | visual 0
+session | 100.00% (4/4) | 100.00% (1/1) | visual 0
+sounds | 100.00% (550/550) | 100.00% (212/212) | visual 0
+updates | 96.59% (340/352) | 89.47% (85/95) | visual 0
+warnings | 100.00% (10/10) | 100.00% (2/2) | visual 0
+TOTAL | 68.24% (1285/1883) | 61.58% (420/682) | visual 0
+Reachability (non-production stays in the denominator; earns no headline credit):
+config-only: 11 rows; 11 eligible; 10 implemented; implemented weight 12
+production: 779 rows; 663 eligible; 420 implemented; implemented weight 1285
+test-only: 50 rows; 8 eligible; 0 implemented; implemented weight 0

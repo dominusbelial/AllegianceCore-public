@@ -166,8 +166,9 @@ public sealed partial class Mission : IMissionIgc
     /// look at the map:
     /// <list type="number">
     /// <item><b>The start-of-game reveals</b> — <c>bShowHomeSector</c> /
-    /// <c>bShowMap</c> when configured (<c>Igc/mapmakerigc.cpp:470-477</c>,
-    /// both no-ops at their native-default false).</item>
+    /// <c>bAllowAlliedViz</c> / <c>bShowMap</c> when configured
+    /// (<c>Igc/mapmakerigc.cpp:470-477</c>, in native order; all no-ops at their
+    /// native-default false).</item>
     /// <item><b>One full scanner sweep</b> — the port's own equivalent of the
     /// first <c>Cluster::Update</c> pass running every model's
     /// <c>UpdateSeenBySide</c> (<c>Igc/clusterIGC.cpp:347-357</c>): the own-side
@@ -193,6 +194,9 @@ public sealed partial class Mission : IMissionIgc
             // RevealMap run before ActivateSides, mapmakerigc.cpp:470-479), so the
             // sweep below cannot immediately un-see a revealed object.
             if (ShowHomeSector) RevealHomeClusters();
+            // P856 — native's order (mapmakerigc.cpp:470-477): home, then the
+            // allied reveal, then the full map reveal.
+            if (AllowAlliedViz) RevealAlliedClusters();
             if (ShowMap) RevealMap();
         }
         // The sweep itself is one-shot: it is the start-of-game pass. Later live
@@ -229,6 +233,37 @@ public sealed partial class Mission : IMissionIgc
             }
     }
 
+    /// <summary>P856 — native <c>CmapMakerIGC::RevealAlliedClusters</c>
+    /// (<c>Igc/mapmakerigc.cpp:1020-1058</c>, called at <c>:473-474</c> only when
+    /// <c>MissionParams::bAllowAlliedViz</c> is set): for every side, make every
+    /// model in a cluster where that side owns a station visible to its
+    /// <b>allies</b> — the native loop reveals each cluster model to every side
+    /// whose <c>AlliedSides</c> test passes, explicitly skipping the owning side
+    /// (already covered by <see cref="RevealHomeClusters"/>) and every
+    /// <c>OT_warp</c> ("alephs must be replicated").</summary>
+    private void RevealAlliedClusters()
+    {
+        foreach (var side in Sides)
+            foreach (var sector in Sectors)
+            {
+                bool owned = false;
+                foreach (var station in sector.StationRuntimes)
+                    if (station.SideId == side.Id && !station.Dead) { owned = true; break; }
+                if (!owned) continue;
+                foreach (var ally in Sides)
+                {
+                    if (ally.Id == side.Id || !AreSidesFriendly(side.Id, ally.Id)) continue;
+                    foreach (var model in sector.Models)
+                        model.SideVisibility.SetSideVisibility(ally.Id, true);
+                    foreach (var runtimestation in sector.StationRuntimes)
+                        runtimestation.SideVisibility.SetSideVisibility(ally.Id, true);
+                    foreach (var rock in sector.Mineable)
+                        rock.SideVisibility.SetSideVisibility(ally.Id, true);
+                    // Warps are deliberately excluded (mapmakerigc.cpp:1050).
+                }
+            }
+    }
+
     /// <summary>P797 — native <c>CmapMakerIGC::RevealMap</c>
     /// (<c>Igc/mapmakerigc.cpp:999-1018</c>, repeated at mission start by
     /// <c>Igc/missionigc.cpp:4056-4071</c>): every aleph visible to every side.</summary>
@@ -240,12 +275,35 @@ public sealed partial class Mission : IMissionIgc
                     warp.SideVisibility.SetSideVisibility(side.Id, true);
     }
 
-    /// <summary>Allied side pairs for native AlliedSides damage immunity
-    /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
+    /// <summary>Explicit allied side pairs, in addition to the live alliance
+    /// groups on <see cref="Side.AllyGroup"/>. Used by standalone hosts/tests
+    /// that never run the lobby's <c>CHANGE_ALLIANCE(196)</c> handler; either
+    /// ordering represents the same alliance.</summary>
     public HashSet<(short, short)> AlliedSidePairs { get; } = [];
 
-    internal bool AreSidesFriendly(short? a, short? b) => a is { } x && b is { } y
-        && (x == y || AlliedSidePairs.Contains((x, y)) || AlliedSidePairs.Contains((y, x)));
+    /// <summary>P856 — native <c>IsideIGC::AlliedSides</c>
+    /// (<c>Igc/igc.h:4297-4305</c>): same side counts as friendly, otherwise both
+    /// sides must carry the same non-<c>NA</c> alliance group. Reads the live
+    /// groups the server's <c>UpdateAlliances</c> writes
+    /// (<c>FedSrv/fsmission.cpp:5638-5811</c>, port P190), so the allied legs of
+    /// friendly fire (<c>Igc/shipIGC.cpp:1223-1224</c>), probe immunity
+    /// (<c>Igc/probeigc.h:75</c>) and allied visualization
+    /// (<c>FedSrv/FedSrv.CPP:10893-10895</c>) are reachable in production. The
+    /// explicit <see cref="AlliedSidePairs"/> set is the host/test override.</summary>
+    internal bool AreSidesFriendly(short? a, short? b)
+    {
+        if (a is not { } x || b is not { } y) return false;
+        if (x == y) return true;
+        if (AlliedSidePairs.Contains((x, y)) || AlliedSidePairs.Contains((y, x))) return true;
+        sbyte? groupX = null, groupY = null;
+        bool foundX = false, foundY = false;
+        foreach (var side in Sides)
+        {
+            if (side.Id == x) { groupX = side.AllyGroup; foundX = true; }
+            if (side.Id == y) { groupY = side.AllyGroup; foundY = true; }
+        }
+        return foundX && foundY && groupX is not null && groupX == groupY;
+    }
 
     /// <summary>
     /// The <see cref="Side.Id"/> of the side that currently owns the mission —

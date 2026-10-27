@@ -319,6 +319,9 @@ public sealed class ServerRegistry
             GoalFlags: g.GoalFlags ?? false,
             GoalTerritory: g.GoalTerritory ?? false,
             MinRank: ClampShort(g.MinRank ?? -1),
-            MaxRank: ClampShort(g.MaxRank ?? 1000));
+            MaxRank: ClampShort(g.MaxRank ?? 1000),
+            // P856 — native defaults, off (igc.h:1243,1246).
+            AllowFriendlyFire: g.AllowFriendlyFire ?? false,
+            AllowAlliedViz: g.AllowAlliedViz ?? false);
     }
 }

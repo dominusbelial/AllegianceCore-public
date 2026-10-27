@@ -1,0 +1,63 @@
+{
+  "task": "P856",
+  "date": "2026-10-27",
+  "base": "1e4c33d4 (master at dispatch)",
+  "gate": {
+    "solution_build": {"command": "dotnet build AllegianceCore.slnx --no-incremental", "result": "Build succeeded", "warnings": 0, "errors": 0},
+    "tools_build": {"command": "tools/build-tools.sh", "result": "build-tools: all 91 tool projects built", "warnings": 0, "errors": 0},
+    "rig_aot_publish": {
+      "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true -o .scratch/aot",
+      "result": "clean (native image produced, 15,012,032 bytes)",
+      "il2026": 0,
+      "il3050": 0,
+      "reason": "src/Allegiance.Core (Mission/Sector/Probe/MissionDef) and src/Allegiance.Server (ServerConfig/Server.Lifecycle/Server.Lobby/LobbyHeartbeat) changed; no new reflection serialization (the two new bitfields are plain codec fields, no JSON shape change on the AOT path)"
+    },
+    "new_and_affected_tests_3x_alone": {
+      "P856FriendlyFireAlliedVizTests": {"runs": 3, "passed": 24, "failed": 0},
+      "P856OptionServerTests": {"runs": 3, "passed": 5, "failed": 0},
+      "P856GameDetailsOptionsTests": {"runs": 3, "passed": 2, "failed": 0},
+      "P649CombatBlastParityTests (updated to the native probe gate)": {"runs": 3, "passed": 57, "failed": 0},
+      "ProbeCombatLiveTests (updated same-side probe contract)": {"runs": 3, "passed": 3, "failed": 0},
+      "SP6GameSpeedTests + P799LivesLimitTests + P727SkirmishTests (setup-screen rows)": {"runs": 3, "passed": 21, "failed": 0},
+      "evidence": "docs/reports/P856_assets/targeted-tests-3x.txt"
+    },
+    "fast_tier": {
+      "runs": 2,
+      "run1": {
+        "summary": "TestResults/tiers-20261027T120222.002757Z",
+        "tests": 10993,
+        "failed": 1,
+        "failure": "ProbeCombatLiveTests.Same_side_friendly_missile_damages_the_probe_no_friendly_fire_gate asserted the pre-P856 non-native contract; updated to native's armed-probe gate (probeigc.h:74-89) and re-proven 3/3",
+        "evidence": "docs/reports/P856_assets/fast-tier-run1.txt"
+      },
+      "run2": {
+        "summary": "TestResults/tiers-20261027T120844.018657Z",
+        "tests": 10993,
+        "passed": 10993,
+        "notExecuted": 3,
+        "failures": 0,
+        "limit_offenders": [
+          "P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names 10.886 s > 10 s fast limit (passes 7/7 alone in ~1 s, 3/3 runs; already ledgered in docs/TEST_FLAKES.md, entry added for this run)"
+        ],
+        "verdict": "all tests green; the tier's only error is the calibrated slow-limit on the already-known load flake",
+        "evidence": "docs/reports/P856_assets/fast-tier-run2.txt"
+      }
+    },
+    "scorecard": {
+      "command": "python3 scripts/parity-scorecard.py",
+      "validated_rows": {"sim-rules-matrix.csv": 840},
+      "sim_headline": {"before_weighted": "67.92% (1279/1883)", "after_weighted": "68.24% (1285/1883)",
+                       "before_unweighted": "418/682 (61.29%)", "after_unweighted": "420/682 (61.58%)"},
+      "production_implemented_weight": {"before": 1279, "after": 1285},
+      "test_only_implemented_weight": {"before": 6, "after": 0},
+      "evidence": ["docs/reports/P856_assets/score-before.txt", "docs/reports/P856_assets/score-after.txt"]
+    },
+    "docker": {"command": "docker compose config", "result": "valid (new env vars default empty = per-game JSON preserved)"}
+  },
+  "ui_evidence": {
+    "tool": "tools/p856-options-proof",
+    "details_panel": ["docs/reports/P856_assets/game-details-options-on-classic.png", "docs/reports/P856_assets/game-details-options-on-modern.png", "docs/reports/P856_assets/game-details-options-off-modern.png"],
+    "skirmish_setup": ["docs/reports/P856_assets/skirmish-setup-options-classic.png", "docs/reports/P856_assets/skirmish-setup-options-modern.png"],
+    "observed": "GAME DETAILS shows FF FIRE: Yes / ALLY VIZ: Yes for the game registered with both options on, and FF FIRE: No / ALLY VIZ: No for the native-default game; the Single Player > Skirmish setup shows the two new rows 'Friendly fire: Off' and 'Allied visibility: Off'. The connect/server-browser and skirmish-setup screens are not repainted by HudStyle (both captures are pixel-identical apart from the selection), which is stated in the report rather than claimed as a style difference."
+  }
+}

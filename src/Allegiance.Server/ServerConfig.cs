@@ -114,6 +114,39 @@ public sealed class GameConfig
     /// <summary>Native bAllowAlliedRip, FedSrv/FedSrv.CPP:13387.</summary>
     public bool AllowAlliedRip { get; set; }
 
+    /// <summary>
+    /// P856 — native <c>MissionParams::bAllowFriendlyFire</c>
+    /// (<c>Igc/igc.h:1149</c>, "Allow friends to damage friends"). The native
+    /// default is <b>false</b>: <c>MissionParams::Reset</c> zeroes the struct
+    /// (<c>Igc/igc.h:1246</c>) and never assigns the flag, so a fresh game has
+    /// friendly fire off. Off means the same-side and allied damage gates in
+    /// <c>CshipIGC::ReceiveDamage</c> (<c>Igc/shipIGC.cpp:1222-1228</c>),
+    /// <c>CstationIGC::ReceiveDamage</c> (<c>Igc/stationIGC.cpp:126-133</c>),
+    /// <c>CmissileIGC::ReceiveDamage</c> (<c>Igc/missileigc.h:86-94</c>) and
+    /// <c>CprobeIGC::ReceiveDamage</c> (<c>Igc/probeigc.h:74-89</c>) suppress
+    /// non-repair friendly/allied damage. Reaches the mission as
+    /// <see cref="Allegiance.Core.Model.Mission.AllowFriendlyFire"/>.
+    /// </summary>
+    public bool AllowFriendlyFire { get; set; }
+
+    /// <summary>
+    /// P856 — native <c>MissionParams::bAllowAlliedViz</c>
+    /// (<c>Igc/igc.h:1127</c>, "ALLY"). Native's <c>MissionParams::Reset</c>
+    /// sets it explicitly false (<c>Igc/igc.h:1243</c>). When on, allied sides
+    /// see each other's models and share scans (<c>FedSrv/FedSrv.CPP:10893-10895</c>,
+    /// <c>:10989-11000</c>), the start map reveals allied home clusters
+    /// (<c>Igc/mapmakerigc.cpp:473-474</c> → <c>RevealAlliedClusters</c>,
+    /// <c>:1020-1058</c>) and an armed probe's first shot reveals it to allied
+    /// sides without scanners (<c>Igc/probeigc.cpp:448-463</c>). Reaches the
+    /// mission as <see cref="Allegiance.Core.Model.Mission.AllowAlliedViz"/>.
+    /// <para>Native's team screen also flips the <em>client's local copy</em> on
+    /// whenever an alliance exists (<c>WinTrek/teamscreen.cpp:2335-2337</c>) and
+    /// pushes it to the server through <c>MISSIONPARAMS</c>; this port has no
+    /// MISSIONPARAMS update path (P722), so the configured value is the
+    /// authoritative one — stated, not silently reinterpreted.</para>
+    /// </summary>
+    public bool AllowAlliedViz { get; set; }
+
     /// <summary>Human name, used in logs only.</summary>
     public string Name { get; set; } = "";
 
@@ -1203,6 +1236,9 @@ public static class ServerConfigLoader
         }
 
         ApplyGoalEnvironment(config, Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_GOALS"));
+        ApplyMissionOptionEnvironment(config,
+            Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE"),
+            Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ"));
         ApplyCli(config, cli);
         foreach (var game in config.Games) _ = game.ResolveGoals();
         return config;
@@ -1226,6 +1262,32 @@ public static class ServerConfigLoader
     public static void ApplyGoalEnvironment(ServerConfig config, string? value)
     {
         if (!string.IsNullOrWhiteSpace(value)) ApplyCli(config, [("goals", value)]);
+    }
+
+    /// <summary>P856 — the two native boolean mission options' environment
+    /// overrides (<c>ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE</c>,
+    /// <c>ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ</c>). Explicit parameters for the same
+    /// reason as <see cref="ApplyGoalEnvironment"/>: a test can drive precedence
+    /// without touching process-global state.</summary>
+    public static void ApplyMissionOptionEnvironment(ServerConfig config, string? friendlyFire, string? alliedViz)
+    {
+        var cli = new List<(string Key, string Value)>(2);
+        if (!string.IsNullOrWhiteSpace(friendlyFire)) cli.Add(("friendly-fire", friendlyFire));
+        if (!string.IsNullOrWhiteSpace(alliedViz)) cli.Add(("allied-viz", alliedViz));
+        if (cli.Count > 0) ApplyCli(config, cli);
+    }
+
+    /// <summary>P856 — the switch grammar the boolean mission options accept: an
+    /// explicit <c>true</c>/<c>false</c> (like the other boolean CLI keys), or the
+    /// container-friendly <c>1</c>/<c>0</c>.</summary>
+    private static bool TryParseOptionSwitch(string value, out bool result)
+    {
+        switch (value.Trim().ToLowerInvariant())
+        {
+            case "1": case "true": case "yes": case "on": result = true; return true;
+            case "0": case "false": case "no": case "off": result = false; return true;
+            default: result = false; return false;
+        }
     }
 
     /// <summary>Return value: number of CLI keys actually recognized.</summary>
@@ -1271,6 +1333,24 @@ public static class ServerConfigLoader
                     catch (JsonException ex) { throw new InvalidDataException($"--goals: {ex.Message}", ex); }
                     if (config.Games.Count == 0) throw new InvalidDataException("--goals requires a configured game");
                     foreach (var game in config.Games) { game.Goals = parsedGoals with { }; game.GameLengthSeconds = null; }
+                    recognized++; break;
+                case "friendly-fire":
+                case "friendlyfire":
+                case "allowfriendlyfire":
+                    // P856 — native bAllowFriendlyFire (igc.h:1149, default off).
+                    if (!TryParseOptionSwitch(value, out var friendlyFire))
+                        throw new InvalidDataException($"--friendly-fire must be 0/1 or true/false, got '{value}'");
+                    if (config.Games.Count == 0) throw new InvalidDataException("--friendly-fire requires a configured game");
+                    foreach (var game in config.Games) game.AllowFriendlyFire = friendlyFire;
+                    recognized++; break;
+                case "allied-viz":
+                case "alliedviz":
+                case "allowalliedviz":
+                    // P856 — native bAllowAlliedViz (igc.h:1127, default off).
+                    if (!TryParseOptionSwitch(value, out var alliedViz))
+                        throw new InvalidDataException($"--allied-viz must be 0/1 or true/false, got '{value}'");
+                    if (config.Games.Count == 0) throw new InvalidDataException("--allied-viz requires a configured game");
+                    foreach (var game in config.Games) game.AllowAlliedViz = alliedViz;
                     recognized++; break;
                 case "civs":
                     var ids = value.Split(',');

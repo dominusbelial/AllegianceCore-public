@@ -1288,6 +1288,17 @@ public sealed partial class Server
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;
+        // P856 — the two native create-game mission options, default off
+        // (MissionParams::Reset zeroes bAllowFriendlyFire, igc.h:1246; sets
+        // bAllowAlliedViz false, igc.h:1243). Same post-assembly wiring as
+        // ShowMap/AllowAlliedRip: the flags are mission policy, not map data.
+        mission.AllowFriendlyFire = g.AllowFriendlyFire;
+        mission.AllowAlliedViz = g.AllowAlliedViz;
+        // Native logs the option at mission generation (missionigc.cpp:4116
+        // "Allow Friendly Fire: %s"); both options are logged here so an
+        // operator can see what the advertised MISSIONDEF bits carry.
+        Console.WriteLine($"[boot] game '{g.Name}' options: Allow Friendly Fire: {(g.AllowFriendlyFire ? "yes" : "no")}"
+            + $", Allow Allied Viz: {(g.AllowAlliedViz ? "yes" : "no")}");
         mission.NpcWingmanAmmoResupply = g.NpcWingmanAmmoResupply;   // P767 / SIM-0100
         // P797 — the native mission options that reveal the map. Both default
         // false (igc.h:1244 bShowMap, igc.h:1313 bShowHomeSector), i.e. the port

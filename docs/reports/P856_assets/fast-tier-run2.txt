@@ -1,0 +1,9 @@
+P856 fast-tier run 2 (after the fix):
+fast/main Allegiance.Update.Tests: {'Passed': 28} (1.6s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/fast/Allegiance.Update.Tests-main.log
+fast/main Allegiance.Lobby.Tests: {'Passed': 82} (2.0s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/fast/Allegiance.Lobby.Tests-main.log
+fast/main Allegiance.ClientCore.MonoGame.Tests: {'Passed': 3584, 'NotExecuted': 3} (41.5s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/fast/Allegiance.ClientCore.MonoGame.Tests-main.log
+fast/main Allegiance.ClientCore.Tests: {'Passed': 1832} (195.4s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/fast/Allegiance.ClientCore.Tests-main.log
+fast/main Allegiance.Core.Tests: {'Passed': 5452} (303.5s); /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/fast/Allegiance.Core.Tests-main.log
+fast: 10993 tests, 312.8s, FAIL
+  ERROR: 1 Fast test executions exceeded the calibrated 10 second limit
+FAIL: /home/domingo/allegiance-pi-p856/TestResults/tiers-20261027T120844.018657Z/summary.json

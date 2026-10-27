@@ -1,0 +1,64 @@
+Test run for /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.71]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: "armed", damaged: False) [FAIL]
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: "armed", damaged: False) [6 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(Boolean allow, String kind, Boolean damaged) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 200
+   at InvokeStub_P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.78]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: True, visible: True) [FAIL]
+[xUnit.net 00:00:00.79]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: True, visible: True) [FAIL]
+[xUnit.net 00:00:00.79]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: True, visible: True) [FAIL]
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: True, visible: True) [3 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(Boolean allow, Boolean visible) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 265
+   at InvokeStub_P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: True, visible: True) [2 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(Boolean allow, Boolean visible) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 245
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: True, visible: True) [4 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(Boolean allow, Boolean visible) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 292
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.83]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: True, damaged: True) [FAIL]
+[xUnit.net 00:00:00.83]     Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: False, damaged: False) [FAIL]
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: True, damaged: True) [3 ms]
+  Error Message:
+   Assert.True() Failure
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(Boolean allow, Boolean damaged) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 213
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: False, damaged: False) [3 ms]
+  Error Message:
+   Assert.True() Failure
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(Boolean allow, Boolean damaged) in /home/domingo/allegiance-pi-p856/tests/Allegiance.Core.Tests/P856FriendlyFireAlliedVizTests.cs:line 213
+   at InvokeStub_P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     6, Passed:    18, Skipped:     0, Total:    24, Duration: 240 ms - Allegiance.Core.Tests.dll (net10.0)

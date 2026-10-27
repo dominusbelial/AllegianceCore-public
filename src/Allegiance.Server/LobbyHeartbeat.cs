@@ -425,8 +425,11 @@ internal sealed record LobbyRegisterRequest(
 /// mission: <c>Mission.AllowDevelopments</c> (<c>MissionParams.bAllowDevelopments</c>,
 /// igc.h:1128), <c>Mission.Lives</c> (<c>iLives</c>, igc.h:1185), the P191/P302/
 /// P303 win flags (<c>IsConquestGame</c>/<c>IsDeathMatchGame</c>/…, igc.h:1511-1540),
-/// <c>Mission.CountdownDuration</c> (<c>dtGameLength</c>, igc.h:1162) and
-/// <c>Mission.Stage</c> (<c>fInProgress</c>).</para>
+/// <c>Mission.CountdownDuration</c> (<c>dtGameLength</c>, igc.h:1162),
+/// <c>Mission.Stage</c> (<c>fInProgress</c>) and — P856 — the two create-game
+/// options <c>bAllowFriendlyFire</c> (<c>Mission.AllowFriendlyFire</c>,
+/// igc.h:1149) and <c>bAllowAlliedViz</c> (<c>Mission.AllowAlliedViz</c>,
+/// igc.h:1127).</para>
 /// </summary>
 public sealed record LobbyGameParams(
     bool AllowDevelopments,
@@ -442,7 +445,13 @@ public sealed record LobbyGameParams(
     bool GoalFlags,
     bool GoalTerritory,
     short MinRank,
-    short MaxRank)
+    short MaxRank,
+    // P856 — the two native create-game options, published so the directory
+    // (and through it the client's GAME DETAILS panel) carries the same facts
+    // the native client reads out of MissionParams. Optional trailing members so
+    // pre-P856 constructions keep their shape; both default to native's off.
+    bool AllowFriendlyFire = false,
+    bool AllowAlliedViz = false)
 {
     /// <summary>Native <c>c_cUnlimitedLives</c> (<c>igc.h:1007</c>).</summary>
     public const int UnlimitedLives = 0x7fff;
@@ -469,5 +478,8 @@ public sealed record LobbyGameParams(
         GoalFlags: m.FlagsEnabled,
         GoalTerritory: m.TerritoryEnabled,
         MinRank: -1,
-        MaxRank: 1000);
+        MaxRank: 1000,
+        // P856 — native bAllowFriendlyFire / bAllowAlliedViz (igc.h:1149,1127).
+        AllowFriendlyFire: m.AllowFriendlyFire,
+        AllowAlliedViz: m.AllowAlliedViz);
 }

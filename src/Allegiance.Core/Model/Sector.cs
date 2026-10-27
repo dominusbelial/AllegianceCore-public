@@ -2199,9 +2199,10 @@ public sealed class Sector : IClusterIgc
     /// <see cref="IOrdnance.Launcher"/>, and (friendly-fire gate,
     /// <c>shipIGC.cpp:1222-1228</c>) never damages a <em>ship</em> on the same
     /// <see cref="Ship.SideId"/>; both cases pass the round through (see
-    /// <see cref="Ship.ReceiveDamage"/>). A <b>probe</b> has no such gate — an
-    /// unarmed probe takes direct fire from any side (<c>probeigc.h:74-89</c>;
-    /// see <see cref="Probe.ReceiveDamage"/>). A ship whose hull reaches zero
+    /// <see cref="Ship.ReceiveDamage"/>). A <b>probe</b> has the native probe gate
+    /// instead: with friendly fire OFF an armed probe is immune to friendly and
+    /// allied fire, while a sensor or <c>c_eabmRescueAny</c> probe takes it
+    /// (<c>probeigc.h:74-89</c>; see <see cref="Probe.ReceiveDamage"/>). A ship whose hull reaches zero
     /// emits <c>KillShipEvent</c> <b>once</b> and is removed from the sector; a
     /// probe whose fraction reaches zero removes itself and raises
     /// <see cref="IIgcSite.ProbeDestroyedEvent"/> <b>once</b>, inside
@@ -2439,11 +2440,11 @@ public sealed class Sector : IClusterIgc
             else if (probe is not null)
             {
                 // ── PROBE TARGET (P100) ──
-                // Deliberately NO friendly-fire gate: the native probe damage
-                // formula has none for an unarmed probe (probeigc.h:74-89 blocks
-                // only an ARMED probe's same-side fire), so a probe takes direct
-                // fire from ANY side — a real, cited difference from the ship
-                // path above (shipIGC.cpp:1222-1228). See Probe.ReceiveDamage.
+                // The friendly-fire gate lives INSIDE Probe.ReceiveDamage, like
+                // native's (probeigc.h:74-89): an armed probe is immune to a
+                // friendly/allied launcher while friendly fire is off; a sensor
+                // or RescueAny probe always takes the hit. See
+                // Probe.ReceiveDamage.
                 if (probe.Dead) continue;              // already destroyed this step
                 if (ReferenceEquals(ord.Launcher, probe)) continue; // symmetric self-guard (never fires: a probe is never a launcher)
                 // P491: the armed probe's OWN round emerges from its own body
@@ -4967,13 +4968,18 @@ public sealed class Sector : IClusterIgc
     /// <see cref="SideVisibilityState.SetLastSpotter"/> so the discovery sweep can
     /// fill <c>OBJECT_SPOTTED</c>'s <c>otSpotter/oidSpotter</c> exactly as native
     /// (<c>FedSrv.CPP:10944,11055-11062</c>).</para>
-    /// <para><b>Alliance simplification.</b> The native allied-leg
-    /// (<c>pside-&gt;AlliedSides(...) &amp;&amp; bAllowAlliedViz</c>,
-    /// FedSrv.CPP:10894-10895) is dropped unconditionally — this port has no
-    /// alliance/<c>AlliedSides</c> concept, the same simplification every
-    /// other <c>AlliedSides</c>/<c>bAllowAlliedViz</c> gate in this arc has
-    /// already made (P107/P112/P115 precedent). Own-side is always visible;
-    /// every other side must pass the scanner-range test.</para>
+    /// <para><b>Allied visibility (P856).</b> Native's two <c>bAllowAlliedViz</c>
+    /// legs are implemented here, gated on the mission parameter exactly as
+    /// native's <c>&amp;&amp; bAllowAlliedViz</c> (<c>FedSrv.CPP:10893-10895</c>
+    /// and <c>:10989-11000</c>): an allied side sees an ally's models without a
+    /// scanner of its own, and a contact one ally's scanner spotted is shared
+    /// with the other allies (same last spotter). Friendliness is
+    /// <c>IsideIGC::AlliedSides</c> (<c>Igc/igc.h:4297-4305</c>) over the live
+    /// <c>CHANGE_ALLIANCE</c> groups plus the host/test override. With the
+    /// parameter at its native default (off) nothing changes. Sector-change
+    /// hiding (<c>FedSrv.CPP:10714-10728</c>) has no port counterpart: a model
+    /// that leaves the sector simply stops being a target, so there is nothing
+    /// to hide.</para>
     /// <para><b>Side universe.</b> Iterates <see cref="MissionSides"/> (the
     /// mission's full side set) when bound, so a side whose last scanner left
     /// the sector is still reconciled to <c>false</c>; falls back to the sides
@@ -5156,8 +5162,12 @@ public sealed class Sector : IClusterIgc
             : scannersBySide.Keys.ToArray();
 
         // P835 — per-target scan/write split scratch: one slot per side,
-        // allocated once per sweep and overwritten for every target.
-        var scanResults = new (bool, VisibilityParticipant)[sideIds.Count];
+        // allocated once per sweep and overwritten for every target. P856 adds
+        // the `Allied` flag: a side that sees the target only through the
+        // bAllowAlliedViz legs (FedSrv.CPP:10893-10895 instance, :10989-11000
+        // scan-sharing) is visible but did not scout it.
+        var scanResults = new (bool Seen, VisibilityParticipant Spotter, bool Allied)[sideIds.Count];
+        bool alliedViz = Mission?.AllowAlliedViz == true;
 
         foreach (var t in targets)
         {
@@ -5180,8 +5190,20 @@ public sealed class Sector : IClusterIgc
                 {
                     short sideId = sideIds[si];
                     bool seen = false;
+                    bool allied = false;
                     VisibilityParticipant spotter = default;
-                    if (sideId != t.SideId && scannersBySide.TryGetValue(sideId, out var scns))
+                    // P856 — native's allied instance branch
+                    // (FedSrv.CPP:10893-10895): with bAllowAlliedViz an allied
+                    // side always sees the model (both flags), no scanner
+                    // involved. Checked first, exactly as native orders it
+                    // before the last-spotter/scanner branches.
+                    if (alliedViz && sideId != t.SideId && t.SideId is { } targetSide &&
+                        Mission!.AreSidesFriendly(targetSide, sideId))
+                    {
+                        seen = true;
+                        allied = true;
+                    }
+                    else if (sideId != t.SideId && scannersBySide.TryGetValue(sideId, out var scns))
                     {
                         // P835 — the native last-spotter short-circuit
                         // (FedSrv.CPP:10896-10903): when the target's recorded
@@ -5218,8 +5240,25 @@ public sealed class Sector : IClusterIgc
                                 }
                             }
                     }
-                    results[si] = (seen, spotter);
+                    results[si] = (seen, spotter, allied);
                 }
+                // P856 — native's allied scan-sharing leg
+                // (FedSrv.CPP:10989-11000, "ALLY should be SCAN"): a target one
+                // ally's scanner spotted is visible to its other allies too,
+                // with that same scanner as their last spotter. One pass is
+                // enough because alliance groups are equivalence classes.
+                if (alliedViz && results.Length > 1)
+                    for (int si = 0; si < sideIds.Count; si++)
+                    {
+                        if (results[si].Seen || sideIds[si] == t.SideId) continue;
+                        for (int sj = 0; sj < sideIds.Count; sj++)
+                        {
+                            if (sj == si || !results[sj].Seen) continue;
+                            if (!Mission!.AreSidesFriendly(sideIds[si], sideIds[sj])) continue;
+                            results[si] = (true, results[sj].Spotter, true);
+                            break;
+                        }
+                    }
             }
 
             // Write phase — flip the flags on the computed result
@@ -5240,8 +5279,8 @@ public sealed class Sector : IClusterIgc
                 {
                     short sideId = sideIds[si];
                     if (sideId == t.SideId) continue;
-                    var (seen, spotter) = results[si];
-                    if (seen && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
+                    var (seen, spotter, allied) = results[si];
+                    if (seen && !allied && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
                     t.Body.SideVisibility.SetSideVisibility(sideId, seen);
                     // P797 — record (or clear) the side's last spotter, native's
                     // sv.pLastSpotter(s) / sv.pLastSpotter(NULL) (FedSrv.CPP:10944,

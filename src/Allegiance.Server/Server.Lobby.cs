@@ -3712,6 +3712,12 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // server now fills it from the configured game length so the
                 // client's game-state clock can show countdown remaining.
                 Goals = goalMission.Goals with { },
+                // P856 — the two native create-game options ride the same
+                // MissionParams bitfield block native's client reads
+                // (bAllowAlliedViz bit 6, bAllowFriendlyFire bit 28;
+                // igc.h:1127,1149), so a joining client sees the setting.
+                AllowFriendlyFire = goalMission.AllowFriendlyFire,
+                AllowAlliedViz = goalMission.AllowAlliedViz,
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,
@@ -3788,6 +3794,12 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
                 Goals = goalMission.Goals with { },
+                // P856 — the two native create-game options ride the same
+                // MissionParams bitfield block native's client reads
+                // (bAllowAlliedViz bit 6, bAllowFriendlyFire bit 28;
+                // igc.h:1127,1149), so a joining client sees the setting.
+                AllowFriendlyFire = goalMission.AllowFriendlyFire,
+                AllowAlliedViz = goalMission.AllowAlliedViz,
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,

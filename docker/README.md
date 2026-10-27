@@ -203,3 +203,33 @@ or `--goals '{"teamMoney":2.5}'`. CLI overrides environment, which overrides JSO
 These select the rules and initial objectives; showcase bots acquire goal-specific
 strategies in later P832 slices. See [P832a](../docs/reports/P832A_GAME_GOALS.md)
 for thresholds, presets and local/rig recipes.
+
+### Native create-game options: friendly fire and allied visualization (P856)
+
+Native's create-game screen carries `bAllowFriendlyFire` ("Allow friends to
+damage friends", `Igc/igc.h:1149`) and `bAllowAlliedViz` (`Igc/igc.h:1127`).
+Both are **off** by native default (`MissionParams::Reset`, `Igc/igc.h:1243,1246`),
+which is what omitting them preserves. Set them per game:
+
+```json
+{"games": [{"name": "Main", "map": "XXV_simple.igc", "teams": 2,
+            "allowFriendlyFire": true, "allowAlliedViz": true}]}
+```
+
+or for every configured game at once:
+
+```sh
+ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE=1 ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ=1 \
+  docker compose up -d server
+```
+
+The CLI equivalents `--friendly-fire 0|1` and `--allied-viz 0|1` override the
+environment, which overrides the JSON. With friendly fire off, same-side and
+allied damage is suppressed for ships, stations, missiles and armed probes
+(sensor and RescueAny probes stay damageable, `Igc/probeigc.h:74-89`). With
+allied visualization on, allied sides see each other's models, share scans, get
+the allied home-cluster reveal at start and see an armed probe's first shot
+without a scanner of their own. Both settings reach joining clients in the
+`MISSIONDEF(38)` parameter bitfield block and are published to the lobby
+directory (the client's GAME DETAILS panel shows `FF FIRE:` / `ALLY VIZ:`).
+See [P856](../docs/reports/P856_GAME_OPTIONS_FF_ALLIEDVIZ.md).
