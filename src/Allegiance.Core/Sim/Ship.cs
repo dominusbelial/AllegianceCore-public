@@ -645,8 +645,10 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>
     /// Sim-time of the ship's most recent warp transit. Players use the native
     /// accepted-update handshake (FedSrv/fsship.cpp:1173-1190). The sector's
-    /// additional cooldown is a retained port adaptation, including for NPCs
-    /// (native NPCs remain ready, fsship.cpp:74-82).
+    /// cooldown window (<see cref="Sector.WarpCooldownSeconds"/>) applies to
+    /// players only — native NPCs remain Ready with no cooldown
+    /// (fsship.cpp:74-82), so P857 exempts them from the window
+    /// (Sector.ResolveAlephShip).
     /// </summary>
     public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
@@ -664,23 +666,24 @@ public sealed partial class Ship : Model, IShipIgc
     public double TimeNextWarp { get; set; } = double.NegativeInfinity;
 
     /// <summary>P760 — a ship may enter an aleph only when it is warp-ready.
-    /// Players use the update handshake; NPCs are always ready and rely on the
-    /// <see cref="LastWarpTime"/> cooldown.</summary>
+    /// Players use the update handshake; NPCs are always ready (P857: with no
+    /// <see cref="LastWarpTime"/> cooldown — see Sector.ResolveAlephShip).</summary>
     public bool WarpReady => IsNpc || PlayerWarpState == WarpState.Ready;
 
     /// <summary>
     /// P591b — the warp this ship most recently arrived <b>through</b> (the
     /// destination-side partner warp it emerged at), or <c>-1</c> once it has
-    /// cleared that aleph's transit volume. The warp re-entry guard
-    /// (<c>Model.Sector.ResolveAlephCollisions</c>) refuses to re-transit this
-    /// warp while the ship is still inside its transit volume, completing the
+    /// cleared that aleph's transit volume. The player-only warp re-entry guard
+    /// (<c>Model.Sector.ResolveAlephShip</c>) refuses to re-transit this
+    /// warp while a PLAYER is still inside its transit volume, completing the
     /// native "don't re-enter the arrival aleph" behaviour (the emergent
     /// outward velocity + <c>m_warpState</c> cooldown, <c>fsship.cpp:71-137,
     /// 1185-1191</c>) that the flat 2&nbsp;s <see cref="LastWarpTime"/>
-    /// cooldown alone cannot guarantee for a slow/heavy ship that turns back
-    /// toward the aleph it just came through (the measured mine-layer
-    /// ping-pong). Set by the host transit on the sim thread and cleared by
-    /// the guard once the ship leaves the volume.
+    /// cooldown alone cannot guarantee for a slow/heavy player that turns back
+    /// toward the aleph it just came through. Native NPCs are not latched
+    /// (P857); the guard is a non-native, opt-in safety net, OFF by default
+    /// (<c>Sector.WarpReEntryGuardEnabled</c>). Set by the host transit on the
+    /// sim thread and cleared by the guard once the ship leaves the volume.
     /// </summary>
     public int LastArrivalWarpId { get; set; } = -1;
 
