@@ -1958,11 +1958,10 @@ public sealed class Sector : IClusterIgc
     /// ≈ 3.3&nbsp;u with exit wobble, P777); an off-centre hit (error ≳ 0.35,
     /// i.e. d/R ≳ 0.47 for r = 10) can leave the hull touching it, natively too.
     /// Players are covered by the NoUpdate handshake
-    /// (<c>fsship.cpp:79-82,1185-1191</c>), port NPCs by this port-only cooldown
-    /// (<c>fsship.cpp:129-132</c>, <see cref="AlephConeHitTest"/>). Native drones
-    /// never leave <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown
-    /// at all; the NPC use of this constant is <b>port-only</b> and is left in
-    /// place (removing it is out of P776's scope).</para>
+    /// (<c>fsship.cpp:79-82,1185-1191</c>). Native drones
+    /// never leave <c>warpReady</c> (<c>fsship.cpp:74-82</c>) and have no cooldown
+    /// at all; P857 gates this window on <c>IsNpc == false</c>, so it no longer
+    /// applies to NPCs (see <see cref="ResolveAlephShip"/>).</para>
     /// </summary>
     public const double WarpCooldownSeconds = 2.0;
 
@@ -1975,8 +1974,8 @@ public sealed class Sector : IClusterIgc
     /// is clear of the cone (worst ≈ 3.3&nbsp;u with exit wobble, P777); an
     /// off-centre hit (error ≳ 0.35, i.e. d/R ≳ 0.47 for r = 10) can leave the
     /// hull touching it, natively too. Players are covered by the NoUpdate
-    /// handshake (<c>fsship.cpp:79-82,1185-1191</c>), port NPCs by this port-only
-    /// cooldown (<c>fsship.cpp:129-132</c>; <see cref="AlephConeHitTest"/>, P776).
+    /// handshake (<c>fsship.cpp:79-82,1185-1191</c>). P857: native NPCs have no
+    /// arrival latch at all, so the guard applies to <c>IsNpc == false</c> only.
     /// The guard was added in P591b to stop a real, measured bounce caused
     /// by a routing bug this port had; once that root cause is fixed (P591c) the
     /// guard should fire ≈0 times and acts purely as insurance. It is therefore
@@ -4189,10 +4188,15 @@ public sealed class Sector : IClusterIgc
     {
         if (ship.Dead) return;                   // the dead cannot warp
         if (ship.Mission is null) return;        // unplaced ship has no host to route to
-        // P760 — players use the native update handshake (WarpState); NPCs
-        // keep the existing LastWarpTime cooldown (fsship.cpp:79-82).
+        // P760/P857 — players use the native update handshake (WarpState); the
+        // LastWarpTime window mirrors native's player re-arm floor
+        // (fsship.cpp:1185-1191). Native NPCs never leave warpReady
+        // (fsship.cpp:74-82) and have NO cooldown: P857 exempts them, so an NPC
+        // that re-enters a cone warps at once exactly as native (it normally
+        // clears the arrival aleph via the cruise-speed transit + exit push,
+        // P591c, so re-entry is the exception not the rule).
         if (!ship.WarpReady) return;
-        if (now - ship.LastWarpTime < WarpCooldownSeconds) return;
+        if (!ship.IsNpc && now - ship.LastWarpTime < WarpCooldownSeconds) return;
 
         // Ship radius is the half-length, exactly as the combat pass builds
         // its sphere (Sector.cs:174, shipIGC.cpp:1419).
@@ -4212,9 +4216,10 @@ public sealed class Sector : IClusterIgc
         // destination); if absent (e.g. the ship moved on), release too.
         // The guard is the P591c-documented NON-NATIVE safety net, gated by
         // WarpReEntryGuardEnabled so tests/proof can show the routing fix
-        // holds on its own. P777b: a plain loop instead of
-        // _warps.FirstOrDefault(lambda) — no closure on this per-ship path.
-        if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId >= 0)
+        // holds on its own. P857: the guard applies to PLAYERS only — native
+        // NPCs are not latched (fsship.cpp:74-82). P777b: a plain loop instead
+        // of _warps.FirstOrDefault(lambda) — no closure on this per-ship path.
+        if (Sector.WarpReEntryGuardEnabled && !ship.IsNpc && ship.LastArrivalWarpId >= 0)
         {
             ResolvedWarp? arrival = null;
             for (int i = 0; i < _warps.Count; i++)
@@ -4256,13 +4261,15 @@ public sealed class Sector : IClusterIgc
             // cone (worst ≈ 3.3 u with exit wobble, P777); an off-centre hit
             // (error ≳ 0.35, i.e. d/R ≳ 0.47 for r = 10) can leave the hull
             // touching it, natively too. Players are covered by the NoUpdate
-            // handshake (fsship.cpp:79-82,1185-1191), port NPCs by this
-            // port-only cooldown. This guard predates the P776 geometry fix;
+            // handshake (fsship.cpp:79-82,1185-1191). P857: native NPCs have
+            // neither the handshake nor a latch and still avoid the bounce
+            // (cruise-speed transit + exit push, P591c), so the guard applies
+            // to PLAYERS only. This guard predates the P776 geometry fix;
             // the P591c routing fix makes it fire ≈0 times in practice, so it is
             // OPT-IN and OFF by default (P594), armed only when the operator
             // enables WarpReEntryGuard. The latch is released above the
             // moment the ship clears the volume.
-            if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
+            if (Sector.WarpReEntryGuardEnabled && !ship.IsNpc && ship.LastArrivalWarpId == warp.Warp.WarpId
                 && ship.IntendedNextWarpId != warp.Warp.WarpId)
             {
                 // Only hold the UNINTENTIONAL drift back through the arrival

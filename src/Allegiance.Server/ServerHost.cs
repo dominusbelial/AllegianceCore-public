@@ -1616,8 +1616,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // at r = 50 to 3.8 u at r = 5, measured). Off-centre hits can leave the hull
         // touching the cone — natively too (P777 measured; see the report).
         // Players are covered by the NoUpdate handshake
-        // (fsship.cpp:79-82,1185-1191); port NPCs by the port-only cooldown
-        // (Sector.WarpCooldownSeconds).
+        // (fsship.cpp:79-82,1185-1191); native NPCs have neither a handshake nor a
+        // cooldown — P857 removes the port's NPC cooldown/latch (Sector.ResolveAlephShip),
+        // matching native where the cruise-speed transit + exit push (P591c) clears the cone.
 
         // 4. Sector reassignment — the whole point (C++ GetIGCShip()->SetCluster,
         //    fsship.cpp:134): move the model between the two sectors' lists and
