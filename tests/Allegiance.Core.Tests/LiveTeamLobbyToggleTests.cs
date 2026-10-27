@@ -329,7 +329,7 @@ public class LiveTeamLobbyToggleTests
         int dg = PumpUntil(server,
             () => b.DelPositionReqs.Any(d => d.SideId == side0 && d.Reason == DelPositionReqReason.SidesLocked), 800);
         Assert.True(dg < 800, "locked-side POSITIONREQ was not refused with DPR_SidesLocked");
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // NOT seated
+        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // NOT seated — refusal precedes any removal
         Assert.Contains(b.DelPositionReqs, d => d.SideId == side0 && d.Reason == DelPositionReqReason.SidesLocked);
         Assert.Empty(a.DelPositionReqs);                        // requester-only, not broadcast
 
@@ -344,7 +344,8 @@ public class LiveTeamLobbyToggleTests
         b.SendPositionReq(side0);
         int pg = PumpUntil(server, () => a.PositionReqs.Any(p => p.ShipId == bId && p.SideId == side0), 800);
         Assert.True(pg < 800, "after unlock, the request did not resume P184's pending-broadcast path");
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // still not seated (leader approval needed)
+        // P852 — pending switcher is lobby-parked (native fsmission.cpp:4749-4751).
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // still not seated (leader approval needed)
         Assert.DoesNotContain(b.DelPositionReqs, d => d.Reason == DelPositionReqReason.SidesLocked);
     }
 
@@ -378,7 +379,8 @@ public class LiveTeamLobbyToggleTests
         b.SendPositionReq(side0);
         int rg = PumpUntil(server, () => a.PositionReqs.Any(p => p.ShipId == bId), 800);
         Assert.True(rg < 800, "pending request not broadcast");
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // still pending
+        // P852 — pending switcher is lobby-parked (native fsmission.cpp:4749-4751).
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // still pending
 
         a.ResetLeadershipSignals();
         b.ResetLeadershipSignals();

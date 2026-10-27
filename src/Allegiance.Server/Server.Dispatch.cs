@@ -927,6 +927,19 @@ public sealed partial class Server
                         }
                         else
                         {
+                            // P852 — native RequestPosition removes the switcher
+                            // from their CURRENT side (RemovePlayerFromSide
+                            // QSR_SwitchingSides) BEFORE the request pends
+                            // (fsmission.cpp:4749-4751): they wait in the team
+                            // lobby, off their old side, until the leader answers.
+                            // The port parks the ship on SideTeamLobby (-2) via
+                            // MoveToTeamLobby — the same real remove-from-side path
+                            // (leader succession + payday + whole-mission
+                            // QUIT_SIDE(126)) the squad boots use. An already-parked
+                            // (or never-seated) ship skips this, exactly native's
+                            // `GetSide() != SIDE_TEAMLOBBY` guard (fsmission.cpp:4748).
+                            if (reqLive.Ship.SideId is { } pendingFromSide && pendingFromSide != SideTeamLobby)
+                                MoveToTeamLobby(mission, reqLive.Ship, QuitSideReason.SwitchingSides);
                             // Side has a leader: broadcast the pending request and
                             // record it for the leader to approve.
                             BroadcastPositionReq(mission, reqLive.Ship.Id, pr.SideId);

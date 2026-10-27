@@ -166,7 +166,16 @@ public sealed class P775PlayerInfoMomentsTests
         return n;
     }
 
-    /// <summary>Logon + explicit side seat (the side-select TryJoinSide path).</summary>
+    /// <summary>Logon + seat. P852 — the explicit POSITIONREQ send is gone:
+    /// with the native-faithful RequestPosition park (fsmission.cpp:4749-4751),
+    /// a post-seat explicit side request on a leader-vetted side (AutoAccept
+    /// off) now legitimately parks the bot in the team lobby, changing the
+    /// announcement stream this file measures. The seat itself always came
+    /// from the bot's lazy POSITIONREQ(NA) auto-pick drain (round-robin sides;
+    /// the explicit send never moved anyone — a pending request used to keep
+    /// the requester seated, the SIM-0608 divergence P852 fixed), so dropping
+    /// it preserves the seating this file's moment assertions were written
+    /// against.</summary>
     private static FltBot Seat(Srv server, string name, short sideId)
     {
         var bot = new FltBot();
@@ -174,7 +183,6 @@ public sealed class P775PlayerInfoMomentsTests
         bot.SendLogonRequest(Request(name));
         int got = PumpUntil(server, () => bot.Ack is not null, 4000);
         Assert.True(got < 4000, $"{name}: no logon ack");
-        bot.SendPositionReq(sideId);
         got = PumpUntil(server, () => bot.ShipAssignment is not null, 6000);
         Assert.True(got < 6000, $"{name}: no ship assignment");
         return bot;

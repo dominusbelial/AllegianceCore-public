@@ -11,21 +11,30 @@ public sealed partial class Server
     // Unported invitations, bans and squads have no corresponding state.
     private DelPositionReqReason? CheckPositionRequest(Mission mission, short sideId, Ship? ship)
         => CheckPositionRequestCore(mission, sideId, ship,
-            ship is not null && ConnOf(ship) is { } conn && HarnessGrantFor(conn) is not null);
+            ship is not null && ConnOf(ship) is { } conn && HarnessGrantFor(conn) is not null,
+            ship is not null ? ConnOf(ship) : null, null);
 
     private DelPositionReqReason? CheckInitialPositionRequest(ConnectionId from, string? name, Mission mission, short sideId)
-        => CheckPositionRequestCore(mission, sideId, null, IsHarnessPeer(from, name));
+        => CheckPositionRequestCore(mission, sideId, null, IsHarnessPeer(from, name), from, name);
 
-    private DelPositionReqReason? CheckPositionRequestCore(Mission mission, short sideId, Ship? ship, bool authenticatedBot)
+    private DelPositionReqReason? CheckPositionRequestCore(Mission mission, short sideId, Ship? ship, bool authenticatedBot,
+        ConnectionId? peer, string? name)
     {
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
         if (side is null || !side.Active) return DelPositionReqReason.SideGone;
-        if (mission.Stage == MissionStage.Started && ship?.SideId is not null && ship.SideId != sideId)
+        var game = GameSettingsSafe(mission);
+        // Native's two no-defections gates (fsmission.cpp:4583-4590) both
+        // carry an explicit SIDE_TEAMLOBBY exemption (branch 1: lastSide !=
+        // TEAMLOBBY; branch 2: psideCurrent != TEAMLOBBY) — a player parked in
+        // the team lobby (the port's SideTeamLobby park, P852) may always
+        // request a side. Only the current-side branch (4587-4589) is portable:
+        // the port keeps no GetLastSide() state (fsmission.cpp:4584-4585's
+        // last-side branch is unportable — stated in the P852 report).
+        if (mission.Stage == MissionStage.Started && !game.AllowDefections
+            && ship?.SideId is { } currentSide && currentSide != SideTeamLobby && currentSide != sideId)
             return DelPositionReqReason.NoDefections;
         if (mission.LockSides) return DelPositionReqReason.SidesLocked;
         if (mission.Stage == MissionStage.Over) return DelPositionReqReason.ServerPaused;
-        int index = _missions.IndexOf(mission);
-        var game = index >= 0 && index < _config.Games.Count ? _config.Games[index] : new GameConfig();
         int Count(short sid) => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission)
             && !ReferenceEquals(l.Ship, ship) && l.Ship.SideId == sid);
         int count = Count(sideId);
@@ -58,6 +67,26 @@ public sealed partial class Server
                 if (active.Any(other => RankSum(sideId) > RankSum(other.Id)))
                     return DelPositionReqReason.TeamBalance;
             }
+        }
+        // P852 — native's squad-game join gates (fsmission.cpp:4708-4721),
+        // evaluated after the capacity/balance gates: an OCCUPIED side only
+        // accepts members of the side's squad (DPR_WrongSquad; a side with no
+        // squad accepts everyone — native GetIsMemberOfSquad(NA) is true,
+        // fsship.cpp:1359-1362), and an EMPTY side only accepts a player who
+        // can lead a squad (DPR_CantLeadSquad; native
+        // GetPreferredSquadToLead() == NA, fsship.cpp:1397-1417 — leader or
+        // assistant-leader of some squad; the port collapses ASL to CanLead,
+        // P820b's claim shape). Only gated on mission.SquadGame, exactly like
+        // every other squad rule (P820c).
+        if (mission.SquadGame)
+        {
+            if (Count(sideId) > 0)
+            {
+                if (ship is not null && ConnOf(ship) is { } memberPeer && !PeerIsMemberOfSquad(memberPeer, side.SquadId))
+                    return DelPositionReqReason.WrongSquad;
+            }
+            else if (peer is not { } squadPeer || PeerSquads(squadPeer)?.Any(s => s.CanLead) != true)
+                return DelPositionReqReason.CantLeadSquad;
         }
         return null;
     }

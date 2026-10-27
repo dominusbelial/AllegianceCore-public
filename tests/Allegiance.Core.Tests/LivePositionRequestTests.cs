@@ -295,7 +295,12 @@ public class LivePositionRequestTests
                && b.PositionReqs.Any(p => p.ShipId == bId && p.SideId == side0), 800);
         Assert.True(got < 800, "occupied-side request did not broadcast POSITIONREQ(40)");
 
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // NOT seated yet
+        // P852 — while pending the requester is parked on SIDE_TEAMLOBBY (-2):
+        // native RequestPosition removes the switcher from their old side
+        // (RemovePlayerFromSide QSR_SwitchingSides) BEFORE the request pends
+        // (fsmission.cpp:4749-4751); they wait in the team lobby.
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // NOT seated yet
+        Assert.Contains(b.QuitSides, q => q.ShipId == bId && q.Reason == QuitSideReason.SwitchingSides);
         Assert.Empty(b.JoinSides);                              // no JOIN_SIDE
         Assert.Empty(b.SetTeamLeaders);
     }
@@ -392,7 +397,10 @@ public class LivePositionRequestTests
                && b.DelPositionReqs.Any(d => d.ShipId == bId && d.SideId == side0 && d.Reason == DelPositionReqReason.Rejected), 800);
         Assert.True(got < 800, "reject did not broadcast DELPOSITIONREQ(DPR_Rejected)");
 
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // unseated
+        // P852 — after the rejection the requester is still lobby-parked (-2),
+        // not back on their old side (native SetSide(..., SIDE_TEAMLOBBY),
+        // fsmission.cpp:1123).
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // unseated
         Assert.Empty(b.JoinSides);
         // Pending cleared: a subsequent accept by the leader is a silent no-op.
         a.ResetLeadershipSignals();
@@ -452,7 +460,7 @@ public class LivePositionRequestTests
         Assert.True(PumpUntil(server, () => c.Pings.Any(p => p.TimeClient == barrier), 20000) < 20000,
             "non-leader ACK dispatch barrier did not arrive");
 
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // still unseated
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // still unseated — lobby-parked (P852)
         Assert.Empty(c.JoinSides);
         Assert.Empty(c.PositionReqs);
         Assert.Empty(c.DelPositionReqs);
@@ -520,7 +528,7 @@ public class LivePositionRequestTests
         a.SendPositionAck(bId, side0, accepted: true);
         Flush(server);
         Assert.Empty(b.JoinSides);   // never seated
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // lobby-parked (P852)
 
         // A DIFFERENT peer (C, not the leader) sending DPR_Canceled for B is refused.
         c.ResetLeadershipSignals();
@@ -528,7 +536,7 @@ public class LivePositionRequestTests
         c.SendDelPositionReq(bId, side0, DelPositionReqReason.Canceled);
         Flush(server);
         Assert.DoesNotContain(a.DelPositionReqs, d => d.ShipId == bId);   // no relay of the illegal cancel
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // lobby-parked (P852)
     }
 
     /// <summary>⭐ The leader rejecting directly via DELPOSITIONREQ(DPR_Rejected)
@@ -567,7 +575,7 @@ public class LivePositionRequestTests
             () => b.DelPositionReqs.Any(d => d.ShipId == bId && d.SideId == side0 && d.Reason == DelPositionReqReason.Rejected), 800);
         Assert.True(got < 800, "leader reject via DELPOSITIONREQ not relayed");
 
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // unseated
+        Assert.Equal((short)-2, SideOfShip(ShipOf(server, bId)));   // unseated — lobby-parked (P852)
         Assert.Empty(b.JoinSides);
         // Pending cleared: subsequent accept no-op.
         a.ResetLeadershipSignals();

@@ -9,6 +9,17 @@ public sealed partial class Server
     private readonly HashSet<Mission> _restartWarnings = [];
 
     private GameConfig GameSettings(Mission mission) => _config.Games[_missions.IndexOf(mission)];
+
+    /// <summary>P852 — bounds-safe <see cref="GameSettings"/>: the P655-style
+    /// test harnesses (and any direct-rule caller) can reach the join/ready
+    /// rules with a mission whose game config entry is absent; native's
+    /// MissionParams always exist, so fall back to a default config
+    /// (native defaults, igc.h:1333-1334) instead of throwing.</summary>
+    private GameConfig GameSettingsSafe(Mission mission)
+    {
+        int index = _missions.IndexOf(mission);
+        return index >= 0 && index < _config.Games.Count ? _config.Games[index] : new GameConfig();
+    }
     private bool HasMissionPlayers(Mission mission) =>
         _peerShips.Values.Any(p => ReferenceEquals(p.Ship.Mission, mission));
     private bool HasMinimumPlayers(Mission mission) => mission.Sides.All(side =>
