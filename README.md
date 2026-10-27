@@ -226,6 +226,27 @@ counts/bytes by fmid and peer, and `[inbound-window]` retains a 100-tick histogr
 including drain time. These detailed logs are opt-in. See the
 [P673 report](docs/reports/P673_RECEIVE_DECOUPLE.md) for local A/B evidence.
 
+**Private games (by invitation, P854)** — a host can restrict a game to an
+invitation list by adding per-side lists to that game's entry in `server.json`:
+
+```json
+"games": [
+  { "name": "Members Only", "map": "XXV_simple.igc", "teams": 2, "civIds": [1, 3],
+    "sideNames": ["Alpha", "Bravo"],
+    "sideInvitations": { "0": ["PilotA", "PilotB"], "1": ["PilotC"] } }
+]
+```
+
+`sideInvitations` maps a side index to the list of players allowed to join it
+(matches native `MissionParams::nInvitationListID` + the per-row
+`(iTeam, szSubject)` SQL invitation lists; the port loads them from config at
+mission assembly instead of SQL). In a **squad game** (`"squadGame": true`) each
+entry is a **squad name** matched against the player's active squads; otherwise
+each entry is a player **callsign**, matched case-insensitively — exactly native
+`CFSSide::IsInvited` (fsside.cpp:34-64). A player invited to no side is refused
+at mission entry (`DPR_PrivateGame`); a player invited to one side cannot join
+another. Empty/absent = a fully public game (the default).
+
 **Client** — always a Release build; join *before* bots spawn so you see the whole battle:
 
 ```bash

@@ -16,7 +16,8 @@
       "goals": {},
       "allowFriendlyFire": false,
       "allowAlliedViz": false,
-      "sideNames": [ "Alpha", "Bravo" ]
+      "sideNames": [ "Alpha", "Bravo" ],
+      "sideInvitations": {}
     }
   ],
   "liveSettings": {

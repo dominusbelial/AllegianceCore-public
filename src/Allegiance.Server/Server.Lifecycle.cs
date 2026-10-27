@@ -1312,6 +1312,12 @@ public sealed partial class Server
         // P820c — bSquadGame (igc.h:1142): only a squad game derives a side's
         // squad / boots non-members / relays SET_TEAM_INFO (default false).
         mission.SquadGame = g.SquadGame;
+        // P854 — private game by invitation. The port's config source is already in
+        // memory, so the lists load here synchronously (native's async SQL window,
+        // FedSrv.CPP:1307-1318, is normally nil here); the gates are nonetheless safe
+        // if a future source defers LoadInvitations (empty lists ⇒ refuse, as native).
+        mission.RequiresInvitation = g.SideInvitations.Values.Any(l => l is { Count: > 0 });
+        mission.LoadInvitations(g.SideInvitations.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<string>)kv.Value));
         // P799 — MissionParams::iLives (igc.h:1185): the real per-player life
         // budget, defaulting to the unlimited sentinel. Sent verbatim in the
         // MISSIONDEF(38) slot the lives badge reads (console.cpp:812-817) and the
