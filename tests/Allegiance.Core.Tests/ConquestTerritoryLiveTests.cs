@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
@@ -348,7 +350,15 @@ public sealed class ConquestTerritoryLiveTests
     /// must-fail-if-removed proof of capture → recompute → broadcast → GameOver.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over()
+    public void Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over() =>
+        VerifyWinningCapture(waitForRotationRankings: false);
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Capture_rankings_remain_verifiable_after_the_next_mission_rankings_arrive() =>
+        VerifyWinningCapture(waitForRotationRankings: true);
+
+    private static void VerifyWinningCapture(bool waitForRotationRankings)
     {
         Require.Artwork();
         using var seat = Seat(new() { ConquestPercentage = 65 }, new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
@@ -356,7 +366,24 @@ public sealed class ConquestTerritoryLiveTests
         var target = seat.Target;          // the side-B Flag station
         var mission = seat.Server.Missions[0];
 
+        seat.Server.FlushBroadcastSnapshots();
         foreach (var b in seat.Bots) { b.ResetGameStates(); b.ResetGameOvers(); b.ResetStationCaptures(); }
+
+        var published = new ConcurrentQueue<(ConnectionId Peer, ushort Fmid)>();
+        if (waitForRotationRankings)
+            seat.Server.TestPublicationCapture = (peer, bytes, key, guaranteed) =>
+            {
+                foreach (var message in FedPacket.Unpack(bytes))
+                {
+                    ushort fmid = FedMessageHeader.Read(message).Fmid;
+                    if (fmid is StationCapture.Fmid or GameState.Fmid or GameOver.Fmid)
+                    {
+                        Assert.Equal(0, key);
+                        Assert.True(guaranteed);
+                        published.Enqueue((peer, fmid));
+                    }
+                }
+            };
 
         // Native starts each side at 100/nTeams (missionigc.cpp:3859-3896),
         // then station events recompute actual ownership. No premature win.
@@ -366,10 +393,42 @@ public sealed class ConquestTerritoryLiveTests
         // Fly the boardable capturer into the target's dock radius — the next
         // sector tick's dock pass captures it (P126), triggering the recompute.
         // P450 (shipIGC.cpp:849-851): capture first needs the base's shields down.
-        DropShield(target);
-        capturer.Position = AtTarget;
-        PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over, 9000);
-        Assert.True(mission.Stage == MissionStage.Over, "conquest win must flip the mission to Over");
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var publisher = seat.Server.TestPublisher;
+        long coalesced = publisher?.CoalescedSnapshots ?? 0;
+        try
+        {
+            if (waitForRotationRankings)
+            {
+                Assert.NotNull(publisher);
+                // Hold one pre-capture tick in the publisher while the real
+                // capture/rotation and a later tick fill its pending snapshot.
+                publisher.BeforeEncode = () =>
+                {
+                    entered.Set();
+                    if (!release.Wait(TimeSpan.FromSeconds(30)))
+                        throw new TimeoutException("capture proof did not release the publisher");
+                };
+                seat.Server.TickSim();
+                Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            }
+            DropShield(target);
+            capturer.Position = AtTarget;
+            PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over, 9000);
+            Assert.True(mission.Stage == MissionStage.Over, "conquest win must flip the mission to Over");
+            if (waitForRotationRankings)
+            {
+                seat.Server.TickSim();
+                Assert.True(publisher!.CoalescedSnapshots > coalesced,
+                    "capture/rotation traffic must coalesce with a later tick");
+            }
+        }
+        finally
+        {
+            if (publisher is not null) publisher.BeforeEncode = null;
+            release.Set();
+        }
 
         // The captured station really flipped to the capturing side.
         Assert.Equal(seat.SideA, target.SideId);
@@ -378,12 +437,32 @@ public sealed class ConquestTerritoryLiveTests
         Assert.Equal((byte)80, mission.Sides[0].ConquestPercent);
         Assert.Equal((byte)20, mission.Sides[1].ConquestPercent);
 
-        // Whole-mission GAME_STATE(155): every peer received it with the new arrays.
-        PumpUntil(seat.Server, () => AllGameStates(seat).Length >= seat.Bots.Length, 6000);
-        Assert.True(AllGameStates(seat).Length >= seat.Bots.Length,
-            $"every peer must receive GAME_STATE; got {AllGameStates(seat).Length}/{seat.Bots.Length}");
-        foreach (var gs in AllGameStates(seat))
+        if (waitForRotationRankings)
         {
+            // Deliberately finish receiving the fresh mission's join burst before
+            // inspecting the winning capture, without relying on host load.
+            Assert.True(PumpUntil(seat.Server,
+                () => seat.Bots.All(b => b.GameStates.Count >= 2), 6000) < 6000);
+            foreach (var bot in seat.Bots)
+                Assert.Equal(new byte[] { 80, 50 }, bot.GameStates.Select(gs => gs.Conquest[seat.SideA]));
+            seat.Server.FlushBroadcastSnapshots();
+            Assert.Equal(0, publisher!.EncodeFailures);
+            var peers = published.ToArray().GroupBy(frame => frame.Peer).ToArray();
+            Assert.Equal(seat.Bots.Length, peers.Length);
+            foreach (var peer in peers)
+                Assert.Equal(new ushort[] { StationCapture.Fmid, GameState.Fmid, GameOver.Fmid, GameState.Fmid },
+                    peer.Select(frame => frame.Fmid));
+        }
+
+        // Seat drained each peer's initial rankings before the reset. The next
+        // GAME_STATE follows STATION_CAPTURE (native fsship.cpp:623-631,
+        // fsmission.cpp:3682-3697). Rotation then legitimately sends another
+        // join ranking (fsmission.cpp:4324-4339), which may already be received.
+        Assert.True(PumpUntil(seat.Server, () => seat.Bots.All(b => b.GameStates.Count > 0), 6000) < 6000,
+            "every peer must receive the capture GAME_STATE");
+        foreach (var bot in seat.Bots)
+        {
+            var gs = bot.GameStates[0];
             Assert.Equal((byte)80, gs.Conquest[seat.SideA]);
             Assert.Equal((byte)20, gs.Conquest[seat.SideB]);
             Assert.All(gs.NFlags, b => Assert.Equal((byte)0, b));       // no flag secured in this conquest scenario → counter stays 0 (P201: no longer dead weight)
@@ -391,14 +470,13 @@ public sealed class ConquestTerritoryLiveTests
         }
 
         // P178 GAME_OVER: every peer, winner = side A, mission scoped.
-        PumpUntil(seat.Server, () => AllGameOvers(seat).Length >= seat.Bots.Length, 6000);
-        Assert.True(AllGameOvers(seat).Length >= seat.Bots.Length,
-            $"every peer must receive GAME_OVER; got {AllGameOvers(seat).Length}/{seat.Bots.Length}");
+        Assert.True(PumpUntil(seat.Server, () => seat.Bots.All(b => b.GameOvers.Count > 0), 6000) < 6000,
+            "every peer must receive GAME_OVER");
         foreach (var go in AllGameOvers(seat))
             Assert.Equal(seat.SideA, go.SideWinner);
 
         Console.WriteLine($"P191-LIVE: capturer {capturer.Id} (side {seat.SideA}) captured flag base {target.StationId}; " +
-                          $"conquest {seat.SideA} 60%->80%; GAME_STATE(155) -> {AllGameStates(seat).Length} peers, " +
+                          $"conquest {seat.SideA} 50%->80%; capture GAME_STATE(155) -> {seat.Bots.Length} peers, " +
                           $"GAME_OVER(62) winner={seat.SideA}, stage Over");
     }
 
