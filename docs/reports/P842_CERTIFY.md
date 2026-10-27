@@ -121,3 +121,8 @@ to, removing the last direct `BroadcastSetTeamLeader` calls from policy code.
 - `tests/Allegiance.Core.Tests/P820cSquadGameServerTests.cs` — 3 new tests (squad refit, boot-
   everyone, lock-name).
 - `docs/parity/sim-rules-matrix.csv` — the 30 batch rows only.
+
+## Claude review (2026-10-27)
+
+- Fix 1 extended: the donation-confidence leadership change in the AUTODONATE handler (native `FedSrv.CPP:5607`) now also goes through `SetLeader` (command wing 0 + side SET_WINGID, then SET_TEAM_LEADER); it previously set `LeaderShipId` directly. Test: `PlayerMoneyAutoDonateTests.Donation_confidence_leader_change_puts_the_new_leader_on_the_command_wing` (fails before the fix).
+- Remaining native `SetLeader` caller: FM_CS_SET_TEAM_LEADER (`FedSrv.CPP:7652`, SIM-0630) — no port handler for a client-sent hand-over yet; belongs to the P850 batch.
