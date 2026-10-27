@@ -4896,6 +4896,24 @@ public sealed class Sector : IClusterIgc
         float Radius, float ScannerRange, float Signature, short Ot = -1, short Oid = -1);
 
     /// <summary>
+    /// P835 — index this sweep's scanner participants by (objectType, objectId)
+    /// so the spotter-cache short-circuit can resolve a target's recorded last
+    /// spotter to its live participant in O(1). Only scanner-kind participants
+    /// have a usable (ot, oid) identity — a spotter is always one of a side's
+    /// scanners, so indexing the scannersBySide lists is exhaustive.
+    /// </summary>
+    private static Dictionary<(short Ot, short Oid), VisibilityParticipant> BuildParticipantsIndex(
+        Dictionary<short, List<VisibilityParticipant>> scannersBySide)
+    {
+        var index = new Dictionary<(short, short), VisibilityParticipant>();
+        foreach (var scns in scannersBySide.Values)
+            foreach (var sc in scns)
+                if (sc.Ot >= 0)
+                    index[(sc.Ot, sc.Oid)] = sc;
+        return index;
+    }
+
+    /// <summary>
     /// P132 — the per-tick cross-side visibility sweep, called from
     /// <see cref="Update"/> alongside the other per-tick passes. Wires P131's
     /// three primitives together for the first time: for every
@@ -4934,11 +4952,16 @@ public sealed class Sector : IClusterIgc
     /// a per-sector pass) and strictly simpler, the same
     /// "query instead of maintain an index" substitution this port already
     /// makes by reusing existing collections elsewhere.</para>
-    /// <para><b>"Last spotter" cache omitted, spotter identity recorded.</b> The
+    /// <para><b>"Last spotter" short-circuit behind a flag.</b> The
     /// native <c>sv.pLastSpotter()</c> short-circuit (<c>FedSrv.CPP:10896-10903</c>)
-    /// is a pure performance optimization — it skips re-scanning every scanner
-    /// when the same one that saw the target last tick still can. Deliberately
-    /// omitted: the full scanner loop re-runs every sweep. What the port DOES keep
+    /// skips re-scanning every scanner when the same one that saw the target
+    /// last sweep still can — the dominant cost at the 200v200 clash peak
+    /// (P835). Pre-P835 the full scanner loop re-ran every sweep (spotter
+    /// identity re-picked in enumeration order); the short-circuit is now
+    /// implemented behind <see cref="Sim.VisibilitySpotterCache"/>
+    /// (<c>sim.visibilitySpotterCache</c>, default OFF — spotter identity is
+    /// wire-observable in OBJECT_SPOTTED, so the rig A/B gates the flip; seen
+    /// flags are identical either way, SIM-0840). What the port DOES keep
     /// (P797) is the native side effect of the same field — the spotting scanner's
     /// <c>(ObjectType, ObjectID)</c>, written with
     /// <see cref="SideVisibilityState.SetLastSpotter"/> so the discovery sweep can
@@ -4972,6 +4995,11 @@ public sealed class Sector : IClusterIgc
         var targets = new List<VisibilityParticipant>();
         var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
         var skills = MissionSides?.FirstOrDefault()?.Mission?.Skills;
+        // P835 — bounded sub-step timers for the sweep's three phases
+        // (participant enumeration / scanner-target scan / flag write-back).
+        // Zero-cost when the profiler is off (the string concat happens only
+        // on this taken branch). Disposed at the end of the sweep.
+        var visEnum = TickProfiler.Enter("vis.enumerate");
 
         // P476 — the TARGET side's c_gaSignature resistance factor (the
         // `m /= pside->GetGlobalAttributeSet().GetAttribute(c_gaSignature)`
@@ -5109,9 +5137,16 @@ public sealed class Sector : IClusterIgc
         // common.cpp:2324-2398). Positions are read off the runtime asteroid's
         // static record; a record without a usable position contributes nothing.
         var occluders = new List<VisibilityMath.SightBody>(_mineable.Count);
+        visEnum.Dispose();
         foreach (var a in _mineable)
             if (a.Data.Position is { Length: 3 } ap)
                 occluders.Add(new VisibilityMath.SightBody(new Vector3(ap[0], ap[1], ap[2]), a.Radius));
+
+        // P835 — lookup of this sweep's participants by (objectType, objectId),
+        // so the spotter-cache short-circuit can resolve a recorded last spotter
+        // to its current participant in O(1). Only populated when the cache is
+        // enabled (zero cost otherwise).
+        Dictionary<(short Ot, short Oid), VisibilityParticipant>? participantsById = null;
 
         // The side universe to reconcile: the mission's full side set when
         // bound (faithful to the native GetSides() iteration), else the
@@ -5120,6 +5155,10 @@ public sealed class Sector : IClusterIgc
             ? ms.Select(s => s.Id).Distinct().ToArray()
             : scannersBySide.Keys.ToArray();
 
+        // P835 — per-target scan/write split scratch: one slot per side,
+        // allocated once per sweep and overwritten for every target.
+        var scanResults = new (bool, VisibilityParticipant)[sideIds.Count];
+
         foreach (var t in targets)
         {
             // Own side is always visible to itself — no scan needed
@@ -5127,47 +5166,92 @@ public sealed class Sector : IClusterIgc
             if (t.SideId is { } own)
                 t.Body.SideVisibility.SetSideVisibility(own, true);
 
-            foreach (var sideId in sideIds)
+            // P835 — the scan phase (one profiler scope per TARGET, not per
+            // pair: at 200v200 the pair count is O(10⁵) per sweep and per-pair
+            // scope churn would distort the measurement it exists for). The
+            // scan of (t, side) reads only geometry — positions, radii,
+            // signatures, cluster ids — never visibility flags, so computing
+            // all sides' results before writing any of them is order-safe and
+            // produces the identical flag sequence.
+            var results = scanResults;
+            using (TickProfiler.Enter("vis.scan"))
             {
-                if (sideId == t.SideId) continue;
-
-                bool seen = false;
-                VisibilityParticipant spotter = default;
-                if (scannersBySide.TryGetValue(sideId, out var scns))
-                    foreach (var sc in scns)
+                for (int si = 0; si < sideIds.Count; si++)
+                {
+                    short sideId = sideIds[si];
+                    bool seen = false;
+                    VisibilityParticipant spotter = default;
+                    if (sideId != t.SideId && scannersBySide.TryGetValue(sideId, out var scns))
                     {
-                        if (VisibilityMath.InScannerRange(
-                                new VisibilityMath.SightBody(sc.Position, sc.Radius), sc.ScannerRange, Id,
-                                new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                        // P835 — the native last-spotter short-circuit
+                        // (FedSrv.CPP:10896-10903): when the target's recorded
+                        // spotter for this side is still a live scanner in this
+                        // sector and still sees the target, the side sees it —
+                        // skip the full scanner loop. Seen flags identical to
+                        // the full loop; spotter identity is the native sticky
+                        // one (FedSrv.CPP:11026). Default-off.
+                        if (VisibilitySpotterCache.Enabled)
                         {
-                            seen = true;
-                            spotter = sc;
-                            break;
+                            participantsById ??= BuildParticipantsIndex(scannersBySide);
+                            var (lot, loid) = t.Body.SideVisibility.LastSpotter;
+                            if (lot >= 0 && participantsById.TryGetValue((lot, loid), out var last))
+                            {
+                                if (VisibilityMath.InScannerRange(
+                                        new VisibilityMath.SightBody(last.Position, last.Radius), last.ScannerRange, Id,
+                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                                {
+                                    seen = true;
+                                    spotter = last;
+                                }
+                            }
                         }
+                        if (!seen)
+                            foreach (var sc in scns)
+                            {
+                                if (VisibilityMath.InScannerRange(
+                                        new VisibilityMath.SightBody(sc.Position, sc.Radius), sc.ScannerRange, Id,
+                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                                {
+                                    seen = true;
+                                    spotter = sc;
+                                    break;
+                                }
+                            }
                     }
+                    results[si] = (seen, spotter);
+                }
+            }
 
-                // Flip the flags on the computed result (FedSrv.CPP:11153-11171
-                // via SideVisibilityState.SetSideVisibility). Writing false for
-                // every unseen side is what turns a previous true into a false
-                // when a scanner moves out of range / leaves.
-                //
-                // P349 — the false→true edges are NO LONGER queued here. The
-                // per-tick cross-side export sweep on the host
-                // (Server.Broadcast.SweepCrossSideExports) reads the resulting
-                // LATCHED SeenBySide state each tick and catches up EVERY peer on
-                // the seeing side — including ones who connect after visibility
-                // was established — so the Core only has to keep this flag
-                // correct (the visibility determination itself is untouched).
-                if (seen && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
-                t.Body.SideVisibility.SetSideVisibility(sideId, seen);
-                // P797 — record (or clear) the side's last spotter, native's
-                // sv.pLastSpotter(s) / sv.pLastSpotter(NULL) (FedSrv.CPP:10944,
-                // :11119-11120). The discovery sweep reads it to fill
-                // OBJECT_SPOTTED(6)'s otSpotter/oidSpotter exactly as native does.
-                if (seen)
-                    t.Body.SideVisibility.SetLastSpotter(spotter.Ot, spotter.Oid);
-                else if (!seen)
-                    t.Body.SideVisibility.ClearLastSpotter();
+            // Write phase — flip the flags on the computed result
+            // (FedSrv.CPP:11153-11171 via SideVisibilityState.SetSideVisibility).
+            // Writing false for every unseen side is what turns a previous true
+            // into a false when a scanner moves out of range / leaves.
+            //
+            // P349 — the false→true edges are NO LONGER queued here. The
+            // per-tick cross-side export sweep on the host
+            // (Server.Broadcast.SweepCrossSideExports) reads the resulting
+            // LATCHED SeenBySide state each tick and catches up EVERY peer on
+            // the seeing side — including ones who connect after visibility
+            // was established — so the Core only has to keep this flag
+            // correct (the visibility determination itself is untouched).
+            using (TickProfiler.Enter("vis.write"))
+            {
+                for (int si = 0; si < sideIds.Count; si++)
+                {
+                    short sideId = sideIds[si];
+                    if (sideId == t.SideId) continue;
+                    var (seen, spotter) = results[si];
+                    if (seen && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
+                    t.Body.SideVisibility.SetSideVisibility(sideId, seen);
+                    // P797 — record (or clear) the side's last spotter, native's
+                    // sv.pLastSpotter(s) / sv.pLastSpotter(NULL) (FedSrv.CPP:10944,
+                    // :11119-11120). The discovery sweep reads it to fill
+                    // OBJECT_SPOTTED(6)'s otSpotter/oidSpotter exactly as native does.
+                    if (seen)
+                        t.Body.SideVisibility.SetLastSpotter(spotter.Ot, spotter.Oid);
+                    else
+                        t.Body.SideVisibility.ClearLastSpotter();
+                }
             }
         }
 

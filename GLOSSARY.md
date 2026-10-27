@@ -77,6 +77,15 @@ list in **reverse**.
   Native: `Igc/common.cpp:1157-2333`, `Igc/shipIGC.cpp:2795-2833`.
   Local A/B and independent C++ formula trace: `tools/p817-gotoplan-proof/`;
   report `docs/reports/P817_NATIVE_GOTOPLAN.md`.
+- **Cross-side visibility sweep (P131/P797/P835)** — the every-10th-pass
+  scanner×target sweep behind `SeenBySide` (`Sector.ResolveCrossSideVisibility`,
+  `Sim/VisibilityMath.cs`, `Sim/SideVisibilityState.cs`). P835 adds the sweep's
+  sub-step timers (`vis.enumerate`/`vis.scan`/`vis.write`), a conservative
+  exact-result occlusion pre-filter in `LineOfSightExist`, and the native
+  last-spotter short-circuit (`FedSrv.CPP:10896-10903`) behind the default-off
+  `sim.visibilitySpotterCache` / `ALLEGIANCE_VIS_SPOTTER_CACHE`
+  (`Sim/VisibilitySpotterCache.cs`). Clash-peak cost analysis + bench:
+  `tools/P835Bench/`, report `docs/reports/P835_CLASH_PEAK_COST.md`.
 - **Mounted part** — an equipped part instance (weapon/shield/etc.) with its
   mount and state. `src/Allegiance.Core/Sim/MountedPart.cs`. *Native:*
   `mountc.cpp`.

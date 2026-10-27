@@ -1,0 +1,58 @@
+[
+ {
+  "match": "b36 match 1",
+  "sides": "25:Iron Coalition(plan_a) side1=101:Belters(generated)",
+  "baseline_wall": 46.60769736842105,
+  "peak_wall": 71.19173913043478,
+  "baseline_scale": 0.9697807235669803,
+  "peak_scale": 0.7245170752400091
+ },
+ {
+  "match": "b36 match 2",
+  "sides": "18:Gigacorp(generated) side1=3:Ga'Taraan(plan_a)",
+  "baseline_wall": 44.28563934426229,
+  "peak_wall": 91.99370967741936,
+  "baseline_scale": 0.9788100708830553,
+  "peak_scale": 0.5547872602828278
+ },
+ {
+  "match": "b36 match 3",
+  "sides": "1:Dreghklar(generated) side1=201:Rixian(generated)",
+  "baseline_wall": 36.56590361445783,
+  "peak_wall": 78.60795180722891,
+  "baseline_scale": 0.999209984772752,
+  "peak_scale": 0.6795240991066042
+ },
+ {
+  "match": "b37 match 1",
+  "sides": "4:Phoenix(generated) side1=18:Gigacorp(generated)",
+  "baseline_wall": 47.26069970845481,
+  "peak_wall": 85.2591304347826,
+  "baseline_scale": 0.9517919018030305,
+  "peak_scale": 0.6131922402454425
+ },
+ {
+  "match": "b37 match 2",
+  "sides": "18:Gigacorp(generated) side1=35:Bios(generated)",
+  "baseline_wall": 41.38221864951768,
+  "peak_wall": 75.33412698412698,
+  "baseline_scale": 0.9904928486399767,
+  "peak_scale": 0.6757924810901632
+ },
+ {
+  "match": "b37 match 3",
+  "sides": "25:Iron Coalition(plan_a) side1=3:Ga'Taraan(plan_a)",
+  "baseline_wall": 35.33779083431257,
+  "peak_wall": 53.66350877192983,
+  "baseline_scale": 0.9989133469090101,
+  "peak_scale": 0.9017458299542911
+ },
+ {
+  "match": "b38 match 1",
+  "sides": "25:Iron Coalition(plan_a) side1=35:Bios(generated)",
+  "baseline_wall": 45.914640522875814,
+  "peak_wall": 79.05548387096775,
+  "baseline_scale": 0.9255950233443376,
+  "peak_scale": 0.6643954797717895
+ }
+]

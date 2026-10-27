@@ -182,6 +182,7 @@ public sealed partial class Server
         // so a measurement run is never mistaken for an uninstrumented one.
         // Default OFF = today's serial byte-for-byte path.
         ResolveParallelSectorSim();
+        ResolveVisibilitySpotterCache();
         ResolveNativeBroadcastOrder();
 
         // P619 — log the ACTIVE garbage collector (server vs workstation, and
@@ -1527,6 +1528,38 @@ public sealed partial class Server
         TickProfiler.SetLabel(enabled
             ? $"broadcast.parallelBuild=true (maxPar={_broadcastMaxParallelism})"
             : "broadcast.parallelBuild=false");
+    }
+
+    /// <summary>
+    /// P835 — resolve the cross-side visibility sweep's last-spotter
+    /// short-circuit from config (<c>sim.visibilitySpotterCache</c>, default
+    /// OFF) + the <c>ALLEGIANCE_VIS_SPOTTER_CACHE</c> env var (env wins), and
+    /// print the active value at boot. Default OFF = today's full scanner loop,
+    /// byte-for-byte. ON = the native short-circuit (FedSrv.CPP:10896-10903):
+    /// seen flags identical to the full loop, spotter identity the native
+    /// sticky one — a wire-observable change, hence default-off pending a rig
+    /// A/B (see docs/reports/P835_CLASH_PEAK_COST.md).
+    /// </summary>
+    private void ResolveVisibilitySpotterCache()
+    {
+        bool enabled = _config.Sim?.VisibilitySpotterCache ?? false;
+
+        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_VIS_SPOTTER_CACHE");
+        if (!string.IsNullOrEmpty(env))
+            enabled = env is not ("0" or "false" or "off" or "");
+
+        VisibilitySpotterCache.Enabled = enabled;
+
+        Console.WriteLine(enabled
+            ? "[boot] sim.visibilitySpotterCache = true — visibility sweep uses the native last-spotter short-circuit " +
+              "(FedSrv.CPP:10896-10903; seen flags unchanged, spotter identity sticky like native)"
+            : "[boot] sim.visibilitySpotterCache = false — visibility sweep runs the full scanner loop (today's byte-for-byte behaviour)");
+
+        // Append to the existing profiler header label so a measurement run is
+        // never mistaken for a default one.
+        string prior = TickProfiler.Label ?? "";
+        TickProfiler.SetLabel($"{prior}{(prior.Length > 0 ? "; " : "")}" +
+                              (enabled ? "sim.visibilitySpotterCache=true" : "sim.visibilitySpotterCache=false"));
     }
 
     /// <summary>

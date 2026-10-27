@@ -1,3 +1,4 @@
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Collision;
 
 namespace Allegiance.Core.Sim;
@@ -137,6 +138,21 @@ public static class VisibilityMath
                     float overLen13 = 1.0f / MathF.Sqrt(lenSq13);
                     float cosSep = dot * overLen13;          // cosine of separation angle (common.cpp:2362-2363)
                     float radius3 = obstacle.Radius * 0.5f;  // dense-core half-radius (common.cpp:2368)
+
+                    // P835 — conservative occlusion pre-filter (result-preserving).
+                    // Occlusion requires Acos(cosSep) + visibleAngle < Asin(radius3·overLen13)
+                    // (common.cpp:2376-2378). On [0,1]: Acos(c) ≥ 1 − c and
+                    // Asin(x) ≤ (π/2)·x, so when the LOWER bound of the left side
+                    // already reaches the UPPER bound of the right side (with slack
+                    // for float rounding of the bounds themselves), the exact
+                    // condition can never hold and the two transcendentals are
+                    // skipped. Any pair near the boundary falls through to the
+                    // exact comparison below, so the boolean result — and
+                    // therefore the simulation — is unchanged for every input.
+                    if (cosSep >= 0f && (1f - cosSep) + visibleAngle
+                        >= 1.571f * radius3 * overLen13 + 1e-3f)
+                        continue;
+
                     float covered = MathF.Asin(radius3 * overLen13);       // obstacle coverage angle
                     float sep = MathF.Acos(cosSep);          // separation angle eye→obstacle vs eye→target
                     float maxSep = sep + visibleAngle;       // farthest extent the target can be seen at
