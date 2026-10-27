@@ -244,6 +244,66 @@ public class RequestMoneyTests
         Assert.Empty(b.RequestMoneys);
     }
 
+    /// <summary>P849 (Claude): when the auto-donate target lacks funds AND no other
+    /// teammate holds more than amount-1, native still forwards to the AD target —
+    /// <c>pshipAD</c> is only overwritten inside the richest scan
+    /// (FedSrv.CPP:5377-5393).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Poor_auto_donate_target_still_gets_request_when_nobody_is_richer()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        using var a = new FltBot();
+        using var b = new FltBot();
+        using var c = new FltBot();
+        var (aId, mates, side0) = SeatLeaderAndMates(server, a, (b, "RP1"), (c, "RP2"));
+        short bId = mates[0], cId = mates[1];
+
+        // b's AD target = a with 10 < 50; c holds 20 (not > amount-1 = 49).
+        WalletOf(server, aId).Money = 10;
+        WalletOf(server, cId).Money = 20;
+        a.ResetRequestMoneys();
+        c.ResetRequestMoneys();
+
+        b.SendRequestMoney(50, 530);
+        int got = PumpUntil(server,
+            () => a.RequestMoneys.Any(r => r.Amount == 50 && r.HidFor == 530 && r.ShipIdRequest == bId),
+            800);
+        Assert.True(got < 800, $"request did not reach the poor AD target: A={a.RequestMoneys.Count}, C={c.RequestMoneys.Count}");
+        Assert.Empty(c.RequestMoneys);
+    }
+
+    /// <summary>P849 (Claude): REQUEST_MONEY is charged against the sender's chat
+    /// budget, <c>DecrementChatBudget(true)</c> (FedSrv.CPP:5370-5373); once the
+    /// budget is spent further requests are dropped.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Request_money_is_charged_to_the_chat_budget()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        var cfg = Config();
+        cfg.Transport = new global::Allegiance.Server.TransportConfig
+        {
+            ChatBudgetMax = 40,             // two paid sends
+            ChatBudgetCost = 20,
+            ChatBudgetRefillPerTick = 0,    // no refill during the test
+        };
+        server.Boot(cfg);
+        using var a = new FltBot();
+        using var b = new FltBot();
+        var (aId, mates, side0) = SeatLeaderAndMates(server, a, (b, "RB1"));
+        WalletOf(server, aId).Money = 500;
+        a.ResetRequestMoneys();
+
+        for (int i = 0; i < 4; i++) b.SendRequestMoney(50, (short)(540 + i));
+        PumpUntil(server, () => false, 200);
+
+        Assert.Equal(2, a.RequestMoneys.Count(r => r.Amount == 50));
+    }
+
     // ── solo side silently dropped ─────────────────────────────────────────
 
     /// <summary>⭐ A player alone on their side (no teammates, and the leader has
