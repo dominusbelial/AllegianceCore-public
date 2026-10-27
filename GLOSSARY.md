@@ -348,6 +348,16 @@ list in **reverse**.
   (`RearmRotatedFinales`, `LogRearmGrace`), `tools/allegiance-mcp/BotManager.Lifecycle.cs`
   (`RefreshLife`, `LogObjectiveFallback`), `tools/allegiance-mcp/BotManager.Exploration.cs`
   (`AssignClashTargets`); report: `docs/reports/P831_FALLBACK_BOMBER_REARM.md`.
+- **Prosperity commander (P832b)** — when MISSIONDEF enables team money,
+  `tools/allegiance-mcp/ResearchCommander.Prosperity.cs` grows/replaces miners,
+  banks half observed income and funds the economic-victory bucket above a
+  replacement/defence reserve. `BotManager.ResearchTactics.cs` reads enemy
+  mission-wide BUCKET_STATUS; `ResearchTactics.cs` redirects half the available
+  fighters toward observed miners at 10% enemy investment, retaining home
+  bomber interception. Strategy is a port policy; actions and visibility follow
+  native `FedSrv/FedSrv.CPP:7182-7196`, `Igc/sideigc.h:237-243`.
+  Seeded proof preset: `tools/p832b-prosperity.json`.
+  Report: `docs/reports/P832B_PROSPERITY_BOTS.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
 - **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are

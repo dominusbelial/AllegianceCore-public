@@ -21,7 +21,7 @@ internal sealed class ResearchTactics
         float Hull = -1, float Shield = -1,
         // P801 — the real station type + its native durability profile. Null keeps
         // the legacy SC7 quorum/timeout behaviour (tests without a core profile).
-        short StationTypeId = -1, StrikeVolley.StationProfile? Profile = null);
+        short StationTypeId = -1, StrikeVolley.StationProfile? Profile = null, bool Miner = false);
     internal sealed record Order(short Recipient, short Command, IgcObjectType Type, short Target);
 
     /// <summary>SC8 — one summary line per strike-wave edge (commit/end) for the rig.
@@ -186,8 +186,11 @@ internal sealed class ResearchTactics
         return events;
     }
 
-    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1)
+    internal bool EconomicRaidActive { get; private set; }
+
+    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1, double enemyProsperityProgress = 0)
     {
+        EconomicRaidActive = started && enemyProsperityProgress >= .1;
         if (!started) return [];
         foreach (short id in _sent.Keys.Where(id => !pilots.Any(p => p.Id == id)).ToArray()) _sent.Remove(id);
         var result = new List<Order>();
@@ -364,6 +367,15 @@ internal sealed class ResearchTactics
         // the non-strike loop. MaxOrdersPerTick still bounds the whole tick.
         if (_waveMembers.Count > 0) EmitEscortOrders(time, pilots, result);
         else _escorts.Clear();
+        // P832b: assign the first half of available fighters deterministically,
+        // independent of ship-id parity or worker allocation. Keep the rest home.
+        HashSet<short>? raiders = null;
+        if (EconomicRaidActive)
+        {
+            var raidPilots = pilots.Where(p => !p.Strike && !p.Support && !_escorts.ContainsKey(p.Id))
+                .OrderBy(p => p.Id).ToArray();
+            raiders = raidPilots.Take(raidPilots.Length / 2).Select(p => p.Id).ToHashSet();
+        }
         // Oldest assignments first; bound each tick so a large fleet cannot flood chat.
         foreach (var pilot in pilots.Where(p => !(p.Strike && !p.Support) && !_escorts.ContainsKey(p.Id))
             .OrderBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity).ThenBy(p => p.Id))
@@ -385,6 +397,14 @@ internal sealed class ResearchTactics
                         && friendlyStations.Any(s => s.Sector == t.Sector && (s.Position - t.Position).LengthSquared() <= 3500 * 3500))
                     .OrderBy(t => t.Sector == pilot.Sector ? 0 : 1)
                     .ThenBy(t => (t.Position - pilot.Position).LengthSquared()).ThenBy(t => t.Id).FirstOrDefault();
+                // P832b: retain home-bomber interception above; at most half
+                // the fighters raid observed miners once the enemy invests 10%.
+                // Other fighters and support retain defence/repair; bombers retain strikes.
+                if (raiders?.Contains(pilot.Id) == true)
+                    target ??= targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Ship && t.Miner)
+                        .OrderBy(t => t.Sector == pilot.Sector ? 0 : 1)
+                        .ThenBy(t => t.Sector == pilot.Sector ? (t.Position - pilot.Position).LengthSquared() : 0)
+                        .ThenBy(t => t.Id).FirstOrDefault();
                 target ??= targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Ship && t.Sector == pilot.Sector)
                     .OrderBy(t => (t.Position - pilot.Position).LengthSquared()).ThenBy(t => t.Id).FirstOrDefault();
             }

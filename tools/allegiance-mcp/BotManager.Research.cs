@@ -118,11 +118,13 @@ internal sealed partial class BotManager
                                     .DistinctBy(t => (t.Type, t.Id)).ToArray();
                                 foreach (var order in tactics.Policy.Tick(peer.World.SimulationTimeSeconds,
                                     peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets,
-                                    tactical.StrikeRoster))
+                                    tactical.StrikeRoster, ObserveEnemyProsperity(peer.World, side, core)))
                                 {
                                     peer.SendChat("", ChatTarget.Individual, oidRecipient: order.Recipient,
                                         commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);
-                                    Console.WriteLine($"[commander] side={side} sender={peer.World.MyShipId} recipient={order.Recipient} command={order.Command} target={order.Type}#{order.Target}");
+                                    Console.WriteLine($"[commander] side={side} sender={peer.World.MyShipId} recipient={order.Recipient} command={order.Command} target={order.Type}#{order.Target}"
+                                        + (tactics.Policy.EconomicRaidActive && targets.Any(t => t.Type == order.Type && t.Id == order.Target && t.Miner && !t.Friendly)
+                                            ? " economyRaid=true" : ""));
                                 }
                                 // SC8 — one summary line per strike-wave commit/end, where
                                 // the other commander telemetry is printed (not per tick).
@@ -203,12 +205,15 @@ internal sealed partial class BotManager
                 world.Ships.TryGetValue(p.ShipId, out var ship) ? ship.SectorId : (short)-1)).ToArray();
         var rocks = world.Asteroids.Values.OrderByDescending(a => homeSectors.Contains(a.ClusterId)).ThenBy(a => a.AsteroidId)
             .Select(a => new ResearchCommander.Rock(a.AsteroidId, a.AabmCapabilities,
-                !world.BuildingEffects.ContainsKey(a.AsteroidId), world.BuildingEffects.ContainsKey(a.AsteroidId), a.ClusterId)).ToArray();
+                !world.BuildingEffects.ContainsKey(a.AsteroidId), world.BuildingEffects.ContainsKey(a.AsteroidId), a.ClusterId,
+                // Use the observing client's current known ore, including depletion
+                // (Igc/asteroidigc.h:187-190; FedSrv/fsship.cpp:909).
+                world.AsteroidLive.TryGetValue(a.AsteroidId, out var live) ? live.OreFraction * a.OreMax : a.Ore)).ToArray();
         double time = world.SimulationTimeSeconds;
         return new(time, world.Mission?.Stage == MissionStageMessage.StageStarted, world.MyMoney ?? 0,
             world.DevelopmentTechsFor(side) ?? TechTreeBitMask.Empty, stations.Select(s => s.StationTypeId).ToArray(),
             new(world.CompletedDevelopments), units, rocks,
             world.BucketFundingFor(side).ToDictionary(kv => kv.Key,
-                kv => new ResearchCommander.Funding(kv.Value.InvestedMoney, kv.Value.InvestedTimeMs)));
+                kv => new ResearchCommander.Funding(kv.Value.InvestedMoney, kv.Value.InvestedTimeMs)), world.MissionGoals);
     }
 }
