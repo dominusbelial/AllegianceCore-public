@@ -257,12 +257,13 @@ public sealed partial class Server
             return;
         }
 
-        // Native gates REQUEST_MONEY behind CFSPlayer::DecrementChatBudget — the
-        // chat-spam rate limiter (FedSrv.CPP:5370). This port has NO chat
-        // budget/rate-limit mechanism at all (nothing equivalent exists for
-        // CHATMESSAGE; the standing pooled-design port never introduced one), so
-        // the gate is DELIBERATELY SKIPPED here — the omission is logged, not
-        // fabricated. See docs/REQUEST_MONEY_P199.md.
+        // Native gates REQUEST_MONEY behind CFSPlayer::DecrementChatBudget(true)
+        // (FedSrv.CPP:5370-5373): a paid charge; an exhausted budget drops the request.
+        if (!TryChargeChatBudget(from))
+        {
+            ConsoleLog.Write($"[requestmoney] {from} ship {ship.Id}: chat budget exhausted — REQUEST_MONEY dropped (FedSrv.CPP:5370)");
+            return;
+        }
 
         Ship? pshipAD = live.Wallet.AutoDonateTarget;
         var adLive = pshipAD is null ? null : LiveOf(pshipAD);
@@ -282,7 +283,9 @@ public sealed partial class Server
                     richest = l.Ship;
                 }
             }
-            pshipAD = richest;
+            // Native keeps the (too-poor) auto-donate target when nobody else beats
+            // amount-1 (pshipAD is only overwritten inside the scan, FedSrv.CPP:5377-5393).
+            if (richest is not null) pshipAD = richest;
         }
 
         if (pshipAD is null)
