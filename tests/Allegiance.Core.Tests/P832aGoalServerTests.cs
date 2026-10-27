@@ -12,7 +12,7 @@ namespace Allegiance.Core.Tests;
 
 [Collection("LiveNetwork")]
 [Trait("Tier", "Live")]
-public sealed class P832aGoalServerTests
+public sealed partial class P832aGoalServerTests
 {
     private static ServerConfig Config(MissionGoals goals) => new()
     {

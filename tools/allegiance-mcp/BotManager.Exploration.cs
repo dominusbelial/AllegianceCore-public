@@ -594,7 +594,7 @@ internal sealed partial class BotManager
                 {
                     if (bot.IsPod || bot.PodDocked) continue;
                     if (bot.ReconTarget is not null) continue;   // scouts keep scouting, not marching
-                    if (bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+                    if (bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(bot.Cs!))
                     {
                         // The home sector is known from the CLUSTERINFO flags even
                         // before its station has been seen; the strike itself still

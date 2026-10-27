@@ -1109,7 +1109,7 @@ public sealed partial class Mission : IMissionIgc
         // decided recomputes (fsmission.cpp:3575-3578). Started/Starting here
         // doubles as the idempotency guard — the host flips Stage to Over on a
         // win, and an Over mission never enters this branch.
-        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+        if (Stage != MissionStage.Started && !(Stage == MissionStage.Starting && AllowEmptyTeams))
             return (null, false);
 
         bool bChange = false;
@@ -1146,6 +1146,11 @@ public sealed partial class Mission : IMissionIgc
                 }
             }
         }
+
+        // FedSrv/fsmission.cpp:3628-3630: retain the rankings but suppress a
+        // conquest winner with one active team when empty teams are allowed.
+        if (ConquestEnabled && AllowEmptyTeams && Sides.Count(side => side.Active) == 1)
+            psideWon = null;
 
         if (TerritoryEnabled && psideWon is null)                       // fsmission.cpp:3634
         {

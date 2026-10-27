@@ -14,7 +14,7 @@ namespace Allegiance.Tools.McpSpawner;
 /// </summary>
 internal sealed partial class BotManager
 {
-    internal enum FlagDuty { None, Raid, Escort, Guard, Intercept, Return, Collect, Search }
+    internal enum FlagDuty { None, Raid, Escort, Guard, Intercept, Return, Collect, Search, Siege, Board, Hold, Wing, Recon }
     private sealed partial class ActiveBot
     {
         public FlagDuty FlagTask;
@@ -31,7 +31,7 @@ internal sealed partial class BotManager
 
     private static bool FlagsGame(ConnectionSession cs) => cs.World.Mission?.Goals.IsFlagsGame == true;
     private static bool ArtifactsGame(ConnectionSession cs) => cs.World.Mission?.Goals.IsArtifactsGame == true;
-    private static bool ObjectiveGame(ConnectionSession cs) => FlagsGame(cs) || ArtifactsGame(cs);
+    private static bool ObjectiveGame(ConnectionSession cs) => FlagsGame(cs) || ArtifactsGame(cs) || ConquestGame(cs);
     private double _nextFlagAssignment;
 
     private void UpdateFlagDuties(ActiveBot[] bots, double now)
@@ -55,17 +55,20 @@ internal sealed partial class BotManager
             if (bot.Cs is not { } cs || !ObjectiveGame(cs) || !byName.TryGetValue(bot.Name, out var d)
                 || d.Cookie != CookieOf(cs) || d.Side != bot.Side) continue;
             bot.FlagTask = d.Duty; bot.FlagAnchor = d.Anchor; bot.FlagPost = d.Post;
+            if (ConquestGame(cs)) EndDefense(bot);
         }
+        foreach (var bot in bots) UpdateConquestStrike(bot, now);
     }
 
     private FlagCandidate[] FlagCandidates(ActiveBot[] bots)
     {
         var candidates = new List<FlagCandidate>();
-        foreach (var b in bots.Where(b => b.Cs is { } cs && ObjectiveGame(cs) && DefenseAvailable(b)
-            && !IsSupport(b) && !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
-            && (b.OrderedCommand is null || !HumanCommands(b.Side)) && !b.FinaleBomberActive
+        foreach (var b in bots.Where(b => b.Cs is { } cs && ObjectiveGame(cs) && (DefenseAvailable(b)
+                || b.ConquestStrike && b.FinaleRefitting && IsParticipating(b) && !b.SpawnPending && !b.IsPod)
+            && !IsSupport(b) && (ConquestGame(cs) || !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+            && (b.OrderedCommand is null || !HumanCommands(b.Side)) && (!b.FinaleBomberActive || ConquestGame(cs))
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(b), out var hull)
-            && hull.HasCapability(DataHullTypeIGC.HabmFighter)))
+            && (ConquestGame(cs) || hull.HasCapability(DataHullTypeIGC.HabmFighter))))
         {
             bool carrying;
             lock (b.Cs!.Gate) carrying = b.Cs.World.Ships.TryGetValue(b.ShipId, out var me) && IsObjectiveCargo(b.Cs, me.CarriedFlagSideId);
@@ -78,7 +81,10 @@ internal sealed partial class BotManager
                 // requires HabmRescue (Igc/treasureIGC.h:85-87).
                 Catalog.RepresentativeCore().HullTypes[ActualHullId(b)].HasCapability(DataHullTypeIGC.HabmRescue),
                 ArtifactsGame(b.Cs), FlagsGame(b.Cs), artifact?.Id,
-                artifact is { } a ? FlagDistance(b, a.Sector, a.Position) : double.MaxValue));
+                artifact is { } a ? FlagDistance(b, a.Sector, a.Position) : double.MaxValue,
+                ConquestGame(b.Cs), ConquestPercent(b.Cs, b.Side), b.Cs.World.Mission?.Goals.ConquestPercentage ?? 0,
+                !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase) && Catalog.RepresentativeCore().HullTypes[ActualHullId(b)]
+                    .HasCapability(DataHullTypeIGC.HabmFighter), ConquestContacts(b)));
         }
         return candidates.ToArray();
     }
@@ -92,6 +98,12 @@ internal sealed partial class BotManager
         {
             var available = group.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
             var (raidCount, guardCount) = FlagShares(available.Count);
+            if (available.Any(c => c.Conquest))
+            {
+                PlanConquestDuties(available, ref raidCount, ref guardCount, result);
+                available.RemoveAll(c => !c.CargoPilot || !(c.Flags || c.Artifacts));
+                if (available.Count == 0) continue;
+            }
             if (available.Any(c => c.Artifacts))
             {
                 PlanArtifactDuties(available, raidCount, guardCount, result);
@@ -112,6 +124,7 @@ internal sealed partial class BotManager
             int escorts = Math.Max(0, raidCount - carriers.Length);
             if (carrier is null)
             {
+                if (escorts <= 0) continue;
                 carrier = available.Where(c => c.CanCarry).OrderBy(c => c.Scout ? 0 : 1)
                     .ThenBy(c => c.Name, StringComparer.Ordinal).FirstOrDefault();
                 if (carrier is null) continue; // never send an incapable hull to a pickup
@@ -197,6 +210,17 @@ internal sealed partial class BotManager
         lock (cs.Gate)
         {
             carried = cs.World.Ships.TryGetValue(bot.ShipId, out var me) ? me.CarriedFlagSideId : (short)-1;
+            // A below-goal capture can clear Board during the next planner
+            // pass before this docked pilot is driven. Complete the sortie
+            // from its last observed action, just like a cargo return below.
+            if (me is { StationId: >= 0 } && ConquestGame(cs)
+                && bot.FlagTrace.StartsWith("Board:", StringComparison.Ordinal)
+                && (bot.OrderedCommand is null || !HumanCommands(bot.Side)))
+            {
+                bot.MissionLaunchPending = true;
+                bot.FlagTask = FlagDuty.None; bot.FlagTrace = "";
+                return true;
+            }
             if (me is { StationId: >= 0 } && bot.FlagTrace.StartsWith("Return:", StringComparison.Ordinal))
             {
                 bot.MissionLaunchPending = true;
@@ -205,6 +229,7 @@ internal sealed partial class BotManager
                 return true;
             }
         }
+        if (!IsObjectiveCargo(cs, carried) && TryDriveConquest(bot, cs, now)) return true;
         var duty = IsObjectiveCargo(cs, carried) ? FlagDuty.Return : bot.FlagTask == FlagDuty.Return
             ? ArtifactsGame(cs) ? FlagDuty.Collect : FlagDuty.Raid : bot.FlagTask;
         if (duty == FlagDuty.None || HumanCommands(bot.Side) && bot.OrderedCommand is not null && !IsObjectiveCargo(cs, carried)) return false;

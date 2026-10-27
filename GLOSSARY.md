@@ -427,6 +427,13 @@ list in **reverse**.
   pickup tombstones across workers. The `artifacts` scenario preset requires
   a native artifacts goal; showcase/skirmish detect it automatically and
   suppress the bomber finale. Report: `docs/reports/P832D_ARTIFACT_BOTS.md`.
+- **Conquest take / hold (P832e)** — `tools/allegiance-mcp/BotManager.Conquest.cs`
+  reads native-visible flag stations and GAME_STATE percentages, shares the
+  flag/artifact offense/denial budget across workers, reuses legal strike refits,
+  bomber fire, escort screening and landing bays. A conquest match fields one
+  legal boarding preference per side and suppresses timed finales. Native station
+  event context and reasons: `src/Allegiance.Core/Model/Mission.StationVictory.cs`.
+  Report: `docs/reports/P832E_CONQUEST_BOTS.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
 - **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are

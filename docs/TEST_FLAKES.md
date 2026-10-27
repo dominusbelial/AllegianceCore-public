@@ -3103,3 +3103,34 @@ for workspace scratch avoid the older path/profile environment failures.
 that failure is the AutoAccept fixture issue corrected above, not a P832d regression. The P835/P832c
 spotter-cache isolation race named in the P832d report is gone with P858, which removed the process-global
 toggle.
+
+## P832e — single Fast sweep and isolated receipts (2026-10-27)
+
+The one Fast sweep ran **11,106 .NET cases: 11,095 passed, eight failed and
+three optional skips**, with no timing offenders; infrastructure checks passed.
+The complete sweep was not repeated.
+
+- Five `PlayerBundlePathsTests` cases found the worktree's `local.env` through
+  worktree-local TMPDIR. The full nine-case class passed **3/3** with a
+  `/proc/<parent>/fd/<directory>` lexical alias to the same workspace scratch,
+  matching the existing P832c sandbox receipt. No product/test source changed.
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  tried restoring the read-only default preferences file. It passed **3/3**
+  with workspace-local XDG_CONFIG_HOME; no user preferences were modified.
+- `P775PlayerInfoMomentsTests.Side_switch_sends_no_playerinfo` failed with
+  `Bee: no ship assignment`, matching the existing P813b seating flake. It
+  passed **3/3** alone without source changes.
+- `P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire`
+  reproduced its documented auto-seating failure in the sweep. Three isolated
+  trials then exposed the related incomplete-roster condition (the requested
+  teammate was absent from the fanout snapshot). The fixture now requests
+  sides 0/0/1 explicitly, permits that fixture imbalance and drains the
+  teammate's identity/wing notification before taking the snapshot. The full
+  **31-case P784 class passed 3/3** afterwards. This is a fixture correction,
+  not a product chat change or a claimed passing original sweep.
+
+All task-specific bot/native regressions, the four conquest wire cases and
+six existing flag/artifact loopbacks passed their prescribed repetitions.
+See [P832e](reports/P832E_CONQUEST_BOTS.md) and its
+[validation summary](reports/P832E_assets/validation.json). Raw receipts remain
+in the worktree's ignored `.scratch/p832e/` directory.

@@ -43,11 +43,11 @@ internal static class TechLoadoutSelector
     internal static Selection? Select(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue,
         bool preferMines = false, bool rescueProbe = false,
-        StrikeHullPref strikePref = StrikeHullPref.Best)
+        StrikeHullPref strikePref = StrikeHullPref.Best, bool boarding = false)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
-            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref);
+            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref, boarding: boarding);
     }
 
     /// <summary>P779b-1 — the rescue-probe launcher part a side can actually buy:
@@ -310,7 +310,7 @@ internal static class TechLoadoutSelector
 
     private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target,
         bool preferMines = false, bool rescueProbe = false, StrikeHullPref strikePref = StrikeHullPref.Best,
-        FallbackPool fallbackPool = FallbackPool.None)
+        FallbackPool fallbackPool = FallbackPool.None, bool boarding = false)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
@@ -319,7 +319,8 @@ internal static class TechLoadoutSelector
         }
         var options = new List<Selection>();
         foreach (var h in c.Core.HullTypes.Values.Where(h => c.Hulls.Contains(h.HullId)
-                     && Showcase.IsPlayerBuyable(c.Core, h) && EligibleRole(h, role, fallbackPool)
+                     && (boarding ? h.GroupId >= 0 && h.HasCapability(DataHullTypeIGC.HabmBoard)
+                         : Showcase.IsPlayerBuyable(c.Core, h) && EligibleRole(h, role, fallbackPool))
                      && !SuccessorUpgrade.HullIsObsolete(c.Core, h, c.Local, c.Techs)).OrderBy(h => h.HullId))
         {
             var parts = new List<ExpandedPartData>();
@@ -343,7 +344,7 @@ internal static class TechLoadoutSelector
             // can crew them (native BoardShip needs an equipped slot,
             // FedSrv.CPP:2377-2392). Anti-fighter DPS ranking: gunners defend.
             ArmTurretMounts(c.Core, h, legal, parts, ref energy, ref ammo, ref spent, c.Budget);
-            if (parts.Count == 0) continue; // automatic steering needs a damaging fixed gun
+            if (parts.Count == 0 && !boarding) continue; // boarders can fly to a bay without a gun
             // Scouts reserve their optional-equipment budget for stealth first;
             // dedicated mine layers retain their dispenser purchase policy.
             var equipmentOrder = role == Showcase.HullRole.Scout && !preferMines
@@ -533,9 +534,10 @@ internal static class TechLoadoutSelector
             ? (long)Math.Max(0, p.Price) * amount : Math.Max(0, p.Price);
 
     internal static bool Legal(StaticCore core, short civ, TechTreeBitMask techs, short dock,
-        short hullId, IReadOnlyList<ExpandedPartData> parts)
+        short hullId, IReadOnlyList<ExpandedPartData> parts, bool boarding = false)
     {
-        if (!core.HullTypes.TryGetValue(hullId, out var h) || !Showcase.IsPlayerBuyable(core, h)) return false;
+        if (!core.HullTypes.TryGetValue(hullId, out var h)
+            || !(Showcase.IsPlayerBuyable(core, h) || boarding && h.GroupId >= 0 && h.HasCapability(DataHullTypeIGC.HabmBoard))) return false;
         var c = Create(core, civ, techs, core.StationTypes[dock].TtbmLocal, [dock], long.MaxValue);
         if (!c.Hulls.Contains(hullId) || SuccessorUpgrade.HullIsObsolete(core, h, c.Local, techs)) return false;
         var mounts = new HashSet<(EquipmentType, byte)>();

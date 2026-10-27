@@ -506,6 +506,7 @@ internal sealed partial class BotManager : IDisposable
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
             Showcase.HullRole? techRole = Enum.TryParse<Showcase.HullRole>(role, true, out var parsedRole) ? parsedRole : null;
+            if (string.Equals(role, "boarder", StringComparison.OrdinalIgnoreCase)) techRole = Showcase.HullRole.Fighter;
             bool defensiveMines = false;
             if (techRole == Showcase.HullRole.Fighter)
             {
@@ -753,7 +754,8 @@ internal sealed partial class BotManager : IDisposable
                 selected = PickTechLoadout(s, techRole ?? Showcase.HullRole.Fighter, support: support,
                     defensiveMines: defensiveMines, medevacScout: pickedMedevac,
                     varied: loadoutVariety, varietySeed: LoadoutVarietySeed + botId * 1_000_003,
-                    preferTurretBomber: preferTurretBomber);
+                    preferTurretBomber: preferTurretBomber,
+                    boarding: ConquestGame(cs) && string.Equals(roleName, "boarder", StringComparison.OrdinalIgnoreCase));
                 return selected is not null;
             }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {techRole}");
             hullId = selected!.HullId; parts = selected.Parts;
@@ -2813,7 +2815,7 @@ bool isThreat =
         // The requested role can be locked while this life flies a temporary
         // fighter/scout. Research finales can additionally assign a verified legal
         // station-damaging strike loadout on another player hull.
-        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(cs)
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
             && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
                 || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)

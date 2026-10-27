@@ -1,0 +1,930 @@
+{
+  "task": "P832e",
+  "base_commit": "47d1ac8a0040589dc15eecc20cedfe57e15fff14",
+  "status": "completed_with_qualified_fast_failures",
+  "commits_or_pushes": false,
+  "remote_hosts_contacted": false,
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0,
+    "raw_log": "build.log"
+  },
+  "tools_build": {
+    "projects": 90,
+    "warnings": 0,
+    "errors": 0,
+    "raw_log": "build-tools-final.log",
+    "initial_infrastructure_retry": "MSB4166 in hud17-proof; final complete rerun passed"
+  },
+  "server_aot": {
+    "rid": "linux-x64",
+    "publish_succeeded": true,
+    "IL2026_or_IL3050": false,
+    "raw_log": "aot.log",
+    "bounded_boot_log": "aot-boot.log"
+  },
+  "tests": {
+    "bot_regressions": [
+      {
+        "file": "bots-1.trx",
+        "counts": {
+          "total": 82,
+          "executed": 82,
+          "passed": 82,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:37.5196101-05:00",
+          "queuing": "2026-10-27T15:12:37.5196101-05:00",
+          "start": "2026-10-27T15:12:36.9982634-05:00",
+          "finish": "2026-10-27T15:12:38.9944306-05:00"
+        }
+      },
+      {
+        "file": "bots-2.trx",
+        "counts": {
+          "total": 82,
+          "executed": 82,
+          "passed": 82,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:43.7585066-05:00",
+          "queuing": "2026-10-27T15:12:43.7585066-05:00",
+          "start": "2026-10-27T15:12:43.1825822-05:00",
+          "finish": "2026-10-27T15:12:45.1834934-05:00"
+        }
+      },
+      {
+        "file": "bots-3.trx",
+        "counts": {
+          "total": 82,
+          "executed": 82,
+          "passed": 82,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:50.4757706-05:00",
+          "queuing": "2026-10-27T15:12:50.4757707-05:00",
+          "start": "2026-10-27T15:12:49.8698157-05:00",
+          "finish": "2026-10-27T15:12:52.4667433-05:00"
+        }
+      }
+    ],
+    "native_regressions": [
+      {
+        "file": "core-1.trx",
+        "counts": {
+          "total": 52,
+          "executed": 52,
+          "passed": 52,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:40.4131951-05:00",
+          "queuing": "2026-10-27T15:12:40.4131951-05:00",
+          "start": "2026-10-27T15:12:39.4054922-05:00",
+          "finish": "2026-10-27T15:12:42.7835194-05:00"
+        }
+      },
+      {
+        "file": "core-2.trx",
+        "counts": {
+          "total": 52,
+          "executed": 52,
+          "passed": 52,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:46.5864699-05:00",
+          "queuing": "2026-10-27T15:12:46.5864699-05:00",
+          "start": "2026-10-27T15:12:45.5837789-05:00",
+          "finish": "2026-10-27T15:12:49.4262320-05:00"
+        }
+      },
+      {
+        "file": "core-3.trx",
+        "counts": {
+          "total": 52,
+          "executed": 52,
+          "passed": 52,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:12:53.9226434-05:00",
+          "queuing": "2026-10-27T15:12:53.9226434-05:00",
+          "start": "2026-10-27T15:12:52.8993412-05:00",
+          "finish": "2026-10-27T15:12:56.3754890-05:00"
+        }
+      }
+    ],
+    "conquest_wire_regressions": [
+      {
+        "file": "conquest-wire-1.trx",
+        "counts": {
+          "total": 4,
+          "executed": 4,
+          "passed": 4,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T14:57:18.6105758-05:00",
+          "queuing": "2026-10-27T14:57:18.6105758-05:00",
+          "start": "2026-10-27T14:57:16.8496463-05:00",
+          "finish": "2026-10-27T14:57:18.6158277-05:00"
+        }
+      },
+      {
+        "file": "conquest-wire-2.trx",
+        "counts": {
+          "total": 4,
+          "executed": 4,
+          "passed": 4,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T14:57:20.6507006-05:00",
+          "queuing": "2026-10-27T14:57:20.6507006-05:00",
+          "start": "2026-10-27T14:57:19.0983261-05:00",
+          "finish": "2026-10-27T14:57:20.6547335-05:00"
+        }
+      },
+      {
+        "file": "conquest-wire-3.trx",
+        "counts": {
+          "total": 4,
+          "executed": 4,
+          "passed": 4,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T14:57:22.6657235-05:00",
+          "queuing": "2026-10-27T14:57:22.6657236-05:00",
+          "start": "2026-10-27T14:57:21.1046420-05:00",
+          "finish": "2026-10-27T14:57:22.6697746-05:00"
+        }
+      }
+    ],
+    "conquest_games": [
+      {
+        "file": "conquest-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:16:15.9009475-05:00",
+          "queuing": "2026-10-27T15:16:15.9009475-05:00",
+          "start": "2026-10-27T15:14:31.2325507-05:00",
+          "finish": "2026-10-27T15:16:15.9039880-05:00"
+        },
+        "conquest": {
+          "goal": 65,
+          "wall_seconds": 100.6,
+          "stage": "Over",
+          "winner": 1,
+          "native_reason": "Bravo won because mcp-b003-8261 captured Garrison"
+        }
+      },
+      {
+        "file": "conquest-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:20:25.7411003-05:00",
+          "queuing": "2026-10-27T15:20:25.7411003-05:00",
+          "start": "2026-10-27T15:16:16.2944296-05:00",
+          "finish": "2026-10-27T15:20:25.7441326-05:00"
+        },
+        "conquest": {
+          "goal": 65,
+          "wall_seconds": 245.5,
+          "stage": "Over",
+          "winner": 1,
+          "native_reason": "Bravo won because mcp-b003-4766 captured Garrison"
+        }
+      },
+      {
+        "file": "conquest-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:22:33.1107062-05:00",
+          "queuing": "2026-10-27T15:22:33.1107062-05:00",
+          "start": "2026-10-27T15:20:26.1638264-05:00",
+          "finish": "2026-10-27T15:22:33.1138340-05:00"
+        },
+        "conquest": {
+          "goal": 65,
+          "wall_seconds": 122.9,
+          "stage": "Over",
+          "winner": 0,
+          "native_reason": "Alpha won because mcp-b004-4319 captured Garrison"
+        }
+      }
+    ],
+    "legacy_objective_games": [
+      {
+        "file": "legacy-objectives-1.trx",
+        "counts": {
+          "total": 6,
+          "executed": 6,
+          "passed": 6,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T14:49:52.9769085-05:00",
+          "queuing": "2026-10-27T14:49:52.9769086-05:00",
+          "start": "2026-10-27T14:49:24.0473829-05:00",
+          "finish": "2026-10-27T14:56:45.0498738-05:00"
+        }
+      },
+      {
+        "file": "legacy-objectives-2.trx",
+        "counts": {
+          "total": 6,
+          "executed": 6,
+          "passed": 6,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T14:57:22.3673425-05:00",
+          "queuing": "2026-10-27T14:57:22.3673425-05:00",
+          "start": "2026-10-27T14:56:45.4434241-05:00",
+          "finish": "2026-10-27T15:02:54.7541774-05:00"
+        }
+      },
+      {
+        "file": "legacy-objectives-3.trx",
+        "counts": {
+          "total": 6,
+          "executed": 6,
+          "passed": 6,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:03:24.8460264-05:00",
+          "queuing": "2026-10-27T15:03:24.8460264-05:00",
+          "start": "2026-10-27T15:02:55.2775660-05:00",
+          "finish": "2026-10-27T15:10:33.3294431-05:00"
+        }
+      }
+    ],
+    "profile_isolation": [
+      {
+        "file": "profile-isolated-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:33:24.9895351-05:00",
+          "queuing": "2026-10-27T15:33:24.9895351-05:00",
+          "start": "2026-10-27T15:33:24.3308139-05:00",
+          "finish": "2026-10-27T15:33:24.9926038-05:00"
+        }
+      },
+      {
+        "file": "profile-isolated-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:33:28.0568380-05:00",
+          "queuing": "2026-10-27T15:33:28.0568380-05:00",
+          "start": "2026-10-27T15:33:27.4113077-05:00",
+          "finish": "2026-10-27T15:33:28.0599697-05:00"
+        }
+      },
+      {
+        "file": "profile-isolated-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:33:31.1507990-05:00",
+          "queuing": "2026-10-27T15:33:31.1507990-05:00",
+          "start": "2026-10-27T15:33:30.4745050-05:00",
+          "finish": "2026-10-27T15:33:31.1539585-05:00"
+        }
+      }
+    ],
+    "bundle_paths_isolation": [
+      {
+        "file": "bundle-paths-isolated-1.trx",
+        "counts": {
+          "total": 9,
+          "executed": 9,
+          "passed": 9,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:09.1712101-05:00",
+          "queuing": "2026-10-27T15:32:09.1712101-05:00",
+          "start": "2026-10-27T15:32:08.1792199-05:00",
+          "finish": "2026-10-27T15:32:09.1749975-05:00"
+        }
+      },
+      {
+        "file": "bundle-paths-isolated-2.trx",
+        "counts": {
+          "total": 9,
+          "executed": 9,
+          "passed": 9,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:13.2802810-05:00",
+          "queuing": "2026-10-27T15:32:13.2802810-05:00",
+          "start": "2026-10-27T15:32:11.7412866-05:00",
+          "finish": "2026-10-27T15:32:13.2872199-05:00"
+        }
+      },
+      {
+        "file": "bundle-paths-isolated-3.trx",
+        "counts": {
+          "total": 9,
+          "executed": 9,
+          "passed": 9,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:16.8597243-05:00",
+          "queuing": "2026-10-27T15:32:16.8597243-05:00",
+          "start": "2026-10-27T15:32:15.8592160-05:00",
+          "finish": "2026-10-27T15:32:16.8637243-05:00"
+        }
+      }
+    ],
+    "player_info_isolation": [
+      {
+        "file": "player-info-isolated-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:11.2983499-05:00",
+          "queuing": "2026-10-27T15:32:11.2983500-05:00",
+          "start": "2026-10-27T15:32:09.5836057-05:00",
+          "finish": "2026-10-27T15:32:11.3020505-05:00"
+        }
+      },
+      {
+        "file": "player-info-isolated-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:15.4266303-05:00",
+          "queuing": "2026-10-27T15:32:15.4266303-05:00",
+          "start": "2026-10-27T15:32:13.7215638-05:00",
+          "finish": "2026-10-27T15:32:15.4295453-05:00"
+        }
+      },
+      {
+        "file": "player-info-isolated-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:32:19.0373648-05:00",
+          "queuing": "2026-10-27T15:32:19.0373649-05:00",
+          "start": "2026-10-27T15:32:17.3084581-05:00",
+          "finish": "2026-10-27T15:32:19.0405349-05:00"
+        }
+      }
+    ],
+    "fanout_fixed_class": [
+      {
+        "file": "fanout-fixed-1.trx",
+        "counts": {
+          "total": 31,
+          "executed": 31,
+          "passed": 31,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:36:53.4804834-05:00",
+          "queuing": "2026-10-27T15:36:53.4804834-05:00",
+          "start": "2026-10-27T15:36:52.8526701-05:00",
+          "finish": "2026-10-27T15:36:53.7742270-05:00"
+        }
+      },
+      {
+        "file": "fanout-fixed-2.trx",
+        "counts": {
+          "total": 31,
+          "executed": 31,
+          "passed": 31,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:36:54.8096732-05:00",
+          "queuing": "2026-10-27T15:36:54.8096732-05:00",
+          "start": "2026-10-27T15:36:54.1983703-05:00",
+          "finish": "2026-10-27T15:36:55.1066941-05:00"
+        }
+      },
+      {
+        "file": "fanout-fixed-3.trx",
+        "counts": {
+          "total": 31,
+          "executed": 31,
+          "passed": 31,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "times": {
+          "creation": "2026-10-27T15:36:56.1642225-05:00",
+          "queuing": "2026-10-27T15:36:56.1642225-05:00",
+          "start": "2026-10-27T15:36:55.5352775-05:00",
+          "finish": "2026-10-27T15:36:56.4638586-05:00"
+        }
+      }
+    ]
+  },
+  "dispatch_master_decision_hashes": {
+    "False": "B1C3CAAEBEFB6E0DA70EFE29A49F304F3F6CA5C2286B5C7053CE90F6B9A57C8D",
+    "True": "F1E6E61CF1FFC555CFB0ED888A4ADE7C8EB616C0AA4BFEE86438DE0F2D483BFB"
+  },
+  "never_parks": {
+    "runs": 0,
+    "reason": "Idle-host qualification deferred under brief busy-host exception",
+    "host": {
+      "utc": "2026-10-27T19:41:56.514478+00:00",
+      "cpus": 24,
+      "loadavg": [
+        10.7568359375,
+        11.13916015625,
+        8.82958984375
+      ],
+      "cpu_busy_percent_5s": 6.98,
+      "runnable": "3/4617",
+      "our_builds_or_tests_running": false
+    }
+  },
+  "raw_evidence": ".scratch/p832e/ (local ignored files; not part of public diff)",
+  "hygiene": {
+    "checked_code_files": 27,
+    "violations": [],
+    "new_media": []
+  },
+  "fast_tier": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 82,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 3613,
+        "live": 11,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 1891,
+        "live": 105,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 5492,
+        "live": 63,
+        "perf": 62
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 321.5013623249979,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 82,
+            "outcomes": {
+              "Passed": 82
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 3613,
+            "outcomes": {
+              "Passed": 3608,
+              "NotExecuted": 3,
+              "Failed": 2
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 1891,
+            "outcomes": {
+              "Passed": 1891
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 5492,
+            "outcomes": {
+              "Passed": 5486,
+              "Failed": 6
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9769230769230769,
+          "referenceMs": 3.683,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [],
+        "errors": [
+          "Allegiance.ClientCore.MonoGame.Tests: main failed",
+          "Allegiance.Core.Tests: main failed"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.05947857900173403,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05947857900173403,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "fast_qualification": {
+    "full_sweeps": 1,
+    "passed": 11095,
+    "failed": 8,
+    "optional_skips": 3,
+    "environment_failures": 6,
+    "seating_flake": 1,
+    "fanout_fixture_corrected": 1,
+    "full_sweep_repeated": false,
+    "receipt": "docs/TEST_FLAKES.md P832e"
+  }
+}

@@ -146,6 +146,9 @@ public sealed class ConquestTerritoryLiveTests
                                                    && s.Ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)).Ship;
             var target = missionA.Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
 
+            // Native join rankings now arrive at the end of join sync. Drain
+            // that initial state before measuring mission-scoped event traffic.
+            Assert.True(PumpUntil(server, () => bots.All(b => b.GameStates.Count > 0), 4000) < 4000);
             foreach (var b in bots) { b.ResetGameStates(); b.ResetGameOvers(); }
             // P450 (shipIGC.cpp:849-851): capture needs the base's shields down.
             DropShield(target);
@@ -318,6 +321,8 @@ public sealed class ConquestTerritoryLiveTests
             PumpUntil(seat.Server, () => seat.Bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(seat.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");
             Assert.All(seat.Ships, s => Assert.NotNull(s));
+            Assert.True(PumpUntil(seat.Server, () => seat.Bots.All(b => b.GameStates.Count > 0), 4000) < 4000,
+                "Every peer must finish receiving initial native rankings before an event test resets them");
             foreach (var s in seat.Ships) s.Velocity = Vector3.Zero;
             Assert.True(seat.SideA != seat.SideB, "harness needs two distinct sides");
             Assert.Equal(seat.SideA, seat.Ships[0].SideId);   // slot 0 = side A (the boardable capturer)

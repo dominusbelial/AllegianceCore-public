@@ -282,7 +282,7 @@ public class P784ComposeTests
             Port = 0,
             UpdatesPerSecond = 20,
             SideSelectAutoSeatSeconds = 30,
-            Games = [new Gm { Name = "P784 fanout", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
+            Games = [new Gm { Name = "P784 fanout", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], MaxTeamImbalance = 0x7fff }],
         });
 
         var sessions = new[] { new ConnectionSession(), new ConnectionSession(), new ConnectionSession() };
@@ -300,6 +300,12 @@ public class P784ComposeTests
                     CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
                     SteamID = 90200000000000000ul + (ulong)i, DrmHash = "p784fanout",
                 });
+                // The contract needs two known teammates and an enemy, not
+                // timing-dependent auto seating. Finish each explicit side
+                // request before opening the next peer.
+                Assert.True(PumpUntil(server, () => sessions[i].Ack is not null, 8000) < 8000);
+                sessions[i].SendPositionReq(i == 2 ? (short)1 : (short)0);
+                Assert.True(PumpUntil(server, () => sessions[i].World.MyShipId is not null, 8000) < 8000);
             }
             PumpUntil(server, () => sessions.All(s => s.World.MyShipId is not null), 8000);
             Assert.True(sessions.All(s => s.World.MyShipId is not null), "all three sessions must be assigned a ship");
@@ -315,6 +321,15 @@ public class P784ComposeTests
             Assert.True(mateIdx >= 0 && enemyIdx >= 0, "3 peers / 2 teams must leave one teammate and one enemy");
             var mate = sessions[mateIdx];
             var enemy = sessions[enemyIdx];
+
+            // Own assignment precedes the remaining join/peer notifications.
+            // Drain the teammate's identity/wing before taking the fanout snapshot.
+            Assert.True(PumpUntil(server, () =>
+            {
+                lock (sender.Gate)
+                    return sender.World.Ships.TryGetValue(mate.World.MyShipId!.Value, out var teammate)
+                        && teammate.SideId == senderSide && teammate.WingId == 0;
+            }, 8000) < 8000);
 
             // Resolve the wing-0 recipients over the sender's real world. Native
             // includes EVERY same-side wing-0 ship in the CHAT_WING subject sweep

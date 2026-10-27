@@ -9,7 +9,10 @@ internal sealed record DefenseThreat(DefenseKey Key, double AgeSeconds);
 internal sealed record DefenseDeployment(DefenseKey Key, string[] Names);
 internal sealed record FlagCandidate(uint Cookie, short Side, string Name, short ShipId, bool Scout,
     bool Carrying, short? Thief, double Distance, bool CanCarry = true, bool Artifacts = false, bool Flags = true,
-    short? Artifact = null, double ArtifactDistance = double.MaxValue);
+    short? Artifact = null, double ArtifactDistance = double.MaxValue, bool Conquest = false,
+    int ConquestPercent = 0, int ConquestGoal = 0, bool CargoPilot = true, ConquestContact[]? Stations = null);
+internal sealed record ConquestContact(short Id, short Sector, bool Own, double Distance,
+    bool Board, bool Strike, bool Threatened);
 internal sealed record FlagDeployment(uint Cookie, short Side, string Name, BotManager.FlagDuty Duty, short? Anchor = null, int Post = 0);
 internal sealed record CoordinationState(StageTally[] Stages, DefenseKey[] Bases, DefensePopulation[] Population,
     DefenseCandidate[] Candidates, DefenseThreat[] Threats, long Epoch = 0, long PublishedAtMs = 0,
@@ -52,6 +55,10 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
         var intel = all.SelectMany(s => s.Intel ?? []).ToArray();
         var flags = BotManager.PlanFlagDuties(all.SelectMany(s => s.Flags ?? []));
         if (!settings.Enabled) return new(releases, [], 0, intel, flags);
+        var conquestSides = all.SelectMany(s => s.Flags ?? []).Where(c => c.Conquest)
+            .Select(c => (c.Cookie, c.Side)).ToHashSet();
+        var objectivePilots = flags.Where(d => conquestSides.Contains((d.Cookie, d.Side)))
+            .Select(d => (d.Cookie, d.Side, d.Name)).ToHashSet();
 
         var bases = all.SelectMany(s => s.Bases).ToHashSet();
         foreach (var threat in all.SelectMany(s => s.Threats))
@@ -75,10 +82,12 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
             var used = _incidents.Where(kv => kv.Key.Cookie == key.Cookie && kv.Key.Generation == key.Generation && kv.Key.Side == key.Side)
                 .SelectMany(kv => kv.Value.Names ?? []).ToHashSet();
             int budget = BotManager.DefenseBudgetFor(count, used.Count, settings.Cap, settings.Share);
-            var names = candidates.Where(c => c.Key == key && !used.Contains(c.Name) && c.Hops >= 0)
+            var names = candidates.Where(c => c.Key == key && !used.Contains(c.Name) && c.Hops >= 0
+                    && !objectivePilots.Contains((c.Key.Cookie ?? 0, c.Key.Side, c.Name)))
                 .OrderBy(c => c.Hops).ThenBy(c => c.Distance).ThenBy(c => c.ShipId).Take(budget).Select(c => c.Name).ToArray();
             if (names.Length > 0 || budget == 0) { incident.Names = names; incident.Started = now; }
         }
-        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, kv.Value.Names ?? [])).ToArray(), 0, intel, flags);
+        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, (kv.Value.Names ?? [])
+            .Where(name => !objectivePilots.Contains((kv.Key.Cookie ?? 0, kv.Key.Side, name))).ToArray())).ToArray(), 0, intel, flags);
     }
 }

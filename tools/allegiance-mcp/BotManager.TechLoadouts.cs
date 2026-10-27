@@ -62,9 +62,14 @@ internal sealed partial class BotManager
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
         DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
         bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed,
-        bool preferTurretBomber = false)
+        bool preferTurretBomber = false, bool boarding = false)
     {
         var core = Catalog.RepresentativeCore();
+        // Native capture capability is acquired through the same legality and
+        // purchase path as the fleet; a locked boarder temporarily flies fighter.
+        if (boarding && TechLoadoutSelector.Select(core, shop.Civ, Showcase.HullRole.Fighter,
+                shop.Techs, shop.DockType, budget: shop.Budget, boarding: true) is { } transport)
+            return transport with { Reason = "conquest boarding hull; " + transport.Reason };
         // P779b-1 — the medevac exception is scout-only: its Dispenser slot takes
         // the side's best rescue-capable probe launcher instead of a scanner.
         bool rescueProbe = medevacScout && role == Showcase.HullRole.Scout;
@@ -154,7 +159,8 @@ internal sealed partial class BotManager
             TechLoadoutSelector.Selection? selected = null;
             if (bot.LoadoutRefused && bot.PreviousLegalLoadout is { } previous
                 && previous.Price <= shop.Budget && TechLoadoutSelector.Legal(Catalog.RepresentativeCore(), shop.Civ,
-                    shop.Techs, shop.DockType, previous.HullId, previous.Parts))
+                    shop.Techs, shop.DockType, previous.HullId, previous.Parts,
+                    boarding: ConquestGame(cs) && bot.Role.Equals("boarder", StringComparison.OrdinalIgnoreCase)))
                 selected = previous with { Reason = $"refusal fallback to previous legal loadout; {previous.Reason}" };
             if (selected is null)
             {
@@ -167,14 +173,17 @@ internal sealed partial class BotManager
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
                     defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout,
                     varied: bot.Variety, varietySeed: bot.VarietySeed,
-                    preferTurretBomber: role == Showcase.HullRole.Bomber && !bot.FinaleBomberActive);
+                    preferTurretBomber: role == Showcase.HullRole.Bomber && !bot.FinaleBomberActive,
+                    boarding: ConquestGame(cs) && bot.Role.Equals("boarder", StringComparison.OrdinalIgnoreCase));
                 if (selected is null && bot.FinaleBomberActive && target is { } station
-                    && cs.World.ResearchBriefing?.TechMode == "research")
+                    && (cs.World.ResearchBriefing?.TechMode == "research" || ConquestGame(cs)))
                 {
                     selected = TechLoadoutSelector.SelectAvailableStrike(Catalog.RepresentativeCore(), shop.Civ,
                         shop.Techs, shop.DockType, station, shop.Budget);
                     selected ??= PickTechLoadout(shop, role, target, allowRoleFallback: true) is { } available
-                        ? available with { Reason = "research finale: no legal station-damaging loadout; proceeding with best available combat loadout; bounded server finale armed; " + available.Reason }
+                        ? available with { Reason = (ConquestGame(cs)
+                            ? "conquest: awaiting a legal station-damaging loadout; continuing with available combat equipment; "
+                            : "research finale: no legal station-damaging loadout; proceeding with best available combat loadout; bounded server finale armed; ") + available.Reason }
                         : null;
                 }
             }

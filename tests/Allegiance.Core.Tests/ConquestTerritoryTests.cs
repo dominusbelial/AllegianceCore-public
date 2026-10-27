@@ -25,7 +25,7 @@ namespace Allegiance.Core.Tests;
 /// stations are added via <see cref="Mission.PlaceStation"/> to set up the
 /// exact ownership/unanimity scenarios under test.
 /// </remarks>
-public sealed class ConquestTerritoryTests
+public sealed partial class ConquestTerritoryTests
 {
     private static readonly string ArtRoot = TestArtRoot.Value;
 
