@@ -4,12 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P861 verification observations (2026-10-27)
+
+The conquest 80/50 fixture race is resolved: its assertion included the next
+mission's legitimate join ranking after game over. See
+[P861](reports/P861_CONQUEST_GAME_STATE_RACE.md) for the native ordering and the
+deterministic stalled-publisher proof. The complete class passed **20/20 bounded
+parallel invocations (`xargs -P 4`, 100 cases)**; the new and affected methods also
+passed **3/3 each alone**. No production code or P844 certification row changed.
+
+The one Fast sweep had **11,196 passed / 1 failed / 3 optional skips** in 347.5 s,
+with no timing offenders. Both P861 methods passed.
+`Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`
+failed at `:440` (observer B never latched A's death within 2,500 ticks), then
+passed **3/3 exact-method invocations alone** (1.179 / 1.486 / 1.703 s), with source,
+deadline and assertions unchanged. Recorded as a load/receipt flake under the
+lane rule; the underlying death-latch timing is not diagnosed by P861. No full
+Fast retry. Raw receipts: ignored `.scratch/p861/fast/` and
+`.scratch/p861/unrelated-{1,2,3}/`; small summary in the P861 report assets.
+
 ## P832f verification observations (2026-10-27)
 
 The single Fast sweep had **11,155 passed / 2 failed / 3 optional skips**, with no timing offenders. See [P832f](reports/P832F_KILLS_BOTS.md) and its verification receipts. The full sweep was not repeated.
 
 - `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` repeated the already-ledgered read-only user configuration failure. The exact method passed **3/3** with `XDG_CONFIG_HOME` in task scratch. This is an environment restriction, not a product defect or load flake; preferences and test source were unchanged.
-- `ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over` received an initial **50%** GAME_STATE where its post-reset event assertion expected **80%**. It passed **3/3 exact-method invocations alone**, with the same source, deadline and assertions. This is consistent with delayed initial-ranking receipt around the list reset, rather than a conquest calculation failure: the fixture's earlier authoritative 80/20 assertions passed. P832f's bots are not instantiated by this fixture, and its kills goal is disabled. Classified as a load/receive-order flake; no production conquest or fixture change made.
+- `ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over` received **50%** GAME_STATE where its post-reset event assertion expected **80%**. It passed **3/3 exact-method invocations alone**, with the same source, deadline and assertions. **Resolved by P861:** the extra 50% is the **next mission's** legitimate join ranking after GAME_OVER and rotation, not a delayed original join or a stale conquest recompute. The fixture had drained the original join, but `AllGameStates` flattened every later ranking and required all of them to remain 80%. A deterministic delayed-inspection proof reproduced the exact failure; the corrected test checks each peer's first post-capture ranking. A stalled-publisher regression also verifies ordered capture → 80% → GAME_OVER → 50% under snapshot coalescing. See [P861](reports/P861_CONQUEST_GAME_STATE_RACE.md). P832f's bots are not instantiated by this fixture, and its kills goal is disabled.
 
 All 21 flags/artifacts/conquest bot games passed, as did three normal-cadence kills games and the final 64-case bot controller/planner group in three isolated invocations.
 
@@ -3159,4 +3178,4 @@ See [P832e](reports/P832E_CONQUEST_BOTS.md) and its
 [validation summary](reports/P832E_assets/validation.json). Raw receipts remain
 in the worktree's ignored `.scratch/p832e/` directory.
 | 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P852 fast-tier gate (this worktree): 1 fail in the full fast run, then 2/5 alone ("station 1052 was exported to a side that had not seen it"), then 3/3 clean | already ledgered above (2026-10-24 ×2, 2026-10-27 P848); P852 touches no station-export/rotation path (lobby join-request/ready/alliance rules only) — recurrence of the rotation-migration timing flake |
-| 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P852 merge gate 7aa00867: conquest 'Expected 80 Actual 50' (first gate after P832e's station-victory changes — watch: possible stale GAME_STATE read or recompute ordering race); shop launcher = known load flake | 3/3 alone each | suspected race (conquest) / load flake (shop) |
+| 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P852 merge gate 7aa00867: conquest 'Expected 80 Actual 50' (P861: fixture included the fresh mission's legitimate 50% join ranking after GAME_OVER; resolved by per-peer capture-frame assertions); shop launcher = known load flake | 3/3 alone each | resolved fixture race, see P861 (conquest) / load flake (shop) |

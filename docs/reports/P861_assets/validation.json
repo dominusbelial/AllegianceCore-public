@@ -1,0 +1,156 @@
+{
+  "task": "P861",
+  "base": "3f94d5f1",
+  "branch": "codex/p861",
+  "classification": "Test observation bug; native behavior preserved",
+  "productionSourceChanged": false,
+  "sourceSha256": "d26755668b56e53d13c70c2c90abefbea0375cfa48d0e97b3652298f19a5eda6",
+  "rawEvidenceRoot": ".scratch/p861/",
+  "build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "build-final.log"
+  },
+  "tools": {
+    "projects": 90,
+    "warnings": 0,
+    "errors": 0,
+    "log": "build-tools.log"
+  },
+  "delayedInspectionBeforeFix": {
+    "invocations": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "maxCaseSeconds": 0.4960457
+  },
+  "finalRegressionWithLegacyAssertion": {
+    "invocations": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "maxCaseSeconds": 0.5182096
+  },
+  "classAlone": {
+    "invocations": 3,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 0.4824067
+  },
+  "newRegressionAlone": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 0.4985961
+  },
+  "affectedMethodAlone": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 0.5003903
+  },
+  "snapshotDisabled": {
+    "invocations": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 0.4719218
+  },
+  "boundedParallel": {
+    "invocations": 20,
+    "passed": 100,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 0.546941,
+    "concurrency": 4,
+    "loadOneMinuteRange": [
+      24.77,
+      25.18
+    ],
+    "loadStart": [
+      "25.18",
+      "24.35",
+      "23.50"
+    ],
+    "loadEnd": [
+      "24.86",
+      "24.32",
+      "23.50"
+    ]
+  },
+  "unrelatedFastFailureAlone": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 1.7028108
+  },
+  "unrelatedFastFailure": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn: observer never latched death within 2500 ticks",
+  "aotPublish": "Not applicable: Server/Core source unchanged",
+  "checks": {
+    "glossaryPaths": 232,
+    "parityScorecard": true,
+    "gitDiffCheck": true
+  },
+  "fast": {
+    "invocations": 1,
+    "passed": false,
+    "tier": "fast",
+    "seconds": 347.45570698600204,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 87,
+        "outcomes": {
+          "Passed": 87
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 3613,
+        "outcomes": {
+          "Passed": 3610,
+          "NotExecuted": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 1915,
+        "outcomes": {
+          "Passed": 1914,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5557,
+        "outcomes": {
+          "Passed": 5557
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.5148541114058356,
+      "referenceMs": 5.711,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 15.148541114058355
+    },
+    "timingOffenders": [],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.0729917560092872,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  }
+}
