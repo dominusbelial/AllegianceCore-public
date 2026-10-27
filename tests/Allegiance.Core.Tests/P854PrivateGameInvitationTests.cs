@@ -132,6 +132,21 @@ public sealed class P854PrivateGameInvitationModelTests
         Assert.False(m.IsSideInvited(0, "Some Pilot", new[] { "Squad B" }));
     }
 
+    /// <summary>P854 review (Claude): in a squad game native keeps one invited squad
+    /// per side — CFSSide::AddInvitation clears the list first (fsside.cpp:73-80).</summary>
+    [SkippableFact]
+    public void SquadGame_keeps_only_the_last_invited_squad_per_side()
+    {
+        Require.Artwork();
+        var m = NewMission();
+        m.SquadGame = true;
+        m.AddInvitation(0, "Squad A");
+        m.AddInvitation(0, "Squad B");
+        Assert.Equal(new[] { "Squad B" }, m.SideInvitations[0]);
+        Assert.False(m.IsSideInvited(0, "p", new[] { "Squad A" }));
+        Assert.True(m.IsSideInvited(0, "p", new[] { "Squad B" }));
+    }
+
     [SkippableFact]
     public void ListNotYetLoaded_refuses_everyone_until_the_lists_arrive()
     {

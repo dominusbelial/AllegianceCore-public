@@ -198,6 +198,10 @@ public sealed partial class Mission : IMissionIgc
         if (sideId < 0 || sideId >= Sides.Count) return;
         if (!_sideInvitations.TryGetValue(sideId, out var list))
             _sideInvitations[sideId] = list = new List<string>();
+        // Native CFSSide::AddInvitation (fsside.cpp:73-80): a squad game keeps ONE
+        // invited squad per side — the list is cleared before the push (and native
+        // renames the side to the squad, which this port does not do yet: SIM-0491).
+        if (SquadGame) list.Clear();
         list.Add(subject);
     }
 
