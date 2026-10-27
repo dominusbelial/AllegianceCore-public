@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -57,7 +58,28 @@ public sealed partial class Server : IDisposable
     // (native deletes the OldPlayerLink in AddPlayerToSide,
     // fsmission.cpp:572-577). Entries die with their mission (cleared by the
     // game-over rotation, native ~CFSMission discards m_oldPlayers).
-    private readonly Dictionary<(Mission Mission, string Name), PlayerScore> _oldPlayerScores = new();
+    private readonly Dictionary<(Mission Mission, string Name), PlayerScore> _oldPlayerScores =
+        new(OldPlayerKeyComparer.Instance);
+
+    /// <summary>P847 — the old-player cache key comparer. Native keys its
+    /// <c>m_oldPlayers</c> list purely on the character name with
+    /// <c>_stricmp</c> (<c>GetOldPlayerLink</c>, fsmission.cpp:390-398) and
+    /// <c>SaveAsOldPlayer</c> UPDATES the entry it finds (fsmission.cpp:2624-2631),
+    /// so a side always has at most ONE saved score per player name regardless of
+    /// how the name was cased on that visit. With the dictionary's default
+    /// comparer a second departure under different capitalisation created a
+    /// duplicate entry and a later rejoin restored whichever one the scan met
+    /// first. Mission identity stays reference-equal (one cache per mission).</summary>
+    private sealed class OldPlayerKeyComparer : IEqualityComparer<(Mission Mission, string Name)>
+    {
+        internal static readonly OldPlayerKeyComparer Instance = new();
+        public bool Equals((Mission Mission, string Name) a, (Mission Mission, string Name) b) =>
+            ReferenceEquals(a.Mission, b.Mission)
+            && string.Equals(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        public int GetHashCode((Mission Mission, string Name) k) =>
+            HashCode.Combine(RuntimeHelpers.GetHashCode(k.Mission),
+                             StringComparer.OrdinalIgnoreCase.GetHashCode(k.Name));
+    }
     // P439 — the loaded static core and the shared hull-landing-bay resolver
     // are kept after boot so DeclareGameOver can rebuild a finished mission
     // from the SAME inputs InstantiateGames used. Native regenerates the world

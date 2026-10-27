@@ -3105,3 +3105,16 @@ spotter-cache isolation race named in the P832d report is gone with P858, which 
 toggle.
 | 2026-10-27 | P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch | merge gate 47d1ac8a (P849/P858/P859/P832d) 5×: run 4 failed at 302 s (slowest run; message not captured, -v q) while three delegate lanes ran suites on the host | 3/3 re-runs alone pass (2:53–4:29); 7/8 overall | load flake (suspected timeout) |
 | 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect; Hud12bReviewFixTests.Chat_line_truncation_matches_the_native_clip_and_is_cached_per_source_and_width | P842 merge gate f953e685 (three lanes running suites): same 'station 1052 exported to a side that had not seen it' and 7600 B allocation signatures | 3/3 alone each | load flakes; P480 recurs across gates — queued for a root-cause task |
+## P847 observation (2026-10-27)
+
+`Allegiance.ClientCore.MonoGame.Tests.P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire`
+failed in the P847 fast tier (line 328: the mate ship `8100` is missing from the wing-0 recipient list
+`[8098, 8096]`). **Pre-existing on master, not a flake and not P847's**: reverting every P847 `src/` change
+and re-running the test alone reproduces the identical assertion 3/3. The earlier ledger entry above
+(2026-10-24, different assertion at line 315) recorded a load flake in the same test; this is a different,
+deterministic failure (a same-side wing-0 mate is not selected by `Game1.CommandFanout.Recipients`), so it
+needs an owner rather than a retry. P847 touches no fanout/order-compose code.
+
+P847 also updated two test expectations that pinned the old, non-native dropped-part treasure quantity
+(`TreasureDropLiveTests`, `DropPartTests`): a dropped WEAPON's treasure now carries `amount = 0`
+(FedSrv.CPP:4392), so both suites were re-run 3/3 alone and are green.

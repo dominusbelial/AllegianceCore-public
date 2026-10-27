@@ -279,7 +279,10 @@ public class DropPartTests
             // Structural fields match the dropped part / native CreateTreasure maths.
             Assert.Equal(TreasureCode.Part, data.TreasureCode);          // c_tcPart (FedSrv.CPP:4367)
             Assert.Equal(pidW, data.TreasureId);                          // part's PartId (FedSrv.CPP:4369)
-            Assert.Equal((short)20, data.Amount);                         // dropped part's Amount
+            // P847 — native's third CreateTreasure overload carries a quantity only
+            // for magazine/dispenser/pack drops; every other object type falls to
+            // `default: amount = 0` (FedSrv.CPP:4392), so a dropped WEAPON reports 0.
+            Assert.Equal((short)0, data.Amount);                          // default: amount = 0 (FedSrv.CPP:4392)
             Assert.Equal((short)subjectSector, data.ClusterId);           // pcluster id (FedSrv.CPP:4335)
             Assert.Equal(120f, data.Lifespan);                            // DROP_PART lifespan arg (FedSrv.CPP:6326)
             Assert.False(data.CreateNow);                                 // createNow = false (FedSrv.CPP:4372)

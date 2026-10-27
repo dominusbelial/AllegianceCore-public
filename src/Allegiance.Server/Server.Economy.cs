@@ -470,9 +470,19 @@ public sealed partial class Server
     /// Runs with <c>bSend:true</c> for each member so every changed relationship
     /// is broadcast as <c>AUTODONATE(116)</c> to the side group (native gathers
     /// the same batch with <c>bSend=false</c> and flushes it once to the side
-    /// group — identical net wire effect).</summary>
+    /// group — identical net wire effect).
+    /// <para><b>P847 stage gate.</b> Native keeps the whole donation block inside
+    /// <c>if (STAGE_STARTED == stage || STAGE_STARTING == stage)</c>
+    /// (fsmission.cpp:1103-1115) — before the start there is no income to
+    /// redirect. The port ran it unconditionally, so a lobby-time leader exit
+    /// silently rewrote every donor's relationship where native leaves it alone.
+    /// Both callers (a real departure and a side switch, both native
+    /// <c>RemovePlayerFromSide</c>) now honour that gate.</para></summary>
     private void RetargetDonorsOffLeaver(Mission mission, short sideId, Ship departing, Ship newLeader)
     {
+        // fsmission.cpp:1103 — no income to redirect before the game runs.
+        if (mission.Stage is not (MissionStage.Started or MissionStage.Starting)) return;
+
         var newLeaderLive = LiveOf(newLeader);
         if (newLeaderLive is not null && ReferenceEquals(newLeaderLive.Wallet.AutoDonateTarget, departing))
             SetAutoDonate(newLeaderLive, null, 0, bSend: true);
@@ -1168,6 +1178,22 @@ public sealed partial class Server
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets) SendPeer(t, packet);
         Console.WriteLine($"[sideattr] side {side.Id} -> SIDE_ATTRIBUTE_CHANGE(76) x{targets.Length} whole-mission peer(s)");
+    }
+
+/// <summary>P847 — the port of <c>CFSMission::GiveSideMoney</c>
+    /// (<c>FedSrv/fsmission.cpp:1777-1787</c>): <c>if (money != 0)</c> accrue the
+    /// amount into the side's treasury and then <b>pay it out at once</b> with
+    /// <c>DoPayday(pside)</c>. Every native caller (a simulated
+    /// <c>PaydayEvent</c>, an NPC cash-treasure pickup, the side-leave payday in
+    /// <c>RemovePlayerFromSide</c>, and the ore sale) goes through this one body,
+    /// so the port does too — a bare <c>side.Money += x</c> is not the native
+    /// rule and leaves the cash waiting for the next natural payday.</summary>
+    private void GiveSideMoney(Side side, long money)
+    {
+        if (money == 0) return;          // fsmission.cpp:1780
+        if (money < 0) money = 0;        // native asserts money >= 0
+        side.Money += money;             // m_rgMoney[sideID] += money (fsmission.cpp:1783)
+        OnPayday(side, money);           // DoPayday(pside) (fsmission.cpp:1785)
     }
 
 /// <summary>

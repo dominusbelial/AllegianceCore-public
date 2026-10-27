@@ -150,7 +150,11 @@ public class TreasureDropLiveTests
         Assert.NotNull(te);
         Assert.Equal(TreasureCode.Part, te!.Code);           // c_tcPart (FedSrv.CPP:4367)
         Assert.Equal(weaponId.Value, te.PayloadId);          // part's PartId
-        Assert.Equal((short)20, te.Amount);                  // dropped part's Amount
+        // P847 — native's third CreateTreasure overload only carries a quantity for
+        // magazine/dispenser/pack drops; every other object type falls to
+        // `default: amount = 0` (FedSrv.CPP:4392), so a dropped weapon's treasure
+        // reports amount 0 and the client mounts it from the part type.
+        Assert.Equal((short)0, te.Amount);                    // default: amount = 0 (FedSrv.CPP:4392)
         Assert.Equal(FlySector, te.ClusterId);               // pcluster id (FedSrv.CPP:4335)
         // The treasure P0 sits offset from the ship (~radius + 10), so it is NOT
         // exactly at the ship's spawn point — it is a distinct real position.
