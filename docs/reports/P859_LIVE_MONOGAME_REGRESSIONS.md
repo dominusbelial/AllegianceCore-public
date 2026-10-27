@@ -289,4 +289,3 @@ Raw logs / TRX / bisect traces: `~/allegiance-evidence/P859/` (`step.sh`, `bisec
 | `docs/TEST_FLAKES.md` | P699 entry marked resolved (P859); 2026-10-27 reconnect load-flake row |
 | `docs/reports/P859_LIVE_MONOGAME_REGRESSIONS.md` + `docs/reports/P859_assets/` | this report, five PNGs (need Domingo's review), `validation-summary.json` |
 
-> **Media note (Claude, 2026-10-27):** the five before/after PNGs named above are held out of the public repo pending media review; they are kept with the local evidence for this task.
