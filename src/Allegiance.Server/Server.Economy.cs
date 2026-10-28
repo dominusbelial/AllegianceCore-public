@@ -1093,10 +1093,13 @@ public sealed partial class Server
                 BroadcastSideTechChange(mission, side);
             // P845 — native SideDevelopmentTechChange (FedSrv.CPP:11304-11313):
             // after the (stage-gated) broadcast, upgrade every station the side
-            // owns to its buyable successor type, unconditionally. (The trailing
-            // UpgradeDrones — same native fn, FedSrv.CPP:11312 — is SIM-0636's
-            // scope, realised in this port at dock-time.)
+            // owns to its buyable successor type, unconditionally.
             side.UpgradeStationsToSuccessors();
+            // SIM-0636/0638 — native SideDevelopmentTechChange's trailing
+            // UpgradeDrones(pside) (FedSrv.CPP:11312): the tech change ALSO
+            // upgrades every non-player ship docked at the side's stations,
+            // EAGERLY (not at the next dock).
+            (mission.Site as ServerHost)?.UpgradeDrones(side);
         }
 
         // 2. DEV_COMPLETED — unconditional, side's own group (FedSrv.CPP:11262-11266).
@@ -1117,16 +1120,24 @@ public sealed partial class Server
                           $"{(newTechs && mission.Stage == MissionStage.Started ? "; SIDE_TECH_CHANGE(75) side-group (stage Started)" : (newTechs ? " (SIDE_TECH_CHANGE suppressed: stage != Started)" : ""))}" +
                           $"{(techOnly ? "; tech-only, no attribute delta" : "; SIDE_ATTRIBUTE_CHANGE(76) whole-mission")}");
 
-        // 4. P302 — the prosperity win: completing the c_didTeamMoney development
-        //    ends the game for its owner (FedSrv.CPP:11274-11279). Gated on
-        //    ProsperityEnabled so a non-prosperity mission completing this dev is
-        //    unaffected; the recompute confirms the winner and raises the seam the
-        //    host consumes (GAME_STATE + P178 DeclareGameOver).
+        // 4. P302/SIM-0637 — the prosperity win: completing the c_didTeamMoney
+        //    development ends the game (FedSrv.CPP:11274-11279). Native's
+        //    GameOver is UNCONDITIONAL in the body, but only reachable in
+        //    prosperity games: CreateBuckets EXCLUDES the c_didTeamMoney
+        //    development (sideigc.cpp:186) and EnterGame creates its bucket only
+        //    when IsProsperityGame() (missionigc.h:769-794). This port seeds the
+        //    bucket in every mission, so the ProsperityEnabled gate here is the
+        //    exact reachability compensation — behaviour-equal to native. The
+        //    winner is the completing side and the reason is native's text
+        //    (FedSrv.CPP:11276-11277).
         if (dev.DevelopmentId == Mission.TeamMoneyDevelopmentId && mission.ProsperityEnabled)
         {
             var (pWinner, pChanged) = mission.RecomputeProsperityAndArtifacts();
-            if (pChanged || pWinner is not null)
-                mission.Site.ProsperityArtifactComputed(mission, pChanged, pWinner);
+            if (pWinner is not null && mission.Stage != MissionStage.Over)
+                DeclareGameOver(mission, pWinner.Id,
+                    $"{pWinner.Name} has proven the economic value of their outpost.");   // FedSrv.CPP:11276-11277
+            else if (pChanged)
+                mission.Site.ProsperityArtifactComputed(mission, pChanged, null);
         }
     }
 

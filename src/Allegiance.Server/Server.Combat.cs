@@ -1029,6 +1029,24 @@ public sealed partial class Server
         SendExplosionEvent(targets, stationType, station.ClusterId, station.Center, Vector3.Zero, 100f);
     }
 
+    /// <summary>SIM-0650 — native SendChatf(NULL, CHAT_EVERYONE, NA, NA, ...)
+    /// (FedSrv.CPP:12376-12379): a system chat line to EVERY peer in the
+    /// mission, no sender, no voice cue. Same shape as
+    /// <see cref="SendFlagSecureChat"/> with the Everyone target.</summary>
+    private void SendMissionChat(Mission mission, string text)
+    {
+        var message = new ChatMessage
+        {
+            SidSender = -1, ChatTarget = (int)ChatTarget.Everyone, OidRecipient = -1,
+            VoiceOver = 0, CommandID = OrderChange.CidNone, OtTarget = -1, OidTarget = -1, Message = text,
+        };
+        var packet = FedPacket.Pack([message.Encode()]);
+        int recipients = 0;
+        foreach (var (connection, peer) in _peerShips)
+            if (ReferenceEquals(peer.Ship.Mission, mission)) { SendPeer(connection, packet); recipients++; }
+        Console.WriteLine($"[chat] mission-wide: '{text}' -> {recipients} peer(s) (FedSrv.CPP:12376-12379)");
+    }
+
     /// <summary>
     /// P451 — the defending team's base-under-attack alert, the port of
     /// <c>FedSrvSiteBase::DamageStationEvent</c> (<c>FedSrv.CPP:12183-12233</c>),
@@ -1520,6 +1538,21 @@ public sealed partial class Server
             OnSideLostRestartStation(mission, capture.OldSide);
             if (mission.Sides.Any(side => side.Id == capture.OldSide && side.Active))
                 VacateStation(capture.Station);
+        }
+
+        // SIM-0650 — the non-victory destruction announcement (FedSrv.CPP:
+        // 12376-12379): when a SHIP with a side destroyed a station and the kill
+        // produced NO victory, native SendChatf's CHAT_EVERYONE
+        // "%s has destroyed %s's %s.". Reached only on a kill (captures pass
+        // Captured:true, builds Built:true — neither announces).
+        if (winner is null && victory is { Captured: false, Built: false } killAnnounce
+            && killAnnounce.Launcher is Ship killer
+            && killer.SideId is { } killerSideId
+            && mission.Sides.FirstOrDefault(s => s.Id == killerSideId) is { } killerSide
+            && mission.Sides.FirstOrDefault(s => s.Id == killAnnounce.Station.SideId) is { } ownerSide)
+        {
+            SendMissionChat(mission,
+                $"{killerSide.Name} has destroyed {ownerSide.Name}'s {killAnnounce.Station.Data.Name}.");
         }
 
         if (winner is not null && mission.Stage != MissionStage.Over)
@@ -2892,12 +2925,16 @@ public sealed partial class Server
         // P494 — the dock auto-restock (refill + desired-loadout successor
         // upgrade), for a player-piloted ship only (native gates the dock
         // restock's desired-loadout walk on IsPlayer(), FedSrv.CPP:12836).
-        foreach (var kvp in _peerShips)
-        {
-            if (!ReferenceEquals(kvp.Value.Ship, ship)) continue;
-            RestockOnDock(kvp.Value);
-            break;
-        }
+        // SIM-0667 — a lifepod flagged for the allied re-home redirect skips it:
+        // native's pod path (FedSrv.CPP:13264-13300) re-hulls and re-docks
+        // WITHOUT an AlliedRearm body.
+        if (!_alliedPodRedirectPending.Contains(ship))
+            foreach (var kvp in _peerShips)
+            {
+                if (!ReferenceEquals(kvp.Value.Ship, ship)) continue;
+                RestockOnDock(kvp.Value);
+                break;
+            }
 
         if (ship.Flag is { } sidFlag
             && stationSide is { } ss
@@ -2986,6 +3023,12 @@ public sealed partial class Server
         // BroadcastShipDeparted — it sees the station scene, not a ghost.
         BroadcastShipDeparted(ship, ship.Sector, ShipDelete.SdrDocked);
 
+        // SIM-0667 — the allied lifepod redirect runs BEFORE the dock notify so
+        // the wire carries the HOME station, not the allied one (native re-docks
+        // the pod at its own base before ShipStatusDocked, FedSrv.CPP:13286-13298).
+        if (_alliedPodRedirectPending.Remove(ship))
+            PerformAlliedLifepodRedirect(ship);
+
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
@@ -3014,6 +3057,25 @@ public sealed partial class Server
             };
             SendPeer(kv.Key, FedPacket.Pack(new[] { sync.Encode() }));
             Console.WriteLine($"[docked] peer {kv.Key} ship {ship.Id} <- BUY_LOADOUT_ACK dock-sync hull {sync.HullId} + {sync.Parts.Count} part(s) (real mounted loadout)");
+
+            // SIM-0662/0667 — the AlliedRearm(pship, true) launch leg for an
+            // allied-base dock: the restock already ran above (its body), now the
+            // BUY_LOADOUT_ACK with fLaunch = true (FedSrv.CPP:12776-12782) and the
+            // ship+children SetStation(NULL) (FedSrv.CPP:12800-12810) via the real
+            // undock path (launch pose, re-dock debounce, SET_CLUSTER).
+            if (_alliedRearmPending.Remove(ship) && ship.StationId is not null)
+            {
+                var launch = new BuyLoadoutAck
+                {
+                    HullId = ship.HullType.HullId,
+                    FBoughtEverything = true,
+                    FLaunch = true,
+                    Parts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray(),
+                };
+                SendPeer(kv.Key, FedPacket.Pack(new[] { launch.Encode() }));
+                UndockShipState(ship, kv.Value.Sector);
+                Console.WriteLine($"[allied-dock] ship {ship.Id}: rearmed at allied base — BUY_LOADOUT_ACK fLaunch=true + SetStation(NULL) ship+children (FedSrv.CPP:12776-12810) — relaunched");
+            }
             return;
         }
 

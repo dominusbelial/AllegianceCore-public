@@ -334,6 +334,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             || rock.Sector is not { } sector || rock.ConstructedStation is not null) return;
         var station = sector.BuildStation(rock, owner, stationType, now, seen);
         StationConstructed?.Invoke(rock, station);
+        // SIM-0643 — native BuildStation's trailing UpgradeDrones(pside)
+        // (FedSrv.CPP:11507): the freshly built station may upgrade the drones
+        // docked at the side's stations (a new base widens the buyable set).
+        UpgradeDrones(owner);
     }
 
     public void KillBuildingEffectEvent(IBuildingEffectIgc buildingEffect)
@@ -1198,6 +1202,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         sh.StationId = ds.Station.StationId;
 
+        // SIM-0666 (FedSrv.CPP:13172-13178) — the docked ship's children get the
+        // station too: native loops GetChildShips() and calls SetStation(pstation)
+        // on each, so a boarded gunner's station state follows its parent's dock.
+        // The port's StationId is the whole dock latch (MakeOwnShipStatus reads it
+        // for the turret-status row), so setting it here is the port's SetStation.
+        foreach (var child in sh.ChildShips)
+            child.StationId = ds.Station.StationId;
+
         // P767c — decide the resupply BEFORE the plan clear below: the
         // PlanTarget/PlanCommandId setters call DronePlanChanged(), which
         // clears the getting-ammo latch (Ship.DronePlanChanged, Ship.cs:7548).
@@ -1743,11 +1755,26 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // Dock gates (FedSrv.CPP:13233-13238). Native's UpgradeShip call sits
         // AFTER this gate if/else (FedSrv.CPP:13240), so a refused NPC dock is
         // still upgraded — the gates only skip the Dock body itself.
+        // SIM-0667 — a lifepod at an ALLIED station is the branch's own case
+        // (FedSrv.CPP:13264-13300): native skips the Dock there too, then the
+        // allied branch re-homes the pod at its OWN base within the same event.
+        // The port accepts the latch so the redirect can run in OnShipDocked —
+        // before any wire notify — so the net observable state is native's.
+        bool alliedDock = station.SideId != ship.SideId
+            && ship.Mission is { } allyProbe
+            && allyProbe.AreSidesFriendly(station.SideId, ship.SideId);
         bool docked = true;
         if (ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) && station.SideId != ship.SideId)
         {
-            Console.WriteLine($"[changestation] ship {ship.Id}: lifepod dock at enemy station {station.StationId} refused");
-            docked = false;
+            if (alliedDock)
+            {
+                Console.WriteLine($"[changestation] ship {ship.Id}: lifepod docked at ALLIED station {station.StationId} — re-home redirect (FedSrv.CPP:13264-13300)");
+            }
+            else
+            {
+                Console.WriteLine($"[changestation] ship {ship.Id}: lifepod dock at enemy station {station.StationId} refused");
+                docked = false;
+            }
         }
         else if (station.SideId != ship.SideId && (ship.ChildShips.Count > 0 || ship.ParentShip is not null))
         {
@@ -1759,8 +1786,51 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         if (ship.IsNpc)
             UpgradeNpcShipAtStation(ship, station);
 
+        // SIM-0662/0667 — the #ALLY allied-base branch (FedSrv.CPP:13242-13310):
+        // a PLAYER docked at an ALLIED side's station (AlliedSides, same group)
+        // is rearmed and relaunched at once; a lifepod is instead deleted from
+        // the allied base and re-homed (with its last hull) at its own side's
+        // station. Native gate (FedSrv.CPP:13244): IsPlayer && station side !=
+        // own side && own side AlliedSides(station side). The body runs through
+        // the Server hooks below because the restock/relaunch half is the
+        // Server's dock machinery (RestockOnDock/UndockShipState); the dock
+        // itself has already been accepted above, exactly like native's
+        // pfsShip->Dock(pstationNew) at :13241 before the branch. A turret
+        // (ParentShip != null) and a parent with children (:13291-13299) take
+        // neither leg — children stay docked.
+        if (!ship.IsNpc && alliedDock)
+        {
+            if (ship.ParentShip is null && ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+                AlliedLifepodDocked?.Invoke(ship, station);
+            else if (ship.ParentShip is null)
+            {
+                Console.WriteLine($"[changestation] ship {ship.Id}: docked at ALLIED station {station.StationId} — AlliedRearm relaunch (FedSrv.CPP:13301-13308)");
+                AlliedDockRearm?.Invoke(ship, station);
+            }
+        }
+
         return docked;
     }
+
+    /// <summary>SIM-0662/0667 — raised from <see cref="ChangeStation"/>'s
+    /// #ALLY allied-base branch (<c>FedSrv.CPP:13242-13310</c>) when a PLAYER
+    /// (non-NPC, non-pod, non-turret) docks at an ALLIED side's station. The
+    /// Server's handler performs native <c>AlliedRearm(pship, true)</c>'s launch
+    /// leg: the restock (its RefillPart + desired-loadout body is the port's
+    /// <c>RestockOnDock</c>, run by <c>OnShipDocked</c>), the
+    /// <c>BUY_LOADOUT_ACK</c> with <c>fLaunch = true</c> (FedSrv.CPP:12776-12782)
+    /// and ship+children <c>SetStation(NULL)</c> (FedSrv.CPP:12800-12810).
+    /// Raised after the dock gates but before the dock latches on the Server
+    /// side, so the handler defers the launch until <c>OnShipDocked</c>.</summary>
+    public Action<Ship, DataStationIGC>? AlliedDockRearm;
+
+    /// <summary>SIM-0667 — raised from <see cref="ChangeStation"/>'s #ALLY
+    /// allied-base branch when a PLAYER LIFEPOD docks at an allied station
+    /// (<c>FedSrv.CPP:13264-13300</c>): the pod cannot stay there — the Server's
+    /// handler deletes it from the allied base (SHIP_DELETE SDR_DOCKED to the
+    /// whole mission) and re-homes it, hull-swapped to a buyable hull, docked at
+    /// its own side's restart station.</summary>
+    public Action<Ship, DataStationIGC>? AlliedLifepodDocked;
 
     /// <summary>The world-mission site implementation of <c>CommandChangedEvent</c>
     /// (<c>igc.h:4882</c>; <c>FedSrv/FedSrv.CPP:13699-13732</c>). Builds an
@@ -1855,6 +1925,34 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
                 }
             }
         }
+    }
+
+    /// <summary>SIM-0636 — the port of <c>FedSrvSiteBase::UpgradeDrones</c>
+    /// (<c>FedSrv.CPP:11234-11257</c>): iterate every station owned by
+    /// <paramref name="pside"/> and upgrade every NON-PLAYER ship docked there
+    /// (<c>!pfsship-&gt;IsPlayer()</c> → <c>UpgradeShip(pship, pstation)</c>,
+    /// FedSrv.CPP:11251-11253). Native raises it EAGERLY on a side tech change
+    /// (<c>SideDevelopmentTechChange</c> tail, FedSrv.CPP:11312) and on a station
+    /// build (<c>BuildStation</c>, FedSrv.CPP:11507) — the dock-time upgrade in
+    /// <see cref="ChangeStation"/> is the separate NPC-dock call (FedSrv.CPP:13240),
+    /// and this method is its tech-change/build counterpart.</summary>
+    public void UpgradeDrones(ISideIgc pside)
+    {
+        if (pside is not Side side || side.Mission is not { } mission) return;
+        int upgraded = 0;
+        foreach (var sector in mission.Sectors)
+            foreach (var stationRuntime in sector.StationRuntimes)
+            {
+                if (stationRuntime.SideId != side.Id || stationRuntime.Dead) continue;
+                foreach (var ship in sector.Models.OfType<Ship>())
+                    if (ship.StationId == stationRuntime.StationId && ship.IsNpc)
+                    {
+                        UpgradeNpcShipAtStation(ship, stationRuntime.Data);
+                        upgraded++;
+                    }
+            }
+        if (upgraded > 0)
+            Console.WriteLine($"[upgradedrones] side {side.Id}: upgraded {upgraded} docked NPC ship(s) (FedSrv.CPP:11234-11257)");
     }
 
     /// <summary>P760b — the "buy a default loadout" half of native

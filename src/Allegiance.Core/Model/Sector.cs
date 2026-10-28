@@ -4536,6 +4536,7 @@ public sealed class Sector : IClusterIgc
             // FedSrv/FedSrv.CPP:13165-13173 ChangeStation).
             if (ship.ParentShip is not null) continue;
             if (ship.Mission is null) continue;          // unplaced ship has no host
+            var dockMission = ship.Mission;              // non-null from here down (SIM-0666 allied capture gate reuses it)
             if (ship.StationId is not null) continue;    // already docked (latch)
             if (ship.SideId is not { } side) continue;   // no side ⇒ nothing is friendly (native pside == psideOld impossible)
 
@@ -4637,7 +4638,18 @@ public sealed class Sector : IClusterIgc
                 // board ship falls through with a `continue` (below) — this port's
                 // stand-in for native's collision bounce — so it neither captures
                 // nor docks, matching the non-board rejection.
-                if (station.SideId != side)
+                // SIM-0662/0666/0667 — the allied dock ENTRY (shipIGC.cpp:729-731):
+                // native admits the station collision when `(pside1 == pside2) ||
+                // pside1->AlliedSides(pside1, pside2)` — an ALLIED side's ship
+                // reaches InGarage → DockWithStationEvent exactly like an own-side
+                // one (no capture, no shield gate). The port previously rejected
+                // every non-own-side dock that did not capture, which made the
+                // whole allied-dock half of ChangeStation/DockWithStationEvent
+                // unreachable. Own-side docks fall through as before.
+                bool alliedDock = station.SideId != side
+                    && dockMission.AreSidesFriendly(side, station.SideId);
+
+                if (station.SideId != side && !alliedDock)
                 {
                     // A hostile ship can only capture with a c_habmBoard hull;
                     // otherwise it is rejected (the pre-P126 behaviour: no dock,
@@ -4657,6 +4669,21 @@ public sealed class Sector : IClusterIgc
                     // non-board hull — no capture, no dock (the port's stand-in for
                     // native's collision bounce, which a separate pass covers).
                     if (rt.ShieldFraction >= DownedShieldFraction) continue;
+                }
+
+                // SIM-0666 — the capture gate with its ALLIED exemption
+                // (FedSrv.CPP:13100-13105): native captures only when
+                // `!AlliedSides(pside, psideOld) || bAllowFriendlyFire` — an
+                // ALLIED board hull captures only when friendly fire is ON
+                // (and then regardless of the shields: the FedSrv capture gate has
+                // no shield term; the shield-down gate above is the ENEMY branch's
+                // IGC collision gate, shipIGC.cpp:849-851, which own/allied docks
+                // never pass through).
+                if (station.SideId != side
+                    && ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)
+                    && (!alliedDock || dockMission.AllowFriendlyFire))
+                {
+                    if (rt is null) continue;
 
                     // Raise the capture seam BEFORE committing the re-side, so the
                     // host's STATION_CAPTURE broadcast reads sidOld from the still-
@@ -4693,6 +4720,11 @@ public sealed class Sector : IClusterIgc
                     // ordinary friendly dock below (native docking continues
                     // unconditionally after the capture, FedSrv.CPP:13107 onward).
                 }
+
+                // A non-capturing allied dock (alliedDock && no board hull, or an
+                // allied board hull with friendly fire OFF) falls through to the
+                // ordinary dock below with the station still foreign-owned —
+                // exactly native's own-or-allied InGarage branch.
 
                 // Arrived at a (now, after a capture, friendly) station — raise the
                 // seam. The host's DockWithStationEvent latches the state (sets

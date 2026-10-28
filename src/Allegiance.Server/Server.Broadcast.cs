@@ -1901,7 +1901,11 @@ public sealed partial class Server
     private PlayerInfo BuildPlayerInfo(Ship ship, short isSide, string? characterName,
         int kills = 0, int deaths = 0, int ejections = 0, short rank = 0) => new()
     {
-        CharacterName = characterName ?? PeerName(ship) ?? $"Ship {ship.Id}",
+        // SIM-0770 — native CreateStockDrone names a drone "<name><shipId>"
+        // (FedSrv.CPP:2246-2261): the drone type's name, or the building station
+        // type's BuilderName for a c_ptBuilder drone; the id is appended WITHOUT
+        // a separator. PLAYERINFO is exactly where the name reaches every peer.
+        CharacterName = characterName ?? NativeDroneName(ship) ?? PeerName(ship) ?? $"Ship {ship.Id}",
         Money = 0,
         ISide = isSide,
         ShipId = ship.Id,
@@ -1922,6 +1926,21 @@ public sealed partial class Server
         // native client rank reader uses NA (teampane.cpp:308,1866).
         PersistScores = [new(0f, 0f, ship.IsNpc ? (short)0 : rank, PlayerInfo.NA)],
     };
+
+    /// <summary>SIM-0770 — native CreateStockDrone's drone name
+    /// (<c>FedSrv.CPP:2246-2261</c>): <c>&lt;droneTypeName&gt;&lt;shipId&gt;</c>,
+    /// or <c>&lt;builderName&gt;&lt;shipId&gt;</c> for a c_ptBuilder drone (the
+    /// building station type's BuilderName). Null for anything that is not an
+    /// NPC with a resolvable type — human ships keep their own names.</summary>
+    private static string? NativeDroneName(Ship ship)
+    {
+        if (!ship.IsNpc || ship.Mission?.Core is not { } core) return null;
+        if (ship.PilotType == Ship.PilotTypeBuilder && ship.BuilderStationType is { } builderType)
+            return $"{builderType.BuilderName}{ship.Id}";                 // FedSrv.CPP:2252-2255
+        if (ship.DroneTypeId is { } dtId && core.DroneTypes.TryGetValue(dtId, out var droneType))
+            return $"{droneType.Name}{ship.Id}";                          // FedSrv.CPP:2257-2261
+        return null;
+    }
 
     /// <summary>P775 — announce ONE subject ship to its whole mission at the
     /// native moment, the exact port counterpart of native's whole-mission

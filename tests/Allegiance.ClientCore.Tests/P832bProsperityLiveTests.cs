@@ -73,7 +73,7 @@ public sealed class P832bProsperityLiveTests(ITestOutputHelper output)
             Assert.NotNull(result);
             Assert.True(sawGoals); Assert.True(sawEnemyInvestment);
             Assert.InRange(result.SideWinner, (short)0, (short)1);
-            Assert.Contains("prosperity", result.GameoverMessage);
+            Assert.Contains("economic value", result.GameoverMessage);   // native reason text, FedSrv.CPP:11276-11277
             lock (guard)
             {
                 Assert.Equal(MissionStage.Over, mission.Stage);
