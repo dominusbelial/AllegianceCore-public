@@ -1721,6 +1721,34 @@ public sealed partial class Server
                     Console.WriteLine($"[wire] bad CHANGE_ALLIANCE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == SetTeamInfo.Fmid)   // FM_CS_SET_TEAM_INFO (Messages.h:157-161)
+            {
+                // P853 / SIM-0625 — the C→S half of SET_TEAM_INFO: a team
+                // leader renames their side (non-squad game) or re-points the
+                // side's squad (squad game) while the mission is
+                // STAGE_NOTSTARTED and team settings are unlocked. Port of
+                // FedSrv.CPP:7430-7467; the guards and effects live in
+                // HandleSetTeamInfo (Server.MissionParams.cs).
+                try { HandleSetTeamInfo(from, command.Read<SetTeamInfo>()); }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SET_TEAM_INFO from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == MissionParamsMsg.Fmid)   // FM_CS_MISSIONPARAMS (Messages.h, fmid 113)
+            {
+                // P853 / SIM-0628 — the mission owner's live game-settings
+                // edit. Port of FedSrv.CPP:7518-7597; the owner gate, the
+                // Invalid(true) TrapHackBoot, the server-side overrides, the
+                // NOTSTARTED gate, SetMissionParams, the whole-mission
+                // MISSIONDEF(38) re-advertisement and the lobby refresh live
+                // in HandleMissionParams (Server.MissionParams.cs).
+                try { HandleMissionParams(from, command.Read<MissionParamsMsg>()); }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad MISSIONPARAMS from {from}: {e.Message}");
+                }
+            }
             else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
             {
                 // P84: "Sent to everyone on team" (the native message's own

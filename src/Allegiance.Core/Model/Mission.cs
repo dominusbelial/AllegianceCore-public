@@ -199,9 +199,19 @@ public sealed partial class Mission : IMissionIgc
         if (!_sideInvitations.TryGetValue(sideId, out var list))
             _sideInvitations[sideId] = list = new List<string>();
         // Native CFSSide::AddInvitation (fsside.cpp:73-80): a squad game keeps ONE
-        // invited squad per side — the list is cleared before the push (and native
-        // renames the side to the squad, which this port does not do yet: SIM-0491).
-        if (SquadGame) list.Clear();
+        // invited squad per side — the list is cleared before the push, and native
+        // renames the side to the invited squad (SetSideName(szSubjectName),
+        // fsside.cpp:78). P853 / SIM-0491 close-out: the port now performs that
+        // rename at the model level (Side.SetName); the server relays the
+        // resulting SET_TEAM_INFO after loading the lists (Server.Lifecycle.cs,
+        // mirroring SetSideName's whole-mission broadcast, fsmission.cpp:1580-1590).
+        // A non-squad game keeps the callsign semantics and never renames
+        // (fsside.cpp:72 IsSquadGame() gate).
+        if (SquadGame)
+        {
+            list.Clear();
+            Sides[sideId].SetName(subject);
+        }
         list.Add(subject);
     }
 

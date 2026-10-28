@@ -1068,6 +1068,21 @@ public sealed partial class ClientWorld
     public string? SideSquadName(short sideId) =>
         _sideSquadNameBySideId.TryGetValue(sideId, out var name) && name.Length > 0 ? name : null;
 
+    /// <summary>P853 — each side's real name, as the server re-announces it on
+    /// native SET_TEAM_INFO(15) when squadID is NA (the rename path):
+    /// <c>CFSMission::SetSideName</c> broadcasts the new name on every rename
+    /// (fsmission.cpp:1575-1590) and native's client applies it to the IGC side
+    /// (<c>appmsg.cpp:2541-2550</c>). Keyed by side id; the team pane's side
+    /// header reads it via <see cref="SideNameOverride"/>. Cleared on
+    /// reconnect/mission reset.</summary>
+    private readonly Dictionary<short, string> _sideNameBySideId = new();
+
+    /// <summary>The live side name for <paramref name="sideId"/> from the
+    /// server's SET_TEAM_INFO renames (P853), or null when the server has not
+    /// renamed that side (then the SIDE_ROSTER creation-time name stands).</summary>
+    public string? SideNameOverride(short sideId) =>
+        _sideNameBySideId.TryGetValue(sideId, out var name) && name.Length > 0 ? name : null;
+
     /// <summary>P281 — the latest SET_MISSION_OWNER(123) whole-mission broadcast
     /// (side + ship that now owns the mission), kept verbatim so the owner-gated
     /// randomize-teams control can be surfaced only to the current mission owner.
@@ -2052,6 +2067,7 @@ public sealed partial class ClientWorld
         _publishedDecision = DecisionSnapshot.Empty;
         SideRoster = null;
         _sideSquadNameBySideId.Clear();   // P820c — no stale squads across reconnect/reset
+        _sideNameBySideId.Clear();        // P853 — no stale side-name overrides across reconnect/reset
         MissionOwnerBroadcast = null;
         Graph = null;
         CountdownStartLocalMs = null;
@@ -5230,13 +5246,20 @@ public sealed partial class ClientWorld
     /// relayed by the server (Server.Squads.RelaySideSquad; native client
     /// appmsg.cpp:2541-2550). The squad name is SET_TEAM_INFO's SideName field
     /// (native fills it with the squad name in a squad game, fsmission.cpp:
-    /// 1666-1667); a NA squadID clears the side's squad. Unlike native's client
-    /// we do <b>not</b> rename the side from SideName — the real side name stays
-    /// from SIDE_ROSTER, so the team pane can show "SIDE n [Squad]" separately
-    /// (a deliberate P820c divergence).</summary>
+    /// 1666-1667); a NA squadID clears the side's squad. P853 — a NA squadID
+    /// ALSO carries a side rename (the <c>SetSideName</c> relay's SideName is
+    /// the new real name, fsmission.cpp:1587): native's client renames the IGC
+    /// side from it, and this port now records the override for the team pane
+    /// (deliberate P820c divergence retired — the creation-time SIDE_ROSTER
+    /// name stays authoritative only until the server renames the side).</summary>
     private void Apply(SetTeamInfo m)
     {
-        if (m.SquadId < 0) _sideSquadNameBySideId.Remove(m.SideId);
+        if (m.SquadId < 0)
+        {
+            _sideSquadNameBySideId.Remove(m.SideId);
+            if (m.SideName.Length > 0) _sideNameBySideId[m.SideId] = m.SideName;   // P853 — the rename echo
+            else _sideNameBySideId.Remove(m.SideId);
+        }
         else if (m.SideName.Length > 0) _sideSquadNameBySideId[m.SideId] = m.SideName;
         else _sideSquadNameBySideId.Remove(m.SideId);
     }

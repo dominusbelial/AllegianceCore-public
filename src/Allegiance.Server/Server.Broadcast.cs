@@ -187,6 +187,9 @@ public sealed partial class Server
         // tick if it already has every vote (e.g. an initiator-only side).
         Step("ballots", () => { foreach (var m in _missions) ResolveBallots(m, now); });
         Step("periodicRules", () => AdvancePeriodicRules(now));
+        // P853 — drop the params snapshots of rotated-out missions (a no-op
+        // table scan while no mission has ever been edited).
+        Step("missionParamsPrune", PruneMissionParams);
         lock (_statsLock)
         {
             _loopIterations++;

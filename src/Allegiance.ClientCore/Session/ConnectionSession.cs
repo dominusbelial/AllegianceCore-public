@@ -747,6 +747,31 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P853 — send a real <c>FM_CS_SET_TEAM_INFO(15)</c> (the C→S
+    /// half, <c>Inc/Messages.h:157-161</c>): the side's team leader proposes a
+    /// side rename (non-squad game, <c>squadId = NA</c>) or a squad re-point
+    /// (squad game). The server accepts it only at <c>STAGE_NOTSTARTED</c>
+    /// with unlocked team settings, from the side's current leader seated on
+    /// that side (<c>FedSrv.CPP:7430-7467</c>); the authoritative echo comes
+    /// back on the S→C <c>SET_TEAM_INFO</c> relay, which
+    /// <see cref="Allegiance.ClientCore.State.ClientWorld"/> applies.</summary>
+    public void SendSetTeamInfo(short sideId, int squadId, string sideName)
+    {
+        var msg = new SetTeamInfo { SideId = sideId, SquadId = squadId, SideName = sideName };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>P853 — send a real <c>FM_CS_MISSIONPARAMS(113)</c>: the
+    /// mission owner's live game-settings edit. The whole payload is the
+    /// native <c>MissionParams</c> struct; the server validates it with the
+    /// port of <c>MissionParams::Invalid(true)</c>, overrides the immutable
+    /// fields, applies it at <c>STAGE_NOTSTARTED</c> and re-advertises the
+    /// whole <c>MISSIONDEF(38)</c> (<c>FedSrv.CPP:7518-7597</c>).</summary>
+    public void SendMissionParams(MissionParamsMsg missionParams)
+    {
+        Send(FedPacket.Pack(new[] { missionParams.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_SUICIDE(80)</c> — the client's "I want to
     /// die" request, the mirror of <c>Bot.SendSuicide</c>. The message is
     /// header-only (no fields to encode), so this takes no parameters. The
