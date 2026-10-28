@@ -115,11 +115,26 @@ public class P480RotationKeepsPlayersLiveTests
         server.Missions[0].Stage = MissionStage.Started;   // a draw needs a started game
 
         // Reset accumulators so we only measure post-rotation signals.
+        // P860 — the WORLD exports are cleared by a stream-ordered boundary, never on
+        // this thread: the rotation rebuilds the same static map, so a station's
+        // StationId is identical in both worlds and a received EXPORT(26) cannot be
+        // attributed to one by its content. A caller-thread ResetWorldExports() does
+        // not order itself against the socket/publisher (an EXPORT the server queued
+        // earlier can be appended after the clear), which is exactly how this test
+        // used to fail under load with "station 1052 was exported to a side that had
+        // not seen it": the peer the round-robin spawner seated on side 1 (KA1)
+        // legitimately received side 1's garrison in its FIRST join burst, and that
+        // pre-rotation export survived the clear. Native orders the same boundary the
+        // same way — GAME_OVER is queued before the mission is reset
+        // (Fsmission.cpp:3437, then :3490) — so the bot clears inside its receive loop
+        // at the game-over message and everything held afterwards is the rotated
+        // mission's fresh-joiner burst. Root cause + reproduction:
+        // P860RotationWorldExportBoundaryTests.
         foreach (var (b, _) in bots)
         {
             b.ResetGameOvers();
             b.ResetMissionStages();
-            b.ResetWorldExports();
+            b.ResetWorldExportsOnGameOver();   // P860 — the ordered world boundary
             b.ResetBallotSignals();
         }
 
