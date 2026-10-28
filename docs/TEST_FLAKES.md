@@ -3316,3 +3316,4 @@ The four existing snapshot golden-prefix failures reproduce on untouched
 byte comparisons pass. This confirms the stale golden observation already
 ledgered under P788c. Their expectations were left for NT-2. Full evidence and
 local timings: [P863_REPORT.md](reports/P863_REPORT.md).
+| 2026-10-28 | Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P864 fast-tier gate (this worktree): MonoGame reported these 2 fails in the full fast run (interrupted once during Core.Tests under shared-host load ~7-11 procs); Core.Tests re-run below | 2/2 x3 alone clean | load flakes — P864 touches game-over/GetExpMult/leadership (server sim) only; no HUD rendering/allocation or shop-launcher path |

@@ -1284,6 +1284,12 @@ public sealed partial class Server
             ratioFor[s1] = r0 / r1;            // ratio1 = rank[0]/rank[1], fsmission.cpp:3197
         }
 
+        // Collect every connected player of the mission on a real side into a
+        // frozen list, finalizing each one's session score (native's connected
+        // EndGame loop, fsmission.cpp:3178-3263). They are captured BEFORE the
+        // GetExpMult pass so that pass sees the pre-damping scores and the career
+        // standing (native reads persist.GetScore() before damping, :3261-3272).
+        var fin = new List<(string Name, PlayerScore Ps, short SideId)>();
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
@@ -1300,15 +1306,43 @@ public sealed partial class Server
             score.SetRankRatio(ratioFor.TryGetValue(sid, out var rat) ? rat : 1.0f);
             score.SetWin(winnerId != GameOver.NA && sid == winnerId);
             score.CalculateScore(fc);
+            // P864 / SIM-0528 — load the player's prior career standing so
+            // GetExpMult's experience accumulation weighs it (native
+            // persist.GetScore(), fsmission.cpp:3261-3262).
+            string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {kv.Value.Ship.Id}";
+            score.CareerScore = _careerScores.GetValueOrDefault(name);
             Console.WriteLine($"[scoring] ship {kv.Value.Ship.Id} (side {sid}) final score {score.Score:R} " +
                               $"kills={score.Kills} deaths={score.Deaths} rescues={score.Rescues} ejections={score.Ejections} " +
                               $"baseKills={score.BaseKills:R} baseCaptures={score.BaseCaptures:R} flags={score.Flags} artifacts={score.Artifacts} " +
                               $"win={score.Win} ratio={score.RankRatio:R} played={score.TimePlayed:F0}s");
+            fin.Add((name, score, sid));
         }
         // P844b/SIM-0526 — every still-connected player's TimePlayed now carries
         // the folded total (baseline + final stint); mark the mission so the
         // roster reads it as-is instead of folding the open stint a second time.
         _scoresFinalized.Add(mission);
+
+        // ═══════ P864 / SIM-0528 + SIM-0761 — GetExpMult's three
+        // ProcessGameOver call sites ═══════
+        // Native accumulates each side's experience as Σ timePlayed · persisted
+        // career score (fsmission.cpp:3261-3262,3271-3272), over BOTH connected
+        // players and cached old players (m_oldPlayers), then applies the
+        // multiplier at its three call sites (connected scores :3290-3314,
+        // departed scores :3316-3327, commander :3340-3376) and saves the
+        // results to the career record (:3378-3402). The math is delegated to
+        // the pure, unit-tested <see cref="PlayerScore.ApplyGameOverExperienceBalance"/>
+        // (career reads/writes routed to this server's in-memory career store).
+        var departed = _oldPlayerScores
+            .Where(kvp => ReferenceEquals(kvp.Key.Mission, mission))
+            .Where(kvp => _oldPlayerSideIds.TryGetValue(kvp.Key, out var osid) && osid >= 0)
+            .Select(kvp => (Name: kvp.Key.Name, Ps: kvp.Value,
+                            SideId: _oldPlayerSideIds[kvp.Key]))
+            .ToList();
+
+        PlayerScore.ApplyGameOverExperienceBalance(
+            fin, departed, mission.Sides.Count, _simNow,
+            careerOf: name => _careerScores.GetValueOrDefault(name),
+            foldCareer: (name, score) => _careerScores[name] = _careerScores.GetValueOrDefault(name) + score);
     }
 
     /// <summary>Per-server monotonic counter for the lobby match id, so a
@@ -1364,7 +1398,13 @@ public sealed partial class Server
                 BaseKills: score.BaseKills, BaseCaptures: score.BaseCaptures,
                 Minutes: (int)(score.TimePlayed / 60.0),
                 Win: score.Win, Loss: winnerId != GameOver.NA && sid != winnerId,
-                CommanderWin: false, CommanderLoss: false, ScoresCount: true,
+                // P864 / SIM-0528 — the commander-score credit columns, from the
+                // score object's command flags (native SetCharStats reads
+                // GetCommandWin()/GetCommandLoss(), fsmission.cpp:2969-2986; they
+                // are set only on the side's awarded commander, cleared for
+                // everyone else at finalize start).
+                CommanderWin: score.CommandWin,
+                CommanderLoss: score.CommandLose, ScoresCount: true,
                 // P844/SIM-0526 — the remaining native CQPlayerResults columns
                 // (fsmission.cpp:2969-2986): ejections, rescues, flags,
                 // artifacts, techs recovered, alephs/asteroids spotted and the
@@ -2748,9 +2788,38 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
         Console.WriteLine($"[lead] side {sideId} new leader ship {newLeader.Id}: SET_WINGID(106) wing 0 (commanded) to {nWing} side peer(s)");
 
-        // SetLeaderID + SET_TEAM_LEADER whole-mission (fsmission.cpp:1545-1553).
+        // SetLeaderID + SET_TEAM_LEADER whole-mission (fsmission.cpp:1545-1553),
+        // including SetLeaderID's command-time bookkeeping side effects
+        // (fsmission.cpp:1470,1480 — SIM-0504). The outgoing leader is captured
+        // BEFORE the reassignment (LeaderShip reads side.LeaderShipId).
+        var outgoingLeader = LeaderShip(mission, sideId);
         side.LeaderShipId = newLeader.Id;
+        TransferCommandTime(outgoingLeader, newLeader);
         BroadcastSetTeamLeader(mission, sideId, newLeader.Id);
+    }
+
+    /// <summary>
+    /// P864 / SIM-0504 — the command-time score side effects of a leadership
+    /// change, the port of native <c>CFSMission::SetLeaderID</c>
+    /// (fsmission.cpp:1464-1483): <c>StopCommand</c> the deposed leader and
+    /// <c>StartCommand</c> the incoming one (fsmission.cpp:1470,1480), so each
+    /// player's <c>PlayerScore.TimeCommanded</c> accumulates exactly the time
+    /// they led the side and the game-over commander-selection pass
+    /// (fsmission.cpp:3286-3292) can pick the side's longest-serving leader.
+    /// A <c>null</c> <paramref name="outgoingLeader"/> means the side was empty
+    /// (first player onto it becomes leader, fsmission.cpp:601-613); a leader
+    /// re-affirmation (outgoing == incoming) is a no-op so an unchanged leader's
+    /// running command timer is never spuriously reset.
+    /// </summary>
+    private void TransferCommandTime(Ship? outgoingLeader, Ship incomingLeader)
+    {
+        double now = _simNow;
+        if (outgoingLeader is not null
+            && !ReferenceEquals(outgoingLeader, incomingLeader)
+            && LiveOf(outgoingLeader) is { } ol)
+            ol.PlayerScore.StopCommand(now);
+        if (LiveOf(incomingLeader) is { } nl)
+            nl.PlayerScore.StartCommand(now);
     }
 
 // ════════════════════ P197 — per-player money & auto-donate ════════════════════
@@ -3434,6 +3503,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             // squad (GetCanLeadSquad, fsship.cpp:1374-1390), then the first
             // remaining player. P820b adds the squad-capable preference.
             newLeader ??= PreferSquadCapableLeader(remaining, side, remaining[0]);
+            // P864 / SIM-0504 — the departing leader hands off command time to
+            // the successor (native SetLeaderID, fsmission.cpp:1470,1480).
+            TransferCommandTime(ship, newLeader);
             side.LeaderShipId = newLeader.Id;
             BroadcastSetTeamLeader(mission, oldSideId, newLeader.Id);
             if (mission.MissionOwnerSideId == oldSideId)
@@ -3456,6 +3528,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
 
         // Side is now empty: clear its leader, then migrate the owner role if needed.
+        // P864 / SIM-0504 — stop the departing leader's command stint (native
+        // SetLeaderID(sideID, NA), fsmission.cpp:1470).
+        LiveOf(ship)?.PlayerScore.StopCommand(_simNow);
         side.LeaderShipId = null;
         // P820c — a side that empties before the start also clears its squad
         // (native fsmission.cpp:1008-1009: "set the squad to NA if the game
@@ -3590,6 +3665,10 @@ private void CompleteStartCountdown(Mission mission, double now)
                     newMissionOwner = true;
             }
             targetSide.LeaderShipId = ship.Id;
+            // P864 / SIM-0504 — first player onto the empty side becomes leader
+            // and begins commanding (native AddPlayerToSide → SetLeaderID,
+            // fsmission.cpp:601-613,1480).
+            TransferCommandTime(null, ship);
             // P820b/P820c — the side's squad is established when a TEAM LEADER
             // joins an empty side (native AddPlayerToSide, fsmission.cpp:661-690),
             // gated on mission.SquadGame (a non-squad game has no side squad).
@@ -4251,6 +4330,19 @@ private void CompleteStartCountdown(Mission mission, double now)
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.DwCookie };
+        // P864 / SIM-0504 — the logon leader election (TryJoinSide in the
+        // side-select flow) runs BEFORE this ship is registered in _peerShips,
+        // so TransferCommandTime's _peerShips lookup could not StartCommand the
+        // initial leader (its TimeCommanded stayed 0 all game). Reconcile now
+        // that the live ship is registered: if it is its side's current leader
+        // and not yet commanding, StartCommand it. A leader elected/re-seated
+        // after registration (an explicit TryJoinSide, a succession, a rotation
+        // re-seat) is already commanding and is left untouched.
+        if (live.Ship.SideId is { } cmdSide
+            && live.Ship.Mission is Mission cmdMission
+            && cmdMission.Sides.FirstOrDefault(s => s.Id == cmdSide)?.LeaderShipId == live.Ship.Id
+            && !live.PlayerScore.Commanding)
+            live.PlayerScore.StartCommand(_simNow);
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
         // P775 — the catch-all of native moment (1): a joiner that is never
         // seated (SideId still null at launch) is announced here with its own

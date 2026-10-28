@@ -82,6 +82,24 @@ public sealed partial class Server : IDisposable
     /// rotation.</summary>
     private readonly HashSet<Mission> _scoresFinalized = new();
 
+    /// <summary>P864 / SIM-0528 — the port's per-player <b>career</b> score
+    /// store, the stand-in for native's persisted
+    /// <c>PlayerScoreObject::GetPersistPlayerScore(civId)</c> career record that
+    /// <c>GetExpMult</c> weighs experience with
+    /// (<c>timePlayed · persist.GetScore()</c>, fsmission.cpp:3261-3272). Keyed
+    /// by character name (the port's only stable identity; case-insensitive like
+    /// native's name scans) and <b>server-lifetime in-memory only</b>: each game
+    /// over folds the player's final session <see cref="PlayerScore.Score"/> into
+    /// their career score so experience (and thus GetExpMult's anti-stacking
+    /// damping) accumulates across games within a server run. It does NOT survive
+    /// a server restart — the cross-restart persistence leg is classified as an
+    /// era/design limitation (no account/DB layer, P583), so the port keeps
+    /// native's career-based anti-stacking structure minus the DB. A brand-new
+    /// server where nobody has a career yet behaves exactly like native's new
+    /// players (experience 0 → GetExpMult inert → 1.0). Internal for the
+    /// GetExpMult live test (InternalsVisibleTo).</summary>
+    internal readonly Dictionary<string, float> _careerScores = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>P847 — the old-player cache key comparer. Native keys its
     /// <c>m_oldPlayers</c> list purely on the character name with
     /// <c>_stricmp</c> (<c>GetOldPlayerLink</c>, fsmission.cpp:390-398) and
