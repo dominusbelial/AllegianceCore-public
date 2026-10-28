@@ -133,6 +133,10 @@ public sealed class DroneBucketSpawnsDroneLiveTests
         InjectSingleMissionSpawn(server);
         server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb the drone-cycle assertions
         server.Boot(Config());
+        // P864c populates the file map. These drone-order fixtures inject their
+        // own only target, so remove ambient rocks before any NPC can choose one.
+        foreach (var arena in server.Missions[0].Sectors)
+            foreach (var generated in arena.Mineable.ToArray()) arena.RemoveAsteroid(generated);
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
         var bot = new FltBot();
         SeatOne(server, bot, "P459D");

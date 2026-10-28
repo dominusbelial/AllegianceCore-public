@@ -1,0 +1,107 @@
+{
+  "task": "P864c",
+  "base": "f6e9e480fab8f446d0fafa0ec3caed61675ee3c6",
+  "commits_or_pushes": false,
+  "rows": {
+    "SIM-0748": {
+      "before": "partial",
+      "after": "implemented",
+      "weight": 5
+    },
+    "SIM-0496": {
+      "before": "partial",
+      "after": "implemented",
+      "weight": 2
+    }
+  },
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "projects": 91,
+    "passed": true
+  },
+  "aot": {
+    "runtime": "linux-x64",
+    "self_contained": true,
+    "passed": true,
+    "IL2026": 0,
+    "IL3050": 0
+  },
+  "new_tests": {
+    "cases": 16,
+    "isolated_runs": 3,
+    "passed_case_executions": 48
+  },
+  "final_affected_fixture_and_timing_tests": {
+    "passed_case_executions": 153,
+    "failed": 0,
+    "runs_per_group": 3,
+    "note": "final strike receipts supersede the intermediate strike fixture failure"
+  },
+  "fast": {
+    "whole_sweeps": 1,
+    "passed": 11300,
+    "failed": 28,
+    "skipped": 3,
+    "seconds": 483.58879291600897,
+    "infrastructure_checks": 9,
+    "original_sweep_passed": false,
+    "resolutions": {
+      "fixed_fixture_cases": 19,
+      "environment_or_build_order": 7,
+      "unchanged_three_isolated_pass_receipt_flakes": 2
+    },
+    "timing": "Legacy warp case moved to Live after repeated 18-20 s passes; P651 arena fixed"
+  },
+  "showcase": [
+    {
+      "run": 1,
+      "name": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "outcome": "Passed",
+      "duration": "00:04:43.5373083"
+    },
+    {
+      "run": 2,
+      "name": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "outcome": "Passed",
+      "duration": "00:03:58.9310045"
+    },
+    {
+      "run": 3,
+      "name": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "outcome": "Passed",
+      "duration": "00:03:12.4293563"
+    },
+    {
+      "run": 4,
+      "name": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "outcome": "Passed",
+      "duration": "00:04:20.5232851"
+    },
+    {
+      "run": 5,
+      "name": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "outcome": "Passed",
+      "duration": "00:03:52.8460066"
+    }
+  ],
+  "checks": {
+    "compose": true,
+    "glossary": true,
+    "scorecard": true,
+    "whitespace": true,
+    "added_code_hygiene": true,
+    "new_media": 0
+  },
+  "sim_scorecard": {
+    "before_credit": 1813,
+    "after_credit": 1820,
+    "weight": 1903,
+    "before_complete": 643,
+    "after_complete": 645,
+    "eligible_rows": 687
+  },
+  "raw_evidence": ".scratch/p864c/"
+}

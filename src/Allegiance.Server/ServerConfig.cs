@@ -965,6 +965,22 @@ public sealed class ServerConfig
 {
     public ServerIdentityConfig? Identity { get; set; }
 
+    /// <summary>Opt out of native authenticated duplicate-logon replacement
+    /// (FedSrv.CPP:629). Default false: only the same verified account may
+    /// replace a seated player; unverified/different accounts are always refused.</summary>
+    public bool AlwaysRefuseDuplicateLogons { get; set; }
+
+    public void ApplyDuplicateLogonEnvironment(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        AlwaysRefuseDuplicateLogons = value.Trim().ToLowerInvariant() switch
+        {
+            "1" or "true" or "yes" or "on" => true,
+            "0" or "false" or "no" or "off" => false,
+            _ => throw new InvalidDataException("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS must be a boolean"),
+        };
+    }
+
     /// <summary>
     /// P762 / SIM-0142-adjacent moderation row — the port's stand-in for the
     /// native Steam moderator/developer group (<c>FedSrv.CPP:6751-6753</c>):

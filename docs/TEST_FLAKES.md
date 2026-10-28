@@ -4,6 +4,51 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P864c verification observations (2026-10-28)
+
+The P730 two-match showcase passed **5/5** (ten matches, 3m12s–4m43s per run).
+
+The single Fast sweep retained **11,300 passed / 28 failed / 3 optional skips**
+(483.6 s), plus **9/9 infrastructure checks**. It was not repeated. Detailed
+receipts and the final validation summary are in [P864c](reports/P864c_REPORT.md).
+
+- **Seven environment failures:** five `PlayerBundlePathsTests` cases inherited
+  the worktree's `local.env` through the worktree-local TMPDIR. The unchanged
+  nine-case class passed **3/3 (27/27)** with an open-directory `/proc` alias to
+  the same scratch directory. `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  repeated the read-only user-config failure (also 3/3 failures alone), then
+  passed **3/3** with `XDG_CONFIG_HOME` in scratch. `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane`
+  started before the parallel tool build had produced its DLL; it passed **3/3**
+  after `tools/build-tools.sh` completed. These are environment/build-order
+  issues, not load flakes. Final tool build covers all 91 projects.
+- **Two receipt/load flakes, unchanged source:**
+  `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+  inspected the client loadout before its launcher grant arrived;
+  `CrossSideCombatVisibilityLiveTests.SameSide_pairStillSeesProjectileAndMissile`
+  missed a combat receipt. Each passed **3/3 exact-method runs alone**. The
+  host's measured load average reached 21.29 on 24 CPUs during real verification
+  work; no artificial load was introduced.
+- **Nineteen fixture regressions, fixed rather than classified as flakes:**
+  file-map top-up intentionally invalidated empty-sector, authored-rock-only,
+  unchanged-station-type and empty-new-world-treasure assumptions. Affected
+  tests are `TargetPickSectorScopeLiveTests`, `AsteroidExportTests`,
+  `P733ResearchTimeTests` (two unlocked cases), `P616TrackerNativeBugTests`'s
+  treasure teardown, the layer/cross-cluster miner/default builder order tests
+  (including the P817 builder variant), two debug `InitialMinerSpawnLiveTests`,
+  `DropPartTests`, two `DroneBucketSpawnsDroneLiveTests`, the invisible-side
+  `AsteroidsUpdateLiveTests` case, `P801StrikeLoopbackLiveTests`, both P682
+  rotation cases and P651's missile battle. Deterministic failures were checked
+  3 times alone before repair (P651 instead showed 2 passes/1 failure with the
+  random populated corridor). Fixtures now explicitly prepare controlled scenes
+  or assert native new-world populations. P801 compares the same station type
+  and side attributes, allowing the native armor-first regen rule to leave its
+  shield depleted. All repaired groups pass **3/3** after their final changes.
+- **Timing:** the legacy slow-hull arrival test passed but took 19.437 s in Fast
+  and 18–20 s alone. It is now tagged `Tier=Live`; its geometry, assertions and
+  deadline are unchanged, and it passed 3/3 again with that classification.
+  P651's 15.171 s failed Fast execution was the populated-corridor fixture issue
+  above; all three cases in its repaired class passed 3/3.
+
 ## P862b verification observations (2026-10-28)
 
 The single Fast-tier sweep on the P862b tree (client rendering only: the aleph destination glimpse's

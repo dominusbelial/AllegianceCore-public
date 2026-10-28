@@ -312,6 +312,7 @@ public sealed class ClientWarpApproachSlowHullLiveTests
     /// P490's live run observed. This measures the mechanism, not assumes it.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Live")] // Measured 18-19 s alone; exceeds the Fast-tier limit.
     public void Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume()
     {
         Require.Artwork();

@@ -2241,9 +2241,11 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// <paramref name="shipId"/> left the mission entirely, to the whole
     /// mission. Emitted on the disconnect path (native
     /// <c>RemovePlayerFromMission</c>, fsmission.cpp:482-488).</summary>
-    private void BroadcastQuitMission(Mission mission, short shipId, QuitSideReason reason)
+    private void BroadcastQuitMission(Mission mission, short shipId, QuitSideReason reason, string message = "")
     {
-        var packet = FedPacket.Pack(new[] { new QuitMission { ShipId = shipId, Reason = reason }.Encode() });
+        // RemovePlayerByName forwards the same message to the whole mission
+        // (FedSrv/fsmission.cpp:482-488), including surviving peers.
+        var packet = FedPacket.Pack(new[] { new QuitMission { ShipId = shipId, Reason = reason, Message = message }.Encode() });
         int n = SendToMissionPeers(mission, packet);
         Console.WriteLine($"[quit] ship {shipId} left mission (reason {reason}): QUIT_MISSION(124) whole-mission to {n} peer(s)");
     }

@@ -348,6 +348,16 @@ public sealed class Sector : IClusterIgc
         _stationRuntimes.Add(station);
     }
 
+    /// <summary>Native retyping detaches/re-adds the cluster membership
+    /// (stationIGC.cpp:229-230,267-271; missionigc.cpp:4018-4023).</summary>
+    internal void MoveStationToEnd(Station station)
+    {
+        _stationRuntimes.Remove(station);
+        _stationRuntimes.Add(station);
+        _stations.RemoveAll(s => s.StationId == station.StationId);
+        _stations.Add(station.Data);
+    }
+
     internal void SyncStationData(Station station)
     {
         int index = _stations.FindIndex(s => s.StationId == station.StationId);

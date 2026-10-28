@@ -65,6 +65,8 @@ services:
       # (empty preserves games[].allowFriendlyFire / games[].allowAlliedViz; both default off).
       ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE: "${ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE:-}"
       ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ: "${ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ:-}"
+      # P864c: opt out of replacing an old seat for the same verified account.
+      ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS: "${ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS:-}"
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
       # P817 — native NPC travel (docs/reports/P817_NATIVE_GOTOPLAN.md).
       ALLEGIANCE_SIM_NATIVE_GOTOPLAN: "${ALLEGIANCE_SIM_NATIVE_GOTOPLAN:-0}"

@@ -60,6 +60,7 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         ValidateIdentityConfiguration();
         _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
         _config.ResolveShowcaseMode();
@@ -1349,7 +1350,8 @@ public sealed partial class Server
         Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (experimental NPC travel)");
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
-        mission.PopulateGoalObjects(_simNow);
+        if (fromMapGen) mission.PopulateGoalObjects(_simNow);
+        else mission.PopulateFileMap(_simNow, MapGenParams.FileMapDefaults(g.Teams));
 
         if (mg is not null)
         {
@@ -1924,7 +1926,7 @@ public sealed partial class Server
             + $"{(sector is not null ? $"sector {sector.Id} wide" : "side-wide (docked)")} (fsmission.cpp:895-913)");
     }
 
-    private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason, bool requested = false)
+    private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason, bool requested = false, string message = "")
     {
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
@@ -2047,7 +2049,7 @@ public sealed partial class Server
             return;
         }
 
-        RetireDepartedPeer(live, reason, _peerNames.GetValueOrDefault(id));
+        RetireDepartedPeer(live, reason, _peerNames.GetValueOrDefault(id), message);
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
         _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
@@ -2064,7 +2066,7 @@ public sealed partial class Server
     /// <c>RemovePlayerFromMission(QSR_LinkDead)</c>, <c>fsship.cpp:995</c>,
     /// reached from <c>OnDestroyConnection</c>, <c>FedSrv.CPP:4549-4566</c>.
     /// Called on the sim thread by both callers.</summary>
-    private void RetireDepartedPeer(LiveShip live, QuitSideReason reason, string? playerName = null)
+    private void RetireDepartedPeer(LiveShip live, QuitSideReason reason, string? playerName = null, string message = "")
     {
         var departureMission = live.Ship.Mission as Mission;
         short? departedSideId = live.Ship.SideId;
@@ -2121,7 +2123,7 @@ public sealed partial class Server
             // P183 — broadcast QUIT_MISSION(124) to the whole mission. This
             // disconnect path previously sent nothing telling remaining peers
             // "ship X quit the mission" — a real, live gap now closed.
-            BroadcastQuitMission(mission, live.Ship.Id, reason);
+            BroadcastQuitMission(mission, live.Ship.Id, reason, message);
 
             // P841 — the remaining RemovePlayerFromSide departure effects,
             // which native applies after its succession block:

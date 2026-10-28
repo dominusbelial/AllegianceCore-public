@@ -13,6 +13,16 @@ namespace Allegiance.Core.MapGen;
 /// </summary>
 public sealed class MapGenParams
 {
+    /// <summary>MissionParams::Reset resource defaults for custom maps
+    /// (Igc/igc.h:1284,1315-1328). Generated-map presets retain their own defaults.</summary>
+    public static MapGenParams FileMapDefaults(int teams) => new()
+    {
+        Teams = teams,
+        PlayerSectorAsteroids = 20, NeutralSectorAsteroids = 20,
+        PlayerSectorMineableAsteroids = 2, NeutralSectorMineableAsteroids = 4,
+        PlayerSectorSpecialAsteroids = 1, NeutralSectorSpecialAsteroids = 1,
+        PlayerSectorTreasures = 0, NeutralSectorTreasures = 5,
+    };
     /// <summary>Which topology to generate. Defaults to the native default
     /// (<see cref="MapGenType.SingleRing"/>); all ring-family types are
     /// implemented (P398).</summary>
