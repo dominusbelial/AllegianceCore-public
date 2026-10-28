@@ -1,0 +1,13 @@
+  Error Message:
+   Assert.All() Failure: 1 out of 2 items in the collection did not pass.
+[0]: Item:  ExportStation { ObjectType = 1, Station = DataStationIGC { Position = System.Single[], Up = System.Single[], Forward = System.Single[], Rotation = System.Single[], ClusterId = 1061, SideId = 1, StationId = 1052, StationTypeId = 15, BpHull = 240, BpShield = 240, Name = Garrison } }
+     Error: P860: station 1052 was exported to a side that had not seen it in the rotated mission (export 'Garrison' side 1 cluster 1061; recipient side 0, stage NotStarted); rotated [station 1051 'Garrison' side 0 cluster 1053 seenBySide0=True; station 1052 'Garrison' side 1 cluster 1061 seenBySide0=False]; received: 1052/side 1@1061 | 1051/side 0@1053
+  Stack Trace:
+     at Allegiance.Core.Tests.P860RotationWorldExportBoundaryTests.Stale_export_from_before_the_rotation_is_not_attributed_to_the_new_mission() in /home/domingo/allegiance-pi-p860/tests/Allegiance.Core.Tests/P860RotationWorldExportBoundaryTests.cs:line 285
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+
+(Reproduction: `tests/Allegiance.Core.Tests/P860RotationWorldExportBoundaryTests.Stale_export_...`
+run with the ordered boundary disabled — i.e. the pre-fix accumulator semantics. No load
+was applied; the failure is deterministic.)

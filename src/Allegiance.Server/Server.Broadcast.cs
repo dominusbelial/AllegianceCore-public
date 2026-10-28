@@ -185,7 +185,16 @@ public sealed partial class Server
         // Runs on the sim thread right after the mission tick so a ballot
         // created during this tick's transport drain is resolved this same
         // tick if it already has every vote (e.g. an initiator-only side).
-        Step("ballots", () => { foreach (var m in _missions) ResolveBallots(m, now); });
+        // P860 — index the list instead of enumerating it: a ballot that ends the
+        // game rotates the mission in place (RotateMissionAfterGameOver's
+        // `_missions[idx] = fresh`), and a List<T> indexer SET bumps the version, so
+        // the old foreach aborted this stage with "Collection was modified" on EVERY
+        // ballot-driven game-over (observed in the P480 rotation tests). Mission
+        // count and indexes are stable across a rotation, so indexing is exact.
+        Step("ballots", () =>
+        {
+            for (int i = 0; i < _missions.Count; i++) ResolveBallots(_missions[i], now);
+        });
         Step("periodicRules", () => AdvancePeriodicRules(now));
         lock (_statsLock)
         {

@@ -659,8 +659,50 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<ExportStation> StationExports { get { lock (_gate) return _stationExports.ToArray(); } }
 
     /// <summary>P480 — clear the accumulated cluster/warp/station world exports
-    /// (between joins/phases; the asteroid exports have their own reset above).</summary>
-    public void ResetWorldExports() { lock (_gate) { _clusterExports.Clear(); _warpExports.Clear(); _stationExports.Clear(); } }
+    /// (between joins/phases; the asteroid exports have their own reset above).
+    /// <para><b>Not ordered against the wire (P860).</b> This is a caller-thread
+    /// clear: an <c>EXPORT(26)</c> the server queued <em>before</em> the call can
+    /// still be sitting in the socket/publisher and be appended <em>after</em> it.
+    /// Use it only between phases of one world (or before any traffic at all);
+    /// to measure a new world, arm <see cref="ResetWorldExportsOnGameOver"/> so
+    /// the boundary lands at a fixed position in the received stream.</para></summary>
+    public void ResetWorldExports() { lock (_gate) ClearWorldExportsLocked(); }
+
+    private void ClearWorldExportsLocked()
+    {
+        _clusterExports.Clear();
+        _warpExports.Clear();
+        _stationExports.Clear();
+    }
+
+    private bool _clearWorldExportsOnGameOver;
+
+    /// <summary>P480/P860 — make every <c>GAME_OVER(62)</c> a <b>stream-ordered
+    /// world boundary</b> for the world-export accumulators
+    /// (<see cref="ClusterExports"/>/<see cref="WarpExports"/>/<see cref="StationExports"/>):
+    /// from now on the receive loop clears them at the exact position the
+    /// game-over message occupies in this connection's byte stream.
+    /// <para><b>Why a wire-ordered boundary is required.</b> A game-over rotation
+    /// rebuilds the same static map, so the finished mission's station objects
+    /// and the fresh mission's station objects carry the <em>same</em>
+    /// <c>StationId</c>s — a received <c>EXPORT(26)/OT_station</c> cannot be
+    /// attributed to a world by its content. Only the stream can attribute it,
+    /// and native orders the boundary exactly this way: it queues
+    /// <c>GAME_OVER</c> to the mission group and only then resets the mission
+    /// state (<c>FedSrv/fsmission.cpp:3437</c> QueueGameoverMessage +
+    /// <c>:3490</c> <c>SetStage(STAGE_NOTSTARTED)</c> → the world regenerate). So
+    /// everything the server queued before the game-over belongs to the finished
+    /// world and everything after it (the port's migrated fresh-joiner burst,
+    /// P480) belongs to the new one. Because both are ordinary (coalesce-key 0)
+    /// traffic on one TCP connection, that order survives any transport or
+    /// publisher delay — unlike a caller-thread <see cref="ResetWorldExports"/>,
+    /// which races them.</para>
+    /// <para>Native needs no such thing: it re-sends no object sync at a reset at
+    /// all (<c>Igc/missionigc.cpp:3804-3828</c> <c>ResetMission</c>,
+    /// <c>GenerateMission</c> from <c>:3830</c>), so its client keeps the objects
+    /// it already has. The boundary exists because the port deliberately re-sends
+    /// the fresh world's exports to migrated peers (P480).</para></summary>
+    public void ResetWorldExportsOnGameOver() { lock (_gate) _clearWorldExportsOnGameOver = true; }
 
     /// <summary>All <c>FM_S_PLAYERINFO(10)</c> received so far, in arrival order —
     /// including the one-shot teammate-ship PlayerInfos (P63) that attach a real
@@ -2033,6 +2075,11 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case GameOver.Fmid:
                         _gameOvers.Add(GameOver.Decode(m));
+                        // P860 — stream-ordered world boundary (see
+                        // ResetWorldExportsOnGameOver): everything received up to
+                        // here belongs to the mission that just ended, everything
+                        // after it to the rotated one.
+                        if (_clearWorldExportsOnGameOver) ClearWorldExportsLocked();
                         break;
                     case GameOverPlayers.Fmid:
                         _gameOverPlayers.Add(GameOverPlayers.Decode(m));

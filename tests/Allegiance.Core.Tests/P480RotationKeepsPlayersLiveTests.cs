@@ -115,11 +115,26 @@ public class P480RotationKeepsPlayersLiveTests
         server.Missions[0].Stage = MissionStage.Started;   // a draw needs a started game
 
         // Reset accumulators so we only measure post-rotation signals.
+        // P860 — the WORLD exports are cleared by a stream-ordered boundary, never on
+        // this thread: the rotation rebuilds the same static map, so a station's
+        // StationId is identical in both worlds and a received EXPORT(26) cannot be
+        // attributed to one by its content. A caller-thread ResetWorldExports() does
+        // not order itself against the socket/publisher (an EXPORT the server queued
+        // earlier can be appended after the clear), which is exactly how this test
+        // used to fail under load with "station 1052 was exported to a side that had
+        // not seen it": the peer the round-robin spawner seated on side 1 (KA1)
+        // legitimately received side 1's garrison in its FIRST join burst, and that
+        // pre-rotation export survived the clear. Native orders the same boundary the
+        // same way — GAME_OVER is queued before the mission is reset
+        // (Fsmission.cpp:3437, then :3490) — so the bot clears inside its receive loop
+        // at the game-over message and everything held afterwards is the rotated
+        // mission's fresh-joiner burst. Root cause + reproduction:
+        // P860RotationWorldExportBoundaryTests.
         foreach (var (b, _) in bots)
         {
             b.ResetGameOvers();
             b.ResetMissionStages();
-            b.ResetWorldExports();
+            b.ResetWorldExportsOnGameOver();   // P860 — the ordered world boundary
             b.ResetBallotSignals();
         }
 
@@ -181,10 +196,21 @@ public class P480RotationKeepsPlayersLiveTests
                 $"bot got {bot.ClusterExports.Count} cluster exports, expected >= {newMission.Sectors.Count}");
             Assert.NotEmpty(bot.StationExports);
             var botSide = server.Ships.First(x => x.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship.SideId;
-            Assert.All(bot.StationExports, st => Assert.True(
-                newMission.Sectors.SelectMany(x => x.StationRuntimes)
-                    .Any(rt => rt.StationId == st.Station.StationId && rt.SeenBySide(botSide!.Value)),
-                $"station {st.Station.StationId} was exported to a side that had not seen it"));
+            var freshStations = newMission.Sectors.SelectMany(x => x.StationRuntimes).ToArray();
+            Assert.All(bot.StationExports, st =>
+            {
+                var runtime = freshStations.FirstOrDefault(rt => rt.StationId == st.Station.StationId);
+                string FreshState() => runtime is null
+                    ? "station absent from the new mission"
+                    : $"fresh station side {runtime.SideId} cluster {runtime.Data.ClusterId} seen=[" +
+                      string.Join(",", newMission.Sides.Select(s => $"{s.Id}:{(runtime.SeenBySide(s.Id) ? "yes" : "no")}")) + "]";
+                Assert.True(runtime is not null && runtime.SeenBySide(botSide!.Value),
+                    $"station {st.Station.StationId} was exported to a side that had not seen it " +
+                    $"(export: '{st.Station.Name}' side {st.Station.SideId} cluster {st.Station.ClusterId}; " +
+                    $"recipient side {botSide?.ToString() ?? "(none)"}, bot ship {bot.ShipAssignment?.Ship.ShipId}, " +
+                    $"stage {newMission.Stage}; {FreshState()}; " +
+                    $"received stations: {string.Join(" | ", bot.StationExports.Select(e => $"{e.Station.StationId}/side {e.Station.SideId}@{e.Station.ClusterId}"))})");
+            });
 
             // (3) The bot's ship is seated on its ORIGINAL side in the NEW mission.
             short newId = bot.ShipAssignment!.Ship.ShipId;

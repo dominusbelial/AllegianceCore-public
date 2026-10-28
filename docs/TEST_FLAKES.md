@@ -56,6 +56,66 @@ The single Fast sweep had **11,155 passed / 2 failed / 3 optional skips**, with 
 - `ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over` received **50%** GAME_STATE where its post-reset event assertion expected **80%**. It passed **3/3 exact-method invocations alone**, with the same source, deadline and assertions. **Resolved by P861:** the extra 50% is the **next mission's** legitimate join ranking after GAME_OVER and rotation, not a delayed original join or a stale conquest recompute. The fixture had drained the original join, but `AllGameStates` flattened every later ranking and required all of them to remain 80%. A deterministic delayed-inspection proof reproduced the exact failure; the corrected test checks each peer's first post-capture ranking. A stalled-publisher regression also verifies ordered capture → 80% → GAME_OVER → 50% under snapshot coalescing. See [P861](reports/P861_CONQUEST_GAME_STATE_RACE.md). P832f's bots are not instantiated by this fixture, and its kills goal is disabled.
 
 All 21 flags/artifacts/conquest bot games passed, as did three normal-cadence kills games and the final 64-case bot controller/planner group in three isolated invocations.
+## P860 root cause (2026-10-27) — the P480 rotation failure was a harness attribution race, not a fog leak
+
+`P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect`
+("station 1052 was exported to a side that had not seen it") is **root-caused and
+retired**: it is a fixture bug, not a load flake and not a visibility leak. Full
+detail, native citations and receipts: [P860](reports/P860_REPORT.md).
+
+- **What the server did.** Nothing wrong. The recurring item is station `1052`
+  (side 1's 'Garrison' in Quaoar, `XXV_simple.igc`) received by a peer whose final
+  side is 0. The port exports a station per side and only when that side sees it
+  (`Server.Lobby.cs` join burst <- `FedSrv/fsmission.cpp:4215-4222`), and a station's
+  `SeenBySide` latches once true (`SideVisibilityState` <- `FedSrv.CPP:11124-11126`;
+  own side always sees it, `FedSrv.CPP:10904-10912`, `Igc/common.cpp:3004-3017`).
+  Instrumented runs (120 rotation runs, a probe line at all three `ExportStation`
+  send sites) recorded **zero** exports to a side that had not seen the station.
+- **What the fixture did.** It seats four bots and the default spawner assigns a
+  side by peer count, so the 2nd peer is spawned on **side 1** and receives side
+  1's garrison in its *first* join burst; the test then switches it to side 0
+  before the draw. The rotation rebuilds the **same static map**, so both worlds'
+  stations carry the **same `StationId`** — a received `EXPORT(26)` cannot be
+  attributed to a world by content, only by its position in the stream. The old
+  fixture cleared the accumulator on the test thread, which does not order itself
+  against the socket/publisher: under load that pre-rotation export was appended
+  after the clear and measured as part of the rotated mission's burst.
+- **Fix.** The `GAME_OVER(62)` message is the world boundary, exactly native's
+  order (`fsmission.cpp:3437` queues it, `:3490` resets the mission;
+  `missionigc.cpp:3804-3828` `ResetMission` + `GenerateMission` from `:3830`
+  re-send no object sync at all). `Bot.ResetWorldExportsOnGameOver()` now clears
+  the world-export accumulators **inside the receive loop at that message**, so
+  the split is wire-ordered and load-independent. `P480` uses it instead of the
+  thread-side `ResetWorldExports()`; its diagnostic failure message is kept.
+- **Deterministic regression proof.** `P860RotationWorldExportBoundaryTests`
+  (2 cases, Fast tier, `[Collection("LiveNetwork")]`) reproduce the ordering with
+  no load at all: one asserts the pre-boundary stale export exists and that every
+  post-boundary station export is seen by the recipient's side (it fails with the
+  gated message verbatim when the boundary is disabled), the other asserts the
+  fog-leak invariant at the server's own send sink across the rotation.
+- **Adjacent defect found while tracing the game-over tick.** The `ballots` SimPass
+  stage enumerated `_missions` while a ballot-driven game-over rotates a mission in
+  place (`_missions[idx] = fresh` bumps `List<T>`'s version), so **every**
+  ballot-driven game-over aborted that stage with `InvalidOperationException:
+  Collection was modified` (visible in the P480 logs of every gate run). It now
+  indexes the list; the stage no longer aborts.
+- **Gate receipts for P860** (three full fast-tier sweeps on the same tree, other
+  lanes idle): PASS `tiers-20261028T031838` (312.7 s), FAIL
+  `tiers-20261028T033047` (311.0 s), PASS `tiers-20261028T033636` (310.0 s,
+  11,165 tests, 0 timing offenders). The FAIL sweep's two failures are both
+  pre-existing load flakes, untouched by P860 and each ledgered above:
+  `P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame`
+  (`:2970`) and the `ConquestTerritoryLiveTests.Flag_capture_...` case already
+  opened by the P852 row (2026-10-27, "watch: possible stale GAME_STATE read").
+  **Conquest diagnosis while it was in front of us** (not fixed here; 3/3 alone
+  both before and after): the failure is `:387` — a *received* GAME_STATE(155)
+  whose `Conquest[SideA]` is still 50 — not the mission value the test asserts two
+  lines earlier (that one is correct at 80). So the port's recompute/broadcast is
+  fine; the fixture's `ResetGameStates()` is a caller-thread clear of an async
+  accumulator (the exact P860 lesson: `EXPORT`/`GAME_STATE` already queued when the
+  clear runs are appended after it), and the pre-capture 50% GAME_STATE lands in
+  the list. It should be asserted as "the NEWEST GameState per peer" (per-peer wire
+  order is preserved) rather than "every GameState ever received".
 
 ## P837 observations (2026-10-27) — the two bot live regressions were defects, not flakes
 
@@ -2881,7 +2941,8 @@ pre-state ghost refusal). Recorded as a load flake per the 3/3-alone rule.
 
 The first Fast-tier run on this task's tree (2026-10-23 21:33Z) recorded one failure
 outside the task's surface: `Allegiance.Core.Tests.P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect`
-("station 1052 was exported to a side that had not seen it"). It passed **3/3 exact-class
+("station 1052 was exported to a side that had not seen it" — **P860 root-caused this as a fixture
+world-attribution race, not a load flake; see the P860 section**). It passed **3/3 exact-class
 isolated** invocations immediately after, and the same test passed in the two later full
 Fast-tier runs. P798b touches only `tools/allegiance-mcp/**` and test projects — no
 `src/Allegiance.Core` / `src/Allegiance.Server` change — so this is recorded as a **load
@@ -2908,19 +2969,19 @@ P798 WIP and fixed here (see `docs/reports/P798_SCOUT_OPENING.md` §6):
 | 2026-10-24 | P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it | P803 fast-tier gate (this worktree): "a random CHANGE_TEAM_CIV must resolve, apply and relay" under full-suite load | 3/3 pass alone (2/2 tests each, after the gate); P803 touches no team-civ path (turret HUD/relay only) — random+timing load flake |
 | 2026-10-25 | P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it | P820a fast-tier gate: same "a random CHANGE_TEAM_CIV must resolve, apply and relay" under full-suite load | 3/3 pass alone (3/3 tests each); P820a touches no server or team-civ code (lobby squads + client screen) — second occurrence of the load flake |
 | 2026-10-24 | RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads; CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors; DockedStationUpdateLiveTests.Docked_player_receives_seen_own_station_update_within_native_cadence | P803 fast-tier gate, second run (three delegates building/testing on the same host): socket-count 9≠10, fire positive-control timeout, station-update cadence timeout | all three pass 3/3 alone; P803 touches none of these paths (turret HUD/relay only) — load-timing flakes |
-| 2026-10-24 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P803 fast-tier gate, third run (concurrent delegates): rotation migration timing under load | 3/3 pass alone; P803 touches no rotation path — load-timing flake |
+| 2026-10-24 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P803 fast-tier gate, third run (concurrent delegates): rotation migration timing under load | 3/3 pass alone; P803 touches no rotation path — **P860 root-caused: fixture world-attribution race, not a load flake; fixed, see the P860 section** |
 | 2026-10-24 | BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes | 3/3 exact-class isolated failures on the P788 tree while other agents ran suites on the same host. The 4 cases assert a golden SHA256 prefix of live broadcast frame bytes ([Collection("LiveNetwork")], real server ticking on real sockets). P788's server-side change is byte-neutral for the seeded ships (all have no ripcord → IsRipcordActive false → BIsRipcording unchanged, UpdateCadenceTests.Seed creates plain Ships), so the transcript hash cannot be affected by the diff. Live broadcast coalescing varies with host load → different tick lanes → golden mismatch. These Live-tier golden-hash tests are meant to run on Claude's mini runner; recommended there. |
 | 2026-10-24 | ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick | fast tier on the P788 merge gate: "stuck NPC stand-by must log on transition only (got 0 lines over 200 calls, expected 1)" | Fails on MASTER too (650eb6a5: the class 1/3 alone; P788 tree 2/3), passes alone as a single test 3/3 — 0 captured lines points at the shared Console.Out capture racing another test in the class; P788 touches no NPC/console path. Follow-up: serialise the class or capture per-test. |
 | 2026-10-24 | CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return | fast-tier quarantine on the P787b gate (branch pi/p787b): exceeded the 10 s fast limit under full-suite load (26.1 s), then passed the tier's own retry; already a known flake (lines 55/913/970). P787b touches no combat-visibility/transport path (client audio + docked UI only). | 3/3 exact-method pass alone (~1 s each) — load flake |
 | 2026-10-24 | P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station | Unreliable on MASTER (041e23a0): 2 pass / 1 fail in isolation the same evening (fail = finale massed or never registered because one side had not discovered the enemy base before the deadline). P814b gunners-off runs matched (1 pass / 1 fail). Not a 3/3 gate test; judge finale changes by the rig A/B and the `[strike]` telemetry. |
 | 2026-10-24 | P813cReconnectClientTests.Beyond_the_window_the_session_is_lost_and_the_ship_retired | P813c first full fast-tier run: asserted the `SessionLost` flag immediately after polling the `Lost` latch (the latch is set just before the synchronous event raise on the reconnect thread) — test-side visibility race, NOT a product race | test fixed to wait for both; 6/6 alone and PASS in the gate; no ledger action beyond this note |
-| 2026-10-24 | ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility; P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate; P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it; ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick; P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P813c fast-tier gate re-runs (host load average ~14 from concurrent delegates): logon-drain/seating order, relay timing, random civ pick, stand-by log transition, rotation migration timing | all pass 3/3 alone on this worktree; every one is already a known load flake above, and P813c touches none of those paths (session park/resume + client reconnect only) — load-timing flakes |
+| 2026-10-24 | ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility; P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate; P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it; ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick; P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P813c fast-tier gate re-runs (host load average ~14 from concurrent delegates): logon-drain/seating order, relay timing, random civ pick, stand-by log transition, rotation migration timing | all pass 3/3 alone on this worktree; every one is already a known load flake above, and P813c touches none of those paths (session park/resume + client reconnect only) — load-timing flakes (**P480: P860 root-caused, fixture attribution race; see the P860 section**) |
 | 2026-10-24 | SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25) | P813c fast-tier gate, third/"fourth" runs: SLOW FAST 11.203 s against the calibrated 10 s fast limit while the host ran at load average ~14 (every test passed) | 7-8 s for both cases 3/3 alone (limit 10 s standalone); same load-timing class as the `P750NativeAsteroidTypesTests` SLOW FAST entry above |
 | 2026-10-25 | P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7) | P805b fast-tier gate (this worktree, concurrent agents on the host): `Assert.InRange` upper bound 7 vs actual `7.0000000000000009` — a float boundary in an untouched `Allegiance.Core` timer test | 3/3 exact-class pass alone (5/5 tests, ~0.56 s each); P805b touches only `src/Allegiance.ClientCore.Game` + the proof script, no Core/server timing path — load-timing flake |
 | 2026-10-25 | P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it | P824 fast-tier gate (this worktree, concurrent agents on the host): same "a random CHANGE_TEAM_CIV must resolve, apply and relay" | full class 3/3 pass alone immediately after the gate; one later solo single-test set went 2/3 (same assertion), then 3/3 exact-class × 3 — fourth occurrence of this load flake; P824 touches only the texture/authoring pipeline (MdlTextureDecoder/Writer, tools/mdl-to-glb), no team-civ or relay path |
 
 | 2026-10-27 | P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names | P856 fast-tier gate (this worktree, concurrent agents on the host): SLOW FAST 10.886 s against the calibrated 10 s fast limit (every test passed) | 7/7 pass alone in ~1 s, 3/3 runs; P856 touches no asteroid-type or model-resolution path — third occurrence of the already-ledgered load flake above |
-| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect; DockedStationUpdateLiveTests.Docked_player_receives_own_station_update_when_own_station_has_no_scanner | P848 fast-tier gate (this worktree; docs-only change — CSV + report, no production code): rotation-migration timing ("station 1052 exported to a side that had not seen it") and 15-tick station-update cadence ("did not arrive within 15 ticks"), host load average ~6-7 with other lanes' dotnet builds at 400%+ CPU | both already ledgered above (P480 3/3-alone; DockedStationUpdate 3/3-alone on 2026-10-24). Under this gate: P480 2/3 alone (rotational timing), DockedStationUpdate 3/3 fail alone while the host is saturated — both touch no path P848 modifies (P848 changes no source); load-timing flakes |
+| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect; DockedStationUpdateLiveTests.Docked_player_receives_own_station_update_when_own_station_has_no_scanner | P848 fast-tier gate (this worktree; docs-only change — CSV + report, no production code): rotation-migration timing ("station 1052 exported to a side that had not seen it" — **P860: fixture attribution race, see the P860 section**) and 15-tick station-update cadence ("did not arrive within 15 ticks"), host load average ~6-7 with other lanes' dotnet builds at 400%+ CPU | both already ledgered above (P480 3/3-alone; DockedStationUpdate 3/3-alone on 2026-10-24). Under this gate: P480 2/3 alone (rotational timing), DockedStationUpdate 3/3 fail alone while the host is saturated — both touch no path P848 modifies (P848 changes no source); load-timing flakes |
 ## P819 validation environment (2026-10-25)
 
 The single fast-tier run recorded six environment-context failures (not load
@@ -3157,7 +3218,7 @@ that failure is the AutoAccept fixture issue corrected above, not a P832d regres
 spotter-cache isolation race named in the P832d report is gone with P858, which removed the process-global
 toggle.
 | 2026-10-27 | P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch | merge gate 47d1ac8a (P849/P858/P859/P832d) 5×: run 4 failed at 302 s (slowest run; message not captured, -v q) while three delegate lanes ran suites on the host | 3/3 re-runs alone pass (2:53–4:29); 7/8 overall | load flake (suspected timeout) |
-| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect; Hud12bReviewFixTests.Chat_line_truncation_matches_the_native_clip_and_is_cached_per_source_and_width | P842 merge gate f953e685 (three lanes running suites): same 'station 1052 exported to a side that had not seen it' and 7600 B allocation signatures | 3/3 alone each | load flakes; P480 recurs across gates — queued for a root-cause task |
+| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect; Hud12bReviewFixTests.Chat_line_truncation_matches_the_native_clip_and_is_cached_per_source_and_width | P842 merge gate f953e685 (three lanes running suites): same 'station 1052 exported to a side that had not seen it' and 7600 B allocation signatures | 3/3 alone each | load flakes; **P480 is now root-caused by P860 (fixture world-attribution race, fixed — see the P860 section)** |
 ## P847 observation (2026-10-27)
 
 `Allegiance.ClientCore.MonoGame.Tests.P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire`
@@ -3205,8 +3266,10 @@ in the worktree's ignored `.scratch/p832e/` directory.
 | 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P852 fast-tier gate (this worktree): 1 fail in the full fast run, then 2/5 alone ("station 1052 was exported to a side that had not seen it"), then 3/3 clean | already ledgered above (2026-10-24 ×2, 2026-10-27 P848); P852 touches no station-export/rotation path (lobby join-request/ready/alliance rules only) — recurrence of the rotation-migration timing flake |
 | 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P852 merge gate 7aa00867: conquest 'Expected 80 Actual 50' (P861: fixture included the fresh mission's legitimate 50% join ranking after GAME_OVER; resolved by per-peer capture-frame assertions); shop launcher = known load flake | 3/3 alone each | resolved fixture race, see P861 (conquest) / load flake (shop) |
 | 2026-10-27 | P857NpcWarpParityTests.Player_is_held_by_arrival_latch_when_guard_enabled | gate 3f94d5f1: Expected 0 Actual 5 — root cause: it and P591cDroneRoutingTests both toggle the process-global Sector.WarpReEntryGuardEnabled from parallel collections | fixed: P857 joins the non-parallel LiveNetwork collection; 3/3 with P591c | race (fixed) |
+| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P852 fast-tier gate (this worktree): 1 fail in the full fast run, then 2/5 alone ("station 1052 was exported to a side that had not seen it"), then 3/3 clean | already ledgered above (2026-10-24 ×2, 2026-10-27 P848); P852 touches no station-export/rotation path (lobby join-request/ready/alliance rules only) — recurrence of the rotation-migration timing flake, **root-caused by P860 (fixture attribution race, fixed)** |
 | 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P852 merge gate 7aa00867: conquest 'Expected 80 Actual 50' (first gate after P832e's station-victory changes — watch: possible stale GAME_STATE read or recompute ordering race); shop launcher = known load flake | 3/3 alone each | suspected race (conquest) / load flake (shop) |
 | 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over | P844 fast-tier gate (this worktree): same 'Expected 80 Actual 50' as the P852 row above — recurrence of the suspected conquest GAME_STATE recompute race (P861, being fixed in parallel; P844 touches no conquest recompute line) | 3/3 alone | load/suspected race |
 | 2026-10-27 | P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch | P844 merge gate: 2/10 failed at ~440 s with "lifepod observed by its controller" | **Fixed (test race), Claude in the P844 merge:** the victim was picked in one sim lock and killed in a second; a natural fight/dock in between let the global Kills/PodsCreated counters advance from another death while the victim never podded (180 s wait). Pick + kill now share one lock and assert `DamageResult.Killed`. 8/8 after the fix. Likely also explains the 47d1ac8a run-4 entry above. | test race — fixed |
 | 2026-10-27 | P844MissionRulesCertifyTests.Allied_survivors_win_when_third_side_is_eliminated | P832g merge gate fast tier (host load ~6, four lanes): `Assert.Single` on bot GameOvers was empty — the test waited for server `Stage==Over`, then read the bot's received GAME_OVER without waiting for the async broadcast publisher | **Fixed (test race), Claude in the P832g merge:** pump until the bot holds the GAME_OVER before asserting. 5/5 after the fix | test race — fixed |
 | 2026-10-27 | ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P832g merge gate fast tier (also in Codex's P832g run): default ExpandedPartData — server grant before the client's loadout ack | 1/1 alone; known launcher-receipt flake | load flake (ledgered) |
+| 2026-10-28 | P660NextMatchLiveTests.Two_consecutive_matches_deliver_both_players_results_and_reseat_every_peer; ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines; P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names (10.016 s) | P860 merge gate fast tier (four lanes building, load 3–4) | P660 class 5/5 alone, ConsoleLog class 3/3 alone; P750 16 ms over the calibrated limit (seen 2026-10-27 too); ConsoleLog also fails in the nightly → NT-2 | load flakes (P660 live next-match timing; ConsoleLog → NT-2) |

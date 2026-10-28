@@ -232,6 +232,17 @@ list in **reverse**.
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **Game-over world boundary (P860)** — a rotation rebuilds the same static map,
+  so both worlds' stations carry the SAME `StationId`s and a received
+  `EXPORT(26)` is attributable to a world only by its position in the byte
+  stream. `GAME_OVER(62)` is that boundary (native queues it before the reset:
+  `FedSrv/fsmission.cpp:3437` then `:3490`); the harness's world-export
+  accumulators clear inside the receive loop at that message
+  (`Bot.ResetWorldExportsOnGameOver`, `src/Allegiance.Bot/Bot.cs`) instead of on
+  a test thread. Per-side export gate: `src/Allegiance.Server/Server.Lobby.cs`
+  (join burst) / `Server.Research.cs` (`ExportDiscoveredStations`), native
+  `FedSrv/fsmission.cpp:4215-4222` and `FedSrv.CPP:10750-10778`. Report:
+  `docs/reports/P860_REPORT.md`.
 - **Cheats / debug** — `Server.AdminCheats.cs`, `Server.Privileges.cs`;
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,
