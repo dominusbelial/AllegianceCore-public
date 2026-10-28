@@ -36,7 +36,23 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
     // the hull-separation path runs ~4–5× slower than Release (185 ms vs 41 ms
     // on this rig). Debug is only for suite stability; the real ≤50 ms perf
     // gate is enforced in Release. Mirrors P694's own 200 ms Debug budget.
-    private const double DispatchBudgetMs = 200;
+    //
+    // NT-2: 200 → 240. The 200 Debug base was tuned on the reference workstation
+    // with ~20 % headroom (median ≈ 162 ms here, factor 0.97), but the mini
+    // runner (P744 factor ≈ 1.5) lands at median 302–331 ms vs the linearly
+    // scaled 297–304 ms budget — a fail on 8 of the 9 nightlies 2026-10-19…28
+    // (passed only 10-25). Normalised (median ÷ factor) the workload costs
+    // 202–222 ms — i.e. ABOVE this 200 base on factor-1.0 hardware: the
+    // hull-separation loop (per-event convex Separate hill-climb over the
+    // fixture's deliberately random attitudes, which defeat the pair-keyed
+    // separation cache; 23,227 of 25,828 events are debounced only AFTER the
+    // full Separate) is cache/branch sensitive and scales superlinearly with
+    // the P744 scalar-FP reference factor. Nothing grew: the mini's medians are
+    // flat since the 10-19 nightly (331 → 309 → 315 → 302 → 316 → 309), before
+    // P797…P860. The 240 base restores one machine-independent headroom band
+    // (~10 %) without loosening the Release gate; a real dispatch regression
+    // (extra per-event work) still trips it — see P744_SIMULATE_REGRESSION.
+    private const double DispatchBudgetMs = 240;
 #else
     private const double DispatchBudgetMs = 50;    // the P706 target in Release
 #endif

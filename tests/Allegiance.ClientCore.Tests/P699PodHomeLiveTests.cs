@@ -35,7 +35,10 @@ public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
             LiveSettings = new() { TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true } },
             // P693: native default 0x7ffe is rank balance (fsmission.cpp:4646-4671), which moves a second
             // joiner to the emptier side; this test pins its bots to sides, so balance is off (0x7fff, :4612).
-            Games = [new() { Name = "P699", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"], MaxTeamImbalance = 0x7fff }],
+            // NT-2: ShowMap (native bShowMap, igc.h:1123) — since P797 the pod's client only knows the
+            // alephs its side has seen, and this fixture has no scouts; without the reveal the two-jump
+            // route is unroutable and the pod dies of oxygen (same fix P859 applied to P699HumanPodHomeLiveTests).
+            Games = [new() { Name = "P699", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"], MaxTeamImbalance = 0x7fff, ShowMap = true }],
         });
         var mission = server.Missions[0];
         mission.Stage = MissionStage.Started;

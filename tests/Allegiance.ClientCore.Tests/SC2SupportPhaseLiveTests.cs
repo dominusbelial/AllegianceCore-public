@@ -4,6 +4,7 @@ using System.Text.Json;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
 using Allegiance.TestInfra;
 using Allegiance.Tools.McpSpawner;
 using Xunit.Abstractions;
@@ -156,6 +157,17 @@ public sealed class SC2SupportPhaseLiveTests(ITestOutputHelper output)
                     foreach (var holder in holders)
                     {
                         string name = Get<string>(holder, "Name");
+                        // NT-2: a commander-driven repair (research commander; native
+                        // shipIGC.cpp:1936-1939 — the commander owns the target and
+                        // route) has no autonomous leash in production, so it must not
+                        // feed the hold-duration metric; the fraction gate above still
+                        // scores it via SupportHoldTarget. Only autonomous holds are
+                        // leashed to 60 s.
+                        var ordered = Get<object?>(holder, "OrderedCommand");
+                        short orderedCommand = ordered is null ? (short)-1
+                            : (short)Convert.ChangeType(ordered.GetType().GetProperty("CommandId")!.GetValue(ordered)!, typeof(short));
+                        if (orderedCommand == OrderChange.CidRepair)
+                        { holdSince.Remove(name); continue; }
                         if (TryGet<short?>(holder, "SupportHoldTarget") is not { } held)
                         { holdSince.Remove(name); continue; }
                         double since = TryGet<double>(holder, "SupportHoldSince");

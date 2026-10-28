@@ -347,12 +347,22 @@ public sealed class BroadcastSnapshotTests
         // PLAYERINFO only at native moments (fsmission.cpp:411,:3958-3968). The
         // native/parallel/encode-once equality assertions are unchanged: each case
         // changes for the same reason and all three transcripts still hash equal.
+        // NT-2: regenerated after P797 (7734a197) — native map discovery. The
+        // cross-side DISCOVERY sweep (Server.Broadcast.cs SweepCrossSideDiscoveryExports,
+        // the port of FedSrv.CPP:10766-10775 ShowObject + :11055-11062 OBJECT_SPOTTED,
+        // fsmission.cpp:4169-4250) now exports each newly-seen static object (aleph,
+        // asteroid + building effect, probe, treasure) to the seeing side's peers
+        // exactly once, so the fixture's recorded ticks carry those one-shot discovery
+        // packets on top of the previous transcript. Intentional native-parity wire
+        // change, bisected (fd510d2e green … 7734a197 red, --first-parent). The
+        // equality assertions are unchanged: all four variants still agree with each
+        // other and across off/on/encode-once.
         string golden = (native, parallel) switch
         {
-            (false, false) => "BF92D4A2003D66CC",
-            (false, true) => "D74C1E1854875051",
-            (true, false) => "3C1876D181A6A011",
-            _ => "E06266AEDF1980C0",
+            (false, false) => "D0ED7EEB37594AF5",
+            (false, true) => "B16780AEF82384FC",
+            (true, false) => "227A25DD0857FB42",
+            _ => "420FA677AEEA2B8F",
         };
         File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p669-identity-{native}-{parallel}-{floor}.json"), JsonSerializer.Serialize(result));
         Assert.StartsWith(golden, result.offHash);

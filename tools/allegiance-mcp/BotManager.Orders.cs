@@ -64,14 +64,21 @@ internal sealed partial class BotManager
                     if (ship.Latest is { } pose) point = pose.Position;
                     enemy = ship.SideId != bot.Side && !world.AreAllied(bot.Side, ship.SideId);
                     if (!enemy && ship.Latest is { HullFraction: > 0 and < 1 } shipPose && ship.StationId < 0 && ship.ParentId < 0)
-                        repair = new(ship.ShipId, false, sector, point, shipPose.Velocity, HullRadius(ship.HullId));
+                        // NT-2: pass the observed fraction — P791's fire law in
+                        // FlyRepairTarget ("no nanites once the target is whole",
+                        // shipIGC.cpp:2668-2671) reads target.HullFraction, which
+                        // defaults to 1 when omitted, so a commander-ordered repair
+                        // never fired at all (SC2NaniteSupportLiveTests One_legally…).
+                        repair = new(ship.ShipId, false, sector, point, shipPose.Velocity, HullRadius(ship.HullId),
+                            HullFraction: shipPose.HullFraction);
                     break;
                 case IgcObjectType.Station when world.Stations.TryGetValue(command.TargetId, out var station):
                     sector = station.ClusterId; point = Vec3(station.Position);
                     enemy = station.SideId != bot.Side && !world.AreAllied(bot.Side, station.SideId);
                     if (!enemy && world.StationLive.TryGetValue(station.StationId, out var live) && live.HullFraction is > 0 and < 1)
                         repair = new(station.StationId, true, sector, point, Vector3.Zero,
-                            Catalog.RepresentativeCore().StationTypes.TryGetValue(station.StationTypeId, out var type) ? type.Radius : 100);
+                            Catalog.RepresentativeCore().StationTypes.TryGetValue(station.StationTypeId, out var type) ? type.Radius : 100,
+                            HullFraction: live.HullFraction);   // NT-2: see the ship case above
                     break;
                 case IgcObjectType.Asteroid when world.Asteroids.TryGetValue(command.TargetId, out var rock):
                     sector = rock.ClusterId; point = Vec3(rock.Position);

@@ -24,6 +24,13 @@ public sealed class P660ShowcaseLiveTests(ITestOutputHelper output)
         Require.Artwork();
         using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
         server.Boot(P660NextMatchLiveTests.Config(true, intermission: 12));
+        // NT-2: seed the sides' station visibility for the FIRST match before the bots
+        // spawn (see the longer note at the post-rotation Wait below): BotManager
+        // registers a finale only after every side has observed an enemy station, and
+        // this fixture forces an early game-over that never gives the scouts the time.
+        foreach (var st in server.Missions[0].Sectors.SelectMany(s => s.StationRuntimes))
+            foreach (var sideId in server.Missions[0].Sides.Select(s => s.Id))
+                st.SideVisibility.SetSideVisibility(sideId, true);
         using var humanA = P660NextMatchLiveTests.Connect(server, "P660-showcase-human-A", 66021);
         using var humanB = P660NextMatchLiveTests.Connect(server, "P660-showcase-human-B", 66022);
         using var ticker = new Ticker(server);
@@ -46,8 +53,29 @@ public sealed class P660ShowcaseLiveTests(ITestOutputHelper output)
         Assert.NotNull(humanA.World.GameOverResult);
         Assert.NotNull(humanB.World.GameOverResult);
         output.WriteLine($"intermission timer A={humanA.World.CountdownRemainingSeconds()}s B={humanB.World.CountdownRemainingSeconds()}s");
-        Wait(() => server.Missions[0].Stage == MissionStage.Started);
-        Wait(() => manager.FinaleStatus().Length == 2);
+        // NT-2: the second match needs the rotation drain (32 migrating peers, a
+        // bounded slice per tick since P765) + the intermission + the 15 s start
+        // countdown on top of the game-over phase — more than the 90 s default on
+        // the slower nightly runner (P744 factor ~1.5), so give the post-rotation
+        // waits a Live-tier budget.
+        Wait(() => server.Missions[0].Stage == MissionStage.Started, seconds: 240);
+        // NT-2: since P797 (7734a197) a station reaches a bot's world only once its side
+        // has seen it, and BotManager registers a finale only after every side has
+        // OBSERVED an enemy station (map discovery). This fixture forces an early
+        // game-over, so the natural scouting never lands inside the Wait and both
+        // finales stay pending forever. Seed the sides' station visibility on whatever
+        // mission is live (what the showcase's scouts discover) — the join export and
+        // the per-tick station/discovery sweeps then deliver both stations and the
+        // commander registers each match's finale.
+        Wait(() =>
+        {
+            var live = server.Missions[0];
+            if (live.Stage is MissionStage.Started or MissionStage.Starting)
+                foreach (var st in live.Sectors.SelectMany(s => s.StationRuntimes))
+                    foreach (var sideId in live.Sides.Select(s => s.Id))
+                        st.SideVisibility.SetSideVisibility(sideId, true);
+            return manager.FinaleStatus().Length == 2;
+        }, seconds: 240);
         var after = manager.ActiveBots();
         Assert.Equal(30, after.Count);
         Assert.All(after, bot =>
@@ -75,11 +103,11 @@ public sealed class P660ShowcaseLiveTests(ITestOutputHelper output)
         output.WriteLine(JsonSerializer.Serialize(runs));
     }
 
-    private static void Wait(Func<bool> done)
+    private static void Wait(Func<bool> done, int seconds = 90)
     {
         var clock = Stopwatch.StartNew();
-        while (!done() && clock.Elapsed.TotalSeconds < 90) Thread.Sleep(25);
-        Assert.True(done(), "MCP loopback condition timed out");
+        while (!done() && clock.Elapsed.TotalSeconds < seconds) Thread.Sleep(25);
+        Assert.True(done(), $"MCP loopback condition timed out after {seconds}s");
     }
 
     private sealed class Ticker : IDisposable
