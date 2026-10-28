@@ -361,6 +361,55 @@ public sealed class P853HostEditServerTests
         Assert.Equal((short)2, server.TestParamsOf(mission).NTems);
     }
 
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void NTeams_regrow_after_shrink_reactivates_the_side()
+    {
+        Require.Artwork();
+        using var server = new Server();
+        server.Boot(Config(teams: 3));
+        var mission = server.TestMission!;
+        var (owner, _, _, _) = SeatOwnerAndMate(server, mission);
+
+        var shrink = Edit(lives: 30);
+        shrink.NTems = 2;                                     // 3 -> 2 teams
+        server.TestProcessDatagram(owner, FedPacket.Pack([shrink.Encode()]));
+        Assert.False(mission.Sides.First(s => s.Id == 2).Active);
+
+        var sent = CaptureSends(server);
+        var grow = Edit(lives: 30);
+        grow.NTems = 3;                                       // 2 -> 3 teams (native InitSide, fsmission.cpp:1846-1852)
+        server.TestProcessDatagram(owner, FedPacket.Pack([grow.Encode()]));
+
+        Assert.True(mission.Sides.First(s => s.Id == 2).Active);
+        Assert.Contains(sent, s => IsSideInactive(s.Msg) && SideInactive.Decode(s.Msg) is { } si
+            && si.SideId == 2 && si.BActive);
+        Assert.Equal((short)3, server.TestParamsOf(mission).NTems);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Params_edit_cannot_change_game_name_or_password()
+    {
+        Require.Artwork();
+        using var server = new Server();
+        server.Boot(Config());
+        var mission = server.TestMission!;
+        var (owner, _, _, _) = SeatOwnerAndMate(server, mission);
+        var before = server.TestParamsOf(mission);
+
+        var edit = Edit(lives: 30);
+        edit.StrGameName = "Renamed by client";
+        edit.StrGamePassword = "hunter2";
+        server.TestProcessDatagram(owner, FedPacket.Pack([edit.Encode()]));
+
+        // FedSrv.CPP:7562-7572 (KGJV #114): name and password stay the server's.
+        var after = server.TestParamsOf(mission);
+        Assert.Equal(30, mission.Lives);
+        Assert.Equal(before.StrGameName, after.StrGameName);
+        Assert.Equal(before.StrGamePassword, after.StrGamePassword);
+    }
+
     /// <summary>The same FNV-1a wire mapping Server.SquadWireId uses (the
     /// squadID int on the SET_TEAM_INFO wire is an opaque stable hash of the
     /// port's string squad guid, P820c).</summary>

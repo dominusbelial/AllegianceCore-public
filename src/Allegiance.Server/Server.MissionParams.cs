@@ -228,6 +228,11 @@ public sealed partial class Server
         msg.SzIgcStaticFile = cur.SzIgcStaticFile;
         // :1809-1817 — the standalone server forces the club flag off.
         msg[MissionParamsMsg.BitClubGame] = false;
+        // FedSrv.CPP:7562-7572 (KGJV #114) — every port mission is a
+        // bObjectModelCreated game, so the client may not change the game
+        // name or password.
+        msg.StrGameName = cur.StrGameName;
+        msg.StrGamePassword = cur.StrGamePassword;
 
         // :1821-1835 — team-count shrink: kick everyone off each extra team
         // (RemovePlayerFromSide QSR_SideDestroyed) and deactivate the side.
@@ -285,7 +290,18 @@ public sealed partial class Server
         mission.AllowAlliedRip = msg[MissionParamsMsg.BitAllowAlliedRip];
         mission.AllowDevelopments = msg[MissionParamsMsg.BitAllowDevelopments];
 
-        // :1846-1852 — grow InitSide: unsupported (clamped above).
+        // :1846-1852 — grow InitSide: beyond the assembled count it is
+        // unsupported (clamped above); within it, a side an earlier shrink
+        // deactivated comes back (the port's stand-in for InitSide).
+        for (short sideId = oldTeams; sideId < newTeams; sideId++)
+        {
+            var revived = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+            if (revived is null || revived.Active) continue;
+            revived.Active = true;
+            var si = new SideInactive { SideId = sideId, BActive = true, BChangeAet = false, BAet = false };
+            SendToMissionPeers(mission, FedPacket.Pack([si.Encode()]));
+            Console.WriteLine($"[missionparams] side {sideId} restored by nTeams growth -> SIDE_INACTIVE(68) bActive");
+        }
 
         // :1861 — #ALLY: some teams may have been removed, revalidate.
         UpdateAlliances(mission, (short)-1, (short)-1);
