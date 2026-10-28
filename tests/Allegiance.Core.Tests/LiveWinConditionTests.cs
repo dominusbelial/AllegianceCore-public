@@ -185,12 +185,14 @@ public class LiveWinConditionTests
         private readonly List<GameOver> _gameOvers = new();
         private readonly List<ShipDelete> _deletes = new();
         private int _boardNacks;
+        private int _pingMarkers;
 
         public LogonAck? Ack { get { lock (_gate) return _ack; } }
         public SetCluster? ShipAssignment { get { lock (_gate) return _set; } }
         public IReadOnlyList<GameOver> GameOvers { get { lock (_gate) return _gameOvers.ToArray(); } }
         public IReadOnlyList<ShipDelete> Deletes { get { lock (_gate) return _deletes.ToArray(); } }
         public int BoardNacks { get { lock (_gate) return _boardNacks; } }
+        public int PingMarkers { get { lock (_gate) return _pingMarkers; } }
 
         public WireClient() => _t = new TcpTransport(this);
 
@@ -199,6 +201,12 @@ public class LiveWinConditionTests
         public void SendSuicide() => _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { new Suicide().Encode() }), guaranteed: true);
         public void SendBoard(short sidParent) =>
             _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { new BoardShip { SidParent = sidParent }.Encode() }), guaranteed: true);
+
+        // Same packet, ordered messages: receipt of this PING proves the server
+        // processed the preceding BOARD_SHIP, without waiting for a nonexistent NACK.
+        public void SendBoardAndPing(short sidParent) => _t.Send(ConnectionId.Server,
+            FedPacket.Pack([new BoardShip { SidParent = sidParent }.Encode(),
+                new Ping { TimeClient = 867 }.Encode()]), guaranteed: true);
 
         void ITransportSite.OnPeerJoined(ConnectionId id, string name) { }
         void ITransportSite.OnPeerLeft(ConnectionId id) { }
@@ -221,6 +229,9 @@ public class LiveWinConditionTests
                         case GameOver.Fmid: _gameOvers.Add(GameOver.Decode(m)); break;
                         case ShipDelete.Fmid: _deletes.Add(ShipDelete.Decode(m)); break;
                         case 178: _boardNacks++; break;   // BOARD_NACK
+                        case Ping.Fmid:
+                            if (Ping.Decode(m).TimeClient == 867) _pingMarkers++;
+                            break;
                     }
                 }
             }
@@ -612,8 +623,9 @@ public class LiveWinConditionTests
 
     /// <summary>⭐ Representative Stage gate #2: the BOARD_SHIP handler's gate
     /// (Server.cs, FedSrv.CPP:6388) refuses once the mission is Over — the
-    /// boarder's request is answered with BOARD_NACK and its ParentShip stays
-    /// null. Control (Started) shown by the docked pair boarding successfully.</summary>
+    /// boarder's request is silently ignored (FedSrv.CPP:6388-6389) and its
+    /// ParentShip stays null. A following PING in the same packet proves dispatch
+    /// progressed. Control (Started) still boards the docked pair successfully.</summary>
     [Trait("Requires", "Artwork")]
     [Trait("Lane", "LiveTiming")]   // P647 quarantine: flaky live-wire board handshake even in isolation
     [SkippableFact]
@@ -659,12 +671,13 @@ public class LiveWinConditionTests
 
             server.Missions[0].Stage = MissionStage.Over;    // end the mission behind the gate
             var actualBoarder = new[] { carrier, boarder }.Single(c => c.ShipAssignment!.Ship.ShipId == sp.Boarder.Id);
-            actualBoarder.SendBoard(sp.Carrier.Id);
-            int nacked = PumpUntil(server, () => actualBoarder.BoardNacks > 0, 8000);
-            Assert.True(nacked < 8000, "boarder should get BOARD_NACK once the mission is Over");
-            Assert.Null(sp.Boarder.ParentShip);              // refused — not boarded
+            actualBoarder.SendBoardAndPing(sp.Carrier.Id);
+            int progressed = PumpUntil(server, () => actualBoarder.PingMarkers > 0, 4000);
+            Assert.True(progressed < 4000, "following PING must prove BOARD dispatch progressed");
+            Assert.Equal(0, actualBoarder.BoardNacks);       // native stage gate is silent
+            Assert.Null(sp.Boarder.ParentShip);             // refused — not boarded
 
-            Console.WriteLine("WIN-GATE-LIVE: BOARD once mission Over was refused with BOARD_NACK (parent stayed null)");
+            Console.WriteLine("WIN-GATE-LIVE: BOARD once mission Over was silent; following PING received (parent stayed null)");
         }
     }
 

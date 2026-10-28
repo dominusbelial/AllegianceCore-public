@@ -266,11 +266,11 @@ public class LiveCountdownStartPingTests
         Assert.Empty(a.EnterGames);
     }
 
-    /// <summary>⭐ The owner's START_GAME while not every occupied side is ready
-    /// is refused (the port's own simplified all-ready gate).</summary>
+    /// <summary>FedSrv.CPP:7610 and fsmission.cpp:4432: the manual start
+    /// checks balance, even when a side's ready flag is false.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void StartGame_not_all_ready_is_refused()
+    public void StartGame_balanced_unready_sides_start_the_countdown()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -289,9 +289,9 @@ public class LiveCountdownStartPingTests
         Assert.Equal(MissionStage.NotStarted, m.Stage);
 
         a.SendStartGame();
-        PumpUntil(server, () => false, 30);
-        Assert.Equal(MissionStage.NotStarted, m.Stage);
-        Assert.Empty(a.SetStartTimes);
+        Assert.True(PumpUntil(server, () => m.Stage == MissionStage.Starting, 400) < 400);
+        Assert.True(SpinWait.SpinUntil(() => a.SetStartTimes.Count > 0, TimeSpan.FromSeconds(10)));
+        Assert.Single(a.SetStartTimes);
     }
 
     /// <summary>⭐ The owner's START_GAME is refused once the mission is already

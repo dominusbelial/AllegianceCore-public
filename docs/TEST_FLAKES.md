@@ -62,6 +62,53 @@ resolution/warm-up and the flare's occlusion probe) retained **11,286 tests / 1 
   P862b touches no inventory/swap-part, server or simulation code.
 
 The P730 two-match showcase regression passed **5/5** alone on the same tree (3 m 12 s – 4 m 21 s).
+## P867 verification observations (2026-10-28)
+
+The single Fast-tier sweep recorded **11,320 passed / 3 failed / 3 optional
+skips** in 336.7 s. All 51 new P867 dispatcher cases passed within that sweep;
+its tier infrastructure checks passed. The full sweep was not repeated. See
+[the P867 report](reports/P867_REPORT.md) and its small verification receipt.
+
+- `Hud18TargetPaneTests.Steady_in_range_and_tti_paths_allocate_nothing`
+  observed **760 allocated bytes** at line 291 where it expects zero. The exact
+  method passed **3/3 filtered invocations**, with source and allocation limit
+  unchanged. Recorded as a suite/load-order flake under the lane rule; the
+  allocation's cause was not diagnosed by P867. Raw receipts include measured
+  host load in `.scratch/p867/failure-isolation.json`.
+- `P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries`
+  repeated **3/3** because it explicitly excluded the requester from PINGDATA.
+  Native iterates every live player (`FedSrv/FedSrv.CPP:7755-7763`), including
+  the requester. The corrected fixture requires both entries and retains its
+  final-marker, You/other-player and Average display assertions. It passes
+  **3/3** with the native server behavior.
+- `LiveWinConditionTests.Board_refused_once_mission_over` repeated **3/3**
+  because it waited for BOARD_NACK after the mission was Over. The native stage
+  gate is silent (`FedSrv/FedSrv.CPP:6388-6389`). The corrected fixture sends a
+  PING after BOARD_SHIP in the **same ordered packet**; receipt proves dispatch
+  progressed before asserting no NACK and no parent change. Its successful
+  Started-stage boarding control remains. It passes **3/3**. The old NACK wait
+  accounted for both Fast timing offenders (10.771 s initial / 10.645 s runner
+  retry); the corrected check stays below the Fast limit. The existing P647
+  quarantine tag remains for the separate positive boarding handshake.
+
+- `P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`
+  passed **4/5** in the required initial cohort. Run 5 failed after 437.7 s at
+  “lifepod observed by its controller” in match 2; match 1 had completed.
+  It then passed **3/3 exact-method invocations** on the final build, for
+  **7/8 overall**, with P730 source, assertions, deadlines, transport settings
+  and quarantine unchanged. Completion-sampled 1-minute host load for the
+  failed run was 4.23. Recorded under the lane's isolated-recheck rule; this
+  recurrence's cause is unproven. The ledger's earlier select/kill-lock fix is
+  already in this checkout, so its old root cause is not assumed here.
+  Historical context: pre-P867 merge `47d1ac8a` recorded 7/8, the later fixed
+  P844 fixture recorded 8/8, and P832g recorded 5/5. No paired base experiment
+  was performed. Raw receipts are `showcase-5.trx` and
+  `showcase-isolation-{1,2,3}.trx` under `.scratch/p867/`.
+
+The last two observations were deterministic fixture-contract errors exposed
+by restored native behavior. Their corrections change no production deadlines
+or behavior. Raw logs/TRX remain in the P867 worktree's ignored
+`.scratch/p867/`; the report links to that local evidence.
 
 ## P832g verification observations (2026-10-27)
 

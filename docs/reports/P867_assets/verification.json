@@ -1,0 +1,1042 @@
+{
+  "task": "P867",
+  "base": "b37b4efe0e2591a723b239e16ee5c431edd42438",
+  "native": {
+    "path": "FedSrv/FedSrv.CPP",
+    "sha256": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014"
+  },
+  "caseAudit": {
+    "activeCases": 49,
+    "equal": 14,
+    "classified": 35,
+    "disabledNativeCase": "FM_C_BANDWIDTH"
+  },
+  "builds": [
+    {
+      "name": "build-final",
+      "exit": 0,
+      "seconds": 7.16,
+      "load": [
+        6.14794921875,
+        6.15185546875,
+        6.09228515625
+      ]
+    },
+    {
+      "name": "build-tools-final",
+      "exit": 0,
+      "seconds": 140.688,
+      "load": [
+        8.83349609375,
+        7.43798828125,
+        6.634765625
+      ]
+    },
+    {
+      "name": "aot-final",
+      "exit": 0,
+      "seconds": 18.162,
+      "load": [
+        10.923828125,
+        8.02294921875,
+        6.84228515625
+      ]
+    }
+  ],
+  "newTests": {
+    "methods": 28,
+    "argumentCases": 51,
+    "filteredMethodInvocations": 84,
+    "casePasses": 153,
+    "failures": 0,
+    "finalNotificationFollowups": [
+      {
+        "passed": 51,
+        "failed": 0,
+        "durations": [
+          "00:00:00.0185894",
+          "00:00:00.0305440",
+          "00:00:00.0101908",
+          "00:00:00.0083442",
+          "00:00:00.0154109",
+          "00:00:00.0153043",
+          "00:00:00.0138540",
+          "00:00:00.0277774",
+          "00:00:00.0082587",
+          "00:00:00.0142676",
+          "00:00:00.0135884",
+          "00:00:00.0111867",
+          "00:00:00.0103192",
+          "00:00:00.0129324",
+          "00:00:00.0093805",
+          "00:00:00.0148771",
+          "00:00:00.0127978",
+          "00:00:00.0184009",
+          "00:00:00.0117028",
+          "00:00:00.0101856",
+          "00:00:00.0126386",
+          "00:00:00.0079979",
+          "00:00:00.0219440",
+          "00:00:00.0079274",
+          "00:00:00.0164319",
+          "00:00:00.0122719",
+          "00:00:00.0127114",
+          "00:00:00.0147176",
+          "00:00:00.0199232",
+          "00:00:00.0113578",
+          "00:00:00.0129613",
+          "00:00:00.0083665",
+          "00:00:00.0183493",
+          "00:00:00.0094343",
+          "00:00:00.0120899",
+          "00:00:00.0124404",
+          "00:00:00.0241918",
+          "00:00:00.0081042",
+          "00:00:00.0144171",
+          "00:00:00.0157290",
+          "00:00:00.0899216",
+          "00:00:00.0091246",
+          "00:00:00.0089487",
+          "00:00:00.0137661",
+          "00:00:00.0408321",
+          "00:00:00.0119889",
+          "00:00:00.0082406",
+          "00:00:00.0086852",
+          "00:00:00.0152644",
+          "00:00:00.0078482",
+          "00:00:00.0183578"
+        ]
+      },
+      {
+        "passed": 51,
+        "failed": 0,
+        "durations": [
+          "00:00:00.0144197",
+          "00:00:00.0083559",
+          "00:00:00.0118298",
+          "00:00:00.0074282",
+          "00:00:00.0078800",
+          "00:00:00.0078219",
+          "00:00:00.0085028",
+          "00:00:00.0087809",
+          "00:00:00.0391567",
+          "00:00:00.0186521",
+          "00:00:00.0119039",
+          "00:00:00.0116196",
+          "00:00:00.0134725",
+          "00:00:00.0104111",
+          "00:00:00.0166119",
+          "00:00:00.0125883",
+          "00:00:00.0129867",
+          "00:00:00.0145063",
+          "00:00:00.0125536",
+          "00:00:00.0137444",
+          "00:00:00.0094104",
+          "00:00:00.0160692",
+          "00:00:00.0129806",
+          "00:00:00.0101412",
+          "00:00:00.0088947",
+          "00:00:00.0135208",
+          "00:00:00.0219411",
+          "00:00:00.0256093",
+          "00:00:00.0108349",
+          "00:00:00.0932410",
+          "00:00:00.0123724",
+          "00:00:00.0099986",
+          "00:00:00.0132652",
+          "00:00:00.0200832",
+          "00:00:00.0121393",
+          "00:00:00.0123705",
+          "00:00:00.0083674",
+          "00:00:00.0338296",
+          "00:00:00.0106768",
+          "00:00:00.0180646",
+          "00:00:00.0074653",
+          "00:00:00.0091569",
+          "00:00:00.0080753",
+          "00:00:00.0128918",
+          "00:00:00.0124248",
+          "00:00:00.0081323",
+          "00:00:00.0400432",
+          "00:00:00.0082663",
+          "00:00:00.0114918",
+          "00:00:00.0213391",
+          "00:00:00.0093459"
+        ]
+      },
+      {
+        "passed": 51,
+        "failed": 0,
+        "durations": [
+          "00:00:00.0150030",
+          "00:00:00.0135689",
+          "00:00:00.0099988",
+          "00:00:00.0149793",
+          "00:00:00.0152690",
+          "00:00:00.0084616",
+          "00:00:00.0083920",
+          "00:00:00.0145332",
+          "00:00:00.0156784",
+          "00:00:00.0136423",
+          "00:00:00.0087577",
+          "00:00:00.0216821",
+          "00:00:00.0160311",
+          "00:00:00.0117302",
+          "00:00:00.0086666",
+          "00:00:00.0179044",
+          "00:00:00.0151478",
+          "00:00:00.0151439",
+          "00:00:00.0138242",
+          "00:00:00.0090586",
+          "00:00:00.0085341",
+          "00:00:00.0192325",
+          "00:00:00.0079383",
+          "00:00:00.0244564",
+          "00:00:00.0167377",
+          "00:00:00.0139443",
+          "00:00:00.0109835",
+          "00:00:00.0117666",
+          "00:00:00.0097179",
+          "00:00:00.0162217",
+          "00:00:00.0135935",
+          "00:00:00.0082421",
+          "00:00:00.0256685",
+          "00:00:00.0913966",
+          "00:00:00.0104493",
+          "00:00:00.0119151",
+          "00:00:00.0097722",
+          "00:00:00.0437156",
+          "00:00:00.0144427",
+          "00:00:00.0280271",
+          "00:00:00.0085616",
+          "00:00:00.0085755",
+          "00:00:00.0090846",
+          "00:00:00.0139013",
+          "00:00:00.0086318",
+          "00:00:00.0112624",
+          "00:00:00.0075022",
+          "00:00:00.0133285",
+          "00:00:00.0081286",
+          "00:00:00.0115234",
+          "00:00:00.0203521"
+        ]
+      }
+    ]
+  },
+  "affectedExisting": {
+    "classes": 16,
+    "casePasses": 318,
+    "failures": 0,
+    "notificationFollowups": [
+      {
+        "name": "ballot-notification-followup-1",
+        "exit": 0,
+        "seconds": 3.221
+      },
+      {
+        "name": "ballot-notification-followup-2",
+        "exit": 0,
+        "seconds": 3.28
+      },
+      {
+        "name": "ballot-notification-followup-3",
+        "exit": 0,
+        "seconds": 3.208
+      }
+    ]
+  },
+  "showcaseIsolation": [
+    {
+      "name": "showcase-isolation-1",
+      "exit": 0,
+      "seconds": 213.229,
+      "load": [
+        1.546875,
+        2.76953125,
+        3.63134765625
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "showcase-isolation-2",
+      "exit": 0,
+      "seconds": 203.655,
+      "load": [
+        2.92919921875,
+        2.490234375,
+        3.32568359375
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "showcase-isolation-3",
+      "exit": 0,
+      "seconds": 225.658,
+      "load": [
+        3.4853515625,
+        2.97607421875,
+        3.32275390625
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    }
+  ],
+  "fast": {
+    "tier": "fast",
+    "seconds": 336.73757240202394,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 87,
+        "outcomes": {
+          "Passed": 87
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 3633,
+        "outcomes": {
+          "Passed": 3629,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 1933,
+        "outcomes": {
+          "Passed": 1932,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5645,
+        "outcomes": {
+          "Passed": 5644,
+          "Failed": 1
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9774535809018567,
+      "referenceMs": 3.685,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+        "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+        "outcome": "Failed",
+        "seconds": 10.771295
+      },
+      {
+        "name": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+        "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+        "outcome": "Failed",
+        "seconds": 10.645491
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over: quarantine failed in isolation",
+      "2 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06314866998582147,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "failureIsolation": [
+    {
+      "name": "isolate-hud-allocation-1",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Hud18TargetPaneTests.Steady_in_range_and_tti_paths_allocate_nothing",
+      "exit": 0,
+      "seconds": 1.051,
+      "load": [
+        3.17431640625,
+        3.5390625,
+        4.97900390625
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "isolate-hud-allocation-2",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Hud18TargetPaneTests.Steady_in_range_and_tti_paths_allocate_nothing",
+      "exit": 0,
+      "seconds": 1.024,
+      "load": [
+        4.28173828125,
+        3.7626953125,
+        5.0439453125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "isolate-hud-allocation-3",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Hud18TargetPaneTests.Steady_in_range_and_tti_paths_allocate_nothing",
+      "exit": 0,
+      "seconds": 1.045,
+      "load": [
+        4.28173828125,
+        3.7626953125,
+        5.0439453125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "isolate-ping-old-expectation-1",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 1,
+      "seconds": 2.597,
+      "load": [
+        4.28173828125,
+        3.7626953125,
+        5.0439453125
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "Assert.DoesNotContain() Failure: Item found in collection\n             \u2193 (pos 0)\nCollection: [8096, 8097]\nFound:      8096"
+      ]
+    },
+    {
+      "name": "isolate-ping-old-expectation-2",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 1,
+      "seconds": 2.618,
+      "load": [
+        4.41943359375,
+        3.80029296875,
+        5.04931640625
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "Assert.DoesNotContain() Failure: Item found in collection\n             \u2193 (pos 0)\nCollection: [8096, 8097]\nFound:      8096"
+      ]
+    },
+    {
+      "name": "isolate-ping-old-expectation-3",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 1,
+      "seconds": 2.59,
+      "load": [
+        4.41943359375,
+        3.80029296875,
+        5.04931640625
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "Assert.DoesNotContain() Failure: Item found in collection\n             \u2193 (pos 0)\nCollection: [8096, 8097]\nFound:      8096"
+      ]
+    },
+    {
+      "name": "isolate-board-old-expectation-1",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 1,
+      "seconds": 12.133,
+      "load": [
+        4.314453125,
+        3.8095703125,
+        5.0322265625
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "boarder should get BOARD_NACK once the mission is Over"
+      ]
+    },
+    {
+      "name": "isolate-board-old-expectation-2",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 1,
+      "seconds": 12.105,
+      "load": [
+        4.98681640625,
+        3.9658203125,
+        5.0693359375
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "boarder should get BOARD_NACK once the mission is Over"
+      ]
+    },
+    {
+      "name": "isolate-board-old-expectation-3",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 1,
+      "seconds": 12.115,
+      "load": [
+        4.6083984375,
+        3.93408203125,
+        5.041015625
+      ],
+      "outcomes": [
+        "Failed"
+      ],
+      "messages": [
+        "boarder should get BOARD_NACK once the mission is Over"
+      ]
+    }
+  ],
+  "correctedFixtures": [
+    {
+      "name": "fixed-ping-build",
+      "exit": 0,
+      "seconds": 10.97
+    },
+    {
+      "name": "fixed-ping-1",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 0,
+      "seconds": 2.635,
+      "load": [
+        12.91015625,
+        6.53662109375,
+        5.75439453125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "fixed-ping-2",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 0,
+      "seconds": 2.626,
+      "load": [
+        12.91015625,
+        6.53662109375,
+        5.75439453125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "fixed-ping-3",
+      "method": "Allegiance.ClientCore.Tests.P740FlightInterfaceTests.Player_ping_request_uses_real_server_and_final_marker_after_entries",
+      "exit": 0,
+      "seconds": 2.653,
+      "load": [
+        12.1162109375,
+        6.4775390625,
+        5.7392578125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "fixed-board-build",
+      "exit": 0,
+      "seconds": 5.99
+    },
+    {
+      "name": "fixed-board-1",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 0,
+      "seconds": 3.173,
+      "load": [
+        11.5458984375,
+        6.45263671875,
+        5.73486328125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "fixed-board-2",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 0,
+      "seconds": 3.195,
+      "load": [
+        10.861328125,
+        6.39501953125,
+        5.7197265625
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    },
+    {
+      "name": "fixed-board-3",
+      "method": "Allegiance.Core.Tests.LiveWinConditionTests.Board_refused_once_mission_over",
+      "exit": 0,
+      "seconds": 3.17,
+      "load": [
+        10.1513671875,
+        6.32177734375,
+        5.69970703125
+      ],
+      "outcomes": [
+        "Passed"
+      ],
+      "messages": []
+    }
+  ],
+  "showcase": [
+    {
+      "run": "showcase-1",
+      "cohort": "initial-five",
+      "outcome": "Passed",
+      "duration": "00:03:52.9969462",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 405,
+          "hits": 234,
+          "kills": 1,
+          "pods": 2,
+          "minedOreAtLeast": 2.59,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 1890,
+          "hits": 906,
+          "kills": 2,
+          "pods": 5,
+          "minedOreAtLeast": 66.92,
+          "research": [
+            {
+              "side": 0,
+              "step": 23,
+              "totalSteps": 157,
+              "completedTechCount": 15
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-2",
+      "cohort": "initial-five",
+      "outcome": "Passed",
+      "duration": "00:04:26.8664357",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 203,
+          "hits": 182,
+          "kills": 1,
+          "pods": 3,
+          "minedOreAtLeast": 18.05,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 532,
+          "hits": 309,
+          "kills": 3,
+          "pods": 7,
+          "minedOreAtLeast": 66.4,
+          "research": [
+            {
+              "side": 0,
+              "step": 23,
+              "totalSteps": 157,
+              "completedTechCount": 15
+            },
+            {
+              "side": 1,
+              "step": 23,
+              "totalSteps": 181,
+              "completedTechCount": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-3",
+      "cohort": "initial-five",
+      "outcome": "Passed",
+      "duration": "00:03:19.7838851",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 185,
+          "hits": 134,
+          "kills": 1,
+          "pods": 2,
+          "minedOreAtLeast": 7.6,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 945,
+          "hits": 805,
+          "kills": 7,
+          "pods": 7,
+          "minedOreAtLeast": 1.19,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-4",
+      "cohort": "initial-five",
+      "outcome": "Passed",
+      "duration": "00:03:49.7779674",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 301,
+          "hits": 192,
+          "kills": 1,
+          "pods": 2,
+          "minedOreAtLeast": 10.41,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 724,
+          "hits": 400,
+          "kills": 2,
+          "pods": 4,
+          "minedOreAtLeast": 58.33,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-5",
+      "cohort": "initial-five",
+      "outcome": "Failed",
+      "duration": "00:07:16.7073775",
+      "message": "lifepod observed by its controller",
+      "matches": [
+        {
+          "match": 1,
+          "shots": 145,
+          "hits": 140,
+          "kills": 1,
+          "pods": 3,
+          "minedOreAtLeast": 18.99,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-isolation-1",
+      "cohort": "isolation",
+      "outcome": "Passed",
+      "duration": "00:03:32.1123171",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 180,
+          "hits": 170,
+          "kills": 1,
+          "pods": 2,
+          "minedOreAtLeast": 15.76,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 368,
+          "hits": 314,
+          "kills": 2,
+          "pods": 4,
+          "minedOreAtLeast": 20.43,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-isolation-2",
+      "cohort": "isolation",
+      "outcome": "Passed",
+      "duration": "00:03:22.6307172",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 2972,
+          "hits": 1171,
+          "kills": 10,
+          "pods": 9,
+          "minedOreAtLeast": 1.61,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 3197,
+          "hits": 1351,
+          "kills": 12,
+          "pods": 12,
+          "minedOreAtLeast": 2.76,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": "showcase-isolation-3",
+      "cohort": "isolation",
+      "outcome": "Passed",
+      "duration": "00:03:44.6536629",
+      "message": null,
+      "matches": [
+        {
+          "match": 1,
+          "shots": 2919,
+          "hits": 1771,
+          "kills": 11,
+          "pods": 11,
+          "minedOreAtLeast": 1.53,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 3288,
+          "hits": 1990,
+          "kills": 12,
+          "pods": 14,
+          "minedOreAtLeast": 56.98,
+          "research": [
+            {
+              "side": 0,
+              "step": 16,
+              "totalSteps": 157,
+              "completedTechCount": 10
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "totalSteps": 181,
+              "completedTechCount": 11
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "caseInventory": "PASS",
+    "scorecard": "PASS",
+    "glossaryLinks": "PASS",
+    "diffCheck": "PASS",
+    "addedCodeHygiene": "PASS",
+    "newMedia": 0
+  },
+  "scorecard": {
+    "simWeightedBefore": "1804/1903 (94.80%)",
+    "simWeightedAfter": "1806/1903 (94.90%)",
+    "simCompleteBefore": "640/687",
+    "simCompleteAfter": "641/687",
+    "fedSrvWeightedBefore": "516/603 (85.57%)",
+    "fedSrvWeightedAfter": "518/603 (85.90%)"
+  },
+  "rawEvidence": ".scratch/p867/",
+  "deliveryBuild": {
+    "exit": 0,
+    "seconds": 10.235
+  }
+}

@@ -225,7 +225,10 @@ public sealed class OrderChangeReturnToBaseLiveTests
         Require.Artwork();
         using var seat = SeatOne();
         var sector = FlySectorOf(seat.Mission);
-        // No station placed in 1052 — nothing qualifies (own-sector scoped, P149).
+        // FedSrv.CPP:7308-7320 searches ANY cluster. Remove every station,
+        // so this is the actual no-qualifying-station branch, not a local miss.
+        foreach (var cluster in seat.Mission.Sectors)
+            foreach (var station in cluster.StationRuntimes.ToArray()) cluster.RemoveStation(station);
 
         var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, seat.PeerSide, new Vector3(310f, 290f, 255f));
         Assert.Null(npc.StationId);

@@ -312,9 +312,7 @@ public sealed partial class Server
     /// (the P103/P106 convention), so "flying" = <c>Sector != null &amp;&amp;
     /// StationId == null</c>.</item>
     /// <item><b>Not a flag-carrier.</b> <c>GetFlag() != NA</c> → ignored
-    /// (<c>FedSrv.CPP:7720</c>). This port tracks no flags (the same
-    /// always-passing gate-collapse precedent P100/P107 used); phase 4 /
-    /// <c>GAIN_FLAG</c> territory.</item>
+    /// (<c>FedSrv.CPP:7720</c>). Covers carried flags and artifacts.</item>
     /// <item><b>Hull can ripcord.</b> <c>GetBaseHullType()-&gt;HasCapability(
     /// c_habmNoRipcord)</c> → ignored (<c>FedSrv.CPP:7721</c>). <c>c_habmNoRipcord
     /// = 0x20</c> (<c>igc.h:731</c>), read like P107 read <c>c_habmLifepod</c>.</item>
@@ -347,13 +345,14 @@ public sealed partial class Server
             ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: {(ship.Sector is null ? "no cluster" : "docked")} — request ignored (gate GetCluster(), FedSrv.CPP:7719)");
             return;
         }
+        // FedSrv.CPP:7720: carrying either a flag or the artifact sentinel
+        // blocks the entire request, including cancellation of an active ripcord.
+        if (ship.Flag is not null) return;
         if (ship.HullType.HasCapability(DataHullTypeIGC.HabmNoRipcord))
         {
             ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: hull {ship.HullType.HullId} has c_habmNoRipcord — request ignored (gate FedSrv.CPP:7721)");
             return;
         }
-        // Flag-carrier gate (FedSrv.CPP:7720) collapses to always-passing: this
-        // port tracks no flags. Documented, not silently dropped.
 
         // Native resolves the requested sector via
         // GetIGCMission()->GetCluster(sidRipcord), which returns NULL for an
@@ -2044,64 +2043,35 @@ public sealed partial class Server
         SendPeer(from, FedPacket.Pack(new[] { nack.Encode() }));
     }
 
-    /// <summary>
-    /// This port's <c>GetModel(ot, oid)</c> — resolve an object by
-    /// <c>(ObjectType, ObjectID)</c> across the objects the port can name: the
-    /// peer ships (the only first-class models, all present in <see cref=\"_peerShips\"/>)
-    /// and sector-attached stations. On success outputs the object's real
-    /// position, the sector that owns it, and its side (nullable for a neutral
-    /// object). Returns false for an unnamed type or an unknown id — the caller
-    /// then emits a bare-cluster reply. This matches the practical reality of a
-    /// spectator target (another player's ship, or a station).
-    /// </summary>
-    private bool TryResolveViewTarget(Mission mission, IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
+    /// <summary>FedSrv.CPP:6429-6446: resolve a live model, its cluster and
+    /// SeenBySide, including NPCs and static targets. Ownership is not visibility.</summary>
+    private static bool TryResolveViewTarget(Mission mission, IgcObjectType ot, short oid,
+        short? requesterSide, out Vector3 position, out Sector? sector, out bool seen)
     {
-        switch (ot)
+        foreach (var candidate in mission.Sectors)
         {
-            case IgcObjectType.Ship:
-                foreach (var kv in _peerShips)
+            var target = EquipmentTarget.Resolve(candidate, ot, oid)
+                ?? candidate.Models.FirstOrDefault(m => m.Id == oid && (m switch
                 {
-                    if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == oid)
-                    {
-                        position = kv.Value.Ship.Position;
-                        sector = kv.Value.Ship.Sector;
-                        side = kv.Value.Ship.SideId;
-                        return true;
-                    }
-                }
-                break;
-
-            case IgcObjectType.Station:
-                foreach (var s in mission.Sectors)
-                {
-                    foreach (var st in s.Stations)
-                    {
-                        if (st.StationId == oid)
-                        {
-                            position = new Vector3(st.Position[0], st.Position[1], st.Position[2]);
-                            sector = s;
-                            side = st.SideId;
-                            return true;
-                        }
-                    }
-                }
-                break;
+                    Missile => (IgcObjectType)2,
+                    Treasure => IgcObjectType.Treasure,
+                    Chaff => (IgcObjectType)10, // Igc/igc.h:130
+                    _ => (IgcObjectType)(-1),
+                }) == ot);
+            if (target is null) continue;
+            position = target.Position;
+            sector = candidate;
+            ISideVisible visible = target is EquipmentTarget { Body: ISideVisible body } ? body : target;
+            if (requesterSide is { } sid && !visible.SideVisibility.HasState(sid))
+                candidate.ResolveCrossSideVisibility();
+            seen = requesterSide is { } sideId && visible.SeenBySide(sideId);
+            return true;
         }
-
         position = Vector3.Zero;
         sector = null;
-        side = null;
+        seen = false;
         return false;
     }
-
-    /// <summary>The port's stand-in for native <c>ImodelIGC::SeenBySide(side)</c> —
-    /// the same-side predicate the P58 teammate broadcast already uses
-    /// (<c>Server.cs:521</c>). An object with no side (a neutral world object)
-    /// is always visible; a side-carrying object is visible only to its own
-    /// side. The port has no fog-of-war/scanner, so this is the faithful
-    /// existing gate, not an invented one.</summary>
-    private static bool SeenByRequesterSide(short? objectSide, short? requesterSide) =>
-        objectSide is null || objectSide == requesterSide;
 
     /// <summary>
     /// Apply a received <see cref="BuyLoadoutRequest"/> (FM_C_BUY_LOADOUT, 4)
@@ -2309,7 +2279,7 @@ public sealed partial class Server
         // c_sabmRestart-capable. Side can't be null here — the caller's docked
         // gate implies a placed ship with a side — but guard anyway.
         bool exists = target is not null;
-        bool sameSide = target is { } t0 && t0.SideId == ship.SideId;
+        bool sameSide = target is { } t0 && mission.AreSidesFriendly(t0.SideId, ship.SideId); // FedSrv.CPP:7064
         bool restartOk = target is { } t1
             && mission.Core.StationTypes.TryGetValue(t1.StationTypeId, out var stype)
             && stype.HasCapability(DataStationTypeIGC.SabmRestart);
