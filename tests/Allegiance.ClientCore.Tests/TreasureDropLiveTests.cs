@@ -127,8 +127,15 @@ public class TreasureDropLiveTests
         Assert.NotNull(placedShip);
         Assert.NotNull(weaponId);
 
-        // Client has not yet seen any treasure.
-        lock (session.Gate) Assert.Empty(session.World.Treasures);
+        // The drop is identified by its part id among NEW treasures. Since P864c the file map's
+        // treasure-less sectors get native's starting treasures (missionigc.cpp:4048-4051
+        // → common.cpp PopulateCluster), which the scanner ship may already see, so the
+        // drop is identified as the new part treasure rather than the only one.
+        HashSet<int> before;
+        lock (session.Gate)
+        {
+                        before = session.World.Treasures.Keys.Select(k => (int)k).ToHashSet();
+        }
 
         // Press the drop key equivalent: one DROP_PART(33) over the real transport.
         session.SendDropPart(EquipmentType.Weapon, mount: 0);
@@ -137,15 +144,14 @@ public class TreasureDropLiveTests
         // and track the dropped part-treasure at its real position.
         int received = PumpUntil(server, () =>
         {
-            lock (session.Gate) return session.World.Treasures.Count > 0;
+            lock (session.Gate) return session.World.Treasures.Values.Any(t => t.Code == TreasureCode.Part && t.PayloadId == weaponId && !before.Contains((int)t.TreasureId));
         }, 2000);
         Assert.True(received < 2000, "client world never received TREASURE(28) — P293 tracking not wired");
 
         TreasureEntity? te;
         lock (session.Gate)
         {
-            Assert.Single(session.World.Treasures);
-            te = session.World.Treasures.Values.First();
+            te = Assert.Single(session.World.Treasures.Values, t => t.Code == TreasureCode.Part && t.PayloadId == weaponId && !before.Contains((int)t.TreasureId));
         }
         Assert.NotNull(te);
         Assert.Equal(TreasureCode.Part, te!.Code);           // c_tcPart (FedSrv.CPP:4367)
