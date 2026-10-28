@@ -394,4 +394,159 @@ public sealed class P852MissionRulesCertifyTests
         Assert.Equal("Alpha won by outlasting all other sides.",
             (string)w.Call("AlliedWinnerReason", w.Mission, w.Mission.Sides[0])!);
     }
+
+    // ── SIM-0554 / SIM-0556 — the team lobby: FlushSides + RandomizeSides ───
+
+    /// <summary>P864b — native FlushSides (fsmission.cpp:5069-5119) moves every
+    /// NON-LEADER to the team lobby (SIDE_TEAMLOBBY/-2) while team leaders stay
+    /// and anchor their side (GetLeader(sideID) != pfsPlayer, :5109-5112), each
+    /// move announced as QUIT_SIDE, with auto-accept turned off on every side
+    /// first (KGJV "auto accept off", :5080-5092). The player's last side is
+    /// reset to the lobby (represented by the -2 park itself).</summary>
+    [SkippableFact]
+    public void P1_FlushSides_moves_non_leaders_to_lobby_leaders_stay()
+    {
+        using var w = new World();
+        w.Mission.Stage = MissionStage.NotStarted;   // native asserts NOTSTARTED
+        w.Mission.Sides[0].LeaderShipId = w.Ship.Id;    // Ship = side0 leader
+        w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;   // Enemy = side1 leader
+        Assert.True(w.Mission.Sides[0].AutoAccept);
+        Assert.True(w.Mission.Sides[1].AutoAccept);
+
+        w.Call("FlushSides", w.Mission);
+
+        // Leaders never move; the lone non-leader (Mate) is flushed to the lobby.
+        Assert.Equal((short)0, w.Ship.SideId);
+        Assert.Equal((short)1, w.Enemy.SideId);
+        Assert.Equal((short)-2, w.Mate.SideId);            // SIDE_TEAMLOBBY
+        // Auto-accept swept off everywhere (fsmission.cpp:5080-5092).
+        Assert.False(w.Mission.Sides[0].AutoAccept);
+        Assert.False(w.Mission.Sides[1].AutoAccept);
+        // The flush move was announced whole-mission as QUIT_SIDE(126).
+        Assert.True(w.CountFmid(QuitSide.Fmid) >= 1, "FlushSides must broadcast QUIT_SIDE for the flushed player");
+    }
+
+    /// <summary>P864b — native RandomizeSides' two-phase shape (fsmission.cpp:
+    /// 5139-5260): phase 2 flushes every non-leader to the lobby, then phase 4
+    /// re-seats ONLY READY (non-AFK) players highest-rank-first (the AFK filter,
+    /// :5230-5241, GetReady()). An unready non-leader stays in the team lobby —
+    /// the port previously rebalanced every non-leader in one pass with no
+    /// lobby and no AFK filter.</summary>
+    [SkippableFact]
+    public void P2_Randomize_leaves_unready_afk_player_in_lobby()
+    {
+        using var w = new World();
+        w.Mission.Stage = MissionStage.NotStarted;
+        w.Mission.Sides[0].LeaderShipId = w.Ship.Id;
+        w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
+        SetRank(w.Server, w.Mate, 10);                     // high rank, but NOT ready
+
+        w.Call("RebalanceSides", w.Mission);               // the RandomizeSides port
+
+        // Mate is not ready (AFK) -> flushed to the lobby and left there.
+        Assert.Equal((short)-2, w.Mate.SideId);
+        Assert.Equal((short)0, w.Ship.SideId);
+        Assert.Equal((short)1, w.Enemy.SideId);
+    }
+
+    /// <summary>P864b — the same RandomizeSides with the non-leader READY: it is
+    /// flushed to the lobby (two-phase) then re-seated onto the lowest-rank-sum
+    /// real side (the greedy PickNewSide re-assignment, fsmission.cpp:5199-5260),
+    /// leaders anchoring their sides.</summary>
+    [SkippableFact]
+    public void P3_Randomize_reseats_ready_non_leader()
+    {
+        using var w = new World();
+        w.Mission.Stage = MissionStage.NotStarted;
+        w.Mission.Sides[0].LeaderShipId = w.Ship.Id;
+        w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
+        SetRank(w.Server, w.Mate, 10);
+        w.Send(w.ConnOf(w.Mate), new PlayerReady { ShipId = (short)101, FReady = true });
+
+        w.Call("RebalanceSides", w.Mission);
+
+        // Mate (ready) re-seated onto a real side — NOT left in the lobby.
+        Assert.NotEqual((short)-2, w.Mate.SideId);
+        Assert.True(w.Mate.SideId is 0 or 1, $"Mate re-seated to a real side, got {w.Mate.SideId}");
+        Assert.Equal((short)0, w.Ship.SideId);             // leaders never move
+        Assert.Equal((short)1, w.Enemy.SideId);
+    }
+
+    /// <summary>P864b — the FM_C_RANDOMIZE_TEAMS dispatch branches on
+    /// iMaxImbalance exactly as native (FedSrv.CPP:6976-6987): 0x7ffe →
+    /// RandomizeSides (balance), anything else → FlushSides (dump to the lobby,
+    /// no reassignment). With iMaxImbalance=1 (not rank mode) the owner's
+    /// RANDOMIZE_TEAMS performs a FLUSH: the non-leader lands in the lobby and
+    /// stays there.</summary>
+    [SkippableFact]
+    public void P4_Randomize_teams_dispatch_flushes_when_not_rank_mode()
+    {
+        using var w = new World();
+        w.Mission.Stage = MissionStage.NotStarted;
+        w.Mission.MissionOwnerSideId = 0;                  // side0 owns; Ship is its leader -> owner
+        w.Mission.Sides[0].LeaderShipId = w.Ship.Id;
+        w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
+        w.Set("_config", new ServerConfig
+        {
+            LiveSettings = new LiveSettingsConfig(),
+            Games = [new GameConfig { MaxTeamImbalance = 1 }],
+        });
+
+        w.Send(w.Conn, new RandomizeTeams());
+
+        // Not rank mode -> FlushSides: the non-leader Mate is flushed to the
+        // lobby and (unready) stays there; leaders stay.
+        Assert.Equal((short)-2, w.Mate.SideId);
+        Assert.Equal((short)0, w.Ship.SideId);
+        Assert.Equal((short)1, w.Enemy.SideId);
+    }
+
+    /// <summary>P864b — the rebalance pick implements native PickNewSide's
+    /// iMaxImbalance fewest-players override INSIDE the re-seat (fsmission.cpp:
+    /// 4506-4516): the default is the lowest-rank-sum side; when seating the
+    /// picked player on it would exceed fewestPlayers + iMaxImbalance, the
+    /// fewest-players side wins instead.</summary>
+    [SkippableFact]
+    public void P5_Rebalance_pick_applies_iMaxImbalance_override()
+    {
+        using var w = new World();
+        w.Mission.Stage = MissionStage.NotStarted;
+        w.Mission.Sides[0].LeaderShipId = w.Ship.Id;
+        w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
+        // Stuff side0 with an extra low-rank player so it has the FEWEST rank
+        // sum but the MOST players; side1 (Enemy, rank 5) has fewer players.
+        var extra = new Ship(103, w.Mate.HullType, new Vector3(7000, 5000, 5000), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+        w.Mission.PlaceShip(extra, w.Mission.Sectors[0]);
+        w.Server.TestSeedPeers([
+            (w.Conn, w.Ship, w.Mission.Sectors[0]),
+            (new ConnectionId(2), w.Mate, w.Mission.Sectors[0]),
+            (new ConnectionId(3), w.Enemy, w.Mission.Sectors[0]),
+            (new ConnectionId(4), extra, w.Mission.Sectors[0]),
+        ]);
+        // Ranks must be set AFTER the reseed (TestSeedPeers re-seeds peers and
+        // resets PlayerScore).
+        SetRank(w.Server, w.Ship, 1);
+        SetRank(w.Server, w.Enemy, 5);
+        SetRank(w.Server, w.Mate, 10);
+        SetRank(w.Server, extra, 1);
+        // Mate parked on the lobby, ready to be picked.
+        w.Mate.SideId = -2;
+        w.Send(w.ConnOf(w.Mate), new PlayerReady { ShipId = (short)101, FReady = true });
+
+        // Default config (MaxTeamImbalance=0x7ffe, rank mode): the override is
+        // inert and the LOWEST RANK SUM wins. side0: Ship(1)+extra(1)=2; side1:
+        // Enemy(5)=5 -> lowest is side0 (2 < 5).
+        short picked = (short)w.Call("PickRebalanceSide", w.Mission, w.Mate)!;
+        Assert.Equal((short)0, picked);
+
+        // iMaxImbalance=1: seating Mate on side0 (2 players) -> 2+1 > fewest(1)+1
+        // -> the fewest-players side (side1, one player) wins.
+        w.Set("_config", new ServerConfig
+        {
+            LiveSettings = new LiveSettingsConfig(),
+            Games = [new GameConfig { MaxTeamImbalance = 1 }],
+        });
+        picked = (short)w.Call("PickRebalanceSide", w.Mission, w.Mate)!;
+        Assert.Equal((short)1, picked);
+    }
 }

@@ -17,13 +17,20 @@ namespace Allegiance.Core.Wire;
 /// roster message mirrors the established one-shot identity-seed precedent
 /// (the per-(peer, ship) PLAYERINFO(10)/EXPORT(26) pair, HUD-20) rather than
 /// widening the huge MISSIONDEF struct.
+/// <para>P864b — <see cref="LobbyPlayerCount"/> carries the size of the team
+/// lobby pool (players in the mission on no side, <c>SIDE_TEAMLOBBY</c>/−2), so
+/// the client's team screen can show the lobby pool ("Not on a team") exactly
+/// as native's team screen lists its lobby members (teamscreen.cpp:378,445;
+/// clintlib.cpp:994). Kept as a scalar rather than a fake −2 <see cref="SideRecord"/>
+/// so the many real-side consumers of <see cref="Sides"/> are undisturbed.</para>
 ///
 /// Layout (variable-length; one 46-byte record per side):
 /// <code>
 ///   offset 0: ushort cbmsg
 ///   offset 2: ushort fmid = 211
 ///   offset 4: short  nSides                  (number of SideRecord entries)
-///   offset 6: [ SideRecord × nSides ]
+///   offset 6: short  lobbyPlayerCount        (P864b — team-lobby pool size)
+///   offset 8: [ SideRecord × nSides ]
 ///   SideRecord (46 B):
 ///     short  sideId        (SideID; NA(-1) sentinels are skipped by sender)
 ///     short  civId         (civilization id for this side)
@@ -40,7 +47,7 @@ public sealed class SideRoster : IFedMessage
 {
     public const ushort Fmid = 211;
 
-    public const int HeaderSize = 6;          // cbmsg + fmid + nSides
+    public const int HeaderSize = 8;          // cbmsg + fmid + nSides + lobbyPlayerCount
     public const int RecordSize = 46;         // 3 shorts + char[24] + 4 floats
 
     /// <summary>One joinable side in the roster.</summary>
@@ -49,6 +56,10 @@ public sealed class SideRoster : IFedMessage
         float R = 0.5f, float G = 0.5f, float B = 0.5f, float A = 1f);
 
     public SideRecord[] Sides = System.Array.Empty<SideRecord>();
+
+    /// <summary>P864b — number of players currently in the team lobby (on no
+    /// side) for this mission. 0 when the roster carries no lobby.</summary>
+    public short LobbyPlayerCount;
 
     public ushort GetFmid() => Fmid;
 
@@ -59,6 +70,7 @@ public sealed class SideRoster : IFedMessage
         w.WriteU16(0);               // cbmsg placeholder
         w.WriteU16(Fmid);
         w.WriteI16((short)Sides.Length);   // offset 4: nSides
+        w.WriteI16(LobbyPlayerCount);      // offset 6: P864b lobby pool size
         foreach (var s in Sides)
         {
             w.WriteI16(s.SideId);
@@ -80,8 +92,8 @@ public sealed class SideRoster : IFedMessage
 
     public static SideRoster Decode(ReadOnlySpan<byte> buf)
     {
-        if (buf.Length < HeaderSize)
-            throw new ArgumentException($"SIDE_ROSTER(211) needs >= {HeaderSize} bytes, got {buf.Length}");
+        if (buf.Length < 6)   // smallest header (pre-P864b 6-byte); new format needs 8
+            throw new ArgumentException($"SIDE_ROSTER(211) needs >= 6 bytes, got {buf.Length}");
         var hdr = FedMessageHeader.Read(buf);
         if (hdr.Fmid != Fmid) throw new ArgumentException($"expected SIDE_ROSTER fmid={Fmid}, got {hdr.Fmid}");
         if (hdr.CbMsg != buf.Length) throw new ArgumentException($"cbmsg={hdr.CbMsg} != buffer length {buf.Length}");
@@ -89,8 +101,16 @@ public sealed class SideRoster : IFedMessage
         WireReader r = new(buf);
         r.Advance(4);
         short n = r.ReadI16();
-        if (n < 0 || HeaderSize + RecordSize * n != buf.Length)
+        if (n < 0) throw new ArgumentException($"SIDE_ROSTER(211) bad record count {n}");
+        // P864b — the roster gained a lobbyPlayerCount short in its header
+        // (HeaderSize 6 → 8). Pre-P864b recorded wire captures (battle replays)
+        // use the old 6-byte header: sniff by exact length so both formats
+        // decode; old captures simply carry no lobby count (LobbyPlayerCount=0).
+        bool oldFormat = buf.Length == 6 + RecordSize * n;
+        bool newFormat = buf.Length == HeaderSize + RecordSize * n;
+        if (!oldFormat && !newFormat)
             throw new ArgumentException($"SIDE_ROSTER(211) bad record count {n} for {buf.Length}-byte buffer");
+        short lobby = oldFormat ? (short)0 : r.ReadI16();   // P864b lobby pool size (absent pre-P864b)
         var sides = new SideRecord[n];
         for (int i = 0; i < n; i++)
         {
@@ -108,6 +128,6 @@ public sealed class SideRoster : IFedMessage
             r.Advance(16);
             sides[i] = new SideRecord(sideId, civId, pc, Encoding.Latin1.GetString(nameBytes[..len]), rr, gg, bb, aa);
         }
-        return new SideRoster { Sides = sides };
+        return new SideRoster { Sides = sides, LobbyPlayerCount = lobby };
     }
 }

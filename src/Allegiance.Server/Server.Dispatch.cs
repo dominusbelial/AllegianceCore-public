@@ -1235,13 +1235,13 @@ public sealed partial class Server
                     {
                         ConsoleLog.Write($"[randomizeteams] {from} ship {rtLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — RANDOMIZE_TEAMS refused");
                     }
-                    else if (GameSettings(mission).MaxTeamImbalance == 0x7ffe)
+                    else if (GameSettingsSafe(mission).MaxTeamImbalance == 0x7ffe)
                     {
-                        RebalanceSides(mission);
+                        RebalanceSides(mission);   // RandomizeSides (P864b, Server.Lobby.cs)
                     }
                     else
                     {
-                        FlushSides(mission);
+                        FlushSides(mission);       // FlushSides (P864b, Server.Lobby.cs)
                     }
                 }
                 catch (Exception e)

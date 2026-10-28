@@ -3,6 +3,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.TestInfra;
+using System.Buffers.Binary;
 
 namespace Allegiance.Core.Tests;
 
@@ -118,5 +119,40 @@ public sealed class ShipTrailSideColorTests
         Assert.Equal(217f / 255f, back.Sides[1].B, 6);
         Assert.Equal(1f, back.Sides[1].A);
         Assert.Equal("Bravo", back.Sides[1].Name);
+        Assert.Equal((short)0, back.LobbyPlayerCount);   // not set -> 0
+    }
+
+    /// <summary>P864b — SIDE_ROSTER(211) is backward-compatible with pre-P864b
+    /// recorded wire captures (battle replays): the roster's header grew 6 → 8
+    /// bytes with the new lobbyPlayerCount, but the decoder sniffs the header
+    /// size by exact length and reads an old 6-byte-header packet as a zero
+    /// lobby (the pre-P864b format P729/P730 replay tests replay).</summary>
+    [Fact]
+    public void SideRoster_decodes_old_6byte_header_with_zero_lobby()
+    {
+        var roster = new SideRoster
+        {
+            Sides =
+            [
+                new SideRoster.SideRecord(0, CivId: 1, PlayerCount: 2, "Alpha"),
+                new SideRoster.SideRecord(1, CivId: 3, PlayerCount: 1, "Bravo"),
+            ],
+        };
+        // Build a pre-P864b packet: 6-byte header (cbmsg+fmid+nSides, NO lobby
+        // field) followed by the n records — exactly what the old encoder and
+        // the recorded battle-replay captures carry.
+        var newEncoded = roster.Encode();                       // 8-byte header
+        var oldBuf = new byte[6 + SideRoster.RecordSize * roster.Sides.Length];
+        BinaryPrimitives.WriteUInt16LittleEndian(oldBuf, (ushort)oldBuf.Length);  // cbmsg
+        BinaryPrimitives.WriteUInt16LittleEndian(oldBuf.AsSpan(2), SideRoster.Fmid);
+        BinaryPrimitives.WriteInt16LittleEndian(oldBuf.AsSpan(4), (short)roster.Sides.Length);
+        newEncoded.AsSpan(8).CopyTo(oldBuf.AsSpan(6));           // the n records
+        Assert.Equal(6 + SideRoster.RecordSize * 2, oldBuf.Length);
+
+        var back = SideRoster.Decode(oldBuf);
+        Assert.Equal(2, back.Sides.Length);
+        Assert.Equal("Alpha", back.Sides[0].Name);
+        Assert.Equal("Bravo", back.Sides[1].Name);
+        Assert.Equal((short)0, back.LobbyPlayerCount);   // absent in old format
     }
 }

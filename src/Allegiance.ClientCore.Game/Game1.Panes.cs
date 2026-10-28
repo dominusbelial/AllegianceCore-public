@@ -1265,15 +1265,19 @@ public sealed partial class Game1
     private void HandleGameOverBack()
     {
         int? stage;
-        bool ownSideActive;
+        bool ownSideActive, inTeamLobby;
         lock (_session.Gate)
         {
             var w = _session.World;
             stage = w.Mission?.Stage;
-            ownSideActive = w.IsSideActive(w.MySideId ?? -1);
+            short? mySide = w.MySideId;
+            ownSideActive = w.IsSideActive(mySide ?? -1);
+            // P864b — a player on no side (team lobby / not yet seated) is in the
+            // team lobby and lands in the side-select picker to request a side.
+            inTeamLobby = mySide is null or -2;
         }
 
-        switch (State.GameOverBackPlanner.Plan(stage, ownSideActive))
+        switch (State.GameOverBackPlanner.Plan(stage, ownSideActive, inTeamLobby))
         {
             case State.GameOverBackAction.LeaveMission:
                 Console.WriteLine("[monogame] game-over Back: stage Over -> leave mission (LOG OFF)");

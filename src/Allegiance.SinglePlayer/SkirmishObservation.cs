@@ -89,7 +89,8 @@ public sealed partial class SkirmishHost
             var objects = new List<IFedMessage>
             {
                 new SideRoster { Sides = mission.Sides.Select(s => new SideRoster.SideRecord(s.Id,
-                    s.Civilization.CivilizationId, 0, s.Name ?? "", s.ColorR, s.ColorG, s.ColorB, s.ColorA)).ToArray() }
+                    s.Civilization.CivilizationId, 0, s.Name ?? "", s.ColorR, s.ColorG, s.ColorB, s.ColorA)).ToArray(),
+                    LobbyPlayerCount = 0 }
             };
             foreach (var sector in mission.Sectors)
             {

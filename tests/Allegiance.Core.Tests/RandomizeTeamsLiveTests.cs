@@ -36,9 +36,12 @@ public class RandomizeTeamsLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        // P864b — AutoStart=false so marking every bot READY (the rebalance's
+        // AFK filter) does not auto-start the mission out of NotStarted before
+        // the owner's RANDOMIZE_TEAMS (which the dispatch refuses once started).
         Games =
         [
-            new Gm { Name = "RT Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "RT Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], AutoStart = false },
         ],
     };
 
@@ -50,8 +53,8 @@ public class RandomizeTeamsLiveTests
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "RT A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
-            new Gm { Name = "RT B", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Gamma", "Delta"] },
+            new Gm { Name = "RT A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], AutoStart = false },
+            new Gm { Name = "RT B", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Gamma", "Delta"], AutoStart = false },
         ],
     };
 
@@ -198,6 +201,16 @@ public class RandomizeTeamsLiveTests
         PlayerScoreOf(server, dId).Rank = 9;
         PlayerScoreOf(server, eId).Rank = 8;
 
+        // P864b — native RandomizeSides re-seats only READY (non-AFK) players
+        // (fsmission.cpp:5235-5241, GetReady()). Mark EVERY bot ready (leaders
+        // are never moved regardless) and pump until the server has applied the
+        // readiness (both sides' aggregate Ready) so the rebalance observes the
+        // ready state — a plain "send then randomize" races the TCP datagrams.
+        a.SendPlayerReady(true, aId); b.SendPlayerReady(true, bId);
+        c.SendPlayerReady(true, cId); d.SendPlayerReady(true, dId); e.SendPlayerReady(true, eId);
+        int rd = PumpUntil(server, () => m.Sides.All(s => s.Ready), 2000);
+        Assert.True(rd < 2000, "players did not reach side-ready before the rebalance");
+
         // Pre-rebalance: side0 = A5+C10+D9 = 24, side1 = B1+E8 = 9 — imbalanced.
         Assert.Equal(24, RankSum(server, side0));
         Assert.Equal(9, RankSum(server, side1));
@@ -256,6 +269,14 @@ public class RandomizeTeamsLiveTests
         PlayerScoreOf(server, bId).Rank = 989;
         PlayerScoreOf(server, cId).Rank = 960;
         PlayerScoreOf(server, dId).Rank = 850;
+
+        // P864b — non-leaders must be READY to be re-seated after the flush.
+        // Mark all (leaders harmless) and pump until the side-ready aggregate
+        // confirms the ready datagrams were applied before the rebalance.
+        a.SendPlayerReady(true, aId); b.SendPlayerReady(true, bId);
+        c.SendPlayerReady(true, cId); d.SendPlayerReady(true, dId);
+        int rd = PumpUntil(server, () => m.Sides.All(s => s.Ready), 2000);
+        Assert.True(rd < 2000, "players did not reach side-ready before the rebalance");
 
         a.SendRandomizeTeams();
         int settled = PumpUntil(server, () => ShipsOnSide(server, m, side0).Contains(cId) == false, 2000);
@@ -339,6 +360,12 @@ public class RandomizeTeamsLiveTests
         PlayerScoreOf(server, cId).Rank = 10;
         Assert.Equal(15, RankSum(server, side0));
         Assert.Equal(1, RankSum(server, side1));
+        // P864b — the non-leader C must be READY to be re-seated by the owner's
+        // later (honoured) rebalance. Mark all (leaders harmless) and pump until
+        // the side-ready aggregate confirms the ready datagrams were applied.
+        a.SendPlayerReady(true, aId); b.SendPlayerReady(true, bId); c.SendPlayerReady(true, cId);
+        int rd = PumpUntil(server, () => m.Sides.All(s => s.Ready), 2000);
+        Assert.True(rd < 2000, "players did not reach side-ready before the rebalance");
 
         // B (a side leader but not the mission owner) tries → refused, nothing moves.
         b.SendRandomizeTeams();
@@ -417,6 +444,12 @@ public class RandomizeTeamsLiveTests
         Assert.True(server.TryJoinSide(ShipOf(server, eId), side1));
         PlayerScoreOf(server, aId).Rank = 5;  PlayerScoreOf(server, bId).Rank = 1;
         PlayerScoreOf(server, cId).Rank = 10; PlayerScoreOf(server, dId).Rank = 9; PlayerScoreOf(server, eId).Rank = 8;
+        // P864b — non-leaders must be READY to be re-seated after the flush;
+        // mark all and pump until the side-ready aggregate confirms application.
+        a.SendPlayerReady(true, aId); b.SendPlayerReady(true, bId);
+        c.SendPlayerReady(true, cId); d.SendPlayerReady(true, dId); e.SendPlayerReady(true, eId);
+        int rd = PumpUntil(server, () => m.Sides.All(s => s.Ready), 2000);
+        Assert.True(rd < 2000, "players did not reach side-ready before the rebalance");
         Assert.Equal(24, RankSum(server, side0));
         Assert.Equal(9, RankSum(server, side1));
 
@@ -481,6 +514,12 @@ public class RandomizeTeamsLiveTests
         PlayerScoreOf(server, a0Id).Rank = 5;  PlayerScoreOf(server, a1Id).Rank = 1;
         PlayerScoreOf(server, cdId).Rank = 10; PlayerScoreOf(server, ceId).Rank = 8;
         PlayerScoreOf(server, lbId).Rank = 3;  PlayerScoreOf(server, cbId).Rank = 976;
+        // P864b — mission A's non-leaders must be READY to be re-seated; mark
+        // mission A's players ready and pump until A's side-ready confirms it.
+        a0.SendPlayerReady(true, a0Id); a1.SendPlayerReady(true, a1Id);
+        cd.SendPlayerReady(true, cdId); ce.SendPlayerReady(true, ceId);
+        int rdA = PumpUntil(server, () => mA.Sides.All(s => s.Ready), 2000);
+        Assert.True(rdA < 2000, "mission A did not reach side-ready before its rebalance");
 
         // Mission B baseline (must stay exactly this after A's rebalance).
         int bBefore = MissionRankSum(server, mB);

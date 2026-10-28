@@ -70,26 +70,5 @@ public sealed partial class Server
         return false;
     }
 
-    /// <summary>FedSrv/fsmission.cpp:5069-5118, selected by
-    /// FedSrv/FedSrv.CPP:6972-6982 outside rank-balance mode.</summary>
-    private void FlushSides(Mission mission)
-    {
-        foreach (var side in mission.Sides)
-        {
-            if (!side.AutoAccept) continue;
-            side.AutoAccept = false;
-            SendToMissionPeers(mission, FedPacket.Pack([new AutoAccept
-            {
-                SideId = side.Id, FAutoAccept = false,
-            }.Encode()]));
-        }
-        // Snapshot: removal/succession can change the live peer bookkeeping.
-        foreach (var kv in _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)).ToArray())
-        {
-            var ship = kv.Value.Ship;
-            if (ship.SideId is not >= 0) continue;
-            if (mission.Sides.Any(s => s.Id == ship.SideId && s.LeaderShipId == ship.Id)) continue;
-            MoveToTeamLobby(mission, ship, QuitSideReason.FlushSides);
-        }
-    }
+    // FlushSides (fsmission.cpp:5069-5119) lives in Server.Lobby.cs (P864b), shared with RebalanceSides.
 }
