@@ -61,6 +61,31 @@ public sealed class NativeAsteroidRenderer : IDisposable
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
+    /// <summary>P862 — how many rock meshes are resident (diagnostics for the
+    /// sector asset warm-up: a first entry into an asteroid sector grows this).</summary>
+    public int LoadedModelCount => _models.Count;
+
+    /// <summary>P862 — how many native rock textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
+
+    /// <summary>P862 — resolve a rock's native mesh and its native texture into
+    /// the caches WITHOUT drawing (the sector asset warm-up). This is the exact
+    /// work the first <see cref="Draw"/> after a warp would otherwise do, so a
+    /// warmed rock costs one dictionary hit instead of a <c>.mdl</c> parse + a
+    /// 2048² texture decode + upload inside the transit frame.</summary>
+    /// <returns>1 when at least one new resource was created, 0 when it was
+    /// already resident, -1 when the model is missing/undecodable (already logged
+    /// once by <see cref="GeometryFor"/>; the caller falls back to the imported
+    /// rock as it does on the draw path).</returns>
+    public int Warm(string modelStem, string? textureName)
+    {
+        if (string.IsNullOrEmpty(modelStem)) return -1;
+        int models = _models.Count, textures = _textures.Count;
+        if (GeometryFor(modelStem) is null) return -1;
+        if (TextureStemFor(modelStem, textureName) is { } texStem) TextureFor(texStem);
+        return _models.Count > models || _textures.Count > textures ? 1 : 0;
+    }
+
     /// <summary>The compiled native rock geometry for a model stem (parsed + built
     /// once, cached), or null when the file is missing/undecodable (logged once →
     /// the caller falls back to the imported/procedural path). Built through P566's
@@ -96,6 +121,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
             if (!_assets.Exists(textureStem + ".mdl"))
@@ -105,16 +131,15 @@ public sealed class NativeAsteroidRenderer : IDisposable
             }
             var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
-            var cols = new Color[mdlTex.Width * mdlTex.Height];
-            int n = 0;
-            for (int y = 0; y < mdlTex.Height; y++)
-                for (int x = 0; x < mdlTex.Width; x++)
-                {
-                    int si = (y * mdlTex.Width + x) * 4;
-                    cols[n++] = new Color((int)mdlTex.Rgba[si], (int)mdlTex.Rgba[si + 1], (int)mdlTex.Rgba[si + 2], 255);
-                }
-            surf.SetData(cols);
+            // P862 — upload the decoder's RGBA bytes straight (SurfaceFormat.Color IS
+            // RGBA8, and the decoder already writes alpha 255 for every texel). The
+            // old Color[] staging cost a 16.7 MB array plus a 4.2M-iteration loop per
+            // 2048² texture — ~33 MB of garbage per texture, and a cold sector loads
+            // several in one frame (the P862 transit hitch).
+            surf.SetData(mdlTex.Rgba);
             _textures[textureStem] = surf;
+            AssetLoadLog.Note("rock texture", textureStem, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                $"{mdlTex.Width}x{mdlTex.Height}");
             return surf;
         }
         catch (Exception ex)

@@ -263,6 +263,21 @@ public sealed class AutoProofPlan
     /// read at 1080p, far enough not to collide.</summary>
     public float AutoSummonEnemyDistance = 500f;
 
+    /// <summary>P862 — sector (name or id) every known harness bot on the pilot's
+    /// own side is relocated into, <c>--auto-park-bots &lt;sector&gt;</c>: the port's
+    /// privileged <c>relocate</c> chat cheat (Server.AdminCheats.cs, a PORT
+    /// EXTENSION) parks them where a warp is about to be measured. Native
+    /// discovery is SIDE-wide, so friendly ships in a sector are what make the
+    /// server export that sector's rocks/stations to this pilot BEFORE he gets
+    /// there — the live 200v200 situation (hundreds of friendly bots already
+    /// fighting in Alderan) that a scripted single-pilot run otherwise lacks.
+    /// Empty = never.</summary>
+    public string AutoParkBotsSector = "";
+
+    /// <summary>P862 — seconds after launch to relocate the harness bots
+    /// (<c>--auto-park-bots-at</c>, default 6).</summary>
+    public double AutoParkBotsAt = 6;
+
     /// <summary>P805b — seconds after launch to stop the ship
     /// (<c>--auto-stop-after</c>): the Backspace TK_ThrottleZero preset (-1 =
     /// kill throttle, WinTrek.cpp:10939-10960), so a long scripted sequence
@@ -436,6 +451,22 @@ public sealed class AutoProofPlan
             else if (a.StartsWith("--auto-drop-probe-at=", StringComparison.Ordinal))
             {
                 if (TryParseSeconds(a.Substring("--auto-drop-probe-at=".Length), out var dp2)) plan.AutoDropProbeAt = dp2;
+            }
+            else if (a == "--auto-park-bots")
+            {
+                if (i + 1 < args.Count) plan.AutoParkBotsSector = args[++i];
+            }
+            else if (a.StartsWith("--auto-park-bots=", StringComparison.Ordinal))
+            {
+                plan.AutoParkBotsSector = a.Substring("--auto-park-bots=".Length);
+            }
+            else if (a == "--auto-park-bots-at")
+            {
+                if (i + 1 < args.Count && TryParseSeconds(args[++i], out var pb)) plan.AutoParkBotsAt = pb;
+            }
+            else if (a.StartsWith("--auto-park-bots-at=", StringComparison.Ordinal))
+            {
+                if (TryParseSeconds(a.Substring("--auto-park-bots-at=".Length), out var pb2)) plan.AutoParkBotsAt = pb2;
             }
             else if (a == "--auto-summon-enemy-at")
             {
@@ -691,6 +722,7 @@ public sealed class AutoProofPlan
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||
         TargetSequence.Length > 0 || AutoDropProbeAt.HasValue || AutoSummonEnemyAt.HasValue
+            || AutoParkBotsSector.Length > 0
             || StopAfter.HasValue || AutoCarryProbe || AutoTreasureCode.HasValue ||
         AutoHideChatHistory ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||

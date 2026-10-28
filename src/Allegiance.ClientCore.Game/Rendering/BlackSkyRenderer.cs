@@ -87,6 +87,14 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
         _giants = new GiantObjectRenderer(gd, assets);
     }
 
+    /// <summary>P862 — decode a planet poster texture into this tier's cache
+    /// WITHOUT drawing (the sector asset warm-up). Same loader <see cref="SetCluster"/>
+    /// uses. Returns 1 when created now, 0 when already resident, -1 when unavailable.</summary>
+    public int WarmPlanet(string planetName) => _planet.Warm(planetName);
+
+    /// <summary>P862 — how many planet poster textures this tier has resident.</summary>
+    public int LoadedPlanetTextures => _planet.LoadedTextureCount;
+
     /// <summary>Switch the sky to a cluster's data (planet poster + P589 sun,
     /// moons, distant objects and galaxy field; stars are the fixed pre-P576
     /// shells). Called on sector change.</summary>

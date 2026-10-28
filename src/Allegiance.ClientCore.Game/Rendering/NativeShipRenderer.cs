@@ -81,6 +81,36 @@ public sealed class NativeShipRenderer : IDisposable
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
+    /// <summary>P862 — how many hull meshes are resident (diagnostics for the
+    /// sector asset warm-up: a warp into a sector full of hulls never seen
+    /// before grows this).</summary>
+    public int LoadedModelCount => _models.Count;
+
+    /// <summary>P862 — how many native hull textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
+
+    /// <summary>P862 — resolve a hull model's mesh, native texture and every
+    /// native LODGeo level into the caches WITHOUT drawing, so the first frame
+    /// that actually shows that hull does no decode/upload work. Calls exactly
+    /// the loaders <see cref="Draw"/> and <see cref="LodLevel"/> call, so a warmed
+    /// model is a plain cache hit afterwards; nothing here is evicted (the
+    /// caches live for the match).</summary>
+    /// <param name="modelStem">The hull's <c>DataHullTypeIGC.ModelName</c>.</param>
+    /// <param name="hullTextureName">The hull's texture-name override (usually
+    /// empty — the model's own texture namespace is used).</param>
+    /// <returns>1 when at least one new resource was created, 0 when everything
+    /// was already resident, -1 when the model is missing/undecodable.</returns>
+    public int Warm(string modelStem, string? hullTextureName)
+    {
+        if (string.IsNullOrEmpty(modelStem)) return -1;
+        int models = _models.Count, textures = _textures.Count, levels = _lodLevels.Count;
+        if (MeshFor(modelStem) is null) return -1;
+        if (TextureStemFor(modelStem, hullTextureName) is { } texStem) TextureFor(texStem);
+        int count = LodLevelCount(modelStem);
+        for (int i = 0; i < count; i++) _ = LodLevel(modelStem, i);
+        return _models.Count > models || _textures.Count > textures || _lodLevels.Count > levels ? 1 : 0;
+    }
+
     /// <summary>The compiled native geometry for a model stem (parsed + built once,
     /// cached), or null when the file is missing/undecodable (logged once → caller
     /// falls back to Meshy then placeholder).</summary>
@@ -114,6 +144,7 @@ public sealed class NativeShipRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
             if (!_assets.Exists(textureStem + ".mdl"))
@@ -123,16 +154,15 @@ public sealed class NativeShipRenderer : IDisposable
             }
             var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
-            var cols = new Color[mdlTex.Width * mdlTex.Height];
-            int n = 0;
-            for (int y = 0; y < mdlTex.Height; y++)
-                for (int x = 0; x < mdlTex.Width; x++)
-                {
-                    int si = (y * mdlTex.Width + x) * 4;
-                    cols[n++] = new Color((int)mdlTex.Rgba[si], (int)mdlTex.Rgba[si + 1], (int)mdlTex.Rgba[si + 2], 255);
-                }
-            surf.SetData(cols);
+            // P862 — upload the decoder's RGBA bytes straight (SurfaceFormat.Color IS
+            // RGBA8, and the decoder already writes alpha 255 for every texel). The
+            // old Color[] staging cost a 16.7 MB array plus a 4.2M-iteration loop per
+            // 2048² texture — ~33 MB of garbage per texture, and a cold sector loads
+            // several in one frame (the P862 transit hitch).
+            surf.SetData(mdlTex.Rgba);
             _textures[textureStem] = surf;
+            AssetLoadLog.Note("ship texture", textureStem, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                $"{mdlTex.Width}x{mdlTex.Height}");
             return surf;
         }
         catch (Exception ex)

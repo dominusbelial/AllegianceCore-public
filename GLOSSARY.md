@@ -290,6 +290,26 @@ list in **reverse**.
   `clintlib/appmsg.cpp:230-238` `FindTarget(… c_ttAnyCluster …, c_sabmRescue…)`),
   oxygen budget and docking. Reports P699/P699c; live test
   `P699HumanPodHomeLiveTests`.
+- **Sector asset warm-up (P862)** — a warp must not load a sector in its transit
+  frame. Per-type assets (native rock/station/hull meshes + 2048² native textures,
+  the planet poster, the tier's dome) are created lazily by the renderer that
+  first draws them, so entering a never-drawn sector (Alderan's 134-rock field)
+  used to decode several 8.4 MB RGB565 files, allocate ~240 MB and stall the
+  transit frame. The fix resolves them ahead of time under a per-frame time
+  budget — the own sector as soon as the mission data is known, and the sector
+  behind an aleph once the own ship is on approach (side-wide discovery means the
+  client usually knows it, exactly as in the 200v200 showcase) — through the SAME
+  loaders the draw path uses, so a warmed asset is resident for the match and a
+  second entry loads nothing. Key: `src/Allegiance.ClientCore.Game/Rendering/SectorWarmup.cs`
+  (pure queue/planner/budget), `Game1.SectorLoad.cs` (seeding, aleph approach,
+  `[sector-warm]` / `[sector-entry]` accounting), `Rendering/AssetLoadLog.cs`
+  (`ALLEGIANCE_ASSET_LOG_MS`, the `[asset]` slow-load line); harness
+  `scripts/p862-warp-stall.sh` + `scripts/p862-warp-summary.py`
+  (`ALLEGIANCE_SECTOR_PREWARM=0` is the A/B baseline). Only the ACTIVE sky tier
+  resolves a sector (each tier owns its own planet/dome caches), and the aleph
+  destination glimpse no longer prepares a sky it would draw fully transparent.
+  Report `docs/reports/P862_REPORT.md`. *Native intent:* the cluster-entry model
+  load (`WinTrek`/`Igc` cluster change) — the port does the same work earlier.
 - **Flight prediction / dead reckoning** — `src/Allegiance.ClientCore/Flight/`
   (`KinematicsDeadReckoner` etc.), reports `P447*/P448*`.
 - **Volumetric explosions (raymarch tier)** — Technique A (P573/P579) plus the

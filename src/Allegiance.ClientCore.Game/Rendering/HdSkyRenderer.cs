@@ -108,6 +108,14 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         _starTexture = LoadPngCapped(stem);
     }
 
+    /// <summary>P862 — decode a planet poster texture into this tier's cache
+    /// WITHOUT drawing (the sector asset warm-up). Same loader <see cref="SetCluster"/>
+    /// uses. Returns 1 when created now, 0 when already resident, -1 when unavailable.</summary>
+    public int WarmPlanet(string planetName) => _planet.Warm(planetName);
+
+    /// <summary>P862 — how many planet poster textures this tier has resident.</summary>
+    public int LoadedPlanetTextures => _planet.LoadedTextureCount;
+
     /// <summary>Switch the HD sky to a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
@@ -286,6 +294,23 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         }
         catch (Exception ex) { Missing(stem, ex.Message); return null; }
     }
+
+    /// <summary>P862 — resolve a poster's HD environment dome texture into the
+    /// cache WITHOUT drawing (the sector asset warm-up), so a warp into a sector
+    /// whose HD nebula has never been seen does not decode/upload a large PNG in
+    /// the transit frame. Returns 1 when a new texture was created, 0 when it was
+    /// already resident, -1 when the poster has no HD environment art.</summary>
+    public int Warm(string poster)
+    {
+        if (string.IsNullOrEmpty(poster)) return -1;
+        if (!TryPosterIndex(poster, out int n)) return -1;
+        string stem = _lowRes ? $"hdsky/nebula_a/env{n}" : $"hdsky/nebula/env{n}";
+        if (_textures.ContainsKey(stem)) return 0;
+        return LoadPngCapped(stem) is null ? -1 : 1;
+    }
+
+    /// <summary>P862 — how many HD sky textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
 
     private Texture2D? EnvTextureFor(string poster)
     {

@@ -43,6 +43,22 @@ public sealed class PlanetPoster : IDisposable
     /// <summary>Whether a planet is currently available (a texture decoded).</summary>
     public bool HasPlanet => _has;
 
+    /// <summary>P862 — decode a cluster's planet poster texture into the cache
+    /// WITHOUT drawing (the sector asset warm-up), so the first frame in a new
+    /// sector does not pay for a 2048² native planet decode + upload. Uses the same
+    /// loader <see cref="SetCluster"/> uses; a missing asset stays a logged miss.</summary>
+    /// <returns>1 when the texture was created now, 0 when it was already resident,
+    /// -1 when the cluster has no planet or its art is unavailable.</returns>
+    public int Warm(string planetName)
+    {
+        if (string.IsNullOrEmpty(planetName)) return -1;
+        if (_textures.ContainsKey(planetName)) return 0;
+        return PlanetTextureFor(planetName) is null ? -1 : 1;
+    }
+
+    /// <summary>P862 — how many planet poster textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
+
     /// <summary>Update the planet from a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
@@ -123,6 +139,7 @@ public sealed class PlanetPoster : IDisposable
     {
         if (_textures.TryGetValue(planetName, out var t)) return t;
         if (_missing.Contains(planetName)) return null;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
             var (mdlStem, pngStem) = HdSkyGuard.NativePlanetTextureStems(planetName);
@@ -134,12 +151,13 @@ public sealed class PlanetPoster : IDisposable
                 // black backing; native keys it transparent via the surface colorkey).
                 var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
                 var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
-                var cols = new Color[mdlTex.Width * mdlTex.Height];
-                int n = 0;
-                for (int i = 0; i < cols.Length; i++, n += 4)
-                    cols[i] = new Color(rgba[n], rgba[n + 1], rgba[n + 2], rgba[n + 3]);
-                surf.SetData(cols);
+                // P862 — upload the premultiplied RGBA bytes straight (SurfaceFormat.Color
+                // is RGBA8); the Color[] staging was another 16.7 MB per 2048² planet.
+                surf.SetData(rgba);
                 _textures[planetName] = surf;
+                AssetLoadLog.Note("planet poster", planetName,
+                    System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                    $"{mdlTex.Width}x{mdlTex.Height}");
                 return surf;
             }
             // ASCII "use ...ImportImageFromFile(.png)" stub — sibling PNG.

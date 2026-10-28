@@ -2357,10 +2357,25 @@ public sealed partial class Game1
                 sentControls = apControls;
                 sentStateM = _autopilotMovementButtons;
                 sentFireM = 0;   // autopilot drives with neutral fire
+                _autoPilotHoldSinceMs = 0;
             }
             else
             {
-                if (_autoPilotEngaged) DisengageAutopilot(AutopilotDisengageReason.TargetLost);
+                // P862 — "cannot steer this frame" is not "target lost": a goto
+                // issued while undocking has no pose / no warp graph for a frame or
+                // two. Hold the order (neutral controls) while the target still
+                // exists, and only disengage when it is really gone or has been
+                // unsteerable for longer than AutopilotHold.HoldLimitMs — the
+                // pre-P862 code dropped the order on that one frame, so a
+                // launch-time --auto-goto never flew (measured: no warp at all).
+                if (_autoPilotEngaged)
+                {
+                    long nowMs = Environment.TickCount64;
+                    if (_autoPilotHoldSinceMs == 0) _autoPilotHoldSinceMs = nowMs;
+                    if (Flight.AutopilotHold.ShouldDisengage(_autoPilotEngaged, steered: false,
+                            AutoPilotTargetStillKnown(), nowMs, _autoPilotHoldSinceMs))
+                        DisengageAutopilot(AutopilotDisengageReason.TargetLost);
+                }
                 sentControls = cmd.Controls;
                 sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
@@ -2415,6 +2430,12 @@ public sealed partial class Game1
         // remarks). Locked against the receive thread's concurrent upserts
         // into world.Ships — see ConnectionSession.Gate's doc comment.
         GatherRenderPoses(gameTime, sentFireM);
+
+        // P862 — sector load: pre-warm the own sector / the sector behind the
+        // aleph the ship is approaching (bounded per-frame work), and account for
+        // what a sector entry actually created. Runs before this frame's Draw so a
+        // warmed asset is resident by the time the scene asks for it.
+        UpdateSectorLoad();
 
         // P508 — send the native SHIP_UPDATE at the 0.15 s cadence from the current
         // local simulation pose + the adopted cookie + the server-converted time. Runs
@@ -3060,7 +3081,20 @@ public sealed partial class Game1
             return false;
         }
 
-        if (!TryOwnPose(out var pos, out var orient, out var vel)) return false;
+        // P862 — a goto order issued on the very frame the ship undocks has
+        // nothing to steer with yet (no own pose, or the warp graph has not
+        // arrived): the caller used to read that single-frame miss as
+        // "TargetLost" and drop the order instantly (reproduced live: `auto-goto`
+        // at launch logged `autopilot ON … autopilot OFF (TargetLost)` before the
+        // sim was seeded, so the ship never warped). The caller now holds the
+        // engagement while the TARGET still exists — see
+        // AutoPilotTargetStillKnown — so this simply means "no steering this
+        // frame", native's own behaviour (an autopilot with no pose coasts).
+        if (!TryOwnPose(out var pos, out var orient, out var vel))
+        {
+            NoteAutopilotHold("no own pose");
+            return false;
+        }
 
         // P540b — cross-sector steering decision. The target's SECTOR is resolved
         // separately from its raw position: a station/probe/ship in another
@@ -3088,7 +3122,11 @@ public sealed partial class Game1
         if (!TryResolveAutopilotGoal(ownSector, targetSector, targetLocal,
                                      warpSource,
                                      out var goal, out var routed))
+        {
+            NoteAutopilotHold($"no route own={ownSector} target={targetSector?.ToString() ?? "?"} "
+                + $"warps={warpSource.Count} kind={tgt.Kind}");
             return false;
+        }
 
         // P575 — a same-sector DOCKABLE station target uses the shared native
         // bay approach (DockApproach) instead of steering at the station centre
@@ -3651,6 +3689,49 @@ public sealed partial class Game1
                 TargetKind.Cluster => tgt.Id,
                 TargetKind.Treasure => world.Treasures.TryGetValue(tgt.Id, out var treasure) ? treasure.ClusterId : null,
                 _ => null,
+            };
+        }
+    }
+
+    /// <summary>P862 — a one-per-second trace of WHY an engaged autopilot could not
+    /// steer this frame (<c>ALLEGIANCE_AUTOPILOT_DEBUG=1</c>). A real-window proof
+    /// that never reaches its aleph is unfalsifiable without it: the same run either
+    /// holds on a transient (no pose / no warp graph yet) or on a genuine routing
+    /// failure, and those two want different answers.</summary>
+    private static readonly bool AutoPilotDebug =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_AUTOPILOT_DEBUG") == "1";
+    private long _autoPilotHoldLogAt;
+
+    private void NoteAutopilotHold(string why)
+    {
+        if (!AutoPilotDebug || Environment.TickCount64 < _autoPilotHoldLogAt) return;
+        _autoPilotHoldLogAt = Environment.TickCount64 + 1000;
+        Console.WriteLine($"[autopilot-hold] {why}");
+    }
+
+    /// <summary>P862 — is the autopilot's target still a real object in the world?
+    /// This answers "the order still means something" WITHOUT asking whether this
+    /// frame can steer it: an own pose that is not seeded yet or a warp graph that
+    /// has not arrived are transient (a goto pressed while undocking), while a
+    /// target that has died, docked away or left the tables is genuinely lost. The
+    /// caller keeps the engagement while this is true and disengages otherwise.
+    /// </summary>
+    private bool AutoPilotTargetStillKnown()
+    {
+        if (_autoTarget is not { } tgt) return false;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            return tgt.Kind switch
+            {
+                TargetKind.Ship => world.Ships.TryGetValue(tgt.Id, out var ship) && !ship.IsDead,
+                TargetKind.Station => world.Stations.ContainsKey(tgt.Id),
+                TargetKind.Asteroid => world.Asteroids.ContainsKey(tgt.Id),
+                TargetKind.Warp => world.Warps.ContainsKey(tgt.Id),
+                TargetKind.Probe => world.Probes.ContainsKey(tgt.Id),
+                TargetKind.Treasure => world.Treasures.ContainsKey(tgt.Id),
+                TargetKind.Cluster => world.Clusters.ContainsKey(tgt.Id),
+                _ => false,
             };
         }
     }

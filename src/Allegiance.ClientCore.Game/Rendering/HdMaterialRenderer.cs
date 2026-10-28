@@ -73,6 +73,40 @@ public sealed class HdMaterialRenderer : IDisposable
         return material is null ? null : MapsFor(material, 256, unlit: true)?[0];
     }
 
+    /// <summary>P862 — resolve a material's HD maps into the residency cache WITHOUT
+    /// drawing it, so the frame that first draws a newly entered sector's model does
+    /// not decode/upload its HD set (a 2048² basecolor, or the five-map PBR set,
+    /// inside the transit frame). Uses the SAME <see cref="MapsFor"/> call the draw
+    /// path makes (unlit basecolor in <see cref="HdDrawMode.Classic"/>, the full set
+    /// in <see cref="HdDrawMode.Pbr"/>), so the picture is identical; the quality is
+    /// chosen for a mid-distance view, and the existing promote-on-approach logic
+    /// upgrades it once if the camera gets close. Residency is still bounded by the
+    /// existing LRU budget.</summary>
+    /// <param name="model">The native model stem (PBR lookup key; ignored by the
+    /// classic basecolor lookup, which is keyed by texture).</param>
+    /// <param name="texture">The native texture stem the draw path passes.</param>
+    /// <param name="projectedPixels">Screen footprint to pick the mip for — pass a
+    /// mid-distance size (the warm-up uses <see cref="WarmProjectedPixels"/>).</param>
+    /// <returns>1 when a new resident set was created, 0 when it was already
+    /// resident, -1 when the pack has no material for this model/texture or the
+    /// renderer is in <see cref="HdDrawMode.Off"/>.</returns>
+    public int Warm(string? model, string? texture, float projectedPixels = WarmProjectedPixels)
+    {
+        if (Mode == HdDrawMode.Off || string.IsNullOrEmpty(texture)) return -1;
+        var material = _pack.Resolve(model ?? "", texture, _openNative);
+        if (material is null) return -1;
+        bool unlit = Mode != HdDrawMode.Pbr;
+        string key = material.Key + (unlit ? "|unlit" : "");
+        bool resident = _resident.ContainsKey(key);
+        if (MapsFor(material, projectedPixels, unlit) is null) return -1;
+        return _resident.ContainsKey(key) && !resident ? 1 : 0;
+    }
+
+    /// <summary>P862 — the screen-footprint the warm-up asks HD maps for: ~512 px,
+    /// i.e. a model a few hundred metres away. A closer view promotes the set (the
+    /// existing quality path), a farther one is served by the same resident maps.</summary>
+    public const float WarmProjectedPixels = 256f;
+
     /// <summary>HD-5 — the pack's <b>basecolor</b> (UNORM / sRGB-encoded) for the
     /// native classic path: BasicEffect consumes the encoded samples directly, so
     /// the classic HD material renders with the EXACT native lighting/blending but

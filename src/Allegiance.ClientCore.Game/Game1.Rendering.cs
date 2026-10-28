@@ -2167,28 +2167,50 @@ public sealed partial class Game1
     /// change. The sky is the backdrop, drawn behind everything (the sky renderer
     /// pins its own depth/blend states). Also draws the optional aleph
     /// destination-glimpse when <c>--aleph-glimpse on</c> (default OFF).
+    /// <para><b>P862 — only the ACTIVE tier resolves the new sector.</b> All three
+    /// tiers used to be told about every sector change, and each owns its own
+    /// <see cref="Rendering.PlanetPoster"/> plus its own dome/environment cache —
+    /// so one warp decoded the same 2048² <c>nebplntNNbmp.mdl</c> planet THREE
+    /// times and the inactive tiers' nebula art on top of that, all inside the
+    /// transit frame. The tier is fixed at launch (<c>--sky</c>), so the two idle
+    /// tiers now stay cold; a per-tier latch re-resolves the past sector if a tier
+    /// ever becomes active.</para>
     /// </summary>
     private void DrawSkyP576(Matrix view, Matrix projection, Vector3 cameraEye)
     {
         var world = _session.World;
         DataClusterIGC? sky = null;
+        short skySectorId = -1;
         if (TrySceneSector(world, RenderShipId(world) ?? -1, out short skySector)
             && world.Clusters.TryGetValue(skySector, out var dc))
         {
             sky = dc;
-            if (skySector != _skySector)
-            {
-                _skySector = skySector;
-                _blackSky.SetCluster(dc);
-                _nativeSky.SetCluster(dc);
-                _hdSky.SetCluster(dc);
-            }
+            skySectorId = skySector;
         }
 
         // P588 — the sky tier dispatch: black (default: point stars + native
         // planet, no dome) | native (P576 dome + planet) | hd (P577 telescope).
         bool black = string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase);
         bool hd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
+        if (sky is not null)
+        {
+            // P862 — tell ONLY the tier that draws (each one owns its own planet
+            // poster + dome caches; the others would decode the same art for
+            // nothing). The latch keeps a tier change working.
+            if (black)
+            {
+                if (_skySectorBlack != skySectorId) { _skySectorBlack = skySectorId; _blackSky.SetCluster(sky.Value); }
+            }
+            else if (hd)
+            {
+                if (_skySectorHd != skySectorId) { _skySectorHd = skySectorId; _hdSky.SetCluster(sky.Value); }
+            }
+            else
+            {
+                if (_skySectorNative != skySectorId) { _skySectorNative = skySectorId; _nativeSky.SetCluster(sky.Value); }
+            }
+        }
+
         if (sky is not null && black)
         {
             _blackSky.Draw(view, projection, cameraEye);

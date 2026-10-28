@@ -257,15 +257,27 @@ public sealed class AlephGlimpseRenderer : IDisposable
                 float screenRadius = (warp.Radius / dist) * halfVP * focus;
                 if (screenRadius < MinScreenRadiusPx) continue;
 
+                // P585 — resting strength fades in with approach; a transit pulse
+                // pushes the disc wider and far more opaque (opens wide).
+                float s = Math.Max(0f, pulseStrength(warp.WarpId));
+                float fade = ApproachFade(dist);
+
+                // P862 — a glimpse whose resting fade is zero and that has no
+                // transit pulse draws NOTHING (it is past FadeStartDistance). Do
+                // not build its destination sky behind it: entering a sector used
+                // to prepare up to MaxGlimpses destination skies — a 2048² planet,
+                // the p589obj library and a per-destination sky renderer each — in
+                // the ONE frame the new sector first appeared, which measured as a
+                // second ~1 s stall on top of the sector's own assets. The sky is
+                // built the moment the aleph is close enough to show one (or when
+                // a transit pulse fires), which is where it has always been built.
+                if (s <= 0.001f && RestingCentreOpacity * fade <= 0.001f) continue;
+
                 EnsureRendered(dest.ClusterId, dest, dir);
 
                 if (!_cache.TryGetValue(dest.ClusterId, out var e) || e.Target is null)
                     continue;
 
-                // P585 — resting strength fades in with approach; a transit pulse
-                // pushes the disc wider and far more opaque (opens wide).
-                float s = Math.Max(0f, pulseStrength(warp.WarpId));
-                float fade = ApproachFade(dist);
                 float opacity = Mix(RestingCentreOpacity * fade, PulseCentreOpacity, s);
                 float radiusFactor = Mix(RestingDiscRadiusFactor, PulseDiscRadiusFactor, s);
 
