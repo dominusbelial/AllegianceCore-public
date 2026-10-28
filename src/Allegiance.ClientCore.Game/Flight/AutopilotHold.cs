@@ -17,22 +17,22 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 /// </summary>
 public static class AutopilotHold
 {
-    /// <summary>How long an unstecrable frame may be held while the target still
+    /// <summary>How long an unsteerable frame may be held while the target still
     /// exists. The transient this fixes lasts one or two frames (the undock frame
     /// has no pose yet, the warp graph lands a frame later), so two seconds is
-    /// generous — beyond it the order is genuinely unstecrable (e.g. its ship
+    /// generous — beyond it the order is genuinely unsteerable (e.g. its ship
     /// docked and left the tables) and the pre-P862 disengage is the right answer.</summary>
     public const double HoldLimitMs = 2000;
 
     /// <summary>Whether this frame ends the engagement. A target that is no longer a
-    /// live object in the world, or an order that has been unstecrable for longer
+    /// live object in the world, or an order that has been unsteerable for longer
     /// than <see cref="HoldLimitMs"/>, disengages; a merely transient miss (no pose
     /// / no route yet) keeps the order.</summary>
     /// <param name="engaged">The autopilot is engaged.</param>
     /// <param name="steered">This frame produced controls (the autopilot flew).</param>
     /// <param name="targetKnown">The target still exists in the world.</param>
     /// <param name="nowMs">A monotonic millisecond clock.</param>
-    /// <param name="holdSinceMs">When the current run of unstecrable frames began,
+    /// <param name="holdSinceMs">When the current run of unsteerable frames began,
     /// or 0 when the autopilot steered last frame.</param>
     public static bool ShouldDisengage(bool engaged, bool steered, bool targetKnown,
         double nowMs, double holdSinceMs)

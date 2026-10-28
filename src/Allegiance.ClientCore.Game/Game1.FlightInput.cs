@@ -2365,7 +2365,7 @@ public sealed partial class Game1
                 // issued while undocking has no pose / no warp graph for a frame or
                 // two. Hold the order (neutral controls) while the target still
                 // exists, and only disengage when it is really gone or has been
-                // unstecrable for longer than AutopilotHold.HoldLimitMs — the
+                // unsteerable for longer than AutopilotHold.HoldLimitMs — the
                 // pre-P862 code dropped the order on that one frame, so a
                 // launch-time --auto-goto never flew (measured: no warp at all).
                 if (_autoPilotEngaged)

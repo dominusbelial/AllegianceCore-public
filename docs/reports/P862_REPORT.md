@@ -250,7 +250,7 @@ The harness needs a real aleph transit, and the client could not fly one: a `--a
 undock frame resolved before the own pose/warp graph existed, the caller treated that single frame as
 `TargetLost` and dropped the order (`autopilot ON … autopilot OFF (TargetLost)`, same second), so the ship
 never warped. `AutopilotHold.ShouldDisengage(engaged, steered, targetKnown, nowMs, holdSince)` now holds the order while
-the target still exists, and disengages when it is really gone **or** when the order has been unstecrable
+the target still exists, and disengages when it is really gone **or** when the order has been unsteerable
 for longer than `HoldLimitMs` (2 s) — so the one-frame transient is covered without leaving a stuck order
 engaged for the rest of the match. Native's own behaviour is the model (an autopilot with no pose simply
 has nothing to steer). This is the only behaviour change in the flight code; it is client-only and it is

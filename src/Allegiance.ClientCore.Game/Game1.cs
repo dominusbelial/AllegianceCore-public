@@ -1125,7 +1125,7 @@ public sealed partial class Game1 : Game
     /// disengage check in <see cref="TryGetAutopilotControls"/>.</summary>
     private SimVec? _autoTargetAtEngage;
     private bool _autoPilotEngaged;
-    /// <summary>P862 — when the current run of unstecrable autopilot frames began
+    /// <summary>P862 — when the current run of unsteerable autopilot frames began
     /// (0 = the autopilot steered last frame). Bounds the "hold a transient" rule in
     /// <see cref="Flight.AutopilotHold"/>.</summary>
     private long _autoPilotHoldSinceMs;
