@@ -281,6 +281,14 @@ list in **reverse**.
   `sim.prepare` / `sim.models` complete the sector timing breakdown. Proof and
   400-peer projection measurements: `tests/Allegiance.Core.Tests/P863ClashBudgetTests.cs`;
   report `docs/reports/P863_REPORT.md`.
+- **Surge projection allocation (P863b)** — native-mode ranked poses use the
+  existing single-delivery packet leases in `src/Allegiance.Server/Server.RankedPose.cs`;
+  selection/deviation remains sequential within each sector. Encoded events
+  share a wrapper within a snapshot, and missile fan-outs share detached source
+  poses/statuses in `src/Allegiance.Server/Server.FireAudience.cs`. The 400-peer
+  death/eject/missile/relaunch transcript and per-step measurements live in
+  `tests/Allegiance.Core.Tests/P863bSurgeBudgetTests.cs`; report
+  `docs/reports/P863b_REPORT.md`.
 - **Game-over world boundary (P860)** — a rotation rebuilds the same static map,
   so both worlds' stations carry the SAME `StationId`s and a received
   `EXPORT(26)` is attributable to a world only by its position in the byte

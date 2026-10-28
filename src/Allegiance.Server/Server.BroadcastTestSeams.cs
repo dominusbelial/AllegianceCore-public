@@ -210,7 +210,7 @@ public sealed partial class Server
 
     // Replays the complete broadcast suffix against a recorded tick's world.
     // No Mission.Update or socket timing changes the supplied inputs.
-    internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false, bool discovery = false)
+    internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false, bool discovery = false, Action? surge = null)
     {
         _broadcastSnapshotEnabled = snapshot;
         lock (_statsLock) _loopIterations = tick;
@@ -219,6 +219,8 @@ public sealed partial class Server
         if (measure) StartBroadcastProjectionMeasurement();
         try
         {
+            if (surge is not null)
+                using (Allegiance.Core.Profiling.TickProfiler.Enter("step:surgeEvents")) surge();
             long allocationMark;
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:crossSideExportSweep")) SweepCrossSideExports();
@@ -284,6 +286,9 @@ public sealed partial class Server
             _crossSideShipStatusTick.Remove(key);
         _statusSweepRemovalVersion++;
     }
+
+    internal bool TestLegacySurgeProjection;
+    internal void TestSeedSurgeRandom(int seed) => _rand = new Random(seed);
 
     internal void TestResetSnapshotReplay()
     {

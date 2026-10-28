@@ -3416,3 +3416,34 @@ local timings: [P863_REPORT.md](reports/P863_REPORT.md).
 | 2026-10-28 | P746KillCreditOnEjectionTests.Winning_kill_finishes_wire_and_victim_score_before_mission_rotation | P866 full-project sweep then 1/3 class runs: `Results.Entries.Single(CharacterName == "P746-1")` found no entry while the game-over snapshot was being built; no P866 line touches results/rotation (event audiences, lobby publication, counters) | 8/8 single-theory isolated runs + 12/12 whole-class pass | load flake (rotation/results timing) |
 | 2026-10-28 | BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes (4 golden cases) | P866 full-suite: the expected-prefix golden hashes mismatch while `offHash == onHash == sharedHash` in every case — the recorded actual is `D0ED7EEB…`, exactly the dispatch/master value in `docs/reports/P788C_assets/verification.json` | pre-existing stale golden (P788c entry above); no P866 change regenerates it. Reconfirmed after reverting the only MISSIONDEF-affecting experiment: still `D0ED7EEB…` | stale golden baseline (pre-existing, not a flake) |
 | 2026-10-28 | P477E2eMiningRateDevLiveTests.Completing_dev_145_raises_real_mining_accrual (post-dev accrual 0.0 vs 62.4); TreasureDropLiveTests.SendDropPart_ClientWorldReceivesTreasureSpawn_OverTheWire | combined gate NT-2+P864c+P866+P867 fast tier | P477 3/3 alone → load flake. TreasureDrop 1/3 alone → REAL: P864c native file-map PopulateCluster seeds starting treasures (cash/powerup/part) into the fly sector; test assumed an empty sector. Fixed (identify the drop by part id among new treasures), 5/5 | P477: load flake (watch); TreasureDrop: fixed |
+
+
+## P863b surge verification (2026-10-28)
+
+The single Fast sweep records the existing five `PlayerBundlePathsTests`
+worktree-TMPDIR ancestor/local.env failures. All nine cases pass **3/3** isolated
+invocations through a proc directory-handle alias to the same NVMe workspace
+scratch, restoring the intended outside-repository lexical context. No resolver
+or test assertion changed. This is an environment-context failure, not a load
+flake; the sweep was not repeated.
+
+`ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`
+records the existing async logon-order `(0,1,0)` failure and passes **3/3 alone**.
+
+`RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight`
+fails its fixed off-screen NPC placement premise in the sweep and **3/3 alone**.
+The candidate's packets show the NPC has moved from the intended +Z placement.
+An independently built **unchanged dispatch server** (`a94c13c7`) substituted in
+the same test output reproduces that failure **2/3**, with one baseline pass.
+This is a pre-existing placement/timing fixture failure, not a passing isolation
+or a P863b regression. No radar, path resolver, seeding or NPC behavior was edited
+to mask these observations. See [P863b_REPORT.md](reports/P863b_REPORT.md) for raw
+logs and the independent full surge transcript comparison.
+
+The Fast quarantine lane also observes the existing
+`AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+`Assert.Single` failure: three treasure-spawn records include ambient powerup
+and cash spawns. The runner's automatic retry passes, followed by **3/3** manual
+exact-method isolated passes. The original failed receipt remains in the one
+Fast sweep. Overall original outcomes are **11,408 pass / 8 fail / 3 skip**;
+infrastructure 9/9 and the Fast timing guard pass.

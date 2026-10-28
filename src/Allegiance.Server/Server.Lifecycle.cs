@@ -964,7 +964,7 @@ public sealed partial class Server
     private void SendPeer(ConnectionId target, byte[] packet)
     {
         if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true);
-        else QueueBroadcast(target, new BroadcastPacket(packet), 0, true);
+        else QueueEncodedEvent(target, packet, 0, true);
     }
 
     /// <summary>
@@ -983,7 +983,7 @@ public sealed partial class Server
     private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
     {
         if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed);
-        else QueueBroadcast(target, new BroadcastPacket(packet), coalesceKey, guaranteed);
+        else QueueEncodedEvent(target, packet, coalesceKey, guaranteed);
     }
 
     /// <summary>Capture one received packet before it is processed. Called from

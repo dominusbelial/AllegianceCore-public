@@ -326,8 +326,9 @@ public sealed partial class Server
 
         int n = 0;
         var viewers = _missileViewers[m] = new();
+        var shared = TestLegacySurgeProjection ? null : new EmissionPackets();
         foreach (var peer in _peerShips.Keys)
-            if (PeerInSector(peer, m.OwnerSector) && SendShipEmission(peer, shooter, m.OwnerSector, packet))
+            if (PeerInSector(peer, m.OwnerSector) && SendShipEmission(peer, shooter, m.OwnerSector, packet, shared))
             {
                 viewers.Add(peer);
                 n++;

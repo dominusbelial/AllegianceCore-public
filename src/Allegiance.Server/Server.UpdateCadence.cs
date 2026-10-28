@@ -341,31 +341,38 @@ internal sealed class ViewerPoseCadence
         Vector3 posRef, double now, double hz, int tickHz, bool snapshot = false,
         Func<uint, Vector3, Ship, uint, HeavyShipUpdateEntry>? capture = null)
     {
-        if (hz <= 0 || _visible.Count == 0) return;
-        // A whole sweep within floor(tickHz/hz) ticks. Never let ranked serves
-        // move this cursor: otherwise the shared deviation ranking can starve
-        // the same far ships for a particular viewer indefinitely.
+        foreach (var ship in SelectFloor(now, hz, tickHz))
+            entries.Add(capture is not null ? capture(tick, posRef, ship, tick)
+                : snapshot ? HeavyShipUpdateEntry.Capture(tick, posRef, ship, tick)
+                : HeavyShipUpdateEntry.From(tick, posRef, ship, tick));
+    }
+
+    private Ship[] _floorDue = [];
+    internal ReadOnlySpan<Ship> SelectFloor(double now, double hz, int tickHz)
+    {
+        if (hz <= 0 || _visible.Count == 0) { Array.Clear(_floorDue); return []; }
+        if (_floorDue.Length < _visible.Count) Array.Resize(ref _floorDue, _visible.Count);
+        // Same ordered fair sweep as AppendFloor: ranking never moves the cursor.
         int periodTicks = Math.Max(1, (int)Math.Min(int.MaxValue, Math.Floor(tickHz / hz)));
         int quota = (int)Math.Ceiling(_visible.Count / (double)periodTicks);
         _cursor %= _visible.Count;
+        int count = 0;
         for (int n = 0; n < _visible.Count; n++)
         {
             var ship = _visible[(_cursor + n) % _visible.Count];
             var stamp = _stamps[ship.Id];
-            // Deadline catch-up handles population churn and irregular tick
-            // spacing. No server can promise a wall-time deadline during a stall;
-            // catch up at the next broadcast rather than carrying that backlog.
             bool due = now - stamp.LastPose >= 1 / hz;
             if ((n < quota || due) && (!stamp.HasPose || stamp.LastPose != now))
             {
-                entries.Add(capture is not null ? capture(tick, posRef, ship, tick)
-                    : snapshot ? HeavyShipUpdateEntry.Capture(tick, posRef, ship, tick)
-                    : HeavyShipUpdateEntry.From(tick, posRef, ship, tick));
+                _floorDue[count++] = ship;
                 MarkPose(ship.Id, now);
                 ExtraBytes += HeavyShipUpdateEntry.Width;
             }
         }
         _cursor = (_cursor + quota) % _visible.Count;
+        // Do not retain departed identities in unused scratch slots.
+        Array.Clear(_floorDue, count, _floorDue.Length - count);
+        return _floorDue.AsSpan(0, count);
     }
 }
 
