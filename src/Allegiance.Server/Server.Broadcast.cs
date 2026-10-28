@@ -196,6 +196,9 @@ public sealed partial class Server
             for (int i = 0; i < _missions.Count; i++) ResolveBallots(_missions[i], now);
         });
         Step("periodicRules", () => AdvancePeriodicRules(now));
+        // P853 — drop the params snapshots of rotated-out missions (a no-op
+        // table scan while no mission has ever been edited).
+        Step("missionParamsPrune", PruneMissionParams);
         lock (_statsLock)
         {
             _loopIterations++;

@@ -321,4 +321,16 @@ public sealed partial class Server
     /// least one side). Inert in production (unused).</summary>
     internal bool TestAdmittedAtMissionJoin(ConnectionId conn, string name, Mission mission)
         => !(mission.RequiresInvitation && !mission.IsInvited(name, PlayerInvitationSquads(conn)));
+
+    /// <summary>P853 test seam — feed one raw datagram through the real inbound
+    /// dispatcher (<see cref="ProcessDatagram"/>) so packet-level fixtures can
+    /// drive FM_CS_MISSIONPARAMS / FM_CS_SET_TEAM_INFO and their guards exactly
+    /// as the transport would. Inert in production.</summary>
+    internal void TestProcessDatagram(ConnectionId from, byte[] data) => ProcessDatagram(from, data);
+
+    /// <summary>P853 test seam — the mission's current params snapshot
+    /// (native <c>m_misdef.misparms</c> stand-in), seeded on first call. Lets a
+    /// fixture assert that a refused edit left the snapshot untouched. Inert in
+    /// production.</summary>
+    internal MissionParamsMsg TestParamsOf(Mission mission) => ParamsOf(mission);
 }

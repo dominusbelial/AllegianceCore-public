@@ -75,6 +75,11 @@ public class MissionDefJoinedMissionWireTests
 
         // Everything except the populated cells and the header must be zero
         // (proves we did not scribble a stray offset from hand-composed maths).
+        // P853 — the params tail the FM_CS_MISSIONPARAMS echo guards compare
+        // against now carries its native Reset defaults instead of zeros:
+        // iMinRank@224 = -1 (0xFFFF), iMaxRank@226 = 1000, nMin/nMaxPlayersPerTeam
+        // @250/251 = 1/100, nTotalMaxPlayersPerGame@254 = 0x7FFF (igc.h:1301-1302,
+        // 1318-1320).
         for (int i = 4; i < b.Length; i++)
         {
             bool isPopulated =
@@ -82,6 +87,9 @@ public class MissionDefJoinedMissionWireTests
                 (i >= 124 && i < 128) ||   // verIGCcore
                 (i >= 186 && i < 190) ||   // territory disabled + unused artifact percentage (native Reset 100)
                 (i >= 208 && i < 210) ||   // HUD-12 iLives (default unlimited 0x7fff)
+                (i >= 224 && i < 228) ||   // P853 iMinRank/-1 + iMaxRank/1000 (Reset defaults)
+                (i >= 250 && i < 252) ||   // P853 nMin/nMaxPlayersPerTeam = 1/100 (Reset defaults)
+                (i >= 254 && i < 256) ||   // P853 nTotalMaxPlayersPerGame = 0x7FFF (Reset default)
                 (i >= 460 && i < 464);     // dwCookie
             if (!isPopulated)
                 Assert.True(b[i] == 0, $"offset {i} non-zero ({b[i]:X2})");

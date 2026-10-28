@@ -2026,7 +2026,8 @@ public sealed partial class Game1
                     selectedName,
                     joinRequests,
                     sortKey: _teamPaneControls.SortKey,
-                    sideSquadName: sideId => _session.World.SideSquadName(sideId));
+                    sideSquadName: sideId => _session.World.SideSquadName(sideId),
+                    sideName: sideId => _session.World.SideNameOverride(sideId));
                 lines = lines.Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Hint, ModerationModel.Hint))
                     .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
                     .ToArray();

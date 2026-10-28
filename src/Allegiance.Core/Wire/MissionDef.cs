@@ -68,6 +68,17 @@ public sealed class MissionDef : IFedMessage
     private const int LivesOffset = MisparmsOffset + 204;          // HUD-12 — offsetof(MissionParams, iLives), igc.h:1185
     private const int RgCivIdOffset = MisparmsOffset + 168;        // + offsetof(MissionParams, rgCivID)   (P29 probe)
     private const int NTemsOffset = MisparmsOffset + 218;          // + offsetof(MissionParams, nTeams)    (P29 probe)
+    // P853 — the MissionParams tail native's FM_CS_MISSIONPARAMS guards read
+    // (FedSrv.CPP:7541-7557): iMinRank/iMaxRank (igc.h:1200-1201),
+    // nMinPlayersPerTeam/nMaxPlayersPerTeam (igc.h:1232-1233) and
+    // nTotalMaxPlayersPerGame (igc.h:1237). MISSIONDEF carries the whole
+    // MissionParams, so the advertisement must be truthful about them for the
+    // C→S echo guards to be meaningful.
+    private const int IMinRankOffset = MisparmsOffset + 220;
+    private const int IMaxRankOffset = MisparmsOffset + 222;
+    private const int NMinPlayersPerTeamOffset = MisparmsOffset + 246;
+    private const int NMaxPlayersPerTeamOffset = MisparmsOffset + 247;
+    private const int NTotalMaxPlayersPerGameOffset = MisparmsOffset + 250;
     // P761 — MissionParams.bLockGameOpen (igc.h:1139, "Prevent players from
     // limiting the size of the game"): the 19th of the bool:1 bitfields that
     // pack at MissionParams offset 108 (after strGamePassword[17] ends there —
@@ -165,8 +176,30 @@ public sealed class MissionDef : IFedMessage
 
     /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
     /// (<c>Igc/igc.h:1127</c>, bit 6 of the bitfield block). See
-    /// <see cref="AllowFriendlyFire"/> for the client read path. </summary>
+    /// <see cref="AllowFriendlyFire"/> for the client read path. </summary>
     public bool AllowAlliedViz;
+
+    /// <summary>P853 — <c>MissionParams.iMinRank</c> (igc.h:1200). The native
+    /// <c>Reset</c> default is -1 (no minimum, igc.h:1301).</summary>
+    public short IMinRank = -1;
+
+    /// <summary>P853 — <c>MissionParams.iMaxRank</c> (igc.h:1201). The native
+    /// <c>Reset</c> default is 1000 (igc.h:1302).</summary>
+    public short IMaxRank = 1000;
+
+    /// <summary>P853 — <c>MissionParams.nMinPlayersPerTeam</c> (igc.h:1232;
+    /// byte, <c>Reset</c> default 1, igc.h:1318).</summary>
+    public byte NMinPlayersPerTeam = 1;
+
+    /// <summary>P853 — <c>MissionParams.nMaxPlayersPerTeam</c> (igc.h:1233;
+    /// byte, <c>Reset</c> default 100, igc.h:1319).</summary>
+    public byte NMaxPlayersPerTeam = 100;
+
+    /// <summary>P853 — <c>MissionParams.nTotalMaxPlayersPerGame</c> (igc.h:1237;
+    /// <c>Reset</c> default 0x7FFF, igc.h:1320). The FM_CS_MISSIONPARAMS handler
+    /// TrapHackBoots any client echo that does not match the mission's value
+    /// (FedSrv.CPP:7547-7548), so the advertisement must carry it.</summary>
+    public short NTotalMaxPlayersPerGame = unchecked((short)0x7FFF);
 
     public ushort GetFmid() => Fmid;
 
@@ -215,7 +248,17 @@ public sealed class MissionDef : IFedMessage
         w.WriteI16(ILives);
         w.Advance(NTemsOffset - w.Position);        // 210 -> 222
         w.WriteI16(NTems);                          // nTeams (short) at 222
-        w.Advance(MissionParamsSize - (NTemsOffset - MisparmsOffset) - 2); // finish MissionParams: 224..252 gap minus the 2 we wrote
+        // P853 — the params tail the FM_CS_MISSIONPARAMS echo guards compare
+        // against (see the offset constants above).
+        w.Advance(IMinRankOffset - w.Position);
+        w.WriteI16(IMinRank);
+        w.WriteI16(IMaxRank);
+        w.Advance(NMinPlayersPerTeamOffset - w.Position);
+        w.WriteByte(NMinPlayersPerTeam);
+        w.WriteByte(NMaxPlayersPerTeam);
+        w.Advance(NTotalMaxPlayersPerGameOffset - w.Position);
+        w.WriteI16(NTotalMaxPlayersPerGame);
+        w.Advance(MissionParamsSize - (NTotalMaxPlayersPerGameOffset - MisparmsOffset) - 2); // finish MissionParams after the total-max short
         // ------------------------- MISSIONDEF fixed fields ------------------
         w.Advance(256 - w.Position);   // szDescription char[201] zeros -> land at 256
         // dwCookie at 460, iSideMissionOwner 464, stage 468: reach 460 via zeros
@@ -290,6 +333,12 @@ public sealed class MissionDef : IFedMessage
         for (int i = 0; i < leaders.Length; i++)
             leaders[i] = BitConverter.ToInt16(buf.Slice(LeadersOffset + i * 2));
         bool lockGameOpen = ReadBitfield(buf, BLockGameOpenBit);
+        // P853 — the params tail (see the offset constants above).
+        short minRank = BitConverter.ToInt16(buf.Slice(IMinRankOffset));
+        short maxRank = BitConverter.ToInt16(buf.Slice(IMaxRankOffset));
+        byte minPerTeam = buf[NMinPlayersPerTeamOffset];
+        byte maxPerTeam = buf[NMaxPlayersPerTeamOffset];
+        short totalMax = BitConverter.ToInt16(buf.Slice(NTotalMaxPlayersPerGameOffset));
 
         return new MissionDef
         {
@@ -316,6 +365,11 @@ public sealed class MissionDef : IFedMessage
             RgCivId = rgCivId,
             RgShipIdLeaders = leaders,
             BLockGameOpen = lockGameOpen,
+            IMinRank = minRank,
+            IMaxRank = maxRank,
+            NMinPlayersPerTeam = minPerTeam,
+            NMaxPlayersPerTeam = maxPerTeam,
+            NTotalMaxPlayersPerGame = totalMax,
         };
     }
 

@@ -46,8 +46,17 @@ public sealed class Side : ISideIgc
     public float ColorB { get; set; } = 0.5f;
     public float ColorA { get; set; } = 1f;
 
-    /// <summary>The side name, if the supplying host provided one; else <c>null</c>.</summary>
-    public string? Name { get; }
+    /// <summary>The side name, if the supplying host provided one; else <c>null</c>.
+    /// Mutable only through <see cref="SetName"/> — the port of native
+    /// <c>IsideIGC::SetName</c> (<c>Igc/igc.h</c> side object), driven by
+    /// <c>CFSMission::SetSideName</c> (<c>FedSrv/fsmission.cpp:1564-1600</c>).</summary>
+    public string? Name { get; private set; }
+
+    /// <summary>P853 / SIM-0508 — the port of native <c>IsideIGC::SetName</c>:
+    /// rename the side in place. Called only from the server's
+    /// <c>SetSideName</c> primitive (the host supplies the truncation and the
+    /// SET_TEAM_INFO broadcast), so no guard duplication here.</summary>
+    public void SetName(string name) => Name = name;
 
     /// <summary>The civilization backing this side, resolved from the core.
     /// Settable since P186: <c>CHANGE_TEAM_CIV(51)</c> swaps it mid-mission

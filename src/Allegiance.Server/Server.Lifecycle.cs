@@ -1331,6 +1331,14 @@ public sealed partial class Server
         // if a future source defers LoadInvitations (empty lists ⇒ refuse, as native).
         mission.RequiresInvitation = g.SideInvitations.Values.Any(l => l is { Count: > 0 });
         mission.LoadInvitations(g.SideInvitations.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<string>)kv.Value));
+        // P853 / SIM-0491 close-out — native CFSSide::AddInvitation renames a
+        // squad-game side to the invited squad (SetSideName, fsside.cpp:78); the
+        // model rename happens inside Mission.AddInvitation. No SET_TEAM_INFO
+        // relay happens here: at assembly the mission is not yet registered
+        // (GameSettings(mission) needs the live slot) and no peer is seated.
+        // Every joining peer is seeded with the renamed side via SendSideRoster's
+        // squad relay (Server.Lobby.cs — SET_TEAM_INFO carries the renamed
+        // SideName, the same relay SetSideName's broadcast feeds).
         // P799 — MissionParams::iLives (igc.h:1185): the real per-player life
         // budget, defaulting to the unlimited sentinel. Sent verbatim in the
         // MISSIONDEF(38) slot the lives badge reads (console.cpp:812-817) and the

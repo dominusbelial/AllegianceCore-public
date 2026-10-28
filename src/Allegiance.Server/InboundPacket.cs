@@ -87,6 +87,8 @@ internal sealed class InboundMessage
         AutoAccept.Fmid => AutoAccept.Decode(Bytes),
         ChangeTeamCiv.Fmid => ChangeTeamCiv.Decode(Bytes),
         ChangeAlliance.Fmid => ChangeAlliance.Decode(Bytes),
+        SetTeamInfo.Fmid => SetTeamInfo.Decode(Bytes),          // P853 — the C→S half of SET_TEAM_INFO
+        MissionParamsMsg.Fmid => MissionParamsMsg.Decode(Bytes), // P853 — FM_CS_MISSIONPARAMS
         PlayerReady.Fmid => PlayerReady.Decode(Bytes),
         Suicide.Fmid => Suicide.Decode(Bytes),
         Logoff.Fmid => Logoff.Decode(Bytes),
