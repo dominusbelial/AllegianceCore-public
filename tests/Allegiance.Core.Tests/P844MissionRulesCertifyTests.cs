@@ -371,4 +371,143 @@ public class P844MissionRulesCertifyTests
         Assert.Equal(1817f, p.TimePlayedSeconds);
         Console.WriteLine("P844-REPORT: game row + team rows + extended player columns survive the wire (SIM-0524/0525/0526)");
     }
+
+    // ── P844b — SIM-0531 allies override in the conquest recompute + SIM-0533 draw edge ──
+
+    /// <summary>P844b/SIM-0531 — native's allies-override tail for
+    /// <c>CheckForVictoryByStationKill</c> (fsmission.cpp:3719-3743): when every
+    /// ACTIVE side is one alliance group, the alliance wins even though no side
+    /// reached the conquest/territory threshold. The un-allied control proves the
+    /// tally itself is NULL in this setup, so only the override can produce the
+    /// winner (the positive leg fails on master — no override existed).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Conquest_recompute_allied_sides_win_by_override()
+    {
+        Require.Artwork();
+        var m = Assembly();
+        short side0 = m.Sides[0].Id, side1 = m.Sides[1].Id;
+        // Opt the conquest win condition in (threshold 100: no side wins unless it
+        // monopolises every flag station, so the tally is NULL here — verified by
+        // the control below). Territory stays disabled (sentinel 100).
+        m.Goals.ConquestPercentage = 100;
+        Assert.True(m.ConquestEnabled);
+
+        // Control: no alliance → the conquest/territory tally yields no winner.
+        m.Sides[0].AllyGroup = null;
+        m.Sides[1].AllyGroup = null;
+        Assert.Null(m.RecomputeConquestAndTerritory(null).Winner);
+
+        // Allied → the override crowns the alliance (fsmission.cpp:3719-3743).
+        m.Sides[0].AllyGroup = 5;
+        m.Sides[1].AllyGroup = 5;
+        var (winner, _) = m.RecomputeConquestAndTerritory(null);
+        Assert.NotNull(winner);
+        Assert.True(winner!.Id == side0 || winner.Id == side1,
+            $"the alliance member must win by the override, got side {winner.Id}");
+        Console.WriteLine($"P844b-CONQ-ALLY: conquest recompute crowned alliance member side {winner.Id} by the override");
+    }
+
+    /// <summary>P844b/SIM-0533 — the shared pure helper matches native's double
+    /// loop (fsmission.cpp:3833-3855 / :3719-3743, Igc/igc.h:4297-4305) for the
+    /// corners the tally path leans on: zero active → null; a SINGLE active side
+    /// (even un-allied) → that side (native's only pair is itself, so
+    /// <c>bAllAllies</c> stays true); two un-allied → null; one group → a member.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void AllianceOverrideWinner_single_active_side_or_one_group_wins()
+    {
+        Require.Artwork();
+        var m = Assembly();
+        m.Sides[0].Active = false;
+        m.Sides[1].Active = false;
+        Assert.Null(Mission.AllianceOverrideWinner(m));                       // zero active
+
+        m.Sides[0].Active = true;
+        m.Sides[1].Active = false;
+        Assert.Same(m.Sides[0], Mission.AllianceOverrideWinner(m));           // lone active side
+
+        m.Sides[1].Active = true;
+        m.Sides[0].AllyGroup = null;
+        m.Sides[1].AllyGroup = null;
+        Assert.Null(Mission.AllianceOverrideWinner(m));                       // two un-allied
+
+        m.Sides[0].AllyGroup = 5;
+        m.Sides[1].AllyGroup = 5;
+        var w = Mission.AllianceOverrideWinner(m);
+        Assert.True(w is not null && (w.Id == m.Sides[0].Id || w.Id == m.Sides[1].Id));   // one group
+        Console.WriteLine("P844b-ALLY-WINNER: AllianceOverrideWinner matches native single/all-group semantics");
+    }
+
+    /// <summary>P844b/SIM-0533 — the draw edge: when NO side has players, native's
+    /// override still crowns the alliance (the tally is NULL but the double loop
+    /// runs, fsmission.cpp:3820-3856). The port previously drew. The observer bot
+    /// sits on the TEAM LOBBY (no real side), so the tally sees zero populated
+    /// sides while a connected peer still receives GAME_OVER and exposes the winner.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Allied_zero_populated_sides_win_instead_of_draw()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        var mission = server.Missions[0];
+        mission.Stage = MissionStage.Started;
+        mission.Sides[0].AllyGroup = 5;
+        mission.Sides[1].AllyGroup = 5;
+
+        using var a = new FltBot();
+        a.Connect(server.BoundPort, "ObsA");
+        a.SendLogonRequest(Request("ObsA"));
+        int got = PumpUntil(server, () => a.ShipAssignment is not null, 4000);
+        Assert.True(got < 4000, "observer must seat");
+        // Force the observer onto the TEAM LOBBY (no real side) so the
+        // win-by-inactive-sides tally sees ZERO populated sides, while the
+        // connected peer still receives GAME_OVER (seating auto-assigns a real
+        // side, which would make it populated).
+        server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId = null;
+        a.ResetGameOvers();
+
+        InvokeVictoryCheck(server, mission);
+        int seen = PumpUntil(server, () => a.GameOvers.Count > 0, 400);
+        Assert.True(seen < 400, "allied zero-populated must declare game over (alliance wins, not draw)");
+        var go = Assert.Single(a.GameOvers);
+        short s0 = mission.Sides[0].Id, s1 = mission.Sides[1].Id;
+        Assert.True(go.SideWinner == s0 || go.SideWinner == s1,
+            $"alliance must win instead of draw, got {go.SideWinner}");
+        Assert.Contains("&", go.GameoverMessage);   // allied name list, fsmission.cpp:5396-5412
+        Console.WriteLine($"P844b-EMPTY-ALLY: zero populated allied sides -> side {go.SideWinner} won, not a draw");
+    }
+
+    /// <summary>P844b/SIM-0533 — negative control for the draw edge: with NO
+    /// alliance between the active sides and zero populated sides, native declares
+    /// a draw ("All sides were destroyed", fsmission.cpp:5388) — the override must
+    /// not fabricate a winner.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Unallied_zero_populated_sides_draw()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        var mission = server.Missions[0];
+        mission.Stage = MissionStage.Started;
+
+        using var a = new FltBot();
+        a.Connect(server.BoundPort, "ObsB");
+        a.SendLogonRequest(Request("ObsB"));
+        int got = PumpUntil(server, () => a.ShipAssignment is not null, 4000);
+        Assert.True(got < 4000, "observer must seat");
+        // TEAM LOBBY (no real side) — see Allied_zero_populated_sides_win_instead_of_draw.
+        server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId = null;
+        a.ResetGameOvers();
+
+        InvokeVictoryCheck(server, mission);
+        int seen = PumpUntil(server, () => a.GameOvers.Count > 0, 400);
+        Assert.True(seen < 400, "zero-populated un-allied must still declare game over as a draw");
+        var go = Assert.Single(a.GameOvers);
+        Assert.Equal(GameOver.NA, go.SideWinner);    // draw
+        Assert.Contains("destroyed", go.GameoverMessage);
+        Console.WriteLine("P844b-EMPTY-UNALLIED: zero populated un-allied sides -> draw (\"All sides were destroyed\")");
+    }
 }

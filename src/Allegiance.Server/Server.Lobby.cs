@@ -125,6 +125,23 @@ public sealed partial class Server
             return;
         }
 
+        // P844b/SIM-0533 — native's override replaces the tally result even when
+        // the tally is NULL (zero populated sides): the same double loop
+        // (fsmission.cpp:3820-3856) crowns the alliance — or a lone ACTIVE side
+        // — instead of declaring a draw. The port previously drew here. Reached
+        // only in production: the P388 debug-mode skip above returns first, so
+        // the unattended 0-player arena keeps its designed steady state (see the
+        // report on how the two interact).
+        if (playerSideIds.Count == 0)
+        {
+            var allyWinner = AllAlliedWinner(mission);
+            if (allyWinner is not null)
+            {
+                DeclareGameOver(mission, allyWinner.Id, AlliedWinnerReason(mission, allyWinner));
+                return;
+            }
+        }
+
         // Exactly one side with players → it wins; zero → draw.
         short winnerId = GameOver.NA;
         string reason = "All sides were destroyed";
@@ -158,13 +175,8 @@ public sealed partial class Server
     /// walk visited — the reason lists every group member, so the pick is
     /// immaterial). Returns null when the active sides are not one alliance
     /// (or there are none). Internal for the P844 certification tests.</summary>
-    internal static Side? AllAlliedWinner(Mission mission)
-    {
-        foreach (var side in mission.Sides)
-            if (side.Active && AllActiveSidesAllied(mission, side))
-                return side;
-        return null;
-    }
+    internal static Side? AllAlliedWinner(Mission mission) =>
+        Mission.AllianceOverrideWinner(mission);   // P844b — pure logic now lives in Core
 
     /// <summary>P844/SIM-0533 — the override's pairwise test: true when
     /// <paramref name="winner"/> carries an alliance group
@@ -448,6 +460,24 @@ public sealed partial class Server
             return;
         }
 
+        // P844b/SIM-0533 — native's override also decides when the tally is NULL
+        // (zero alive/populated sides): the alliance — or a lone ACTIVE side —
+        // wins instead of the draw (fsmission.cpp:3820-3856). In production
+        // `alive` is HasPlayers && GetActiveF(), so this is the zero-populated
+        // edge; in debug mode `alive` is Active-alone, so zero means no active
+        // sides at all and the override (correctly) stays null — a genuine
+        // all-eliminated draw survives (this deactivation path is allowed to end
+        // even a debug mission: it is a real combat outcome, P388).
+        if (alive.Count == 0)
+        {
+            var allyWinner = AllAlliedWinner(mission);
+            if (allyWinner is not null)
+            {
+                DeclareGameOver(mission, allyWinner.Id, AlliedWinnerReason(mission, allyWinner));
+                return;
+            }
+        }
+
         short winnerId = GameOver.NA;
         string reason = "All sides were destroyed";
         if (alive.Count == 1)
@@ -658,6 +688,7 @@ public sealed partial class Server
             _oldPlayerScores.Remove(k);
         foreach (var k in _oldPlayerSideIds.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
             _oldPlayerSideIds.Remove(k);
+        _scoresFinalized.Remove(mission);   // P844b/SIM-0526 — the finalized marker dies with the mission
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
@@ -1259,7 +1290,13 @@ public sealed partial class Server
             if (kv.Value.Ship.SideId is not { } sid) continue;
             var score = kv.Value.PlayerScore;
             score.SetRepair(kv.Value.Ship.Repair);                                   // FedSrv.CPP:3704-3709
-            score.SetTimePlayed((float)Math.Max(0.0, _simNow - kv.Value.ConnectSimTime));
+            // P844b/SIM-0526 — accumulate time across rejoins: fold the final
+            // open stint onto the player's accumulated baseline (native's
+            // Disconnect does `m_dtPlayed += (t - m_timeConnect)`, igc.h:5602-5613).
+            // A first-stint player starts at 0; a rejoined player starts at the
+            // restored sum of prior stints. Never double-counted: the open stint
+            // is folded exactly once here, at the finalize.
+            score.SetTimePlayed(score.TimePlayed + (float)Math.Max(0.0, _simNow - kv.Value.ConnectSimTime));
             score.SetRankRatio(ratioFor.TryGetValue(sid, out var rat) ? rat : 1.0f);
             score.SetWin(winnerId != GameOver.NA && sid == winnerId);
             score.CalculateScore(fc);
@@ -1268,6 +1305,10 @@ public sealed partial class Server
                               $"baseKills={score.BaseKills:R} baseCaptures={score.BaseCaptures:R} flags={score.Flags} artifacts={score.Artifacts} " +
                               $"win={score.Win} ratio={score.RankRatio:R} played={score.TimePlayed:F0}s");
         }
+        // P844b/SIM-0526 — every still-connected player's TimePlayed now carries
+        // the folded total (baseline + final stint); mark the mission so the
+        // roster reads it as-is instead of folding the open stint a second time.
+        _scoresFinalized.Add(mission);
     }
 
     /// <summary>Per-server monotonic counter for the lobby match id, so a
@@ -1425,15 +1466,20 @@ public sealed partial class Server
                 continue;                              // scope to THIS mission
             if (live.Ship.SideId is not { } sid)
                 continue;                              // no real side → the team-lobby analogue
-            // P844/SIM-0527 — native's roster gate (fsmission.cpp:3118):
-            // <c>ppso->GetTimePlayed() > 0.0f</c> — a player who never flew is
-            // not on the endgame roster. The port's collapsed Connect/
-            // Disconnect accounting sets TimePlayed at score-finalize time, so
-            // the side-only path (which runs before any finalize) falls back to
-            // the seat-time delta — the same quantity the finalize writes.
+            // P844/SIM-0527 + P844b/SIM-0526 — native's roster gate
+            // (fsmission.cpp:3118): <c>ppso->GetTimePlayed() > 0.0f</c> — a player
+            // who never flew is not on the endgame roster. The roster time is the
+            // player's accumulated <c>TimePlayed</c>: for a finalized mission (the
+            // main game-over) <c>FinalizeMissionScores</c> has already folded the
+            // final stint, so use it as-is; for a side-only game-over (not
+            // finalized) it is the restored accumulated baseline, so fold the
+            // still-open current stint onto it — "accumulate the restored score's
+            // time plus the current stint", never double-counted (guarded by
+            // _scoresFinalized). The whole-mission path never enters the fold
+            // because finalize always precedes the roster there.
             float played = live.PlayerScore.TimePlayed;
-            if (played <= 0f)
-                played = (float)Math.Max(0.0, _simNow - live.ConnectSimTime);
+            if (!_scoresFinalized.Contains(mission))
+                played += (float)Math.Max(0.0, _simNow - live.ConnectSimTime);
             if (played <= 0f)
                 continue;
             string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
