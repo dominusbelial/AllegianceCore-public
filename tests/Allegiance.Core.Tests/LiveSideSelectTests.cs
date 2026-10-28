@@ -36,7 +36,7 @@ public class LiveSideSelectTests
         SideSelectAutoSeatSeconds = autoSeatSeconds,
         Games =
         [
-            new Gm { Name = "SideSel", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Bios", "IronCo"] },
+            new Gm { Name = "SideSel", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Bios", "IronCo"], AutoStart = false },
         ],
     };
 
@@ -273,6 +273,11 @@ public class LiveSideSelectTests
         // A is the mission owner: its RANDOMIZE_TEAMS rebalances -> the lone
         // non-leader B is moved to the lightest side (both leader sums equal, so
         // the first side wins), evidencing the trigger fired over the wire.
+        // P864b — B must be READY to be re-seated (native AFK filter). Mark all
+        // and pump until side-ready confirms application before the rebalance.
+        a.SendPlayerReady(true, aId); b.SendPlayerReady(true, bId); c.SendPlayerReady(true, cId);
+        Assert.True(PumpUntil(server, () => server.Missions[0].Sides.All(s => s.Ready), 2000) < 2000,
+            "players did not reach side-ready before the rebalance");
         a.SendRandomizeTeams();
         Assert.True(PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == bId).Ship.SideId == side0, 400) < 400,
             "owner RANDOMIZE_TEAMS did not rebalance the non-leader onto the lighter side");

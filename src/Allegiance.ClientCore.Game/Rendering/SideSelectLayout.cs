@@ -91,6 +91,17 @@ public static class SideSelectLayout
                 Highlight: isSel));
         }
 
+        // P864b — the team-lobby pool (players in the mission on no side,
+        // SIDE_TEAMLOBBY/-2), shown as native's "Not on a team" lobby row
+        // (clintlib.cpp:994 SideName; teamscreen.cpp:378,445). Not selectable —
+        // a player picks a REAL side, never the lobby, from this pre-join picker.
+        if (roster!.LobbyPlayerCount > 0)
+        {
+            string lobbyName = "Not on a team";
+            rows.Add(new Row(Kind.Muted,
+                $"    {AsciiSafe(lobbyName),-20}  (players: {roster.LobbyPlayerCount})"));
+        }
+
         rows.Add(Row.Blank());
         if (amMissionOwner) rows.Add(Row.Of(Kind.Hint, "R  RANDOMIZE TEAMS"));
         return rows;

@@ -1980,6 +1980,65 @@ bool isThreat =
             if (_passTimesMs.Count > MaxPassSamples) _passTimesMs.RemoveAt(0);
         }
         SampleRuntimeOnce();
+        ReseatFlushedBots();   // P864b — self-throttled ~1 Hz lobby re-seat, background task
+    }
+
+    // P864b — coarse ~1 Hz scan for bots flushed to the team lobby; see
+    // <see cref="ReseatFlushedBots"/>. Cheap timestamp + Interlocked guards keep
+    // the re-seat (a blocking SeatWithRetry on a background Task) off the
+    // decision thread and non-overlapping.
+    private double _lastReseatScanAt = -1;
+    private int _reseatInFlight;
+
+    /// <summary>P864b — after a FlushSides/RandomizeSides a bot left in the team
+    /// lobby (SIDE_TEAMLOBBY, ship on no side) must request a side again so the
+    /// showcase keeps running unattended. Scanned at a coarse ~1 Hz cadence
+    /// (never per decision pass); each lobby-detected bot is re-seated via the
+    /// same <see cref="SeatWithRetry"/> path a fresh spawn uses, on a background
+    /// task so the decision thread is never blocked and overlapping runs are
+    /// suppressed by the <see cref="_reseatInFlight"/> guard. Detection reads the
+    /// bot's OWN ClientWorld <c>MySideId</c>, which the client sets to −2
+    /// (<c>SIDE_TEAMLOBBY</c>) when the server moves the ship to the lobby
+    /// (QUIT_SIDE → Apply(QuitSide)). Best-effort: a failure only logs.</summary>
+    private void ReseatFlushedBots()
+    {
+        double wall = Environment.TickCount64;
+        if (_lastReseatScanAt > 0 && wall - _lastReseatScanAt < 950) return;
+        _lastReseatScanAt = wall;
+        if (Interlocked.Exchange(ref _reseatInFlight, 1) != 0) return;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                ActiveBot[] snap;
+                lock (_gate) snap = _bots.ToArray();
+                foreach (var bot in snap)
+                {
+                    if (bot.Cs is not { } cs || cs.Lost || bot.ShipId < 0) continue;
+                    short? mySide;
+                    lock (cs.Gate) mySide = cs.World.MySideId;
+                    if (mySide != -2) continue;                       // not parked on the lobby
+                    short target = bot.RequestedSide >= 0 ? bot.RequestedSide : bot.Side;
+                    if (target < 0) continue;
+                    Console.WriteLine($"[teamlobby] bot '{bot.Name}' (ship {bot.ShipId}) parked on SIDE_TEAMLOBBY -> re-requesting side {target}");
+                    try
+                    {
+                        SeatWithRetry(bot.Name, target,
+                            () => { lock (cs.Gate) return cs.World.MyShipId is not null && cs.World.MySideId != -2; },
+                            () => cs.Connected && !cs.Lost,
+                            () => cs.LastPositionRefusal,
+                            cs.SendPositionReq);
+                        Console.WriteLine($"[teamlobby] bot '{bot.Name}' re-seated after flush");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"[teamlobby] bot '{bot.Name}' re-seat attempt failed: {e.Message}");
+                    }
+                }
+            }
+            finally { Interlocked.Exchange(ref _reseatInFlight, 0); }
+        });
     }
 
     private double _lastResourceSampleAt = -1;

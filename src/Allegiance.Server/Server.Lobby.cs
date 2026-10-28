@@ -3114,96 +3114,169 @@ private void CompleteStartCountdown(Mission mission, double now)
         return sum;
     }
 
-/// <summary>P195 — the <c>RandomizeSides</c> port (<c>fsmission.cpp:5133-
-    /// 5260</c>) as the Stage-1 substitute the brief specifies. Native's
-    /// two-phase flush-then-reassign (move every non-leader to a neutral
-    /// <c>SIDE_TEAMLOBBY</c>, then greedily re-seat them) cannot be ported
-    /// because this port has no lobby side — every ship is always seated on a
-    /// real side. The buildable substitute rebalances <b>directly across the
-    /// existing real sides in one pass</b>: collect every non-leader seated on
-    /// any real side (analogous to native's lobby population, never physically
-    /// moved first), then repeatedly seat the highest-<c>Rank</c> remaining
-    /// player onto whichever real side currently has the lowest rank sum
-    /// (ties broken by connection/iteration order via LINQ's stable
-    /// <c>OrderBy</c>). The end state — players redistributed to minimize
-    /// per-side rank-sum imbalance — is equivalent to native; the mechanism —
-    /// no visible "everyone stripped to a lobby" intermediate state — is not.
-    /// <para><b>Step 3 faithful</b>: pending join requests (P184) for this
-    /// mission are cleared before any reassignment (native
-    /// <c>fsmission.cpp:5183-5196</c>), since a mass reassignment would
-    /// otherwise leave stale pending entries. <b>LockSides bypass</b>: the
-    /// dispatch intentionally does not refuse while sides are locked (native
-    /// never consults bLockSides here). Reassignment broadcasts ride the
-    /// existing per-player join/leave announcements inside
-    /// <see cref="TryJoinSide"/> (QUIT_SIDE / JOIN_SIDE / SET_TEAM_LEADER /
-    /// SET_MISSION_OWNER) — no new broadcast shape is invented. Simplifications
-    /// (native concepts absent here, all stated in docs/RANDOMIZE_TEAMS_P195.md):
-    /// no banned-side mask, no AFK/ready filter (every non-leader is
-    /// rebalanced), no ghost counting, and no <c>iMaxImbalance</c> player-count
-    /// override (pure rank-sum minimization).</summary>
+    /// <summary>P195/P864b — the <c>RandomizeSides</c> port (<c>fsmission.cpp:5139-
+    /// 5260</c>) with native's two-phase team-lobby shape restored. <b>Phase 1:</b>
+    /// turn auto-accept OFF on every side that has it on (KGJV change, "changed to
+    /// turn on auto accept off", fsmission.cpp:5142-5160), broadcasting
+    /// AUTO_ACCEPT(52) per toggled side. <b>Phase 2:</b> flush every non-leader to
+    /// the team lobby (SIDE_TEAMLOBBY), clearing its banned-side mask and setting
+    /// its last side to the lobby (fsmission.cpp:5173-5185) — the visible
+    /// two-phase "everyone stripped to a neutral lobby" intermediate native
+    /// performs, each move riding <see cref="MoveToTeamLobby"/>'s QUIT_SIDE.
+    /// <b>Phase 3:</b> clear every pending join request for the mission
+    /// (fsmission.cpp:5183-5196). <b>Phase 4:</b> greedily re-seat the lobby pool
+    /// highest-rank-first, skipping AFK (not-ready) players, onto whichever real
+    /// side currently has the lowest rank sum, with the <c>iMaxImbalance</c>
+    /// fewest-players override inside the pick (fsmission.cpp:5199-5261;
+    /// PickNewSide fsmission.cpp:4454-4524). Re-seat rides
+    /// <see cref="TryJoinSide"/>'s JOIN_SIDE / SET_TEAM_LEADER /
+    /// SET_MISSION_OWNER announcements exactly as native's AddPlayerToSide.
+    /// <para><b>Fidelity notes.</b> The banned-mask clear and SetLastSide are
+    /// represented in this port by parking the ship on <see cref="SideTeamLobby"/>
+    /// (-2): there is no separate banned-side-mask state and no GetLastSide()
+    /// state (both documented n/a), so "clear banned mask + set last side to
+    /// lobby" collapses to the park itself — the observable native effect (the
+    /// player is in the lobby, may re-request any side, and is exempt from the
+    /// no-defection gate). LockSides is deliberately NOT consulted:
+    /// RandomizeSides is a privileged owner-only mass reassignment and the P195
+    /// decision (reaffirmed by P864, tested by
+    /// Randomize_teams_bypasses_lock_sides) is that it bypasses the lock. AFK = a
+    /// peer whose ready flag (<see cref="_playerReady"/>, the port of native
+    /// <c>GetReady()</c>) is not set; those stay in the lobby, exactly native.</para>
+    /// </summary>
     private void RebalanceSides(Mission mission)
     {
-        // P852 — native RandomizeSides turns auto-accept OFF on every side that
-        // has it on before moving anyone (KGJV change, "changed to turn on auto
-        // accept off", fsmission.cpp:5142-5160), broadcasting AUTO_ACCEPT(52)
-        // per toggled side. After a rebalance, joining a led side needs the
-        // leader's approval again — exactly native.
+        DisableAutoAcceptOnAllSides(mission);                                  // phase 1
+        FlushNonLeadersToLobby(mission, QuitSideReason.BalanceSides);          // phase 2
+        ClearPendingJoinRequestsForMission(mission);                           // phase 3
+
+        // phase 4 — re-seat the ready lobby pool highest-rank-first. Native loops
+        // while the lobby still has members and re-picks the highest-rank READY
+        // player each pass (AFK players are ignored and stay in the lobby,
+        // fsmission.cpp:5230-5241); a pick that no side will accept stops the loop
+        // (fsmission.cpp:5253-5259, bPickTeamFailed).
+        int seated = 0;
+        while (true)
+        {
+            (ConnectionId conn, LiveShip live)? pick = null;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != SideTeamLobby) continue;
+                if (!(_playerReady.TryGetValue(kv.Key, out var rdy) && rdy)) continue;   // AFK filter, fsmission.cpp:5235-5241
+                if (pick is null || kv.Value.PlayerScore.Rank > pick.Value.live.PlayerScore.Rank)
+                    pick = (kv.Key, kv.Value);
+            }
+            if (pick is null) break;                                            // no ready lobby player left
+            Ship ship = pick.Value.live.Ship;
+            short? side = PickRebalanceSide(mission, ship);
+            if (side is null) break;                                            // no side will accept them (bPickTeamFailed)
+            TryJoinSide(ship, side.Value);
+            seated++;
+        }
+
+        Console.WriteLine($"[randomizeteams] flushed non-leaders to SIDE_TEAMLOBBY and re-seated {seated} ready player(s) across {mission.Sides.Count} side(s)");
+    }
+
+    /// <summary>P864b — the <c>FlushSides</c> port (<c>fsmission.cpp:5069-5119</c>),
+    /// the "dump everyone to a neutral lobby" branch of FM_C_RANDOMIZE_TEAMS
+    /// (FedSrv.CPP:6981-6987, taken when
+    /// <see cref="GameConfig.MaxTeamImbalance"/> != 0x7ffe): turn auto-accept off
+    /// everywhere, then move every non-leader to the team lobby (banned-mask
+    /// clear + SetLastSide(lobby), see <see cref="RebalanceSides"/>' fidelity
+    /// note). No reassignment. Reached via the RANDOMIZE_TEAMS dispatch.</summary>
+    private void FlushSides(Mission mission)
+    {
+        DisableAutoAcceptOnAllSides(mission);
+        FlushNonLeadersToLobby(mission, QuitSideReason.FlushSides);
+    }
+
+    /// <summary>P864b — native RandomizeSides'/FlushSides' auto-accept-off sweep
+    /// (fsmission.cpp:5080-5092 / 5142-5160, "changed to turn on auto accept
+    /// off"): every side with auto-accept on is turned off and told whole-mission
+    /// via AUTO_ACCEPT(52). After a flush/rebalance, joining a led side needs the
+    /// leader's approval again — exactly native.</summary>
+    private void DisableAutoAcceptOnAllSides(Mission mission)
+    {
         foreach (var side in mission.Sides)
         {
             if (!side.AutoAccept) continue;
             side.AutoAccept = false;
             var aa = new AutoAccept { SideId = side.Id, FAutoAccept = false };
             int n = SendToMissionPeers(mission, FedPacket.Pack(new[] { aa.Encode() }));
-            Console.WriteLine($"[randomizeteams] side {side.Id}: AUTO_ACCEPT(52) fAutoAccept=false whole-mission -> {n} peer(s) (fsmission.cpp:5142-5160)");
+            Console.WriteLine($"[teamlobby] side {side.Id}: AUTO_ACCEPT(52) fAutoAccept=false whole-mission -> {n} peer(s) (fsmission.cpp:5080-5092,5142-5160)");
         }
+    }
 
-        // Step 3 (native fsmission.cpp:5183-5196): clear this mission's pending
-        // join requests before reassigning — a mass reassignment would leave
-        // stale entries otherwise.
-        ClearPendingJoinRequestsForMission(mission);
-
-        // Running per-side rank sums, seeded with the leaders' contributions
-        // (leaders are never moved; their rank counts from the start — the
-        // equivalent of native's sides still holding their leaders after the
-        // non-leader flush). Computed fresh at the top so a leader's
-        // contribution is always anchored.
-        var sums = new Dictionary<short, int>();
-        foreach (var side in mission.Sides)
-            sums[side.Id] = GetLeaderRankSum(mission, side.Id);
-
-        // The rebalance pool: every non-leader seated on any real side of this
-        // mission, ranked highest-first (LINQ OrderBy is stable, so equal ranks
-        // keep connection/iteration order — the port's "arrival order" tie-break,
-        // since all PlayerScores seed at Rank 0 per P193 and only a future
-        // feature ever differentiates them).
-        var pool = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
-            .Where(kv => kv.Value.Ship.SideId is not null)
-            .Where(kv => !IsSideLeader(mission, kv.Value.Ship))
-            .Select(kv => (Ship: kv.Value.Ship, Rank: kv.Value.PlayerScore.Rank))
-            .OrderByDescending(x => x.Rank)
-            .ToList();
-
-        foreach (var (ship, rank) in pool)
+    /// <summary>P864b — the flush half shared by <see cref="FlushSides"/> and
+    /// <see cref="RebalanceSides"/>: move every non-leader seated on a real side
+    /// of <paramref name="mission"/> to the team lobby
+    /// (<c>SideTeamLobby</c>), each via <see cref="MoveToTeamLobby"/> (the port of
+    /// native RemovePlayerFromSide), broadcasting QUIT_SIDE. Leaders stay and
+    /// anchor their side (GetLeader(sideID) != pfsPlayer, fsmission.cpp:5109-5112
+    /// / 5178-5182). Already-lobby ships are skipped. The banned-mask clear +
+    /// SetLastSide(lobby) collapse to the park itself (see <see cref="RebalanceSides"/>
+    /// fidelity note).</summary>
+    private void FlushNonLeadersToLobby(Mission mission, QuitSideReason reason)
+    {
+        int flushed = 0;
+        foreach (var kv in _peerShips)
         {
-            // Whichever real side currently has the lowest rank sum gets this
-            // player (every side is eligible — no banned-side mask exists).
-            short bestSide = -1;
-            int bestSum = int.MaxValue;
-            foreach (var side in mission.Sides)
-            {
-                if (!sums.TryGetValue(side.Id, out var s)) s = 0;
-                if (s < bestSum) { bestSum = s; bestSide = side.Id; }
-            }
-            if (bestSide == -1) break;   // no real side — nothing to seat onto
-
-            // Fold the newcomer into the running sum immediately (native adds
-            // via AddPlayerToSide before the next PickNewSide), then move them.
-            sums[bestSide] = bestSum + Math.Max(rank, (short)1);
-            TryJoinSide(ship, bestSide);   // announces QUIT_SIDE / JOIN_SIDE / leader changes
+            var ship = kv.Value.Ship;
+            if (!ReferenceEquals(ship.Mission, mission)) continue;
+            if (ship.SideId is not { } sideId) continue;
+            if (sideId == SideTeamLobby) continue;                              // already in the lobby
+            if (IsSideLeader(mission, ship)) continue;                          // leaders never flush
+            MoveToTeamLobby(mission, ship, reason);
+            flushed++;
         }
+        Console.WriteLine($"[teamlobby] flushed {flushed} non-leader player(s) to SIDE_TEAMLOBBY ({(int)reason} {reason}) (fsmission.cpp:5097-5117,5173-5185)");
+    }
 
-        Console.WriteLine($"[randomizeteams] rebalanced {pool.Count} non-leader player(s) across {mission.Sides.Count} side(s)");
+    /// <summary>P864b — the re-seat pick during <see cref="RebalanceSides"/>, the
+    /// port of native PickNewSide (fsmission.cpp:4454-4524) in the
+    /// STAGE_NOTSTARTED context it always runs in (native asserts it; the
+    /// dispatch enforces it). Among the real, active, accepting sides, remember
+    /// the lowest rank sum (default choice) and the fewest players; the
+    /// <c>iMaxImbalance</c> override swaps the rank choice for the fewest-players
+    /// side when seating the newcomer would exceed fewestPlayers + iMaxImbalance
+    /// (fsmission.cpp:4506-4516). Only gates relevant pre-game are consulted
+    /// (active side, private-game invitation, capacity — native's no-defection /
+    /// no-base / rank-balance gates all guard on GetStage()!=NOTSTARTED and are
+    /// inert here). LockSides and banned-side-mask are not consulted (see
+    /// <see cref="RebalanceSides"/> fidelity note). Returns null when no side will
+    /// accept the player (native returns SIDE_TEAMLOBBY → bPickTeamFailed).</summary>
+    private short? PickRebalanceSide(Mission mission, Ship ship)
+    {
+        long lowestRankSum = long.MaxValue;
+        int fewestPlayers = int.MaxValue;
+        int chosenSidePlayers = 0;
+        short? fewestSide = null, chosenSide = null;
+        var game = GameSettingsSafe(mission);
+        ConnectionId? conn = ConnOf(ship);
+        foreach (var s in mission.Sides)
+        {
+            if (!s.Active) continue;                                            // rgfActive guard, fsmission.cpp:4475
+            if (mission.RequiresInvitation &&
+                !mission.IsSideInvited(s.Id, PlayerInvitationName(conn, null), PlayerInvitationSquads(conn)))
+                continue;                                                       // DPR_PrivateGame, fsmission.cpp:4605
+            int players = 0; long rankSum = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || ReferenceEquals(kv.Value.Ship, ship)) continue;
+                if (kv.Value.Ship.SideId != s.Id) continue;
+                players++;
+                rankSum += Math.Max(1, (int)kv.Value.PlayerScore.Rank);         // GetSideRankSum floor, fsmission.cpp:1352-1369
+            }
+            if (players >= game.MaxPlayersPerTeam) continue;                    // DPR_TeamFull, fsmission.cpp:4626
+            if (rankSum < lowestRankSum) { lowestRankSum = rankSum; chosenSide = s.Id; chosenSidePlayers = players; }
+            if (players < fewestPlayers) { fewestPlayers = players; fewestSide = s.Id; }
+        }
+        if (chosenSide is null) return null;
+        var settings = GameSettingsSafe(mission);
+        if (settings.MaxTeamImbalance != 0x7fff && chosenSidePlayers + 1 > fewestPlayers + settings.MaxTeamImbalance)
+            chosenSide = fewestSide;                                            // override rank choice with imbalance choice, fsmission.cpp:4513-4515
+        return chosenSide;
     }
 
 /// <summary>P195 — clear every pending join request (P184) belonging to a
@@ -5294,8 +5367,12 @@ private void CompleteStartCountdown(Mission mission, double now)
                 s.Name ?? $"side{s.Id}",
                 s.ColorR, s.ColorG, s.ColorB, s.ColorA))
             .ToArray();
-        SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs }.Encode() }));
-        Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
+        // P864b — the team-lobby pool size (players in the mission on no side,
+        // SideTeamLobby/-2), so the client's team screen can show the lobby
+        // ("Not on a team"), native clintlib.cpp:994.
+        short lobby = (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == SideTeamLobby);
+        SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs, LobbyPlayerCount = lobby }.Encode() }));
+        Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [+ lobby {lobby}] [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
         // P820c — seed the joining peer with each side's CURRENT squad via native
         // SET_TEAM_INFO(15) (the squad relay native sends on every squad/name
         // change, fsmission.cpp:1580-1590), so a late-arriving peer's team pane

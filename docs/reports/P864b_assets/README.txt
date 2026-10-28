@@ -1,0 +1,1 @@
+Screenshots (both HUD styles: lobby pool listed, a side request from the lobby) are pending Claude's graphical review runner — this P864b lane is headless and could not capture real MonoGame frames. The side-select layout (shared by Classic + Modern) is unit-verified in tests/Allegiance.ClientCore.MonoGame.Tests/SideSelectLayoutTests. See P864b_REPORT.md "Unfinished / deferred".

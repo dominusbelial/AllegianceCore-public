@@ -122,4 +122,45 @@ public class SideSelectLayoutTests
             rows.Single(r => r.Text.Contains("Charlie")).Kind);
         Assert.DoesNotContain(rows, r => r.Text.Contains("Charlie") && r.Highlight);
     }
+
+    // ── P864b — the team-lobby pool row ──────────────────────────────────────
+
+    /// <summary>⭐ The team lobby pool ("Not on a team", SIDE_TEAMLOBBY/-2) is
+    /// listed on the team screen as a muted row carrying the lobby's player
+    /// count (native teamscreen.cpp:378,445 / clintlib.cpp:994). It is a scalar
+    /// on the roster — never a selectable side — so a player always picks a
+    /// real side, never the lobby. The side-select layout is shared by both HUD
+    /// styles (Classic + Modern draw the same rows), so this covers both.</summary>
+    [Fact]
+    public void Build_shows_team_lobby_pool_row_when_nonzero()
+    {
+        var roster = Roster((1, 3, "Alpha"), (2, 5, "Bravo"));
+        roster.LobbyPlayerCount = 4;   // 4 players sitting on no side
+
+        var rows = SideSelectLayout.Build(roster, 0, false);
+        AssertPureAscii(rows);
+        var joined = string.Join("\n", rows.Select(r => r.Text));
+        Assert.Contains("Not on a team", joined);
+        Assert.Contains("players: 4", joined);
+        // The lobby row is muted (informational, not selectable), never an Item.
+        var lobby = rows.Single(r => r.Text.Contains("Not on a team"));
+        Assert.Equal(SideSelectLayout.Kind.Muted, lobby.Kind);
+        Assert.False(lobby.Highlight);
+
+        // The lobby is NOT among the selectable side ids (it is a scalar, not a
+        // SideRecord — but pin it: a player may only request a REAL side).
+        Assert.DoesNotContain((short)-2, SideSelectLayout.SelectableSideIds(roster));
+        Assert.DoesNotContain((short)-2, SideSelectLayout.SelectableSideIds(roster, _ => true));
+    }
+
+    /// <summary>⭐ An empty lobby (0 on no side) renders no "Not on a team" row
+    /// — the pool row appears only when there are lobby players to show.</summary>
+    [Fact]
+    public void Build_omits_lobby_row_when_lobby_empty()
+    {
+        var roster = Roster((1, 3, "Alpha"), (2, 5, "Bravo"));
+        roster.LobbyPlayerCount = 0;
+        var joined = string.Join("\n", SideSelectLayout.Build(roster, 0, false).Select(r => r.Text));
+        Assert.DoesNotContain("Not on a team", joined);
+    }
 }

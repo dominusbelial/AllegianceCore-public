@@ -31,26 +31,33 @@ public enum GameOverBackAction
     TeamLobbySideSelect,
 }
 
-/// <summary>P481 — decides the game-over Back action from the live client world
-/// state. Pure and headless-testable (no MonoGame, no graphics device).</summary>
+/// <summary>P481/P864b — decides the game-over Back action from the live client
+/// world state. Pure and headless-testable (no MonoGame, no graphics device).</summary>
 public static class GameOverBackPlanner
 {
     /// <summary>Resolve the Back action. <paramref name="missionStage"/> is the
     /// client's <see cref="MissionInfo.Stage"/> (an int in the
     /// <c>MissionStageMessage</c> constant family); <paramref name="ownSideActive"/>
     /// is <see cref="ClientWorld.IsSideActive"/> of the local player's side
-    /// (<c>true</c> when the side is unknown/active). Faithful to native's
-    /// single <c>GetStage() == STAGE_OVER</c> branch; the ready-check vs
+    /// (<c>true</c> when the side is unknown/active). <paramref name="inTeamLobby"/>
+    /// is true when the local player is on no side at all (parked on the team
+    /// lobby, <c>SIDE_TEAMLOBBY</c>/-2, or not yet seated) — P864b: a lobby player
+    /// must land in the side-select picker so it can request a real side, exactly
+    /// as native routes a not-on-a-team player back to the team screen
+    /// (gameoverscreen.cpp:641,669; teamscreen.cpp:2931-2970). Faithful to
+    /// native's single <c>GetStage() == STAGE_OVER</c> branch; the ready-check vs
     /// side-select split is the port's mapping of native's TeamScreen onto the
     /// two existing overlays.</summary>
-    public static GameOverBackAction Plan(int? missionStage, bool ownSideActive)
+    public static GameOverBackAction Plan(int? missionStage, bool ownSideActive, bool inTeamLobby = false)
     {
         if (missionStage == MissionStageMessage.StageOver)
             return GameOverBackAction.LeaveMission;
 
-        // Not a full game-over: the team lobby for the current mission.
-        return ownSideActive
-            ? GameOverBackAction.TeamLobbyReadyCheck
-            : GameOverBackAction.TeamLobbySideSelect;
+        // Not a full game-over: the team lobby for the current mission. A player
+        // on no team (team lobby) or on an inactive/eliminated side goes to the
+        // side-select picker; a seated player on an active side readies up.
+        return (inTeamLobby || !ownSideActive)
+            ? GameOverBackAction.TeamLobbySideSelect
+            : GameOverBackAction.TeamLobbyReadyCheck;
     }
 }

@@ -1201,17 +1201,16 @@ public sealed partial class Server
             }
             else if (fmid == RandomizeTeams.Fmid)   // FM_C_RANDOMIZE_TEAMS (Messages.h:201)
             {
-                // P195 — the mission owner's "balance the teams" trigger (not
-                // actually random). Port of FedSrv.CPP:6964-6997: refuse unless
-                // the sender is the mission owner (the same IsMissionOwnerPlayer
-                // gate P186's LOCK_LOBBY/START_GAME use) and the mission is
-                // STAGE_NOTSTARTED, then balance the sides. The real dispatch
-                // branches on iMaxImbalance==0x7ffe (balance) vs flush — the
-                // flush branch (dump everyone to a neutral lobby, no
-                // reassignment) is OUT OF SCOPE: this port has no SIDE_TEAMLOBBY
-                // and no MissionParams field, and "balance" is what the message
-                // name promises, so Stage-1 always balances (a deliberate,
-                // permanent simplification — see docs/RANDOMIZE_TEAMS_P195.md).
+                // P195/P864b — the mission owner's "balance the teams" trigger
+                // (not actually random). Port of FedSrv.CPP:6964-6997: refuse
+                // unless the sender is the mission owner (the same
+                // IsMissionOwnerPlayer gate P186's LOCK_LOBBY/START_GAME use)
+                // and the mission is STAGE_NOTSTARTED, then branch exactly as
+                // native does on iMaxImbalance (FedSrv.CPP:6976-6987):
+                // iMaxImbalance == 0x7ffe (rank-balance mode) → RandomizeSides
+                // (balance/rebalance), anything else → FlushSides (dump every
+                // non-leader to the neutral team lobby, no reassignment). Both
+                // are the P864b team-lobby implementations in Server.Lobby.cs.
                 // LockSides is deliberately BYPASSED (not a refusal): native's
                 // RandomizeSides does not consult bLockSides (SetLockSides is
                 // even commented out there, fsmission.cpp:5258-5259, "Randomize
@@ -1239,7 +1238,13 @@ public sealed partial class Server
                     }
                     else
                     {
-                        RebalanceSides(mission);
+                        // Native branches on iMaxImbalance (FedSrv.CPP:6976-6987):
+                        // 0x7ffe → balance (RandomizeSides), else → flush.
+                        var cfg = GameSettingsSafe(mission);
+                        if (cfg.MaxTeamImbalance == 0x7ffe)
+                            RebalanceSides(mission);
+                        else
+                            FlushSides(mission);
                     }
                 }
                 catch (Exception e)
