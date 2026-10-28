@@ -1239,7 +1239,9 @@ public sealed partial class Server
         // SideId. The grouping is the same peer-resolution the chat Team relay
         // uses (Server.cs:1124-1128).
         var sidePeers = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == side.Id)
+            // Native DoPayday enumerates this mission's side ships, never
+            // another mission's identically numbered side (fsmission.cpp:2295-2314).
+            .Where(kv => kv.Value.Ship.SideId == side.Id && ReferenceEquals(kv.Value.Ship.Mission, side.Mission))
             .Select(kv => kv.Key)
             .ToArray();
         int playerCount = sidePeers.Length;
@@ -1281,7 +1283,7 @@ public sealed partial class Server
         // deliberately no MONEY_CHANGE at payday (see PLAYER_MONEY_AUTODONATE_P197.md).
         foreach (var kv in _peerShips)
         {
-            if (kv.Value.Ship.SideId != side.Id) continue;
+            if (kv.Value.Ship.SideId != side.Id || !ReferenceEquals(kv.Value.Ship.Mission, side.Mission)) continue;
             var donate = kv.Value.Wallet.AutoDonateTarget;
             var receiver = donate is null ? kv.Value : LiveOf(donate);
             if (receiver is not null)

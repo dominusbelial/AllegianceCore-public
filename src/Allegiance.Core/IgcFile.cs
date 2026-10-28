@@ -16,10 +16,10 @@ public enum IgcWrapper
 /// </summary>
 /// <remarks>
 /// The outer wrapper is read by <c>LoadIGCFile</c>
-/// (<c>src/Igc/missionigc.cpp:94</c>), which passes the payload to
-/// <c>ImissionIGC::Import</c>. On-disk data is <b>plaintext</b>: the
-/// <c>munge</c> decrypt hook is wired only for the Zone Club download path, and
-/// <c>ALLSRV_STANDALONE</c> passes NULL (<c>src/FedSrv/fsmission.cpp:164-166</c>).
+/// (<c>src/Igc/missionigc.cpp:94</c>), which optionally transforms the body
+/// before <c>ImissionIGC::Import</c>. Plain/decrypted artwork is the default;
+/// encrypted core loading explicitly selects the native rolling-XOR hook
+/// (<c>FedSrv/FedSrv.CPP:9763</c>). <see cref="Body"/> contains decoded bytes.
 /// </remarks>
 public sealed class IgcFile
 {

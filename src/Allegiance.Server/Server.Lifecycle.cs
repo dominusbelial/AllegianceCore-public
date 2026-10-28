@@ -741,7 +741,7 @@ public sealed partial class Server
         var corePath = Path.Combine(_config.ArtPath, _config.StaticCore);
         if (!File.Exists(corePath))
             throw new InvalidDataException($"static core '{corePath}' not found under artPath");
-        var file = IgcReader.ParseFile(corePath);
+        var file = IgcReader.ParseFile(corePath, encrypted: _config.StaticCoreEncrypted);
         if (file.Wrapper != IgcWrapper.VersionAndDataSize)
             throw new InvalidDataException($"'{corePath}' is not a static core (wrapper {file.Wrapper})");
         var core = StaticCore.Load(file);

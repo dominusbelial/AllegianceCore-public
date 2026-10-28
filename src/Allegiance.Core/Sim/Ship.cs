@@ -7531,9 +7531,8 @@ public sealed partial class Ship : Model, IShipIgc
     /// sector (<see cref="FindNearestEnemyShip"/>) and commit to it via
     /// <see cref="AttackTarget"/>. This is the port of native
     /// <c>PickDefaultOrder</c>'s <c>c_ptWingman</c> case
-    /// (<c>Igc/shipIGC.h:2436-2455</c>): skip the training/co-op
-    /// <c>HandlePickDefaultOrder</c> hook (this port has no training-mission
-    /// system), go straight to the <c>FindTarget(this, c_ttEnemy | c_ttShip |
+    /// (<c>Igc/shipIGC.h:2436-2455</c>): offer the training/co-op
+    /// <c>HandlePickDefaultOrder</c> hook first, then use the <c>FindTarget(this, c_ttEnemy | c_ttShip |
     /// c_ttNearest, NULL, pcluster, ...)</c> fallback, and
     /// <c>SetCommand(c_cmdAccepted, pmodel, c_cidAttack)</c>
     /// (<c>shipIGC.h:2441-2447</c>).
@@ -7554,6 +7553,10 @@ public sealed partial class Ship : Model, IShipIgc
     private void DecideWingmanDefaultOrder()
     {
         _runawayCheckInterval = 5f; // PickDefaultOrder, shipIGC.h:2216
+
+        // Native Igc/shipIGC.h:2438-2440: a host-provided order suppresses
+        // ordinary enemy acquisition (training/co-op use this override).
+        if (Mission?.Site.HandlePickDefaultOrder(this) == true) return;
 
         if (FindNearestEnemyShip() is { } enemy)
         {

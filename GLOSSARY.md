@@ -95,6 +95,13 @@ list in **reverse**.
   parts, stations, asteroids, float constants. Key:
   `src/Allegiance.Core/Model/StaticCore.cs`,
   `src/Allegiance.Core/IgcReader.cs`, `src/Allegiance.Core/IgcFile.cs`.
+- **Encrypted native core (P868)** — `src/Allegiance.Core/IgcReader.cs`
+  decodes the cumulative DWORD XOR before walking body records. File loading
+  uses explicit format selection (`ServerConfig.StaticCoreEncrypted` /
+  JSON `staticCoreEncrypted`, default false); decrypted files can retain the
+  native `zone_core.igc` name. Version/size prefixes stay plain. Native:
+  `FedSrv/FedSrv.CPP:31-56,9304,9763`; tests:
+  `tests/Allegiance.Core.Tests/P868EncryptedCoreTests.cs`.
 - **Ship** — player/bot vessel: flight, weapons, shields, cargo. Key:
   `src/Allegiance.Core/Sim/Ship.cs`. *Native:* `shipigc.cpp`, `fsship.cpp`.
 - **Flight model / physics** — acceleration, drag, turn rates, afterburner.
@@ -739,6 +746,12 @@ list in **reverse**.
 
 ## 8. Parity matrices (`docs/parity`)
 
+- **Native n/a ruling audit (P868)** — all 199 original exclusions are
+  classified in `docs/parity/p868-na-audit.csv`: A is a justified exclusion,
+  B is behavior (implemented or explicitly partial), C needs a product
+  decision (partial). General-matrix identities use `area::native_item`.
+  `tools/p868-na-audit.py` checks coverage, statuses and citation integrity;
+  `docs/reports/P868_REPORT.md` records decisions, remaining branches and gates.
 - **`docs/parity/parity-matrix.csv`** — the master native-behaviour parity
   matrix (rows closed with `done` / `done-visual` / `n/a` per the lane rules).
 - **`docs/parity/sim-rules-matrix.csv`** — sim-rule equivalence rows.

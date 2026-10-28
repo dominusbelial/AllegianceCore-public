@@ -1039,6 +1039,10 @@ public sealed class ServerConfig
 
     /// <summary>Static core file name, relative to <see cref="ArtPath"/>.</summary>
     public string StaticCore { get; set; } = "PCore001.igc";
+    /// <summary>Decode native cumulative DWORD XOR before loading the static
+    /// core (FedSrv/FedSrv.CPP:9763, bEncrypt ? DoDecrypt : NULL). False keeps
+    /// ordinary/decrypted artwork compatible, including files named zone_core.</summary>
+    public bool StaticCoreEncrypted { get; set; }
 
     /// <summary>TCP port the logon transport listens on.</summary>
     public int Port { get; set; } = 6073;

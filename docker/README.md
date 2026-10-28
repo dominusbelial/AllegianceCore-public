@@ -1,5 +1,11 @@
 # docker/ — deploy configs
 
+For an encrypted native static core, set `"staticCoreEncrypted": true` next to
+`"staticCore"` in the server JSON. It defaults to false: a file named
+`zone_core.igc` may already be decrypted. This selects native's cumulative DWORD
+XOR body transform (`FedSrv/FedSrv.CPP:9763`); it is a compatibility format,
+not encryption for secrets. Mount the chosen core with the ordinary artwork.
+
 ## Files here
 
 - **`compose.server.json`** — the checked-in **safe default** server config,

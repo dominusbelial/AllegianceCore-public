@@ -370,11 +370,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
     // P736 — presence / side-change salutation one-shots (parity wave 23).
     // Waves from sounddef.mdl:825-831 (vo_sal_recruitsarrived / vo_sal_mia /
-    // vo_sal_quit / vo_sal_traitor / vo_sal_enemyjoiners / vo_sal_enemyleaves).
-    // Native maps salQuitSound to the vo_sal_mia wave (sounddef.mdl:827-828);
-    // this port uses the dedicated vo_sal_quit wave so the same-side "X has
-    // quit" cue is distinguishable from the MIA cue the player hears.
-    private SoundEffect _salQuit = null!;
+    // vo_sal_traitor / vo_sal_enemyjoiners / vo_sal_enemyleaves).
+    // salQuitSound uses its native serialized voice template below.
     private SoundEffect _salChangeSides = null!;
     private SoundEffect _salMia = null!;
     private SoundEffect _salEnemyLeaves = null!;
@@ -884,13 +881,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _positiveClick = LoadSound("Sounds/accept");    // P764 — positiveButtonClickSound (sounddef.mdl:313)
             _cargoFull = LoadSound("Sounds/vo_sal_cargofull");
             // P736 — presence / side-change salutation one-shots. Waves
-            // sounddef.mdl:825-831 (recruitsarrived / mia / quit / traitor /
-            // enemyjoiners / enemyleaves). salQuitSound is vo_sal_mia in native
-            // (sounddef.mdl:827-828); this port plays vo_sal_quit for the plain
-            // quit so the two cues are distinguishable.
+            // sounddef.mdl:825-831 (recruitsarrived / mia / traitor /
+            // enemyjoiners / enemyleaves). salQuitSound is played through
+            // its native serialized template, including the vo_sal_mia wave.
             _salRecruitsArrived = LoadSound("Sounds/vo_sal_recruitsarrived");
             _salMia = LoadSound("Sounds/vo_sal_mia");
-            _salQuit = LoadSound("Sounds/vo_sal_quit");
             _salChangeSides = LoadSound("Sounds/vo_sal_traitor");
             _salEnemyJoiners = LoadSound("Sounds/vo_sal_enemyjoiners");
             _salEnemyLeaves = LoadSound("Sounds/vo_sal_enemyleaves");
@@ -1413,9 +1408,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     // one-shots on the same ClientSoundEvent path, played through the voice-
     // budgeted warn-one-shot lane (MutexSal grouping).
 
-    /// <summary>P736 — play the same-side quit salutation (<c>vo_sal_quit</c>;
-    /// native <c>salQuitSound</c>, clintlib.cpp:3952-3991).</summary>
-    public void PlaySalQuit() => PlayWarnOneShot(_salQuit);
+    /// <summary>Native salQuitSound uses vo_sal_mia and the MutexSal voice
+    /// template (sounddef.mdl:827; clintlib.cpp:3939-3991).</summary>
+    public void PlaySalQuit() => PlayVoice(NativeVoiceCatalog.Definitions["salQuitSound"]);
 
     /// <summary>P736 — play the side-change salutation (<c>vo_sal_traitor</c>;
     /// native <c>salChangeSidesSound</c>, clintlib.cpp:3975, sounddef.mdl:829).</summary>
@@ -2511,7 +2506,6 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _mapClick?.Dispose();              // P755
             _cargoFull?.Dispose();             // P719
             // P736 — presence / side-change salutations.
-            _salQuit?.Dispose();
             _salChangeSides?.Dispose();
             _salMia?.Dispose();
             _salEnemyLeaves?.Dispose();

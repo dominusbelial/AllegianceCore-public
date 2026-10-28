@@ -20,7 +20,10 @@ public static class IgcReader
     /// practice: a wrong wrapper desynchronises the very first header.
     /// </remarks>
     /// <exception cref="InvalidDataException">No candidate wrapper yields a walkable stream.</exception>
-    public static IgcFile Parse(ReadOnlySpan<byte> raw)
+    public static IgcFile Parse(ReadOnlySpan<byte> raw) => Parse(raw, encrypted: false);
+
+    /// <summary>Parse a native body with explicit rolling-XOR format selection.</summary>
+    public static IgcFile Parse(ReadOnlySpan<byte> raw, bool encrypted)
     {
         Span<(IgcWrapper w, int bodyStart, int bodyLen, int? ver)> cands = stackalloc (IgcWrapper, int, int, int?)[2];
         var n = 0;
@@ -45,7 +48,10 @@ public static class IgcReader
         for (var i = 0; i < n; i++)
         {
             var (w, start, len, ver) = cands[i];
-            var body = raw.Slice(start, len);
+            // Native optional munge callback runs on the body, never the
+            // version/size prefix (Igc/missionigc.cpp:94-109). Decrypt before
+            // walking: ciphertext can itself have plausible record headers.
+            var body = encrypted ? DecryptBody(raw.Slice(start, len)) : raw.Slice(start, len).ToArray();
             if (!TryWalk(body, out var recs, out var consumed)) continue;
 
             var file = new IgcFile
@@ -55,7 +61,7 @@ public static class IgcReader
                 Records = recs,
                 BodyLength = len,
                 BytesConsumed = consumed,
-                Body = raw.Slice(start, len).ToArray(),
+                Body = body,
             };
             if (file.IsExact) return file;
             loose ??= file;
@@ -90,5 +96,33 @@ public static class IgcReader
         return true;
     }
 
-    public static IgcFile ParseFile(string path) => Parse(File.ReadAllBytes(path));
+    /// <summary>Native cumulative DWORD XOR (FedSrv/FedSrv.CPP:31-41).
+    /// Native allocates four extra bytes for a partial final DWORD
+    /// (Igc/missionigc.cpp:100); only the declared body bytes are retained.</summary>
+    private static byte[] DecryptBody(ReadOnlySpan<byte> encrypted)
+    {
+        byte[] body = encrypted.ToArray();
+        uint previous = 0;
+        for (int offset = 0; offset < body.Length; offset += 4)
+        {
+            uint decoded = 0;
+            int width = Math.Min(4, body.Length - offset);
+            for (int i = 0; i < width; i++)
+            {
+                byte value = (byte)(body[offset + i] ^ (byte)(previous >> (8 * i)));
+                body[offset + i] = value;
+                decoded |= (uint)value << (8 * i);
+            }
+            previous = decoded;
+        }
+        return body;
+    }
+
+    /// <summary>Load a plain native file. Decrypted artwork can retain the
+    /// zone_core filename, so the format must not be inferred from its name.</summary>
+    public static IgcFile ParseFile(string path) => ParseFile(path, encrypted: false);
+
+    /// <summary>Load a named core with an explicit format override.</summary>
+    public static IgcFile ParseFile(string path, bool encrypted) =>
+        Parse(File.ReadAllBytes(path), encrypted);
 }

@@ -1,28 +1,11 @@
 namespace Allegiance.Core.Wire;
 
 /// <summary>
-/// <para>
-/// The permanent, code-visible registry of native FEDMSGs this port has
-/// <b>confirmed, and deliberately decided not to build</b> — as distinct
-/// from the much larger "not yet ported" set (tracked in the wiki
-/// roadmap, still real work with a real path forward). Everything listed
-/// here was investigated against the live native source
-/// (<c>~/Development/Allegiance/src</c>) and found to be either dead
-/// weight in native itself, or structurally inapplicable to this port's
-/// own architecture, or genuinely unrecoverable because the C++ struct(s)
-/// it depends on have no surviving declaration. Re-verified in full on
-/// 2026-09-13 (a prior pass this session briefly mis-classified
-/// <see cref="Fmid.AsteroidDrained"/> as live before re-checking its
-/// actual call site — every entry below was re-checked against the live
-/// source, not carried over from memory).
-/// </para>
-/// <para>
-/// This exists so a future contributor grepping for a message id here
-/// gets a real, cited answer instead of silence or a stale guess. See
-/// <c>allegiance-fedmsg-roadmap.md</c> in the Domingo LLM Wiki for the
-/// full running tally and the "genuinely blocked, real path exists"
-/// bucket this registry deliberately excludes.
-/// </para>
+/// Registry of historical native-message exclusions and their current status.
+/// P868 distinguishes dead native declarations from live behavior still awaiting
+/// implementation or a product decision. A different port architecture is not
+/// proof that a native behavior is inapplicable. The complete classification is
+/// recorded in docs/parity/p868-na-audit.csv.
 /// </summary>
 public static class NotSupportedFedMsgs
 {
@@ -54,32 +37,26 @@ public static class NotSupportedFedMsgs
         MissionParams = 113,
     }
 
-    /// <summary>Why a message is unsupported: dead weight in native
-    /// itself (nobody ever sends or fully wires it up, so there is
-    /// nothing to be faithful <em>to</em>), or a real native feature that
-    /// is structurally inapplicable to this port's own architecture.
-    /// </summary>
+    /// <summary>Current status of a historical exclusion. Live behavior
+    /// remains pending unless an explicit product decision resolves it.</summary>
     public enum Reason
     {
         /// <summary>Native itself never sends this, or the handler that
         /// would act on it is disabled/commented out — porting it would
         /// mean inventing behavior native doesn't actually have.</summary>
         DeadInNative,
-        /// <summary>Native uses this for real, but it depends on a
-        /// concept (a lobby, squads, client-claimed positions, an
-        /// account/SQL layer, ...) that this port's own architecture
-        /// deliberately does not have.</summary>
+        /// <summary>Legacy value retained for compatibility. A different
+        /// architecture alone is not an exclusion under the P868 ruling.</summary>
         NotApplicableToThisPort,
-        /// <summary>Native uses this for real, and this port's
-        /// architecture has no objection to it — but the exact wire
-        /// layout can never be recovered because the C++ struct(s) it
-        /// carries have no declaration anywhere in this native checkout
-        /// (not commented out, not `#if`-guarded — genuinely absent, the
-        /// same missing-header shape repeatedly confirmed this session
-        /// for a handful of types). A faithful byte-for-byte port is
-        /// impossible without guessing a layout with no way to verify
-        /// it.</summary>
+        /// <summary>Legacy value retained for compatibility. Recheck the
+        /// actual native declarations before making this claim.</summary>
         GenuinelyUnrecoverable,
+        /// <summary>Live native behavior that remains wholly or partly unported.
+        /// This is an implementation gap, never an n/a classification.</summary>
+        PendingParity,
+        /// <summary>Live external-platform integration awaiting an explicit
+        /// product decision; remains partial in the parity matrix.</summary>
+        RequiresProductDecision,
     }
 
     /// <summary>One registry entry: why, and the real citation trail.
@@ -132,51 +109,32 @@ public static class NotSupportedFedMsgs
             "WinTrek/WinTrek.cpp:6200) but sends into a void with no real " +
             "effect."),
 
-        [Fmid.SetTeamInfo] = new(Reason.NotApplicableToThisPort,
-            "P820c ports the S→C direction: the server relays a side's squad on native "
-            + "SET_TEAM_INFO(15) (fsmission.cpp:1580-1590), gated on bSquadGame "
-            + "(AddPlayerToSide fsmission.cpp:661-690); see Server.Squads.cs + SetTeamInfo.cs. "
-            + "The C→S direction (a client leader proposing a squad/name change) remains a "
-            + "documented gap: native honours it only in a squad game with bLockTeamSettings off "
-            + "and the sender the side's leader (FedSrv/FedSrv.CPP:7430-7463), and this port "
-            + "derives the side squad from the leader's preferred squad with no client "
-            + "squad-selection UI (invited-squad UI for bLockTeamSettings is out of scope), "
-            + "so there is no client entry point to send it. SIDE_ROSTER(211) was reverted to "
-            + "master (P820c fix 4) — squad info no longer rides it."),
+        [Fmid.SetTeamInfo] = new(Reason.PendingParity,
+            "Historical exclusion superseded by P853: Server.MissionParams handles " +
+            "leader-authorized squad/name changes as well as the S-to-C relay " +
+            "(FedSrv/FedSrv.CPP:7430-7467; FedSrv/fsmission.cpp:1564-1600). " +
+            "The client squad-selection/invitation surface needs separate certification; " +
+            "this entry must not be used to claim that the inbound handler is absent " +
+            "or that a different provisioning architecture makes the behavior n/a."),
 
-        [Fmid.IcqChatAck] = new(Reason.NotApplicableToThisPort,
-            "A 2000s-era ICQ-instant-messenger character-link feature, SQL " +
-            "-backed. The entire handler is wrapped in " +
-            "#if !defined(ALLSRV_STANDALONE) in native itself " +
-            "(FedSrv/FedSrv.CPP:5255-5282) — compiled OUT of the exact " +
-            "standalone/no-lobby/no-account-layer build mode this port " +
-            "already deliberately mirrors. See docs/LOBBY_SOCIAL_NA_FINDINGS_P129.md."),
+        [Fmid.IcqChatAck] = new(Reason.RequiresProductDecision,
+            "Live external ICQ character-link integration (FedSrv/FedSrv.CPP:5255-5282; " +
+            "WinTrek/WinTrek.cpp:11053-11060). Its standalone build guard is not proof " +
+            "that this port's online identity architecture cannot support the behavior. " +
+            "P868 leaves the product decision and parity row partial."),
 
-        [Fmid.StaticMapInfo] = new(Reason.NotApplicableToThisPort,
-            "Native's per-server browsable map/mission-template catalog for " +
-            "a lobby's game-creation UI (FedSrv/FedSrv.CPP:189-231, boot-time " +
-            "load). This port has no lobby, no mission browser, no map-" +
-            "selection UI anywhere — it boots exactly one mission per " +
-            "process from config. Re-confirmed 2026-09-13 after a same" +
-            "-session slip briefly proposed reviving this as \"tractable\" " +
-            "without checking the existing finding first — see " +
-            "docs/LOBBY_SOCIAL_NA_FINDINGS_P129.md (original, 2026-09-10)."),
+        [Fmid.StaticMapInfo] = new(Reason.PendingParity,
+            "Live map catalog: sent after validated logon (FedSrv/FedSrv.CPP:990-998) " +
+            "and consumed by the client (clintlib/appmsg.cpp:3353-3361). Boot-configured " +
+            "worlds do not make player map selection/provisioning n/a. P868 tracks " +
+            "the missing catalog/provisioning behavior as partial."),
 
-        [Fmid.MissionParams] = new(Reason.GenuinelyUnrecoverable,
-            "The message's entire payload is one field: the whole " +
-            "MissionParams struct (Inc/Messages.h: 'DEFINE_FEDMSG(CS, " +
-            "MISSIONPARAMS, 113) MissionParams missionparams; END_FEDMSG'). " +
-            "MissionParams itself (aka CGameParamData) has NO declaration " +
-            "anywhere in this native checkout — exhaustively grepped this " +
-            "session; it is only ever seen as a base-class reference or via " +
-            "->misparms.<field> member access, never declared. Individual " +
-            "named fields it carries (iMaxImbalance, bLockLobby, bLockSides, " +
-            "iGoalConquestPercentage, ...) were still independently portable " +
-            "by name in other messages/tasks this session (this port never " +
-            "needed byte-for-byte compatibility with a real native client) " +
-            "— but MISSIONPARAMS(113) itself, which transmits the struct " +
-            "WHOLE, cannot be — there is no way to know its true size, field " +
-            "order, or padding. Not dead, not inapplicable — genuinely " +
-            "unrecoverable."),
+        [Fmid.MissionParams] = new(Reason.PendingParity,
+            "The native declaration exists at Igc/igc.h:1109-1251; the earlier " +
+            "unrecoverable-layout claim was incorrect. MissionParamsMsg and " +
+            "Server.MissionParams implement the codec, owner/stage/validation guards " +
+            "and relay (FedSrv/FedSrv.CPP:7518-7597). Native live side-list growth " +
+            "(FedSrv/fsmission.cpp:1846-1852) remains clamped to boot-time side count " +
+            "in this port, so P868 records the remaining branch as partial."),
     };
 }
