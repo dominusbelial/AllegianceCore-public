@@ -161,6 +161,15 @@ public sealed class MissionDef : IFedMessage
     /// empty side; zero-filled unspecified entries retain the legacy codec default.</summary>
     public short[] RgShipIdLeaders = Array.Empty<short>();
 
+    // Native tail after leaders: Inc/Messages.h:312-317. Byte offsets follow
+    // the six short leaders at 814, then six char-sized entries per array.
+    public byte[] RgcPlayers = [];
+    public bool[] RgfAutoAccept = [];
+    public bool[] RgfReady = [];
+    public bool[] RgfForceReady = [];
+    public bool[] RgfActive = [];
+    public sbyte[] RgfAllies = [];
+
     /// <summary><c>MissionParams.bLockGameOpen</c> (igc.h:1139) — the mission
     /// was created with the game-open lock on; gates Auto-Accept and Lock Lobby
     /// OFF in the team screen (teamscreen.cpp:1563-1569). Decode-only: the
@@ -288,6 +297,16 @@ public sealed class MissionDef : IFedMessage
         for (int i = 0; i < 6; i++)
             w.WriteI16(i < RgShipIdLeaders.Length ? RgShipIdLeaders[i] : (short)0);
 
+        for (int i = 0; i < 6; i++)
+        {
+            buf[826 + i] = i < RgcPlayers.Length ? RgcPlayers[i] : (byte)0;
+            buf[832 + i] = (byte)(i < RgfAutoAccept.Length && RgfAutoAccept[i] ? 1 : 0);
+            buf[838 + i] = (byte)(i < RgfReady.Length && RgfReady[i] ? 1 : 0);
+            buf[844 + i] = (byte)(i < RgfForceReady.Length && RgfForceReady[i] ? 1 : 0);
+            buf[850 + i] = (byte)(i < RgfActive.Length && RgfActive[i] ? 1 : 0);
+            buf[856 + i] = unchecked((byte)(i < RgfAllies.Length ? RgfAllies[i] : 0));
+        }
+
         // pad to exact total first, then stamp cbmsg = the full 864 (a message
         // length is the whole thing, not just the fields we happened to write).
         // P856 — stamp the native bool:1 block (params offset 108, five bytes):
@@ -393,6 +412,12 @@ public sealed class MissionDef : IFedMessage
             NTems = nTems,
             RgCivId = rgCivId,
             RgShipIdLeaders = leaders,
+            RgcPlayers = buf.Slice(826, 6).ToArray(),
+            RgfAutoAccept = buf.Slice(832, 6).ToArray().Select(b => b != 0).ToArray(),
+            RgfReady = buf.Slice(838, 6).ToArray().Select(b => b != 0).ToArray(),
+            RgfForceReady = buf.Slice(844, 6).ToArray().Select(b => b != 0).ToArray(),
+            RgfActive = buf.Slice(850, 6).ToArray().Select(b => b != 0).ToArray(),
+            RgfAllies = buf.Slice(856, 6).ToArray().Select(b => unchecked((sbyte)b)).ToArray(),
             BLockGameOpen = lockGameOpen,
             IMinRank = minRank,
             IMaxRank = maxRank,

@@ -228,6 +228,14 @@ list in **reverse**.
   echo their latest pose with a fresh PING clock through the same validation:
   `src/Allegiance.Core/Wire/ScriptedWarpHandshake.cs`, used by Bot and
   `src/Allegiance.ClientCore/Session/ConnectionSession.cs`.
+- **Inbound native-message certification (P867)** — the 49 active cases of
+  `FedSrvSiteBase::OnAppMessage`, with sender/stage/ownership/trap guards,
+  effects, handler cites and equal/classified results:
+  `docs/parity/p867-onappmessage.csv`; inventory/citation check
+  `tools/p867-dispatch-audit.py`. Dispatch stays in
+  `src/Allegiance.Server/Server.Dispatch.cs`; native chat lobby controls and
+  the balance-mode team flush use `src/Allegiance.Server/Server.DispatchParity.cs`.
+  Report: `docs/reports/P867_REPORT.md`.
 - **Ship commands** — client intent handlers (flight, firing, docking, buying).
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.

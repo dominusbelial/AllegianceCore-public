@@ -272,7 +272,10 @@ public sealed class P740FlightInterfaceTests
         P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(a, () => a.World.PlayerPingsRevision > 0));
         lock (a.Gate)
         {
-            Assert.DoesNotContain(a.World.MyShipId!.Value, a.World.PlayerConnections.Keys); // server excludes requester
+            // FedSrv/FedSrv.CPP:7755-7763 includes every live player, including
+            // the requester. Keep the final-marker/display assertions below.
+            Assert.Contains(a.World.MyShipId!.Value, a.World.PlayerConnections.Keys);
+            Assert.Equal(2, a.World.PlayerConnections.Count);
             Assert.Contains(b.World.MyShipId!.Value, a.World.PlayerConnections.Keys);
             Assert.Contains(a.World.PlayerPingLines, l => l.StartsWith("You:"));
             Assert.Contains(a.World.PlayerPingLines, l => l.StartsWith("P740-B:"));

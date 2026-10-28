@@ -106,6 +106,7 @@ public sealed partial class Server
             IMaxRank = 1000,                    // igc.h:1302
             NMinPlayersPerTeam = (byte)Math.Clamp(g.MinPlayersPerTeam, 0, 255),
             NMaxPlayersPerTeam = (byte)Math.Clamp(g.MaxPlayersPerTeam, 0, 255),
+            IMaxImbalance = (short)g.MaxTeamImbalance,
             ILives = mission.Lives,
             FGoalTeamMoney = mission.Goals.TeamMoney,
             DtGameLength = mission.Goals.GameLengthSeconds,
@@ -292,6 +293,7 @@ public sealed partial class Server
             TeamMoney = msg.FGoalTeamMoney,
             GameLengthSeconds = msg.DtGameLength,
         };
+        GameSettings(mission).MaxTeamImbalance = msg.IMaxImbalance;
         mission.Lives = msg.ILives;
         mission.SquadGame = msg[MissionParamsMsg.BitSquadGame];
         mission.AllowEmptyTeams = msg[MissionParamsMsg.BitAllowEmptyTeams];
@@ -362,6 +364,11 @@ public sealed partial class Server
     private void SendMissionDef(Mission mission)
     {
         var cur = ParamsOf(mission);
+        // Native setters update the cached def; these state fields live on
+        // Mission here (FedSrv.CPP:5202/5219 forward the current whole def).
+        cur[MissionParamsMsg.BitLockLobby] = mission.LockLobby;
+        cur[MissionParamsMsg.BitLockSides] = mission.LockSides;
+        cur[MissionParamsMsg.BitAllowEmptyTeams] = mission.AllowEmptyTeams;
         var md = new MissionDef
         {
             SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
@@ -371,6 +378,13 @@ public sealed partial class Server
             RgCivId = mission.Sides.Select(s => s.Civilization.CivilizationId).ToArray(),
             ISideMissionOwner = mission.MissionOwnerSideId ?? (short)-1,
             RgShipIdLeaders = mission.Sides.Select(s => s.LeaderShipId ?? (short)-1).ToArray(),
+            RgcPlayers = mission.Sides.Select(s => (byte)Math.Min(255, _peerShips.Values.Count(p =>
+                ReferenceEquals(p.Ship.Mission, mission) && p.Ship.SideId == s.Id))).ToArray(),
+            RgfAutoAccept = mission.Sides.Select(s => s.AutoAccept).ToArray(),
+            RgfReady = mission.Sides.Select(s => s.Ready).ToArray(),
+            RgfForceReady = mission.Sides.Select(s => s.ForceReady).ToArray(),
+            RgfActive = mission.Sides.Select(s => s.Active).ToArray(),
+            RgfAllies = mission.Sides.Select(s => s.AllyGroup ?? (sbyte)-1).ToArray(),
             Stage = (int)mission.Stage,
             Goals = mission.Goals with { },
             AllowFriendlyFire = mission.AllowFriendlyFire,

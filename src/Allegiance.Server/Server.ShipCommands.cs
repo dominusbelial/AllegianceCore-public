@@ -17,54 +17,10 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
 
-    /// <summary>
-    /// Handle a client <c>FM_C_VIEW_CLUSTER(104)</c> for a <b>docked</b> peer —
-    /// the P106 port of the native <c>FedSrv.CPP:6420-6454</c>
-    /// <c>case FM_C_VIEW_CLUSTER</c>:
-    /// <list type="bullet">
-    /// <item><b>Gate on docked.</b> The dispatch branch already enforced
-    /// <see cref="Ship.StationId"/> != null — the port's direct equivalent of the
-    /// native <c>GetStation() != NULL</c> (<c>FedSrv.CPP:6421</c>). A flying ship
-    /// never reaches this method (its request is a no-op, no reply).</item>
-    /// <item><b>NA cluster = silent.</b> <c>clusterID != NA</c> gates the whole
-    /// reply in native (<c>FedSrv.CPP:6423</c>); a request naming NA(-1) cluster
-    /// gets no reply at all (native still calls <c>SetCluster(NULL)</c> after,
-    /// but that persistence is deliberately not ported — see finding below).</item>
-    /// <item><b>Target resolution.</b> When <c>otTarget != NA</c> the native
-    /// resolves <c>pMission-&gt;GetModel(otTarget, oidTarget)</c>
-    /// (<c>FedSrv.CPP:6428</c>) — this port's model list is the peer ships
-    /// (plus sector-attached stations), resolved in
-    /// <see cref="TryResolveViewTarget"/>.</item>
-    /// <item><b>Reply shape.</b> Echo <c>clusterID</c> and, only when the target
-    /// resolved to a real object in that cluster (<c>ptarget-&gt;GetCluster() ==
-    /// pcluster</c>, <c>FedSrv.CPP:6430</c>) <b>and</b> visible to the requester's
-    /// side (<c>ptarget-&gt;SeenBySide(pfsPlayer-&gt;GetSide())</c>,
-    /// <c>FedSrv.CPP:6431</c>), the object's real position with
-    /// <c>bUsePosition=true</c>; else bare cluster with <c>bUsePosition=false</c>.
-    /// The visibility predicate reused here is this port's existing same-side
-    /// gate (the P58 teammate broadcast's <c>tv.Value.Ship.SideId != recipientSide
-    /// → skip</c>, <c>Server.cs:521</c>), applied to the target: an object with no
-    /// side (a neutral world object) is visible; a side-carrying object is
-    /// visible only to the same side — this port has no fog-of-war/scanner, so
-    /// same-side is the faithful stand-in for native <c>SeenBySide</c>.</item>
-    /// <item><b>Reply to requester only.</b> <c>SendPeer(from, …)</c> — the
-    /// direct equivalent of <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), …)</c>
-    /// (<c>FedSrv.CPP:6433-6434</c>); never a sector/mission broadcast.</item>
-    /// </list>
-    /// <para><b>Finding on the per-player "currently viewed cluster" state:</b>
-    /// the native's trailing <c>pfsPlayer-&gt;SetCluster(pcluster, true)</c>
-    /// (<c>FedSrv.CPP:6453</c>) persists a per-player viewed-cluster. Searching
-    /// <c>FedSrv.CPP</c>'s native call sites, <b>no other handler reads that
-    /// state back</b> — it is written only here and consumed nowhere else in
-    /// server code (its consumer would be the client, if anything). So this
-    /// port implements <c>VIEW_CLUSTER</c> as a pure request/reply with no new
-    /// server-side per-player state, and says so; nothing in the wire protocol
-    /// depends on the server remembering what the client is currently viewing.
-    /// Confirmed for this task (details and rationale in VIEW_CLUSTER_P106.md).</para>
-    /// Runs on the sim thread (the dispatch is drained inside <see cref="Tick"/>,
-    /// like every other inbound handler), so it may read <c>_peerShips</c> and
-    /// touch <c>SendPeer</c> without extra locking.
-    /// </summary>
+    /// <summary>FedSrv.CPP:6420-6457: docked viewer's request/reply. The
+    /// dispatch checks docking; the target must be in the requested cluster
+    /// and actually SeenBySide. Persistent native viewer-cluster interest is
+    /// replaced by the port's client-driven view (classified in the P867 audit).</summary>
     private void HandleViewCluster(ConnectionId from, LiveShip live, ViewClusterRequest req)
     {
         var mission = live.Ship.Mission;
@@ -89,9 +45,9 @@ public sealed partial class Server
         bool bUsePosition = false;
         Vector3 targetPos = Vector3.Zero;
         if (req.OtTarget != -1 && pcluster is not null
-            && TryResolveViewTarget(mission, (IgcObjectType)req.OtTarget, req.OidTarget, out targetPos, out var objectSector, out var objectSide)
+            && TryResolveViewTarget(mission, (IgcObjectType)req.OtTarget, req.OidTarget, requesterSide, out targetPos, out var objectSector, out var seen)
             && objectSector == pcluster
-            && SeenByRequesterSide(objectSide, requesterSide))
+            && seen)
         {
             bUsePosition = true;
         }
@@ -145,8 +101,9 @@ public sealed partial class Server
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[boardship] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — BOARD_NACK (native gate, FedSrv.CPP:6388)");
-            SendBoardNack(from, req.SidParent);
+            // FedSrv.CPP:6388-6389: stage guard is silent; BOARD_NACK
+            // belongs only to a failed boarding/leaving attempt below.
+            Console.WriteLine($"[boardship] {from} ship {ship.Id}: not started — ignored (FedSrv.CPP:6388)");
             return;
         }
 
@@ -171,7 +128,9 @@ public sealed partial class Server
             // Board the named ship (FedSrv.CPP:6404-6409): resolved on the
             // boarder's OWN side (native GetShip on GetSide()).
             var target = FindSameSideShip(req.SidParent, ship.SideId, mission);
-            success = target is not null && PerformBoard(ship, target);
+            // FedSrv.CPP:6405: a resolved parent must not be a ghost.
+            var targetLive = target is null ? null : LiveOf(target);
+            success = target is not null && (targetLive is null || !IsGhost(targetLive)) && PerformBoard(ship, target);
         }
 
         if (!success)
@@ -381,13 +340,17 @@ public sealed partial class Server
             return;
         }
 
-        // Broadcast PROMOTE(189) to the sector-wide audience
-        // (GetGroupSectorFlying(pcluster), FedSrv.CPP:6374-6376). The no-cluster
-        // side-group fallback (FedSrv.CPP:6377) is unreachable here — an in-game
-        // ship always has a sector — so SendSectorWide is the faithful route.
+        // FedSrv.CPP:6374-6377: flying -> sector, docked -> side group.
         var msg = new Promote { ShipidPromoted = promoted.Id };
-        SendSectorWide(ship.Sector!, msg.Encode());
-        Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector!.Id} wide; old parent {ship.Id} demoted to its own seat");
+        if (ship.Sector is { } sector && ship.StationId is null)
+            SendSectorWide(sector, msg.Encode());
+        else
+        {
+            var packet = FedPacket.Pack([msg.Encode()]);
+            foreach (var peer in _peerShips)
+                if (ReferenceEquals(peer.Value.Ship.Mission, mission) && peer.Value.Ship.SideId == ship.SideId)
+                    SendPeer(peer.Key, packet);
+        }
     }
 
     /// <summary>
@@ -937,6 +900,16 @@ public sealed partial class Server
             return;
         }
 
+        // Native TrapHackBoot(pfmSW->wingID < c_widMax) (FedSrv.CPP:5319);
+        // c_widMax = 10 (igc.h:505). The lower-bound trap is commented out
+        // in native (:5323), so NA/negative values clear wing membership.
+        if (req.WingId >= SetWingId.WidMax)
+        {
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
+            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfmSW->wingID < c_widMax", "FedSrv.CPP:5324");
+            return;
+        }
+
         // FedSrv.CPP:5323-5330: a commander may assign another teammate;
         // ordinary pilots may only assign themselves. Leadership already
         // exists in the port, so retain the native commanded-assignment path.
@@ -945,15 +918,6 @@ public sealed partial class Server
         if (target is null)
         {
             ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: no assignable teammate {req.ShipID} — ignored");
-            return;
-        }
-
-        // Native TrapHackBoot(pfmSW->wingID < c_widMax) (FedSrv.CPP:5319);
-        // c_widMax = 10 (igc.h:505). Negative ids (= NA) also rejected.
-        if (req.WingId < 0 || req.WingId >= SetWingId.WidMax)
-        {
-            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
-            ReportTrapHack(TrapHackKind.Boot, from, ship.Id, "pfmSW->wingID < c_widMax", "FedSrv.CPP:5324");
             return;
         }
 
@@ -1050,7 +1014,7 @@ public sealed partial class Server
         var entries = new List<PingData>();
         foreach (var kv in _peerShips)
         {
-            if (kv.Key == from) continue;
+            // FedSrv.CPP:7752-7765 includes the requesting player itself.
             if (requesterMission is not null && !ReferenceEquals(kv.Value.Ship.Mission, requesterMission))
                 continue;   // P654 (H-32) — scope to the seated requester's mission
             entries.Add(new PingData
@@ -1196,6 +1160,7 @@ public sealed partial class Server
             if (req.CommandId == OrderChange.CidDoNothing)
             {
                 target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
+                SendDroneAffirmative(from, ship, target); // FedSrv.CPP:7293-7294
                 if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
             }
             else
@@ -1218,6 +1183,7 @@ public sealed partial class Server
                 // transition alone (StayDocked=false + the shared undock core)
                 // IS the port; a PickDefaultOrder call would be dead code.
                 target.StayDocked = false;   // pship->SetStayDocked(false), FedSrv.CPP:7298
+                SendDroneAffirmative(from, ship, target, "Affirmative. Preparing to launch."); // :7299-7300
                 if (target.Sector is { } undockSector)
                 {
                     // Share the real-peer undock core: clear StationId, push
@@ -1259,21 +1225,28 @@ public sealed partial class Server
             target.QueuedTarget = null;
             target.QueuedCommandId = OrderChange.CidNone;
 
-            // Find the base server-side because the ship's exact location is
-            // only available here when it is in a different sector (comment at
-            // FedSrv.CPP:7306). This port has NO carrier pilot-type distinction
-            // (Ship.IsNpc is a single bool, P148 — not a PilotType enum), so the
-            // native `GetPilotType() != c_ptCarrier` gate (FedSrv.CPP:7307) is
-            // UNREACHABLE here: always take the non-carrier path, the nearest
-            // friendly repair-capable station in the ship's own sector (P149;
-            // c_sabmRepair = 0x40). The carrier shipyard-first search
-            // (FedSrv.CPP:7312-7320) is its own future slice.
-            var station = target.FindNearestFriendlyStation(0x40);
+            // FedSrv.CPP:7307-7320: carriers prefer a shipyard (CapLand)
+            // across clusters, falling back to repair; other drones seek repair.
+            var station = target.PilotType == Ship.PilotTypeCarrier
+                ? target.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmCapLand)
+                    ?? target.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmRepair)
+                : target.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmRepair);
 
             // The station-store is gated by `if (pmodel)` (FedSrv.CPP:7323-7331);
             // StayDocked + Queued-clear above happened unconditionally.
             if (station is { } st)
             {
+                SendDroneAffirmative(from, ship, target); // FedSrv.CPP:7325-7326
+                var notice = new ChatMessage
+                {
+                    SidSender = target.Id, ChatTarget = (int)ChatTarget.Team,
+                    OidRecipient = target.SideId ?? (short)-1, CommandID = OrderChange.CidNone,
+                    Message = "Heading back to base. I'll sit tight.",
+                };
+                var noticePacket = FedPacket.Pack([notice.Encode()]);
+                foreach (var peer in _peerShips)
+                    if (ReferenceEquals(peer.Value.Ship.Mission, mission) && peer.Value.Ship.SideId == target.SideId)
+                        SendPeer(peer.Key, noticePacket); // FedSrv.CPP:7327-7328
                 ApplyCommandSlot(target, req.Command, st, req.CommandId);   // pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID), FedSrv.CPP:7330
             }
 
@@ -1311,6 +1284,7 @@ public sealed partial class Server
         // FindShipAnySide; objectID=NA clears; any non-ship objectType is a
         // logged no-op (this port's Station is not a Model, so neither slot can
         // hold one — documented scope boundary, not a bug).
+        if (ship.SideId is not >= 0) return; // FedSrv.CPP:7335
         bool accepted = req.Command == OrderChange.CmdAccepted;
         bool current = req.Command == OrderChange.CmdCurrent;
 
@@ -1443,10 +1417,13 @@ public sealed partial class Server
                     : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
                 if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
             }
-            else if (!accepted)
+            else
             {
-                var et = EquipmentTarget.Resolve(target.Sector, req.ObjectType, req.ObjectID);
-                target.SetCommand(req.Command, et, req.CommandId);
+                // FedSrv.CPP:7337-7338: GetModel spans the whole mission,
+                // including non-ship models for either current or accepted slots.
+                var model = mission.Sectors.Select(s => EquipmentTarget.Resolve(s, req.ObjectType, req.ObjectID))
+                    .FirstOrDefault(m => m is not null);
+                target.SetCommand(req.Command, model, req.CommandId);
             }
             return;
         }
@@ -2166,11 +2143,12 @@ public sealed partial class Server
     /// Individual chat FROM the drone (native SendChat(pshipTo, CHAT_INDIVIDUAL,
     /// ...), FedSrv.CPP:3256-3257). The same private-chat construction
     /// <see cref="RefuseBuild"/> uses, with the drone as speaker.</summary>
-    private void SendDroneAffirmative(ConnectionId from, Ship sender, Ship drone)
+    private void SendDroneAffirmative(ConnectionId from, Ship sender, Ship drone, string text = "Affirmative.")
     {
         var msg = new ChatMessage
         {
-            Message = "Affirmative.",
+            Message = text,
+            CommandID = OrderChange.CidNone, OtTarget = -1, OidTarget = -1,
             VoiceOver = 1178, // voAffirmativeSound: Igc/sounds.h:218; FedSrv.CPP:3256-3257
             SidSender = drone.Id,
             ChatTarget = (int)ChatTarget.Individual,
@@ -2540,6 +2518,7 @@ public sealed partial class Server
         }
 
         ship.PendingTreasureOffer = null; // Native clears its buffer (FedSrv.CPP:6148).
+        if (ship.SideId is not >= 0) return; // FedSrv.CPP:6102, still consumes the offer.
         if (ship.Sector is null || ship.StationId is not null || ship.Dead
             || ship.ParentShip is not null || offer.Amount < 0) return;
 

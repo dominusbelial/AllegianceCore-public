@@ -166,7 +166,7 @@ public sealed partial class Server
                         TimeServer = (uint)pendingLogon.Request.Time + 1,
                         ShipID = pendingLogon.Request.VersionMatches ? pendingLogon.ShipId : (short)0,
                         FValidated = pendingLogon.Request.VersionMatches,
-                        FRetry = !pendingLogon.Request.VersionMatches,
+                        FRetry = false, // FedSrv.CPP:6081: version mismatch is not retryable.
                         Cookie = (byte)(pendingLogon.Request.DwCookie & 0xFF),
                     };
                     SendPeer(from, FedPacket.Pack(new[] { reack.Encode() }));
@@ -255,7 +255,7 @@ public sealed partial class Server
                     TimeServer = (uint)req.Time + 1,
                     ShipID = validated ? shipId : (short)0,
                     FValidated = validated,
-                    FRetry = !req.VersionMatches,
+                    FRetry = false, // FedSrv.CPP:6081: version mismatch is not retryable.
                     Cookie = (byte)(req.DwCookie & 0xFF),
                 };
                 SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
@@ -491,7 +491,9 @@ public sealed partial class Server
                         // line a privileged player's cheat parser consumes is never
                         // forwarded as chat (native bForward=false). A line it does
                         // NOT consume falls through to the ordinary relay below.
+                        if (senderLive.Ship.Mission is null) continue; // FedSrv.CPP:4918
                         if (!TryHandleAdminCheat(from, senderLive.Ship, chat)
+                            && !TryHandleLobbyChatCommand(from, senderLive.Ship, chat)
                             && !TryHandleBallotCommand(from, senderLive.Ship, chat.Message))
                         {
                             // P654 (H-24) — the per-peer chat budget (native's
@@ -726,7 +728,8 @@ public sealed partial class Server
                     else
                     {
                         var targets = _peerShips
-                            .Where(kv => kv.Value.Ship.SideId == senderLive.Ship.SideId)
+                            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, senderLive.Ship.Mission)
+                                && kv.Value.Ship.SideId == senderLive.Ship.SideId)
                             .Select(kv => kv.Key)
                             .ToArray();
                         Console.WriteLine($"[highlight] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
@@ -995,13 +998,15 @@ public sealed partial class Server
                             }
                             else if (pa.FAccepted)
                             {
-                                if (RemovePendingJoinRequest(targetConn.Value, pa.SideId))
+                                var targetShip = _peerShips[targetConn.Value].Ship;
+                                // FedSrv.CPP:6735-6736: recheck FIRST. If the lobby
+                                // settings changed, keep the request for a later answer.
+                                if (CheckPositionRequest(mission, pa.SideId, targetShip) is not null)
                                 {
-                                    // Still exists + request still there → seat them.
-                                    var targetShip = _peerShips[targetConn.Value].Ship;
-                                    if (CheckPositionRequest(mission, pa.SideId, targetShip) is { } refusal)
-                                        RefuseSideSelection(targetConn.Value, targetShip.Id, pa.SideId, refusal);
-                                    else TryJoinSide(targetShip, pa.SideId);
+                                }
+                                else if (RemovePendingJoinRequest(targetConn.Value, pa.SideId))
+                                {
+                                    TryJoinSide(targetShip, pa.SideId);
                                 }
                                 else
                                 {
@@ -1010,9 +1015,11 @@ public sealed partial class Server
                             }
                             else
                             {
-                                if (RemovePendingJoinRequest(targetConn.Value, pa.SideId))
+                                // FedSrv.CPP:6744: NULL side removes ANY request
+                                // by this player, including one since moved to another side.
+                                if (_pendingJoinRequests.Remove(targetConn.Value, out var pending))
                                 {
-                                    BroadcastDelPositionReq(mission, pa.ShipId, pa.SideId, DelPositionReqReason.Rejected);
+                                    BroadcastDelPositionReq(mission, pa.ShipId, pending.SideId, DelPositionReqReason.Rejected);
                                 }
                                 else
                                 {
@@ -1150,22 +1157,9 @@ public sealed partial class Server
             }
             else if (fmid == StartGame.Fmid)   // FM_C_START_GAME (Messages.h:868-869)
             {
-                // P188 — the mission owner manually triggers the start
-                // countdown, a genuine alternative to the ready-up auto-start.
-                // Port of FedSrv.CPP:7597-7621: refuse unless the sender is the
-                // mission owner (P183's owner concept — the owning side's
-                // leader, the same IsMissionOwnerPlayer gate P186's LOCK_LOBBY
-                // uses), the mission is STAGE_NOTSTARTED, and every occupied
-                // side is ready. Native's bot-authentication special-case (bots
-                // may start regardless of ownership / with zero countdown) is
-                // OUT OF SCOPE — no such concept exists in this port. Native's
-                // full FAllReady (team-balance/rank logic needing
-                // nMaxPlayersPerTeam/a rank system) is likewise replaced by
-                // this port's own already-simplified readiness check — the
-                // same IsAllOccupiedSidesReady P180's auto-start uses (a real,
-                // deliberate simplification, stated in the P188 writeup). On
-                // success: call StartCountdown with the real native constant
-                // c_fMissionBriefingCountdown = 15s (igc.h:1005).
+                // FedSrv.CPP:7597-7622: owner + NotStarted + FAllReady (balance
+                // only, fsmission.cpp:4375-4432), then the 15-second countdown.
+                // WOPR bot-auth bypass is an era constraint; ordinary bots are players.
                 try
                 {
                     _ = command.Read<StartGame>();   // zero-field marker; decode validates cbmsg=4
@@ -1185,9 +1179,9 @@ public sealed partial class Server
                     {
                         ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — START_GAME refused");
                     }
-                    else if (!IsAllOccupiedSidesReady(mission))
+                    else if (!FAllReady(mission))
                     {
-                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: not all occupied sides ready — START_GAME refused");
+                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: native balance check failed — START_GAME refused");
                     }
                     else
                     {
@@ -1201,23 +1195,9 @@ public sealed partial class Server
             }
             else if (fmid == RandomizeTeams.Fmid)   // FM_C_RANDOMIZE_TEAMS (Messages.h:201)
             {
-                // P195 — the mission owner's "balance the teams" trigger (not
-                // actually random). Port of FedSrv.CPP:6964-6997: refuse unless
-                // the sender is the mission owner (the same IsMissionOwnerPlayer
-                // gate P186's LOCK_LOBBY/START_GAME use) and the mission is
-                // STAGE_NOTSTARTED, then balance the sides. The real dispatch
-                // branches on iMaxImbalance==0x7ffe (balance) vs flush — the
-                // flush branch (dump everyone to a neutral lobby, no
-                // reassignment) is OUT OF SCOPE: this port has no SIDE_TEAMLOBBY
-                // and no MissionParams field, and "balance" is what the message
-                // name promises, so Stage-1 always balances (a deliberate,
-                // permanent simplification — see docs/RANDOMIZE_TEAMS_P195.md).
-                // LockSides is deliberately BYPASSED (not a refusal): native's
-                // RandomizeSides does not consult bLockSides (SetLockSides is
-                // even commented out there, fsmission.cpp:5258-5259, "Randomize
-                // should not touch sides!"), and this is a privileged
-                // owner-only, NotStarted-only mass reassignment, not the
-                // ordinary player-initiated side-switch the lock guards.
+                // FedSrv.CPP:6964-6985: owner + NotStarted, then balance only
+                // in rank-balance mode (0x7ffe); otherwise flush non-leaders to
+                // the team lobby. Both privileged operations bypass LockSides.
                 try
                 {
                     _ = command.Read<RandomizeTeams>();   // zero-field marker; decode validates cbmsg=4
@@ -1237,9 +1217,13 @@ public sealed partial class Server
                     {
                         ConsoleLog.Write($"[randomizeteams] {from} ship {rtLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — RANDOMIZE_TEAMS refused");
                     }
-                    else
+                    else if (GameSettings(mission).MaxTeamImbalance == 0x7ffe)
                     {
                         RebalanceSides(mission);
+                    }
+                    else
+                    {
+                        FlushSides(mission);
                     }
                 }
                 catch (Exception e)
@@ -1353,6 +1337,10 @@ public sealed partial class Server
                     else if (!IsMissionOwnerPlayer(llLive.Ship, mission))
                     {
                         ConsoleLog.Write($"[locklobby] {from} ship {llLive.Ship.Id}: not the mission owner — LOCK_LOBBY refused");
+                    }
+                    else if (ParamsOf(mission)[MissionParamsMsg.BitLockGameOpen])
+                    {
+                        // FedSrv.CPP:6944-6945: locked-open games cannot lock the lobby.
                     }
                     else
                     {
@@ -1546,17 +1534,21 @@ public sealed partial class Server
                     {
                         ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: no side (NA) — AUTO_ACCEPT ignored (no mission-owner auto-accept-of-leaders in this port)");
                     }
-                    else if (aa.SideId != aaSideId)
-                    {
-                        ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
-                        ReportTrapHack(TrapHackKind.Boot, from, aaLive.Ship.Id, "pfmAutoAccept->iSide == sid", "FedSrv.CPP:6926");
-                    }
                     else
                     {
                         var aaSide = mission.Sides.FirstOrDefault(s => s.Id == aaSideId);
                         if (aaSide is null || aaSide.LeaderShipId != aaLive.Ship.Id)
                         {
                             ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: not side {aaSideId}'s current leader — AUTO_ACCEPT refused");
+                        }
+                        else if (aa.SideId != aaSideId)
+                        {
+                            ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
+                            ReportTrapHack(TrapHackKind.Boot, from, aaLive.Ship.Id, "pfmAutoAccept->iSide == sid", "FedSrv.CPP:6926");
+                        }
+                        else if (ParamsOf(mission)[MissionParamsMsg.BitLockGameOpen])
+                        {
+                            // FedSrv.CPP:6929-6930: server-locked-open game.
                         }
                         else
                         {
@@ -1751,24 +1743,19 @@ public sealed partial class Server
             }
             else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
             {
-                // P84: "Sent to everyone on team" (the native message's own
-                // header comment) -- the client's own handler
-                // (appmsg.cpp:2297-2312) only updates PlayerInfo.fReady and
-                // fires the roster-changed sink when this message is
-                // RECEIVED; a click on the Team Lobby's own JOIN control
-                // never applies locally, it waits for this relay. Before this,
-                // the server logged "unsupported fmid 45" and the click
-                // appeared completely dead, live-confirmed on the real
-                // client (P84). Relay the original bytes to every peer on the
-                // sender's side, including the sender itself (its own client
-                // is waiting on the same relay to update its own roster
-                // entry) -- same shape as ChatTarget.Team in SelectChatTargets.
+                // FedSrv.CPP:6988-7026: remember the sender's readiness and
+                // relay to the WHOLE mission, including the opposing team and lobby.
+                // Keep P654's sender-id correction and bounded fan-out policy.
                 try
                 {
                     var ready = command.Read<PlayerReady>();
                     if (!_peerShips.TryGetValue(from, out var readyLive))
                     {
                         ConsoleLog.Write($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
+                    }
+                    else if (readyLive.Ship.Mission is not Mission mission)
+                    {
+                        // Native shared PLAYER_READY/FORCE_TEAM_READY mission gate (:6991).
                     }
                     else
                     {
@@ -1780,7 +1767,7 @@ public sealed partial class Server
                         else
                         {
                             var targets = _peerShips
-                                .Where(kv => kv.Value.Ship.SideId == readyLive.Ship.SideId)
+                                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
                                 .Select(kv => kv.Key)
                                 .ToArray();
                             // P654 (H-19) — re-encode the relay with the sender's
@@ -2339,6 +2326,10 @@ public sealed partial class Server
             }
             else
             {
+                // FedSrv.CPP:7811-7814: unknown messages from a player trap.
+                // Keep the established log-and-ignore policy (P855).
+                if (_peerShips.TryGetValue(from, out var unknownSender))
+                    ReportTrapHack(TrapHackKind.Boot, from, unknownSender.Ship.Id, "false", "FedSrv.CPP:7814");
                 // P315 (H3): rate-limit the per-message refusal log so a flood of
                 // unsupported/garbage fmids cannot force unbounded synchronous
                 // console I/O inside one tick. Emit a few lines per peer per

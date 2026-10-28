@@ -2482,7 +2482,8 @@ private void CompleteStartCountdown(Mission mission, double now)
         var msg = new ChatMessage
         {
             Message = text,
-            SidSender = shipId,
+            CommandID = OrderChange.CidNone, OtTarget = -1, OidTarget = -1,
+            SidSender = -1, // native SendChatf(NULL, ...), FedSrv.CPP:5227
             ChatTarget = (int)ChatTarget.IndividualNoFilter,
             OidRecipient = shipId,
         };
