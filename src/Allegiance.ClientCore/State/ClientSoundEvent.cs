@@ -269,10 +269,8 @@ public enum ClientSoundEventKind
 
     /// <summary><c>salQuitSound</c> — a same-side player quit the mission
     /// (RemovePlayerFromSide, clintlib.cpp:3952-3991 for the boot/quit reasons;
-    /// wave <c>vo_sal_quit</c>, sounddef.mdl:828). Note native maps salQuitSound
-    /// to the <c>vo_sal_mia</c> wave (sounddef.mdl:827-828); the port uses the
-    /// dedicated <c>vo_sal_quit</c> wave when the quitting player's reason is a
-    /// plain quit rather than MIA.</summary>
+    /// native template/wave <c>salQuitSound</c>/<c>vo_sal_mia</c>,
+    /// sounddef.mdl:827). The event carries the serialized native voice cue.</summary>
     SalQuit,
 
     /// <summary><c>salChangeSidesSound</c> — a same-side player is switching

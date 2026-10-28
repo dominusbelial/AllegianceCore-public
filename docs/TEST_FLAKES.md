@@ -4,6 +4,49 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P868 verification observations (2026-10-28)
+
+The one Fast sweep retains **11,404 passed / 39 failed / 3 optional skips**
+(11,446 cases, 480.5 s). Infrastructure **9/9** and the timing guard passed.
+The sweep was not repeated. The requested P730 showcase passes **5/5**
+(ten local matches), and all 28 new P868 cases pass **3/3** isolated runs.
+Every failed method's three isolated outcomes are
+in [P868_VERIFICATION.csv](reports/P868_VERIFICATION.csv); the report is
+[P868_REPORT.md](reports/P868_REPORT.md).
+
+- **35 P868 regressions repaired, not flakes:** the initial encrypted-core
+  loader inferred encryption from `zone_core.igc`, but the artwork corpus keeps
+  an already-decrypted file with that name. Corpus container/payload/map,
+  round-trip, treasure-alignment and lifepod-display methods failed. The final
+  loader preserves the plain default and explicitly selects encryption through
+  `staticCoreEncrypted`; each of the 35 affected methods passes **3/3 alone**
+  after that correction (105 exact-method invocations, including their theory
+  cases). A native-named plain-file regression and a real server boot with a
+  renamed encrypted core are covered by the new P868 tests.
+- **Radar fixture regression remains:**
+  `RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight`
+  repeats the existing off-screen placement-premise failure in **3/3 alone**.
+  The NPC's delivered position has moved into the forward half-space. The P865b
+  radar lane is reserved; neither its fixture nor radar/simulation code was
+  edited for this observation. See the earlier P863b baseline evidence below.
+- **User-config environment failure:**
+  `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  fails **3/3 alone** against the read-only default user configuration path,
+  then passes **3/3** with `XDG_CONFIG_HOME` directed into task scratch. This is
+  the already-ledgered environment restriction, not a new product defect.
+- **Intermittent missile assertion:**
+  `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission`
+  passes twice and fails once in three exact-method runs. The failure compares
+  a destroy position about 1340 m from launch with a two-second ballistic
+  expectation of about 1849 m. This observation establishes intermittency, not
+  its root cause; missile simulation and that fixture were unchanged.
+- **Known quarantine fixture intermittency:**
+  `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+  fails the sweep's `Assert.Single` on multiple treasure records, passes the
+  runner's automatic retry, and records **pass/fail/pass** alone. This repeats
+  the ambient-treasure receipt assumption already recorded under P863b; it is
+  not reported as three passing isolation runs.
+
 ## P864c verification observations (2026-10-28)
 
 The P730 two-match showcase passed **5/5** (ten matches, 3m12s–4m43s per run).

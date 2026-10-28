@@ -5462,8 +5462,8 @@ public sealed partial class ClientWorld
     /// (always true here), and not our own ship (:3924-3926).</item>
     /// <item><b>Same-side leaver</b> (the leaver's side == our side, :3928): the
     /// reason picks the cue — LinkDead → <c>salMIASound</c> (:3999, SIM-0463),
-    /// SwitchingSides → <c>salChangeSidesSound</c> (:3975, SIM-0461), any other
-    /// same-side quit reason → <c>salQuitSound</c> (SIM-0462).</item>
+    /// SwitchingSides → <c>salChangeSidesSound</c> (:3975, SIM-0461), boot/quit
+    /// reasons → <c>salQuitSound</c>; native's explicit silent reasons stay silent.</item>
     /// <item><b>Other-side leaver</b> (:4004-4009): allied → <c>salQuitSound</c>,
     /// enemy (non-allied) → <c>salEnemyLeavesSound</c> (SIM-0468 — the dynamic
     /// leave voice).</item>
@@ -5492,8 +5492,29 @@ public sealed partial class ClientWorld
                 case QuitSideReason.SwitchingSides:
                     RecordSoundEvent(ClientSoundEventKind.SalChangeSides, shipId);// SIM-0461
                     break;
+                // clintlib/clintlib.cpp:3934-3994: these branches explicitly
+                // break without ReceiveChat, so they must not play a quit cue.
+                case QuitSideReason.ServerShutdown:
+                case QuitSideReason.SideDestroyed:
+                case QuitSideReason.DuplicateLocalLogon:
+                case QuitSideReason.DuplicateCDKey:
+                case QuitSideReason.BannedBySteam:
+                case QuitSideReason.RandomizeSides:
+                    break;
+                case QuitSideReason.LeaderBooted:
+                case QuitSideReason.OwnerBooted:
+                case QuitSideReason.AdminBooted:
+                case QuitSideReason.SquadChange:
+                case QuitSideReason.RankLimits:
+                case QuitSideReason.TeamSizeLimits:
+                case QuitSideReason.Quit:
+                case QuitSideReason.DuplicateRemoteLogon:
+                    RecordSoundEvent(ClientSoundEventKind.SalQuit, shipId,
+                        voice: Allegiance.Core.Audio.NativeVoiceCatalog.Definitions["salQuitSound"]);
+                    break;
                 default:
-                    RecordSoundEvent(ClientSoundEventKind.SalQuit, shipId);       // SIM-0462
+                    // Native's assert/default falls through to QSR_LinkDead.
+                    RecordSoundEvent(ClientSoundEventKind.SalMia, shipId);
                     break;
             }
         }
@@ -5502,7 +5523,8 @@ public sealed partial class ClientWorld
             // Other-side leaver: allied → salQuitSound, enemy → salEnemyLeavesSound
             // (clintlib.cpp:4006-4009 — SIM-0468).
             bool allied = AreAllied(mySide, sideOld);
-            RecordSoundEvent(allied ? ClientSoundEventKind.SalQuit : ClientSoundEventKind.SalEnemyLeaves, shipId);
+            RecordSoundEvent(allied ? ClientSoundEventKind.SalQuit : ClientSoundEventKind.SalEnemyLeaves, shipId,
+                voice: allied ? Allegiance.Core.Audio.NativeVoiceCatalog.Definitions["salQuitSound"] : null);
         }
     }
 

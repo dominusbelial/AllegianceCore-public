@@ -670,7 +670,10 @@ public sealed partial class Game1
                     break;
                 // ── P736 — presence / side-change salutations ───────────────
                 case ClientSoundEventKind.SalQuit:
-                    snd?.PlaySalQuit();
+                    // Native salQuitSound uses the MIA wave and the
+                    // serialized MutexSal/gain/timeout template (sounddef.mdl:827).
+                    if (ev.Voice is { } quitVoice) snd?.PlayVoice(quitVoice);
+                    else snd?.PlaySalQuit();
                     Console.WriteLine($"[monogame] audio: teammate quit (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalChangeSides:
