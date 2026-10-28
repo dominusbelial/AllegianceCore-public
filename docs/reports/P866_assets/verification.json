@@ -1,0 +1,41 @@
+{
+  "task": "P866",
+  "scorecard": {
+    "sim-rules-matrix.csv": {
+      "before": {
+        "weighted": "94.80% (1804/1903)",
+        "unweighted": "93.16% (640/687)"
+      },
+      "after": {
+        "weighted": "96.11% (1829/1903)",
+        "unweighted": "94.91% (652/687)"
+      }
+    },
+    "parity-matrix.csv": {
+      "before": {
+        "weighted": "99.91% (1856.332/1858.000)",
+        "unweighted": "99.85% (648/649)"
+      },
+      "after": {
+        "weighted": "99.91% (1856.332/1858.000)",
+        "unweighted": "99.85% (648/649)"
+      }
+    }
+  },
+  "build": {
+    "solution": "0 warnings / 0 errors",
+    "tools_build_tools": "91/91 tool projects, 0 warnings"
+  },
+  "aot": "dotnet publish -c Release -r linux-x64 --self-contained -p:PublishAot=true: SUCCESS, no IL2026/IL3050",
+  "new_and_affected_tests_3x_alone": "51/51 pass x3 (P866*, ProbeBroadcast, MineBroadcast, MissileBroadcast, AsteroidMinedLive, P739, P806, P591d, MineCrossSideVisibilityLive, ProbeCombatLive, P747)",
+  "p697_ghost_mission_scope_3x_alone": "14/14 x3",
+  "fast_tier_run_1": "11286 tests; 1 fail: P697GhostBattleLiveTests (real P866 bug, fixed: mine/probe/missile cleanup audience now keyed by the OBJECT's sector mission)",
+  "fast_tier_run_2": "11286 tests; 1 fail: P761bCommandRelayTests.QueuedStationGoto... (ledgered live-network greet-timeout flake; 5/5 x3 alone)",
+  "showcase_never_parks_5x": "5/5 pass (3m12s..4m38s)",
+  "flakes_3x_alone": {
+    "P699bPodLoadTests": "3/3",
+    "ConsoleVerbosityLiveTests": "3/3",
+    "P746KillCreditOnEjectionTests": "8/8 theory + 12/12 class",
+    "BroadcastSnapshotTests": "pre-existing stale golden (D0ED7EEB..., documented P788C evidence)"
+  }
+}

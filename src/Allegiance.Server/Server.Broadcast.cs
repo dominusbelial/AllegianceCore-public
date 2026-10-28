@@ -210,7 +210,16 @@ public sealed partial class Server
             // P806 — the game settings the directory publishes for the
             // server-list filters (native MissionInfo, read off-thread by the
             // lobby heartbeat like the two snapshots above).
-            _liveGameParams = _missions.Count > 0 ? LobbyGameParams.FromMission(_missions[0]) : null;
+            // P866 — the snapshot now carries QueueLobbyMissionInfo's live half
+            // (counts/slots/countdown), and a NEW mission identity (boot or
+            // rotation) marks the lobby dirty exactly like native's dirty-at-
+            // construction CFSMission (fsmission.cpp:90,448).
+            if (_missions.Count > 0 && !ReferenceEquals(_missions[0], _lobbySnapshotMission))
+            {
+                _lobbySnapshotMission = _missions[0];
+                _lobbyDirtyVersion++;
+            }
+            _liveGameParams = _missions.Count > 0 ? SnapshotLobbyGameParams(_missions[0]) : null;
         }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared

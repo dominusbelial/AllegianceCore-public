@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -221,9 +222,10 @@ public sealed partial class Server
         // :7577 — tell the people in the game about the new settings (the
         // whole MissionDef, exactly what native forwards).
         SendMissionDef(mission);
-        // :7579 — SetLobbyIsDirty: the port's lobby advertisement snapshot
-        // (_liveGameParams) is rebuilt from the mission every loop iteration
-        // (Server.Broadcast.cs:201), so the refresh happens on the next tick.
+        // :7579 — SetLobbyIsDirty: the next throttled heartbeat republishes the
+        // lobby advertisement (P866 — a real dirty mark now, not just the
+        // per-tick snapshot refresh).
+        MarkLobbyDirty("missionparams");
         Console.WriteLine($"[missionparams] ship {live.Ship.Id}: mission params updated (nTeams {cur.NTems}, maxPerTeam {cur.NMaxPlayersPerTeam}, rank {cur.IMinRank}..{cur.IMaxRank}) — MISSIONDEF(38) whole-mission + lobby refresh");
     }
 
@@ -499,4 +501,164 @@ public sealed partial class Server
         int n = SendToMissionPeers(mission, FedPacket.Pack([relay.Encode()]));
         Console.WriteLine($"[teaminfo] side {side.Id} renamed '{trimmed}' (squad {side.SquadId ?? "NA"}): SET_TEAM_INFO(15) whole-mission to {n} peer(s) (fsmission.cpp:1575-1590)");
     }
+
+    // ═══════════════════ P866 — lobby publication + the dirty flag ═══════════════════
+
+    /// <summary>P866 / SIM-0572 — the port of native <c>CFSMission::m_fLobbyDirty</c>
+    /// (<c>FedSrv/fsmission.cpp:90</c>, set by <c>SetLobbyIsDirty</c>,
+    /// <c>fsmission.cpp:5624-5628</c>). Native's flag is a bool on the sim thread;
+    /// this port's heartbeat runs off-thread, so the flag is a monotonic VERSION:
+    /// every native <c>SetLobbyIsDirty()</c> call site bumps it, and the heartbeat
+    /// publishes when the version it last published differs from the current one
+    /// (a read/clear race can then never lose an update — the counter only grows).
+    /// Initial value 1: the mission was constructed dirty
+    /// (<c>fsmission.cpp:90</c> <c>m_fLobbyDirty(true)</c>, plus the
+    /// <c>SetLobbyIsDirty()</c> at the end of construction, <c>:448</c>).</summary>
+    private long _lobbyDirtyVersion = 1;
+
+    /// <summary>P866 — the mission the last published advertisement described.
+    /// A rotation/new mission identity bumps the dirty version, the port form of
+    /// native creating a fresh <c>CFSMission</c> (dirty at construction).</summary>
+    private Mission? _lobbySnapshotMission;
+
+    /// <summary>P866 — the dirty flag the lobby heartbeat reads (never clears):
+    /// monotonic counter, readable off the sim thread.</summary>
+    public long LobbyDirtyVersion { get { lock (_statsLock) return _lobbyDirtyVersion; } }
+
+    /// <summary>P866 — the port of <c>CFSMission::SetLobbyIsDirty</c>
+    /// (<c>fsmission.cpp:5624-5628</c>): mark the lobby advertisement stale so the
+    /// next throttled heartbeat republishes it (<c>UpdateLobby</c>,
+    /// <c>fsmission.cpp:5606-5621</c>: at most once per 10 s,
+    /// <c>c_flUpdateTimeInterval</c>). Called at every native call site this port
+    /// has: host mission-param edit (<c>FedSrv.CPP:7579</c>), stage change
+    /// (<c>fsmission.cpp:1766</c>), squad change (<c>:1669</c>), lobby/side lock
+    /// (<c>:5028</c>), a player entering/leaving the team lobby
+    /// (<c>fsship.cpp:1134</c>) and a player leaving the mission
+    /// (<c>fsmission.cpp:523</c>).</summary>
+    private void MarkLobbyDirty(string why)
+    {
+        lock (_statsLock) _lobbyDirtyVersion++;
+        ConsoleLog.Write($"[lobby-dirty] mark ({why}) → version {LobbyDirtyVersion}");
+    }
+
+    /// <summary>
+    /// P866 / SIM-0537 — the live half of native <c>CFSMission::QueueLobbyMissionInfo</c>
+    /// (<c>FedSrv/fsmission.cpp:3983-4096</c>): the fields that need the server's
+    /// player bookkeeping. Runs on the sim thread inside the per-tick stats
+    /// snapshot (<c>Server.Broadcast.cs</c>) and freezes the result into
+    /// <see cref="LobbyGameParams"/> for the off-thread heartbeat.
+    /// <list type="bullet">
+    /// <item><b>Player counts</b> (<c>:4041-4043</c>) — non-NPC players of this
+    /// mission, and how many are still on <c>SIDE_TEAMLOBBY</c> (the port's
+    /// unseated <c>null</c> / <c>SideTeamLobby</c> ships).</item>
+    /// <item><b>Slot availability</b> (<c>:4046-4073</c>) — native's scan of the
+    /// mission's sides: a joiner policy/stage/lobby-lock pre-gate, then per side
+    /// <c>nMaxPlayersPerTeam - nNumPlayersOnSide</c>, plus the stage/base/active
+    /// gate; the guaranteed bit when the side auto-accepts or is leaderless
+    /// (<c>fAutoAcceptLeaders</c>, always on in this port — the same fold
+    /// <c>RequestPosition</c>'s leaderless fast path makes).</item>
+    /// <item><b>The countdown</b> (<c>:4036-4037,4084-4086</c>) — the armed
+    /// deadline as an offset from now, and whether the countdown has started.</item>
+    /// <item><b>Team/side counts, caps, eject pods, invulnerable stations,
+    /// squad game, squad ids</b> (<c>:3995-4013,4076-4095</c>) — read from the
+    /// mission's own <c>misparms</c> stand-in (<see cref="ParamsOf"/>) so a host
+    /// edit is advertised, exactly like native's <c>m_misdef.misparms</c>.</item>
+    /// </list>
+    /// </summary>
+    private LobbyGameParams SnapshotLobbyGameParams(Mission mission)
+    {
+        var parms = ParamsOf(mission);
+        int players = 0, noat = 0;
+        var perSide = new Dictionary<short, int>();
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+            if (!ReferenceEquals(ship.Mission, mission) || ship.IsNpc) continue;
+            players++;
+            if (ship.SideId is { } sideId && sideId >= 0)
+                perSide[sideId] = perSide.GetValueOrDefault(sideId) + 1;
+            else
+                noat++;   // SIDE_TEAMLOBBY (never seated / parked, -2)
+        }
+
+        short teams = parms.NTems > 0 ? parms.NTems : (short)mission.Sides.Count;
+        short maxPerTeam = parms.NMaxPlayersPerTeam;
+        int maxPerGame = parms.NTotalMaxPlayersPerGame > 0
+            ? Math.Min(parms.NTotalMaxPlayersPerGame, teams * maxPerTeam)   // :4079-4081
+            : teams * maxPerTeam;
+
+        // :4047-4048 — pre-gate: joiners allowed (or the game has not started),
+        // the lobby is not locked, and the game is not over.
+        bool anySlots = false, guaranteedSlots = false;
+        if ((parms[MissionParamsMsg.BitAllowJoiners] || mission.Stage == MissionStage.NotStarted)
+            && !mission.LockLobby && mission.Stage != MissionStage.Over)
+        {
+            foreach (var side in mission.Sides)
+            {
+                if (side.Id < 0 || side.Id >= teams) continue;   // native's live side list only has nTeams sides
+                int available = maxPerTeam - perSide.GetValueOrDefault(side.Id);
+                // :4055-4057 — a not-started game always qualifies; once running a
+                // side needs its restart base (GetBase) and to be active.
+                bool canTake = mission.Stage == MissionStage.NotStarted
+                    || (side.Active && mission.Sectors.Any(sec => sec.StationRuntimes.Any(st =>
+                        !st.Dead && st.SideId == side.Id && st.Type.HasCapability(DataStationTypeIGC.SabmRestart))));
+                if (!canTake || available == 0) continue;
+                anySlots = true;
+                // :4064-4072 — guaranteed when the side auto-accepts, or is
+                // leaderless and the game auto-accepts leaders. The port folds
+                // fAutoAcceptLeaders to "a leaderless side accepts" (the same rule
+                // RequestPosition's fast path uses, Server.Dispatch.cs).
+                if (side.AutoAccept || side.LeaderShipId is null) guaranteedSlots = true;
+            }
+        }
+
+        // :3995-4013 — the squads of sides that have ships (and are active once
+        // the game started). A squad id only exists on a squad game.
+        List<string>? squadIds = null;
+        if (mission.SquadGame)
+            foreach (var side in mission.Sides)
+            {
+                if (side.SquadId is not { } squad) continue;
+                bool hasShips = mission.Sectors.Any(sec => sec.Models.OfType<Ship>().Any(sh => sh.SideId == side.Id));
+                if (!hasShips) continue;
+                if (mission.Stage == MissionStage.Started && !side.Active) continue;
+                (squadIds ??= []).Add(squad);
+            }
+
+        // :4036-4037 — misparms.timeStart - now, milliseconds; :4084-4086 the
+        // countdown-started bit (STARTING, or NOTSTARTED with bAutoRestart).
+        uint startOffsetMs = 0;
+        if (_startCountdownDeadline.TryGetValue(mission, out var deadline) && deadline > _simNow)
+            startOffsetMs = (uint)((deadline - _simNow) * 1000.0);
+        bool countdownStarted = mission.Stage == MissionStage.Starting
+            || (mission.Stage == MissionStage.NotStarted && parms[MissionParamsMsg.BitAutoRestart]);
+
+        var live = new LobbyMissionLive(
+            NumPlayers: players,
+            NumNoatPlayers: noat,
+            Teams: teams,
+            MaxPlayersPerGame: maxPerGame,
+            MinPlayersPerTeam: parms.NMinPlayersPerTeam,
+            MaxPlayersPerTeam: maxPerTeam,
+            StartTimeOffsetMs: startOffsetMs,
+            CountdownStarted: countdownStarted,
+            SquadGame: mission.SquadGame,
+            // Native reads misparms.bEjectPods (fsmission.cpp:4095, Reset default
+            // ON, igc.h:1246). The port's death path always ejects pods
+            // (Server.Combat.cs:1715-1717 deliberately folds bEjectPods on), so
+            // the advertisement publishes that effective value rather than the
+            // unmodelled bit — the same honesty the client's GameParams uses for
+            // its other Reset defaults.
+            EjectPods: true,
+            InvulnerableStations: parms[MissionParamsMsg.BitInvulnerableStations],
+            AnySlotsAvailable: anySlots,
+            GuaranteedSlotsAvailable: guaranteedSlots,
+            SquadIds: squadIds);
+        return LobbyGameParams.FromMission(mission, live);
+    }
+
+    /// <summary>P866 test seam — the advertisement snapshot the heartbeat would
+    /// publish right now (same call the per-tick stats snapshot makes).</summary>
+    internal LobbyGameParams TestLobbyParams() =>
+        SnapshotLobbyGameParams(_missions.Count > 0 ? _missions[0] : throw new InvalidOperationException("no mission"));
 }

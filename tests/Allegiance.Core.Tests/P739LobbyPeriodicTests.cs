@@ -43,6 +43,49 @@ public sealed class P739LobbyPeriodicTests
         clock.Advance(.001); await heartbeat.PumpAsync(periodic: true); Assert.Equal(3, handler.Requests.Count);
     }
 
+    /// <summary>P866 / SIM-0572 — the DIRTY FLAG, native
+    /// <c>CFSMission::SetLobbyIsDirty</c> + <c>UpdateLobby</c>
+    /// (<c>fsmission.cpp:5606-5628</c>): a marked mission publishes on the next
+    /// tick AFTER the ten-second coalesce window, even when the player count and
+    /// the lease are unchanged; an unmarked mission keeps waiting for the lease.
+    /// </summary>
+    [Fact]
+    public async Task Dirty_version_triggers_a_publication_after_the_ten_second_coalesce()
+    {
+        var clock = new Clock(); var handler = new Handler();
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+        long version = 1;
+        using var heartbeat = new LobbyHeartbeat(http, new() { HeartbeatIntervalSeconds = 25 },
+            () => 1, "P866", "core", "v1", 1234, clock,
+            livePlayerNames: null, liveGameParams: null, lobbyDirtyVersion: () => version);
+
+        await heartbeat.PumpAsync(periodic: true);
+        Assert.Single(handler.Requests);                 // first registration
+
+        // Dirty inside the coalesce window: nothing publishes, the flag stays set.
+        version = 2;                                     // e.g. a host mission-param edit
+        clock.Advance(5); await heartbeat.PumpAsync(periodic: true);
+        Assert.Single(handler.Requests);
+
+        // Ten seconds after the last publish the dirty mission republishes, with an
+        // unchanged player count and no lease expiry.
+        clock.Advance(5); await heartbeat.PumpAsync(periodic: true);
+        Assert.Equal(2, handler.Requests.Count);
+
+        // No new dirty event and no lease expiry (25 s) → quiet.
+        clock.Advance(10); await heartbeat.PumpAsync(periodic: true);
+        Assert.Equal(2, handler.Requests.Count);
+
+        // Another dirty event publishes at the next eligible tick, not at the lease.
+        version = 3;
+        clock.Advance(10); await heartbeat.PumpAsync(periodic: true);
+        Assert.Equal(3, handler.Requests.Count);
+
+        // Finally the clean lease refresh still fires at the configured interval.
+        clock.Advance(25); await heartbeat.PumpAsync(periodic: true);
+        Assert.Equal(4, handler.Requests.Count);
+    }
+
     [Fact]
     public async Task Rejected_lobby_token_retries_without_token_after_rate_limit()
     {

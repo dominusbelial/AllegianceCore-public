@@ -125,7 +125,26 @@ public sealed record GameParamsDto(
     bool AllowFriendlyFire = false,
     /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
     /// (<c>Igc/igc.h:1127</c>). Optional trailing member, native default off.</summary>
-    bool AllowAlliedViz = false);
+    bool AllowAlliedViz = false,
+    // P866 / SIM-0537 — the rest of native pfmLobbyMissionInfo
+    // (FedSrv/fsmission.cpp:3983-4096; wire shape lobby/messagesall.h:25-63).
+    // Optional trailing members: a pre-P866 host omits them and the directory
+    // publishes native MissionParams::Reset's defaults, exactly like the
+    // existing optional members above.
+    int NumPlayers = 0,
+    int NumNoatPlayers = 0,
+    short Teams = 0,
+    int MaxPlayersPerGame = 0,
+    short MinPlayersPerTeam = 0,
+    short MaxPlayersPerTeam = 0,
+    uint StartTimeOffsetMs = 0,
+    bool CountdownStarted = false,
+    bool SquadGame = false,
+    bool EjectPods = true,
+    bool InvulnerableStations = false,
+    bool AnySlotsAvailable = false,
+    bool GuaranteedSlotsAvailable = false,
+    IReadOnlyList<string>? SquadIds = null);
 
 /// <summary>
 /// P761b — one hit of the per-name find-player query (<c>GET /api/servers/findplayer?name=</c>):
@@ -223,6 +242,26 @@ public sealed class GameParamsRequest
     public bool? AllowFriendlyFire { get; set; }
     /// <summary>P856 — <c>bAllowAlliedViz</c> (igc.h:1127); omitted → off.</summary>
     public bool? AllowAlliedViz { get; set; }
+    // P866 / SIM-0537 — the rest of pfmLobbyMissionInfo. Omitted → the native
+    // MissionParams::Reset default (fsmission.cpp:3983-4096 reads the same
+    // fields off m_misdef.misparms), so an older host still advertises a
+    // plausible mission rather than zeroes.
+    public int? NumPlayers { get; set; }
+    public int? NumNoatPlayers { get; set; }
+    public int? Teams { get; set; }
+    public int? MaxPlayersPerGame { get; set; }
+    public int? MinPlayersPerTeam { get; set; }
+    public int? MaxPlayersPerTeam { get; set; }
+    /// <summary>Native <c>dwStartTime</c> — the countdown deadline offset in ms.</summary>
+    public uint? StartTimeOffsetMs { get; set; }
+    public bool? CountdownStarted { get; set; }
+    public bool? SquadGame { get; set; }
+    public bool? EjectPods { get; set; }
+    public bool? InvulnerableStations { get; set; }
+    public bool? AnySlotsAvailable { get; set; }
+    public bool? GuaranteedSlotsAvailable { get; set; }
+    /// <summary>Native <c>rgSquadIDs</c> — the playing sides' squad ids.</summary>
+    public List<string>? SquadIds { get; set; }
 }
 
 /// <summary>

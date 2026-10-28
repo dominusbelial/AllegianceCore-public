@@ -97,7 +97,7 @@ public class ProbeBroadcastTests
     /// point).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Directly_deployed_probe_broadcasts_create_and_destroy_to_teammate_but_not_enemy()
+    public void Directly_deployed_probe_broadcasts_create_to_teammate_and_destroy_to_whole_mission()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -220,11 +220,17 @@ public class ProbeBroadcastTests
                     $"probe {d.ProbeId} moved: deployed {initialPositions[d.ProbeId]} → {pr.Position}");
             }
 
-            // (4) the cross-side enemy receives NEITHER message, no matter how
-            // many ticks we pump past expiry.
-            PumpUntil(server, () => false, 400);   // extra ticks past expiry for luck-free confidence
+            // (4) P866 / SIM-0656 — native KillProbeEvent sends PROBE_DESTROYED to
+            // GetGroupRealSides() (FedSrv.CPP:12479-12482): the cross-side enemy
+            // DOES receive the destruction notice though it never got the probe's
+            // creation export (a client ignores an unknown probe id,
+            // clintlib/appmsg.cpp:1822-1829). It must still receive NO creation
+            // message, no matter how long we pump.
+            PumpUntil(server, () => enemyBot.ProbeDestroyeds.Count >= 2, 400);
             Assert.Empty(enemyBot.ProbeExports);
-            Assert.Empty(enemyBot.ProbeDestroyeds);
+            Assert.Equal(2, enemyBot.ProbeDestroyeds.Select(d => d.ProbeId).Distinct().Count());
+            foreach (var d in enemyBot.ProbeDestroyeds)
+                Assert.Equal(deployer.Sector?.Id, d.ClusterId);
         }
         finally
         {

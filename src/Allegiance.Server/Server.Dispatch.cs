@@ -30,7 +30,16 @@ public sealed partial class Server
     {
         if (inbound.Error is { } error)
         {
-            Console.WriteLine($"[wire] crc/ framing failure from {from}: {error.Message}");
+            // P866 / SIM-0582 — native FedSrvSiteBase::OnBadCRC (FedSrv.CPP:4591-4603):
+            // a packet that fails the CRC is logged with the offending player and
+            // sizes, then the connection is DELETED ("bye bye now"). Before this the
+            // port only logged the failure and let the peer keep talking, so a
+            // corrupt/fuzzing client survived forever. The crashplayers.txt copy and
+            // the message box are DirectPlay/desktop plumbing (n/a here): the
+            // diagnostic goes to the server log instead.
+            string name = _peerNames.GetValueOrDefault(from) ?? "?";
+            Console.WriteLine($"[wire] corrupt message from {name}({from}): {error.Message} — dropping the peer (FedSrv.CPP:4591-4603)");
+            (_host.Transport as TcpTransport)?.ClosePeer(from, DisconnectReason.BadCrc);
             return;
         }
 
@@ -1375,6 +1384,10 @@ public sealed partial class Server
                         {
                             SendToMissionPeers(mission, FedPacket.Pack(new[] { ll.Encode() }));
                             mission.LockLobby = ll.FLock;
+                            // P866 — native SetLockLobby ends in SetLobbyIsDirty
+                            // (fsmission.cpp:5023-5029): the advertisement's
+                            // slot-availability scan reads bLockLobby.
+                            MarkLobbyDirty("lock-lobby");
                             Console.WriteLine($"[locklobby] ship {llLive.Ship.Id}: LOCK_LOBBY fLock={ll.FLock} whole-mission, Mission.LockLobby={mission.LockLobby}");
                         }
                     }
@@ -1421,6 +1434,9 @@ public sealed partial class Server
                         {
                             SendToMissionPeers(mission, FedPacket.Pack(new[] { ls.Encode() }));
                             mission.LockSides = ls.FLock;
+                            // P866 — native SetLockSides also marks the lobby dirty
+                            // (the SetLockLobby sibling, fsmission.cpp:5023-5049).
+                            MarkLobbyDirty("lock-sides");
                             Console.WriteLine($"[locksides] ship {lsLive.Ship.Id}: LOCK_SIDES fLock={ls.FLock} whole-mission, Mission.LockSides={mission.LockSides}");
                         }
                     }
@@ -1579,6 +1595,9 @@ public sealed partial class Server
                             {
                                 SendToMissionPeers(mission, FedPacket.Pack(new[] { aa.Encode() }));
                                 aaSide.AutoAccept = aa.FAutoAccept;
+                                // P866 — the advertisement's guaranteed-slot bit reads
+                                // Side.AutoAccept (native rgfAutoAccept[sideID]).
+                                MarkLobbyDirty("auto-accept");
                                 Console.WriteLine($"[autoaccept] ship {aaLive.Ship.Id}: AUTO_ACCEPT side {aaSideId} fAutoAccept={aa.FAutoAccept} whole-mission, Side.AutoAccept={aaSide.AutoAccept}");
                                 if (aa.FAutoAccept)
                                 {

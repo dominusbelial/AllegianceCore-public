@@ -63,6 +63,11 @@ public enum DisconnectReason
     /// <summary>A malformed frame / wrong frame type / oversize greeting was
     /// received during the join handshake.</summary>
     ProtocolError,
+    /// <summary>P866 — a data frame failed packet validation (the trailing CRC or
+    /// the message framing). Native's messaging layer deletes the connection
+    /// outright on a bad CRC (<c>FedSrvSiteBase::OnBadCRC</c>,
+    /// <c>FedSrv.CPP:4591-4603</c>).</summary>
+    BadCrc,
     /// <summary>A peer connected and sent nothing (or a partial frame) within
     /// the greeting timeout.</summary>
     GreetTimeout,
@@ -372,6 +377,13 @@ public sealed class TcpTransport : ITransport
     /// coalesce per class). Set before Host; mirrors <see cref="Egress"/>'s
     /// null fast path. No send policy depends on it.</summary>
     public ReliableTelemetry? Reliable { get; init; }
+
+    /// <summary>P866 — the native <c>g.pServerCounters</c> object
+    /// (<c>FedSrv/counters.h:8-30</c>). Host-only, set before <see cref="Host"/>;
+    /// the client half leaves it null. Fed from the per-peer send queue exactly
+    /// where native's <c>OnMessageSent</c> fired (see
+    /// <see cref="Transport.ServerCounters.RecordFrame"/>).</summary>
+    public ServerCounters? ServerCounters { get; init; }
 
     /// <summary>
     /// P813d — EXPERIMENTAL, default OFF. When true, ordered-guaranteed
@@ -699,6 +711,7 @@ public sealed class TcpTransport : ITransport
                 EgressHarness = name.StartsWith("mcp-", StringComparison.Ordinal),
                 Reliable = Reliable,
                 ReliableOneShotPark = ReliableOneShot,
+                ServerCounters = ServerCounters,
             };
             lock (_gate)
             {
@@ -707,6 +720,12 @@ public sealed class TcpTransport : ITransport
                 established = true;          // this connection survived the greeting
             }
             StartOrPool(id, sender);
+            // P866 / SIM-0579 — the whole native OnNewConnection body is a debug
+            // log of the connection id and its source IP (FedSrv.CPP:4536-4546,
+            // "we don't do anything until they login"); the port mints the id at
+            // the greeting (TCP has no DirectPlay connection object), so the log
+            // lands here with both facts.
+            Console.WriteLine($"[conn] new connection ID: {id} IP: {remote} name '{name}' (FedSrv.CPP:4536-4546)");
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
             // greeting above was consumed internally; OnReceive cannot fire
             // until this call has returned.
@@ -819,6 +838,15 @@ public sealed class TcpTransport : ITransport
     /// <summary>True once a host peer has logically departed, including while
     /// its final replies are draining. Queued inbound packets must not rearm it.</summary>
     public bool IsPeerClosed(ConnectionId id) => _closingPeers.ContainsKey(id) || _peerEnded.ContainsKey(id);
+
+    /// <summary>P866 — the source address recorded when this peer's greeting was
+    /// accepted (the same value the accept-time log prints, the port's whole
+    /// <c>OnNewConnection</c> body, <c>FedSrv.CPP:4536-4546</c>). <c>null</c> for
+    /// an unknown/already-reaped peer or on the client half.</summary>
+    public IPAddress? PeerAddress(ConnectionId id)
+    {
+        lock (_gate) return _peerIpById.GetValueOrDefault(id);
+    }
 
     /// <summary>Retire a peer immediately, then close its socket after queued
     /// guaranteed replies reach the socket. Native LOGOFF forwards the reply
@@ -1418,6 +1446,8 @@ public sealed class TcpTransport : ITransport
         private bool _inflightStream;
         internal EgressAccounting? Egress;
         internal SendCounters? Counters;
+        // P866 — the native g.pServerCounters object (null on the client half).
+        internal Transport.ServerCounters? ServerCounters;
         // P813d — reliable-tier telemetry sink (null fast path) and the
         // experimental park-lane switch, copied from the owning transport.
         internal ReliableTelemetry? Reliable;
@@ -1512,6 +1542,12 @@ public sealed class TcpTransport : ITransport
                 _enqueuedBytes += length;
                 if (Counters is { } counters) Interlocked.Add(ref counters.Enqueued, length);
                 Egress?.Record(frame.AsSpan(0, length), EgressHarness, coalesceKey != 0, EgressEvent.Offered);
+                // P866 — native OnMessageSent (FedSrv.CPP:4613-4636): a guaranteed
+                // message handed to FedMessaging bumps cPacketsOut/cBytesOut once
+                // per recipient. Counted at enqueue (the DirectPlay hand-off
+                // instant), before any later coalescing/shedding can replace the
+                // frame — native counts a superseded COALESCE message too.
+                ServerCounters?.RecordFrame(frame.AsSpan(0, length), guaranteed);
                 // Was the peer's send path fully drained before this enqueue?
                 // If so the peer is current (idle or caught up); its writer
                 // gets a fresh liveness window rather than being judged stale

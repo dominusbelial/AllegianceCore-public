@@ -94,7 +94,7 @@ public class MissileBroadcastTests
     /// (the not-yet-dispatch-wired entry point).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy()
+    public void Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -208,11 +208,17 @@ public class MissileBroadcastTests
             Assert.True(dest.Select(d => d.MissileId).Distinct().Count() == 2,
                 $"two expiries must yield two distinct destroy ids, got [{string.Join(", ", dest.Select(d => d.MissileId))}]");
 
-            // (3) the cross-side enemy receives NEITHER message, no matter how
-            // many ticks we pump past expiry.
-            PumpUntil(server, () => false, 400);   // extra ticks past expiry for luck-free confidence
+            // (3) P866 / SIM-0659 — native KillMissileEvent sends
+            // MISSILE_DESTROYED to GetGroupRealSides() (FedSrv.CPP:12520-12521):
+            // the cross-side enemy DOES receive the destruction notice even though
+            // it never got the missile's creation message (native's client only
+            // explodes a missile it knows, clintlib/appmsg.cpp:1795-1804). It must
+            // still receive NO creation message, no matter how long we pump.
+            PumpUntil(server, () => enemyBot.MissileDestroyeds.Count >= 2, 400);
             Assert.Empty(enemyBot.FireMissiles);
-            Assert.Empty(enemyBot.MissileDestroyeds);
+            Assert.Equal(2, enemyBot.MissileDestroyeds.Select(d => d.MissileId).Distinct().Count());
+            foreach (var d in enemyBot.MissileDestroyeds)
+                Assert.Equal(shooter.Sector?.Id, d.ClusterId);
         }
         finally
         {

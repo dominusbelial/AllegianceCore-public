@@ -118,6 +118,9 @@ public sealed partial class Server
         side.SquadId = squadId;
         side.SquadName = squadName;
         if (!changed) return;   // native: "if the squad doesn't need to be changed, don't touch it" (fsmission.cpp:1617-1619)
+        // P866 — SetSideSquad's tail marks the lobby dirty (fsmission.cpp:1669),
+        // so the advertisement's squad-id list refreshes.
+        MarkLobbyDirty("set-side-squad");
         if (mission.SquadGame && squadId is not null)
         {
             // fsmission.cpp:1623-1641 — boot seated players not on the squad

@@ -31,6 +31,41 @@ public sealed partial class Server
         => admin || viewer.SideId == subject.SideId || !subject.IsCloaked
             || viewer.SideId is not { } side || subject.SeenBySide(side);
 
+    /// <summary>P866 — native <c>CFSMission::GetGroupRealSides()</c>
+    /// (<c>FedSrv/fsmission.h:361</c>): the mission's "All real teams" group.
+    /// Membership is maintained by <c>CFSShip::SetSide</c>
+    /// (<c>FedSrv/fsship.cpp:1073-1078</c>): a connection is ADDED when its player
+    /// is seated on a side and REMOVED when the player is on
+    /// <c>SIDE_TEAMLOBBY</c> (<c>fsship.cpp:1076</c>). So "whole mission" in
+    /// native means every seated player of the mission — never a team-lobby
+    /// (unseated) connection, and never a connection of another mission.
+    /// The port's team-lobby state is <c>Ship.SideId == null</c> (never seated) or
+    /// <c>SideTeamLobby</c> (-2, the park <see cref="MoveToTeamLobby"/> uses), so
+    /// both are excluded here. Reused by every KILL/MINE broadcast whose native
+    /// rule is <c>SendMessages(GetGroupRealSides())</c>.</summary>
+    private List<ConnectionId> RealSideAudience(Mission? mission = null)
+    {
+        var targets = new List<ConnectionId>();
+        foreach (var kv in _peerShips)
+        {
+            short? side = kv.Value.Ship.SideId;
+            if (side is null || side == SideTeamLobby) continue;
+            if (mission is not null && !ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            targets.Add(kv.Key);
+        }
+        return targets;
+    }
+
+    /// <summary>P866 — the mission that owns <paramref name="sector"/>. A KILL/MINE
+    /// notice is about an object whose owner sector never changes (a mine never
+    /// moves, a probe is anchored, a missile lives in its launch sector), even when
+    /// its LAUNCHER later warps into another game / changes side (P697's ghost
+    /// battle). Native derives the group from the mission the object lives in, so
+    /// the whole-mission audience must be that mission's real sides — never the
+    /// launcher's CURRENT mission.</summary>
+    private Mission? MissionOfSector(Sector sector) =>
+        _missions.FirstOrDefault(mission => mission.Sectors.Contains(sector));
+
     // Side IDs are mission-local; persistent side-wide object knowledge must
     // not spill into another game's equally numbered side/sector.
     private bool PeerInMission(ConnectionId peer, Sector sector)

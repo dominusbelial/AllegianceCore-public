@@ -144,4 +144,70 @@ public sealed class P806LobbyGameParamsTests
             http.Dispose();
         }
     }
+
+    /// <summary>P866 / SIM-0537 — the rest of native <c>pfmLobbyMissionInfo</c>
+    /// (<c>FedSrv/fsmission.cpp:3983-4096</c>) survives the HTTP directory
+    /// end-to-end: player counts, team/cap numbers, slot availability, the armed
+    /// countdown offset, squad game, eject pods, invulnerable stations and the
+    /// playing squads. Before P866 only the P806 filter set was carried.</summary>
+    [Fact]
+    public async Task Heartbeat_publishes_the_remaining_native_mission_info_fields()
+    {
+        using var app = new LobbyHarness();
+        using var client = app.CreateClient();
+
+        var game = new LobbyGameParams(
+            AllowDevelopments: true, Lives: 3, ScoresCount: true, ObjectModelCreated: true,
+            InProgress: false, GoalConquest: true, GoalDeathmatch: false, GoalProsperity: false,
+            GoalCountdown: false, GoalArtifacts: false, GoalFlags: false, GoalTerritory: false,
+            MinRank: -1, MaxRank: 1000,
+            AllowFriendlyFire: false, AllowAlliedViz: true,
+            NumPlayers: 5, NumNoatPlayers: 2, Teams: 2, MaxPlayersPerGame: 20,
+            MinPlayersPerTeam: 1, MaxPlayersPerTeam: 10, StartTimeOffsetMs: 12_500,
+            CountdownStarted: true, SquadGame: true, EjectPods: true, InvulnerableStations: false,
+            AnySlotsAvailable: true, GuaranteedSlotsAvailable: false,
+            SquadIds: ["squad-alpha", "squad-bravo"]);
+
+        var http = new HttpClient(app.Server.CreateHandler())
+        {
+            BaseAddress = app.ClientOptions.BaseAddress,
+            Timeout = TimeSpan.FromSeconds(5),
+        };
+        var cfg = new LobbyConfig
+        {
+            Url = app.ClientOptions.BaseAddress.AbsoluteUri,
+            DisplayName = "P866 Mission Info Server",
+            PublicAddress = "1.2.3.4",
+        };
+        using var hb = new LobbyHeartbeat(http, cfg, () => 5, "Wing War", "PCore001.igc", "0.1.0", 5333,
+            clock: null, livePlayerNames: null, liveGameParams: () => game);
+        try
+        {
+            await hb.PumpAsync();
+
+            var mine = Assert.Single((await client.GetFromJsonAsync<List<ServerListingDto>>("/api/servers"))!);
+            var g = mine.Game;
+            Assert.NotNull(g);
+            Assert.Equal(5, g!.NumPlayers);
+            Assert.Equal(2, g.NumNoatPlayers);
+            Assert.Equal((short)2, g.Teams);
+            Assert.Equal(20, g.MaxPlayersPerGame);
+            Assert.Equal((short)1, g.MinPlayersPerTeam);
+            Assert.Equal((short)10, g.MaxPlayersPerTeam);
+            Assert.Equal(12_500u, g.StartTimeOffsetMs);
+            Assert.True(g.CountdownStarted);
+            Assert.True(g.SquadGame);
+            Assert.True(g.EjectPods);
+            Assert.False(g.InvulnerableStations);
+            Assert.True(g.AnySlotsAvailable);
+            Assert.False(g.GuaranteedSlotsAvailable);
+            Assert.Equal(["squad-alpha", "squad-bravo"], g.SquadIds!);
+            Assert.True(g.AllowAlliedViz);
+        }
+        finally
+        {
+            hb.Dispose();
+            http.Dispose();
+        }
+    }
 }

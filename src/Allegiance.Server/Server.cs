@@ -836,6 +836,16 @@ public sealed partial class Server : IDisposable
     /// sim-thread-owned mission itself.</summary>
     public LobbyGameParams? LiveGameParams { get { lock (_statsLock) return _liveGameParams; } }
 
+    /// <summary>P866 — the native <c>g.pServerCounters</c> object
+    /// (<c>SERVER_COUNTERS</c>, <c>FedSrv/counters.h:8-30</c>): the named
+    /// <c>cPacketsOut</c>/<c>cBytesOut</c>/<c>cTimeouts</c> counters plus their
+    /// per-second twins. Fed where native's DirectPlay callbacks fired: the
+    /// guaranteed-message hand-off (<c>OnMessageSent</c>, <c>FedSrv.CPP:4613-4636</c>
+    /// → <see cref="TcpTransport.ServerCounters"/>) and the dropped-player
+    /// connection teardown (<c>OnDestroyConnection</c>, <c>FedSrv.CPP:4558-4562</c>
+    /// → <c>ReleasePeerWithReason</c>). Thread-safe; never reset.</summary>
+    public ServerCounters Counters { get; } = new();
+
     /// <summary>Bucket ids that have become fully funded AND fully
     /// time-invested (the P119 completion-detection seam), in completion order,
     /// guarded by <c>_statsLock</c>. Detection-only — nothing is built.</summary>

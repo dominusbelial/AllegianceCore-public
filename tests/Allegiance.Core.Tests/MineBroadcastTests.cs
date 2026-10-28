@@ -94,7 +94,7 @@ public class MineBroadcastTests
     /// point).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Directly_deployed_mine_broadcasts_create_and_destroy_to_teammate_but_not_enemy()
+    public void Directly_deployed_mine_broadcasts_create_to_teammate_and_destroy_to_whole_mission()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -214,11 +214,17 @@ public class MineBroadcastTests
                     $"mine {d.MineId} moved: deployed {initialPositions[d.MineId]} → {m.Position}");
             }
 
-            // (4) the cross-side enemy receives NEITHER message, no matter how
-            // many ticks we pump past expiry.
-            PumpUntil(server, () => false, 400);   // extra ticks past expiry for luck-free confidence
+            // (4) P866 / SIM-0660 — native KillMineEvent sends MINE_DESTROYED to
+            // GetGroupRealSides() (FedSrv.CPP:12536-12539): the cross-side enemy
+            // DOES receive the destruction notice though it never got the mine's
+            // creation export (a client ignores an unknown mine id,
+            // clintlib/appmsg.cpp:1808-1819). It must still receive NO creation
+            // message, no matter how long we pump.
+            PumpUntil(server, () => enemyBot.MineDestroyeds.Count >= 2, 400);
             Assert.Empty(enemyBot.MineExports);
-            Assert.Empty(enemyBot.MineDestroyeds);
+            Assert.Equal(2, enemyBot.MineDestroyeds.Select(d => d.MineId).Distinct().Count());
+            foreach (var d in enemyBot.MineDestroyeds)
+                Assert.Equal(layer.Sector?.Id, d.ClusterId);
         }
         finally
         {

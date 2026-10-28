@@ -10,9 +10,21 @@ public sealed partial class Server
     /// The admin egress command prints this without draining/resetting counters.</summary>
     public EgressWindow? LastEgressWindow { get; private set; }
 
+    /// <summary>P866 — the last drained <see cref="ServerCounters"/> window: the
+    /// native <c>cTimeouts</c>/<c>cPacketsOut</c>/<c>cBytesOut</c> values and their
+    /// per-second twins (read-only snapshot).</summary>
+    public ServerCountersWindow? LastServerCounters { get; private set; }
+
     private void EmitEgressWindow()
     {
         EmitSendWindow();
+        // P866 — the named native server counters (FedSrv/counters.h:10-21), on
+        // the same photometer window as the egress rows. Independent of the
+        // profiler-gated egress accounting below, so the line is always emitted.
+        var counters = Counters.DrainWindow();
+        LastServerCounters = counters;
+        Console.WriteLine(FormattableString.Invariant(
+            $"[server-counters] cTimeouts={counters.CTimeouts} cTimeoutsPerSecond={counters.CTimeoutsPerSecond:0.000} cPacketsOut={counters.CPacketsOut} cPacketsOutPerSecond={counters.CPacketsOutPerSecond:0.000} cBytesOut={counters.CBytesOut} cBytesOutPerSecond={counters.CBytesOutPerSecond:0.000}"));
         if (_host?.Transport?.Egress is not { } accounting) return;
         var window = accounting.DrainWindow();
         LastEgressWindow = window;

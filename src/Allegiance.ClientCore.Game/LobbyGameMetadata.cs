@@ -40,7 +40,26 @@ public sealed record GameParams(
     // ("Allow Friendly Fire: Yes/No", newgamescreen.cpp:347). Optional trailing
     // members so a pre-P856 host/listing keeps its shape; native default off.
     bool AllowFriendlyFire = false,
-    bool AllowAlliedViz = false)
+    bool AllowAlliedViz = false,
+    // P866 / SIM-0537 — the rest of the server's pfmLobbyMissionInfo payload
+    // (FedSrv/fsmission.cpp:3983-4096), now carried end-to-end through the HTTP
+    // directory. The two values native's game-type classifier reads
+    // (bInvulnerableStations / bEjectPods) are now REAL here instead of assumed
+    // Reset defaults; everything else is informational for the client.
+    int NumPlayers = 0,
+    int NumNoatPlayers = 0,
+    short Teams = 0,
+    int MaxPlayersPerGame = 0,
+    short MinPlayersPerTeam = 0,
+    short MaxPlayersPerTeam = 0,
+    uint StartTimeOffsetMs = 0,
+    bool CountdownStarted = false,
+    bool SquadGame = false,
+    bool EjectPods = true,
+    bool InvulnerableStations = false,
+    bool AnySlotsAvailable = false,
+    bool GuaranteedSlotsAvailable = false,
+    IReadOnlyList<string>? SquadIds = null)
 {
     /// <summary><c>c_cUnlimitedLives = 0x7fff</c> (<c>Igc/igc.h:1007</c>).</summary>
     public const int UnlimitedLives = 0x7fff;
@@ -132,10 +151,14 @@ public static class NativeGameTypes
         {
             var t = Types[i];
             if (p.AllowDevelopments == t.AllowDevelopments
-                // bInvulnerableStations / bEjectPods / bExperimental have no port
-                // mission parameter: native Reset's defaults are the port's values.
-                && false == t.InvulnerableStations
-                && true == t.EjectPods
+                // P866 — bInvulnerableStations / bEjectPods now ride the listing
+                // (native MissionParams bits, published by the server), so the
+                // classifier uses the real values. Their defaults are native
+                // Reset's (invulnerable off, eject pods on), so a pre-P866 host
+                // keeps the exact pre-P866 classification. bExperimental has no
+                // port mission parameter (Reset default off).
+                && p.InvulnerableStations == t.InvulnerableStations
+                && p.EjectPods == t.EjectPods
                 && !t.Experimental
                 && p.LimitedLives == !t.UnlimitedLives
                 && p.GoalProsperity == t.GoalTeamMoney
