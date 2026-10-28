@@ -4,6 +4,29 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P864d verification observations (2026-10-28)
+
+The P730 two-match showcase passed **5/5** (3m12s–5m09s per run, load ~10 at start).
+
+Two Fast sweeps were run (the first caught a regression of this lane's own: a new
+`sim-rules-matrix.csv` row whose `native_body` was prose instead of the
+`P832aMissionRulesInventoryTests` inventory key — fixed, and that test passes):
+
+| Sweep | Result |
+|---|---|
+| `tiers-20261028T214951` | 11,430 tests, 2 failed: the matrix-inventory regression above + `RadarTargetHighlightLiveTests.LiveOffScreenEnemy_Is_TheFlaggedRadarTargetHighlight` |
+| `tiers-20261028T215959` (after the fix) | 11,430 tests, 4 failed: `ConsoleLogNonBlockingTests.Verbose_gate…`, `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout`, `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `RadarTargetHighlightLiveTests.LiveOffScreenEnemy…`; plus one calibrated-limit offender (`P750NativeAsteroidTypesTests…`, 12.7 s vs 10 s, **passed**) |
+
+All four test failures were re-run **3/3 alone** clean except
+`RadarTargetHighlightLiveTests.LiveOffScreenEnemy_Is_TheFlaggedRadarTargetHighlight`:
+**0/3 on this tree and 1/3 on a pristine `HEAD` copy** (`.scratch/base`, `git
+archive HEAD`), so it is pre-existing/environmental, not lane-caused. Its staging
+is time-based: the peer waits for the 30 s side-select auto-seat
+(`SideSelectAutoSeatSeconds = 30`) while the spawned enemy NPC keeps flying, so
+the “directly behind my facing” premise decays whenever the host is loaded. The
+fix, if anyone picks it up: freeze the enemy (`OrderIdle`) or seat the peer
+explicitly instead of relying on the auto-seat deadline.
+
 ## P864c verification observations (2026-10-28)
 
 The P730 two-match showcase passed **5/5** (ten matches, 3m12s–4m43s per run).

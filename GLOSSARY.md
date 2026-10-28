@@ -493,6 +493,28 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs`,
   `Rendering/ChatTargetLogic.cs`, `Game1.Panes.cs`
   (`UpdateReadyCheck`/`DrawReadyCheckChat`).
+- **Team screen / team-lobby pool (P864d)** — the port's TEAM SCREEN is the
+  side-select overlay before admission and the ready-check overlay once seated;
+  both now list the mission team lobby ("Not on a team", native
+  `clintlib/clintlib.h:571`) **by name** with native's per-player status column
+  (`WinTrek/teamscreen.cpp:378-386` team count, `:470-510` player rows,
+  `:1330-1335` lobby row in the team list). Who is in the lobby comes from the
+  normal player-info traffic — ships whose `ShipEntity.SideId` is
+  `SIDE_TEAMLOBBY` (-2), named by `PLAYERINFO(10)`/`EXPORT(26)` and moved by
+  `QUIT_SIDE(126)`/`JOIN_SIDE(125)`. Key:
+  `src/Allegiance.ClientCore/State/ClientWorld.Lobby.cs`
+  (`SideTeamLobby`, `TeamLobbyMembers()`, `SideHumanCount()` = native
+  `SideNumPlayers`), `src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs`,
+  `Rendering/ReadyCheckLayout.cs`, `Rendering/ReadyCheckRoster.cs`
+  (`GatherLobby`), `Game1.Panes.cs` (`DrawSideSelect`/`DrawReadyCheck`) and
+  `Game1.FlightInput.cs` (a player parked on -2 is routed to the team screen). A
+  lobby player requests a side with Enter (`POSITIONREQ`), a team leader accepts
+  a waiting player with A (`POSITIONACK`); the team lobby also offers the
+  owner's R (randomize) and the leader's O/U/N/H controls. Server half:
+  `src/Allegiance.Server/Server.Lobby.cs` `SendSideRoster` sends the native
+  join-time player list (`SendLobbyMissionInfo`, `FedSrv/fsmission.cpp:3940-3971`)
+  to a peer still choosing a side. Proof: `tools/p864d-teamlobby-proof/`, report
+  `docs/reports/P864d_REPORT.md`. *Native:* `WinTrek/teamscreen.cpp`.
 - **Host editing (P853b)** — the pre-game team lobby's two host affordances, the
   client half of P853's wire: the side leader's **team name** (native
   `TeamSettingsDialogPopup`, `WinTrek/teamscreen.cpp:856-1104` →

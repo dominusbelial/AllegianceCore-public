@@ -2330,6 +2330,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
         ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
+        // P864d — a peer still on the side-select screen reads the SIDE_ROSTER
+        // snapshot, not the mission-group QUIT_SIDE relay (pending peers are not
+        // in _peerShips). Native has no such stage — a joining player is already a
+        // mission member on the lobby side and receives the relay — so refresh the
+        // snapshot (its lobby count and, via SendSideRoster's PLAYERINFO burst, the
+        // lobby player list) after a park. Mirrors the CHANGE_TEAM_CIV refresh
+        // above; pending peers always belong to _missions[0].
+        if (_pendingSideSelect.Count > 0 && ReferenceEquals(mission, _missions[0]))
+            BroadcastSideRosterToPendingPeers(mission);
         // P866 / fsmission.cpp:523 + fsship.cpp:1134 — the player joined the
         // team lobby: the lobby advertisement's player counts changed.
         MarkLobbyDirty("team-lobby");
@@ -5433,6 +5442,31 @@ private void CompleteStartCountdown(Mission mission, double now)
         short lobby = (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == SideTeamLobby);
         SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs, LobbyPlayerCount = lobby }.Encode() }));
         Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [+ lobby {lobby}] [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
+        // P864d — native's SendLobbyMissionInfo ends with "tell them about all of
+        // the players": one PLAYERINFO(10) per ship in the mission, sent to the
+        // joining peer while it is still on SIDE_TEAMLOBBY (fsmission.cpp:3954-3967).
+        // That is the wire path the native client builds its side/player tables
+        // from (appmsg.cpp:2217-2294 → AddPlayerToMission/Side), so a client on the
+        // team screen knows WHO is in the lobby (and on which side) — not just a
+        // count. This port defers a joiner's ship to the side-select stage (P281),
+        // so it is not yet in _peerShips and never receives the mission-group
+        // PLAYERINFO traffic; send the same per-ship burst here through the same
+        // one-shot _playerInfoSent latch the join burst uses (so the later
+        // CompleteJoinAndLaunch burst never duplicates it).
+        var lobbyInfos = new List<byte[]>();
+        foreach (var (peer, player) in _peerShips)
+            if (ReferenceEquals(player.Ship.Mission, mission))
+                AppendPlayerInfoForRecipient(to, player.Ship, player.Ship.SideId ?? SideTeamLobby,
+                    _peerNames.TryGetValue(peer, out var playerName) ? playerName : "", lobbyInfos);
+        foreach (var sector in mission.Sectors)
+            foreach (var model in sector.Models)
+                if (model is Ship { IsNpc: true } npc)
+                    AppendPlayerInfoForRecipient(to, npc, npc.SideId ?? SideTeamLobby, null, lobbyInfos);
+        if (lobbyInfos.Count > 0)
+        {
+            SendPeer(to, FedPacket.Pack(lobbyInfos));
+            Console.WriteLine($"[sideselect] -> peer {to} PLAYERINFO(10) x{lobbyInfos.Count} (mission player list, native SendLobbyMissionInfo loop)");
+        }
         // P820c — seed the joining peer with each side's CURRENT squad via native
         // SET_TEAM_INFO(15) (the squad relay native sends on every squad/name
         // change, fsmission.cpp:1580-1590), so a late-arriving peer's team pane

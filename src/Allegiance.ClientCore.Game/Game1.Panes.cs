@@ -1502,15 +1502,44 @@ public sealed partial class Game1
     }
 
     /// <summary>Render the post-connect side-select overlay from the current
-    /// SIDE_ROSTER snapshot and the highlighted roster index.</summary>
+    /// SIDE_ROSTER snapshot and the highlighted roster index.
+    /// <para>P864d — the same overlay is the port's TEAM SCREEN once the local
+    /// player is in the mission: it now also lists the team lobby's members by
+    /// name (native lists the lobby side as a team row plus its members in the
+    /// player list, <c>WinTrek/teamscreen.cpp:1330-1335,380,470-510</c>). The
+    /// names come from the normal player-info traffic
+    /// (<see cref="ClientWorld.TeamLobbyMembers"/>), the count from the
+    /// SIDE_ROSTER snapshot (P864b).</para></summary>
     private void DrawSideSelect()
     {
         IReadOnlyList<Rendering.SideSelectLayout.Row> rows;
         lock (_session.Gate)
+        {
+            var world = _session.World;
+            var lobby = world.TeamLobbyMembers()
+                .Select(m => new Rendering.SideSelectLayout.LobbyMember(
+                    m.Name, m.IsSelf, m.RequestingSideId is not null))
+                .ToArray();
+            string ownName = "you";
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+                && !string.IsNullOrWhiteSpace(own.CharacterName))
+                ownName = own.CharacterName!;
+            bool ownRequestPending = world.MyShipId is { } mine
+                && world.PendingPositionRequests.Any(r => r.ShipId == mine);
+            // P864d — per-team counts are the client's running per-side human
+            // counts (native MissionInfo::SideNumPlayers), not the join-time
+            // SIDE_ROSTER snapshot; a peer with no player table yet falls back to
+            // the roster record's count.
+            int LivePlayerCount(short side) => world.SideHumanCount(side)
+                ?? world.SideRoster?.Sides.FirstOrDefault(s => s.SideId == side).PlayerCount ?? 0;
             rows = Rendering.SideSelectLayout.Build(
-                _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
-                _session.World.IsSideActive, SideCivName).Concat(Rendering.LobbyStatusLayout.Build(_session.World)
+                world.SideRoster, _sideSelectIndex, world.AmMissionOwner,
+                world.IsSideActive, SideCivName, lobby,
+                world.MySideId == ClientWorld.SideTeamLobby, ownName, ownRequestPending,
+                LivePlayerCount)
+                .Concat(Rendering.LobbyStatusLayout.Build(world)
                 .Select(text => new Rendering.SideSelectLayout.Row(Rendering.SideSelectLayout.Kind.Info, text))).ToArray();
+        }
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 
@@ -1654,6 +1683,49 @@ public sealed partial class Game1
         bool o = ActionDown(ks, "ForceReady") || nav.X;
         if (o && !_rcOWasDown) ToggleTeamReady();
         _rcOWasDown = o;
+
+        // P864d — native's TEAM SCREEN buttons for the other two privileged
+        // messages (both on the team lobby, both gated on the pre-start stage):
+        // the mission owner's Randomize (teamscreen.cpp:1554-1573 button row;
+        // FM_C_RANDOMIZE_TEAMS, FedSrv.CPP:6964-6985) and the team leader's
+        // Accept of a lobby player's pending join request
+        // (teamscreen.cpp:2998-3013 -> FM_C_POSITIONACK accepted).
+        bool rnd = ActionDown(ks, "RandomizeTeams");
+        if (rnd && !_rcRWasDown)
+        {
+            bool canRandomize;
+            lock (_session.Gate)
+                canRandomize = world.AmMissionOwner
+                    && world.Mission is { Stage: (int)MissionStage.NotStarted };
+            if (canRandomize)
+            {
+                Console.WriteLine("[monogame] ready-check: mission owner -> RANDOMIZE_TEAMS");
+                _session.SendRandomizeTeams();
+            }
+        }
+        _rcRWasDown = rnd;
+
+        bool acceptRequest = ActionDown(ks, "AcceptJoinRequest");
+        if (acceptRequest && !_rcAWasDown)
+        {
+            short? requestShip = null;
+            short acceptSide = -1;
+            lock (_session.Gate)
+            {
+                if (world.IsTeamLeader && world.MySideId is { } ownSide)
+                {
+                    acceptSide = ownSide;
+                    foreach (var request in world.PendingPositionRequests)
+                        if (request.SideId == ownSide) { requestShip = request.ShipId; break; }
+                }
+            }
+            if (requestShip is { } ship)
+            {
+                Console.WriteLine($"[monogame] ready-check: leader accepts lobby request ship {ship} into side {acceptSide} (POSITIONACK)");
+                _session.SendPositionAck(ship, acceptSide, accepted: true);
+            }
+        }
+        _rcAWasDown = acceptRequest;
 
         // P806 — the team lobby's chat pane (native TeamScreen hosts the same
         // ChatListPane, teamscreen.cpp:1214/1455): TAB steps the chat-target
@@ -2018,8 +2090,18 @@ public sealed partial class Game1
         var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _session.Gate, _ownReady);
         bool forced;
         bool canForce;
+        // P864d — the team lobby's player pool (native's "Not on a team" team row
+        // with its member list, WinTrek/teamscreen.cpp:1330-1335,378-386,470-510)
+        // and whether this viewer is a team leader who can accept one of the
+        // pending requests it lists (native's Accept button, :2998-3013).
+        IReadOnlyList<Rendering.ReadyCheckLayout.LobbyRow> lobby;
+        bool canAcceptLobbyRequest;
+        bool amOwner;
         lock (_session.Gate)
         {
+            (lobby, var firstOwnSideRequest) = Rendering.ReadyCheckRoster.GatherLobby(world);
+            canAcceptLobbyRequest = firstOwnSideRequest is not null;
+            amOwner = world.AmMissionOwner;
             forced = world.MySideId is { } sideId
                 && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
             canForce = State.LobbyScreenState.ToggleTeamReady(world, _ownReady) is not null;
@@ -2038,7 +2120,8 @@ public sealed partial class Game1
         }
 
         var rows = Rendering.ReadyCheckLayout.Build(
-            sideName, _ownReady, players, agg, forced, canForce, launchCountdown);
+            sideName, _ownReady, players, agg, forced, canForce, launchCountdown,
+            lobby, canAcceptLobbyRequest, amOwner);
         string civIconStem;
         lock (_session.Gate)
         {

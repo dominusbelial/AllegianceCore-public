@@ -48,6 +48,13 @@ public static class ReadyCheckLayout
     /// player (styled distinctly).</summary>
     public readonly record struct PlayerRow(string Name, bool Ready, bool IsSelf);
 
+    /// <summary>P864d — one player in the mission's team lobby ("Not on a team",
+    /// native's lobby team row: <c>WinTrek/teamscreen.cpp:378-386</c> for the
+    /// count, <c>:470-510</c> for the per-player row). <see cref="RequestingSideName"/>
+    /// is the side this player asked to join and is still waiting for (native's
+    /// player-row status "Requesting", <c>:495-497</c>), or null when idle.</summary>
+    public readonly record struct LobbyRow(string Name, bool IsSelf, string? RequestingSideName);
+
     /// <summary>Build the READY-CHECK rows. <paramref name="sideDisplayName"/>
     /// is the side's name (from the SIDE_ROSTER entry matching MySideId, or a
     /// "SIDE &lt;id&gt;" fallback); <paramref name="ownReady"/> is the local
@@ -71,13 +78,23 @@ public static class ReadyCheckLayout
         bool? sideAggregateReady,
         bool forcedReady,
         bool canForceTeamReady,
-        int? launchCountdown = null)
+        int? launchCountdown = null,
+        IReadOnlyList<LobbyRow>? lobby = null,
+        bool canAcceptLobbyRequest = false,
+        bool amMissionOwner = false)
     {
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "READY CHECK"));
         rows.Add(Row.Of(Kind.Hint, "Y TOGGLE READY"));
         if (canForceTeamReady) rows.Add(Row.Of(Kind.Hint, "O TOGGLE TEAM READY"));
+        // P864d — the team screen's other owner/leader controls: native's
+        // Randomize button (mission owner, teamscreen.cpp:1554-1573 button row +
+        // OnButtonRandomize → FM_C_RANDOMIZE_TEAMS) and the team leader's Accept
+        // button for a pending join request (teamscreen.cpp:2998-3013 →
+        // FM_C_POSITIONACK accepted).
+        if (amMissionOwner) rows.Add(Row.Of(Kind.Hint, "R  RANDOMIZE TEAMS"));
+        if (canAcceptLobbyRequest) rows.Add(Row.Of(Kind.Hint, "A  ACCEPT LOBBY REQUEST"));
 
         // P522 — the countdown hold: while the mission is STAGE_STARTING the
         // ship is held (not flying), so surface the launch countdown loudly.
@@ -110,6 +127,27 @@ public static class ReadyCheckLayout
                 rows.Add(new Row(Kind.Item,
                     $"{tag} {AsciiSafe(p.Name),-16}{suffix}",
                     Highlight: p.IsSelf));
+            }
+        }
+
+        // P864d — native's TEAM LOBBY team row on the team screen: the lobby side
+        // sits at the bottom of the team list (teamscreen.cpp:1330-1335) and its
+        // player list is drawn by name with each player's status
+        // (:378-386 count, :470-510 rows). Shown to EVERY viewer (the lobby's
+        // members are mission members), which is exactly how a team leader sees
+        // who is waiting to be accepted (:2998-3013).
+        if (lobby is { Count: > 0 })
+        {
+            rows.Add(Row.Blank());
+            rows.Add(Row.Of(Kind.Info, $"NOT ON A TEAM  (players: {lobby.Count})"));
+            foreach (var m in lobby)
+            {
+                string status = m.RequestingSideName is { Length: > 0 } wanted
+                    ? "Requesting " + AsciiSafe(wanted)
+                    : "Not Playing";
+                string suffix = m.IsSelf ? "  (you)" : "";
+                rows.Add(new Row(Kind.Muted,
+                    $"    {AsciiSafe(m.Name),-16}  {status}{suffix}"));
             }
         }
 

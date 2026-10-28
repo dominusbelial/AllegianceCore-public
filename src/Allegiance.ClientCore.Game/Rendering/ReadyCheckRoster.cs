@@ -101,4 +101,44 @@ public static class ReadyCheckRoster
 
         return (sideName, players, agg);
     }
+
+    /// <summary>P864d — the team lobby's member rows for the TEAM SCREEN plus the
+    /// first pending join request on the LOCAL player's own side (the request the
+    /// leader's Accept button answers, native <c>OnButtonAccept</c>,
+    /// <c>WinTrek/teamscreen.cpp:2998-3013</c>). Call under the session gate, like
+    /// <see cref="Gather"/>: the network thread mutates
+    /// <c>world.Ships</c>/<c>PendingPositionRequests</c> concurrently. Names come
+    /// from the normal player-info traffic (<see cref="ClientWorld.TeamLobbyMembers"/>);
+    /// the requested side's NAME is resolved from the same roster the rest of the
+    /// overlay uses (native's player-row status "Requesting",
+    /// <c>teamscreen.cpp:495-497</c>).</summary>
+    public static (IReadOnlyList<ReadyCheckLayout.LobbyRow> Rows, short? FirstOwnSideRequest)
+        GatherLobby(ClientWorld world)
+    {
+        var rows = new List<ReadyCheckLayout.LobbyRow>();
+        short? firstRequest = null;
+        short mySide = world.MySideId ?? -1;
+        bool leader = world.IsTeamLeader;
+        foreach (var member in world.TeamLobbyMembers())
+        {
+            string? wanted = member.RequestingSideId is { } side ? SideNameOf(world, side) : null;
+            rows.Add(new ReadyCheckLayout.LobbyRow(member.Name, member.IsSelf, wanted));
+            if (leader && member.RequestingSideId == mySide && firstRequest is null)
+                firstRequest = member.ShipId;
+        }
+        return (rows, firstRequest);
+    }
+
+    /// <summary>P864d — a side's live display name for the lobby list: the
+    /// server's SET_TEAM_INFO rename when there is one (P853,
+    /// <see cref="ClientWorld.SideNameOverride"/>), else the SIDE_ROSTER
+    /// creation-time name, else the native <c>SIDE &lt;id&gt;</c> fallback.</summary>
+    public static string SideNameOf(ClientWorld world, short sideId)
+    {
+        if (sideId >= 0 && world.SideNameOverride(sideId) is { } renamed) return renamed;
+        if (world.SideRoster is { } roster)
+            foreach (var side in roster.Sides)
+                if (side.SideId == sideId && side.Name.Length > 0) return side.Name;
+        return "SIDE " + sideId;
+    }
 }
