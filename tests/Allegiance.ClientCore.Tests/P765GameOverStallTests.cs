@@ -111,8 +111,15 @@ public sealed class P765GameOverStallTests(ITestOutputHelper output)
             Assert.True(fresh.Sides.Count == 2, "fresh mission assembles both sides");
 
             // Every peer receives GAME_OVER, then is migrated into the fresh mission.
+            // NT-2: the id comparison must require a LIVE new id — a peer mid-migration
+            // briefly has MyShipId CLEARED (its old ship was removed before the fresh
+            // assignment arrives), and `!= oldIds[i]` is true for the cleared value, so
+            // the pump could exit while a peer still had no ship (Single() then failed
+            // with "Sequence contains no matching element" — the nightly's flake).
             Pump(server, () =>
-                conns.All(c => Read(c, () => c.World.MyShipId != oldIds[conns.IndexOf(c)]
+                conns.All(c => Read(c, () => c.World.MyShipId is { } newId
+                    && newId != oldIds[conns.IndexOf(c)]
+                    && server.Ships.Any(s => s.Ship.Id == newId)
                     && c.World.GameOverResult is not null))
                 && PendingRotationsEmpty(server));
 

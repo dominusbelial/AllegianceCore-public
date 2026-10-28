@@ -296,9 +296,40 @@ internal sealed partial class BotManager
             return true;
         }
         bot.SupportRefitting = false;
+        HashSet<short> supportIds;
+        lock (_gate)
+            supportIds = _bots.Where(b => b.Side == bot.Side && IsSupport(b) && !b.IsPod)
+                .Select(b => b.ShipId).ToHashSet();
         // Accepted commander repair owns the named target and route before
         // autonomous support selection (shipIGC.cpp:1936-1939).
-        if (bot.OrderedCommand?.CommandId == OrderChange.CidRepair && DriveCommanderOrder(bot, now)) return true;
+        if (bot.OrderedCommand is { } ordered && ordered.CommandId == OrderChange.CidRepair)
+        {
+            // NT-2 — P791's mutual-ring rule also binds an ORDERED repair: a support
+            // pilot never repairs another support pilot (PickRepairTarget refuses
+            // them at home; the SC2SupportPhase gate counts a held support pilot as
+            // the bug). Drop such an order instead of flying it.
+            if (ordered.TargetType == IgcObjectType.Ship && supportIds.Contains(ordered.TargetId))
+            {
+                bot.OrderedCommand = null;
+                bot.OrderedTargetId = null;
+            }
+            else if (DriveCommanderOrder(bot, now))
+            {
+                // Keep the hold bookkeeping honest on this path — the pick/hold
+                // machinery below never runs here, so the stale AUTONOMOUS hold used
+                // to linger forever (the SC2SupportPhase gate read it as one endless
+                // 198 s hold). A commander repair has no leash in production (the
+                // commander owns the target), so track it like any other hold; the
+                // live-test leash scores autonomous holds only.
+                if (bot.TargetId is { } commanderTarget && bot.SupportHoldTarget != commanderTarget)
+                {
+                    bot.SupportHoldTarget = commanderTarget;
+                    bot.SupportHoldSince = now;
+                    bot.SupportHoldLast = 1f;
+                }
+                return true;
+            }
+        }
         if (!TryCsPose(cs, bot.ShipId, out var pos, out _)) return true;
         short sector = CsSector(cs);
         // P791 — the side's phase drives everything below: opening → the fighter
@@ -315,10 +346,6 @@ internal sealed partial class BotManager
                 finalePushers = activeFinale.Bots.Where(b => b.Side == bot.Side && b.FinaleEscort && !b.IsPod && b.PushContacts > 0)
                     .Select(b => b.ShipId).ToList();
             }
-        HashSet<short> supportIds;
-        lock (_gate)
-            supportIds = _bots.Where(b => b.Side == bot.Side && IsSupport(b) && !b.IsPod)
-                .Select(b => b.ShipId).ToHashSet();
         bool cooldownActive = bot.SupportCooldownTarget >= 0 && now < bot.SupportCooldownUntil;
         RepairTarget? target;
         lock (cs.Gate)

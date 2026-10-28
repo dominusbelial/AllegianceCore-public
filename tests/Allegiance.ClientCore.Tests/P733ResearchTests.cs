@@ -48,6 +48,18 @@ public sealed class P733ResearchTests(ITestOutputHelper output)
             P660NextMatchLiveTests.Pump(server, () => mission.Stage == MissionStage.Started
                 && peers.All(p => P660NextMatchLiveTests.Read(p, () => p.World.ResearchBriefing?.Epoch == mission.ResearchEpoch
                     && p.World.MyShipId is { } id && p.World.Ships.TryGetValue(id, out var me) && me.StationId >= 0)));
+            // NT-2: since P797 (7734a197) a station reaches a client only once its
+            // side has seen it (native fsmission.cpp:4169-4250), and this fixture
+            // has no scouts — so the enemy home station never arrived and
+            // RegisterFinale threw "finale needs an observed enemy home station".
+            // Seed the sides' station visibility directly (what the showcase's
+            // scouts do before the commander registers a finale) and let the
+            // discovery/STATIONS_UPDATE sweeps export it.
+            foreach (var st in mission.Sectors.SelectMany(s => s.StationRuntimes))
+                foreach (var sideId in mission.Sides.Select(s => s.Id))
+                    st.SideVisibility.SetSideVisibility(sideId, true);
+            P660NextMatchLiveTests.Pump(server, () => peers.All(p => P660NextMatchLiveTests.Read(p, () =>
+                p.World.Stations.Values.Any(s => s.SideId >= 0 && s.SideId != p.World.MySideId))));
             var botType = typeof(BotManager).GetNestedType("ActiveBot", BindingFlags.NonPublic)!;
             var bots = peers.Select((peer, i) =>
             {

@@ -2162,7 +2162,7 @@ public sealed partial class Server
                                 told++;
                             }
                         if (told > 0)
-                            Console.WriteLine($"[discover] side {sideId} aleph {warp.Warp.WarpId} '{warp.Warp.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe: one line per newly seen aleph
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[discover] side {sideId} aleph {warp.Warp.WarpId} '{warp.Warp.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe: one line per newly seen aleph (NT-2: gated, was a plain sim-thread write)
                     }
 
                     foreach (var rock in sector.Mineable)
@@ -2178,7 +2178,7 @@ public sealed partial class Server
                                 told++;
                             }
                         if (told > 0)
-                            Console.WriteLine($"[discover] side {sideId} asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                            if (ConsoleLog.Verbose) ConsoleLog.Write($"[discover] side {sideId} asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe (NT-2: gated, was a plain sim-thread write)
                     }
 
                     foreach (var model in sector.Models)
@@ -2196,7 +2196,7 @@ public sealed partial class Server
                                     told++;
                                 }
                             if (told > 0)
-                                Console.WriteLine($"[discover] side {sideId} probe {probe.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                                if (ConsoleLog.Verbose) ConsoleLog.Write($"[discover] side {sideId} probe {probe.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe (NT-2: gated, was a plain sim-thread write)
                         }
                         else if (model is Treasure treasure)
                         {
@@ -2218,7 +2218,7 @@ public sealed partial class Server
                                     told++;
                                 }
                             if (told > 0)
-                                Console.WriteLine($"[discover] side {sideId} treasure {treasure.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                                if (ConsoleLog.Verbose) ConsoleLog.Write($"[discover] side {sideId} treasure {treasure.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe (NT-2: gated, was a plain sim-thread write)
                         }
                     }
                 }
@@ -2631,8 +2631,8 @@ public sealed partial class Server
             var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceStations);
 
-            Console.WriteLine($"[stations] side {sideId} sees {visible.Length} station(s) " +
-                              $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[stations] side {sideId} sees {visible.Length} station(s) " +
+                              $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: was plain Console.WriteLine — a per-cadence sim-thread write bypasses the P619c non-blocking sink (stalled stdout blocked the tick ~57 ms per line, ConsoleVerbosityLiveTests)
         }
     }
 
@@ -2806,8 +2806,8 @@ public sealed partial class Server
             var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceAsteroids);
 
-            Console.WriteLine($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
-                              $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
+                              $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
         }
     }
 
@@ -2887,8 +2887,8 @@ public sealed partial class Server
             var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceProbes);
 
-            Console.WriteLine($"[probes] side {sideId} sees {visible.Length} probe(s) " +
-                              $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[probes] side {sideId} sees {visible.Length} probe(s) " +
+                              $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
         }
     }
 

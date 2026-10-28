@@ -429,7 +429,13 @@ internal sealed partial class BotManager
                     // (ExplorationPlanner.Assign hysteresis).
                     bot.IsExplorer = (chosen.Contains(bot.Name) || recon)
                         && (!complete || raiding || recon)
-                        && (OpeningActive(now) || !complete);
+                        && (OpeningActive(now) || !complete)
+                        // NT-2 — a committed finale escort (P778a) is owned by the
+                        // strike: the escort drive (TryDriveFinaleEscort) runs after
+                        // this in the decision order, so an explorer flag on a
+                        // FinaleEscort bot starves the push (the staged P778a live
+                        // gate lost its pusher to the lane sweeps after P798/P830).
+                        && !bot.FinaleEscort;
                     if (recon)
                     {
                         if (bot.ExploreLane is not null) _laneStarted.Remove(bot.Name);

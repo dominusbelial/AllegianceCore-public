@@ -166,6 +166,17 @@ public sealed class P778ABomberPushLiveTests(ITestOutputHelper output)
             config.Games[0].MapGen = null;
             config.Games[0].Map = "m2xspiderw.igc";   // one hop to the enemy home
             server.Boot(config);
+            // NT-2: since P797 (7734a197) a station reaches a client only once its
+            // side has seen it (native fsmission.cpp:4169-4250); this fixture has
+            // no scouts, so seed the sides' station visibility directly (what the
+            // showcase's scouts discover) before the staged fleet spawns — the
+            // bots' join exports then carry the enemy home station and
+            // spawn_scenario registers the finale synchronously instead of arming
+            // it pending (leaving _finales null and Runs() throwing).
+            var seeded = server.Missions[0];
+            foreach (var st in seeded.Sectors.SelectMany(s => s.StationRuntimes))
+                foreach (var sideId in seeded.Sides.Select(s => s.Id))
+                    st.SideVisibility.SetSideVisibility(sideId, true);
             using var stop = new CancellationTokenSource();
             var simActions = new ConcurrentQueue<Action>();
             var ticker = new Thread(() =>

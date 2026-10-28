@@ -50,6 +50,18 @@ public sealed class SC2NaniteSupportLiveTests(ITestOutputHelper output)
         try
         {
             using var manager = new BotManager("127.0.0.1", server.BoundPort);
+            // NT-2: since P797 (7734a197) a station reaches a bot's world only once its
+            // side has seen it, and BotManager registers a finale only after every side
+            // has OBSERVED an enemy station (map discovery). In this 90-bot staging
+            // fixture the observation never lands (the nightly's [finale-sample] stayed
+            // [] for the whole 20-minute window), so no finale armed, no strike flew,
+            // nothing was damaged and both repair counters stayed 0. Seed the sides'
+            // station visibility (what the showcase's scouts discover) before the fleet
+            // spawns — the join export then carries both home stations and
+            // spawn_scenario registers the finale.
+            foreach (var st in server.Missions[0].Sectors.SelectMany(s => s.StationRuntimes))
+                foreach (var sideId in server.Missions[0].Sides.Select(s => s.Id))
+                    st.SideVisibility.SetSideVisibility(sideId, true);
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
                 """{"preset":"showcase","size_scale":3,"staging":true,"finale_after_minutes":1,"finale_side":"both","finale_min_relaunch_share":0,"finale_min_kills_last_5_minutes":1,"finale_bombers":6}""")!;
             args["target_sector"] = JsonSerializer.SerializeToElement(server.Missions[0].Sectors.First(s => s.Stations.Count == 0).Name);
