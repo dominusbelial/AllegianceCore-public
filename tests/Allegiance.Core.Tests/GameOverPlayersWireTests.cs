@@ -177,11 +177,11 @@ public sealed class GameOverPlayersWireTests
 
     /// <summary>⭐ The P178 elimination path shares the <c>DeclareGameOver</c>
     /// hook, so a win-by-elimination (a side emptying) broadcasts
-    /// GAME_OVER_PLAYERS to the surviving mission peer <b>alongside</b>
-    /// GAME_OVER. The departed player is NOT in the list (this port has no
-    /// m_oldPlayers recently-disconnected tracking — the deliberate
-    /// simplification), so the surviving peer's single message carries exactly
-    /// its own entry.</summary>
+    /// GAME_OVER_PLAYERS to the surviving mission peer <b>alongside</b> GAME_OVER.
+    /// P844/SIM-0527 — the departed player IS now on the roster (native walks
+    /// m_oldPlayers after the connected peers, fsmission.cpp:3123-3135, with
+    /// its cached side id and time played), appended after the surviving
+    /// peer's entry.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Win_by_elimination_broadcasts_game_over_players_to_surviving_peer()
@@ -231,7 +231,12 @@ public sealed class GameOverPlayersWireTests
         Assert.True(a.GameOvers.Count > 0, "GAME_OVER must accompany GAME_OVER_PLAYERS");
 
         var gop = Assert.Single(a.GameOverPlayerBroadcasts);
-        var entry = Assert.Single(gop.Entries);         // only the still-connected peer
+        // P844/SIM-0527 — the roster carries the still-connected peer FIRST
+        // (fsmission.cpp:3108-3121) and the departed player's cached entry
+        // appended (fsmission.cpp:3123-3135), on its original side with its
+        // stamped time played.
+        Assert.Equal(2, gop.Entries.Length);
+        var entry = gop.Entries[0];
         Assert.Equal("Ace", entry.CharacterName);
         Assert.Equal(aceSide, entry.SideId);
         Assert.Equal((short)4, entry.Rank);
@@ -239,8 +244,13 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal((short)1, entry.Rescues);
         Assert.Equal((short)1, entry.Kills);
 
+        var departed = gop.Entries[1];
+        Assert.Equal("Bee", departed.CharacterName);
+        Assert.NotEqual(aceSide, departed.SideId);      // cached OldPlayerInfo.sideID (fsmission.cpp:2636)
+        Assert.True(departed.TimePlayed > 0f, "departed player's stamped time played must pass the roster gate");
+
         Console.WriteLine($"P194-ELIM-LIVE: elimination win -> survivor {entry.CharacterName} (side {entry.SideId}) " +
-                          $"saw GAME_OVER + GAME_OVER_PLAYERS [1 entry], rank {entry.Rank}, score {entry.Score}");
+                          $"+ departed {departed.CharacterName} (side {departed.SideId}) saw GAME_OVER + GAME_OVER_PLAYERS [2 entries], rank {entry.Rank}, score {entry.Score}");
     }
 
     // ── live: conquest (P191) lists EVERY connected player, losing side included ──

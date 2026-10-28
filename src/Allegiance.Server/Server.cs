@@ -61,6 +61,16 @@ public sealed partial class Server : IDisposable
     private readonly Dictionary<(Mission Mission, string Name), PlayerScore> _oldPlayerScores =
         new(OldPlayerKeyComparer.Instance);
 
+    /// <summary>P844/SIM-0527 — the side id each cached old-player score
+    /// belonged to, saved alongside <see cref="_oldPlayerScores"/> in
+    /// <c>ApplyDeparturePaydayAndOldPlayer</c> (native <c>OldPlayerInfo</c>
+    /// carries <c>sideID</c> next to the score object, fsmission.cpp:2608-2615)
+    /// so the game-over roster can seat the departed player on the right team's
+    /// endgame row (fsmission.cpp:3123-3135). Same lifecycle as the score
+    /// cache: consumed on rejoin, cleared on the game-over rotation.</summary>
+    private readonly Dictionary<(Mission Mission, string Name), short> _oldPlayerSideIds =
+        new(OldPlayerKeyComparer.Instance);
+
     /// <summary>P847 — the old-player cache key comparer. Native keys its
     /// <c>m_oldPlayers</c> list purely on the character name with
     /// <c>_stricmp</c> (<c>GetOldPlayerLink</c>, fsmission.cpp:390-398) and

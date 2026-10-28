@@ -52,15 +52,19 @@ public sealed class P730ShowcaseLiveTests(ITestOutputHelper output)
                 Wait(() => manager.ResearchStatus().Any(r => r.Step > 1), "research commander progress");
                 var roster = manager.ActiveBots();
                 short victim;
-                lock (simGate) victim = roster.First(b => b.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase)
-                    && server.Ships.Any(l => l.Ship.Id == b.ShipId && l.Ship.Weapons.Count > 0 && l.Ship.StationId is null)).ShipId;
-                string victimName = roster.Single(b => b.ShipId == victim).Name;
+                // Pick and kill the victim under ONE sim lock: between two locks a
+                // natural fight or a dock could take the fighter first, and the
+                // global Kills/PodsCreated counters below would still advance from
+                // some other death — leaving a 180 s wait for a pod that never comes.
                 lock (simGate)
                 {
+                    victim = roster.First(b => b.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase)
+                        && server.Ships.Any(l => l.Ship.Id == b.ShipId && l.Ship.Weapons.Count > 0 && l.Ship.StationId is null && !l.Ship.Dead)).ShipId;
                     var own = server.Ships.Single(l => l.Ship.Id == victim).Ship;
                     var enemy = server.Ships.First(l => l.Ship.SideId != own.SideId && l.Ship.Weapons.Count > 0).Ship;
-                    own.ReceiveDamage(0, 1_000_000, server.SimNow, own.Position, own.Position, enemy);
+                    Assert.Equal(DamageResult.Killed, own.ReceiveDamage(0, 1_000_000, server.SimNow, own.Position, own.Position, enemy));
                 }
+                string victimName = roster.Single(b => b.ShipId == victim).Name;
                 Wait(() => manager.GetCombatSummary().Kills > before.Kills && manager.GetCombatSummary().PodsCreated > before.PodsCreated,
                     "controlled death delivered over the real wire");
                 Wait(() => manager.GetCombatSummary().Bots.Any(b => b.Name == victimName && b.IsPod), "lifepod observed by its controller");

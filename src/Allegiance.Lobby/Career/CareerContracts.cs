@@ -49,7 +49,19 @@ public static class CareerContracts
         bool Loss,
         bool CommanderWin,
         bool CommanderLoss,
-        bool ScoresCount);
+        bool ScoresCount,
+        // P844/SIM-0526 — the remaining native CQPlayerResults columns
+        // (fsmission.cpp:2969-2986), optional on the wire; the career store
+        // currently persists the core subset and ignores these until its
+        // schema grows columns for them.
+        int Ejections = 0,
+        int Rescues = 0,
+        int Flags = 0,
+        int Artifacts = 0,
+        int TechsRecovered = 0,
+        int WarpsSpotted = 0,
+        int AsteroidsSpotted = 0,
+        float TimePlayedSeconds = 0f);
 
     /// <summary>Whole-match report: one <see cref="MatchResultEntry"/> per
     /// verified player who sat out that match. <c>MatchId</c> is the server's
@@ -62,7 +74,50 @@ public static class CareerContracts
     /// fsmission.cpp:3421-3427); absent for non-squad or non-qualifying games.</summary>
     public sealed record MatchReport(string MatchId, IReadOnlyList<MatchResultEntry> Players,
         string? ServerId = null, string? ServerSecret = null,
-        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] SquadGameResult? SquadGame = null);
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] SquadGameResult? SquadGame = null,
+        // P844/SIM-0524/0525 — the game-level row (native CQGameResults,
+        // fsmission.cpp:2757-2836) and per-side rows (native CQTeamResults,
+        // fsmission.cpp:2845-2915); absent (null) from older servers.
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] GameResult? Game = null,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<TeamResult>? Teams = null);
+
+    /// <summary>P844/SIM-0524 — one finished match's game-level result row
+    /// (server mirror of the wire shape; see Allegiance.Server's
+    /// LobbyGameResult). Persisted alongside the match id once the career
+    /// store grows a games table; currently carried for wire compatibility.</summary>
+    public sealed record GameResult(
+        string? GameName,
+        short WinnerSideId,
+        string? WinnerName,
+        float DurationSeconds,
+        bool GoalConquest,
+        bool GoalCountdown,
+        bool GoalTeamKills,
+        bool GoalProsperity,
+        bool GoalArtifacts,
+        bool GoalFlags,
+        short GoalConquestPercentage,
+        float GoalCountdownLength,
+        short GoalTeamKillsCount,
+        float GoalProsperityMoney,
+        short GoalArtifactsCount,
+        short GoalFlagsCount);
+
+    /// <summary>P844/SIM-0525 — one finished side's outcome row (server mirror
+    /// of the wire shape; see Allegiance.Server's LobbyTeamResult).</summary>
+    public sealed record TeamResult(
+        short TeamNumber,
+        string Name,
+        string? Faction,
+        short Kills,
+        short BaseKills,
+        short BaseCaptures,
+        short Deaths,
+        short Ejections,
+        short Flags,
+        short Artifacts,
+        byte ConquestPercent,
+        byte TerritoryCount);
 
     /// <summary>P855/SIM-0765 — one finished squad game's standings facts: the
     /// winning side's squad id (native <c>squadIDWon</c>, may be NA/null when

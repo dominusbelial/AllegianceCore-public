@@ -372,7 +372,20 @@ public sealed record LobbyMatchResultEntry(
     bool Loss,
     bool CommanderWin,
     bool CommanderLoss,
-    bool ScoresCount);
+    bool ScoresCount,
+    // P844/SIM-0526 — the remaining native CQPlayerResults columns
+    // (fsmission.cpp:2969-2986) the report previously dropped. Optional
+    // (default zero) so existing constructors keep compiling; the lobby binds
+    // the payload case-insensitively and ignores fields its career model does
+    // not store yet.
+    int Ejections = 0,
+    int Rescues = 0,
+    int Flags = 0,
+    int Artifacts = 0,
+    int TechsRecovered = 0,
+    int WarpsSpotted = 0,
+    int AsteroidsSpotted = 0,
+    float TimePlayedSeconds = 0f);
 
 /// <summary>A finished match's results for one server (see
 /// <see cref="LobbyMatchResultEntry"/>). <see cref="SquadGame"/> — P855 —
@@ -385,7 +398,62 @@ public sealed record LobbyMatchReport(
     IReadOnlyList<LobbyMatchResultEntry> Players,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerId = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerSecret = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] LobbySquadGameResult? SquadGame = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] LobbySquadGameResult? SquadGame = null,
+    // P844/SIM-0524/0525 — the game-level row and the per-side rows of the
+    // finished match (native RecordGameResults/RecordTeamResults). Null when
+    // the mission state needed for them is unavailable.
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] LobbyGameResult? Game = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<LobbyTeamResult>? Teams = null);
+
+/// <summary>P844/SIM-0524 — the finished match's game-level result row: the
+/// port of native's <c>CQGameResults</c> query payload
+/// (<c>CFSMission::RecordGameResults</c>, FedSrv/fsmission.cpp:2757-2836) —
+/// game name, winner (side id or NA on a draw + name), duration, and the six
+/// goal switches with their configured goal values (conquest percentage,
+/// countdown length, team kills, prosperity money, artifacts, flags).
+/// Native also posts the same facts plus server/core/reason as a JSON blob
+/// to <c>szGameStatsUpdateUrl</c> when set (fsmission.cpp:2810-2818) — that
+/// Steam-era export URL is n/a here; the lobby report is the persistence.</summary>
+public sealed record LobbyGameResult(
+    string? GameName,
+    short WinnerSideId,
+    string? WinnerName,
+    float DurationSeconds,
+    bool GoalConquest,
+    bool GoalCountdown,
+    bool GoalTeamKills,
+    bool GoalProsperity,
+    bool GoalArtifacts,
+    bool GoalFlags,
+    short GoalConquestPercentage,
+    float GoalCountdownLength,
+    short GoalTeamKillsCount,
+    float GoalProsperityMoney,
+    short GoalArtifactsCount,
+    short GoalFlagsCount);
+
+/// <summary>P844/SIM-0525 — one finished side's outcome row: the port of
+/// native's <c>CQTeamResults</c> query payload
+/// (<c>CFSMission::RecordTeamResults</c>, FedSrv/fsmission.cpp:2845-2915) —
+/// team number, name, civilization (name; native posts the civ id), the
+/// team kill/death/ejection/base counters, flags and artifacts, and the
+/// conquest/territory standings. Native's tech-tree mask, prosperity
+/// percentages and <c>TimeEndured</c> have no port-side source yet (the side
+/// model does not track them) and are omitted — see
+/// docs/reports/P844_CERTIFY.md.</summary>
+public sealed record LobbyTeamResult(
+    short TeamNumber,
+    string Name,
+    string? Faction,
+    short Kills,
+    short BaseKills,
+    short BaseCaptures,
+    short Deaths,
+    short Ejections,
+    short Flags,
+    short Artifacts,
+    byte ConquestPercent,
+    byte TerritoryCount);
 
 /// <summary>P855/SIM-0765 — the server's mirror of the lobby contract's
 /// <c>SquadGameResult</c>: the winning side's squad id (native

@@ -69,6 +69,13 @@ public sealed partial class Server
         if (mission.Stage == MissionStage.NotStarted)
             return;
 
+        // P844/SIM-0533 — native's AllowEmptyTeams gate (fsmission.cpp:3808-3811,
+        // KGJV #62): don't end the game during STAGE_STARTING when empty teams
+        // are allowed — sides are expected to sit empty before the start, so a
+        // tally that would crown the only populated side must not fire.
+        if (mission.Stage == MissionStage.Starting && mission.AllowEmptyTeams)
+            return;
+
         // P388 — debug mode is an UNATTENDED autonomous test arena: zero
         // players is the designed steady state (P379/P381/P382/P387). When it
         // fires, the empty-lobby population check below would end the mission
@@ -105,7 +112,18 @@ public sealed partial class Server
         playerSideIds.RemoveWhere(id => mission.Sides.FirstOrDefault(s => s.Id == id) is not { Active: true });
 
         if (playerSideIds.Count > 1)
-            return;                                  // ≥2 sides alive — game continues
+        {
+            // P844/SIM-0533 — native's allies override (fsmission.cpp:3820-3856,
+            // Imago ALLY 7/17/09): the tally found several sides with players,
+            // but when every ACTIVE side is one alliance group the game is over
+            // and the alliance wins — the pre-fix code just returned and the
+            // allied sides played on forever.
+            var allyWinner = AllAlliedWinner(mission);
+            if (allyWinner is null)
+                return;                              // ≥2 un-allied sides alive — game continues
+            DeclareGameOver(mission, allyWinner.Id, AlliedWinnerReason(mission, allyWinner));
+            return;
+        }
 
         // Exactly one side with players → it wins; zero → draw.
         short winnerId = GameOver.NA;
@@ -114,13 +132,52 @@ public sealed partial class Server
         {
             winnerId = playerSideIds.First();
             var winnerSide = mission.Sides.FirstOrDefault(s => s.Id == winnerId);
-            string winnerName = winnerSide?.Name ?? $"side{winnerId}";
-            reason = $"{winnerName} won by outlasting all other sides.";
+            // Native names every side of the winner's alliance in the reason
+            // whenever the winner is allied (fsmission.cpp:5396-5412), even when
+            // the override did not fire — P852's AlliedWinnerReason.
+            reason = winnerSide is not null
+                ? AlliedWinnerReason(mission, winnerSide)
+                : $"side{winnerId} won by outlasting all other sides.";
         }
 
         // Decide the outcome first so the Stage==Over gates are live for any
         // subsequent gameplay message before we broadcast the end.
         DeclareGameOver(mission, winnerId, reason);
+    }
+
+    /// <summary>P844/SIM-0533 — native's allies override for the
+    /// win-by-inactive-sides family (<c>fsmission.cpp:3820-3856</c>, the tail of
+    /// <c>CheckForVictoryByInactiveSides</c>; Imago ALLY 7/17/09): when every
+    /// <b>active</b> side of the mission sits in ONE alliance group, the
+    /// alliance wins the game even though the one-side-with-players tally
+    /// found several survivors. Native's double loop keeps <c>bAllAllies</c>
+    /// unless some ordered pair of distinct active sides fails
+    /// <c>IsideIGC::AlliedSides</c> (<c>Igc/igc.h:4297-4305</c>: same side, or
+    /// equal non-NA alliance ids — the port's <see cref="Side.AllyGroup"/>);
+    /// the winner is a member of that group (native picks the last side its
+    /// walk visited — the reason lists every group member, so the pick is
+    /// immaterial). Returns null when the active sides are not one alliance
+    /// (or there are none). Internal for the P844 certification tests.</summary>
+    internal static Side? AllAlliedWinner(Mission mission)
+    {
+        foreach (var side in mission.Sides)
+            if (side.Active && AllActiveSidesAllied(mission, side))
+                return side;
+        return null;
+    }
+
+    /// <summary>P844/SIM-0533 — the override's pairwise test: true when
+    /// <paramref name="winner"/> carries an alliance group
+    /// (<c>GetAllies() != NA</c>) and every <b>active</b> side shares it
+    /// (fsmission.cpp:3824-3841 active-side pairs). Internal for the P844
+    /// certification tests.</summary>
+    internal static bool AllActiveSidesAllied(Mission mission, Side winner)
+    {
+        if (winner.AllyGroup is not { } group) return false;   // :5397 gate
+        foreach (var side in mission.Sides)
+            if (side.Active && side.AllyGroup != group)        // :3824-3841 active-side pairs
+                return false;
+        return true;
     }
 
     /// <summary>
@@ -355,6 +412,12 @@ public sealed partial class Server
         if (mission.Stage == MissionStage.Over)
             return;                                   // idempotent: already decided
 
+        // P844/SIM-0533 — native's AllowEmptyTeams gate (fsmission.cpp:3808-3811):
+        // the same CheckForVictoryByInactiveSides body serves the deactivation
+        // call site, so a Starting mission with empty teams allowed never ends here.
+        if (mission.Stage == MissionStage.Starting && mission.AllowEmptyTeams)
+            return;
+
         bool debug = _config.LiveSettings?.DebugMode == true;
 
         List<Side> alive;
@@ -374,13 +437,24 @@ public sealed partial class Server
         }
 
         if (alive.Count > 1)
-            return;                                   // ≥2 sides alive — game continues
+        {
+            // P844/SIM-0533 — native's allies override (fsmission.cpp:3820-3856):
+            // several sides still alive, but if every ACTIVE side is one
+            // alliance group the game is over and the alliance wins.
+            var allyWinner = AllAlliedWinner(mission);
+            if (allyWinner is null)
+                return;                               // ≥2 un-allied sides alive — game continues
+            DeclareGameOver(mission, allyWinner.Id, AlliedWinnerReason(mission, allyWinner));
+            return;
+        }
 
         short winnerId = GameOver.NA;
         string reason = "All sides were destroyed";
         if (alive.Count == 1)
         {
             winnerId = alive[0].Id;
+            // Native names every side of the winner's alliance in the reason
+            // whenever the winner is allied (fsmission.cpp:5396-5412) — P852.
             reason = AlliedWinnerReason(mission, alive[0]);
         }
         DeclareGameOver(mission, winnerId, reason);
@@ -582,6 +656,8 @@ public sealed partial class Server
         // fresh).
         foreach (var k in _oldPlayerScores.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
             _oldPlayerScores.Remove(k);
+        foreach (var k in _oldPlayerSideIds.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
+            _oldPlayerSideIds.Remove(k);
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
@@ -1247,8 +1323,56 @@ public sealed partial class Server
                 BaseKills: score.BaseKills, BaseCaptures: score.BaseCaptures,
                 Minutes: (int)(score.TimePlayed / 60.0),
                 Win: score.Win, Loss: winnerId != GameOver.NA && sid != winnerId,
-                CommanderWin: false, CommanderLoss: false, ScoresCount: true));
+                CommanderWin: false, CommanderLoss: false, ScoresCount: true,
+                // P844/SIM-0526 — the remaining native CQPlayerResults columns
+                // (fsmission.cpp:2969-2986): ejections, rescues, flags,
+                // artifacts, techs recovered, alephs/asteroids spotted and the
+                // exact time played (native nTimePlayed).
+                Ejections: score.Ejections, Rescues: score.Rescues,
+                Flags: score.Flags, Artifacts: score.Artifacts,
+                TechsRecovered: score.TechsRecovered,
+                WarpsSpotted: score.WarpsSpotted, AsteroidsSpotted: score.AsteroidsSpotted,
+                TimePlayedSeconds: score.TimePlayed));
         }
+
+        // P844/SIM-0524 — the game-level row (native CQGameResults,
+        // fsmission.cpp:2768-2790): game name, winner, duration, and the goal
+        // switches + values. Duration anchors on the started transition
+        // (native nDuration = GetGameDuration() = g.timeNow - timeStart,
+        // fsmission.cpp:3175); a mission that never started reports 0.
+        int gameIdx = _missions.IndexOf(mission);
+        var winnerSide = mission.Sides.FirstOrDefault(s => s.Id == winnerId);
+        float duration = mission.CountdownStart > 0
+            ? (float)Math.Max(0.0, mission.LastUpdate - mission.CountdownStart)
+            : 0f;
+        var game = new LobbyGameResult(
+            GameName: gameIdx >= 0 ? _config.Games[gameIdx].Name : null,
+            WinnerSideId: winnerId,
+            WinnerName: winnerSide?.Name,
+            DurationSeconds: duration,
+            GoalConquest: mission.ConquestEnabled,
+            GoalCountdown: mission.Goals.IsCountdownGame,
+            GoalTeamKills: mission.KillsEnabled,
+            GoalProsperity: mission.ProsperityEnabled,
+            GoalArtifacts: mission.ArtifactEnabled,
+            GoalFlags: mission.FlagsEnabled,
+            GoalConquestPercentage: mission.ConquestWinThreshold,
+            GoalCountdownLength: mission.Goals.GameLengthSeconds,
+            GoalTeamKillsCount: mission.KillsWinGoal,
+            GoalProsperityMoney: mission.Goals.TeamMoney,
+            GoalArtifactsCount: mission.ArtifactWinGoal,
+            GoalFlagsCount: mission.FlagsWinGoal);
+
+        // P844/SIM-0525 — the per-side rows (native RecordTeamResults, walked
+        // for every side of the mission, fsmission.cpp:2804-2821).
+        var teams = mission.Sides.Select(s => new LobbyTeamResult(
+            TeamNumber: s.Id,
+            Name: s.Name ?? $"side{s.Id}",
+            Faction: s.Civilization.Name,
+            Kills: s.Kills, BaseKills: s.BaseKills, BaseCaptures: s.BaseCaptures,
+            Deaths: s.Deaths, Ejections: s.Ejections,
+            Flags: s.Flags, Artifacts: s.Artifacts,
+            ConquestPercent: s.ConquestPercent, TerritoryCount: s.TerritoryCount)).ToList();
 
         // P855/SIM-0765 — the native squad-game gate, verbatim
         // (fsmission.cpp:3421-3427): a squad game whose scores count, with a
@@ -1275,15 +1399,18 @@ public sealed partial class Server
         if (entries.Count == 0 && squadGame is null) return;
         Console.WriteLine($"[lobby] career report: {entries.Count} verified player(s), match {matchId}"
                           + (squadGame is null ? "" : $", squad game: winner {(squadGame.WinnerSquadId ?? "NA")} vs {squadGame.LoserSquadIds.Count} loser squad(s)"));
-        _ = _heartbeat.ReportResultsAsync(new LobbyMatchReport(matchId, entries, SquadGame: squadGame));
+        _ = _heartbeat.ReportResultsAsync(new LobbyMatchReport(matchId, entries, SquadGame: squadGame, Game: game, Teams: teams));
     }
 
     /// <summary>Build the per-player endgame roster for a mission (the port's
     /// stand-in for native's per-player <c>GAME_OVER_PLAYERS</c> list inside
     /// <c>QueueGameoverMessage</c>, fsmission.cpp:3094-3141): one
     /// <see cref="GameOverPlayerEntry"/> per currently-connected peer on a real
-    /// side of the mission, in <c>_peerShips</c> order. Shared by the full
-    /// whole-mission game-over (<see cref="EncodeGameOverResult"/>) and the
+    /// side of the mission, in <c>_peerShips</c> order, then every departed
+    /// player's cached score appended after (P844/SIM-0527 — native walks
+    /// <c>m_oldPlayers</c> second, fsmission.cpp:3123-3135, with the
+    /// <c>GetTimePlayed() != 0.0f</c> and non-team-lobby gates). Shared by the
+    /// full whole-mission game-over (<see cref="EncodeGameOverResult"/>) and the
     /// P455b side-only game-over (<see cref="SendSideOnlyGameOver"/>), whose
     /// only difference is the recipient set — native builds the SAME full player
     /// list in both cases (fsmission.cpp:3115-3141), addressing it to whoever
@@ -1298,6 +1425,17 @@ public sealed partial class Server
                 continue;                              // scope to THIS mission
             if (live.Ship.SideId is not { } sid)
                 continue;                              // no real side → the team-lobby analogue
+            // P844/SIM-0527 — native's roster gate (fsmission.cpp:3118):
+            // <c>ppso->GetTimePlayed() > 0.0f</c> — a player who never flew is
+            // not on the endgame roster. The port's collapsed Connect/
+            // Disconnect accounting sets TimePlayed at score-finalize time, so
+            // the side-only path (which runs before any finalize) falls back to
+            // the seat-time delta — the same quantity the finalize writes.
+            float played = live.PlayerScore.TimePlayed;
+            if (played <= 0f)
+                played = (float)Math.Max(0.0, _simNow - live.ConnectSimTime);
+            if (played <= 0f)
+                continue;
             string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
             entries.Add(new GameOverPlayerEntry(
                 CharacterName: name,
@@ -1313,7 +1451,37 @@ public sealed partial class Server
                 Artifacts: (short)Math.Clamp(live.PlayerScore.Artifacts, short.MinValue, short.MaxValue),
                 Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue),
                 Assists: (short)Math.Clamp(live.PlayerScore.Assists, short.MinValue, short.MaxValue),
-                TimePlayed: live.PlayerScore.TimePlayed));
+                TimePlayed: played));
+        }
+
+        // P844/SIM-0527 — departed players: native appends every
+        // <c>OldPlayerInfo</c> whose time played is non-zero and whose side is
+        // not the team lobby (fsmission.cpp:3123-3135), so a player who left
+        // mid-game still appears on the endgame screen with their final stats.
+        // The cache entries die with their mission (the P439 rotation clears
+        // them, matching native ~CFSMission discarding m_oldPlayers).
+        foreach (var kvp in _oldPlayerScores)
+        {
+            if (!ReferenceEquals(kvp.Key.Mission, mission)) continue;
+            if (kvp.Value.TimePlayed == 0f) continue;  // native opi.pso.GetTimePlayed() != 0.0f gate
+            if (!_oldPlayerSideIds.TryGetValue(kvp.Key, out var oldSid) || oldSid < 0)
+                continue;                              // team-lobby analogue
+            var s = kvp.Value;
+            entries.Add(new GameOverPlayerEntry(
+                CharacterName: kvp.Key.Name,
+                SideId: oldSid,
+                Rank: s.Rank,
+                Score: s.Score,
+                Kills: (short)Math.Clamp(s.Kills, short.MinValue, short.MaxValue),
+                Deaths: (short)Math.Clamp(s.Deaths, short.MinValue, short.MaxValue),
+                Ejections: (short)Math.Clamp(s.Ejections, short.MinValue, short.MaxValue),
+                Rescues: (short)Math.Clamp(s.Rescues, short.MinValue, short.MaxValue),
+                BaseKills: (short)Math.Clamp((int)s.BaseKills, short.MinValue, short.MaxValue),
+                BaseCaptures: (short)Math.Clamp((int)s.BaseCaptures, short.MinValue, short.MaxValue),
+                Artifacts: (short)Math.Clamp(s.Artifacts, short.MinValue, short.MaxValue),
+                Flags: (short)Math.Clamp(s.Flags, short.MinValue, short.MaxValue),
+                Assists: (short)Math.Clamp(s.Assists, short.MinValue, short.MaxValue),
+                TimePlayed: s.TimePlayed));
         }
         return entries.ToArray();
     }
@@ -1347,8 +1515,8 @@ public sealed partial class Server
     /// guaranteed frame, as native QueueGameoverMessage + FM_FLUSH does
     /// (FedSrv/fsmission.cpp:3094-3141,3427-3429). Both full-mission and
     /// side-only results use this builder; the caller owns the audience.
-    /// The port retains its connected-real-side roster policy (no old-player
-    /// tracking or time-played filter). Native's 50-player message chunks are
+    /// The roster carries the native time-played gate and the departed-player
+    /// tail (P844/SIM-0527). Native's 50-player message chunks are
     /// preserved within the frame so large rosters use the same wire shape.
     /// </summary>
     private byte[] EncodeGameOverResult(Mission mission, short winnerId, string reason)
@@ -3670,7 +3838,9 @@ private void CompleteStartCountdown(Mission mission, double now)
     private PlayerScore? TryTakeOldPlayerScore(Mission mission, string? characterName)
     {
         if (string.IsNullOrEmpty(characterName)) return null;
-        return _oldPlayerScores.Remove((mission, characterName), out var score) ? score : null;
+        if (!_oldPlayerScores.Remove((mission, characterName), out var score)) return null;
+        _oldPlayerSideIds.Remove((mission, characterName));   // P844 — the side id dies with the entry
+        return score;
     }
 
     /// <summary>P480 — create the fresh ship for a peer being MIGRATED into a
