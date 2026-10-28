@@ -285,7 +285,11 @@ public sealed partial class Server
             // developments/lives/scores/zone/goal bits/rank window/in-progress)
             // for the client's server-list filters and status/skill/settings
             // sort columns. Cross-thread-safe snapshot like the fields above.
-            () => LiveGameParams);
+            // P866 — plus the thread-safe lobby-dirty version (native
+            // m_fLobbyDirty), so a host edit / stage / side / player change
+            // publishes on the next throttled tick.
+            () => LiveGameParams,
+            () => LobbyDirtyVersion);
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -862,6 +866,11 @@ public sealed partial class Server
             Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
             Reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null,
             ReliableOneShot = _reliableOneShot,
+            // P866 — native g.pServerCounters (FedSrv/counters.h) is ALWAYS on in
+            // native (the callback guards on NULL but the standalone server
+            // allocates it), so the port's named counters are always fed too,
+            // independent of the profiler-gated egress lane above.
+            ServerCounters = Counters,
         }; // site set; assign the back-ref next
         if (_reliableOneShot)
             Console.WriteLine("[boot] transport reliableOneShot=PARK-LANE (EXPERIMENTAL; one-shots parked ahead of stream/ordered)");
@@ -1968,6 +1977,22 @@ public sealed partial class Server
             _peerNames.Remove(id);
             _playerReady.Remove(id);
             return;
+        }
+
+        // P866 / SIM-0580 — native OnDestroyConnection's counter bump
+        // (FedSrv.CPP:4558-4562): a DROPPED connection that still had a player
+        // attached increments cTimeouts (+ its per-second twin, drained from the
+        // same window). A voluntary LOGOFF is not a timeout: native deletes the
+        // player inside the LOGOFF handler first, so GetPlayerFromConnection
+        // returns null and the block is skipped — mirrored by `requested`.
+        // P866 — a player left the mission: native RemovePlayerFromMission's tail
+        // marks the lobby dirty (fsmission.cpp:519-524) because the player counts
+        // and slot availability changed.
+        MarkLobbyDirty("player-left");
+        if (!requested)
+        {
+            Counters.RecordTimeout();
+            Console.WriteLine($"[conn] peer {id} ({_peerNames.GetValueOrDefault(id) ?? "?"}) dropped without a logoff → cTimeouts={Counters.CTimeouts} (FedSrv.CPP:4558-4562)");
         }
 
         // M1 — the departing connection also keys the teammate-scoped caches

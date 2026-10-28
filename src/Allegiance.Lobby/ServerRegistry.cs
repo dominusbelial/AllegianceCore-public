@@ -322,6 +322,24 @@ public sealed class ServerRegistry
             MaxRank: ClampShort(g.MaxRank ?? 1000),
             // P856 — native defaults, off (igc.h:1243,1246).
             AllowFriendlyFire: g.AllowFriendlyFire ?? false,
-            AllowAlliedViz: g.AllowAlliedViz ?? false);
+            AllowAlliedViz: g.AllowAlliedViz ?? false,
+            // P866 — pfmLobbyMissionInfo's remaining fields
+            // (fsmission.cpp:3983-4096). Omitted values take the native
+            // MissionParams::Reset shape: no players, no armed countdown,
+            // eject pods on (igc.h:1246), no squads.
+            NumPlayers: Math.Max(0, g.NumPlayers ?? 0),
+            NumNoatPlayers: Math.Max(0, g.NumNoatPlayers ?? 0),
+            Teams: ClampShort(g.Teams ?? 0),
+            MaxPlayersPerGame: Math.Max(0, g.MaxPlayersPerGame ?? 0),
+            MinPlayersPerTeam: ClampShort(g.MinPlayersPerTeam ?? 0),
+            MaxPlayersPerTeam: ClampShort(g.MaxPlayersPerTeam ?? 0),
+            StartTimeOffsetMs: g.StartTimeOffsetMs ?? 0,
+            CountdownStarted: g.CountdownStarted ?? false,
+            SquadGame: g.SquadGame ?? false,
+            EjectPods: g.EjectPods ?? true,
+            InvulnerableStations: g.InvulnerableStations ?? false,
+            AnySlotsAvailable: g.AnySlotsAvailable ?? false,
+            GuaranteedSlotsAvailable: g.GuaranteedSlotsAvailable ?? false,
+            SquadIds: g.SquadIds);
     }
 }

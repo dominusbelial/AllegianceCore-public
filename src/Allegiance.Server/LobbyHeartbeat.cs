@@ -48,6 +48,14 @@ public sealed class LobbyHeartbeat : IDisposable
     /// <summary>P806 — reads the cross-thread-safe mission-settings snapshot (the
     /// same discipline as <c>LivePlayerCount</c>/<c>LivePlayerNames</c>).</summary>
     private readonly Func<LobbyGameParams?>? _liveGameParams;
+    /// <summary>P866 — reads the server's lobby-dirty VERSION, the thread-safe
+    /// form of native <c>m_fLobbyDirty</c> (<c>fsmission.cpp:5624-5628</c>). The
+    /// heartbeat publishes only when this differs from the version it last
+    /// published (native <c>UpdateLobby</c>, <c>:5606-5621</c>), so a host edit,
+    /// stage change, side change or player join/leave reaches the directory on
+    /// the next throttled tick instead of waiting for the lease refresh.</summary>
+    private readonly Func<long>? _lobbyDirtyVersion;
+    private long? _publishedDirtyVersion;
     private readonly string? _minClientVersion;
     private readonly int _intervalSeconds;
     private readonly TimeProvider _clock;
@@ -71,8 +79,9 @@ public sealed class LobbyHeartbeat : IDisposable
     public LobbyHeartbeat(LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
-        Func<LobbyGameParams?>? liveGameParams = null)
-        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams)
+        Func<LobbyGameParams?>? liveGameParams = null,
+        Func<long>? lobbyDirtyVersion = null)
+        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams, lobbyDirtyVersion)
     {
     }
 
@@ -84,15 +93,17 @@ public sealed class LobbyHeartbeat : IDisposable
     internal LobbyHeartbeat(HttpClient http, LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
-        Func<LobbyGameParams?>? liveGameParams = null)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams)
+        Func<LobbyGameParams?>? liveGameParams = null,
+        Func<long>? lobbyDirtyVersion = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams, lobbyDirtyVersion)
     {
     }
 
     private LobbyHeartbeat(HttpClient http, bool ownsHttp, LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
-        Func<LobbyGameParams?>? liveGameParams = null)
+        Func<LobbyGameParams?>? liveGameParams = null,
+        Func<long>? lobbyDirtyVersion = null)
     {
         _clock = clock ?? TimeProvider.System;
         _http = http;
@@ -115,6 +126,7 @@ public sealed class LobbyHeartbeat : IDisposable
         // P806 — the game settings the directory publishes for the server-list
         // filters (see LobbyGameParams). Null when the caller has none.
         _liveGameParams = liveGameParams;
+        _lobbyDirtyVersion = lobbyDirtyVersion;
         // P810 — the advertised minimum-client-version requirement (native
         // enforced it at the lobby via the LOGON crcFileList,
         // clintlib/clintlib.cpp:1418 → lobby/client.cpp:272-281; the port
@@ -152,15 +164,21 @@ public sealed class LobbyHeartbeat : IDisposable
         {
             if (_enrollmentFile.Length > 0 && _enrollment is null) await EnrollAsync().ConfigureAwait(false);
             int playerCount = _livePlayerCount();
+            long? dirtyVersion = _lobbyDirtyVersion?.Invoke();
+            bool dirty = dirtyVersion is { } v && v != _publishedDirtyVersion;
             DateTimeOffset now = _clock.GetUtcNow();
             if (periodic && _lastAttempt is { } previous)
             {
                 double elapsed = (now - previous).TotalSeconds;
-                // Dirty mission details coalesce for ten seconds. HTTP leases
-                // additionally need a clean refresh; DirectPlay cookie/session
-                // handling is replaced by the directory's ownership token.
-                if (elapsed < DirtyIntervalSeconds ||
-                    (_token is not null && playerCount == _publishedPlayerCount && elapsed < _intervalSeconds)) return;
+                // P866 — native CFSMission::UpdateLobby (fsmission.cpp:5606-5621):
+                // nothing publishes inside the ten-second coalesce window — the
+                // dirty flag simply STAYS set for the next tick. Once it elapses a
+                // dirty mission republishes immediately; otherwise the HTTP lease
+                // (the port's replacement for native DirectPlay cookie/session
+                // handling) still refreshes an unchanged listing every interval.
+                if (elapsed < DirtyIntervalSeconds) return;
+                if (!dirty && _token is not null && playerCount == _publishedPlayerCount
+                    && elapsed < _intervalSeconds) return;
             }
             _lastAttempt = now;
             // Named payload mirroring Allegiance.Lobby's RegisterRequest wire shape
@@ -212,6 +230,10 @@ public sealed class LobbyHeartbeat : IDisposable
                     _id = reg.Id;
                     _token = reg.Token;
                     _publishedPlayerCount = playerCount;
+                    // P866 — the dirty version this REQUEST carried is now published.
+                    // An event that lands after this read leaves a higher version
+                    // behind, so the next throttled tick republishes it (never lost).
+                    _publishedDirtyVersion = dirtyVersion ?? _publishedDirtyVersion;
                     Console.WriteLine($"[lobby] heartbeat ok -> {reg.Id}, {_livePlayerCount()} player(s)");
                 }
                 catch (Exception e)   // JSON/deserialization error
@@ -532,7 +554,56 @@ public sealed record LobbyGameParams(
     // the native client reads out of MissionParams. Optional trailing members so
     // pre-P856 constructions keep their shape; both default to native's off.
     bool AllowFriendlyFire = false,
-    bool AllowAlliedViz = false)
+    bool AllowAlliedViz = false,
+    // P866 / SIM-0537 — the rest of native pfmLobbyMissionInfo's payload
+    // (FedSrv/fsmission.cpp:3983-4096, wire shape lobby/messagesall.h:25-63).
+    // Optional trailing members so pre-P866 constructions keep their shape and
+    // their native Reset defaults; the directory defaults each omitted field to
+    // the same value (Allegiance.Lobby GameParamsRequest).
+    // Native <c>nNumPlayers</c> — <c>GetCountOfPlayers(NULL, false)</c>:
+    // every non-ghost PLAYER of the mission (fsmission.cpp:4041-4042).
+    int NumPlayers = 0,
+    // Native <c>nNumNoatPlayers</c> (Imago #169) — the players still
+    // on <c>SIDE_TEAMLOBBY</c> (<c>GetCountOfPlayers(GetSide(SIDE_TEAMLOBBY))</c>,
+    // fsmission.cpp:4043).
+    int NumNoatPlayers = 0,
+    // Native <c>nTeams</c> (<c>m_misdef.misparms.nTeams</c>,
+    // fsmission.cpp:4076).
+    short Teams = 0,
+    // Native <c>nMaxPlayersPerGame</c> = <c>min(nTotalMaxPlayersPerGame,
+    // nTeams * nMaxPlayersPerTeam)</c> (fsmission.cpp:4079-4081).
+    int MaxPlayersPerGame = 0,
+    // Native <c>nMinPlayersPerTeam</c> (fsmission.cpp:4082).
+    short MinPlayersPerTeam = 0,
+    // Native <c>nMaxPlayersPerTeam</c> (fsmission.cpp:4083).
+    short MaxPlayersPerTeam = 0,
+    // Native <c>dwStartTime</c>: the countdown deadline as an offset
+    // from now, in milliseconds (<c>timeStart.clock() - Time::Now().clock()</c>,
+    // fsmission.cpp:4036-4037; the lobby resolves it against its own clock,
+    // lobby/server.cpp:169-186). 0 = no countdown armed.
+    uint StartTimeOffsetMs = 0,
+    // Native <c>fCountdownStarted</c> (fsmission.cpp:4084-4086): STAGE_STARTING,
+    // or STAGE_NOTSTARTED with <c>bAutoRestart</c>.
+    bool CountdownStarted = false,
+    // Native <c>fSquadGame</c> (<c>misparms.bSquadGame</c>, fsmission.cpp:4094).
+    bool SquadGame = false,
+    // Native <c>fEjectPods</c> (<c>misparms.bEjectPods</c>, fsmission.cpp:4095).
+    // Native Reset defaults this ON (igc.h:1246); the port always ejects pods.
+    bool EjectPods = true,
+    // Native <c>fInvulnerableStations</c> (<c>misparms.bInvulnerableStations</c>,
+    // fsmission.cpp:4091); native Reset default off.
+    bool InvulnerableStations = false,
+    // Native <c>fAnySlotsAvailable</c> (fsmission.cpp:4060): a side can
+    // still take a joiner (stage/joiner policy, lobby lock, per-side cap, base
+    // and active checks).
+    bool AnySlotsAvailable = false,
+    // Native <c>fGuaranteedSlotsAvailable</c> (fsmission.cpp:4066-4072):
+    // at least one such side would seat a joiner immediately (side auto-accept,
+    // or leaderless with <c>fAutoAcceptLeaders</c>).
+    bool GuaranteedSlotsAvailable = false,
+    // Native <c>rgSquadIDs</c> (fsmission.cpp:3995-4013): the squads of
+    // the sides that have ships and are active once the game started.
+    IReadOnlyList<string>? SquadIds = null)
 {
     /// <summary>Native <c>c_cUnlimitedLives</c> (<c>igc.h:1007</c>).</summary>
     public const int UnlimitedLives = 0x7fff;
@@ -544,8 +615,12 @@ public sealed record LobbyGameParams(
     /// <c>bObjectModelCreated = true</c> (igc.h:1150: the mission was created by
     /// the server app — every port mission is), <c>iMinRank = -1</c> /
     /// <c>iMaxRank = 1000</c> (igc.h:1301-1302: the port has no rank window).
+    /// <para><paramref name="live"/> carries the P866 fields that need the
+    /// server's player bookkeeping (per-side counts, slot availability, the armed
+    /// countdown). Omitted (null) they take the native <c>Reset</c> defaults for a
+    /// mission with no players — the shape the pre-P866 callers/tests expect.</para>
     /// </summary>
-    public static LobbyGameParams FromMission(Allegiance.Core.Model.Mission m) => new(
+    public static LobbyGameParams FromMission(Allegiance.Core.Model.Mission m, LobbyMissionLive? live = null) => new(
         AllowDevelopments: m.AllowDevelopments,
         Lives: m.Lives,
         ScoresCount: true,
@@ -562,5 +637,60 @@ public sealed record LobbyGameParams(
         MaxRank: 1000,
         // P856 — native bAllowFriendlyFire / bAllowAlliedViz (igc.h:1149,1127).
         AllowFriendlyFire: m.AllowFriendlyFire,
-        AllowAlliedViz: m.AllowAlliedViz);
+        AllowAlliedViz: m.AllowAlliedViz,
+        // P866 — the rest of native's QueueLobbyMissionInfo payload
+        // (fsmission.cpp:3983-4096).
+        NumPlayers: live?.NumPlayers ?? 0,
+        NumNoatPlayers: live?.NumNoatPlayers ?? 0,
+        Teams: live?.Teams ?? (short)m.Sides.Count,
+        MaxPlayersPerGame: live?.MaxPlayersPerGame ?? 0,
+        MinPlayersPerTeam: live?.MinPlayersPerTeam ?? 0,
+        MaxPlayersPerTeam: live?.MaxPlayersPerTeam ?? 0,
+        StartTimeOffsetMs: live?.StartTimeOffsetMs ?? 0,
+        CountdownStarted: live?.CountdownStarted
+            ?? m.Stage is Allegiance.Core.Sim.MissionStage.Starting,
+        SquadGame: live?.SquadGame ?? m.SquadGame,
+        EjectPods: live?.EjectPods ?? true,
+        InvulnerableStations: live?.InvulnerableStations ?? false,
+        AnySlotsAvailable: live?.AnySlotsAvailable ?? false,
+        GuaranteedSlotsAvailable: live?.GuaranteedSlotsAvailable ?? false,
+        SquadIds: live?.SquadIds);
+
+    /// <summary>Native <c>MissionInfo::LimitedLives()</c> equivalent, published
+    /// as <c>fLimitedLives = iLives != 0x7fff</c> (fsmission.cpp:4092).</summary>
+    public bool LimitedLives => Lives != UnlimitedLives;
+
+    /// <summary>Native <c>fMSArena = m_misdef.misparms.bObjectModelCreated</c>
+    /// (fsmission.cpp:4087) — the same bit the port publishes as
+    /// <see cref="ObjectModelCreated"/>.</summary>
+    public bool MSArena => ObjectModelCreated;
+}
+
+/// <summary>P866 / SIM-0537 — the live player-bookkeeping half of native
+/// <c>CFSMission::QueueLobbyMissionInfo</c> (<c>FedSrv/fsmission.cpp:3983-4096</c>)
+/// that cannot be derived from the <see cref="Allegiance.Core.Model.Mission"/> alone:
+/// the player counts a server owns (<c>_peerShips</c>), the slot-availability scan
+/// over the mission's sides, and the armed countdown deadline. Built on the sim
+/// thread by <c>Server.SnapshotLobbyGameParams</c>, then frozen into
+/// <see cref="LobbyGameParams"/> for the off-thread heartbeat.</summary>
+public readonly record struct LobbyMissionLive(
+    int NumPlayers,
+    int NumNoatPlayers,
+    short Teams,
+    int MaxPlayersPerGame,
+    short MinPlayersPerTeam,
+    short MaxPlayersPerTeam,
+    uint StartTimeOffsetMs,
+    bool CountdownStarted,
+    bool SquadGame,
+    bool EjectPods,
+    bool InvulnerableStations,
+    bool AnySlotsAvailable,
+    bool GuaranteedSlotsAvailable,
+    IReadOnlyList<string>? SquadIds)
+{
+    /// <summary>The native <c>Reset</c>-shaped empty state (no players, no armed
+    /// countdown, eject pods on) — what <see cref="LobbyGameParams.FromMission"/>'s
+    /// mission-only overload publishes.</summary>
+    public static readonly LobbyMissionLive Empty = new(0, 0, 0, 0, 0, 0, 0, false, false, true, false, false, false, null);
 }

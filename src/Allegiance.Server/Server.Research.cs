@@ -56,7 +56,21 @@ public sealed partial class Server
 
     /// <summary>Complete the native wire observation after Sector's real build. Previously only
     /// late joiners learned the station, and the consumed rock/builder remained ghosts.
-    /// FedSrv.CPP:11431-11462,12025; completion chat buildingeffectigc.h:319-321.</summary>
+    /// FedSrv.CPP:11431-11462,12025; completion chat buildingeffectigc.h:319-321.
+    /// <para>P866 — SIM-0652's remaining branch: the native side-scoped
+    /// <c>KillAsteroidEvent</c> overload sends the silent <c>ASTEROID_DESTROYED</c>
+    /// only to the sides in <c>BuildStation</c>'s two loops
+    /// (<c>FedSrv.CPP:11429-11457</c>): the builder's side
+    /// (<c>pside == potherside</c>), a side with an eye on the rock
+    /// (<c>GetAsteroidCurrentEye</c>), a builder-seen side
+    /// (<c>GetBuilderSeenSide</c>) or a side in the <c>pbseensides</c> mask; the
+    /// second loop also sends it to a side that now sees the STATION. Every other
+    /// side is left on the stale-rock path (it learns only when it spots the zone,
+    /// <see cref="Sector.ResolveConsumedRockVisibility"/> → the third overload).
+    /// <c>Station.StaleRockSides</c> is exactly that complement (Sector.cs
+    /// <c>BuildStation</c>), so the retirement packet must go to the informed,
+    /// seated sides — never to a team-lobby (unseated) peer, which a side group
+    /// could not contain (<c>CFSSide::FromIGC(side)-&gt;GetGroup()</c>).</para></summary>
     private void OnStationConstructed(Asteroid rock, Station station)
     {
         if (station.Mission is not { } mission) return;
@@ -65,10 +79,11 @@ public sealed partial class Server
         var completion = FedPacket.Pack(new[] { destruction, ExportStation.FromStation(station.Data).Encode() });
         var retirement = FedPacket.Pack(destruction);
         foreach (var peer in _peerShips)
-            if (ReferenceEquals(peer.Value.Ship.Mission, mission))
+            if (ReferenceEquals(peer.Value.Ship.Mission, mission)
+                && peer.Value.Ship.SideId is { } peerSide && peerSide != SideTeamLobby)
             {
-                bool ownSide = peer.Value.Ship.SideId == station.SideId;
-                bool stale = peer.Value.Ship.SideId is { } other && station.StaleRockSides.Contains(other);
+                bool ownSide = peerSide == station.SideId;
+                bool stale = station.StaleRockSides.Contains(peerSide);
                 if (ownSide) SendPeer(peer.Key, completion);
                 else if (!stale) SendPeer(peer.Key, retirement);
                 if (ownSide) _stationIdentitySent.Add((peer.Key, mission, station.StationId, station.Data.StationTypeId));

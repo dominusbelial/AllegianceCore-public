@@ -20,20 +20,24 @@ namespace Allegiance.Core.Tests;
 /// <list type="number">
 /// <item>a ship parked on a real He3 rock mines it past the threshold and a real
 /// <see cref="AsteroidMined"/>(198) naming that asteroid id, its sector and its
-/// remaining ore (div-240 byte) is delivered to the WHOLE MISSION — the
-/// cross-side enemy bot receives it exactly like the same-side peer, the same
-/// <c>GetGroupRealSides()</c> audience (<c>FedSrv.CPP:12418</c>) and settlement
-/// P102 reached for <c>ASTEROID_DESTROYED</c>(86);</item>
+/// remaining ore (div-240 byte) is delivered to the SIDES whose
+/// <c>GetAsteroidCurrentEye</c> is on the rock (P866 / SIM-0655 — native
+/// <c>MineAsteroidEvent</c>'s per-side gate, <c>FedSrv.CPP:12454-12471</c>): the
+/// same-side teammate (a scanner in range) receives it, while a cross-side peer
+/// 30 km away — its only scanner, never in detection range — receives NOTHING,
+/// exactly like native;</item>
 /// <item>once the miner's bag hits capacity, accrual halts and <b>no</b> further
 /// <c>ASTEROID_MINED</c> fires on subsequent ticks — the existing
 /// <see cref="Asteroid.MineOre"/> reporting throttle still gates the new
 /// broadcast exactly as it gates the log.</item>
 /// </list>
-/// Construction mirrors <see cref="AsteroidCombatLiveTests"/>' 3-bot / 2-side
-/// harness (a guaranteed same-side pair plus a cross-side peer) with the rock and
-/// the miner co-located at the origin spawn so only the miner is in mining range;
-/// the demo map has zero asteroids, so the synthetic rock is the only one in the
-/// universe (<see cref="MiningTests"/>' seam). A separate deterministic unit test
+/// Construction mirrors <see cref="AsteroidsUpdateLiveTests"/>' 3-bot / 2-side
+/// harness (a same-side pair on the rock plus a cross-side peer 30 km away, out of
+/// every scanner's range) with the rock and the miner co-located at the origin
+/// spawn so only the miner is in mining range; the demo map has zero asteroids, so
+/// the synthetic rock is the only one in the universe (<see cref="MiningTests"/>'
+/// seam). That separation is what proves the per-side eye gate: side B has no eye
+/// on the rock, so native sends it nothing. A separate deterministic unit test
 /// pins the &gt;3.0 reporting threshold itself. No Windows VM, no native client.
 /// </summary>
 [Collection("LiveNetwork")]
@@ -134,11 +138,16 @@ public sealed class AsteroidMinedLiveTests
                 seat.Rock = new Asteroid(MkAsteroid(8301, apos, oreMax: 480f, radius: 60, sectorId: sector.Id));
                 mission.PlaceAsteroid(seat.Rock, sector);
             }
+            // The hull with the largest ScannerRange makes detection robust: an
+            // asteroid has no own-side rule, so a side sees it purely through a
+            // scanner in range — the 30 km observer cannot (AsteroidsUpdateLiveTests'
+            // exact separation).
+            var hull = mission.Core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
             var ship = placed switch
             {
-                0 => new Ship(id, mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First(), apos, Vector3.Zero, Orientation.Identity),   // miner on the rock
-                1 => new Ship(id, mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First(), new Vector3(0f, 580f, 980f), Vector3.Zero, Orientation.Identity),   // cross-side observer
-                _ => new Ship(id, mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First(), new Vector3(680f, -400f, 840f), Vector3.Zero, Orientation.Identity),  // same-side observer
+                0 => new Ship(id, hull, apos, Vector3.Zero, Orientation.Identity),                                  // miner on the rock
+                1 => new Ship(id, hull, new Vector3(0f, 0f, 30000f), Vector3.Zero, Orientation.Identity),           // cross-side, no eye
+                _ => new Ship(id, hull, new Vector3(680f, -400f, 840f), Vector3.Zero, Orientation.Identity),         // same-side, eye
             };
             if (mission.Sides.Count > 0)
                 ship.SideId = mission.Sides[placed % mission.Sides.Count].Id;   // round-robin A,B,A
@@ -163,8 +172,8 @@ public sealed class AsteroidMinedLiveTests
             {
                 var ship = seat.Server.Ships.First(s => s.Ship.Id == bots[i].ShipAssignment!.Ship.ShipId).Ship;
                 if (ship.Position.Length() < 1f) { seat.Miner = ship; seat.MinerBot = bots[i]; }
-                else if (ship.Position.X > 500f) { seat.Teammate = ship; seat.TeammateBot = bots[i]; }   // teammate at (680,−400,840)
-                else { seat.CrossSide = ship; seat.CrossSideBot = bots[i]; }                              // cross-side at (0,580,980)
+                else if (ship.Position.Z > 1000f) { seat.CrossSide = ship; seat.CrossSideBot = bots[i]; }   // cross-side at (0,0,30000)
+                else { seat.Teammate = ship; seat.TeammateBot = bots[i]; }                                  // same-side teammate at (680,−400,840)
             }
             Assert.NotNull(seat.Miner); Assert.NotNull(seat.CrossSide); Assert.NotNull(seat.Teammate);
             Assert.True(seat.Miner.SideId != seat.CrossSide.SideId, "cross-side peer must be on the other side from the miner");
@@ -205,16 +214,17 @@ public sealed class AsteroidMinedLiveTests
         }, TimeSpan.FromSeconds(30)), "all mining recipients must decode the ordered phase barrier");
     }
 
-    /// <summary>⭐ A ship parked on a real He3 rock mines it past the &gt;3.0
-    /// threshold and a real <see cref="AsteroidMined"/>(198) naming the correct
-    /// asteroid id + sector, with a declining div-240 ore fraction, is broadcast to
-    /// the WHOLE MISSION: the same-side teammate AND the cross-side enemy both
-    /// receive it. That cross-side arrival is the whole-mission proof
-    /// (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12418</c>), exactly the P102
-    /// <c>ASTEROID_DESTROYED</c> settlement.</summary>
+    /// <summary>⭐ P866 / SIM-0655 — a ship parked on a real He3 rock mines it past
+    /// the &gt;3.0 threshold and a real <see cref="AsteroidMined"/>(198) naming the
+    /// correct asteroid id + sector, with a declining div-240 ore fraction, is
+    /// broadcast to the sides whose <c>GetAsteroidCurrentEye</c> is on the rock
+    /// (native <c>MineAsteroidEvent</c>, <c>FedSrv.CPP:12454-12471</c>): the miner
+    /// and its same-side teammate (scanner in range) receive it; the cross-side peer
+    /// 30 km away — no eye on the rock — receives NOTHING, the native per-side rule
+    /// that replaces the old whole-mission broadcast.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Mining_broadcasts_ASTEROID_MINED_to_whole_mission_cross_side_and_same_side()
+    public void Mining_broadcasts_ASTEROID_MINED_only_to_sides_with_an_eye_on_the_rock()
     {
         Require.Artwork();
         using var seat = SeatThree();
@@ -226,21 +236,33 @@ public sealed class AsteroidMinedLiveTests
         seat.MinerBot.ResetAsteroidMineds();
         seat.CrossSideBot.ResetAsteroidMineds();
         seat.TeammateBot.ResetAsteroidMineds();
+        // Preconditions for the per-side branch: the teammate's side has an eye on
+        // the rock (its scanner is in range) and the 30 km cross-side peer's side
+        // does not. The visibility sweep runs on the first started pass, so pump a
+        // few ticks before pinning them.
+        short crossSide = seat.CrossSide.SideId!.Value;
+        short mateSide = seat.Teammate.SideId!.Value;
+        PumpUntil(seat.Server, () => rock.GetCurrentEye(mateSide), 200);
+        Assert.True(rock.GetCurrentEye(mateSide), "the teammate's side must have an eye on the rock");
+        Assert.False(rock.GetCurrentEye(crossSide), "the 30 km cross-side peer must have no eye on the rock");
 
         // Generate the first real threshold crossing, then freeze physics while
         // every reader decodes that same historical ore state.
         int mined = PumpUntil(seat.Server, () => rock.OreMax - rock.OreRemaining > 3f, 6000);
         Assert.True(mined < 6000, "mining must cross the native reporting threshold");
         Assert.True(SpinWait.SpinUntil(() => seat.MinerBot.AsteroidMineds.Count > 0
-            && seat.CrossSideBot.AsteroidMineds.Count > 0 && seat.TeammateBot.AsteroidMineds.Count > 0,
-            TimeSpan.FromSeconds(30)), "all three peers must decode the mining report");
+            && seat.TeammateBot.AsteroidMineds.Count > 0,
+            TimeSpan.FromSeconds(30)), "the miner and its eyeing teammate must decode the mining report");
         Assert.True(seat.MinerBot.AsteroidMineds.Count > 0, "the miner itself must receive ASTEROID_MINED");
-        Assert.True(seat.CrossSideBot.AsteroidMineds.Count > 0, "cross-side enemy must receive ASTEROID_MINED (whole mission)");
-        Assert.True(seat.TeammateBot.AsteroidMineds.Count > 0, "same-side teammate must receive ASTEROID_MINED (whole mission)");
+        Assert.True(seat.TeammateBot.AsteroidMineds.Count > 0, "a same-side teammate with an eye on the rock must receive ASTEROID_MINED");
+        // P866 — the native per-side gate: the side with no eye learns nothing.
+        PumpUntil(seat.Server, () => false, 100);
+        Assert.True(rock.GetCurrentEye(mateSide), "the teammate's side keeps its eye on the rock");
+        Assert.Empty(seat.CrossSideBot.AsteroidMineds);
 
         // Every message names the RIGHT rock and sector, and carries a declining
         // (non-increasing) ore fraction — the rock only drains between reports.
-        foreach (var bot in new[] { seat.MinerBot, seat.CrossSideBot, seat.TeammateBot })
+        foreach (var bot in new[] { seat.MinerBot, seat.TeammateBot })
         {
             var msgs = bot.AsteroidMineds;
             foreach (var m in msgs)
@@ -259,7 +281,7 @@ public sealed class AsteroidMinedLiveTests
         // — the rock's net draw equals the miner's carried ore (self-consistent
         // with the server's own numbers), within regen drift + timing slack.
         float expectedStop = (rock.OreMax - seat.Miner.Ore) / rock.OreMax;
-        foreach (var bot in new[] { seat.MinerBot, seat.CrossSideBot, seat.TeammateBot })
+        foreach (var bot in new[] { seat.MinerBot, seat.TeammateBot })
         {
             var msgs = bot.AsteroidMineds;
             float last = Frac(msgs[^1]);
@@ -268,7 +290,8 @@ public sealed class AsteroidMinedLiveTests
         }
 
         Console.WriteLine($"P120-MINED: asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' mined to ore fraction {Frac(seat.TeammateBot.AsteroidMineds[^1]):0.###} " +
-                          $"=> ASTEROID_MINED(198) at sector {sector.Id} -> miner + same-side + cross-side peer(s) [WHOLE MISSION]");
+                          $"=> ASTEROID_MINED(198) at sector {sector.Id} -> miner + eyeing teammate only; 30 km cross-side peer got none " +
+                          $"[PER-SIDE EYE, FedSrv.CPP:12455]");
     }
 
     /// <summary>⭐ No-regression of the throttle: once the miner's bag reaches its
@@ -292,7 +315,6 @@ public sealed class AsteroidMinedLiveTests
         PumpUntil(seat.Server,
             () => seat.Miner.Ore >= cap
                && seat.MinerBot.AsteroidMineds.Count > 0
-               && seat.CrossSideBot.AsteroidMineds.Count > 0
                && seat.TeammateBot.AsteroidMineds.Count > 0,
             20000);
         Assert.True(seat.Miner.Ore >= cap - 0.5f, "miner should reach its ore capacity");
@@ -302,18 +324,19 @@ public sealed class AsteroidMinedLiveTests
         int mCount = seat.MinerBot.AsteroidMineds.Count;
         int cCount = seat.CrossSideBot.AsteroidMineds.Count;
         int tCount = seat.TeammateBot.AsteroidMineds.Count;
-        Assert.True(mCount > 0 && cCount > 0 && tCount > 0, "broadcasts should have flowed on the way to capacity");
+        Assert.True(mCount > 0 && tCount > 0, "broadcasts should have flowed to the eyeing sides on the way to capacity");
+        Assert.Empty(seat.CrossSideBot.AsteroidMineds);   // P866 — the no-eye side never received any
 
         // Pump many more ticks — with the miner parked full, nothing mines, so no
         // MineAsteroidEvent (and therefore no ASTEROID_MINED) may be emitted.
         PumpUntil(seat.Server, () => false, 150);
         ReceiveBarrier(seat, 0x120b);
         Assert.Equal(mCount, seat.MinerBot.AsteroidMineds.Count);
-        Assert.Equal(cCount, seat.CrossSideBot.AsteroidMineds.Count);
+        Assert.Empty(seat.CrossSideBot.AsteroidMineds);
         Assert.Equal(tCount, seat.TeammateBot.AsteroidMineds.Count);
 
-        Console.WriteLine($"P120-HALT: miner full at {seat.Miner.Ore:0.#}/{cap:0.#}; {mCount}+{cCount}+{tCount} " +
-                          $"ASTEROID_MINED seen, zero further broadcasts across 150 idle ticks [THROTTLE HOLDS]");
+        Console.WriteLine($"P120-HALT: miner full at {seat.Miner.Ore:0.#}/{cap:0.#}; {mCount}+{tCount} " +
+                          $"ASTEROID_MINED seen (0 to the no-eye side), zero further broadcasts across 150 idle ticks [THROTTLE HOLDS]");
     }
 
     /// <summary>⭐ Deterministic unit pin of the &gt;3.0 reporting threshold the

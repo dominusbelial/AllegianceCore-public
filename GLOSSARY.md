@@ -196,7 +196,32 @@ list in **reverse**.
 - **Lifecycle / mission assembly** — `Server.Lifecycle.cs` builds missions from
   `GameConfig` (map load **or** `mapGen`), `Server.Periodic.cs` ticks the world.
 - **Lobby heartbeat** — announces the server to the lobby directory.
-  `src/Allegiance.Server/LobbyHeartbeat.cs`.
+  `src/Allegiance.Server/LobbyHeartbeat.cs`. Publication is driven by native's
+  dirty flag: `Server.MarkLobbyDirty`/`LobbyDirtyVersion` bumps on every native
+  `SetLobbyIsDirty` call site and the heartbeat republishes on the first tick
+  after the 10 s coalesce (`FedSrv/fsmission.cpp:5606-5628`).
+- **Lobby mission info (P866)** — the full `pfmLobbyMissionInfo` payload
+  (player/noat counts, per-team caps, slot-availability scan, armed countdown
+  offset, squad game, eject pods, invulnerable stations, playing squads) on the
+  register payload: `src/Allegiance.Server/Server.MissionParams.cs`
+  (`SnapshotLobbyGameParams`, `LobbyMissionLive`), `LobbyHeartbeat.cs`
+  (`LobbyGameParams`), `src/Allegiance.Lobby/ServerListing.cs`
+  (`GameParamsDto`/`GameParamsRequest`). Native:
+  `FedSrv/fsmission.cpp:3983-4096`.
+- **Native server counters (P866)** — `cTimeouts`/`cPacketsOut`/`cBytesOut` and
+  their per-second twins as named, thread-safe counters fed where the port
+  hands guaranteed frames to the per-peer send queue and where an unrequested
+  connection loss retires a player; reported on a `[server-counters]` window
+  line. `src/Allegiance.Core/Transport/ServerCounters.cs`,
+  `src/Allegiance.Server/Server.Egress.cs`. Native:
+  `FedSrv/counters.h:10-21`, `FedSrv/FedSrv.CPP:4558-4562,4613-4652`.
+- **Event audiences** — every KILL/MINE broadcast's recipient set is named after
+  the native group it ports: `Server.RealSideAudience` (native
+  `GetGroupRealSides()`, `FedSrv/fsmission.h:361`, seated players only —
+  `fsship.cpp:1073-1078`) for whole-mission KILL notices, and the per-side eye
+  gate (`Asteroid.GetCurrentEye`) for `ASTEROID_MINED`. `Server.FireAudience.cs`,
+  `Server.Combat.cs`, `Server.Research.cs`. Native: `FedSrv/FedSrv.CPP:11429-11457,
+  12454-12483,12512-12540`.
 - **Discovery responder** — the P731 UDP "Find Server" responder.
   `src/Allegiance.Server/Discovery/`.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and

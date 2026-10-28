@@ -360,36 +360,40 @@ public sealed partial class Server
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
-        // Creation and late tracking both record recipients. Cleanup must still
-        // reach them after a cloak/warp/death, without revealing a new source or
-        // playing an explosion to someone who never knew this missile.
-        // Ordered destruction outranks the best-effort position lane. Replace
-        // its pending batch BEFORE enqueueing destruction, or a stale 205 can
-        // follow 83 and rehydrate the terminated missile in a late-viewer client.
-        // Native termination is final (clintlib/appmsg.cpp:1790-1803); 205 is a
-        // port-only stream. Other live missiles receive their next normal batch.
+        // P866 — SIM-0659 audience. Native KillMissileEvent sends
+        // MISSILE_DESTROYED to GetGroupRealSides() (FedSrv.CPP:12520-12521): every
+        // seated player of the MISSION, on any side — not the missile's viewers.
+        // A client that never received the missile's EXPORT/MISSILE_UPDATE simply
+        // ignores the notice (clintlib/appmsg.cpp:1795-1804 only explodes a
+        // missile it knows). Ordered destruction outranks the best-effort position
+        // lane, so the port's 205 clear is still sent to the recorded viewers only.
+        var destroyAudio = RealSideAudience(MissionOfSector(m.OwnerSector));
+
+        // Creation and late tracking both record recipients, so the port's own
+        // 205 stream still only reaches them. Native termination is final
+        // (clintlib/appmsg.cpp:1790-1803); 205 is a port-only stream. Other live
+        // missiles receive their next normal batch.
         byte[] clearedPositions = FedPacket.Pack(new MissileUpdate { Records = [] }.Encode());
-        var targets = new List<ConnectionId>();
-        if (_missileViewers.Remove(m, out var viewers))
-            foreach (var peer in viewers)
+        var viewers = new List<ConnectionId>();
+        if (_missileViewers.Remove(m, out var known))
+            foreach (var peer in known)
                 if (PeerInSector(peer, m.OwnerSector))
                 {
                     SendPeerCoalescing(peer, clearedPositions, CoalesceMissiles);
-                    SendPeer(peer, packet);
-                    targets.Add(peer);
+                    viewers.Add(peer);
                 }
-        int n = targets.Count;
+        foreach (var peer in destroyAudio)
+            SendPeer(peer, packet);
+        int n = destroyAudio.Count;
         Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
-                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s) (same-side + cross-side)");
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s) (whole mission real sides, FedSrv.CPP:12520)");
 
-        // P263 — the missile's impact/expiry blast VFX to the same audience.
-        // Native Explode() plays the c_etMissile explosion wherever the missile
-        // terminates (missileigc.cpp:531, scale = GetRadius()); the port emits
-        // it server-side as the explosion category + position + velocity so the
-        // fireball sprites ride the missile's momentum. P375 — `targets` now
-        // includes the cross-side viewers, so they see the blast too.
-        if (targets.Count > 0)
-            SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
+        // P263 — the missile's impact/expiry blast VFX to the peers that KNEW the
+        // missile: native's Explode() is a client-side reaction to the notice
+        // (appmsg.cpp:1801-1803), so an unaware peer has nothing to explode. The
+        // fireball sprites ride the missile's momentum (P375).
+        if (viewers.Count > 0)
+            SendExplosionEvent(viewers, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }
 
     // Explicit PROMOTE/SWAP_PART echoes apply their own mutations on clients.
@@ -644,17 +648,18 @@ public sealed partial class Server
     /// raised from <c>Sim/Mine.cs</c> <c>OnUpdate</c> alongside
     /// <c>sector.Remove(mine)</c> on the sim thread) by broadcasting a real
     /// <c>FM_S_MINE_DESTROYED(84)</c> <see cref="MineDestroyed"/> message — the
-    /// \"this mine blew up\" notice (<c>Messages.h:603-606</c>) — to the same
-    /// same-side audience that saw it deploy (<see cref="BroadcastExportMine"/>).
-    /// This is P94's destruction half, reached by modelling the mine's own
-    /// expiry as the analogue of a ship's death (<c>Ship.ReceiveDamage</c> →
-    /// <c>KillShipEvent</c>, <c>Sim/Ship.cs:494</c>), exactly as
-    /// <see cref="BroadcastMissileDestroyed"/> does for missiles. Because a mine
-    /// never moves, the position carried (<c>m.Position</c>) is the <b>same</b>
-    /// deployment position the creation export carried — the observable
-    /// \"the mine didn't move\" contract this task's verification asserts
-    /// explicitly. Same-side only, same <c>_teammateExportSent</c>-gated
-    /// audience, same sim-thread-no-lock reasoning as the other broadcasts.
+    /// \"this mine blew up\" notice (<c>Messages.h:603-606</c>).
+    /// <para><b>WHOLE MISSION (P866 / SIM-0660).</b> Native
+    /// <c>FedSrvSiteBase::KillMineEvent</c> sends <c>MINE_DESTROYED</c> to
+    /// <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12536-12539</c>) — every seated
+    /// player of the mission, on any side. The port previously used the owning
+    /// side plus the cross-side export latch (P94/P453/P591d); that is a subset
+    /// of the native audience (the latch only ever reaches peers that saw the
+    /// mine's EXPORT), so the notice now reaches every real side and a client that
+    /// never saw the field ignores the unknown id (clintlib/appmsg.cpp:1808-1819).
+    /// Because a mine never moves, the position carried (<c>m.Position</c>) is the
+    /// <b>same</b> deployment position the creation export carried. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.</para>
     /// </summary>
     private void BroadcastMineDestroyed(Mine m)
     {
@@ -665,37 +670,16 @@ public sealed partial class Server
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
-        // P453 — the destroy audience is the union of the same-side deploy
-        // audience (P591d: the owning side's seated peers, exactly
-        // BroadcastExportMine's side-wide shape) and every cross-side peer that
-        // was ever sent this mine's EXPORT (the _crossSideMineExportSent latch
-        // from SweepCrossSideMineExports). A client must never keep a phantom
-        // field after the mine is destroyed or expires, so the cross-side reach
-        // rides the latch and is served even when the launcher is unusual (log-only).
         Ship? layer = m.Launcher as Ship;
-        short? ownerSide = m.SideId; // ownership belongs to the field, not its deployer
-        bool hasOwner = ownerSide is not null;
-        if (!hasOwner)
-            Console.WriteLine("[mine] MineDestroyedEvent for an unowned field — same-side audience skipped, cross-side latch still served");
+        if (m.SideId is null)
+            Console.WriteLine("[mine] MineDestroyedEvent for an unowned field — whole-mission notice still served");
 
-        int n = 0;
-        var targets = new List<ConnectionId>();
-        foreach (var kv in _peerShips)
-        {
-            // P591d — same-side = the owning side (matches the new
-            // BroadcastExportMine audience), not gated on the launcher being a
-            // connected peer.
-            bool sameSide = hasOwner && kv.Value.Ship.SideId == ownerSide;
-            bool gotCrossSideExport = _crossSideMineExportSent.Contains((kv.Key, m.Id));
-            if ((sameSide || gotCrossSideExport) && PeerInMission(kv.Key, m.OwnerSector))
-            {
-                SendPeer(kv.Key, packet);
-                targets.Add(kv.Key);
-                n++;
-            }
-        }
+        // P866 — GetGroupRealSides(): every seated peer of the mission, any side.
+        var targets = RealSideAudience(MissionOfSector(m.OwnerSector));
+        foreach (var peer in targets)
+            SendPeer(peer, packet);
         Console.WriteLine($"[mine] ship {layer?.Id ?? -1} destroyed/expired mine {m.Id} -> MINE_DESTROYED(84) " +
-                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s)");
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {targets.Count} peer(s) (whole mission real sides, FedSrv.CPP:12536)");
         // P574 — deliberately NO explosion here. The centre "field died"
         // c_etMine blast this P263 block previously sent is a misattribution:
         // the native line it cited (shipIGC.h:2024) is the PER-HIT pop inside
@@ -823,23 +807,28 @@ public sealed partial class Server
                           $"pos {p.Position} life {p.ProbeType.Lifespan} side {deployerSide} -> {n} same-side peer(s)");
     }
 
-    /// <summary>Remove a probe for its owning side, matching creation including
-    /// NPC deployers. Cleanup does not depend on the deployer remaining alive,
-    /// on its current side, or on a connected-player export latch.</summary>
+    /// <summary>Destroy a probe for the whole mission's real sides, matching
+    /// creation's side audience for the EXPORT but native's whole-mission notice
+    /// for the removal. Cleanup does not depend on the deployer remaining alive,
+    /// on its current side, or on a connected-player export latch.
+    /// <para>P866 / SIM-0656: native <c>FedSrvSiteBase::KillProbeEvent</c> sends
+    /// <c>PROBE_DESTROYED</c> to <c>GetGroupRealSides()</c>
+    /// (<c>FedSrv.CPP:12479-12482</c>) — every seated player of the mission, on
+    /// any side. A client that never saw the probe drops the unknown id
+    /// (clintlib/appmsg.cpp:1822-1829), so the port now sends it whole-mission
+    /// instead of the owner's side plus recorded viewers.</para></summary>
     private void BroadcastProbeDestroyed(Probe p)
     {
-        _probeViewers.Remove(p, out var viewers);
+        _probeViewers.Remove(p, out _);
         var packet = FedPacket.Pack(new ProbeDestroyed
         {
             ClusterId = p.OwnerSector.Id,
             ProbeId = p.Id,
         }.Encode());
-        int sent = 0;
-        foreach (var peer in _peerShips)
-            if ((peer.Value.Ship.SideId == p.SideId || viewers?.Contains(peer.Key) == true)
-                && PeerInMission(peer.Key, p.OwnerSector)) { SendPeer(peer.Key, packet); sent++; }
+        var targets = RealSideAudience(MissionOfSector(p.OwnerSector));
+        foreach (var peer in targets) SendPeer(peer, packet);
         Console.WriteLine($"[probe] ship {(p.Launcher as Ship)?.Id ?? -1} expired probe {p.Id} -> PROBE_DESTROYED(85) " +
-                          $"pos {p.Position} sector {p.OwnerSector.Id} -> {sent} same-side peer(s)");
+                          $"pos {p.Position} sector {p.OwnerSector.Id} -> {targets.Count} peer(s) (whole mission real sides, FedSrv.CPP:12479)");
     }
 
     /// <summary>
@@ -2625,20 +2614,16 @@ public sealed partial class Server
     /// rock's remaining ore made wire-visible to observers in real time (P120).
     /// The <c>newOre</c> arg is the rock's ore fraction (<c>asteroidigc.h:249</c>),
     /// i.e. <c>ore/oreMax</c>, not an absolute mass.
-    /// <para><b>WHOLE MISSION.</b> Native sends <c>ASTEROID_MINED</c> from
-    /// <c>MineAsteroidEvent</c> behind a per-side <c>GetAsteroidCurrentEye</c>
-    /// visibility gate (<c>FedSrv.CPP:12453-12468</c>), but that gate is the same
-    /// class of cross-side-visibility infrastructure this port lacks for
-    /// <c>PROBES_UPDATE</c>(92)/<c>ASTEROIDS_UPDATE</c>(179) and does not build
-    /// here. Following the precedent this port's own sibling message set —
-    /// <c>ASTEROID_DESTROYED</c>(86, P102) broadcasts whole-mission with no
-    /// per-side gate (<see cref="BroadcastAsteroidDestroyed"/>, confirmed
-    /// deliberate) — this broadcasts to every connected peer with a seated ship,
-    /// <c>GetGroupRealSides()</c> audience (<c>FedSrv.CPP:12418</c>). The miner's
-    /// own cargo ore still travels as <c>ServerShipUpdate</c> byte 45
-    /// (<c>OreFraction</c>); this closes the observer gap for the <em>rock's</em>
-    /// remaining ore. Runs on the sim thread (same one that owns
-    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// <para><b>PER-SIDE EYE (P866 / SIM-0655).</b> Native sends
+    /// <c>ASTEROID_MINED</c> from <c>MineAsteroidEvent</c> behind a per-side
+    /// <c>GetAsteroidCurrentEye</c> visibility gate (<c>FedSrv.CPP:12454-12471</c>):
+    /// only a side whose eye is on the rock learns the new ore. The port has that
+    /// exact state since P132 (<see cref="Asteroid.GetCurrentEye"/>), so this now
+    /// follows native per side instead of broadcasting whole-mission (the P120
+    /// simplification). The miner's own cargo ore still travels as
+    /// <c>ServerShipUpdate</c> byte 45 (<c>OreFraction</c>); this is the
+    /// <em>rock's</em> remaining ore for the sides that can see it. Runs on the sim
+    /// thread (same one that owns <c>_peerShips</c>), so no extra locking.</para>
     /// </summary>
     private void OnMine(IAsteroidIgc pasteroid, float newOre)
     {
@@ -2652,13 +2637,16 @@ public sealed partial class Server
         var msg = AsteroidMined.ForAsteroid(ast, newOre);
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
-        // Whole mission: every connected peer with a seated ship, regardless of
-        // side (GetGroupRealSides(), FedSrv.CPP:12418) — the ASTEROID_DESTROYED
-        // precedent (P102).
-        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+        // Native FedSrv.CPP:12455-12471 — one send per side whose
+        // GetAsteroidCurrentEye is on this rock.
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, ast.Mission)
+                      && kv.Value.Ship.SideId is { } side && ast.GetCurrentEye(side))
+            .Select(kv => kv.Key)
+            .ToArray();
 
         Console.WriteLine($"[asteroid] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} " +
-                          $"=> ASTEROID_MINED(198) sector {ast.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
+                          $"=> ASTEROID_MINED(198) sector {ast.Data.ClusterId} -> {targets.Length} peer(s) [sides with an eye on the rock, FedSrv.CPP:12455]");
         foreach (var t in targets)
             SendPeer(t, packet);
     }

@@ -20,6 +20,11 @@ public sealed partial class Server
     /// <summary>P603 test seam — the first mission (null if no games booted).</summary>
     internal Mission? TestMission => _missions.Count > 0 ? _missions[0] : null;
 
+    /// <summary>P866 test seam — the live host transport (null before boot /
+    /// after shutdown), so a test can read the accept-time peer address and the
+    /// native server counters without reaching into private state.</summary>
+    internal TcpTransport? TestTransport => _host?.Transport as TcpTransport;
+
     /// <summary>P802 test seam — the live score object of a seated peer ship
     /// (null for an unseated/NPC id), so the native <c>SetSideCiv</c> score reset
     /// can be asserted without staging a pre-start kill.</summary>

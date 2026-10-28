@@ -1,0 +1,95 @@
+{
+  "discovery": {
+    "Allegiance.Lobby.Tests": {
+      "fast": 87,
+      "live": 3,
+      "perf": 0
+    },
+    "Allegiance.Update.Tests": {
+      "fast": 28,
+      "live": 0,
+      "perf": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "fast": 3633,
+      "live": 11,
+      "perf": 9
+    },
+    "Allegiance.ClientCore.Tests": {
+      "fast": 1933,
+      "live": 110,
+      "perf": 6
+    },
+    "Allegiance.Core.Tests": {
+      "fast": 5605,
+      "live": 63,
+      "perf": 62
+    }
+  },
+  "tiers": {
+    "fast": {
+      "tier": "fast",
+      "seconds": 313.33939605401247,
+      "projects": {
+        "Allegiance.Lobby.Tests": {
+          "count": 87,
+          "outcomes": {
+            "Passed": 87
+          }
+        },
+        "Allegiance.Update.Tests": {
+          "count": 28,
+          "outcomes": {
+            "Passed": 28
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 3633,
+          "outcomes": {
+            "Passed": 3630,
+            "NotExecuted": 3
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 1933,
+          "outcomes": {
+            "Passed": 1933
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 5605,
+          "outcomes": {
+            "Passed": 5604,
+            "Failed": 1
+          }
+        }
+      },
+      "calibration": {
+        "factor": 0.9511671087533157,
+        "referenceMs": 3.5859,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 10
+      },
+      "timingOffenders": [],
+      "errors": [
+        "Allegiance.Core.Tests: main failed"
+      ],
+      "quarantineFlakes": [],
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.042052875010995194,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      }
+    }
+  },
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.042052875010995194,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  },
+  "passed": false
+}

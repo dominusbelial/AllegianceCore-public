@@ -527,6 +527,7 @@ public sealed partial class Server
     {
         if (mission.Stage == MissionStage.Over) return;
         mission.Stage = MissionStage.Over;
+        MarkLobbyDirty("stage-over");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
 
         // P765 — per-part timing of the game-over tick. Gated behind the same
         // verbose/profiler switch as the other diagnostic lines so the disabled
@@ -1956,6 +1957,7 @@ public sealed partial class Server
                       // this port has no re-trigger path — refuse
 
         mission.Stage = MissionStage.Starting;
+        MarkLobbyDirty("stage-starting");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
         double target = _simNow + countdownSeconds;
         _startCountdownDeadline[mission] = target;
 
@@ -2040,6 +2042,7 @@ public sealed partial class Server
                     if (remaining <= 0)
                     {
                         m.Stage = MissionStage.Over;
+                        MarkLobbyDirty("stage-over-restart");   // fsmission.cpp:1766
                         _autoRestartDeadline.Remove(m);
                         _restartWarnings.Remove(m);
                         BroadcastMissionStageToMission(m, MissionStage.Over);
@@ -2062,6 +2065,7 @@ public sealed partial class Server
 private void CompleteStartCountdown(Mission mission, double now)
     {
         mission.Stage = MissionStage.Started;
+        MarkLobbyDirty("stage-started");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
         mission.CountdownStart = _startCountdownDeadline[mission];
         _startCountdownDeadline.Remove(mission);
 
@@ -2231,21 +2235,50 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// replaced by this path.</summary>
     private void MoveToTeamLobby(Mission mission, Ship ship, QuitSideReason reason)
     {
-        if (ship.SideId is not { } oldSideId) return;
-        HandleLeaderSuccession(ship);
-        // P841 — native RemovePlayerFromSide zeroes the leaver's money into
-        // the old side's treasury while the game runs (fsmission.cpp:1042-1063;
-        // GiveSideMoney fsmission.cpp:1777). The ship-value leg is not applied
-        // here: this port's side-quit keeps the ship alive (native resets the
-        // player and re-seats them, so the hull value is lost to the player),
-        // so crediting its value too would mint credits.
-        // P847 — order fixed to native's: the payday AMOUNT is captured and the
-        // wallet zeroed before the move (fsmission.cpp:1066-1068), but
-        // GiveSideMoney runs AFTER `pfsPlayer->SetSide(..., SIDE_TEAMLOBBY)`
-        // (fsmission.cpp:1141-1145) — so DoPayday's player count no longer
-        // includes the leaver. Paying before the move split the money one extra
-        // way and the leaver's share vanished with the wallet reset.
+        // Already in the team lobby (never seated / parked) — nothing to remove.
+        // Native guards `GetSide() != SIDE_TEAMLOBBY` before calling
+        // RemovePlayerFromSide (fsmission.cpp:4748-4750).
+        if (ship.SideId is not { } oldSideId || oldSideId == SideTeamLobby) return;
+        LeaveSideForSwitch(mission, ship, oldSideId, reason);
+    }
+
+    /// <summary>
+    /// P866 / SIM-0608 — the shared "leave the old side" side-effect block, the
+    /// port of <c>CFSMission::RemovePlayerFromSide</c> (<c>fsmission.cpp:848-1160</c>)
+    /// up to (not including) its re-seat: every branch a side switch must run, in
+    /// native order. Both callers use it — <see cref="MoveToTeamLobby"/> (the ship
+    /// parks there and stays) and <see cref="TryJoinSideCore"/> (the auto-accept
+    /// and pending join legs, which immediately seat on the new side), so the
+    /// auto-accept leg now equals the pending leg and both equal native's
+    /// <c>RemovePlayerFromSide(QSR_SwitchingSides)</c>:
+    /// <list type="number">
+    /// <item><b>Flag drop</b> (<c>:875-893</c>) — a carried flag is respawned or
+    /// jettisoned where the carrier stands and the mission hears
+    /// <c>GAIN_FLAG(NA, ship)</c> (<see cref="DropFlagOnSideDeparture"/>).</item>
+    /// <item><b>Leader succession</b> (<c>:917-1099</c>) — promotion / mission-owner
+    /// migration / auto-accept-and-reject tail
+    /// (<see cref="HandleLeaderSuccession"/>).</item>
+    /// <item><b>QUIT_SIDE</b> (<c>:1130-1137</c>) — whole mission, with the native
+    /// reason (QSR_SwitchingSides for a switch).</item>
+    /// <item><b>Money</b> (<c>:1042-1068,1141-1145</c>) — the leaver's wallet is
+    /// captured and zeroed, then credited to the old side's treasury with an
+    /// immediate payday once the leaver is off the side. The ship-value leg is
+    /// not applied: this port's side-quit keeps the ship alive (native resets and
+    /// re-seats the player, losing the hull to them), so crediting its value too
+    /// would mint credits.</item>
+    /// <item><b>Team-lobby park</b> — <c>pfsPlayer-&gt;SetSide(SIDE_TEAMLOBBY)</c>
+    /// (<c>:1140</c>): the ship is off its old side before the caller re-seats it,
+    /// which is also what makes the immediate payday exclude the leaver (P847).</item>
+    /// </list>
+    /// Runs on the sim thread; the object-sync/readiness halves stay with the
+    /// callers (the switcher's old side is re-checked after the new seat lands).
+    /// </summary>
+    private void LeaveSideForSwitch(Mission mission, Ship ship, short oldSideId, QuitSideReason reason)
+    {
         LiveShip? live = LiveOf(ship);
+        // :875-893 — flag drop, before the ship leaves the side.
+        if (live is not null) DropFlagOnSideDeparture(mission, live, oldSideId);
+        HandleLeaderSuccession(ship);
         long payday = 0;
         if (live is not null)
         {
@@ -2255,6 +2288,9 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
         ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
+        // P866 / fsmission.cpp:523 + fsship.cpp:1134 — the player joined the
+        // team lobby: the lobby advertisement's player counts changed.
+        MarkLobbyDirty("team-lobby");
         MarkObjectSyncDirty(oldSideId);
         if (payday > 0 && mission.Sides.FirstOrDefault(s => s.Id == oldSideId) is { } side)
         {
@@ -3566,9 +3602,24 @@ private void CompleteStartCountdown(Mission mission, double now)
         short? prevRealSide = oldSideId is { } osv && osv != newSideId ? osv : null;
         if (oldSideId is { } os && os != newSideId)
         {
-            HandleLeaderSuccession(ship);
-            if (announce && os != SideTeamLobby)
-                BroadcastQuitSide(mission, ship.Id, QuitSideReason.SwitchingSides);
+            if (os != SideTeamLobby)
+            {
+                // P866 / SIM-0608 — AddPlayerToSide's opening move is the FULL
+                // RemovePlayerFromSide(QSR_SwitchingSides) (fsmission.cpp:562-563):
+                // flag drop, leader succession, QUIT_SIDE, money to the old side's
+                // treasury and the team-lobby park. The auto-accept
+                // POSITIONREQ leg arrives here directly (no prior park), so this
+                // is what makes it equal the pending leg / native.
+                if (announce) LeaveSideForSwitch(mission, ship, os, QuitSideReason.SwitchingSides);
+                else
+                {
+                    // P807 rotation re-seat: the ship is already a fresh, unseated
+                    // hull in a fresh mission (SideId was nulled in migration), so
+                    // this branch is defensive only — keep the silent succession.
+                    HandleLeaderSuccession(ship);
+                    ship.SideId = SideTeamLobby;
+                }
+            }
         }
 
         // New-side leadership: the first player onto an empty side becomes its
@@ -3602,6 +3653,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
 
         ship.SideId = newSideId;
+        // P866 — native CFSShip::SetSide marks the lobby dirty whenever the player
+        // enters or leaves SIDE_TEAMLOBBY (fsship.cpp:1130-1136), which both the
+        // RemovePlayerFromSide half (`... -> SIDE_TEAMLOBBY`) and this AddPlayerToSide
+        // half (`SIDE_TEAMLOBBY -> side`) trigger on every real switch.
+        if (oldSideId != newSideId) MarkLobbyDirty("side-change");
 
         // P324 (M4): a peer seating on this side must get an immediate per-side
         // object sync (stations/asteroids/probes) rather than wait for the
