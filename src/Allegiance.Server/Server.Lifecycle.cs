@@ -2095,6 +2095,14 @@ public sealed partial class Server
             // SET_TEAM_LEADER / SET_MISSION_OWNER as needed. Runs BEFORE the
             // victory check so the surviving peers hear it while they still
             // belong to the original mission.
+            // P864 / SIM-0504 — the departing leader's ship is ALREADY out of
+            // _peerShips (removed in ReleasePeerWithReason), so the succession's
+            // TransferCommandTime cannot resolve its PlayerScore to StopCommand
+            // it. Fold the open command stint here, from the retained live ship,
+            // so the departing commander's TimeCommanded is complete before the
+            // successor is elected (native folds command time on Disconnect,
+            // igc.h:5609-5611). A no-op for a non-leader (not commanding).
+            live.PlayerScore.FoldOpenCommandTime(_simNow);
             HandleLeaderSuccession(live.Ship);
 
             // P184 — a departing player's pending side-join request(s), if any,

@@ -770,6 +770,22 @@ list in **reverse**.
 - **Career lobby web pages (P808c)** — read-only ladder + player profile on the
   lobby site: `src/Allegiance.Lobby/wwwroot/ladder.html`, `ladder.js`,
   `profile.html`, `profile.js`, `career.css`.
+- **Server-side GetExpMult career store (P864 / SIM-0528+0761)** — the port's
+  in-memory stand-in for native's persisted per-player career score that
+  `GetExpMult` weighs experience with (`timePlayed · persist.GetScore()`,
+  `FedSrv/fsmission.cpp:3261-3272`): a server-lifetime dictionary keyed by
+  character name (`src/Allegiance.Server/Server.cs` `_careerScores`), folded at
+  each game over so career-based anti-stacking accumulates across games within a
+  server run (cross-restart persistence is out of scope — no stats DB, P583).
+  Consumed by `PlayerScore.ApplyGameOverExperienceBalance` (`PlayerScore.cs`)
+  which applies the `GetExpMult` multiplier at all three `ProcessGameOver` call
+  sites (connected, departed, commander) in
+  `src/Allegiance.Server/Server.Lobby.cs` `FinalizeMissionScores`. Also adds
+  native `PlayerScoreObject` command-time (`StartCommand`/`StopCommand`/
+  `TimeCommanded`, `igc.h:5615-5630`) and the commander score
+  (`SetCommanderScore`, `igc.h:5519-5527`), feeding the game-over commander
+  selection and the lobby report's CommanderWin/CommanderLoss columns. Report
+  `docs/reports/P864_REPORT.md`.
 
 ## 14. Match civilizations (P825)
 

@@ -346,6 +346,128 @@ public sealed class PlayerScore
     /// (a peer plays continuously from logon to release).</summary>
     public void SetTimePlayed(float seconds) => TimePlayed = seconds;
 
+    /// <summary>P864 / SIM-0504 — the player's accumulated time as team leader,
+    /// the port of native <c>PlayerScoreObject::GetTimeCommanded()</c>
+    /// (<c>m_dtCommanded</c>, <c>igc.h:5908,5920</c>). Fed by
+    /// <see cref="StartCommand"/> / <see cref="StopCommand"/> exactly as native
+    /// <c>CFSMission::SetLeaderID</c> does on every leader change
+    /// (fsmission.cpp:1470,1480), and consumed at game over to select each
+    /// side's commander (the player with the most commanded time,
+    /// fsmission.cpp:3286-3292) and to derive the commander score
+    /// (<c>commandScore · GetTimePlayed()</c>, fsmission.cpp:3356-3376).</summary>
+    public float TimeCommanded { get; set; }
+
+    /// <summary>Whether this player is currently the team leader, the port of
+    /// native <c>PlayerScoreObject::m_bCommanding</c> (<c>igc.h:5921</c>).</summary>
+    public bool Commanding { get; private set; }
+
+    /// <summary>The mission-clock time the current command stint began
+    /// (<c>m_timeStartCommand</c>, <c>igc.h:5920</c>).</summary>
+    private double _commandStart;
+
+    /// <summary>P864 / SIM-0504 — begin the player's command stint — the port
+    /// of native <c>PlayerScoreObject::StartCommand(t)</c>
+    /// (<c>igc.h:5615-5620</c>), called on the new leader by
+    /// <c>CFSMission::SetLeaderID</c> (fsmission.cpp:1480).</summary>
+    public void StartCommand(double t)
+    {
+        Commanding = true;
+        _commandStart = t;
+    }
+
+    /// <summary>P864 / SIM-0504 — end the player's command stint and fold the
+    /// elapsed interval into <see cref="TimeCommanded"/> — the port of native
+    /// <c>PlayerScoreObject::StopCommand(t)</c> (<c>igc.h:5622-5630</c>), called
+    /// on the deposed leader by <c>CFSMission::SetLeaderID</c>
+    /// (fsmission.cpp:1470). Idempotent: a player who is not commanding does
+    /// nothing (native's <c>if (m_bCommanding)</c> guard).</summary>
+    public void StopCommand(double t)
+    {
+        if (!Commanding) return;
+        Commanding = false;
+        double d = t - _commandStart;
+        if (d > 0.0) TimeCommanded += (float)d;
+    }
+
+    /// <summary>P864 — fold any still-open command stint (an incumbent leader
+    /// whose command was never handed off, e.g. the mission ended while they
+    /// led) into <see cref="TimeCommanded"/>. Native folds command time on
+    /// <c>Disconnect</c> when still commanding (<c>igc.h:5609-5611</c>); the
+    /// game-over finalize is this port's connection-lifetime equivalent of that
+    /// disconnect, so the commander-selection pass sees a complete value.</summary>
+    public void FoldOpenCommandTime(double t)
+    {
+        if (Commanding) StopCommand(t);
+    }
+
+    /// <summary>P864 — reset the per-game command bookkeeping after it has been
+    /// consumed at game over. Native's persisted score object carries a fresh
+    /// <c>m_dtCommanded = 0</c> into each new mission (Reset(true),
+    /// <c>igc.h:5510-5515</c>); this port reuses the connection-lifetime
+    /// <see cref="PlayerScore"/> across a rotation, so the counter is cleared
+    /// here to match that per-game stat semantics.</summary>
+    public void ResetCommandTime()
+    {
+        TimeCommanded = 0f;
+        Commanding = false;
+        // CommandCredit/CommandWin/CommandLose are NOT cleared here: they are
+        // read by the lobby report that runs right after the game-over finalize
+        // (ReportMissionResultsToLobby), so they must survive until then. The
+        // helper clears them per player at the start of each finalize (see
+        // ApplyGameOverExperienceBalance.Accrue), so only this game's commander
+        // carries a credit into the report.
+    }
+
+    /// <summary>P864 / SIM-0528 — the player's <em>career</em> score, the port
+    /// of native <c>PlayerScoreObject::GetPersist().GetScore()</c> — the
+    /// per-player experience weight <c>GetExpMult</c> accumulates as
+    /// <c>timePlayed · careerScore</c> (fsmission.cpp:3261-3262,3271-3272). This
+    /// port has no stats DB (P583), so the career score is a
+    /// <b>server-lifetime, in-memory</b> value keyed by character name (see
+    /// <c>Server._careerScores</c>): it accumulates across games within a server
+    /// run and is folded into a player's <see cref="Score"/> standing at each
+    /// game over, but does not survive a server restart — the cross-restart
+    /// persistence leg is classified as an era/design limitation (no account/DB
+    /// layer), exactly native's career-based anti-stacking minus the DB.</summary>
+    public float CareerScore { get; set; }
+
+    /// <summary>P864 / SIM-0528 — the <c>m_bCommandWin</c> flag (native
+    /// <c>SetCommanderScore</c>, <c>igc.h:5524</c>): whether the commanded game
+    /// was won. Set alongside a commander-score award; reported to the lobby as
+    /// the CommanderWin career column.</summary>
+    public bool CommandWin { get; set; }
+
+    /// <summary>P864 / SIM-0528 — the <c>m_bCommandLose</c> flag (native
+    /// <c>SetCommanderScore</c>, <c>igc.h:5525</c>): whether the commanded game
+    /// was lost. (The port's <see cref="PlayerScore"/> has no separate Lose
+    /// field; with scores counting, win is the complement of loss, so this is
+    /// <c>!Win</c> when the game had a decisive winner.)</summary>
+    public bool CommandLose { get; set; }
+
+    /// <summary>P864 / SIM-0528 — the <c>m_bCommandCredit</c> flag (native
+    /// <c>SetCommanderScore</c>, <c>igc.h:5526</c>): whether this player earned
+    /// a commander-score credit this game. Consumed by the lobby report as the
+    /// CommanderWin/CommanderLoss gate (native fslobby reads it from the score
+    /// object).</summary>
+    public bool CommandCredit { get; set; }
+
+    /// <summary>P864 / SIM-0528 — the port of native
+    /// <c>PlayerScoreObject::SetCommanderScore(f)</c> (<c>igc.h:5519-5527</c>):
+    /// a commander whose awarded <paramref name="f"/> exceeds their computed
+    /// <see cref="Score"/> has the score raised to it (native keeps the higher
+    /// of the two — a strong commander can out-earn their own kill tally), and
+    /// the command win/lose/credit flags are recorded. Called from the game-over
+    /// finalize with <c>commandScore · TimePlayed()</c> (fsmission.cpp:3356-3376)
+    /// where <c>commandScore</c> is the side's average points-per-player-second,
+    /// optionally damped by <see cref="GetExpMult"/>.</summary>
+    public void SetCommanderScore(float f)
+    {
+        if (f > Score) Score = f;
+        CommandWin = Win;
+        CommandLose = !Win;
+        CommandCredit = true;
+    }
+
     /// <summary>Set <see cref="Win"/> — the win flag
     /// <see cref="CalculateScore"/> multiplies by 2.</summary>
     public void SetWin(bool win) => Win = win;
@@ -501,5 +623,108 @@ public sealed class PlayerScore
         float m = avgExp / sideExp;
 
         return (m < minExpMult) ? minExpMult : m;
+    }
+
+    /// <summary>
+    /// P864 / SIM-0528 — the pure, unit-testable body of the <c>GetExpMult</c>
+    /// score-damping pass over <c>ProcessGameOver</c>'s three call sites
+    /// (connected players <c>fsmission.cpp:3290-3314</c>, departed old players
+    /// <c>:3316-3327</c>, commander <c>:3340-3376</c>), plus the preceding
+    /// experience accumulation (<c>fsmission.cpp:3261-3272</c>) and the trailing
+    /// career-record save (<c>:3378-3402</c>). Extracted so the exact native math
+    /// is independently testable; <c>FinalizeMissionScores</c> feeds it this
+    /// server's in-memory career store through <paramref name="careerOf"/> /
+    /// <paramref name="foldCareer"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Experience.</b> Native accumulates each side's experience as
+    /// <c>Σ timePlayed · persist.GetScore()</c> over both connected and departed
+    /// players, where <c>persist.GetScore()</c> is the player's <em>career</em>
+    /// score going into the game (the anti-stacking basis). The port substitutes
+    /// <paramref name="careerOf"/> (name) for the persisted career record — the
+    /// same structure minus the DB (P583).</para>
+    /// <para><b>Three call sites.</b> (1) every connected player's final score is
+    /// scaled by <c>GetExpMult</c> when it is &lt; 1; (2) every departed old
+    /// player's cached score likewise; (3) each side's commander (the player with
+    /// the most <see cref="TimeCommanded"/>) earns
+    /// <c>(side score earned ÷ side player-seconds) · own time-played</c>, itself
+    /// scaled by <c>GetExpMult</c>, applied via <see cref="SetCommanderScore"/>
+    /// (which keeps the higher of it vs. the kill tally). Then every player's
+    /// score is folded into the career record for the next game, and the per-game
+    /// command bookkeeping is reset (native Reset(true), <c>igc.h:5510-5515</c>).</para>
+    /// <para>A fresh server where nobody has a career yet (career 0) yields
+    /// experience 0 → <c>GetExpMult</c> = 1.0 → no damping, exactly native's new
+    /// players; the pass only bites once experience has accumulated.</para>
+    /// </remarks>
+    internal static void ApplyGameOverExperienceBalance(
+        IReadOnlyList<(string Name, PlayerScore Ps, short SideId)> connected,
+        IReadOnlyList<(string Name, PlayerScore Ps, short SideId)> departed,
+        int nSides,
+        double now,
+        Func<string, float> careerOf,
+        Action<string, float> foldCareer)
+    {
+        float totalExperience = 0f;
+        var sideExperience = new Dictionary<short, float>();
+        var sideScoreEarned = new Dictionary<short, float>();
+        var sideDtPlayed = new Dictionary<short, float>();
+        var commander = new Dictionary<short, PlayerScore>();
+
+        void Accrue(short sid, PlayerScore ps, string name)
+        {
+            ps.CareerScore = careerOf(name);       // native persist.GetScore()
+            // P864 — clear this game's commander flags so only the awarded
+            // commander carries CommandCredit/CommandWin/CommandLose into the
+            // lobby report (a player commanded last game but not this one must
+            // not report a stale commander credit).
+            ps.CommandCredit = false; ps.CommandWin = false; ps.CommandLose = false;
+            float e = ps.TimePlayed * ps.CareerScore;
+            totalExperience += e;
+            sideExperience[sid] = sideExperience.GetValueOrDefault(sid) + e;
+            sideScoreEarned[sid] = sideScoreEarned.GetValueOrDefault(sid) + ps.Score;
+            sideDtPlayed[sid] = sideDtPlayed.GetValueOrDefault(sid) + ps.TimePlayed;
+            if (!commander.TryGetValue(sid, out var cur) || cur.TimeCommanded < ps.TimeCommanded)
+                commander[sid] = ps;               // commander[side] = max TimeCommanded, fsmission.cpp:3286-3292
+        }
+
+        foreach (var (name, ps, sid) in connected)
+        {
+            ps.FoldOpenCommandTime(now);           // fold the incumbent leader's open stint (native Disconnect)
+            Accrue(sid, ps, name);
+        }
+        foreach (var (name, ps, sid) in departed)
+            Accrue(sid, ps, name);
+
+        // Call site 1 — damp connected scores (fsmission.cpp:3290-3314).
+        foreach (var (_, ps, sid) in connected)
+        {
+            float f = GetExpMult(totalExperience, sideExperience.GetValueOrDefault(sid), nSides);
+            if (f < 1.0f) ps.Score *= f;
+        }
+        // Call site 2 — damp departed scores (fsmission.cpp:3316-3327).
+        foreach (var (_, ps, sid) in departed)
+        {
+            float f = GetExpMult(totalExperience, sideExperience.GetValueOrDefault(sid), nSides);
+            if (f < 1.0f) ps.Score *= f;
+        }
+        // Call site 3 — commander award (fsmission.cpp:3340-3376).
+        foreach (var (sid, cmdr) in commander)
+        {
+            if (sideDtPlayed.GetValueOrDefault(sid) <= 0f) continue;
+            float commandScore = sideScoreEarned.GetValueOrDefault(sid) / sideDtPlayed[sid];
+            float f = GetExpMult(totalExperience, sideExperience.GetValueOrDefault(sid), nSides);
+            if (f < 1.0f) commandScore *= f;
+            cmdr.SetCommanderScore(commandScore * cmdr.TimePlayed);
+        }
+
+        // Career save (native SetCharStats, fsmission.cpp:3378-3402).
+        foreach (var (name, ps, _) in connected)
+            foldCareer(name, ps.Score);
+        foreach (var (name, ps, _) in departed)
+            foldCareer(name, ps.Score);
+
+        // Reset the per-game command bookkeeping for the next mission.
+        foreach (var (_, ps, _) in connected) ps.ResetCommandTime();
+        foreach (var (_, ps, _) in departed) ps.ResetCommandTime();
     }
 }
