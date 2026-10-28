@@ -1,0 +1,9 @@
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 117 ms - Allegiance.ClientCore.Tests.dll (net10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 117 ms - Allegiance.ClientCore.Tests.dll (net10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 117 ms - Allegiance.ClientCore.Tests.dll (net10.0)

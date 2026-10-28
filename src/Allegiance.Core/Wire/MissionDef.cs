@@ -201,6 +201,22 @@ public sealed class MissionDef : IFedMessage
     /// (FedSrv.CPP:7547-7548), so the advertisement must carry it.</summary>
     public short NTotalMaxPlayersPerGame = unchecked((short)0x7FFF);
 
+    /// <summary>P853b — the WHOLE embedded <c>MissionParams</c> block, when the
+    /// sender has one. Native's client memcpy's the entire struct out of
+    /// MISSIONDEF (<c>appmsg.cpp:2416</c> → <c>clintlib.cpp:670-673</c>
+    /// <c>m_pfmMissionDef</c>) and its game-settings screen re-sends that struct
+    /// with only the user's edits applied (<c>newgamescreen.cpp:968-1031</c>,
+    /// <c>1034-1130</c>), so a client that cannot see the whole block would have
+    /// to send zeros for the fields it never learned (treasure rates, He3
+    /// density, starting money, the unmodelled bool:1 flags, …) and the server
+    /// would adopt them (<c>fsmission.cpp:1843</c>). When this is set,
+    /// <see cref="Encode"/> stamps it over the params block and it is
+    /// authoritative for the cells it covers; the typed fields above stay as a
+    /// compatibility view of the same block. Null (the codec's own tests and any
+    /// caller that only cares about the typed fields) leaves the historical
+    /// zero-filled representation untouched.</summary>
+    public MissionParamsMsg? Params;
+
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
@@ -280,6 +296,16 @@ public sealed class MissionDef : IFedMessage
         WriteBitfield(buf, BLockGameOpenBit, BLockGameOpen);
         WriteBitfield(buf, AllowFriendlyFireBit, AllowFriendlyFire);
 
+        // P853b — when the caller hands over the whole params block, it is
+        // authoritative for the 252-byte MissionParams region (header excluded:
+        // the embedded struct starts at offset 4 in both messages, so the
+        // MISSIONPARAMS encoding's bytes [4..256) land on MISSIONDEF [4..256)).
+        if (Params is { } whole)
+        {
+            var paramsBytes = whole.Encode();
+            Array.Copy(paramsBytes, 4, buf, MisparmsOffset, MissionParamsSize);
+        }
+
         if (w.Position < FixedSize) w.Advance(FixedSize - w.Position);
         if (w.Position != FixedSize)
             throw new InvalidOperationException($"MISSIONDEF internal layout drift: {w.Position} != {FixedSize}");
@@ -287,12 +313,15 @@ public sealed class MissionDef : IFedMessage
         // Re-validate the two essential absolute placements independently of
         // the cursor arithmetic above (belt-and-braces against a silent pad slip).
         // szIGCStaticFile is compared against its truncated written form (a name
-        // longer than the buffer is clipped to width-1, keeping the NUL).
-        if (ReadFixedString(buf, SzIGCStaticFileOffset, StaticFileBufSize) != TruncatedFixedString(SzIGCStaticFile))
+        // longer than the buffer is clipped to width-1, keeping the NUL). When
+        // the params block was stamped, THAT is what landed in the buffer, so
+        // check it against its own values.
+        if (ReadFixedString(buf, SzIGCStaticFileOffset, StaticFileBufSize)
+            != TruncatedFixedString(Params?.SzIgcStaticFile ?? SzIGCStaticFile))
             throw new InvalidOperationException("MISSIONDEF szIGCStaticFile mispositioned");
-        if (BitConverter.ToInt32(buf, VerIgcCoreOffset) != VerIgcCore)
+        if (BitConverter.ToInt32(buf, VerIgcCoreOffset) != (Params?.VerIgcCore ?? VerIgcCore))
             throw new InvalidOperationException("MISSIONDEF verIGCcore mispositioned");
-        if (BitConverter.ToInt16(buf, LivesOffset) != ILives)
+        if (BitConverter.ToInt16(buf, LivesOffset) != (Params?.ILives ?? ILives))
             throw new InvalidOperationException("MISSIONDEF iLives mispositioned");
         return buf;
     }
@@ -370,6 +399,10 @@ public sealed class MissionDef : IFedMessage
             NMinPlayersPerTeam = minPerTeam,
             NMaxPlayersPerTeam = maxPerTeam,
             NTotalMaxPlayersPerGame = totalMax,
+            // P853b — the whole embedded params block (see the field remarks).
+            // MISSIONDEF carries it at the same offset 4 MISSIONPARAMS uses, so
+            // the params codec decodes the region directly.
+            Params = MissionParamsMsg.DecodeParams(buf.Slice(MisparmsOffset, MissionParamsSize)),
         };
     }
 

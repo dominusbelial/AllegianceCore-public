@@ -478,6 +478,14 @@ public static class InputActionCatalog
         // teamscreen.cpp:1007-1075/3049-3065; server gate FedSrv.CPP:7348-7360).
         // The picker pane reuses MenuUp/MenuDown/MenuConfirm in this context.
         new("CivPicker", "READY CHECK (PRE-FLIGHT)", "Team leader: change the side's civilization", K(Keys.C), null),
+        // P853b — the team lobby's HOST-EDITING affordances (the pre-game half of
+        // native's team settings dialog, WinTrek/teamscreen.cpp:856-1104, and of
+        // the create-game settings screen, WinTrek/newgamescreen.cpp:1034-1130).
+        // Both panes are shown only to the player native shows them to (the
+        // side's leader / the mission owner); the keys do nothing for anyone
+        // else. Text entry reuses the shared Window.TextInput path.
+        new("TeamNameEdit", "READY CHECK (PRE-FLIGHT)", "Team leader: rename your side", K(Keys.T), null),
+        new("MissionSettings", "READY CHECK (PRE-FLIGHT)", "Mission owner: game settings", K(Keys.G), null),
 
         // -- PANES / MENUS (docked shop / teleport / invest, side-select) --
         // Generic navigation verbs shared across the docked sub-panes and the
@@ -487,6 +495,11 @@ public static class InputActionCatalog
         // bindings (they come from each pane's own key handling).
         new("MenuUp", "PANES / MENUS", "Menu / pane: cursor up", K(Keys.Up), null),
         new("MenuDown", "PANES / MENUS", "Menu / pane: cursor down", K(Keys.Down), null),
+        // P853b — the value pair the host-editing panes step with (native's combos
+        // move their selection with the arrows). Separate actions so a rebind of
+        // the lobby's sort-header cursor cannot change them.
+        new("MenuLeft", "PANES / MENUS", "Menu / pane: value down (left)", K(Keys.Left), null),
+        new("MenuRight", "PANES / MENUS", "Menu / pane: value up (right)", K(Keys.Right), null),
         new("MenuSelect", "PANES / MENUS", "Menu / pane: select / activate", K(Keys.Space), null),
         new("MenuConfirm", "PANES / MENUS", "Menu / pane: confirm (Enter)", K(Keys.Enter), null),
         new("MenuBack", "PANES / MENUS", "Menu / pane: back to hangar / previous", K(Keys.B), null),

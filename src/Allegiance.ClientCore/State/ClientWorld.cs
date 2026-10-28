@@ -4991,6 +4991,11 @@ public sealed partial class ClientWorld
             // MissionParams bitfield block (igc.h:1127,1149).
             AllowFriendlyFire = def.AllowFriendlyFire,
             AllowAlliedViz = def.AllowAlliedViz,
+            // P853b — the whole advertised MissionParams block, the starting
+            // point of the owner's game-settings form (native memcpy's it out of
+            // the misdef, clintlib.cpp:670-673). The decoded message owns this
+            // instance exclusively, so the form clones before editing.
+            Params = def.Params,
         };
         _missionTimeStartMs = def.TimeStart;
     }
@@ -5028,6 +5033,14 @@ public sealed partial class ClientWorld
             // the goal/lives fields do (they come only from MISSIONDEF).
             AllowFriendlyFire = _mission?.AllowFriendlyFire ?? false,
             AllowAlliedViz = _mission?.AllowAlliedViz ?? false,
+            // P853b review — bLockGameOpen was being dropped here (it is a
+            // MISSIONDEF-only field, P761, and the team lobby's AUTO-ACCEPT /
+            // LOCK LOBBY enable states read it). Every MISSION_STAGE turned a
+            // locked game back into an unlocked one in the UI; carry it like
+            // its two sibling option flags.
+            LockGameOpen = _mission?.LockGameOpen ?? false,
+            // P853b — so does the whole params block the host-editing UI reads.
+            Params = _mission?.Params,
         };
 
         if (enteringOver)

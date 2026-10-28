@@ -242,6 +242,15 @@ public sealed class MissionParamsMsg : IFedMessage
 
     public ushort GetFmid() => Fmid;
 
+    /// <summary>P853b — a deep copy of this params struct. The client's
+    /// game-settings form starts from the mission's advertised params and must
+    /// never mutate the world's snapshot in place (native's form reads a local
+    /// <c>MissionParams</c> copy, <c>WinTrek/newgamescreen.cpp:968-1031</c>), so
+    /// the draft is cloned through the codec — the same
+    /// <see cref="Encode"/>/<see cref="Decode"/> pair the wire uses, which also
+    /// keeps the two in lock-step if a field is ever added.</summary>
+    public MissionParamsMsg Clone() => Decode(Encode());
+
     public byte[] Encode()
     {
         var buf = new byte[FixedSize];
@@ -315,6 +324,25 @@ public sealed class MissionParamsMsg : IFedMessage
             throw new InvalidOperationException($"MISSIONPARAMS internal layout drift: {w.Position} != {FixedSize}");
         w.WriteU16At(0, (ushort)FixedSize);
         return buf;
+    }
+
+    /// <summary>P853b — decode a bare 252-byte <c>MissionParams</c> block, i.e.
+    /// one without the fedmsg header this message normally carries. MISSIONDEF
+    /// embeds exactly that block at its own offset 4
+    /// (<c>offsetof(FMD_S_MISSIONDEF, misparms)</c> = 4, P29 probe); synthesizing
+    /// the 4-byte header here lets the one codec serve both placements instead of
+    /// duplicating the field decodes.</summary>
+    public static MissionParamsMsg DecodeParams(ReadOnlySpan<byte> block)
+    {
+        if (block.Length != MissionParamsSize)
+            throw new ArgumentException($"MISSIONPARAMS block needs exactly {MissionParamsSize} bytes, got {block.Length}");
+        var tmp = new byte[FixedSize];
+        tmp[0] = (byte)(FixedSize & 0xFF);
+        tmp[1] = (byte)(FixedSize >> 8);
+        tmp[2] = (byte)(Fmid & 0xFF);
+        tmp[3] = (byte)(Fmid >> 8);
+        block.CopyTo(tmp.AsSpan(ParamsOffset));
+        return Decode(tmp);
     }
 
     public static MissionParamsMsg Decode(ReadOnlySpan<byte> buf)

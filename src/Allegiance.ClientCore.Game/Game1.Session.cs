@@ -1352,6 +1352,17 @@ public sealed partial class Game1
         if (c < 32 || c == 127)
             return;
 
+        // P853b — the team lobby's TEAM NAME edit box owns typed text while it is
+        // open (native's teamNameEditPane, teamscreen.cpp:887/897: max length
+        // c_cbName - 1 = 24). Same Window.TextInput path as the chat line and the
+        // lobby filter, so editing feels identical and needs no new input plumbing.
+        if (_state == ClientState.ReadyCheck && _teamNameEditing)
+        {
+            if (_teamNameBuffer.Length < State.TeamNameEdit.MaxLength)
+                _teamNameBuffer.Append(c);
+            return;
+        }
+
         if (_state == ClientState.Lobby && _filterActive)
         {
             if (_filterBuffer.Length < MaxFilterLen)

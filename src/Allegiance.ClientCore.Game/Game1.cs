@@ -911,6 +911,22 @@ public sealed partial class Game1 : Game
     private int _civPickerIndex;
     private bool _civOpenWasDown, _civUpWasDown, _civDownWasDown, _civConfirmWasDown;
     private readonly Dictionary<string, Texture2D?> _civIcons = new(StringComparer.Ordinal);
+    // P853b — the team lobby's HOST-EDITING panes: the side's TEAM NAME edit (the
+    // side leader, non-squad game) and the owner's GAME SETTINGS form. Both ride
+    // the ready-check overlay rather than a modal dialog; the models do the rules
+    // (State.TeamNameEdit / State.MissionSettingsForm) and these fields are only
+    // the UI state: the inline edit buffer, the last refusal string, and the
+    // key-edge latches.
+    private bool _teamNameEditing;
+    private readonly StringBuilder _teamNameBuffer = new();
+    private string? _teamNameError;
+    private bool _teamNameKeyWasDown, _teamNameEnterWasDown, _teamNameBackWasDown,
+        _teamNameEscWasDown;
+    private MissionSettingsForm? _settingsForm;
+    private string? _settingsError;
+    private bool _settingsKeyWasDown, _settingsUpWasDown, _settingsDownWasDown,
+        _settingsLeftWasDown, _settingsRightWasDown, _settingsConfirmWasDown,
+        _settingsSpaceWasDown, _settingsEscWasDown;
     // P598 — the ship id this client last sent PLAYER_READY(true) for. The
     // server re-seats a migrated peer after a game-over rotation with a FRESH
     // ship id (new SET_CLUSTER), so a non-null mismatch here means the mission

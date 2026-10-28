@@ -1,0 +1,17 @@
+Waiting for runner lock: /tmp/allegiance-test-tiers.lock
+Building solution
+Discovery counts: {"Allegiance.Lobby.Tests": {"fast": 87, "live": 3, "perf": 0}, "Allegiance.Update.Tests": {"fast": 28, "live": 0, "perf": 0}, "Allegiance.ClientCore.MonoGame.Tests": {"fast": 3613, "live": 11, "perf": 9}, "Allegiance.ClientCore.Tests": {"fast": 1933, "live": 110, "perf": 6}, "Allegiance.Core.Tests": {"fast": 5594, "live": 63, "perf": 62}}
+Fast infrastructure checks: PASS
+P744 factor=0.977; Fast limit=10.000s
+fast/main Allegiance.Update.Tests: {'Passed': 28} (1.6s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.Update.Tests-main.log
+fast/main Allegiance.Lobby.Tests: {'Passed': 87} (2.1s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.Lobby.Tests-main.log
+fast/main Allegiance.ClientCore.MonoGame.Tests: {'Passed': 3610, 'NotExecuted': 3} (39.0s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.ClientCore.MonoGame.Tests-main.log
+fast/main Allegiance.ClientCore.Tests: {'Passed': 1930, 'Failed': 1} (206.6s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.ClientCore.Tests-main.log
+fast/main Allegiance.Core.Tests: {'Passed': 5584} (303.9s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.Core.Tests-main.log
+fast/quarantine Allegiance.ClientCore.Tests: {'Passed': 2} (3.4s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.ClientCore.Tests-quarantine.log
+fast/quarantine Allegiance.Core.Tests: {'Passed': 10} (4.1s); /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/fast/Allegiance.Core.Tests-quarantine.log
+fast: 11255 tests, 313.5s, FAIL
+  ERROR: Allegiance.ClientCore.Tests: main failed
+
+FAIL: /home/domingo/allegiance-pi-p853b/TestResults/tiers-20261028T132446.450182Z/summary.json
+EXIT=1

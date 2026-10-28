@@ -29,6 +29,11 @@ public static class ReadyCheckLayout
         Info,
         Item,
         Muted,
+        /// <summary>P853b — a refused input (the native message box that
+        /// <c>newgamescreen.cpp:1117-1119</c> / <c>temascreen.cpp:1044-1075</c>
+        /// raise). Drawn in a warning colour so a rejected edit is impossible to
+        /// miss.</summary>
+        Error,
     }
 
     /// <summary>One display row.</summary>

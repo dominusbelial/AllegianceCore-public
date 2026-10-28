@@ -31,6 +31,9 @@ public sealed class ReadyCheckOverlayRenderer
     private static readonly Color MutedColor = new(0.50f, 0.56f, 0.58f);
     private static readonly Color HintColor = new(0.60f, 0.72f, 0.70f);
     private static readonly Color InfoColor = new(0.92f, 0.85f, 0.55f);
+    // P853b — a refused host edit (native raises a message box carrying the
+    // validation string: newgamescreen.cpp:1117-1119).
+    private static readonly Color ErrorColor = new(1.00f, 0.52f, 0.42f);
 
     private const float Padding = 24f;
     private const float LineGap = 3f;
@@ -116,6 +119,7 @@ public sealed class ReadyCheckOverlayRenderer
         ReadyCheckLayout.Kind.Info => InfoColor,
         ReadyCheckLayout.Kind.Item => r.Highlight ? HighlightColor : ItemColor,
         ReadyCheckLayout.Kind.Muted => MutedColor,
+        ReadyCheckLayout.Kind.Error => ErrorColor,
         _ => ItemColor,
     };
 

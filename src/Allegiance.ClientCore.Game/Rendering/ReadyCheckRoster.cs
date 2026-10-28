@@ -55,6 +55,12 @@ public static class ReadyCheckRoster
                     if (s.SideId == mySide && s.Name.Length > 0) { sideName = s.Name; break; }
                 }
             }
+            // P853b — the server's live rename (SET_TEAM_INFO with squadID NA,
+            // fsmission.cpp:1564-1600) wins over the creation-time SIDE_ROSTER
+            // name, exactly as native applies it to the IGC side
+            // (appmsg.cpp:2541-2550). Same source the in-flight team pane reads
+            // (P853, TeamPaneLayout), so the lobby and the pane never disagree.
+            if (mySide >= 0 && world.SideNameOverride(mySide) is { } renamed) sideName = renamed;
             foreach (var (sid, ent) in world.Ships)
                 ships.Add((sid, ent.SideId, ent.CharacterName ?? ""));
             roster = new Dictionary<short, bool>(world.Roster.ReadyByShipId);

@@ -709,6 +709,15 @@ public sealed partial class Game1
                     _coastToggled = false;
                     _radarMode = Rendering.RadarMode.Default;
                     _headLookYaw = 0f;
+                    // P853b — the pre-game host-editing panes end with the lobby
+                    // (native closes its team-settings dialog on start,
+                    // teamscreen.cpp:1679-1682); a stale draft must never carry
+                    // into the next intermission.
+                    _teamNameEditing = false;
+                    _teamNameBuffer.Clear();
+                    _teamNameError = null;
+                    _settingsForm = null;
+                    _settingsError = null;
                     PrimeInFlightKeyLatches(ks);
                 }
             }
