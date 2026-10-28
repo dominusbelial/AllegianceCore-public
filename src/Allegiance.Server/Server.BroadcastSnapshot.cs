@@ -16,6 +16,7 @@ public sealed partial class Server
     // the publisher owns only detached records and their shared byte buffers.
     private readonly Dictionary<(Ship Ship, uint Time), HeavyShipUpdateEntry> _sharedHeavy = new();
     private readonly Dictionary<Ship, LightShipUpdateEntry> _sharedLight = new();
+    private readonly Dictionary<byte[], BroadcastPacket> _encodedEventPackets = new();
     internal BroadcastPublisher? TestPublisher => _broadcastPublisher;
     private BroadcastPublisher? _broadcastPublisher;
     private BroadcastSnapshot? _buildingBroadcastSnapshot;
@@ -139,6 +140,7 @@ public sealed partial class Server
         if (_buildingBroadcastSnapshot is not null) throw new InvalidOperationException("Snapshot already being built");
         _sharedHeavy.Clear();
         _sharedLight.Clear();
+        _encodedEventPackets.Clear();
         _buildingBroadcastSnapshot = _broadcastPublisher.Rent(TickIndex);
     }
 
@@ -157,6 +159,7 @@ public sealed partial class Server
             _buildingBroadcastSnapshot = null;
             _sharedHeavy.Clear();
             _sharedLight.Clear();
+            _encodedEventPackets.Clear();
             _broadcastPublisher!.Submit(snapshot);
         }
         if (_snapshotBuildStart != 0)
@@ -195,6 +198,23 @@ public sealed partial class Server
     private void SendPeer(ConnectionId peer, BroadcastPacket packet) => QueueBroadcast(peer, packet, 0, true);
     private void SendPeerCoalescing(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed = false)
         => QueueBroadcast(peer, packet, key, guaranteed);
+
+    // An event already owns immutable encoded bytes. Its N recipients can share
+    // one wrapper within the open snapshot, preserving delivery order and lanes.
+    private void QueueEncodedEvent(ConnectionId peer, byte[] bytes, int key, bool guaranteed)
+    {
+        if (!TestLegacySurgeProjection && _buildingBroadcastSnapshot is { } snapshot)
+        {
+            lock (_snapshotCaptureGate)
+            {
+                if (!_encodedEventPackets.TryGetValue(bytes, out var packet))
+                    _encodedEventPackets.Add(bytes, packet = new BroadcastPacket(bytes));
+                snapshot.Deliveries.Add(new(peer, packet, key, guaranteed));
+            }
+            return;
+        }
+        QueueBroadcast(peer, new BroadcastPacket(bytes), key, guaranteed);
+    }
 
     private void QueueBroadcast(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed)
     {

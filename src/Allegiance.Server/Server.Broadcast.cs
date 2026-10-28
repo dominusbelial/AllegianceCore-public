@@ -2980,6 +2980,7 @@ public sealed partial class Server
         // per SendShipUpdates pass, FedSrv.CPP:3722-3796).
         _activeTurretCandidates.Clear();
         _inactiveTurretRelays.Clear();
+        _rankedHeavy.Clear();
         var peers = SnapshotBroadcastPeers();
         if (_broadcastInterestTiersEnabled) CaptureInterestSnapshot(peers);
         try
@@ -3026,6 +3027,7 @@ public sealed partial class Server
         }
         finally
         {
+            _rankedHeavy.Clear();
             _interestSnapshot.Clear();
             _activeTurretCandidates.Clear();
             _inactiveTurretRelays.Clear();
@@ -3056,6 +3058,12 @@ public sealed partial class Server
             ResolveTargetFractions(self, self.CommandTarget, sector,
                 out Ship? target, out byte hull, out byte shield);
             BroadcastTierPose(kv.Key, self, target, sector, admin, tickIndex, poseNow, hull, shield);
+            return;
+        }
+        if (_nativeShipUpdates && !_broadcastInterestTiersEnabled && ReuseBroadcastBuffers
+            && !TestLegacySurgeProjection && !TestLegacyClashProjection)
+        {
+            BroadcastRankedPose(kv, tickIndex, trackCadence, poseNow);
             return;
         }
         BroadcastShipsUpdatePeerLegacy(kv, tickIndex, trackCadence, poseNow);

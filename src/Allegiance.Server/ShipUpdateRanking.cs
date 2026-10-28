@@ -11,6 +11,8 @@ internal sealed class ShipUpdateRanking
     private readonly List<(Ship Ship, int Ordinal)> _selected = new();
     private bool[] _served = [];
     internal readonly List<Ship> Candidates = new();
+    internal readonly List<Ship> Heavy = new();
+    internal readonly List<Allegiance.Core.Wire.LightShipUpdateEntry> Light = new();
     internal IEnumerable<Ship> Rank(int limit)
     {
         _heap.Clear(); _selected.Clear();

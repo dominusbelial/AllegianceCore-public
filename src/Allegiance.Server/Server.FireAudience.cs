@@ -80,11 +80,21 @@ public sealed partial class Server
             && source.Sector == sector && live.Ship.Mission == source.Mission
             && ShipPoseVisible(live.Ship, source, HasAdminView(peer));
 
+    // Scoped to ONE fan-out: no callback mutates the source between recipients.
+    // Pose/status are identical; export identity retains its existing side gate.
+    // Native FedSrv.CPP:5505 forwards one fire message to the sector; the reliable
+    // pose dependency is the port's existing thin-client adaptation.
+    private sealed class EmissionPackets
+    {
+        internal BroadcastPacket? Status, Pose;
+    }
+
     private int BroadcastShipEmission(Ship source, Sector sector, byte[] packet)
     {
         int sent = 0;
+        var shared = TestLegacySurgeProjection ? null : new EmissionPackets();
         foreach (var peer in _peerShips.Keys)
-            if (PeerInSector(peer, sector) && SendShipEmission(peer, source, sector, packet)) sent++;
+            if (PeerInSector(peer, sector) && SendShipEmission(peer, source, sector, packet, shared)) sent++;
         return sent;
     }
 
@@ -125,7 +135,7 @@ public sealed partial class Server
     // Sim-thread only, including calls during inbound dispenser commands and
     // Mission.Update before the identity/pose broadcast suffix. Key zero uses
     // the reliable FIFO; a later coalesced pose cannot replace this dependency.
-    private bool SendShipEmission(ConnectionId peer, Ship source, Sector sector, byte[] packet)
+    private bool SendShipEmission(ConnectionId peer, Ship source, Sector sector, byte[] packet, EmissionPackets? shared = null)
     {
         if (!EmissionVisible(peer, source, sector))
         {
@@ -140,7 +150,7 @@ public sealed partial class Server
                 || !prior.Poses.TryGetValue(source.Id, out var known) || known.Ship != source)
                 return false;
         }
-        else EnsureEmissionPose(peer, source, sector);
+        else EnsureEmissionPose(peer, source, sector, shared);
         var state = _emissionViewers[peer];
         // Count deliveries, not unique sim events: one round sent to ten viewers
         // contributes ten. This tests reliable source-pose history at enqueue,
@@ -152,7 +162,7 @@ public sealed partial class Server
         return true;
     }
 
-    private void EnsureEmissionPose(ConnectionId peer, Ship source, Sector sector)
+    private void EnsureEmissionPose(ConnectionId peer, Ship source, Sector sector, EmissionPackets? shared = null)
     {
         var viewer = _peerShips[peer].Ship;
         if (!_emissionViewers.TryGetValue(peer, out var state)
@@ -166,13 +176,20 @@ public sealed partial class Server
         if (initial)
         {
             SendPeer(peer, CrossSideExportPacket(source, viewer.SideId ?? -1));
-            SendPeer(peer, PackBroadcast(Message(MakeCrossSideShipStatus(source, sector.Id, spotted: true))));
+            var status = shared?.Status ?? PackBroadcast(Message(MakeCrossSideShipStatus(source, sector.Id, spotted: true)));
+            if (shared is not null) shared.Status = status;
+            SendPeer(peer, status);
             _fireInitialPoses++;
         }
         else _fireRefreshPoses++;
-        var pose = new SingleShipUpdate { OidTarget = source.Id,
-            Ship = ServerShipUpdate.FromModel(source.Id, source, (uint)TickIndex) };
-        SendPeer(peer, PackBroadcast(Message(pose)));
+        var pose = shared?.Pose;
+        if (pose is null)
+        {
+            pose = PackBroadcast(Message(new SingleShipUpdate { OidTarget = source.Id,
+                Ship = ServerShipUpdate.FromModel(source.Id, source, (uint)TickIndex) }));
+            if (shared is not null) shared.Pose = pose;
+        }
+        SendPeer(peer, pose);
         state.Poses[source.Id] = new(source, now);
     }
 

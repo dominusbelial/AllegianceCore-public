@@ -1,0 +1,201 @@
+{
+  "task": "P863b",
+  "dispatchBase": "a94c13c7d3ab4c8c02dbc09cdba929212bfd9474",
+  "build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p863b/build-final.log"
+  },
+  "tools": {
+    "projects": 91,
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p863b/tools-build.log"
+  },
+  "nativeAot": {
+    "rid": "linux-x64",
+    "passed": true,
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p863b/aot.log"
+  },
+  "newCases": [
+    {
+      "run": 1,
+      "passed": 6,
+      "seconds": 33.6937,
+      "transcriptSha256": "7F4342A266BA84DA62ED2F3E3D51D358E767E29B725E96D5667F1E20AC124254"
+    },
+    {
+      "run": 2,
+      "passed": 6,
+      "seconds": 33.5704,
+      "transcriptSha256": "7F4342A266BA84DA62ED2F3E3D51D358E767E29B725E96D5667F1E20AC124254"
+    },
+    {
+      "run": 3,
+      "passed": 6,
+      "seconds": 33.9545,
+      "transcriptSha256": "7F4342A266BA84DA62ED2F3E3D51D358E767E29B725E96D5667F1E20AC124254"
+    }
+  ],
+  "affectedRegressionPassCounts": [
+    81,
+    75,
+    75
+  ],
+  "byteProof": {
+    "peers": 400,
+    "packets": 1485217,
+    "bytes": 321687118,
+    "deviations": 80000,
+    "sha256": "7F4342A266BA84DA62ED2F3E3D51D358E767E29B725E96D5667F1E20AC124254",
+    "independentDispatchMatches": true
+  },
+  "fast": {
+    "tier": "fast",
+    "seconds": 473.06576721099555,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 87,
+        "outcomes": {
+          "Passed": 87
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 3659,
+        "outcomes": {
+          "Passed": 3655,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 1932,
+        "outcomes": {
+          "Passed": 1931,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5713,
+        "outcomes": {
+          "Passed": 5707,
+          "Failed": 6
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9762068965517241,
+      "referenceMs": 3.6803,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed"
+    ],
+    "quarantineFlakes": [
+      "Allegiance.Core.Tests.AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position"
+    ],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06090213201241568,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "isolations": {
+    "PlayerBundlePathsTests": {
+      "passedCasesPerRun": [
+        9,
+        9,
+        9
+      ],
+      "context": "same workspace scratch through a proc directory-handle alias"
+    },
+    "ThreePeerSeededSessionTests": {
+      "passed": [
+        true,
+        true,
+        true
+      ]
+    },
+    "RadarTargetHighlightLiveTests": {
+      "candidatePassed": [
+        false,
+        false,
+        false
+      ],
+      "unchangedDispatchPassed": [
+        true,
+        false,
+        false
+      ]
+    },
+    "AddPartTests": {
+      "passed": [
+        true,
+        true,
+        true
+      ],
+      "runnerRetryPassed": true
+    }
+  },
+  "serverReleaseSha256": "2c0695aaf1d6a3ac0de2855861c55a1a7f2afcd5898ee51a7020564a56eff13d",
+  "rigAcceptance": "Claude A/B pending; local projection does not certify TiDi windows",
+  "noCommitsOrPushes": true,
+  "showcase": [
+    {
+      "run": 1,
+      "passed": true,
+      "matches": 2,
+      "seconds": 208.02,
+      "log": ".scratch/p863b/showcase-1.log"
+    },
+    {
+      "run": 2,
+      "passed": true,
+      "matches": 2,
+      "seconds": 221.508,
+      "log": ".scratch/p863b/showcase-2.log"
+    },
+    {
+      "run": 3,
+      "passed": true,
+      "matches": 2,
+      "seconds": 167.268,
+      "log": ".scratch/p863b/showcase-3.log"
+    },
+    {
+      "run": 4,
+      "passed": true,
+      "matches": 2,
+      "seconds": 171.468,
+      "log": ".scratch/p863b/showcase-4.log"
+    },
+    {
+      "run": 5,
+      "passed": true,
+      "matches": 2,
+      "seconds": 208.11,
+      "log": ".scratch/p863b/showcase-5.log"
+    }
+  ],
+  "checks": {
+    "glossary": true,
+    "parityScorecard": true,
+    "diffCheck": true,
+    "newCodePublicHygiene": true,
+    "parityCsvLF": true
+  }
+}
