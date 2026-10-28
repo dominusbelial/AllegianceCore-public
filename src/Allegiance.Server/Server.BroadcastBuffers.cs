@@ -9,6 +9,12 @@ namespace Allegiance.Server;
 
 public sealed partial class Server
 {
+    // Test-only reference path: no production setting or alternate bot behavior.
+    internal bool TestLegacyClashProjection;
+    private readonly CrossSideSweepCache _exportSweepCache = new(), _discoverySweepCache = new(), _statusSweepCache = new();
+    private long _statusSweepRemovalVersion;
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Allegiance.Core.Model.Sector, ShipUpdateRanking> _shipRankings = new();
+
     private sealed record ExportCache(Ship Ship, long Version, short Hull, short Side, string? PeerName,
         BroadcastPacket Packet)
     {
@@ -42,6 +48,7 @@ public sealed partial class Server
     private void RetireBroadcastProjectionCaches()
     {
         _sharedHeavy.Clear();
+        _exportSweepCache.Clear(); _discoverySweepCache.Clear(); _statusSweepCache.Clear();
         _sharedLight.Clear();
         _tierHeavy.Clear();
         _interestSnapshot.Clear();

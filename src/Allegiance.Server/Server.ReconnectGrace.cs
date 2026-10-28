@@ -352,6 +352,7 @@ public sealed partial class Server
         _teammateLoadoutCache.Remove(shipId);
         foreach (var k in _lastTeammateStatusTick.Keys.Where(k => k.Item2 == shipId).ToList())
             _lastTeammateStatusTick.Remove(k);
+        _statusSweepRemovalVersion++;
         foreach (var k in _crossSideShipStatusTick.Keys.Where(k => k.Item2 == shipId).ToList())
             _crossSideShipStatusTick.Remove(k);
         foreach (var k in _crossSideShipStatusSeen.Keys.Where(k => k.ShipId == shipId).ToList())

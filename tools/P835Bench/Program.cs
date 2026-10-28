@@ -63,17 +63,10 @@ static (StaticCore core, MissionMap map) LoadCoreAndMap(string artRoot, string m
         var mf = IgcReader.ParseFile(mapPath);
         if (mf.Wrapper == IgcWrapper.DataSize) map = MissionMap.Load(mf);
     }
-    foreach (var p in Directory.EnumerateFiles(artRoot, "*.igc", SearchOption.AllDirectories))
-    {
-        if (p.Contains("/.git/")) continue;
-        try
-        {
-            var f = IgcReader.ParseFile(p);
-            if (f.Wrapper == IgcWrapper.VersionAndDataSize && core is null) core = StaticCore.Load(f);
-        }
-        catch { }
-        if (core is not null && map is not null) break;
-    }
+    // Match the production server's core rather than filesystem enumeration
+    // order (the corpus also contains unrelated/older static cores).
+    var corePath = Path.Combine(artRoot, "PCore001.igc");
+    if (File.Exists(corePath)) core = StaticCore.Load(IgcReader.ParseFile(corePath));
     return (core ?? throw new Exception("no static core"), map ?? throw new Exception($"no map '{mapName}'"));
 }
 
@@ -117,8 +110,13 @@ internal sealed class ClashBench
         _m.Stage = MissionStage.Started;
         foreach (var s in _m.Sectors) s.CollisionHulls = hulls;
         _sector = _m.Sectors.OrderByDescending(s => s.Mineable.Count).First();
-        _projectileTypes = core.ProjectileTypes.Values.Where(pt => pt.Power > 0f && pt.Speed > 0f).ToList();
-        var mineTypes = core.MineTypes.Values.Where(mt => mt.Power > 0f).ToList();
+        // P863: sustain the population; lethal random salvos previously killed
+        // all ships during warmup and measured an empty sector. Keep collision
+        // geometry/dispatch but use negligible damage in BOTH benchmark arms.
+        _projectileTypes = core.ProjectileTypes.Values.Where(pt => pt.Power > 0f && pt.Speed > 0f)
+            .Select(pt => pt with { Power = 0.000001f, BlastPower = 0.000001f }).ToList();
+        var mineTypes = core.MineTypes.Values.Where(mt => mt.Power > 0f)
+            .Select(mt => mt with { Power = 0.000001f }).ToList();
         _projectileTarget = projectileCount;
 
         for (int i = 0; i < shipCount; i++)
@@ -174,11 +172,11 @@ internal sealed class ClashBench
     public (List<double> walls, Dictionary<string, (int Count, double MeanMs, double P95Ms, double MaxMs, double TotalMs)> snap)
         Measure(int ticks)
     {
-        TickProfiler.Configure(enabled: true, reportIntervalSeconds: 1000, csvPath: null);
         var walls = new List<double>(ticks);
         double t = _m.LastUpdate;
         // Warmup (JIT, detector caches) — not measured.
         for (int i = 0; i < 60; i++) { t += 0.053; _m.Update(t); TopUpProjectiles(); }
+        TickProfiler.Configure(enabled: true, reportIntervalSeconds: 1000, csvPath: null);
         // P838 — baseline the GC counters AFTER warmup so the deltas below cover
         // exactly the measured loop. `step:update` is wrapped around
         // Mission.Update with the server's own bucket name so the profiler's
@@ -209,6 +207,7 @@ internal sealed class ClashBench
             $"gc gen0={dg0} gen1={dg1} gen2={dg2} ticks={ticks}");
         foreach (var (bucket, bytes) in TickProfiler.SnapshotAlloc().OrderByDescending(kv => kv.Value).Take(8))
             Console.WriteLine($"P838-GC: step-alloc {bucket,-34} {bytes / 1048576.0,8:0.0}MB total  {bytes / 1024.0 / ticks,8:0.0}KB/tick");
+        Console.WriteLine($"P863 population: ships={_sector.Models.OfType<Ship>().Count()} projectiles={_sector.Models.OfType<Projectile>().Count()}");
         var snap = TickProfiler.Snapshot()
             .ToDictionary(kv => kv.Key, kv => (kv.Value.Count, kv.Value.MeanMs, kv.Value.P95Ms, kv.Value.MaxMs, kv.Value.TotalMs));
         TickProfiler.Configure(enabled: false, reportIntervalSeconds: 1000, csvPath: null);
