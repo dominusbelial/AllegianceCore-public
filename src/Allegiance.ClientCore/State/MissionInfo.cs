@@ -54,4 +54,31 @@ public sealed class MissionInfo
     /// <summary>P856 — <c>MissionParams.bAllowAlliedViz</c>
     /// (<c>src/Igc/igc.h:1127</c>), decoded from the MISSIONDEF bitfield block.</summary>
     public bool AllowAlliedViz { get; init; }
+
+    /// <summary>P853b — the WHOLE <c>MissionParams</c> block the server
+    /// advertised in MISSIONDEF(38), i.e. the same struct native's client
+    /// memcpy's out of the misdef (<c>appmsg.cpp:2416</c> →
+    /// <c>clintlib.cpp:670-673</c>). The host-editing UI is the only reader: the
+    /// mission owner's game-settings form starts from this snapshot and re-sends
+    /// it with only the user's edits applied — the native contract
+    /// (<c>newgamescreen.cpp:968-1031</c> + <c>FedSrv.CPP:7518-7597</c> refuses
+    /// an echo that disagrees on the immutable fields and adopts everything else
+    /// wholesale, <c>fsmission.cpp:1843</c>). Null until a MISSIONDEF carrying
+    /// the block lands (a bare stage refinement keeps the previous one).
+    /// Immutable by convention: callers must <see cref="Allegiance.Core.Wire.MissionParamsMsg.Clone"/>
+    /// before editing.</summary>
+    public Allegiance.Core.Wire.MissionParamsMsg? Params { get; init; }
+
+    /// <summary>P853b — native <c>MissionParams.bSquadGame</c> (<c>Igc/igc.h:1142</c>).
+    /// A squad game replaces the team-name edit with the squad picker
+    /// (<c>WinTrek/teamscreen.cpp:960-965</c>), so the port hides the name edit
+    /// there rather than sending a rename the server would treat as a squad
+    /// re-point.</summary>
+    public bool SquadGame => Params?[Allegiance.Core.Wire.MissionParamsMsg.BitSquadGame] ?? false;
+
+    /// <summary>P853b — native <c>MissionParams.bLockTeamSettings</c>
+    /// (<c>Igc/igc.h:1138</c>): the server silently ignores FM_CS_SET_TEAM_INFO
+    /// while it is set (<c>FedSrv.CPP:7433-7436</c>) and native disables the team
+    /// settings button (<c>teamscreen.cpp:1594</c>).</summary>
+    public bool LockTeamSettings => Params?[Allegiance.Core.Wire.MissionParamsMsg.BitLockTeamSettings] ?? false;
 }

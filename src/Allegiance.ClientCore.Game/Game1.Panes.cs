@@ -1617,6 +1617,23 @@ public sealed partial class Game1
             }
         }
 
+        // P853b — the host-editing panes own the keyboard while open, exactly
+        // like native's modal popups: the team-settings dialog is an IPopup that
+        // takes focus (teamscreen.cpp:986-991) and the settings screen replaces
+        // the lobby. Everything below — the ready toggle, team-ready, the lobby
+        // config keys, the chat target, the civ picker — is suppressed for that
+        // frame, so no host key can leak into a typed name or a changed setting.
+        if (_teamNameEditing)
+        {
+            HandleTeamNameEditKeys(ks);
+            return;
+        }
+        if (_settingsForm is not null)
+        {
+            HandleMissionSettingsKeys(ks);
+            return;
+        }
+
         // P501 — gamepad: A toggles ready (confirm), X toggles the commander's team-ready flag
         // (all-false on desktop without a connected pad).
         var nav = GamePadNavNow();
@@ -1754,6 +1771,53 @@ public sealed partial class Game1
             _civConfirmWasDown = civConfirm;
         }
 
+        // P853b — the TEAM NAME edit: a small affordance on this pane, shown only
+        // to the side's own team leader while the mission has not started, team
+        // settings are unlocked and the game is not a squad game (native's
+        // button visibility/enable rules, teamscreen.cpp:1592-1594, plus the
+        // server's own gate, FedSrv.CPP:7433-7436). TeamNameEditLayout already
+        // renders the "why not" line for a leader who cannot edit, so a click can
+        // never vanish silently.
+        bool teamNameCanEdit;
+        lock (_session.Gate) teamNameCanEdit = State.TeamNameEdit.CanEdit(world);
+        bool tnKey = ActionDown(ks, "TeamNameEdit");
+        if (tnKey && !_teamNameKeyWasDown && teamNameCanEdit && !_civPickerOpen)
+        {
+            _teamNameEditing = true;
+            _teamNameError = null;
+            _teamNameBuffer.Clear();
+            // Prefill with the live name, exactly like native's UpdateNameAndSquad
+            // (teamscreen.cpp:967-973) — the edit pane opens showing the current
+            // name, not an empty box.
+            lock (_session.Gate) _teamNameBuffer.Append(State.TeamNameEdit.CurrentName(world));
+            Console.WriteLine($"[monogame] ready-check: TEAM NAME edit OPEN ('{_teamNameBuffer}')");
+        }
+        _teamNameKeyWasDown = tnKey;
+
+        // P853b — the GAME SETTINGS form: owner-only, STAGE_NOTSTARTED (native's
+        // bCanChangeSettings, teamscreen.cpp:1585-1589; FedSrv.CPP:7560).
+        bool msKey = ActionDown(ks, "MissionSettings");
+        if (msKey && !_settingsKeyWasDown && !_civPickerOpen)
+        {
+            State.MissionSettingsForm? form;
+            lock (_session.Gate)
+            {
+                form = State.MissionSettingsForm.TryOpen(world);
+                form?.CaptureSideActivity(world);
+            }
+            if (form is not null)
+            {
+                _settingsForm = form;
+                _settingsError = null;
+                Console.WriteLine($"[monogame] ready-check: GAME SETTINGS open (owner, STAGE_NOTSTARTED) — teams {form.Draft.NTems}/{form.MaxTeams}, lives {form.Draft.ILives}, maxPerTeam {form.Draft.NMaxPlayersPerTeam}");
+            }
+            else
+            {
+                Console.WriteLine("[monogame] ready-check: GAME SETTINGS refused — the mission owner only, before the start");
+            }
+        }
+        _settingsKeyWasDown = msKey;
+
         // P501 — touch: tap the big READY/UNREADY button to toggle; the commander taps
         // FORCE READY to toggle their team-ready flag.
         if (TouchAvailable())
@@ -1791,6 +1855,155 @@ public sealed partial class Game1
             _ownReady = true;
             _session.SendPlayerReady(true, a.ShipId);
         }
+    }
+
+    /// <summary>P853b — one frame of the TEAM NAME edit (native's
+    /// <c>TeamSettingsDialogPopup</c> keyboard behaviour, teamscreen.cpp:1012-1029):
+    /// the edit control owns typed text (fed by <see cref="OnTextInput"/>),
+    /// Backspace deletes, Enter is <c>OnButtonOk</c> → <c>FM_CS_SET_TEAM_INFO</c>
+    /// with <c>squadID = NA</c> + the typed name (:1035-1082), Esc is
+    /// <c>OnButtonCancel</c> (:1085-1093). A refused edit keeps the pane open and
+    /// shows why.</summary>
+    private void HandleTeamNameEditKeys(KeyboardState ks)
+    {
+        var world = _session.World;
+
+        // Losing the right to edit closes the pane without sending anything —
+        // native dismisses the dialog when team settings lock
+        // (teamscreen.cpp:935-936) and when the local player leaves the side
+        // (:940-951).
+        bool canEdit;
+        lock (_session.Gate) canEdit = State.TeamNameEdit.CanEdit(world);
+        if (!canEdit)
+        {
+            _teamNameEditing = false;
+            _teamNameBuffer.Clear();
+            _teamNameError = null;
+            Console.WriteLine("[monogame] ready-check: TEAM NAME edit closed (no longer permitted)");
+            return;
+        }
+
+        bool esc = ActionDown(ks, "CancelChat");
+        if (esc && !_teamNameEscWasDown)
+        {
+            _teamNameEditing = false;
+            _teamNameBuffer.Clear();
+            _teamNameError = null;
+            Console.WriteLine("[monogame] ready-check: TEAM NAME edit cancelled");
+        }
+        _teamNameEscWasDown = esc;
+
+        bool back = ks.IsKeyDown(XnaKeys.Back);
+        if (back && !_teamNameBackWasDown && _teamNameBuffer.Length > 0)
+            _teamNameBuffer.Length -= 1;
+        _teamNameBackWasDown = back;
+
+        bool enter = ActionDown(ks, "MenuConfirm");
+        if (enter && !_teamNameEnterWasDown && !esc)
+        {
+            State.TeamNameEdit.Plan plan;
+            string? error;
+            bool ok;
+            lock (_session.Gate)
+                ok = State.TeamNameEdit.TryPlan(world, _teamNameBuffer.ToString(), out plan, out error);
+            if (!ok)
+            {
+                // Native shows the problem and keeps the dialog up; an empty name
+                // is refused here rather than sent (see State.TeamNameEdit).
+                _teamNameError = error;
+                Console.WriteLine($"[monogame] ready-check: TEAM NAME edit refused: {error}");
+            }
+            else
+            {
+                _session.SendSetTeamInfo(plan.SideId, plan.SquadId, plan.Name);
+                Console.WriteLine($"[monogame] ready-check: SET_TEAM_INFO side {plan.SideId} squadID {plan.SquadId} name '{plan.Name}' ({plan.Name.Length} chars)");
+                _teamNameEditing = false;
+                _teamNameBuffer.Clear();
+                _teamNameError = null;
+            }
+        }
+        _teamNameEnterWasDown = enter;
+    }
+
+    /// <summary>P853b — one frame of the GAME SETTINGS form: UP/DOWN pick a row,
+    /// LEFT/RIGHT step its value (native's combos, newgamescreen.cpp:960-1031),
+    /// ENTER/SPACE toggle a checkbox or send, Esc/G close. A send runs the shared
+    /// <c>MissionParamsMsg.Invalid(true)</c> first and shows its string instead of
+    /// sending — the server <c>TrapHackBoot</c>s an invalid sender
+    /// (<c>FedSrv.CPP:7534</c>; native's identical message box,
+    /// newgamescreen.cpp:1117-1119).</summary>
+    private void HandleMissionSettingsKeys(KeyboardState ks)
+    {
+        var world = _session.World;
+        var form = _settingsForm;
+        if (form is null) return;
+
+        // Ownership / stage can lapse while the form is open (the game starts, the
+        // owner changes); native closes the screen on those transitions.
+        bool canEdit;
+        lock (_session.Gate) canEdit = State.MissionSettingsForm.CanEdit(world);
+        if (!canEdit)
+        {
+            _settingsForm = null;
+            _settingsError = null;
+            Console.WriteLine("[monogame] ready-check: GAME SETTINGS closed (no longer permitted)");
+            return;
+        }
+
+        bool gKey = ActionDown(ks, "MissionSettings");
+        bool esc = ActionDown(ks, "CancelChat");
+        bool close = (gKey && !_settingsKeyWasDown) || (esc && !_settingsEscWasDown);
+        _settingsKeyWasDown = gKey;
+        _settingsEscWasDown = esc;
+        if (close)
+        {
+            _settingsForm = null;
+            _settingsError = null;
+            Console.WriteLine("[monogame] ready-check: GAME SETTINGS closed");
+            return;
+        }
+
+        bool up = ActionDown(ks, "MenuUp");
+        if (up && !_settingsUpWasDown) form.Move(-1);
+        _settingsUpWasDown = up;
+        bool down = ActionDown(ks, "MenuDown");
+        if (down && !_settingsDownWasDown) form.Move(1);
+        _settingsDownWasDown = down;
+
+        // native's combo/checkbox edits: arrows change the value of the row under
+        // the cursor, SPACE clicks a checkbox.
+        bool left = ActionDown(ks, "MenuLeft");
+        if (left && !_settingsLeftWasDown) form.Adjust(form.CursorField, -1);
+        _settingsLeftWasDown = left;
+        bool right = ActionDown(ks, "MenuRight");
+        if (right && !_settingsRightWasDown) form.Adjust(form.CursorField, +1);
+        _settingsRightWasDown = right;
+        bool space = ActionDown(ks, "MenuSelect");
+        if (space && !_settingsSpaceWasDown && State.MissionSettingsForm.IsToggle(form.CursorField))
+            form.Adjust(form.CursorField, +1);
+        _settingsSpaceWasDown = space;
+
+        bool confirm = ActionDown(ks, "MenuConfirm");
+        if (confirm && !_settingsConfirmWasDown)
+        {
+            MissionParamsMsg plan;
+            string? error;
+            bool ok;
+            lock (_session.Gate) ok = form.TryBuildPlan(world, out plan, out error);
+            if (!ok)
+            {
+                _settingsError = error;
+                Console.WriteLine($"[monogame] ready-check: GAME SETTINGS refused: {error} (nothing sent)");
+            }
+            else
+            {
+                _session.SendMissionParams(plan);
+                _settingsError = null;
+                _settingsForm = null;
+                Console.WriteLine($"[monogame] ready-check: MISSIONPARAMS sent — teams {plan.NTems}, maxPerTeam {plan.NMaxPlayersPerTeam}, rank {plan.IMinRank}..{plan.IMaxRank}, lives {plan.ILives}, goals conquest {plan.IGoalConquestPercentage}% territory {plan.IGoalTerritoryPercentage}% flags {plan.NGoalFlagsCount} artifacts {plan.NGoalArtifactsCount} kills {plan.NGoalTeamKills} money {plan.FGoalTeamMoney} len {plan.DtGameLength}s, flags FF {plan[MissionParamsMsg.BitAllowFriendlyFire]} AV {plan[MissionParamsMsg.BitAllowAlliedViz]} AR {plan[MissionParamsMsg.BitAllowAlliedRip]} AET {plan[MissionParamsMsg.BitAllowEmptyTeams]} DEV {plan[MissionParamsMsg.BitAllowDevelopments]} SQUAD {plan[MissionParamsMsg.BitSquadGame]}");
+            }
+        }
+        _settingsConfirmWasDown = confirm;
     }
 
     /// <summary>Render the READY-CHECK overlay from the live world ready state
@@ -1831,7 +2044,21 @@ public sealed partial class Game1
             // modal team-settings dialog, teamscreen.cpp:860-1104), so the
             // civilization list fits even on a 720p window.
             if (_civPickerOpen && !State.TeamCivPicker.CanPick(world)) _civPickerOpen = false;
-            if (_civPickerOpen)
+            // P853b — the owner's GAME SETTINGS form replaces the body the same
+            // way (native's settings screen is a whole screen,
+            // newgamescreen.cpp): 18 rows plus the ready-check roster would not
+            // fit a 720p window.
+            if (_settingsForm is not null && !State.MissionSettingsForm.CanEdit(world))
+            {
+                Console.WriteLine("[monogame] ready-check: GAME SETTINGS closed (ownership or the pre-start stage lapsed)");
+                _settingsForm = null;   // ownership/stage lapsed - drop the draft
+                _settingsError = null;
+            }
+            if (_settingsForm is not null)
+            {
+                rows = Rendering.MissionSettingsFormLayout.Build(world, _settingsForm, _settingsError).ToList();
+            }
+            else if (_civPickerOpen)
             {
                 rows = Rendering.TeamCivPickerLayout.Build(world, open: true, _civPickerIndex).ToList();
             }
@@ -1847,6 +2074,13 @@ public sealed partial class Game1
                 var controls = State.LobbyScreenState.BuildTeamControls(world, world.MySideId);
                 rows = rows.Concat(controls.DisplayLines()
                     .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+                // P853b — the TEAM NAME row/hint (or the inline edit box) and the
+                // owner's GAME SETTINGS hint. Both are already permission-gated by
+                // their models, so a non-leader/non-owner sees only the name.
+                rows = rows.Concat(Rendering.TeamNameEditLayout.Build(
+                    world, _teamNameEditing, _teamNameBuffer.ToString(), _teamNameError)).ToList();
+                if (State.MissionSettingsForm.CanEdit(world))
+                    rows = rows.Concat(Rendering.MissionSettingsFormLayout.Hint()).ToList();
             }
             civIconStem = State.TeamCivPicker.IconStem(world);
         }

@@ -4379,6 +4379,15 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,
+                // P853b — stamp the mission's WHOLE params block, exactly what
+                // native's client learns from the misdef it memcpy's out of this
+                // message (appmsg.cpp:2416 → clintlib.cpp:670-673). The owner's
+                // game-settings form starts from it, so the fields the
+                // advertisement never carried before (the other 33 bool:1 flags,
+                // treasure rates, team sizes, rank window) are still the server's
+                // real values instead of zeros the server would adopt wholesale
+                // (fsmission.cpp:1843).
+                Params = ParamsOf(goalMission),
             }.Encode(),
             new JoinedMission
             {
@@ -4461,6 +4470,15 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
                 ILives = _missions[0].Lives,
+                // P853b — stamp the mission's WHOLE params block, exactly what
+                // native's client learns from the misdef it memcpy's out of this
+                // message (appmsg.cpp:2416 → clintlib.cpp:670-673). The owner's
+                // game-settings form starts from it, so the fields the
+                // advertisement never carried before (the other 33 bool:1 flags,
+                // treasure rates, team sizes, rank window) are still the server's
+                // real values instead of zeros the server would adopt wholesale
+                // (fsmission.cpp:1843).
+                Params = ParamsOf(goalMission),
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");

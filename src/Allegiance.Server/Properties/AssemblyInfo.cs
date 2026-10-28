@@ -15,3 +15,6 @@ using System.Runtime.CompilerServices;
 // ShipSpawner to place a deterministic arena (same seam the test suites use).
 [assembly: InternalsVisibleTo("reconnect-fault")]
 [assembly: InternalsVisibleTo("p817-gotoplan-proof")]
+// P853b — the host-editing proof reads the authoritative mission state (the
+// second vantage point for the rename + params echo).
+[assembly: InternalsVisibleTo("p853b-hostedit-proof")]

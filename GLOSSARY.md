@@ -419,6 +419,23 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs`,
   `Rendering/ChatTargetLogic.cs`, `Game1.Panes.cs`
   (`UpdateReadyCheck`/`DrawReadyCheckChat`).
+- **Host editing (P853b)** — the pre-game team lobby's two host affordances, the
+  client half of P853's wire: the side leader's **team name** (native
+  `TeamSettingsDialogPopup`, `WinTrek/teamscreen.cpp:856-1104` →
+  `FM_CS_SET_TEAM_INFO(15)` with `squadID = NA`) and the mission owner's **game
+  settings** form (native `NewGameScreen`, `WinTrek/newgamescreen.cpp:1034-1130`
+  → `FM_CS_MISSIONPARAMS(113)`, validated client-side with the shared
+  `MissionParamsMsg.Invalid(true)`). Rules live in
+  `src/Allegiance.ClientCore/State/TeamNameEdit.cs` and
+  `src/Allegiance.ClientCore/State/MissionSettingsForm.cs`; rows in
+  `src/Allegiance.ClientCore.Game/Rendering/TeamNameEditLayout.cs`,
+  `Rendering/MissionSettingsFormLayout.cs`; wiring in `Game1.Panes.cs`
+  (`UpdateReadyCheck`, `HandleTeamNameEditKeys`, `HandleMissionSettingsKeys`) and
+  `Game1.Session.cs` (`OnTextInput` text entry). The form starts from the whole
+  `MissionParams` block the server advertises in `MISSIONDEF(38)`
+  (`src/Allegiance.Core/Wire/MissionDef.cs` `Params`,
+  `src/Allegiance.ClientCore/State/MissionInfo.cs` `Params`). Keys: T / G. Proof:
+  `tools/p853b-hostedit-proof/`, report `docs/reports/P853B_REPORT.md`.
 - **Input** — keyboard/mouse/joystick/gamepad rebindable.
   `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`, `Game1.KeyBind.cs`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`

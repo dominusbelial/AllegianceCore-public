@@ -1,0 +1,10 @@
+run 1 08:30:32
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 4 m 20 s - Allegiance.ClientCore.Tests.dll (net10.0)
+run 2 08:34:53
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 3 m 59 s - Allegiance.ClientCore.Tests.dll (net10.0)
+run 3 08:38:53
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 4 m 31 s - Allegiance.ClientCore.Tests.dll (net10.0)
+run 4 08:43:26
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 4 m 7 s - Allegiance.ClientCore.Tests.dll (net10.0)
+run 5 08:47:34
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 4 m 1 s - Allegiance.ClientCore.Tests.dll (net10.0)

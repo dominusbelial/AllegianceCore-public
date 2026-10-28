@@ -80,6 +80,12 @@ public sealed partial class Server
         seeded = new MissionParamsMsg
         {
             StrGameName = g.Name ?? "game",
+            // P853b — the misdef stand-in carries the same IGC-static identity
+            // native's m_misdef.misparms does (fsmission.cpp:1803-1806 copies it
+            // from there). The advertisement now stamps this whole block into
+            // MISSIONDEF, so an empty name here would blank the client's
+            // static-core reload key (P29).
+            SzIgcStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
             VerIgcCore = mission.Core.Version,
             Bits =
             {
@@ -105,6 +111,10 @@ public sealed partial class Server
             DtGameLength = mission.Goals.GameLengthSeconds,
             IGoalConquestPercentage = mission.Goals.ConquestPercentage,
             IGoalTerritoryPercentage = mission.Goals.TerritoryPercentage,
+            // Native Reset default (igc.h:1316) and the value MISSIONDEF has
+            // always advertised at params +184; the port derives no behaviour
+            // from it, so keep it truthful instead of letting the overlay zero it.
+            IGoalArtifactsPercentage = 100,
             NGoalFlagsCount = mission.Goals.Flags,
             NGoalArtifactsCount = mission.Goals.Artifacts,
             NGoalTeamKills = mission.Goals.TeamKills,
@@ -371,6 +381,10 @@ public sealed partial class Server
             NMinPlayersPerTeam = cur.NMinPlayersPerTeam,
             NMaxPlayersPerTeam = cur.NMaxPlayersPerTeam,
             NTotalMaxPlayersPerGame = cur.NTotalMaxPlayersPerGame,
+            // P853b — native forwards its whole m_misdef, misparms included
+            // (FedSrv.CPP:7577), which is how the owner's client learns every
+            // field of the live settings before it edits them again.
+            Params = cur,
         };
         int n = SendToMissionPeers(mission, FedPacket.Pack([md.Encode()]));
         Console.WriteLine($"[missionparams] -> MISSIONDEF(38) nTeams {md.NTems} stage {md.Stage} whole-mission to {n} peer(s)");
