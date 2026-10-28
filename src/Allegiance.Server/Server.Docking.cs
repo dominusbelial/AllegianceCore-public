@@ -1342,40 +1342,24 @@ public sealed partial class Server
     /// sector pass detects the geometry, the host performs the effect.
     /// </summary>
     /// <remarks>
-    /// <para><b>Resupply, at this port's own granularity.</b> The native resets
+    /// <para><b>Resupply — SIM-0663 closes the P488b gap.</b> The native resets
     /// per-part amounts and walks the tech-tree successor of each part
     /// (<c>RefillPart</c>, <c>FedSrv.CPP:12589-12618</c>) and then also resets
     /// the ship-level scalars (<c>FedSrv.CPP:12855-12861</c>:
     /// <c>SetAmmo(SHRT_MAX); SetFuel(FLT_MAX);
     /// SetEnergy(GetHullType()-&gt;GetMaxEnergy()); SetFraction(1.0f);</c> plus a
-    /// mounted shield's fraction). This port tracks ammo/energy as ship-level
-    /// scalar pools seeded from <c>HullType.MaxEnergy</c>/<c>MaxAmmo</c>
-    /// (<c>Sim/Ship.cs:62-63</c>) — there is no per-part inventory — so the
-    /// honest port of the whole resupply is
-    /// to restore the two scalar pools to their hull maxima. That is exactly
-    /// the native's ship-level reset above, at this port's granularity: <c>Ammo
-    /// = SHRT_MAX</c> collapses to the finite hull <c>MaxAmmo</c> and
-    /// <c>Energy = MaxEnergy</c> is verbatim. The native's <c>SetFraction(1.0f)</c>
-    /// and shield-fraction reset are <b>not</b> performed here — the P117 scope
-    /// is the consumable resupply (energy+ammo), and hull/shield repair is a
-    /// separate, documented, not-yet-portable effect (see the P117 report).</para>
-    /// <para><b>Fuel is a confirmed, separate, pre-existing gap.</b> Native
-    /// <c>SetFuel(FLT_MAX)</c> (FedSrv.CPP:12856) has no target here: <c>grep
-    /// "Fuel"</c> finds zero consumers in <c>Sim/Ship.cs</c>, <c>Model/Sector.cs</c>
-    /// and <c>Server.cs</c> (only <c>DataHullTypeIGC.MaxFuel</c> is decoded,
-    /// <c>Data/DataHullTypeIGC.cs:32</c>). Fuel tracking is deliberately not
-    /// invented in this task.</para>
-    /// <para><b>Dock auto-upgrade (restock) is P488b.</b> Native's carrier-land
+    /// mounted shield's fraction). The relaunch now runs the shared restock core
+    /// <see cref="RefillAndRestock"/> — the RefillPart per-part successor walk,
+    /// the player-only desired-loadout re-buy + depleted-launcher remount
+    /// (FedSrv.CPP:12836-12900), and the full scalar reset including
+    /// <c>SetFuel</c>/<c>SetFraction(1.0)</c>/shield fraction — the same body
+    /// <see cref="RestockOnDock"/> runs at a station dock.</para>
+    /// <para><b>Dock auto-upgrade (restock) is P488b, ported.</b> Native's carrier-land
     /// restock walks <c>GetSuccessorPartType()</c> to upgrade each desired part
     /// to the side's best available version (FedSrv.CPP:12831-12854), gated on
     /// the successor's required techs being a subset of the side's
-    /// (development | building) techs. P488 brought the successor
-    /// <em>resolution</em> into the port (<see cref="Allegiance.Core.Model.SuccessorUpgrade"/>
-    /// — used at purchase in <c>ApplyLoadout</c> and at station build), but this
-    /// <b>desired-loadout restock</b> still needs the per-part desired-loadout /
-    /// inventory infrastructure this port doesn't have (documented P117) and is
-    /// the named follow-up <b>P488b</b>; the two scalar-pool reset above remains
-    /// the resupply here.</para>
+    /// (development | building) techs. That walk now runs here via
+    /// <see cref="RefillAndRestock"/>.</para>
     /// <para><b>RecalculateCollisions</b> (<c>FedSrv.CPP:13006</c>) is N/A: this
     /// port has no rigid-body collision-resolution system (established P115/P116),
     /// so there is no post-move collision pass to call.</para>
@@ -1411,11 +1395,15 @@ public sealed partial class Server
             return;
         }
 
-        // 1) Resupply — restore the lander's ship-level consumable pools to
-        //    their hull maxima (see remarks: the port's granularity-equivalent
-        //    of the native's RefillPart loop + ship-level scalar reset).
-        lander.Energy = lander.EffectiveMaxEnergy();
-        lander.Ammo = lander.HullType.MaxAmmo;
+        // 1) Resupply — the native LandOnCarrierEvent restock: the RefillPart
+        //    per-part successor walk (FedSrv.CPP:12818-12848), the player-only
+        //    desired-loadout re-buy + depleted-launcher remount (:12836-12900),
+        //    and the ship-level scalar reset (SetAmmo/SetFuel/SetEnergy/
+        //    SetFraction + shield fraction, :12855-12861). RefillAndRestock is
+        //    the shared core (SIM-0663); a player lander passes its LiveShip so
+        //    the desired-loadout re-buy leg runs (native's IsPlayer gate), an NPC
+        //    lander gets the RefillPart walk only.
+        RefillAndRestock(lander, LiveOf(lander));
 
         // 2) The carrier's real launch slots, resolved through the sector's
         //    landing-bay cache (the same production cache ResolveCarrierLandings
@@ -1738,10 +1726,11 @@ public sealed partial class Server
     /// P441 ship-value differential (FedSrv.CPP:6184-6193) when the restock
     /// upgrades a mounted part to a more valuable successor, via the same
     /// side-wide <c>MONEY_CHANGE(60)</c> (<see cref="BroadcastMoneyChangeSideWide"/>).
-    /// Affordable-gated (soft-fail): if the wallet can't cover the projected
-    /// cost, the paid successor upgrades are skipped (the ship keeps its base
-    /// parts and the free refill still happens) — the port's log-and-continue
-    /// convention where native's BUY_LOADOUT would TrapHackBoot.</para>
+    /// The upgrade itself is UNCONDITIONAL (SIM-0780: native <c>RefillPart</c>
+    /// never charges and never keeps the base part — the player already owns the
+    /// tech, FedSrv.CPP:12592-12620); only the desired-loadout re-buys are
+    /// wallet-gated (the port's log-and-continue convention where native's
+    /// BUY_LOADOUT would TrapHackBoot).</para>
     /// </summary>
     private void RestockOnDock(LiveShip live)
     {
@@ -1751,11 +1740,41 @@ public sealed partial class Server
         var side = mission.Sides.FirstOrDefault(s => s.Id == sd);
         if (side is null || ship.StationId is null) return;
 
-        var ttbm = side.Techs;                 // dev | building (native RefillPart ttbm, FedSrv.CPP:12819)
         long oldValue = RefundableShipValue(ship);
+        RefillAndRestock(ship, live);
+
+        // ---- charge P441-style: the ship-value differential, side-wide
+        // MONEY_CHANGE to the owner's side (FedSrv.CPP:6195-6209).
+        long cost = RefundableShipValue(ship) - oldValue;
+        if (cost > 0)
+        {
+            live.Wallet.Money = checked((int)(live.Wallet.Money - cost));
+            if (sd is { } bs) BroadcastMoneyChangeSideWide(ship.Mission!, bs, checked((int)-cost), ship.Id);
+            Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock charged {cost} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-cost} side-wide");
+        }
+        Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock done, net cost {cost}");
+    }
+
+    /// <summary>SIM-0663/0780 — the shared restock core behind
+    /// <see cref="RestockOnDock"/> and the carrier relaunch
+    /// (<see cref="PerformRelaunch"/>): the native <c>RefillPart</c> walk
+    /// (FedSrv.CPP:12589-12621) over every mounted part, the player-only
+    /// desired-loadout re-buy (FedSrv.CPP:12836-12945 — gated on
+    /// <c>IsPlayer()</c>, which here means a non-null <paramref name="live"/>),
+    /// and the ship-level scalar reset (SetAmmo/SetFuel/SetEnergy/SetFraction +
+    /// shield fraction, FedSrv.CPP:12855-12861). The successor upgrade is
+    /// UNCONDITIONAL (SIM-0780 — RefillPart never charges nor keeps the base
+    /// part); performs no charging — callers own the wallet.</summary>
+    private void RefillAndRestock(Ship ship, LiveShip? live)
+    {
+        var mission = ship.Mission!;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == ship.SideId);
+        if (side is null) return;
+
+        var ttbm = side.Techs;                 // dev | building (native RefillPart ttbm, FedSrv.CPP:12819)
 
         // ---- projection: the target part for each mounted part + the desired-
-        // loadout re-buys + the total cost (P441 ship-value differential).
+        // loadout re-buys.
         var targets = new DataPartTypeIGC[ship.Parts.Count];
         for (int i = 0; i < ship.Parts.Count; i++)
         {
@@ -1767,7 +1786,7 @@ public sealed partial class Server
         // The desired-loadout re-buy: parts saved at buy time that the ship no
         // longer carries are re-mounted (upgraded to their successors).
         var reBuys = new List<DataPartTypeIGC>();
-        if (live.Wallet.DesiredLoadout is { Count: > 0 })
+        if (live?.Wallet.DesiredLoadout is { Count: > 0 })
         {
             // ErasePart (FedSrv.CPP:12637-12653): a desired entry is consumed when
             // a mounted/cargo part MATCHES it through native MatchPT
@@ -1788,11 +1807,14 @@ public sealed partial class Server
                     ship.Parts[i].Type.Price == 0 ? short.MaxValue : ship.Parts[i].Amount))).Sum()
             + reBuys.Sum(r => PartValue(r, Ship.ClampPartAmount(ship.HullType, mission.Core, r, short.MaxValue)))
             + ship.CargoHold.Sum(p => p is null ? 0L : RefundablePartValue(p));
-        long projectedCost = projectedValue - oldValue;
-        bool afford = projectedCost <= live.Wallet.Money && live.Wallet.Money >= 0;   // P441-style funds gate (soft-fail)
+        long projectedCost = projectedValue - RefundableShipValue(ship);
+        bool afford = live is null || projectedCost <= live.Wallet.Money;   // P441-style funds gate (soft-fail, re-buys only)
 
         // ---- apply the successor upgrades + free-amount resets (backwards so
         // newly-replaced parts are not revisited, RefillPart FedSrv.CPP:12665).
+        // SIM-0780: the upgrade is UNCONDITIONAL — native RefillPart replaces the
+        // part whenever the base is buyable and a buyable successor exists
+        // (FedSrv.CPP:12592-12620) and NEVER charges for it.
         int upgraded = 0;
         for (int i = ship.Parts.Count - 1; i >= 0; i--)
         {
@@ -1804,12 +1826,10 @@ public sealed partial class Server
                 ship.SetPartAmount(p, newAmount);
                 continue;
             }
-            if (!ship.HullType.CanMountPart(target, p.MountId)
-                || !afford && PartValue(target, Ship.ClampPartAmount(ship.HullType, mission.Core, target, newAmount)) > RefundablePartValue(p))
+            if (!ship.HullType.CanMountPart(target, p.MountId))
             {
-                // Paid upgrade unaffordable → keep the base part, still reset the amount.
                 ship.SetPartAmount(p, newAmount);
-                Console.WriteLine($"[dock-restock] ship {ship.Id}: successor upgrade of {p.Type.PartId} ('{p.Type.Name}') -> {target.PartId} ('{target.Name}') unaffordable — kept base");
+                Console.WriteLine($"[dock-restock] ship {ship.Id}: successor {target.PartId} ('{target.Name}') cannot mount at {p.MountId} — kept base, amount reset");
                 continue;
             }
             ship.ReplacePartType(p, target, newAmount);
@@ -1817,9 +1837,8 @@ public sealed partial class Server
         }
 
         // ---- desired-loadout re-buy: mount each missing desired part (upgraded
-        // to its successor) into a free mount slot, so the player gets the
-        // loadout they bought back at dock. A paid re-buy is gated on the wallet
-        // covering the projected cost (P441 soft-fail); free ones always mount.
+        // to its successor) into a free mount slot. A paid re-buy is gated on the
+        // wallet covering the projected cost (P441 soft-fail); free ones mount.
         foreach (var succ in reBuys)
         {
             if (succ.Price > 0 && !afford)
@@ -1833,23 +1852,111 @@ public sealed partial class Server
         }
 
         // ---- pool refill (native SetAmmo(SHRT_MAX)/SetFuel(FLT_MAX)/
-        // SetEnergy(MaxEnergy)/SetFraction(1.0), FedSrv.CPP:12947-12955).
+        // SetEnergy(MaxEnergy)/SetFraction(1.0) + shield fraction,
+        // FedSrv.CPP:12855-12861) — also the carrier-landing resets
+        // (FedSrv.CPP:12946-12952, same block in LandOnCarrierEvent).
         ship.Ammo = ship.HullType.MaxAmmo;
         ship.SetFuel((short)ship.HullType.MaxFuel);
         ship.Energy = ship.EffectiveMaxEnergy();
         ship.SetFraction(1.0f);
         ship.SetShieldFraction(1.0f);
 
-        // ---- charge P441-style: the ship-value differential, side-wide
-        // MONEY_CHANGE to the owner's side (FedSrv.CPP:6195-6209).
-        long cost = RefundableShipValue(ship) - oldValue;
-        if (cost > 0)
+        Console.WriteLine($"[dock-restock] ship {ship.Id}: restock core done — {upgraded} successor upgrade(s), {reBuys.Count} re-buy(s), pools refilled");
+    }
+
+    // ── SIM-0662/0667 — the allied-base dock handlers ────────────────────────
+
+    /// <summary>Ships the allied branch of <see cref="ServerHost.ChangeStation"/>
+    /// marked for the <c>AlliedRearm(pship, true)</c> launch leg. Filled on the
+    /// sim thread inside ChangeStation (before the dock latches), drained by
+    /// <see cref="OnShipDocked"/> after the restock.</summary>
+    private readonly HashSet<Ship> _alliedRearmPending = [];
+
+    /// <summary>Lifepods the allied branch marked for the re-home redirect
+    /// (<c>FedSrv.CPP:13264-13300</c>). Same lifecycle as
+    /// <see cref="_alliedRearmPending"/>.</summary>
+    private readonly HashSet<Ship> _alliedPodRedirectPending = [];
+
+    /// <summary>SIM-0662/0667 — the <see cref="ServerHost.AlliedDockRearm"/>
+    /// hook handler: mark the just-docked player for AlliedRearm's launch leg.
+    /// The restock half of <c>AlliedRearm</c> (its RefillPart + desired-loadout
+    /// body, FedSrv.CPP:12662-12733) is exactly <see cref="RestockOnDock"/>,
+    /// which <see cref="OnShipDocked"/> runs first; this handler only latches
+    /// the launch leg so it fires after the dock notify.</summary>
+    private void OnAlliedDockRearm(Ship ship, DataStationIGC station)
+    {
+        _alliedRearmPending.Add(ship);
+        Console.WriteLine($"[allied-dock] ship {ship.Id}: rearmed at allied station {station.StationId} (side {station.SideId}) — launch pending (FedSrv.CPP:13301-13308)");
+    }
+
+    /// <summary>SIM-0667 — the <see cref="ServerHost.AlliedLifepodDocked"/>
+    /// hook handler: mark the lifepod for the re-home redirect. Native
+    /// (<c>FedSrv.CPP:13264-13300</c>) resets the warp state, finds the pilot's
+    /// LAST own-side station (falling back to <c>GetBase(pside)</c>), re-hulls
+    /// it with its last used hull (falling back to the walk below), re-docks at
+    /// the own base, announces SHIP_DELETE(SDR_DOCKED) to the whole mission and
+    /// forces a loadout change. The port has no per-pilot old-ship-status store,
+    /// so both picks take native's own fallbacks: the side's restart-capable
+    /// station (<c>GetBase</c>, fsmission.cpp:6398-6412) and the reverse hull
+    /// walk for a free buyable hull (:13273-13283).</summary>
+    private void OnAlliedLifepodDocked(Ship ship, DataStationIGC station)
+    {
+        _alliedPodRedirectPending.Add(ship);
+        Console.WriteLine($"[allied-dock] ship {ship.Id}: lifepod at allied station {station.StationId} (side {station.SideId}) — re-home redirect pending (FedSrv.CPP:13264-13300)");
+    }
+
+    /// <summary>SIM-0667 — the lifepod redirect body, run from
+    /// <see cref="OnShipDocked"/> before the dock notify so the wire carries the
+    /// HOME station, not the allied one.</summary>
+    private void PerformAlliedLifepodRedirect(Ship ship)
+    {
+        var mission = ship.Mission;
+        if (mission is null || ship.SideId is not { } sideId) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return;
+
+        // GetBase(pside) — the side's restart-capable living station
+        // (fsmission.cpp:6398-6412; native's old-status lookup has no port
+        // counterpart, so the fallback IS the pick).
+        var home = mission.Sectors.SelectMany(s => s.StationRuntimes)
+            .FirstOrDefault(st => !st.Dead && st.SideId == sideId
+                && st.Type.HasCapability(DataStationTypeIGC.SabmRestart));
+        if (home is null)
         {
-            live.Wallet.Money = checked((int)(live.Wallet.Money - cost));
-            if (sd is { } bs) BroadcastMoneyChangeSideWide(ship.Mission!, bs, checked((int)-cost), ship.Id);
-            Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock charged {cost} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-cost} side-wide");
+            Console.WriteLine($"[allied-dock] ship {ship.Id}: no own-side restart station — redirect dropped, pod stays docked");
+            return;
         }
-        Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock done — {upgraded} successor upgrade(s), pools refilled, net cost {cost}");
+
+        // Find the LAST ship type we used — no old ship status in the port, so
+        // native's no-saved-hull fallback (FedSrv.CPP:13273-13283): walk the hull
+        // types backwards for one the home station can buy for free, then take
+        // its buyable successor.
+        DataHullTypeIGC hull = default;
+        bool found = false;
+        foreach (var ht in mission.Core.HullTypes.Values.OrderByDescending(h => h.HullId))
+        {
+            if (ht.GroupId < 0 || ht.Price > 0 || !StationSellsHull(home.Type, side, ht)) continue;
+            hull = SuccessorUpgrade.HullSuccessor(mission.Core, ht, home.Type.TtbmLocal, side.DevelopmentTechs);
+            found = true;
+            break;
+        }
+        if (found && hull.HullId != ship.HullType.HullId)
+            ship.ChangeHull(hull);                     // pfsPlayer->GetIGCShip()->SetBaseHullType(pht) — FedSrv.CPP:13285
+
+        // Re-dock at the own base (pfsShip->Dock(pstation), :13286) + SetStation.
+        ship.StationId = home.StationId;
+        foreach (var child in ship.ChildShips) child.StationId = home.StationId;
+
+        // SHIP_DELETE(SDR_DOCKED) to the WHOLE mission (FedSrv.CPP:13287-13291 —
+        // native's own HACK comment announces to GetGroupMission(), not the
+        // sector) so every peer drops the allied-dock state; SHIP_STATUS carries
+        // the new docked-at-home state next tick.
+        var del = new ShipDelete { ShipId = ship.Id, Sdr = ShipDelete.SdrDocked };
+        byte[] packet = FedPacket.Pack([del.Encode()]);
+        int recipients = 0;
+        foreach (var (conn, peer) in _peerShips)
+            if (ReferenceEquals(peer.Ship.Mission, mission)) { SendPeer(conn, packet); recipients++; }
+        Console.WriteLine($"[allied-dock] ship {ship.Id}: lifepod re-homed at own station {home.StationId} '{home.Data.Name}' (hull {ship.HullType.HullId}) — SHIP_DELETE(SDR_DOCKED) x{recipients} whole mission; ForceLoadoutChange rides the docked BUY_LOADOUT_ACK sync");
     }
 
     /// <summary>

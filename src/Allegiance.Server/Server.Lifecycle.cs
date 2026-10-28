@@ -810,6 +810,8 @@ public sealed partial class Server
         _host.BucketChanged += OnBucketChanged;
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
+        _host.AlliedDockRearm = OnAlliedDockRearm;        // SIM-0662/0667: allied-base dock -> rearm + relaunch
+        _host.AlliedLifepodDocked = OnAlliedLifepodDocked; // SIM-0667: lifepod at allied base -> re-home redirect
         _host.CarrierLanding = (carrier, lander, _) => PerformRelaunch(lander, carrier);   // P754b: LandOnCarrierEvent performs the native relaunch body itself (FedSrv.CPP:12814-13031)
         _host.RipcordUsed = (ship, _) => PerformRipcordTeleport(ship);                   // P754b: UseRipcord performs the native teleport body itself (FedSrv.CPP:13440-13504)
         _host.RescueDestination = rescuee => FindFriendlyStation(rescuee) is not null;    // P754b: RescueShipEvent's native return (`pstation ? ... : false`, FedSrv.CPP:13073-13075)

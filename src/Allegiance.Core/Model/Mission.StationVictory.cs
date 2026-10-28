@@ -12,7 +12,12 @@ public sealed partial class Mission
     public void NotifyStationVictory(Station station, Allegiance.Core.Sim.Model? launcher, bool captured = false, bool built = false, short oldSide = -1)
     {
         var (winner, changed) = RecomputeConquestAndTerritory(null);
-        if (changed || winner is not null || captured) Site.VictoryByStationsComputed(this, changed, winner,
+        // SIM-0650 — raised for EVERY station event, not only when the recompute
+        // changed or won: native's KillStationEvent runs its victory check
+        // unconditionally (FedSrv.CPP:12344) and its non-victory branch sends the
+        // "%s has destroyed %s's %s." chat (FedSrv.CPP:12376-12379). The host
+        // handler no-ops on a no-change/no-winner kill except for that chat.
+        Site.VictoryByStationsComputed(this, changed, winner,
             new StationVictory(station, launcher, captured, built, oldSide));
     }
 
