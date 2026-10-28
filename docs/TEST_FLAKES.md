@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P832g verification observations (2026-10-27)
+
+The single Fast-tier sweep retained **11,203 passed / 7 failed / 3 optional skips**
+in 313.0 s, with no timing offenders. It was not repeated. All new rotation cases
+and all ClientCore Fast cases passed. See
+[P832g](reports/P832G_GOAL_ROTATION.md) and
+[verification receipts](reports/P832G_assets/verification.json).
+
+- Five `PlayerBundlePathsTests` cases repeated the known worktree-TMPDIR ancestor
+  issue: the simulated external install inherited the real checkout's `local.env`.
+  All nine cases passed **3/3 (27/27)** using an open-directory `/proc` alias to
+  the same NVMe scratch. This is environment context, not a load flake.
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  repeated the read-only user configuration failure; **3/3 alone** with
+  `XDG_CONFIG_HOME` in scratch. This is an environment restriction, not a load flake.
+- `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+  failed at line 252 with default client-side `ExpandedPartData` after the server
+  had granted the launcher. It passed **3/3 exact-method runs alone**. This repeats
+  the ledgered launcher grant/receipt race (P852 merge observation); no launcher,
+  grant, broadcast or test assertion/deadline changed in P832g.
+
+The three natural flags→artifacts bot rotations and the exact P730 two-match
+showcase regression **5/5** all passed without retries. Raw gate receipts remain
+in the P832g worktree's ignored `.scratch/p832g/evidence/`.
+
 ## P861 verification observations (2026-10-27)
 
 The conquest 80/50 fixture race is resolved: its assertion included the next
@@ -3183,3 +3208,5 @@ in the worktree's ignored `.scratch/p832e/` directory.
 | 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P852 merge gate 7aa00867: conquest 'Expected 80 Actual 50' (first gate after P832e's station-victory changes — watch: possible stale GAME_STATE read or recompute ordering race); shop launcher = known load flake | 3/3 alone each | suspected race (conquest) / load flake (shop) |
 | 2026-10-27 | ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over | P844 fast-tier gate (this worktree): same 'Expected 80 Actual 50' as the P852 row above — recurrence of the suspected conquest GAME_STATE recompute race (P861, being fixed in parallel; P844 touches no conquest recompute line) | 3/3 alone | load/suspected race |
 | 2026-10-27 | P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch | P844 merge gate: 2/10 failed at ~440 s with "lifepod observed by its controller" | **Fixed (test race), Claude in the P844 merge:** the victim was picked in one sim lock and killed in a second; a natural fight/dock in between let the global Kills/PodsCreated counters advance from another death while the victim never podded (180 s wait). Pick + kill now share one lock and assert `DamageResult.Killed`. 8/8 after the fix. Likely also explains the 47d1ac8a run-4 entry above. | test race — fixed |
+| 2026-10-27 | P844MissionRulesCertifyTests.Allied_survivors_win_when_third_side_is_eliminated | P832g merge gate fast tier (host load ~6, four lanes): `Assert.Single` on bot GameOvers was empty — the test waited for server `Stage==Over`, then read the bot's received GAME_OVER without waiting for the async broadcast publisher | **Fixed (test race), Claude in the P832g merge:** pump until the bot holds the GAME_OVER before asserting. 5/5 after the fix | test race — fixed |
+| 2026-10-27 | ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P832g merge gate fast tier (also in Codex's P832g run): default ExpandedPartData — server grant before the client's loadout ack | 1/1 alone; known launcher-receipt flake | load flake (ledgered) |

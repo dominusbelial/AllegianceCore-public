@@ -14,6 +14,10 @@ public sealed partial class Server
     // and epoch; retries cannot postpone the deadline or arm the automatic next match.
     private void ArmResearchFinale(ConnectionId from, ShowcaseFinaleRequest request)
     {
+        // P832g preset policy: each rotated match ends through its selected native
+        // rules, never the legacy showcase's synthetic finale deadline. Fixed
+        // goal servers preserve their existing policy when rotation is absent.
+        if (_config.Showcase.GoalRotation is not null) return;
         if (_config.Showcase.TechMode != "research" || !_peerShips.TryGetValue(from, out var live)
             || live.Ship.Mission is not { Stage: MissionStage.Started } mission
             || live.Ship.SideId != request.Winner || !mission.Sides.Any(s => s.Id == request.Winner && s.Active)

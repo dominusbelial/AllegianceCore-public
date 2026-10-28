@@ -16,6 +16,8 @@ public sealed class ShowcaseConfig
     /// <summary>Hard simulation-time bound after a research showcase finale fires. Port orchestration.</summary>
     public double FinaleTimeoutSeconds { get; set; } = 300;
     public bool LoopResearchPlans { get; set; }
+    /// <summary>Opt-in preset orchestration; native has creator-selected goals, no rotation.</summary>
+    public GoalRotationConfig? GoalRotation { get; set; }
     public void Validate()
     {
         if (TechMode is not ("unlocked" or "research"))
@@ -46,7 +48,11 @@ public sealed class GameConfig
     public Allegiance.Core.Model.MissionGoals ResolveGoals()
     {
         if (Goals is null) throw new InvalidDataException($"game '{Name}': goals must be an object");
-        var goals = Goals with { };
+        return ValidateGoals(Goals with { });
+    }
+
+    internal Allegiance.Core.Model.MissionGoals ValidateGoals(Allegiance.Core.Model.MissionGoals goals)
+    {
         if (GameLengthSeconds is { } duration)
         {
             if (!double.IsFinite(duration) || duration < 0 || duration > float.MaxValue)
@@ -987,6 +993,8 @@ public sealed class ServerConfig
     public void ResolveShowcaseMode()
     {
         Showcase.Validate();
+        if (Showcase.GoalRotation is { } rotation)
+            foreach (var game in Games) rotation.Validate(game);
         if (Showcase.TechMode != "research") return;
         var live = LiveSettings ?? new LiveSettingsConfig();
         void Conflict(string key) => throw new InvalidDataException($"showcase.techMode=research conflicts with {key}");

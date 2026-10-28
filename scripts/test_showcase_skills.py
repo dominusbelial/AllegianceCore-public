@@ -35,6 +35,16 @@ class SkillsReportTests(unittest.TestCase):
         self.assertIn('guns 0/3', skills.markdown(rows))
         self.assertIn('guns 2/3', skills.markdown(rows))
 
+    def test_rotation_goals_are_joined_by_match_and_fixed_logs_still_parse(self):
+        rows = skills.parse([
+            '[matchup] mission #0 match=1 seed=832 goals=flags(flags=1) goalIndex=0 side0=25',
+            '[skills] match 1 side 0: guns 3',
+            '[matchup] mission #0 match=2 seed=77 goals=artifacts(artifacts=1) goalIndex=1 side0=25',
+            '[skills] match 2 side 0: guns 4',
+            '[skills] match 3 side 0: guns 1'], [dict(id='guns', minimum='3')])
+        self.assertEqual(['flags(flags=1)', 'artifacts(artifacts=1)', 'fixed/unspecified'], [r['goals'] for r in rows])
+        self.assertIn('artifacts(artifacts=1)', skills.markdown(rows))
+
     def test_incomplete_and_malformed_blocks_are_visible(self):
         row, = skills.parse(['[skills] match 2 side 0: guns 3'], [dict(id='guns', minimum='3'), dict(id='cloak', minimum='1')])
         self.assertEqual(['cloak'], row['missing'])

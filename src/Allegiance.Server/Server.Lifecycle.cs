@@ -1113,7 +1113,7 @@ public sealed partial class Server
     private readonly Dictionary<(GameConfig Game, short Side, short Civ), ResearchPlanCatalog.Selection> _showcasePlanSelections = new();
     private readonly HashSet<GameConfig> _primedPlanGames = new();
     private readonly Dictionary<GameConfig, Random> _civSeedStreams = new();
-    private readonly Dictionary<Mission, (long Number, int Seed)> _matchups = new();
+    private readonly Dictionary<Mission, (long Number, int Seed, string Goals)> _matchups = new();
 
     /// <summary>P802 — the <see cref="GameConfig"/> each live mission was assembled
     /// from (assigned in <see cref="AssembleGameMission"/> and dropped on the
@@ -1189,10 +1189,12 @@ public sealed partial class Server
         return seed;
     }
 
+    private readonly Dictionary<GameConfig, (int Match, int Index)> _goalRotations = new();
+
     private string MatchupDetails(Mission mission)
     {
         var match = _matchups[mission];
-        return $"match={match.Number} seed={match.Seed} " + string.Join(" ", mission.Sides.Select(side =>
+        return $"match={match.Number} seed={match.Seed}{match.Goals} " + string.Join(" ", mission.Sides.Select(side =>
             $"side{side.Id}={side.Civilization.CivilizationId}:{side.Civilization.Name}"
             + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})"));
     }
@@ -1230,6 +1232,16 @@ public sealed partial class Server
         // file-load path below runs unchanged.
         var goals = g.ResolveGoals();
         int civSeed = NextCivSeed(g);
+        string goalDescription = "";
+        if (_config.Showcase.GoalRotation is { } rotation)
+        {
+            var previous = _goalRotations.GetValueOrDefault(g, (Match: 0, Index: -1));
+            int index = rotation.Select(previous.Match, civSeed, previous.Index);
+            goals = g.ValidateGoals(rotation.Entries[index].Goals with { });
+            goalDescription = $" goals={rotation.Entries[index].Name}({GoalRotationConfig.Describe(goals)})"
+                + $" goalIndex={index} goalMatch={previous.Match + 1} previousGoalIndex={previous.Index}";
+            _goalRotations[g] = (previous.Match + 1, index);
+        }
         var civIds = MatchCivilizations.Resolve(g, core, civSeed);
         MissionMap map;
         MapGenConfig? mg = g.MapGen;
@@ -1286,7 +1298,7 @@ public sealed partial class Server
             mission.ResearchPlans[side] = selection.Plan;
             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
         }
-        _matchups.Add(mission, (_skillMatchNumber, civSeed));
+        _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription));
         Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;

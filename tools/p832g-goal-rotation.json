@@ -1,0 +1,50 @@
+{
+  "staticCore": "PCore001.igc",
+  "port": 6073,
+  "updatesPerSecond": 20,
+  "sideSelectAutoSeatSeconds": 30,
+  "showcase": {
+    "techMode": "research",
+    "incomeMultiplier": 5000,
+    "researchTimeScale": 16,
+    "goalRotation": {
+      "mode": "cycle"
+    }
+  },
+  "liveSettings": {
+    "timeDilation": "auto",
+    "autoNextMatch": {
+      "enabled": true,
+      "intermissionSeconds": 60
+    },
+    "testUnlock": {
+      "enabled": false
+    },
+    "testHarness": {
+      "enabled": false,
+      "ignoreTechGate": false
+    }
+  },
+  "games": [
+    {
+      "name": "Native goal rotation showcase",
+      "map": "m2xspiderw.igc",
+      "teams": 2,
+      "civIds": [
+        25,
+        3
+      ],
+      "civSeed": 832,
+      "sideNames": [
+        "Alpha",
+        "Bravo"
+      ],
+      "maxTeamImbalance": 32767,
+      "maxPlayersPerTeam": 220
+    }
+  ],
+  "transport": {
+    "maxConnections": 1024,
+    "maxConnectionsPerIp": 1024
+  }
+}

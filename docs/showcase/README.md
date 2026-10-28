@@ -49,3 +49,35 @@ dotnet test tests/Allegiance.ClientCore.Tests --no-build --filter FullyQualified
 ```
 
 It uses civs 25/3, ordinary research and purchases, income ×5000, 45 combat peers per side (five support pilots each) and the existing siege finale. It requires both nanite counters to reach 10 on **each** side within 1,200 wall seconds. `SC2_LIVE_LOG=/writable/disk/path/showcase.log` retains detailed diagnostics. A separate training-style loopback test places/damages fixtures and proves that one legally purchased support pilot actually restores both target kinds. See [the SC-2 report](../reports/SC2_NANITE_SUPPORT.md) for counts, traces and validation.
+
+## Per-match goal coverage (P832g)
+
+Opt in with `showcase.goalRotation` in the server config; see
+[`tools/p832g-goal-rotation.json`](../../tools/p832g-goal-rotation.json).
+`{"mode":"cycle"}` uses conquest 100%, flags 1, artifacts 1, team kills 20,
+prosperity ×1, territory 70%, countdown 1800 s, then flags 1 + artifacts 1.
+Override `entries` with objects containing a unique `name` and a native `goals`
+object. At least two distinct enabled goal sets are required. Fixed `games[].goals`
+or a nonzero `gameLengthSeconds` conflict with rotation. All entries are validated
+for every configured game before boot (territory needs a sufficiently large map;
+prosperity needs developments). The authored spider map supports the full list.
+
+`random` chooses from every entry except the preceding one, with a separate RNG
+seeded from the logged matchup seed (`games[].civSeed` pins the sequence).
+Replay a random choice using the same ordered entries, `seed` and
+`previousGoalIndex` on `[matchup]`; cycle uses the per-game `goalMatch` ordinal.
+The log also includes exact goal values and the selected zero-based `goalIndex`.
+Multi-game servers keep independent rotation positions. A restart begins a fresh
+sequence. An omitted rotation preserves the existing fixed-goal path and log form.
+
+Spawn the ordinary `showcase` bot fleet with `finale_after_minutes:0`; it reads
+all selected objectives from the native-visible mission info after each migration.
+Rotation disables the server's synthetic research-finale deadline. Normal native
+survival/elimination rules still apply. `SkirmishOptions.GoalRotation` exposes the
+same opt-in preset to embedded hosts without changing setup-screen defaults.
+
+The skill report's Goals column/JSON `goals` field joins `[matchup]` to `[skills]`
+by match number, so each match's observed mechanisms retain its actual goal set.
+Old logs show `fixed/unspecified`. Selecting a goal does not itself certify play;
+see the measured two-match proof and the remaining rig recipe in
+[`P832G_GOAL_ROTATION.md`](../reports/P832G_GOAL_ROTATION.md).

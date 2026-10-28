@@ -230,6 +230,9 @@ public class P844MissionRulesCertifyTests
 
         int over = PumpUntil(server, () => mission.Stage == MissionStage.Over, 900);
         Assert.True(over < 900, "allied survivors must win when the un-allied side is eliminated (fsmission.cpp:3820-3856)");
+        // Stage==Over is server state; GAME_OVER reaches the bot through the async
+        // broadcast publisher a tick or more later — wait for the wire, not the sim.
+        Assert.True(PumpUntil(server, () => a.GameOvers.Count > 0, 900) < 900, "GAME_OVER delivered to the surviving ally");
         var go = Assert.Single(a.GameOvers);
         Assert.True(go.SideWinner == side0 || go.SideWinner == side1, $"winner must be an alliance member, got {go.SideWinner}");
         Assert.Contains("&", go.GameoverMessage);   // allied name list, fsmission.cpp:5396-5412

@@ -11,8 +11,11 @@ LINE = re.compile(r'\[skills\] match (\d+) side (-?\d+)(.*)')
 
 
 def parse(lines, catalogue):
-    rows, states = {}, {}
+    rows, states, goals = {}, {}, {}
     for line in lines:
+        matchup = re.search(r'\[matchup\].*?match=(\d+).*? goals=(\S+)', line)
+        if matchup:
+            goals[int(matchup[1])] = matchup[2]
         found = LINE.search(line)
         if not found:
             continue
@@ -33,15 +36,15 @@ def parse(lines, catalogue):
             missing = [c['id'] for c in catalogue if c['id'] not in counts]
             gaps = [dict(id=c['id'], count=counts.get(c['id'], 0), minimum=int(c['minimum']))
                     for c in catalogue if counts.get(c['id'], 0) < int(c['minimum'])]
-            rows[key] = dict(match=key[0], side=key[1], state=states.get(key, 'snapshot'), counts=counts,
+            rows[key] = dict(match=key[0], side=key[1], state=states.get(key, 'snapshot'), goals=goals.get(key[0], 'fixed/unspecified'), counts=counts,
                              covered=len(catalogue) - len(gaps), total=len(catalogue), gaps=gaps, missing=missing)
     return [rows[key] for key in sorted(rows)]
 
 
 def markdown(rows):
-    output = ['| Match | Side | State | Covered | Coverage |', '|---:|---:|---|---:|---:|']
+    output = ['| Match | Side | Goals | State | Covered | Coverage |', '|---:|---:|---|---|---:|---:|']
     for row in rows:
-        output.append(f"| {row['match']} | {row['side']} | {row['state']} | {row['covered']}/{row['total']} | {100 * row['covered'] / row['total']:.1f}% |")
+        output.append(f"| {row['match']} | {row['side']} | {row['goals']} | {row['state']} | {row['covered']}/{row['total']} | {100 * row['covered'] / row['total']:.1f}% |")
     for row in rows:
         output.append(f"\nMatch {row['match']}, side {row['side']} — zero/under minimum: " +
                       ', '.join(f"{g['id']} {g['count']}/{g['minimum']}" for g in row['gaps']))
