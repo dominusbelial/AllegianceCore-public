@@ -1,0 +1,208 @@
+{
+  "natural_victory_runs": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "matches": [
+        {
+          "match": 1,
+          "goals": "flags",
+          "wall_seconds": 46.4,
+          "winner": 0,
+          "reason": "Alpha wins with the flag recovered by mcp-b012-8548"
+        },
+        {
+          "match": 2,
+          "goals": "artifacts",
+          "wall_seconds": 27.6,
+          "winner": 0,
+          "reason": "Alpha wins with the artifact recovered by mcp-b006-7729"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "matches": [
+        {
+          "match": 1,
+          "goals": "flags",
+          "wall_seconds": 46.0,
+          "winner": 0,
+          "reason": "Alpha wins with the flag recovered by mcp-b012-7918"
+        },
+        {
+          "match": 2,
+          "goals": "artifacts",
+          "wall_seconds": 35.1,
+          "winner": 0,
+          "reason": "Alpha wins with the artifact recovered by mcp-b006-6734"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "matches": [
+        {
+          "match": 1,
+          "goals": "flags",
+          "wall_seconds": 46.2,
+          "winner": 0,
+          "reason": "Alpha wins with the flag recovered by mcp-b012-8744"
+        },
+        {
+          "match": 2,
+          "goals": "artifacts",
+          "wall_seconds": 23.2,
+          "winner": 1,
+          "reason": "Bravo wins with the artifact recovered by mcp-b011-7870"
+        }
+      ]
+    }
+  ],
+  "focused_new_tests": {
+    "per_run": 5,
+    "repetitions": 3,
+    "failed": 0
+  },
+  "existing_goal_regressions": {
+    "per_run": 71,
+    "repetitions": 3,
+    "failed": 0
+  },
+  "showcase_runs": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:04:18.7289787",
+      "load_before": [
+        4.38,
+        3.82,
+        3.29
+      ],
+      "idle_cpu_percent_before": 93
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:03:11.4045814",
+      "load_before": [
+        3.96,
+        4.27,
+        3.63
+      ],
+      "idle_cpu_percent_before": 95
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:04:13.3080769",
+      "load_before": [
+        3.97,
+        4.04,
+        3.65
+      ],
+      "idle_cpu_percent_before": 96
+    },
+    {
+      "run": 4,
+      "outcome": "Passed",
+      "duration": "00:04:07.7280936",
+      "load_before": [
+        3.59,
+        3.48,
+        3.5
+      ],
+      "idle_cpu_percent_before": 93
+    },
+    {
+      "run": 5,
+      "outcome": "Passed",
+      "duration": "00:04:09.7979447",
+      "load_before": [
+        1.53,
+        2.83,
+        3.27
+      ],
+      "idle_cpu_percent_before": 91
+    }
+  ],
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tool_build": {
+    "projects": 90,
+    "warnings": 0,
+    "errors": 0
+  },
+  "aot": {
+    "outcome": "passed",
+    "IL2026": 0,
+    "IL3050": 0,
+    "smoke": "native binary boots rotation example and shuts down cleanly"
+  },
+  "metadata_checks": {
+    "glossary_paths": 236,
+    "parity": "passed; score unchanged",
+    "compose": "passed",
+    "csv_cr_bytes": 0,
+    "coverage_parser": "5 tests passed, 3 repetitions"
+  },
+  "fast_tier": {
+    "passed": false,
+    "seconds": 313.0022555030009,
+    "outcomes": {
+      "Passed": 11203,
+      "NotExecuted": 3,
+      "Failed": 7
+    },
+    "timing_offenders": [],
+    "isolated_checks": {
+      "paths": [
+        {
+          "passed": 9,
+          "failed": 0
+        },
+        {
+          "passed": 9,
+          "failed": 0
+        },
+        {
+          "passed": 9,
+          "failed": 0
+        }
+      ],
+      "profile": [
+        {
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "passed": 1,
+          "failed": 0
+        }
+      ],
+      "launcher": [
+        {
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    "note": "Single sweep retained five known TMPDIR ancestor-context failures, one read-only profile failure, and one known launcher receipt race. All affected cases passed 3/3 isolated checks with unchanged assertions; suite not repeated."
+  }
+}

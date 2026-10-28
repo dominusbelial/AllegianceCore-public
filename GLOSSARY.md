@@ -60,6 +60,14 @@ list in **reverse**.
   creates native initial flag pedestals/flags and neutral artifacts. Absent goals
   preserve the port's countdown/finale policy; `NativeDefaults()` explicitly
   selects native Reset's 100% conquest. Report: `docs/reports/P832A_GAME_GOALS.md`.
+- **Per-match goal rotation (P832g, preset policy)** — opt-in
+  `showcase.goalRotation` (`cycle`/seeded `random`, no consecutive repeats),
+  `src/Allegiance.Server/GoalRotationConfig.cs`; selects creator parameters before
+  each fresh world/map in `src/Allegiance.Server/Server.Lifecycle.cs`, logs exact
+  values on `[matchup]`, and uses ordinary MISSIONDEF/briefing for bots/clients.
+  `SkirmishOptions.GoalRotation` forwards the same preset; absent preserves fixed
+  goals. Example `tools/p832g-goal-rotation.json`; skill coverage joins goals by
+  match in `scripts/showcase-skills.py`. Report: `docs/reports/P832G_GOAL_ROTATION.md`.
 - **Friendly fire / allied visualization options (P856)** — the two native
   create-game `MissionParams` booleans, default off: `bAllowFriendlyFire`
   (`Igc/igc.h:1149`) and `bAllowAlliedViz` (`Igc/igc.h:1127`). Per-game

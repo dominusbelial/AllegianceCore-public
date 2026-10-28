@@ -783,6 +783,9 @@ internal sealed partial class BotManager
     private static void RestoreFinaleForNextMission(ActiveBot bot, double now, GameOver? over)
     {
         if (bot.Finale is not { } run) return;
+        // P832g: conquest uses an unregistered strike context, not a re-arming
+        // timed finale. Drop its old station plan when migrating to a new world.
+        bool conquestStrike = bot.ConquestStrike;
         lock (run.Sync)
         {
             run.Rotated = true;
@@ -805,6 +808,7 @@ internal sealed partial class BotManager
             bot.FinaleResetObserved = true;
             bot.ConquestStrike = false;
         }
+        if (conquestStrike) bot.Finale = null;
     }
 
     private static void RestoreFinaleLoadout(ActiveBot bot, bool currentHardware = false)

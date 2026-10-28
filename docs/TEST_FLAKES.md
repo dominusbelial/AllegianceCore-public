@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P832g verification observations (2026-10-27)
+
+The single Fast-tier sweep retained **11,203 passed / 7 failed / 3 optional skips**
+in 313.0 s, with no timing offenders. It was not repeated. All new rotation cases
+and all ClientCore Fast cases passed. See
+[P832g](reports/P832G_GOAL_ROTATION.md) and
+[verification receipts](reports/P832G_assets/verification.json).
+
+- Five `PlayerBundlePathsTests` cases repeated the known worktree-TMPDIR ancestor
+  issue: the simulated external install inherited the real checkout's `local.env`.
+  All nine cases passed **3/3 (27/27)** using an open-directory `/proc` alias to
+  the same NVMe scratch. This is environment context, not a load flake.
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  repeated the read-only user configuration failure; **3/3 alone** with
+  `XDG_CONFIG_HOME` in scratch. This is an environment restriction, not a load flake.
+- `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+  failed at line 252 with default client-side `ExpandedPartData` after the server
+  had granted the launcher. It passed **3/3 exact-method runs alone**. This repeats
+  the ledgered launcher grant/receipt race (P852 merge observation); no launcher,
+  grant, broadcast or test assertion/deadline changed in P832g.
+
+The three natural flags→artifacts bot rotations and the exact P730 two-match
+showcase regression **5/5** all passed without retries. Raw gate receipts remain
+in the P832g worktree's ignored `.scratch/p832g/evidence/`.
+
 ## P861 verification observations (2026-10-27)
 
 The conquest 80/50 fixture race is resolved: its assertion included the next

@@ -33,6 +33,8 @@ public sealed record SkirmishOptions
     /// <see cref="Allegiance.Core.Wire.MissionDef.UnlimitedLives"/> — the native
     /// default and every pre-P799 skirmish's behaviour.</summary>
     public Allegiance.Core.Model.MissionGoals Goals { get; init; } = new();
+    /// <summary>Optional unattended goal coverage preset. Omitted preserves fixed goals.</summary>
+    public GoalRotationConfig? GoalRotation { get; init; }
     /// <summary>P856 — native <c>MissionParams::bAllowFriendlyFire</c>
     /// (igc.h:1149), the create-game option: same-side and allied damage when
     /// on. Default off, exactly native <c>MissionParams::Reset</c>
@@ -123,7 +125,7 @@ public sealed record SkirmishOptions
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
             SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
-            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds },
+            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = TechMode == "unlocked", Money = 1_000_000 },
@@ -155,7 +157,7 @@ public sealed record SkirmishOptions
                 ShowMap = TeamSize < 30,
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
-                Lives = Lives, Goals = Goals with { },
+                Lives = Lives, Goals = Goals with { }, CivSeed = GoalRotation is null ? null : Seed,
                 AllowFriendlyFire = AllowFriendlyFire, AllowAlliedViz = AllowAlliedViz,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
