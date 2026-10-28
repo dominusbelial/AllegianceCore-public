@@ -110,6 +110,18 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             _activeEnvTexture = EnvTextureFor(poster);
             _activePoster = poster;
         }
+        else if (string.IsNullOrEmpty(poster))
+        {
+            // P862b — a sector that declares NO poster has no environment dome
+            // (native: clusterIGC.cpp:41-42 calls SetEnvironmentGeo(posterName) and
+            // an empty name sets none). Clearing here matters because one renderer
+            // is now shared by the current sector and the aleph glimpse's
+            // destinations: without this, glimpsing a poster-less sector would keep
+            // drawing the previous sector's nebula.
+            _activeDome = null;
+            _activeEnvTexture = null;
+            _activePoster = null;
+        }
 
         // Planet poster.
         _planet.SetCluster(cluster);

@@ -1,6 +1,7 @@
 using Allegiance.ClientCore.MonoGame.Assets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -566,6 +567,10 @@ public sealed partial class Game1
                     }
                 }
                 PrepareSceneGeometry(me, cameraEye, dtSec);
+                // P862b — one flare-occlusion frame stamp per rendered frame (the
+                // probe answers from the previous frame's depth and queues this
+                // frame's samples for the next readback).
+                _flareOcclusion.BeginFrame();
                 // HUD-21 — render the selected target's 3-D model preview into
                 // its own render target HERE, before the colour target is bound,
                 // so the RT excursion is lossless (nothing has been drawn to the
@@ -598,6 +603,12 @@ public sealed partial class Game1
                 if (soft)
                 {
                     _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+                    // P862b — the flare occlusion probe reads LAST frame's linear
+                    // depth HERE, before this frame's pass re-renders that target:
+                    // the same exact test P585 did, one frame late, with no
+                    // synchronous mid-frame readback stalling the arrival window.
+                    _flareOcclusion.SampleDeferred();
+                    _flareOcclusion.Report(_nowSeconds, _post.DepthRT!.Width, _post.DepthRT!.Height);
                     // P582 — the depth render target must NOT still be bound as a
                     // texture here: a feedback loop (renderer that sampled it last
                     // frame forgetting to unbind) breaks this pass and hides the
@@ -2247,67 +2258,85 @@ public sealed partial class Game1
     /// P576-B — gather the current sector's warps that have a resolvable
     /// destination cluster and hand them to the glimpse renderer (which draws a
     /// faint destination-sky view into each funnel centre). Nearest-first +
-    /// bounded by the renderer. No-op when the glimpse setting is off (default).
+    /// bounded by the renderer. No-op when the glimpse setting is off.
     /// </summary>
     private void DrawAlephGlimpses(Matrix view, Matrix projection, Vector3 cameraEye,
         ClientWorld world, DataClusterIGC current)
     {
-        var list = new List<(DataWarpIGC Warp, DataClusterIGC Dest, float DistSq)>();
-        foreach (var kv in world.Warps)
-        {
-            var w = kv.Value;
-            if (w.ClusterId != current.ClusterId) continue;   // only this sector's alephs
-            if (!world.Clusters.TryGetValue(w.DestinationId, out var dest)) continue;
-            float dx = w.Position[0] - cameraEye.X, dy = w.Position[1] - cameraEye.Y, dz = w.Position[2] - cameraEye.Z;
-            list.Add((w, dest, dx * dx + dy * dy + dz * dz));
-        }
-        if (list.Count == 0) return;
+        // P862b — resolve each warp's destination SECTOR through its partner warp
+        // (native warpIGC.h:129-141, the P540c rule WarpDestinationResolver owns),
+        // never by feeding the partner WARP id into the cluster table: the two id
+        // spaces do not overlap (this map: clusters 1050-1062, warps 2150-2193), so
+        // the old lookup never matched and the glimpse drew nothing at all.
+        var targets = Rendering.AlephGlimpseRenderer.CollectTargets(
+            world.Warps, world.Clusters, current.ClusterId, cameraEye);
+        if (targets.Count == 0) return;
+        LogGlimpseResolution(targets, current);
         // P585 — pass the per-warp transit-pulse strength (drives the glimpse
         // open-wide + lens-flare) and the flare occlusion test (P547 depth).
-        _alephGlimpseRenderer.Draw(list, cameraEye, view, projection, _ => default,
+        _alephGlimpseRenderer.Draw(targets, cameraEye, view, projection, current,
             wId => _warpPulses.Strength(wId, _nowSeconds),
             TransitFlareOccluded);
     }
 
-    /// <summary>
-    /// P585 — lens-flare occlusion test: is the aleph funnel centre at screen
-    /// position <paramref name="sx"/>,<paramref name="sy"/> (top-left origin)
-    /// hidden behind opaque geometry this frame? Samples the P547 linear-depth
-    /// target at that pixel and compares against the aleph's own view depth
-    /// (<paramref name="viewDepth"/>), both in normalized [0,1] units
-    /// (<see cref="Rendering.LinearDepth"/>). When the depth pass did not run
-    /// this frame (soft particles off) there is no trustworthy depth, so the
-    /// flare is treated as unoccluded.
-    /// </summary>
-    private bool TransitFlareOccluded(int sx, int sy, float viewDepth)
+    /// <summary>P862b — name the glimpse's resolution once per warp: the aleph, the
+    /// partner warp it points at and the SECTOR that partner sits in. This is the
+    /// evidence that the glimpse aims at a real sector (and which one), which the
+    /// [sector-entry] / [asset] lines cannot show.</summary>
+    private void LogGlimpseResolution(List<Rendering.GlimpseTarget> targets, DataClusterIGC current)
     {
-        var post = _post;
-        var depth = post?.DepthRT;
-        if (post is null || depth is null || _softContext is null)
-            return false;                                  // no fresh depth this frame
-        int w = depth.Width, h = depth.Height;
-        sx = (int)(sx * (double)w / GraphicsDevice.Viewport.Width);
-        sy = (int)(sy * (double)h / GraphicsDevice.Viewport.Height);
-        if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
-        // OpenGL render targets are bottom-left origin; screen coords are
-        // top-left, so flip Y before sampling.
-        int ty = h - 1 - sy;
-        if (ty < 0 || ty >= h) return false;
-        try
+        foreach (var t in targets)
         {
-            var px = new Color[1];
-            depth.GetData(0, new Rectangle(sx, ty, 1, 1), px, 0, 1);
-            float sceneNorm = Rendering.LinearDepth.Decode(px[0]);
-            float alephNorm = Rendering.LinearDepth.Normalize(viewDepth,
-                Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
-            // Scene is nearer than the aleph → the funnel centre is occluded.
-            return sceneNorm < alephNorm - 0.005f;
-        }
-        catch
-        {
-            return false;                                  // readback hiccup → treat as visible
+            if (_glimpseLogged.TryGetValue(t.Warp.WarpId, out short known) && known == t.DestSector) continue;
+            _glimpseLogged[t.Warp.WarpId] = t.DestSector;
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"[glimpse] warp #{t.Warp.WarpId} '{t.Warp.Name}' in {current.Name} ({current.ClusterId}) "
+                + $"-> {t.Dest.Name} ({t.DestSector}) via partner warp #{t.Warp.DestinationId}"));
         }
     }
+
+    /// <summary>
+    /// P585/P862b — lens-flare occlusion test: is the aleph funnel centre at screen
+    /// position <paramref name="sx"/>,<paramref name="sy"/> (top-left origin) hidden
+    /// behind opaque geometry? Sampled from the P547 linear-depth target and compared
+    /// against the aleph's own view depth (<paramref name="viewDepth"/>), both in
+    /// normalized [0,1] units (<see cref="Rendering.LinearDepth"/>). The readback
+    /// itself is <see cref="Rendering.FlareOcclusionProbe"/>'s: by default it runs at
+    /// the START of the next frame against the depth that frame's pass has not yet
+    /// overwritten (one frame of latency, no pipeline stall — P862b), instead of a
+    /// synchronous readback inside the frame being drawn (P585). When the depth pass
+    /// did not run (soft particles off) there is no trustworthy depth, so the flare
+    /// is treated as unoccluded.
+    /// </summary>
+    private bool TransitFlareOccluded(short warpId, int sx, int sy, float viewDepth)
+    {
+        var depth = _post?.DepthRT;
+        if (depth is null || _softContext is null)
+            return false;                                  // no fresh depth
+        float alephNorm = Rendering.LinearDepth.Normalize(viewDepth,
+            Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+        return _flareOcclusion.Query(warpId, sx, sy, alephNorm,
+            depth.Width, depth.Height, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+    }
+
+    /// <summary>P862b — the flare occlusion probe's GPU readback: a rectangle of the
+    /// P547 linear-depth target (<c>null</c> when there is no depth target).</summary>
+    private Color[]? ReadSceneDepthForFlare(Rectangle rect)
+    {
+        var depth = _post?.DepthRT;
+        if (depth is null || rect.Width <= 0 || rect.Height <= 0) return null;
+        var pixels = new Color[rect.Width * rect.Height];
+        depth.GetData(0, rect, pixels, 0, pixels.Length);
+        return pixels;
+    }
+
+    /// <summary>P862b — the sky-tier renderer the frame draws with; the aleph glimpse
+    /// renders its destination skies through the SAME instance so the art it shows is
+    /// the art the sector already has resident (no second 2048² planet decode).</summary>
+    private Rendering.ISkyRenderer ActiveSkyTier()
+        => string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase) ? _hdSky
+         : string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? _blackSky
+         : _nativeSky;
 
     /// <summary>
     /// P547 — the linear-depth pass body: re-render the opaque scene geometry

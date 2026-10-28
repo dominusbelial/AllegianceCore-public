@@ -496,11 +496,26 @@ public sealed partial class Game1
             moonsOn: _moonsOn, distantObjectsOn: _distantObjectsOn, galaxiesOn: _galaxiesOn,
             giantObjectsOn: _giantObjectsOn);
         _nativeSky = new Rendering.NativeSkyRenderer(GraphicsDevice, _assets);
-        _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, _assets);
-        // P577/P588 — the aleph destination-glimpse renders the SAME sky tier
-        // as the arriving sector (HD cubemap + HD nebula/planet, native dome +
-        // planet, or black point stars + planet).
-        _alephGlimpseRenderer.SkyTier = _skyTier;
+        // P862b — the transit-flare occlusion probe. Default: deferred (read LAST
+        // frame's depth at the start of the frame, one frame of latency, no stall).
+        // ALLEGIANCE_FLARE_OCCLUSION=blocking restores the P585 in-frame readback
+        // (the A/B arm) and =off skips the test (the measurement floor).
+        _flareOcclusion = new Rendering.FlareOcclusionProbe(
+            Rendering.FlareOcclusionProbe.ParseMode(
+                System.Environment.GetEnvironmentVariable("ALLEGIANCE_FLARE_OCCLUSION")),
+            ReadSceneDepthForFlare);
+        Console.WriteLine(_flareOcclusion.Mode switch
+        {
+            Rendering.FlareOcclusionMode.Deferred =>
+                "[client] transit flare occlusion: deferred — last frame's linear depth, read before this frame's depth pass (P862b)",
+            Rendering.FlareOcclusionMode.Blocking =>
+                "[client] transit flare occlusion: BLOCKING in-frame readback (ALLEGIANCE_FLARE_OCCLUSION=blocking — P862b A/B arm)",
+            _ => "[client] transit flare occlusion: OFF (ALLEGIANCE_FLARE_OCCLUSION=off — flares never occluded)",
+        });
+        // P862b — the glimpse renders its destination skies through the SAME sky-tier
+        // renderer the sector uses (shared art caches: the sector you just left is
+        // already resident, so a glimpse costs one 256² pass and no decode).
+        _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, ActiveSkyTier);
         // P577 — the in-game Credits/Licences screen shows the HD telescope
         // attribution ONLY when the HD tier's real data is actually in use;
         // otherwise (black/native, P588) it notes no external sky assets apply.

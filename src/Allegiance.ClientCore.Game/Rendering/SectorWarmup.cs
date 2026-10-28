@@ -18,6 +18,12 @@ public enum WarmAssetKind
     /// <summary>A sky asset for a cluster — the native planet poster texture and
     /// (HD tier) the environment dome for its poster.</summary>
     Sky,
+    /// <summary>P862b — a GLIMPSE sky: the aleph destination glimpse's cached
+    /// 256² view of a sector's sky (<see cref="AlephGlimpseRenderer"/>). The art
+    /// itself is shared with the sector's own sky, so this item only costs the
+    /// small target pass — but it is what the arrival frame would otherwise pay
+    /// (on arrival the glimpse looks BACK at the sector just left).</summary>
+    GlimpseSky,
 }
 
 /// <summary>
@@ -275,6 +281,13 @@ public static class SectorWarmupPlanner
     /// planet or a poster).</summary>
     public static bool HasSky(in WarmAsset asset)
         => !string.IsNullOrEmpty(asset.Stem) || !string.IsNullOrEmpty(asset.Hint);
+
+    /// <summary>P862b — the aleph destination glimpse's cached sky target for a
+    /// sector. The stem is the sector id so two alephs leading to the same sector
+    /// (and a re-entry) share one target; <see cref="WarmAsset.SectorId"/> is the
+    /// sector whose sky is prepared.</summary>
+    public static WarmAsset GlimpseSky(short sectorId)
+        => new(WarmAssetKind.GlimpseSky, $"glimpse/{sectorId}", null, sectorId);
 
     private static string? Trimmed(string? s)
     {

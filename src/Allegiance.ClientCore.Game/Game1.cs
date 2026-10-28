@@ -516,6 +516,14 @@ public sealed partial class Game1 : Game
     // P592 — the black-sky GIANT sky object (face-on galaxy curved sky patch).
     private bool _giantObjectsOn = true;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
+    // P862b — the transit-flare occlusion probe: answers "is this aleph's funnel
+    // centre behind opaque geometry" from LAST frame's linear depth (one frame
+    // late) instead of a synchronous readback inside the frame being drawn.
+    private Rendering.FlareOcclusionProbe _flareOcclusion = null!;
+    // P862b — the last destination sector logged per aleph warp, so the
+    // [glimpse] resolution line prints once per warp (it is the evidence the
+    // glimpse aims at a real sector, not at a partner-warp id).
+    private readonly Dictionary<short, short> _glimpseLogged = new();
     // P585 — the opt-in transit-pulse envelope: when a ship crosses an aleph in
     // the viewer's sector (ClientWorld's AlephTransitSignals) the affected warp
     // briefly brightens, its glimpse opens wide and a lens-flare bursts. Drives
