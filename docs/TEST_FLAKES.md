@@ -4,6 +4,20 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P862b verification observations (2026-10-28)
+
+The single Fast-tier sweep on the P862b tree (client rendering only: the aleph destination glimpse's
+resolution/warm-up and the flare's occlusion probe) retained **11,286 tests / 1 failure** in 309.8 s:
+
+- `SwapPartTests.SwapPart_swaps_two_occupied_slots_sectorwide_moves_and_silent_noop`
+  (`Assert.Empty` on one `SwapPart { EtOld = Weapon, MountNew = 2, MountOld = 1, ShipID = 8098 }` — the
+  client-side swap-part echo). It passed **3/3 exact-method runs alone** (317/314/326 ms) with no code
+  change, so it is a load flake: other lanes were running suites on the shared 24-CPU host during the
+  sweep (the sweep's own MonoGame/Core counts moved by ±3 from P862's run of the same tree shape).
+  P862b touches no inventory/swap-part, server or simulation code.
+
+The P730 two-match showcase regression passed **5/5** alone on the same tree (3 m 12 s – 4 m 21 s).
+
 ## P832g verification observations (2026-10-27)
 
 The single Fast-tier sweep retained **11,203 passed / 7 failed / 3 optional skips**

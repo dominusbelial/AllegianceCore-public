@@ -111,6 +111,7 @@ public sealed partial class Game1
     private int _sectorLoadShotAfterFrames;   // P862 proof shots still owed for this change
     private readonly string _sectorShotsDir = Environment.GetEnvironmentVariable("ALLEGIANCE_SECTOR_SHOTS") ?? "";
     private bool _sectorShotPreArmed;
+    private bool _sectorShotPre2Armed;
 
     /// <summary>The per-sector warm tally (diagnostics).</summary>
     private sealed class WarmTally
@@ -129,23 +130,27 @@ public sealed partial class Game1
         int RockModels, int RockTextures,
         int StationModels, int StationTextures,
         int ShipModels, int ShipTextures,
-        int Planets, int HdMaterials)
+        int Planets, int HdMaterials,
+        int GlimpseTargets)
     {
         public static LoadCounters operator -(LoadCounters a, LoadCounters b) => new(
             a.RockModels - b.RockModels, a.RockTextures - b.RockTextures,
             a.StationModels - b.StationModels, a.StationTextures - b.StationTextures,
             a.ShipModels - b.ShipModels, a.ShipTextures - b.ShipTextures,
-            a.Planets - b.Planets, a.HdMaterials - b.HdMaterials);
+            a.Planets - b.Planets, a.HdMaterials - b.HdMaterials,
+            a.GlimpseTargets - b.GlimpseTargets);
 
         /// <summary>Every count that can only come from a decode/upload.</summary>
         public int Total => Math.Max(0, RockModels) + Math.Max(0, RockTextures)
                           + Math.Max(0, StationModels) + Math.Max(0, StationTextures)
                           + Math.Max(0, ShipModels) + Math.Max(0, ShipTextures)
-                          + Math.Max(0, Planets) + Math.Max(0, HdMaterials);
+                          + Math.Max(0, Planets) + Math.Max(0, HdMaterials)
+                          + Math.Max(0, GlimpseTargets);
 
         public override string ToString()
             => $"rock {RockModels}M/{RockTextures}T, station {StationModels}M/{StationTextures}T, "
-             + $"ship {ShipModels}M/{ShipTextures}T, planet +{Planets}, HD +{HdMaterials}";
+             + $"ship {ShipModels}M/{ShipTextures}T, planet +{Planets}, HD +{HdMaterials}, "
+             + $"glimpse sky +{GlimpseTargets}";
     }
 
     private LoadCounters SampleLoadCounters()
@@ -160,7 +165,8 @@ public sealed partial class Game1
             _nativeAsteroidRenderer.LoadedModelCount, _nativeAsteroidRenderer.LoadedTextureCount,
             _nativeStationRenderer.LoadedModelCount, _nativeStationRenderer.LoadedTextureCount,
             _nativeShipRenderer.LoadedModelCount, _nativeShipRenderer.LoadedTextureCount,
-            planets, _hdMaterials?.ResidentMaterials ?? 0);
+            planets, _hdMaterials?.ResidentMaterials ?? 0,
+            _alephGlimpseRenderer?.LoadedTargetCount ?? 0);
     }
 
     private void EnsureWarmupConfigured()
@@ -373,6 +379,7 @@ public sealed partial class Game1
         {
             _warmApproachSector = -1;
             _sectorShotPreArmed = false;
+            _sectorShotPre2Armed = false;
             return;
         }
 
@@ -388,15 +395,43 @@ public sealed partial class Game1
             _sectorShotPreArmed = true;
             ScheduleSectorShot($"sector_{ownSector}_pre1");
         }
+        // P862b — a second departure frame right at the gate: inside
+        // AlephGlimpseRenderer.FadeFullDistance the resting aleph glimpse is at full
+        // strength, so the destination sky it shows is plainly visible (the frame
+        // the Classic/Modern proof pairs use).
+        if (_sectorShotsDir.Length > 0 && bestSq <= 700f * 700f && !_sectorShotPre2Armed)
+        {
+            _sectorShotPre2Armed = true;
+            ScheduleSectorShot($"sector_{ownSector}_pre2");
+        }
 
         bool firstScan = approach != _warmApproachSector;
         int added = SeedSectorWarmup(approach, includeShips: true);
+        // P862b — and the GLIMPSE sky the ARRIVAL frame will ask for: coming out
+        // of the aleph the glimpse looks BACK at the sector being left, so that
+        // sector's destination-sky target must be resident before the crossing
+        // (it is the same sector the main sky has been drawing, so its art is
+        // already in the shared tier cache — this only costs the 256² pass).
+        added += EnqueueGlimpseSky(ownSector);
         int promoted = _warmQueue.Promote(approach);
         if (!firstScan && added == 0) return;          // nothing new: stay quiet
         _warmApproachSector = approach;
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"[sector-warm] aleph approach -> {SectorName(approach)} ({approach}): {added} asset(s) queued, "
             + $"{promoted} promoted to the front ({MathF.Sqrt(bestSq):0} u to the aleph)"));
+    }
+
+    /// <summary>P862b — queue the aleph destination glimpse's cached sky for a
+    /// sector (the P862 sector warm-up's item). Off with the glimpse flag or with
+    /// <c>ALLEGIANCE_SECTOR_PREWARM=0</c>, exactly like every other item. Returns 1
+    /// when the item was newly queued.</summary>
+    private int EnqueueGlimpseSky(short sectorId)
+    {
+        if (_warmQueue is null || !_alephGlimpse || sectorId <= 0) return 0;
+        var world = _session.World;
+        lock (_session.Gate)
+            if (!world.Clusters.ContainsKey(sectorId)) return 0;
+        return _warmQueue.Enqueue(Rendering.SectorWarmupPlanner.GlimpseSky(sectorId)) ? 1 : 0;
     }
 
     /// <summary>Warm ONE item by calling the renderer that owns it. Returns 1 when
@@ -460,6 +495,35 @@ public sealed partial class Game1
                     if (dome > 0) created = 1;
                 }
                 return created;
+            }
+            case WarmAssetKind.GlimpseSky:
+            {
+                if (!_alephGlimpse || _alephGlimpseRenderer is null) return 0;
+                DataClusterIGC dest, own;
+                var look = Vector3.Zero;               // zero -> the renderer's fallback
+                Vector3 ownPos = Vector3.Zero;
+                if (TryOwnPose(out var posePos, out _, out _)) ownPos = PoseConverter.ToXna(posePos);
+                lock (_session.Gate)
+                {
+                    var world = _session.World;
+                    if (!world.Clusters.TryGetValue(asset.SectorId, out dest)) return -1;
+                    own = _sectorLoadLastSector is { } here && world.Clusters.TryGetValue(RenderSector(here), out var c)
+                        ? c : dest;
+                    // The travel direction through the gate that leads there: a
+                    // glimpse peeks at the sky AS SEEN LOOKING ALONG THE CROSSING, so
+                    // this is the direction the arrival glance will use (it does not
+                    // depend on where the camera stands — only on the crossing).
+                    foreach (var (_, warp) in world.Warps)
+                    {
+                        if (warp.ClusterId != own.ClusterId) continue;
+                        if (warp.Position is not { Length: 3 }) continue;
+                        if (Allegiance.Core.Model.WarpDestinationResolver
+                                .DestinationSector(world.Warps, warp.WarpId) != asset.SectorId) continue;
+                        var d = new Vector3(warp.Position[0], warp.Position[1], warp.Position[2]) - ownPos;
+                        if (d.LengthSquared() > 1e-6f) { look = d; break; }
+                    }
+                }
+                return _alephGlimpseRenderer.Warm(asset.SectorId, dest, own, look);
             }
             default:
                 return 0;

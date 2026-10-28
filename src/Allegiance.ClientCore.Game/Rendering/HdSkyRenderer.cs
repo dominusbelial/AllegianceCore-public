@@ -126,6 +126,14 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             _activeEnvTexture = EnvTextureFor(poster);
             _activePoster = poster;
         }
+        else if (string.IsNullOrEmpty(poster))
+        {
+            // P862b — no poster, no dome (native clusterIGC.cpp:41-42). See the
+            // native tier: one renderer is shared with the aleph glimpse now.
+            _activeDome = null;
+            _activeEnvTexture = null;
+            _activePoster = null;
+        }
 
         // Native planet poster (shared, P588).
         _planet.SetCluster(cluster);

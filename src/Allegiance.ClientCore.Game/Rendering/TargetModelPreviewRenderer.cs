@@ -12,7 +12,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// happens BEFORE the frame's colour target is bound (called from
 /// <c>Game1.Rendering.cs</c> right after <c>PrepareSceneGeometry</c>), so the
 /// save/switch/restore is lossless (nothing has been drawn to the colour
-/// target yet). See <see cref="AlephGlimpseRenderer.EnsureRendered"/> for the
+/// target yet). See <c>AlephGlimpseRenderer.EnsureTarget</c> for the
 /// RT precedent and <see cref="RenderTargetGuard"/> (P582b).
 /// </summary>
 /// <remarks>

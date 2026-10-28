@@ -319,6 +319,23 @@ list in **reverse**.
   destination glimpse no longer prepares a sky it would draw fully transparent.
   Report `docs/reports/P862_REPORT.md`. *Native intent:* the cluster-entry model
   load (`WinTrek`/`Igc` cluster change) — the port does the same work earlier.
+- **Aleph destination glimpse (P576-B/P585/P862b)** — the opt-in (default ON since
+  P607) view of an aleph's DESTINATION sector sky composited inside its funnel
+  (`Rendering/AlephGlimpseRenderer.cs` + the `WarpPulseController` transit pulse
+  and lens flare). Two rules matter: (1) the destination is resolved from the
+  warp's PARTNER warp (`WarpDestinationResolver`, native `warpIGC.h:129-141`) —
+  `DataWarpIGC.DestinationId` is a WARP id, never a sector id, and feeding it into
+  the cluster table (the pre-P862b code) resolves nothing on a map whose id spaces
+  do not overlap, so the glimpse silently drew nothing; (2) the destination sky is
+  rendered through the SAME sky-tier renderer the current sector uses
+  (`Game1.ActiveSkyTier`), so its art is shared — the sector you just left is
+  already resident, and preparing its glimpse costs one 256² pass, no decode. The
+  sector warm-up (`SectorWarmupPlanner.GlimpseSky`) does that pass during the aleph
+  approach, because on arrival the glimpse looks BACK at the sector just left.
+  The flare's occlusion test samples the P547 linear-depth target one frame late
+  (`Rendering/FlareOcclusion.cs`, `ALLEGIANCE_FLARE_OCCLUSION=deferred|blocking|off`)
+  instead of a synchronous readback inside the frame being drawn. Report
+  `docs/reports/P862B_REPORT.md`.
 - **Flight prediction / dead reckoning** — `src/Allegiance.ClientCore/Flight/`
   (`KinematicsDeadReckoner` etc.), reports `P447*/P448*`.
 - **Volumetric explosions (raymarch tier)** — Technique A (P573/P579) plus the
