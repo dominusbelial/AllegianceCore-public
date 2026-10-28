@@ -421,6 +421,84 @@ public sealed class GameOverPlayersWireTests
         }
     }
 
+    // ── P844b/SIM-0526 — time played accumulates across rejoins ────────────
+
+    /// <summary>P844b/SIM-0526 — native's <c>PlayerScoreObject</c> accumulates
+    /// time over Connect/Disconnect pairs (igc.h:5602-5613): a player who
+    /// leaves, rejoins (old score restored) and plays again has the SUM of both
+    /// stints. Before the fix all three stamping sites overwrote with
+    /// <c>_simNow - ConnectSimTime</c>, keeping only the last stint. Ace joins,
+    /// leaves (~3 s), rejoins (~2 s), then Bee leaves → Ace's side wins by
+    /// elimination while Ace is ONLINE; the game-over roster carries
+    /// stint1 + stint2, not just stint2.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Rejoined_player_accumulates_time_across_stints_in_roster()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+
+        // Ace + Cee on side 0 (Cee stays so Ace's departure does NOT empty side 0
+        // and end the game), Bee on side 1.
+        using var a = new FltBot();
+        using var b = new FltBot();
+        using var c = new FltBot();
+        a.Connect(server.BoundPort, "Ace");
+        a.SendLogonRequest(Request("Ace"));
+        b.Connect(server.BoundPort, "Bee");
+        b.SendLogonRequest(Request("Bee"));
+        c.Connect(server.BoundPort, "Cee");
+        c.SendLogonRequest(Request("Cee"));
+        int got = PumpUntil(server, () => a.ShipAssignment is not null && b.ShipAssignment is not null && c.ShipAssignment is not null, 8000);
+        Assert.True(got < 8000, "all bots must seat");
+        var mission = server.Missions[0];
+        short side0 = mission.Sides[0].Id, side1 = mission.Sides[1].Id;
+
+        short aShip = a.ShipAssignment!.Ship.ShipId;
+        Assert.True(server.TryJoinSide(server.Ships.First(s => s.Ship.Id == aShip).Ship, side0));
+        Assert.True(server.TryJoinSide(server.Ships.First(s => s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship, side1));
+        Assert.True(server.TryJoinSide(server.Ships.First(s => s.Ship.Id == c.ShipAssignment!.Ship.ShipId).Ship, side0));
+        Assert.NotEqual(side0, side1);
+
+        // Stint 1: ~3 s, then Ace leaves (site 1 folds the stint into the cached
+        // score). Cee remains, so Ace's side is not emptied and the game continues.
+        for (int i = 0; i < 60; i++) server.TickSim();            // 3 s @20 Hz
+        a.Dispose();
+        int left = PumpUntil(server, () => server.Ships.FirstOrDefault(s => s.Ship.Id == aShip) is null, 800);
+        Assert.True(left < 800, "Ace must depart");
+
+        // Rejoin: the old score is restored (TimePlayed = stint 1), ConnectSimTime reset.
+        using var a2 = new FltBot();
+        a2.Connect(server.BoundPort, "Ace");
+        a2.SendLogonRequest(Request("Ace"));
+        int re = PumpUntil(server, () => a2.ShipAssignment is not null, 4000);
+        Assert.True(re < 4000, "Ace must re-seat");
+        Assert.True(server.TryJoinSide(server.Ships.First(s => s.Ship.Id == a2.ShipAssignment!.Ship.ShipId).Ship, side0),
+            "rejoined Ace must sit back on side 0");
+        a2.ResetGameOvers();
+        a2.ResetGameOverPlayerBroadcasts();
+
+        // Stint 2: ~2 s more, still online.
+        for (int i = 0; i < 40; i++) server.TickSim();            // 2 s @20 Hz
+
+        // Bee leaves → side 1 empties → Ace's side wins by elimination while Ace is online.
+        b.Dispose();
+        int seen = PumpUntil(server, () => mission.Stage == MissionStage.Over
+                                           && a2.GameOvers.Count > 0 && a2.GameOverPlayerBroadcasts.Count > 0, 900);
+        Assert.True(seen < 900, "elimination must end the mission");
+
+        var gop = Assert.Single(a2.GameOverPlayerBroadcasts);
+        var ace = gop.Entries.Single(e => e.CharacterName == "Ace");
+        // The roster must carry the SUM (~5 s), safely above the last stint alone
+        // (~2 s + seat overhead) — the pre-fix overwrite would report only ~2 s.
+        Assert.InRange(ace.TimePlayed, 4.0f, 8.0f);
+        // The same accumulated PlayerScore.TimePlayed is what ReportMissionResultsToLobby
+        // emits verbatim as TimePlayedSeconds/Minutes (Server.Lobby.cs:1324/1335).
+        Console.WriteLine($"P844b-REJOIN-TIME: Ace TimePlayed after leave+rejoin ≈ {ace.TimePlayed:F1}s (sum of both stints)");
+    }
+
     // ── harness ─────────────────────────────────────────────────────────────
 
     private sealed record Spec(bool Boardable, Vector3 Pos);

@@ -71,6 +71,17 @@ public sealed partial class Server : IDisposable
     private readonly Dictionary<(Mission Mission, string Name), short> _oldPlayerSideIds =
         new(OldPlayerKeyComparer.Instance);
 
+    /// <summary>P844b/SIM-0526 — missions whose per-player scores have been
+    /// finalized by <see cref=\"FinalizeMissionScores\"/> (which folds the final
+    /// open stint into each <c>PlayerScore.TimePlayed</c>). The game-over roster
+    /// (<see cref=\"BuildGameOverPlayerEntries\"/>) uses it to know whether a
+    /// still-connected player's <c>TimePlayed</c> already includes the current
+    /// stint (finalized: use as-is) or is still just the accumulated baseline
+    /// (side-only game-over, not finalized: fold the open stint on). Entries die
+    /// with their mission alongside <see cref=\"_oldPlayerScores\"/> on the P439
+    /// rotation.</summary>
+    private readonly HashSet<Mission> _scoresFinalized = new();
+
     /// <summary>P847 — the old-player cache key comparer. Native keys its
     /// <c>m_oldPlayers</c> list purely on the character name with
     /// <c>_stricmp</c> (<c>GetOldPlayerLink</c>, fsmission.cpp:390-398) and

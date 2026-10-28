@@ -2182,7 +2182,14 @@ public sealed partial class Server
         // roster's TimePlayed != 0 gate, fsmission.cpp:3124, must pass).
         if (playerName is { Length: > 0 } name)
         {
-            live.PlayerScore.SetTimePlayed((float)Math.Max(0.0, _simNow - live.ConnectSimTime));
+            // P844b/SIM-0526 — accumulate time across rejoins: fold this closing
+            // stint onto the player's accumulated baseline so the cached old
+            // player's TimePlayed is the SUM over all its Connect/Disconnect
+            // pairs (native m_dtPlayed += t - m_timeConnect, igc.h:5602-5613) —
+            // a leaver+rejoiner+leaver restores and re-accumulates instead of
+            // the old code's overwrite keeping only the last stint.
+            live.PlayerScore.SetTimePlayed(
+                live.PlayerScore.TimePlayed + (float)Math.Max(0.0, _simNow - live.ConnectSimTime));
             _oldPlayerScores[(mission, name)] = live.PlayerScore;
             _oldPlayerSideIds[(mission, name)] = departedSideId;   // P844/SIM-0527 — OldPlayerInfo.sideID
         }

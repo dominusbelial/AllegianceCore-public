@@ -1284,8 +1284,72 @@ public sealed partial class Mission : IMissionIgc
             }
         }
 
+        // P844b/SIM-0531 — native's allies-override tail for
+        // <c>CheckForVictoryByStationKill</c> (fsmission.cpp:3719-3743, Imago
+        // ALLY 7/17/09): when every ACTIVE side is one alliance group the
+        // alliance wins, overriding the conquest/territory tally. Native gates
+        // this on <c>bAllies</c> — set only when the conquest branch detects a
+        // side with an alliance (fsmission.cpp:3573/3615: <c>if (pside-&gt;
+        // GetAllies() != NA) bAllies = true;</c>) — so a territory-only mission
+        // (or a lone un-allied active side) never triggers it. The gate
+        // preserves the KGJV #62 AllowEmptyTeams one-active-team suppression
+        // above (fsmission.cpp:3628-3630): an un-allied single active side keeps
+        // the game going, exactly as native's <c>bAllies == false</c> does,
+        // while an allied active side still wins (native's documented
+        // "allies override to prevent issues"). The override runs AFTER the
+        // whole conquest/territory recompute, matching native's end-of-body
+        // placement (:3742).
+        if (ConquestEnabled && Sides.Any(s => s.AllyGroup is not null))
+        {
+            var allyWon = AllianceOverrideWinner(this);
+            if (allyWon is not null)
+                psideWon = allyWon;
+        }
+
         return (psideWon, bChange);
     }
+
+    /// <summary>
+    /// P844b/SIM-0531/0533 — the pure allies-override winner, moved into Core
+    /// so the Server's win-by-inactive-sides family and this conquest/territory
+    /// recompute share one faithful port of native's double loop
+    /// (fsmission.cpp:3719-3743 and its inactive-sides twin :3833-3855, Imago
+    /// ALLY 7/17/09). Native walks every ordered pair of ACTIVE sides
+    /// (<c>GetActiveF()</c>), keeping <c>bAllAllies</c> true unless some pair of
+    /// distinct active sides fails <c>IsideIGC::AlliedSides</c>
+    /// (<c>Igc/igc.h:4297-4305</c>: same side, or equal non-NA alliance ids —
+    /// the port's <see cref="Side.AllyGroup"/>); when it stays true the winner
+    /// is the last active side visited. With a single active side the only pair
+    /// is itself, so <c>bAllAllies</c> stays true and that side wins — the
+    /// edge <c>CheckForVictoryByInactiveSides</c> relies on when the player
+    /// tally is empty (P844b/SIM-0533). Returns the alliance member (or lone
+    /// active side), or null when the active sides are not one alliance / there
+    /// are none (0 active sides => the loop body never runs => null).
+    /// </summary>
+    public static Side? AllianceOverrideWinner(Mission mission)
+    {
+        Side? allywinside = null;
+        foreach (var otherside in mission.Sides)
+        {
+            if (!otherside.Active) continue;                    // :3729 GetActiveF()
+            foreach (var thisside in mission.Sides)
+            {
+                if (!thisside.Active) continue;                 // :3735 GetActiveF()
+                if (!AlliedSides(otherside, thisside) && !ReferenceEquals(otherside, thisside))
+                    return null;                                // :3736 — not all one alliance
+                allywinside = thisside;                         // :3739 — native keeps the last
+            }
+        }
+        return allywinside;
+    }
+
+    /// <summary>P844b — the override's pairwise test (the port of native's
+    /// <c>IsideIGC::AlliedSides</c>, <c>Igc/igc.h:4297-4305</c>, plus the
+    /// active-side walk): true iff <paramref name="a"/> and
+    /// <paramref name="b"/> are the same side or share one non-NA alliance id.
+    /// Pure logic moved into Core for <see cref="AllianceOverrideWinner"/>.</summary>
+    private static bool AlliedSides(Side a, Side b) =>
+        ReferenceEquals(a, b) || (a.AllyGroup is { } g && g == b.AllyGroup);
 
     /// <summary>
     /// P302 — the port of the prosperity + artifact win conditions, the sibling
