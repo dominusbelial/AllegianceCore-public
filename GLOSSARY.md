@@ -232,6 +232,15 @@ list in **reverse**.
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **Clash projection scheduling (P863)** — `src/Allegiance.Server/CrossSideSweepCache.cs`
+  retains completed per-object/side/audience work for identity, discovery and
+  status sweeps, invalidated by audience changes and authoritative latch removal;
+  `src/Allegiance.Server/ShipUpdateRanking.cs` selects only the stable served
+  prefix while preserving per-peer deviation. Sector model/blast membership is
+  indexed without changing insertion order in `src/Allegiance.Core/Model/Sector.cs`;
+  `sim.prepare` / `sim.models` complete the sector timing breakdown. Proof and
+  400-peer projection measurements: `tests/Allegiance.Core.Tests/P863ClashBudgetTests.cs`;
+  report `docs/reports/P863_REPORT.md`.
 - **Game-over world boundary (P860)** — a rotation rebuilds the same static map,
   so both worlds' stations carry the SAME `StationId`s and a received
   `EXPORT(26)` is attributable to a world only by its position in the byte

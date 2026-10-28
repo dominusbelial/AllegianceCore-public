@@ -1777,6 +1777,7 @@ public sealed partial class Server
     /// </summary>
     private void SweepCrossSideExports()
     {
+        using var sweep = _exportSweepCache.Begin(_crossSideExportSent.RemovalVersion);
         PruneEmissionPoses();
         // Build the per-side audience once per tick: the side's seated connections
         // AND the sectors that side has a seated peer in (a peer only receives
@@ -1792,6 +1793,8 @@ public sealed partial class Server
             e.Sectors.Add(kv.Value.Sector);
         }
         if (bySide.Count == 0) return;   // nobody seated on a real side
+        foreach (var (side, audience) in bySide)
+            sweep.SetAudience(side, audience.Conns, CrossSideIdentityRefreshTicks);
 
         // P369 — on the slow identity-refresh cadence, the already-latched
         // (peer, ship) identity is re-sent too (below) so a single missed EXPORT
@@ -1840,7 +1843,7 @@ public sealed partial class Server
                         if (!e.Sectors.Contains(sector)) continue;              // no telemetry here -> no identity needed
                         if (ship.IsCloaked && !ship.SeenBySide(sideId)) continue; // cloak-hidden -> no telemetry (P270) -> none here
 
-                        foreach (var conn in e.Conns)
+                        foreach (var conn in TestLegacyClashProjection ? e.Conns : sweep.Recipients(ship, sideId, ship.Id, TickIndex))
                         {
                             if (_crossSideExportSent.Add((conn, ship.Id)))
                             {
@@ -2123,6 +2126,7 @@ public sealed partial class Server
     /// </summary>
     private void SweepCrossSideDiscoveryExports()
     {
+        using var sweep = _discoverySweepCache.Begin(_crossSideDiscoverySent.RemovalVersion);
         var peers = SnapshotBroadcastPeers();
         Dictionary<short, List<ConnectionId>> bySide = new();
         foreach (var kv in peers)
@@ -2132,6 +2136,7 @@ public sealed partial class Server
             list.Add(kv.Key);
         }
         if (bySide.Count == 0) return;   // nobody seated on a real side
+        foreach (var (side, conns) in bySide) sweep.SetAudience(side, conns, 0);
 
         foreach (var m in _missions)
         {
@@ -2149,7 +2154,7 @@ public sealed partial class Server
                         if (!warp.SeenBySide(sideId)) continue;
                         byte[]? packet = null;
                         int told = 0;
-                        foreach (var conn in conns)
+                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(warp, sideId, warp.Warp.WarpId, TickIndex))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Warp, warp.Warp.WarpId)))
                             {
                                 packet ??= DiscoveryPacket(ExportWarp.FromWarp(warp).Encode(), warp);
@@ -2165,7 +2170,7 @@ public sealed partial class Server
                         if (!rock.SeenBySide(sideId)) continue;
                         byte[]? packet = null;
                         int told = 0;
-                        foreach (var conn in conns)
+                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(rock, sideId, rock.Data.AsteroidId, TickIndex))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Asteroid, rock.Data.AsteroidId)))
                             {
                                 packet ??= AsteroidDiscoveryPacket(conn, rock);
@@ -2183,7 +2188,7 @@ public sealed partial class Server
                             if (!probe.SeenBySide(sideId)) continue;
                             byte[]? packet = null;
                             int told = 0;
-                            foreach (var conn in conns)
+                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(probe, sideId, probe.Id, TickIndex))
                                 if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Probe, probe.Id)))
                                 {
                                     packet ??= ProbeDiscoveryPacket(probe);
@@ -2205,7 +2210,7 @@ public sealed partial class Server
                             if (!treasure.SeenBySide(sideId)) continue;
                             byte[]? packet = null;
                             int told = 0;
-                            foreach (var conn in conns)
+                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(treasure, sideId, treasure.Id, TickIndex))
                                 if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Treasure, treasure.Id)))
                                 {
                                     packet ??= FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
@@ -2389,9 +2394,11 @@ public sealed partial class Server
     /// </summary>
     private void SweepCrossSideShipStatuses()
     {
+        using var sweep = _statusSweepCache.Begin(_statusSweepRemovalVersion);
         // Audience: the seated peers grouped by their ship's side.
         var connsBySide = GatherSideConnections();
         if (connsBySide.Count == 0) return;   // nobody seated on a real side
+        foreach (var (side, conns) in connsBySide) sweep.SetAudience(side, conns, CrossSideStatusRefreshTicks);
 
         foreach (var m in _missions)
         {
@@ -2417,13 +2424,15 @@ public sealed partial class Server
                         var key = (sideId, ship.Id);
                         bool wasSeen = _crossSideShipStatusSeen.TryGetValue(key, out var w) && w;
 
+                        var recipients = TestLegacyClashProjection ? conns
+                            : sweep.Recipients(ship, sideId, ship.Id, TickIndex, force: nowSeen != wasSeen);
                         if (nowSeen != wasSeen)
                         {
                             // A genuine visibility edge: fire the spotted/hidden
                             // transition exactly once, native Show/Hide style.
                             _crossSideShipStatusSeen[key] = nowSeen;
                             bool spotted = nowSeen;
-                            foreach (var conn in conns)
+                            foreach (var conn in recipients)
                             {
                                 SendPeer(conn, PackCrossSideStatus(ship, shipSector, spotted));
                                 _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
@@ -2435,7 +2444,7 @@ public sealed partial class Server
                             // Still visible, no edge: only the slow catch-up
                             // refresh re-sends (late-joiner / lost-packet heal),
                             // never per-tick.
-                            foreach (var conn in conns)
+                            foreach (var conn in recipients)
                             {
                                 long last = _crossSideShipStatusTick.TryGetValue((conn, ship.Id), out var l) ? l : -1;
                                 // P604b — phase-stagger the slow catch-up refresh
@@ -3173,12 +3182,12 @@ public sealed partial class Server
                 //    FedSrv.CPP:3870, converges to cLightPerInterval=2 at
                 //    realistic cluster sizes, so the fixed quota is a faithful,
                 //    simpler stand-in (the P219 reasoning, kept here).
-                var others = all
-                    .Where(c => !ReferenceEquals(c, self)
-                             && peerSees(c)                                   // P270 — invisible enemy: no data
-                             && (targetShip is null || !ReferenceEquals(c, targetShip)))
-                    .OrderByDescending(c => c.Deviation)   // stable sort; native's qsort tie order is not load-bearing
-                    .ToList();
+                var ranking = _shipRankings.GetValue(sector, static _ => new());
+                var others = ranking.Candidates;
+                others.Clear();
+                foreach (var c in all)
+                    if (!ReferenceEquals(c, self) && peerSees(c)
+                        && (targetShip is null || !ReferenceEquals(c, targetShip))) others.Add(c);
 
                 // The promoted target consumes one heavy slot (FedSrv.CPP:4141-4146),
                 // so the remaining candidates compete for the rest of the heavy
@@ -3219,7 +3228,8 @@ public sealed partial class Server
                 int servedLimit = othersHeavy + cLightPerInterval;
 
                 int i = 0;
-                foreach (var c in others)
+                foreach (var c in TestLegacyClashProjection
+                    ? others.OrderByDescending(c => c.Deviation) : ranking.Rank(servedLimit))
                 {
                     if (i < othersHeavy)
                     {

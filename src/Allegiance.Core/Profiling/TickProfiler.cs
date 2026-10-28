@@ -74,7 +74,7 @@ public sealed class TickProfiler
     // (only on ticks where a collection actually happened, ~10/s on the rig)
     // one GC.GetGCMemoryInfo call to sample the last GC's pauses + heap. No
     // per-object cost anywhere.
-    private long _gcWindowStartAlloc;        // GC.GetTotalAllocatedBytes(false) at window start
+    private long _gcWindowStartAlloc;        // precise global allocation endpoint at window start
     private double _gcWindowStartPauseMs;    // GC.GetTotalPauseDuration() at window start
     private long _gcWindowStartGen0, _gcWindowStartGen1, _gcWindowStartGen2;
     private long _lastGen0Sample;            // gen0 count seen at the previous FinishTick (pause sampler)
@@ -137,7 +137,7 @@ public sealed class TickProfiler
         _windowStartUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         // P838 — baseline the window GC counters so the first Report()'s deltas
         // cover exactly the profiler's own lifetime.
-        _gcWindowStartAlloc = GC.GetTotalAllocatedBytes(precise: false);
+        _gcWindowStartAlloc = GC.GetTotalAllocatedBytes(precise: true);
         _gcWindowStartPauseMs = GC.GetTotalPauseDuration().TotalMilliseconds;
         _gcWindowStartGen0 = GC.CollectionCount(0);
         _gcWindowStartGen1 = GC.CollectionCount(1);
@@ -441,6 +441,12 @@ public sealed class TickProfiler
     {
         lock (_lock)
         {
+            // P863: sample once, precisely, BEFORE formatting/report allocation.
+            // The approximate counter can stay stale then jump across windows.
+            // Reuse this endpoint as the next baseline so no bytes are dropped.
+            long endAlloc = GC.GetTotalAllocatedBytes(precise: true);
+            double endPause = GC.GetTotalPauseDuration().TotalMilliseconds;
+            long endGen0 = GC.CollectionCount(0), endGen1 = GC.CollectionCount(1), endGen2 = GC.CollectionCount(2);
             long startUnix = _windowStartUnix;
             double seconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - startUnix;
             _windowStartUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -472,11 +478,11 @@ public sealed class TickProfiler
             // collections per generation, bytes allocated per tick (global
             // counter — all threads), heap size after the most recent GC, and
             // the worst single pause sampled at collection boundaries.
-            double pauseMs = GC.GetTotalPauseDuration().TotalMilliseconds - _gcWindowStartPauseMs;
-            long allocBytes = GC.GetTotalAllocatedBytes(precise: false) - _gcWindowStartAlloc;
-            long dg0 = GC.CollectionCount(0) - _gcWindowStartGen0;
-            long dg1 = GC.CollectionCount(1) - _gcWindowStartGen1;
-            long dg2 = GC.CollectionCount(2) - _gcWindowStartGen2;
+            double pauseMs = endPause - _gcWindowStartPauseMs;
+            long allocBytes = endAlloc - _gcWindowStartAlloc;
+            long dg0 = endGen0 - _gcWindowStartGen0;
+            long dg1 = endGen1 - _gcWindowStartGen1;
+            long dg2 = endGen2 - _gcWindowStartGen2;
             int ticks = (int)_ticksInWindow;
             double pausePerTick = ticks > 0 ? pauseMs / ticks : 0;
             double pauseShare = totSum > 0 ? 100.0 * pauseMs / totSum : 0.0;
@@ -494,12 +500,12 @@ public sealed class TickProfiler
                 Console.WriteLine($"  [gcprof] top-alloc steps (global counter, incl. parallel workers): {top}");
             }
 
-            // Re-baseline the window GC counters for the next window.
-            _gcWindowStartAlloc = GC.GetTotalAllocatedBytes(precise: false);
-            _gcWindowStartPauseMs = GC.GetTotalPauseDuration().TotalMilliseconds;
-            _gcWindowStartGen0 = GC.CollectionCount(0);
-            _gcWindowStartGen1 = GC.CollectionCount(1);
-            _gcWindowStartGen2 = GC.CollectionCount(2);
+            // Contiguous endpoints include reporting work in the next window.
+            _gcWindowStartAlloc = endAlloc;
+            _gcWindowStartPauseMs = endPause;
+            _gcWindowStartGen0 = endGen0;
+            _gcWindowStartGen1 = endGen1;
+            _gcWindowStartGen2 = endGen2;
             _gcWorstPauseMs = 0;
             _allocByStep.Clear();
 

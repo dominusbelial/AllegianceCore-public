@@ -2021,6 +2021,7 @@ public sealed partial class Server
         // ship is the subject (the (recipient, ship) refresh tick), and every
         // (seeing-side, ship) visibility edge whose subject is the departing
         // ship — else they grow monotonically with connection churn.
+        _statusSweepRemovalVersion++;
         foreach (var k in _crossSideShipStatusTick
                      .Where(kv => kv.Key.Item1 == id || kv.Key.Item2 == departedShipId)
                      .Select(kv => kv.Key).ToList())

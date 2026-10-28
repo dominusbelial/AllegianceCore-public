@@ -505,7 +505,7 @@ public sealed partial class Server : IDisposable
     // were not connected at the transition instant) was replaced by a per-tick
     // "haven't told YOU yet" sweep (Server.Broadcast.SweepCrossSideExports).
     // Sim-thread only, like the sibling.
-    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _crossSideExportSent = new();
+    private readonly SweepLatchSet<(ConnectionId Recipient, short ShipId)> _crossSideExportSent = new();
 
     // P453 — the cross-side MINE EXPORT(26)/OT_mine latch, the exact mirror of
     // `_crossSideExportSent` above but for the mine identity sweep
@@ -534,7 +534,7 @@ public sealed partial class Server : IDisposable
     /// joins after its side discovered something is caught up by its own join
     /// export. Sim-thread only, like the siblings.
     /// </summary>
-    private readonly HashSet<(ConnectionId Recipient, byte Kind, short Id)> _crossSideDiscoverySent = new();
+    private readonly SweepLatchSet<(ConnectionId Recipient, byte Kind, short Id)> _crossSideDiscoverySent = new();
 
     // P366 — the same-side NPC identity + status latch. Exactly parallel to
     // `_teammateExportSent` but for same-side AI bot ships (IsNpc), which the

@@ -135,6 +135,10 @@ public sealed class Sector : IClusterIgc
     // Models living in this sector and ticking with it. Ships today; stations,
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
+    // P863: constant-time membership for update/blast snapshots. Counts preserve
+    // even duplicate Add/Remove semantics; iteration still uses insertion order.
+    // Native: Igc/clusterIGC.cpp:243-250 (capture-next model traversal).
+    private readonly Dictionary<Model, int> _modelMembership = new();
 
     // P706 — diagnostics: the number of ship↔ship collision events this sector's
     // most recent ResolveShipShipCollisions pass dispatched (retained — i.e. that
@@ -455,6 +459,8 @@ public sealed class Sector : IClusterIgc
     {
         ArgumentNullException.ThrowIfNull(model);
         _models.Add(model);
+        _modelMembership.TryGetValue(model, out int copies);
+        _modelMembership[model] = copies + 1;
         if (model is Probe { } addedProbe &&
             (addedProbe.ProbeType.EabmCapabilities & (DataProbeTypeIGC.EabmRescue | DataProbeTypeIGC.EabmRescueAny)) != 0)
             _rescueProbeCount++;
@@ -471,6 +477,9 @@ public sealed class Sector : IClusterIgc
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
+        int copies = _modelMembership[model];
+        if (copies == 1) _modelMembership.Remove(model);
+        else _modelMembership[model] = copies - 1;
         if (model is Probe probe)
         {
             // P780 — mirror Add's counter maintenance: every probe removal path
@@ -499,7 +508,7 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public bool Terminate(Model model)
     {
-        if (!_models.Contains(model)) return false;
+        if (!_modelMembership.ContainsKey(model)) return false;
         Mission?.Site.TerminateModelEvent(model);
         return Remove(model);
     }
@@ -568,7 +577,7 @@ public sealed class Sector : IClusterIgc
             || _buildingEffects.Any(effect => ReferenceEquals(effect.Target, target)))
             throw new InvalidOperationException("builder or target asteroid is unavailable for construction");
 
-        if (!_models.Contains(builder))
+        if (!_modelMembership.ContainsKey(builder))
             throw new InvalidOperationException(
                 $"builder '{builder.Id}' is not in this sector; a building effect can only be started in the builder's own sector");
         if (!_mineable.Contains(target))
@@ -932,35 +941,41 @@ public sealed class Sector : IClusterIgc
 
         // clusterIGC.cpp:162-198,231. The native inactive reset is the
         // !bStarted branch, independent of the later activeF collision gate.
-        Cost = 0f;
-        if (Mission is { Stage: MissionStage.Started, CrowdingPenaltyEnabled: true } mission)
+        using (TickProfiler.Enter("sim.prepare"))
         {
-            var fc = mission.Core.Constants.FloatConstants;
-            Cost = fc[37];
-            foreach (var ship in _models.OfType<Ship>())
+            Cost = 0f;
+            if (Mission is { Stage: MissionStage.Started, CrowdingPenaltyEnabled: true } mission)
             {
-                // Docked ships are absent from native GetShips(). Parent
-                // occupants remain members and contribute their turret weight.
-                if (ship.StationId is not null) continue;
-                Cost += ship.PilotType < Ship.PilotTypePlayer ? fc[35]
-                    : ship.ParentShip is not null ? fc[34]
-                    : ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? fc[33] : fc[36];
+                var fc = mission.Core.Constants.FloatConstants;
+                Cost = fc[37];
+                foreach (var ship in _models.OfType<Ship>())
+                {
+                    // Docked ships are absent from native GetShips(). Parent
+                    // occupants remain members and contribute their turret weight.
+                    if (ship.StationId is not null) continue;
+                    Cost += ship.PilotType < Ship.PilotTypePlayer ? fc[35]
+                        : ship.ParentShip is not null ? fc[34]
+                        : ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) ? fc[33] : fc[36];
+                }
+                if (Cost > 0f) Cost *= (float)dt / fc[38];
             }
-            if (Cost > 0f) Cost *= (float)dt / fc[38];
-        }
 
-        if (Mission?.Stage == MissionStage.Started) ResolveConsumedRockVisibility();
+            if (Mission?.Stage == MissionStage.Started) ResolveConsumedRockVisibility();
+        }
 
         // Snapshot: the models loop must survive a model that self-terminates
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
-        var snapshot = _models.ToArray();
-        foreach (var model in snapshot)
+        using (TickProfiler.Enter("sim.models"))
         {
-            if (!_models.Contains(model)) continue; // a previous model's blast may destroy it
-            _updatingModel = model;
-            _modelStateTime = timeUpdate;
-            try { model.Update(timeUpdate); }
-            finally { _updatingModel = null; }
+            var snapshot = _models.ToArray();
+            foreach (var model in snapshot)
+            {
+                if (!_modelMembership.ContainsKey(model)) continue; // a previous model's blast may destroy it
+                _updatingModel = model;
+                _modelStateTime = timeUpdate;
+                try { model.Update(timeUpdate); }
+                finally { _updatingModel = null; }
+            }
         }
 
         // The C++ collision block sits AFTER the models loop, still inside the
@@ -3812,7 +3827,7 @@ public sealed class Sector : IClusterIgc
                 }
 
                 // A spent field is not scanned further this tick.
-                if (!_models.Contains(mine)) break;
+                if (!_modelMembership.ContainsKey(mine)) break;
             }
         }
 
@@ -3832,7 +3847,7 @@ public sealed class Sector : IClusterIgc
         {
             if (snapshot[i] is not Ship ship) continue;
             if (!worst.TryGetValue(ship, out var hit)) continue;
-            if (!_models.Contains(ship)) continue;   // a child's death handler may retire it
+            if (!_modelMembership.ContainsKey(ship)) continue;   // a child's death handler may retire it
             if (hit.Time > ship.TimeLastMineExplosion + 0.5f)
             {
                 ship.TimeLastMineExplosion = hit.Time;
@@ -3924,7 +3939,7 @@ public sealed class Sector : IClusterIgc
         var asteroids = _mineable.ToArray();
         foreach (var target in models)
         {
-            if (!_models.Contains(target)) continue; // native GetCluster()==this (clusterIGC.cpp:416)
+            if (!_modelMembership.ContainsKey(target)) continue; // native GetCluster()==this (clusterIGC.cpp:416)
             float radius = target switch
             {
                 Ship ship when !ship.Dead => .5f * ship.HullType.Length,
@@ -3995,7 +4010,7 @@ public sealed class Sector : IClusterIgc
         }
         foreach (var mine in models.OfType<Mine>())
         {
-            if (!_models.Contains(mine)) continue;
+            if (!_modelMembership.ContainsKey(mine)) continue;
             // SIM-0067: native subtracts the mine's collision radius
             // (mineigc.cpp:106 sets SetRadius(dataMineType->radius)). The
             // stock corpus's base model Radius is a junk sentinel, but
@@ -4355,7 +4370,7 @@ public sealed class Sector : IClusterIgc
         if (missile.IsDud) return;          // m_bDisarmed: no contact handling at all (missileigc.cpp:427)
         // The pass iterates a snapshot: an earlier missile's aleph blast can
         // already have killed this one (Missile.ReceiveDamage → Terminate).
-        if (missile.Dead || !_models.Contains(missile)) return;
+        if (missile.Dead || !_modelMembership.ContainsKey(missile)) return;
         float radius = missile.MissileType.Radius;
 
         // Sweep the segment this tick's motion covered (Position − v·dt →
@@ -5534,7 +5549,7 @@ public sealed class Sector : IClusterIgc
         foreach (var effect in _buildingEffects.ToArray())
         {
             if (effect.IsTerminated) continue;
-            if (effect.Builder.Dead || !_models.Contains(effect.Builder)
+            if (effect.Builder.Dead || !_modelMembership.ContainsKey(effect.Builder)
                 || effect.Builder.Sector != this || !_mineable.Contains(effect.Target))
             {
                 (Mission ?? effect.Builder.Mission)?.Site.KillBuildingEffectEvent(effect);
@@ -5549,7 +5564,7 @@ public sealed class Sector : IClusterIgc
     internal void CompleteConstruction(BuildingEffect effect, double now)
     {
         if (effect.ConstructionCompleted || !_buildingEffects.Contains(effect) || effect.Builder.Dead
-            || !_models.Contains(effect.Builder) || effect.Builder.Sector != this || !_mineable.Contains(effect.Target)) return;
+            || !_modelMembership.ContainsKey(effect.Builder) || effect.Builder.Sector != this || !_mineable.Contains(effect.Target)) return;
         _buildingEffects.Remove(effect);
         effect.ConstructionCompleted = true;
         effect.Target.BuildingEffect = null;

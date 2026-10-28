@@ -205,7 +205,7 @@ public sealed partial class Server
 
     // Replays the complete broadcast suffix against a recorded tick's world.
     // No Mission.Update or socket timing changes the supplied inputs.
-    internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false)
+    internal void TestProjectRecordedTick(uint tick, bool snapshot, bool measure = false, bool discovery = false)
     {
         _broadcastSnapshotEnabled = snapshot;
         lock (_statsLock) _loopIterations = tick;
@@ -216,13 +216,15 @@ public sealed partial class Server
         {
             long allocationMark;
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
-            SweepCrossSideExports();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:crossSideExportSweep")) SweepCrossSideExports();
             TestProjectionAllocationCapture?.Invoke("SweepCrossSideExports", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             SweepCrossSideMineExports();
             TestProjectionAllocationCapture?.Invoke("SweepCrossSideMineExports", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
-            SweepCrossSideShipStatuses();
+            if (discovery)
+                using (Allegiance.Core.Profiling.TickProfiler.Enter("step:crossSideDiscoverySweep")) SweepCrossSideDiscoveryExports();
+            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:crossSideShipStatusSweep")) SweepCrossSideShipStatuses();
             TestProjectionAllocationCapture?.Invoke("SweepCrossSideShipStatuses", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             SweepShipDetection();
@@ -269,6 +271,15 @@ public sealed partial class Server
         }
     }
 
+    internal void TestInvalidateClashLatches(ConnectionId conn, short shipId)
+    {
+        _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == shipId);
+        _crossSideDiscoverySent.RemoveWhere(e => e.Recipient == conn);
+        foreach (var key in _crossSideShipStatusTick.Keys.Where(k => k.Item1 == conn || k.Item2 == shipId).ToArray())
+            _crossSideShipStatusTick.Remove(key);
+        _statusSweepRemovalVersion++;
+    }
+
     internal void TestResetSnapshotReplay()
     {
         FlushBroadcastSnapshots();
@@ -279,6 +290,7 @@ public sealed partial class Server
         _buildingEffectExportSent.Clear();
         _crossSideShipStatusSeen.Clear();
         _crossSideShipStatusTick.Clear();
+        _statusSweepRemovalVersion++;
         _shipDetected.Clear();
         _shipDetectedChanged.Clear();
         _lastSectorAssetMaskBySide.Clear();

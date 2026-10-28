@@ -1192,7 +1192,7 @@ public sealed partial class Server
             case 8: RemoveKeys(_lastSameSideNpcStatusTick, k => ByRecipientOrShip(k.Recipient, k.ShipId)); break;
             case 9: RemoveKeys(_teammateLoadoutVersionSent, k => ByRecipientOrShip(k.Recipient, k.ShipId)); break;
             case 10: RemoveKeys(_lastTeammateStatusTick, k => ByRecipientOrShip(k.Item1, k.Item2)); break;
-            case 11: RemoveKeys(_crossSideShipStatusTick, k => ByRecipientOrShip(k.Item1, k.Item2)); break;
+            case 11: _statusSweepRemovalVersion++; RemoveKeys(_crossSideShipStatusTick, k => ByRecipientOrShip(k.Item1, k.Item2)); break;
             case 12: RemoveKeys(_crossSideShipStatusSeen, k => IsOldSubject(k.ShipId)); break;
             default:
                 // Every scanned collection is now clean. The remaining
