@@ -75,22 +75,36 @@ public sealed class SideVisibilityState
     public bool Predictable { get; set; }
 
     /// <summary>
-    /// The last scanner that established this side's visibility — the port of
+    /// The last scanner that established a side's visibility — the port of
     /// native <c>SideVisibility::pLastSpotter()</c> (<c>FedSrv.CPP:10944</c> sets
     /// it on every successful scan; <c>:11119</c> clears it when the eye is lost),
     /// recorded as the native <c>(ObjectType, ObjectID)</c> pair the
     /// <c>OBJECT_SPOTTED</c>(6) announcement carries (<c>FedSrv.CPP:11055-11062</c>).
     /// <c>(-1, -1)</c> = no spotter yet (native NULL pointer / <c>NA</c>).
+    /// <para><b>Per side (P865b).</b> Native's <c>sv</c> is each side's own
+    /// visibility state (ThingSiteImpl keeps one per side), so
+    /// <c>sv.pLastSpotter()</c> reads the seeing side's own spotter. A single
+    /// model-level slot leaked one side's spotter to every other side through
+    /// the last-spotter short-circuit (<c>FedSrv.CPP:10896-10903</c> reads it
+    /// before the scanner loop): once side A's scanner spotted a target, side
+    /// B's short-circuit passed on A's spotter geometry and B "saw" the target
+    /// too — which broke the SIM-0643 disguise (one side's discovery revealed
+    /// the station to every other side). Kept per side, exactly native's
+    /// per-<c>sv</c> slot.</para>
     /// </summary>
-    public (short ObjectType, short ObjectId) LastSpotter { get; private set; } = (-1, -1);
+    private readonly Dictionary<short, (short ObjectType, short ObjectId)> _lastSpotter = [];
+
+    public (short ObjectType, short ObjectId) LastSpotterFor(short sideId) =>
+        _lastSpotter.TryGetValue(sideId, out var spotter) ? spotter : ((short)-1, (short)-1);
 
     /// <summary>Record the scanner that just established visibility for a side
     /// (native <c>sv.pLastSpotter(s)</c>, <c>FedSrv.CPP:10944</c>).</summary>
-    public void SetLastSpotter(short objectType, short objectId) => LastSpotter = (objectType, objectId);
+    public void SetLastSpotter(short sideId, short objectType, short objectId) =>
+        _lastSpotter[sideId] = (objectType, objectId);
 
     /// <summary>Clear the last spotter — native <c>sv.pLastSpotter(NULL)</c> when the
     /// eye is lost while the object stays known (<c>FedSrv.CPP:11119-11120</c>).</summary>
-    public void ClearLastSpotter() => LastSpotter = (-1, -1);
+    public void ClearLastSpotter(short sideId) => _lastSpotter.Remove(sideId);
 
     /// <summary>
     /// Force this model visible to a side <b>without</b> touching its current-eye

@@ -7997,6 +7997,32 @@ public sealed partial class Ship : Model, IShipIgc
     private DroneOrder? _orderBeforeRetreat;
     private Ship? _retreatRepairShip;
 
+    /// <summary>
+    /// SIM-0663 — the plan-slot half of the carrier-relaunch re-task, called by
+    /// the host's <c>LandOnCarrierEvent</c> port for the re-task's ELSE branch
+    /// (<c>FedSrv.CPP:13026-13027</c>: <c>SetCommand(c_cmdPlan, NULL,
+    /// c_cidNone)</c> — "drones will do c_cmdAccepted"). Clears exactly the
+    /// content this port keeps in the single native <c>c_cmdPlan</c> slot —
+    /// the station <see cref="PlanTarget"/>/<see cref="PlanCommandId"/> pair and
+    /// the P403 goto — and performs the resets native's own plan-write performs
+    /// (<c>shipIGC.h:755-762</c>, this port's <see cref="DronePlanChanged"/>):
+    /// the P652 damage retreat (including its carrier leg) and the P767 ammo
+    /// latch end, so a lander that was flying into the carrier it just landed
+    /// on does not fly straight back into the bay. The ACCEPTED slot is
+    /// untouched — the drone re-promotes it into a fresh plan on its next
+    /// decision tick (<c>shipIGC.cpp:1936-1939</c>).</summary>
+    internal void ClearRelaunchPlan()
+    {
+        PlanTarget = null;
+        PlanCommandId = OrderChange.CidNone;
+        GotoWaypoint = null;
+        IsRunningAway = false;
+        _orderBeforeRetreat = null;
+        _retreatRepairShip = null;
+        _isGettingAmmo = false;
+        _gettingAmmoCarrier = null;
+    }
+
     private void DronePlanChanged()
     {
         if (_changingRetreatPlan || !IsNpc) return;

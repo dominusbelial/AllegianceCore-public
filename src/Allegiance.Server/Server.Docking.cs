@@ -1362,13 +1362,15 @@ public sealed partial class Server
     /// <para><b>RecalculateCollisions</b> (<c>FedSrv.CPP:13006</c>) is N/A: this
     /// port has no rigid-body collision-resolution system (established P115/P116),
     /// so there is no post-move collision pass to call.</para>
-    /// <para><b>Autopilot command re-tasking</b> (<c>FedSrv.CPP:13024-13030</c>,
-    /// the <c>SetCommand</c>/<c>c_cidDefend</c>/<c>c_cidGoto</c> re-assign when
-    /// the lander was GOTO-bound for the carrier) is skipped: this port models no
-    /// AI/pilot-type/autopilot command concept — the only command-ish state is a
-    /// single weapon-aim <c>Ship.CommandTarget</c> with no <c>c_cid*</c> IDs
-    /// (confirmed, <c>Sim/Ship.cs:444-456</c>). Same precedent as the
-    /// ShipStatusSpotted (P113) and other confirmed-absent native concepts.</para>
+    /// <para><b>Autopilot command re-tasking — SIM-0663, ported.</b> Native's
+    /// tail (<c>FedSrv.CPP:13020-13028</c>, right after the RELAUNCH_SHIP send)
+    /// re-tasks an autopiloting lander: one whose ACCEPTED slot held
+    /// <c>c_cidGoto</c> onto the carrier is re-tasked to <c>c_cidDefend</c> the
+    /// carrier (accepted slot always; the plan slot too for a
+    /// <c>c_ptPlayer</c>-piloted lander), and every other autopiloting lander
+    /// has its plan slot cleared so a drone re-decides from its accepted order
+    /// ("drones will do c_cmdAccepted"). The port expresses this in its own
+    /// order/command model — see <see cref="RetaskAutopilotAfterRelaunch"/>.</para>
     /// <para><b>Round-robin launch slots are ported, not elided.</b> The native
     /// picks <c>slot = pshipCarrier-&gt;GetLaunchSlot()</c> — a per-carrier modulo
     /// counter (<c>shipIGC.h:2168-2172</c>) — so consecutive landings spread
@@ -1470,9 +1472,78 @@ public sealed partial class Server
         byte[] encoded = relaunch.Encode();
         SendSectorWide(lander.Sector!, encoded);
 
+        // 4) SIM-0663 — the autopilot re-task tail (FedSrv.CPP:13020-13028),
+        //    which native runs right after the RELAUNCH_SHIP send.
+        RetaskAutopilotAfterRelaunch(lander, carrier);
+
         var note = $"[relaunch] ship {lander.Id} relaunched off carrier {carrier.Id} (bay '{carrier.HullType.ModelName}', {launchSlots} launch slots{(selectedSlot >= 0 ? $", slot {selectedSlot}" : "")}) -> RELAUNCH_SHIP(192) sector-wide; energy={lander.Energy:F0}/{lander.HullType.MaxEnergy:F0} ammo={lander.Ammo}/{lander.HullType.MaxAmmo}; pos=({position.X:F1},{position.Y:F1},{position.Z:F1}) vel=({velocity.X:F1},{velocity.Y:F1},{velocity.Z:F1})";
         Console.WriteLine(note);
         Notify(note);
+    }
+
+    /// <summary>SIM-0663 — the carrier-relaunch autopilot re-task, the port of
+    /// native <c>LandOnCarrierEvent</c>'s tail (<c>FedSrv.CPP:13020-13028</c>):
+    /// <code>
+    ///   if (pship-&gt;GetAutopilot()) {
+    ///       if (GetCommandTarget(c_cmdAccepted) == pshipCarrier &amp;&amp; GetCommandID(c_cmdAccepted) == c_cidGoto) {
+    ///           pship-&gt;SetCommand(c_cmdAccepted, pshipCarrier, c_cidDefend);
+    ///           if (pship-&gt;GetPilotType() &gt;= c_ptPlayer)
+    ///               pship-&gt;SetCommand(c_cmdPlan, pshipCarrier, c_cidDefend);
+    ///       }
+    ///       else
+    ///           pship-&gt;SetCommand(c_cmdPlan, NULL, c_cidNone); // drones will do c_cmdAccepted
+    ///   }
+    /// </code>
+    /// The purpose is observable: a ship whose standing order was "Goto the
+    /// carrier it just landed on" would fly straight back into the bay and
+    /// re-land forever — native converts that order into <b>Defend the
+    /// carrier</b>; anything else autopiloting just loses its plan and re-decides
+    /// (from the accepted order it keeps, <c>shipIGC.cpp:1936-1939</c>).
+    /// Expressed in this port's order/command model:
+    /// <list type="bullet">
+    /// <item><b>GetAutopilot() gate</b> — the server-visible autopilot state:
+    /// an NPC lander (its <see cref="Ship.ApplyNpcAutopilot"/> IS the autopilot)
+    /// or a player lander with an active P403 goto. A real player's controls are
+    /// otherwise wire-only (P155) and this port keeps no client autopilot toggle
+    /// to read — the stated delta against native's per-ship
+    /// <c>m_fAutopilot</c> flag.</item>
+    /// <item><b>The accepted slot</b> — <see cref="Ship.AcceptedShipTarget"/>/
+    /// <see cref="Ship.AcceptedShipCommandId"/> via <see cref="Ship.SetCommand"/>
+    /// (P760b, the port of native <c>CshipIGC::SetCommand</c>). A carrier is a
+    /// <see cref="Model"/>, so the Goto-carrier accepted order is expressible
+    /// exactly as native's test reads it.</item>
+    /// <item><b>The Goto branch</b> — accepted := (carrier, <c>CidDefend</c>)
+    /// always; the plan leg (<c>:13023-13024</c>) is the port's defend slot
+    /// <see cref="Ship.DefendTarget"/> (P166 — "the port of the native
+    /// c_cidDefend Accepted-slot assignment"), which <see cref="Ship.ApplyNpcAutopilot"/>
+    /// actually flies (escort/defence). Native writes the plan only for a
+    /// player-piloted lander and lets an NPC promote the accepted Defend on its
+    /// next decision tick (<c>shipIGC.cpp:1936-1939</c>); this port's promote
+    /// leg reads only the station-typed accepted target, so the plan write is
+    /// made here for both — the net flight is native's.</item>
+    /// <item><b>The else branch</b> — <see cref="Ship.ClearRelaunchPlan"/>:
+    /// the plan slot's content (station plan, P403 goto) is cleared and the
+    /// retreat/ammo legs end, exactly native's plan-write resets
+    /// (<c>shipIGC.h:755-762</c>). The accepted slot survives.</item>
+    /// </list></summary>
+    private static void RetaskAutopilotAfterRelaunch(Ship lander, Ship carrier)
+    {
+        if (!lander.IsNpc && lander.GotoWaypoint is null) return;   // GetAutopilot() gate, FedSrv.CPP:13020
+
+        bool acceptedGotoCarrier = ReferenceEquals(lander.AcceptedShipTarget, carrier)
+            && lander.AcceptedShipCommandId == OrderChange.CidGoto;
+        if (acceptedGotoCarrier)
+        {
+            lander.SetCommand(OrderChange.CmdAccepted, carrier, OrderChange.CidDefend);   // FedSrv.CPP:13022
+            lander.GotoWaypoint = null;             // the single plan slot now holds the defend
+            lander.DefendTarget = carrier;          // the plan leg, :13023-13024 (see doc)
+            Console.WriteLine($"[relaunch] ship {lander.Id}: accepted Goto(carrier {carrier.Id}) re-tasked to Defend(carrier {carrier.Id}) (FedSrv.CPP:13020-13028)");
+        }
+        else
+        {
+            lander.ClearRelaunchPlan();             // SetCommand(c_cmdPlan, NULL, c_cidNone), FedSrv.CPP:13027
+            Console.WriteLine($"[relaunch] ship {lander.Id}: plan cleared after relaunch — drone re-decides from its accepted order (FedSrv.CPP:13027)");
+        }
     }
 
     /// <summary>P113 — the ship's bounding radius, <c>GetRadius()</c>. The port

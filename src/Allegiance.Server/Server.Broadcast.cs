@@ -2185,7 +2185,7 @@ public sealed partial class Server
                         foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(warp, sideId, warp.Warp.WarpId, TickIndex))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Warp, warp.Warp.WarpId)))
                             {
-                                packet ??= DiscoveryPacket(ExportWarp.FromWarp(warp).Encode(), warp);
+                                packet ??= DiscoveryPacket(ExportWarp.FromWarp(warp).Encode(), warp, sideId);
                                 SendPeer(conn, packet);
                                 told++;
                             }
@@ -2201,7 +2201,7 @@ public sealed partial class Server
                         foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(rock, sideId, rock.Data.AsteroidId, TickIndex))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Asteroid, rock.Data.AsteroidId)))
                             {
-                                packet ??= AsteroidDiscoveryPacket(conn, rock);
+                                packet ??= AsteroidDiscoveryPacket(conn, rock, sideId);
                                 SendPeer(conn, packet);
                                 told++;
                             }
@@ -2258,9 +2258,9 @@ public sealed partial class Server
     /// byte-mate of the join export, followed by the <c>OBJECT_SPOTTED</c>(6)
     /// announcement native emits alongside it (<c>FedSrv.CPP:11055-11062</c>;
     /// alephs are always in that gate).</summary>
-    private static byte[] DiscoveryPacket(byte[] export, ResolvedWarp warp)
+    private static byte[] DiscoveryPacket(byte[] export, ResolvedWarp warp, short sideId)
     {
-        var (otSpotter, oidSpotter) = warp.SideVisibility.LastSpotter;
+        var (otSpotter, oidSpotter) = warp.SideVisibility.LastSpotterFor(sideId);   // per side — P865b
         var spotted = new ObjectSpotted
         {
             OtObject = (short)IgcObjectType.Warp,
@@ -2278,7 +2278,7 @@ public sealed partial class Server
     /// special (non-plain-buildable) asteroid
     /// (<c>(capabilities &amp; ~c_aabmBuildable) != 0</c>, <c>FedSrv.CPP:11051-11054</c>,
     /// <c>c_aabmBuildable = 0x08</c> at <c>igc.h:765</c>).</summary>
-    private byte[] AsteroidDiscoveryPacket(ConnectionId conn, Asteroid rock)
+    private byte[] AsteroidDiscoveryPacket(ConnectionId conn, Asteroid rock, short sideId)
     {
         var messages = new List<byte[]>(3) { ExportAsteroid.FromAsteroid(rock.Data).Encode() };
         // Native ShowObject sends the building effect along with a newly spotted
@@ -2290,7 +2290,7 @@ public sealed partial class Server
             messages.Add(BuildingEffectExport(effect).Encode());
         if ((rock.Data.AabmCapabilities & ~0x08) != 0)
         {
-            var (otSpotter, oidSpotter) = rock.SideVisibility.LastSpotter;
+            var (otSpotter, oidSpotter) = rock.SideVisibility.LastSpotterFor(sideId);   // per side — P865b
             messages.Add(new ObjectSpotted
             {
                 OtObject = (short)IgcObjectType.Asteroid,
