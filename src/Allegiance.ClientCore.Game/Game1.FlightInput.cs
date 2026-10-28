@@ -337,6 +337,23 @@ public sealed partial class Game1
         if (_state == ClientState.Flying && world.MissionGeneration > 0
             && world.Mission?.Stage is (int)MissionStage.NotStarted or (int)MissionStage.Starting)
             _state = ClientState.ReadyCheck;
+        // P864d — native's TEAM SCREEN for a player on no team: a server
+        // FlushSides/RandomizeSides parks the local ship on SIDE_TEAMLOBBY (-2)
+        // and broadcasts QUIT_SIDE(126) (fsmission.cpp:5097-5117, 5173-5185), so
+        // the player is still in the mission but on no side. Native stays on the
+        // team screen with the lobby row selected and the prompt "you need to
+        // pick a team" (WinTrek/teamscreen.cpp:1662-1672); the port's team screen
+        // is the side-select overlay, so route there (it lists the lobby pool by
+        // name and Enter sends POSITIONREQ, teamscreen.cpp:2962-2982). Only while
+        // a mission is live — never during the initial connect.
+        if (_state is ClientState.Flying or ClientState.ReadyCheck
+            && world.MySideId == ClientWorld.SideTeamLobby && world.Mission is not null)
+        {
+            _sideSelectFromGameOver = true;   // stay until admitted to an ACTIVE side
+            _sideSelectIndex = 0;
+            _state = ClientState.SideSelect;
+            Console.WriteLine("[monogame] team lobby: local ship is on no side (-2) — team screen (pick a side)");
+        }
         var ks = _benchmark is null ? Keyboard.GetState() : new KeyboardState();
         if (UpdateGraphicsSettings(ks))
         {

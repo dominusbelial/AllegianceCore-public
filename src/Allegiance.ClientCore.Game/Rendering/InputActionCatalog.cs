@@ -486,6 +486,14 @@ public static class InputActionCatalog
         // else. Text entry reuses the shared Window.TextInput path.
         new("TeamNameEdit", "READY CHECK (PRE-FLIGHT)", "Team leader: rename your side", K(Keys.T), null),
         new("MissionSettings", "READY CHECK (PRE-FLIGHT)", "Mission owner: game settings", K(Keys.G), null),
+        // P864d — native's team-screen ACCEPT button for a pending side-join
+        // request (WinTrek/teamscreen.cpp:2998-3013 → FM_C_POSITIONACK accepted),
+        // which the team leader presses with the requesting lobby player selected
+        // in the player list. The port's team lobby lists the lobby pool with each
+        // requester's name, so A accepts the first request pending on the leader's
+        // own side. Native has no key for it (it is a button); A is free in this
+        // context.
+        new("AcceptJoinRequest", "READY CHECK (PRE-FLIGHT)", "Team leader: accept a lobby player's join request", K(Keys.A), null),
 
         // -- PANES / MENUS (docked shop / teleport / invest, side-select) --
         // Generic navigation verbs shared across the docked sub-panes and the
@@ -521,7 +529,7 @@ public static class InputActionCatalog
         new("InvestPartial", "PANES / MENUS", "Investment: partial invest (10%)", K(Keys.R), null),
         new("InvestShowAll", "PANES / MENUS", "Investment: show all buckets", K(Keys.S), null),
         new("InvestHideCompleted", "PANES / MENUS", "Investment: hide completed buckets", K(Keys.H), null),
-        new("RandomizeTeams", "READY CHECK (PRE-FLIGHT)", "Mission owner: randomize teams (side-select)", K(Keys.R), null),
+        new("RandomizeTeams", "READY CHECK (PRE-FLIGHT)", "Mission owner: randomize teams (team screen / side-select)", K(Keys.R), null),
 
         // -- FREE-CAM / SPECTATOR (P612 spectator cameras, native has no TK) --
         // Dedicated actions so the spectator free-cam's own WASD/Q-E movement

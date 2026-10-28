@@ -915,6 +915,10 @@ public sealed partial class Game1 : Game
     private Rendering.ReadyCheckOverlayRenderer _readyCheckRenderer = null!;
     private bool _ownReady;
     private bool _rcYWasDown, _rcOWasDown;
+    // P864d — the team lobby's Randomize (R, owner) and Accept-join-request (A,
+    // team leader) key edges; native's team-screen buttons (teamscreen.cpp:1554-1573,
+    // 2998-3013).
+    private bool _rcRWasDown, _rcAWasDown;
     // P761 — the team lobby configuration controls' edge flags.
     private bool _aaKeyWasDown, _llKeyWasDown, _lsKeyWasDown;
     // P802 — the team lobby's CIVILIZATION picker: open state, cursor, key

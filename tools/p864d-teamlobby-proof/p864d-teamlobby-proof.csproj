@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+    <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
+    <ProjectReference Include="../../src/Allegiance.Bot/Allegiance.Bot.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>
