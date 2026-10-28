@@ -64,6 +64,18 @@ public sealed class ClientTrainingSite : ITrainingSite
 
     private ClientWorld World => _f.World();
 
+    /// <summary>True once the client's own ship is in the replicated world with a pose — the
+    /// precondition for <see cref="PlayerShip"/> (native CreateMission runs after
+    /// SetupShipAndCamera, WinTrek.cpp:7401-7421).</summary>
+    public bool HasPlayerShip
+    {
+        get
+        {
+            var w = World;
+            return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is not null;
+        }
+    }
+
     public ITrainingObject PlayerShip
     {
         get

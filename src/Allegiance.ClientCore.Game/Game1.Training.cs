@@ -18,6 +18,10 @@ public sealed partial class Game1
     private TrainingSession? _trainingSession;
     private TrainingHost? _embeddedHost;
     private string _trainingError = "";
+    /// <summary>Seconds left for the loopback join to replicate the player ship before the
+    /// pending mission start gives up (BeginTrainingMission → UpdateTraining).</summary>
+    private double _trainingStartDeadline;
+    private const double TrainingStartTimeoutSeconds = 20.0;
     private double _trainingClock;
     private int _trainingMissionId;
 
@@ -53,6 +57,8 @@ public sealed partial class Game1
 
     /// <summary>P785 — the ALLEGIANCE_TRAINING_OVERLAY proof hook ran once.</summary>
     private bool _trainingOverlayProofSeeded;
+    /// <summary>The ALLEGIANCE_TRAINING_START proof hook ran once.</summary>
+    private bool _trainingStartProofSeeded;
 
     /// <summary>Whether a training mission is currently running on this client.</summary>
     private bool TrainingActive => _trainingSession is { Finished: false };
@@ -137,8 +143,14 @@ public sealed partial class Game1
         var session = new TrainingSession(site, mission);
 
         TrainingController.BeginMission();
-        session.Start();
+        // The mission's CreateMission reads the player's ship, which only exists once the
+        // loopback join below has replicated it — native runs StartMission →
+        // SetupShipAndCamera before the mission script (WinTrek.cpp:7401-7421). Starting it
+        // here crashed every mission that touches the player ship at creation ("no player
+        // ship in the replicated world", mini client 2026-10-27); UpdateTraining starts it
+        // on the first frame the ship is there.
         _trainingSession = session;
+        _trainingStartDeadline = TrainingStartTimeoutSeconds;
         _trainingMissionId = missionId;
         _trainingSkipPostSlideshow = false;
         _trainingClock = TrainingClock.Advance(0);
@@ -179,6 +191,21 @@ public sealed partial class Game1
     private void UpdateTraining(double dt)
     {
         if (_trainingSession is not { } session) return;
+        if (!session.Started)
+        {
+            if (session.Site.HasPlayerShip)
+            {
+                session.Start();
+                Console.WriteLine($"[training] mission {_trainingMissionId} script started (player ship replicated)");
+            }
+            else
+            {
+                _trainingStartDeadline -= dt;
+                if (_trainingStartDeadline <= 0)
+                    AbortTrainingStart("The training mission could not start: your ship never arrived from the training host. See the log.");
+                return;
+            }
+        }
         _trainingClock = TrainingClock.Advance(dt);
         if (_embeddedHost is { } host) host.Paused = TrainingClock.IsPaused;
         if (session.Advance())
@@ -289,6 +316,24 @@ public sealed partial class Game1
     /// <summary>Native OnButtonBack destination (trainingscreen.cpp:160-164) and the
     /// post-slideshow Dismiss destination (PostTrainingSlideshow.cpp:24): the training
     /// screen — the port's IntroView.Training (ScreenIDTrainScreen).</summary>
+    /// <summary>The pending mission start timed out (no player ship from the embedded host):
+    /// tear the training session down like a completed one and return to the chooser with
+    /// a message instead of crashing (P749 rule: a training start fault never kills the app).</summary>
+    private void AbortTrainingStart(string error)
+    {
+        Console.WriteLine($"[training] {error}");
+        Allegiance.ClientCore.Training.TrainingController.EndMission();
+        if (TrainingClock.IsPaused) TrainingClock.Continue();
+        _embeddedHost?.Dispose();
+        _embeddedHost = null;
+        _trainingSession = null;
+        _session.Dispose();
+        _trainingAutoJoin = false;
+        _trainingError = error;
+        Diagnostics.CrashLog.SetMode("training-error");
+        ReturnToTrainingScreen();
+    }
+
     private void ReturnToTrainingScreen()
     {
         _introView = IntroView.Training;

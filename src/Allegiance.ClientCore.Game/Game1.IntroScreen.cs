@@ -171,6 +171,18 @@ public sealed partial class Game1
     private void UpdateIntro(KeyboardState ks)
     {
         UpdateIdentity(ks);
+        // Real-window proof hook: ALLEGIANCE_TRAINING_START=<missionId> starts that training
+        // mission straight from the intro (one-shot; inert when the var is unset), so the full
+        // launch → loopback join → mission script path runs in a real client.
+        if (!_trainingStartProofSeeded
+            && Environment.GetEnvironmentVariable("ALLEGIANCE_TRAINING_START") is { Length: > 0 } startProof
+            && int.TryParse(startProof, out var startProofId))
+        {
+            _trainingStartProofSeeded = true;
+            Console.WriteLine($"[training] proof start of mission {startProofId} (ALLEGIANCE_TRAINING_START)");
+            BeginTrainingMission(startProofId);
+            return;
+        }
         // P731  -  one-shot proof: schedule the real-backbuffer screenshot after
         // the delay, then exit once the Draw-end flush has written it.
         if (_introProofDelayMs >= 0)
