@@ -497,7 +497,12 @@ public sealed partial class Game1 : Game
     // poster), replacing the three generic parallax starfields as the default
     // sky. See Rendering/NativeSkyRenderer.cs.
     private Rendering.NativeSkyRenderer _nativeSky = null!;
-    private short _skySector = -1;
+    // P862 — the sector each tier last resolved. Only the ACTIVE tier is given a
+    // cluster (they each own a PlanetPoster + dome cache, so telling all three
+    // decoded the same planet art three times per warp); the latches keep a tier
+    // change re-resolving the current sector. (Replaces the single `_skySector`
+    // latch, which existed only for the tell-all-three block.)
+    private short _skySectorBlack = -1, _skySectorNative = -1, _skySectorHd = -1;
     // P576 — the sky tier (default black; --sky black|native|hd) and the
     // optional aleph destination-glimpse (default OFF). Client-only launch
     // settings, never on the wire.
@@ -1120,6 +1125,10 @@ public sealed partial class Game1 : Game
     /// disengage check in <see cref="TryGetAutopilotControls"/>.</summary>
     private SimVec? _autoTargetAtEngage;
     private bool _autoPilotEngaged;
+    /// <summary>P862 — when the current run of unstecrable autopilot frames began
+    /// (0 = the autopilot steered last frame). Bounds the "hold a transient" rule in
+    /// <see cref="Flight.AutopilotHold"/>.</summary>
+    private long _autoPilotHoldSinceMs;
     // M-1 — the mouse-joystick deflection captured the moment the autopilot
     // engaged (native's trekJoyStick baseline, WinTrek.cpp:8283-8289). Manual-
     // input disengage only fires when the live deflection leaves this baseline
@@ -1543,6 +1552,19 @@ public sealed partial class Game1 : Game
         {
             _graphics.SynchronizeWithVerticalRetrace = false;
             IsFixedTimeStep = false;
+        }
+        // P862 — the companion cap: an uncapped, vsync-less loop runs at thousands
+        // of frames per second, which is not a client anybody flies (the server
+        // answers a pose stream that fast with SHIP_RESETs). ALLEGIANCE_FRAME_CAP=<fps>
+        // restores a fixed cadence so a measurement run sees realistic per-frame
+        // cost with no presentation stall. Inert unless set.
+        if (int.TryParse(System.Environment.GetEnvironmentVariable("ALLEGIANCE_FRAME_CAP"),
+                System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int frameCap)
+            && frameCap is >= 10 and <= 1000)
+        {
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0 / frameCap);
+            Console.WriteLine($"[monogame] frame cap: {frameCap} fps (ALLEGIANCE_FRAME_CAP)");
         }
         _benchmark = opts.Benchmark;
         InitializeBenchmarkSharing(opts.BenchmarkCollectorUrl);

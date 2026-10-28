@@ -268,6 +268,8 @@ public sealed partial class Game1
     private long _pendingTargetRetryAtMs;
     private string? _pendingTargetClass;   // P623 — "rel:cls[:dir]" class target spec
     private bool _pendingSummonEnemy;      // P805b — relocate an enemy into view
+    private bool _autoParkBotsDone;        // P862 — --auto-park-bots already issued
+    private long _autoParkBotsNextAttempt; // P862 — retry throttle until it lands
     private int _summonEnemyDistance = 500;
     private long _summonEnemyRetryAtMs;
     private bool _pendingHeadToDock;
@@ -622,6 +624,15 @@ public sealed partial class Game1
                 _pendingTargetRetryAtMs = Environment.TickCount64 + 2000;
             }
         }
+        if (_autoPlan.AutoParkBotsSector.Length > 0 && !_autoParkBotsDone
+            && (_auto?.SecondsSinceLaunch ?? 0) >= _autoPlan.AutoParkBotsAt
+            && Environment.TickCount64 >= _autoParkBotsNextAttempt)
+        {
+            // Retried until it actually moves somebody: the MCP bots have to have
+            // joined (and be known to this client) before the relocate is useful.
+            _autoParkBotsNextAttempt = Environment.TickCount64 + 2000;
+            _autoParkBotsDone = ParkHarnessBots(_autoPlan.AutoParkBotsSector);
+        }
         if (_pendingSummonEnemy && Environment.TickCount64 >= _summonEnemyRetryAtMs)
         {
             // Re-asserted every 4 s until an enemy is observed in our sector: the
@@ -649,6 +660,50 @@ public sealed partial class Game1
                 HeadToHomeStation();
             }
         }
+    }
+
+    /// <summary>P862 — <c>--auto-park-bots &lt;sector&gt;</c>: relocate every known
+    /// bot of the pilot's OWN side into that sector with the privileged
+    /// <c>relocate</c> chat cheat (the same path <see cref="TrySummonEnemy"/> uses,
+    /// Server.AdminCheats.cs). Discovery is side-wide, so this is what makes the
+    /// server export the sector's rocks and stations to this pilot BEFORE a warp
+    /// there — exactly the live 200v200 showcase, where hundreds of friendly bots
+    /// were already fighting in Alderan when the reported hitch happened. Without
+    /// it a single-pilot run cannot know a destination sector's contents until the
+    /// moment it arrives, which no client-side pre-warm could ever cover.</summary>
+    private bool ParkHarnessBots(string sectorToken)
+    {
+        if (ResolveSectorId(sectorToken) is not { } sector)
+        {
+            Console.WriteLine($"[autoproof] --auto-park-bots: unknown sector '{sectorToken}'");
+            return false;
+        }
+        var targets = new List<short>();
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            short? mine = world.MyShipId;
+            short? mySide = world.MySideId;
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (id == mine || ship.IsDead || ship.SideId != mySide) continue;
+                var name = ship.CharacterName ?? "";
+                if (!name.StartsWith("mcp-", StringComparison.OrdinalIgnoreCase)) continue;
+                targets.Add(id);
+            }
+        }
+        if (targets.Count == 0) return false;   // no bot known yet — retry
+        float radius = 1200f;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            // Spread them on a ring so they do not stack inside one rock.
+            float angle = MathF.Tau * i / targets.Count;
+            float x = MathF.Cos(angle) * radius, y = MathF.Sin(angle) * radius * .35f, z = MathF.Sin(angle) * radius;
+            _session.SendChat(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                $"relocate {targets[i]} {sector} {x:0.###} {y:0.###} {z:0.###}"));
+        }
+        Console.WriteLine($"[autoproof] --auto-park-bots: asked to relocate {targets.Count} friendly bot(s) into sector {sector}");
+        return true;
     }
 
     private short? CurrentOwnSector()

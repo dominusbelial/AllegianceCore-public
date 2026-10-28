@@ -80,6 +80,14 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         public required float Radius;
     }
 
+    /// <summary>P862 — decode a planet poster texture into this tier's cache
+    /// WITHOUT drawing (the sector asset warm-up). Same loader <see cref="SetCluster"/>
+    /// uses. Returns 1 when created now, 0 when already resident, -1 when unavailable.</summary>
+    public int WarmPlanet(string planetName) => _planet.Warm(planetName);
+
+    /// <summary>P862 — how many planet poster textures this tier has resident.</summary>
+    public int LoadedPlanetTextures => _planet.LoadedTextureCount;
+
     /// <summary>
     /// Switch the sky to a new cluster's data (called on sector change / warp
     /// transit). Asset decode is cached per poster/planet name; the star field
@@ -224,6 +232,23 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         }
     }
 
+    /// <summary>P862 — resolve a poster's sky dome and its environment texture into
+    /// the caches WITHOUT drawing (the sector asset warm-up), so a warp into a
+    /// sector whose nebula dome has never been seen does not decode/upload it in
+    /// the transit frame. Returns 1 when a new texture was created, 0 when it was
+    /// already resident, -1 when the poster has no dome art.</summary>
+    public int Warm(string poster)
+    {
+        if (string.IsNullOrEmpty(poster)) return -1;
+        if (!TryPosterIndex(poster, out int n)) return -1;
+        string stem = $"environment{n}bmp";
+        if (_textures.ContainsKey(stem)) return 0;
+        return TextureFor(stem) is null ? -1 : 1;
+    }
+
+    /// <summary>P862 — how many native sky textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
+
     private SkyDome? DomeFor(string poster)
     {
         if (!TryPosterIndex(poster, out int n)) return null;
@@ -294,11 +319,8 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             // black backing; native keys it transparent via the surface colorkey).
             var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
-            var cols = new Color[mdlTex.Width * mdlTex.Height];
-            int n = 0;
-            for (int i = 0; i < cols.Length; i++, n += 4)
-                cols[i] = new Color(rgba[n], rgba[n + 1], rgba[n + 2], rgba[n + 3]);
-            surf.SetData(cols);
+            // P862 — upload the premultiplied RGBA bytes straight (RGBA8 surface).
+            surf.SetData(rgba);
             _textures[stem] = surf;
             return surf;
         }

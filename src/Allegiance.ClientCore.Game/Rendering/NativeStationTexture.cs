@@ -46,11 +46,11 @@ public static partial class NativeStationTexture
         }
         else decoded = MdlTextureDecoder.Decode(data);
 
-        var colors = new Color[decoded.Width * decoded.Height];
-        for (int i = 0; i < colors.Length; i++)
-            colors[i] = new Color(decoded.Rgba[4 * i], decoded.Rgba[4 * i + 1], decoded.Rgba[4 * i + 2], decoded.Rgba[4 * i + 3]);
         var texture = new Texture2D(gd, decoded.Width, decoded.Height);
-        texture.SetData(colors);
+        // P862 — upload the decoded RGBA bytes straight (SurfaceFormat.Color is
+        // RGBA8); the Color[] staging doubled the peak allocation of every station
+        // texture, and a cold sector loads a whole station's set in one frame.
+        texture.SetData(decoded.Rgba);
         return texture;
     }
 }

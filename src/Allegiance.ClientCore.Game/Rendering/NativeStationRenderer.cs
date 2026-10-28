@@ -61,6 +61,30 @@ public sealed class NativeStationRenderer : IDisposable
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
+    /// <summary>P862 — how many station meshes are resident (diagnostics for the
+    /// sector asset warm-up).</summary>
+    public int LoadedModelCount => _models.Count;
+
+    /// <summary>P862 — how many native station textures are resident.</summary>
+    public int LoadedTextureCount => _textures.Count;
+
+    /// <summary>P862 — resolve a station model's native mesh and every part's
+    /// native texture into the caches WITHOUT drawing (the sector asset warm-up):
+    /// exactly the work the first <see cref="Draw"/> in a new sector would do.</summary>
+    /// <returns>1 when at least one new resource was created, 0 when everything was
+    /// already resident, -1 when the model is missing/undecodable (the caller keeps
+    /// the procedural placeholder as the draw path does).</returns>
+    public int Warm(string modelStem, string? stationTextureName)
+    {
+        if (string.IsNullOrEmpty(modelStem)) return -1;
+        int models = _models.Count, textures = _textures.Count;
+        if (MeshFor(modelStem) is not { } geo) return -1;
+        if (TextureStemFor(modelStem, stationTextureName) is { } texStem) TextureFor(texStem);
+        foreach (var part in geo.Parts)
+            if (part.TextureStem is { Length: > 0 } own) TextureFor(own);
+        return _models.Count > models || _textures.Count > textures ? 1 : 0;
+    }
+
     /// <summary>The compiled native geometry for a model stem (parsed + built once,
     /// cached), or null when the file is missing/undecodable (logged once → caller
     /// falls back to the procedural placeholder).</summary>
@@ -95,6 +119,7 @@ public sealed class NativeStationRenderer : IDisposable
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
         if (_missingTextureLogged.Contains(textureStem)) return null;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
             if (!_assets.Exists(textureStem + ".mdl"))
@@ -104,6 +129,8 @@ public sealed class NativeStationRenderer : IDisposable
             }
             var surf = NativeStationTexture.Load(_gd, _assets, textureStem);
             _textures[textureStem] = surf;
+            AssetLoadLog.Note("station texture", textureStem, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                $"{surf.Width}x{surf.Height}");
             return surf;
         }
         catch (Exception ex)

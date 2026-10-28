@@ -198,6 +198,9 @@ public sealed partial class Game1
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).
             _hdMaterials = new HdMaterialRenderer(GraphicsDevice, NativeMaterialParts.NativeReader(_assets), seconds: () => ClientNowMilliseconds / 1000d);
+            // P862 — stamp slow asset loads with the frame they stalled (the
+            // [asset] line the sector-load accounting quotes; null-safe in tools).
+            Rendering.AssetLoadLog.FrameStamp = () => _frameTelemetry?.FrameId ?? 0;
             _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets, hd: _hdMaterials);
             // P628 — the far-tier sprite batcher (distant ships as lit, side-tinted
             // sprites/points, batched per hull type) + the env-configurable LOD
