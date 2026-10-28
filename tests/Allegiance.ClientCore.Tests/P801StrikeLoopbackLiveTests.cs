@@ -89,7 +89,15 @@ public sealed class P801StrikeLoopbackLiveTests(ITestOutputHelper output)
             .OrderBy(s => s.StationId).ToArray();
         Assert.True(garrisons.Length >= 2, "training_6 must field two real garrisons");
         var massedStation = garrisons[0];
-        var trickleStation = garrisons[1];
+        // P864c applies each side's native station-tech replacement, so two
+        // authored garrisons can now have different durability. Compare the
+        // same station type and side attributes on both schedules.
+        var trickleData = massedStation.Data with
+        {
+            StationId = checked((short)(mission.Sectors.SelectMany(s => s.StationRuntimes).Max(s => s.StationId) + 1)),
+        };
+        var trickleStation = new Station(trickleData, massedStation.Type);
+        mission.PlaceStation(trickleStation, mission.Sectors.Single(s => s.Id == massedStation.ClusterId));
         var profile = StrikeVolley.StationProfile.From(core,
             core.StationTypes[massedStation.Type.StationTypeId]);
         Assert.True(profile.MaxArmor >= 20000f);
@@ -130,7 +138,11 @@ public sealed class P801StrikeLoopbackLiveTests(ITestOutputHelper output)
         // which the pure planner deliberately does not model.
         Assert.Equal(pureMassed.Killed, massed.Dead);
         Assert.Equal(pureTrickle.Killed, trickle.Dead);
-        Assert.True(trickle.Armor > 0f && trickle.Shield > 0f);
+        Assert.True(trickle.Armor > 0f);
+        // Native regenerates armor before shields (stationIGC.h:189-213).
+        // This compatible garrison survives with armor still below full, so its
+        // depleted shield has not begun recovering yet.
+        Assert.Equal(0f, trickle.Shield);
         // Hits inside one 20 s volley window: the massed run lands its whole
         // kill volley, the trickle lands only the first bomber's pair.
         int massedInWindow = massedSchedule.Count(s => s.At <= StrikeVolley.VolleyWindowSeconds);

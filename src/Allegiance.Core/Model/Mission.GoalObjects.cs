@@ -8,7 +8,7 @@ public sealed partial class Mission
     /// <summary>Native PopulateCluster's flag setup (Igc/common.cpp:2895-3001):
     /// two pedestal/flag pairs above and below every Start-capable home station.
     /// Runs once on server assembly, for file and generated maps alike.</summary>
-    public void PopulateGoalObjects(double now)
+    public void PopulateGoalObjects(double now, bool populateArtifacts = true)
     {
         if (Goals.IsFlagsGame)
         {
@@ -44,7 +44,7 @@ public sealed partial class Mission
         // Native PopulateCluster creates a neutral artifact in each neutral
         // sector when populating treasures (Igc/common.cpp:3090-3095); loaded
         // sectors with existing treasures skip population (missionigc.cpp:4048-4051).
-        if (Goals.IsArtifactsGame)
+        if (populateArtifacts && Goals.IsArtifactsGame)
             foreach (var sector in Sectors.Where(s => !s.Cluster.HomeSector && !s.Models.OfType<Treasure>().Any()))
                 GenerateTreasure(now, sector, -2);
 

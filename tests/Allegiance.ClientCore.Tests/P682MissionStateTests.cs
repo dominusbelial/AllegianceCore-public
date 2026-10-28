@@ -57,6 +57,7 @@ public sealed class P682MissionStateTests
         var clusterInfo = typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server);
         var oldStations = old.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
         var oldRocks = old.Sectors.SelectMany(s => s.Mineable).ToArray();
+        var oldTreasures = old.Sectors.SelectMany(s => s.Models.OfType<Treasure>()).ToArray();
         if (pipeline)
         {
             Assert.True(server._broadcastSnapshotEnabled);
@@ -88,7 +89,11 @@ public sealed class P682MissionStateTests
         Assert.All(fresh.Sectors.SelectMany(s => s.StationRuntimes), s => Assert.DoesNotContain(s, oldStations));
         Assert.All(fresh.Sectors.SelectMany(s => s.Mineable), r => Assert.DoesNotContain(r, oldRocks));
         Assert.All(fresh.Sectors, s => Assert.Empty(s.Models.OfType<Probe>()));
-        Assert.All(fresh.Sectors, s => Assert.Empty(s.Models.OfType<Treasure>()));
+        // Native file-map generation creates fresh starting treasures (P864c,
+        // missionigc.cpp:4048-4051). Verify retirement by identity, as for rocks.
+        var newTreasures = fresh.Sectors.SelectMany(s => s.Models.OfType<Treasure>()).ToArray();
+        Assert.NotEmpty(newTreasures);
+        Assert.All(newTreasures, t => Assert.DoesNotContain(t, oldTreasures));
         Assert.All(server.Ships, l => Assert.Same(fresh, l.Ship.Mission));
     }
 }

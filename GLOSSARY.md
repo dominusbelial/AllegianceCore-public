@@ -60,6 +60,13 @@ list in **reverse**.
   creates native initial flag pedestals/flags and neutral artifacts. Absent goals
   preserve the port's countdown/finale policy; `NativeDefaults()` explicitly
   selects native Reset's 100% conquest. Report: `docs/reports/P832A_GAME_GOALS.md`.
+- **File-map generation top-up (P864c / SIM-0748)** —
+  `src/Allegiance.Core/Model/Mission.FileMap.cs` replaces unavailable station
+  types from original local/effect plus side development techs, then fills only
+  empty asteroid/treasure lists. Shared asteroid placement/He3 budgeting lives
+  in `src/Allegiance.Core/MapGen/MissionMapGenerator.cs`; file-map resource
+  defaults come from native Reset. Native: `Igc/missionigc.cpp:3977-4055`.
+  Report: `docs/reports/P864c_REPORT.md`.
 - **Per-match goal rotation (P832g, preset policy)** — opt-in
   `showcase.goalRotation` (`cycle`/seeded `random`, no consecutive repeats),
   `src/Allegiance.Server/GoalRotationConfig.cs`; selects creator parameters before
@@ -252,6 +259,14 @@ list in **reverse**.
   (join burst) / `Server.Research.cs` (`ExportDiscoveredStations`), native
   `FedSrv/fsmission.cpp:4215-4222` and `FedSrv.CPP:10750-10778`. Report:
   `docs/reports/P860_REPORT.md`.
+- **Verified duplicate logons (P864c / SIM-0496)** — the same verified lobby
+  AccountId may replace its old mission seat through `RemovePlayerByName` in
+  `src/Allegiance.Server/Server.Identity.cs`, called after `BindIdentity` by
+  `src/Allegiance.Server/Server.Dispatch.cs`. Different/unverified identities
+  and pending names refuse duplicates. Server config `alwaysRefuseDuplicateLogons`
+  / env `ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS` opts into always refusing
+  (default off). Native: `FedSrv/fsmission.cpp:1248-1273`, `FedSrv/FedSrv.CPP:629`.
+  Report: `docs/reports/P864c_REPORT.md`.
 - **Cheats / debug** — `Server.AdminCheats.cs`, `Server.Privileges.cs`;
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,

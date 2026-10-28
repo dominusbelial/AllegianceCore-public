@@ -24,7 +24,7 @@ namespace Allegiance.Core.Tests;
 /// <c>m2xspiderw.igc</c> map (134 asteroids) receives an <c>ExportAsteroid</c>
 /// (<c>objecttype=5</c>, OT_asteroid) for the asteroids its <b>side has seen</b>
 /// (P797: the join export is per side, native <c>fsmission.cpp:4206</c>), each
-/// byte-for-byte identical to the map's own parsed <c>DataAsteroidIGC</c> — the
+/// byte-for-byte identical to the assembled mission records (authored plus native top-up) — the
 /// exact static snapshot <c>UndockMinersAndStartMining</c>'s
 /// <c>GetAsteroids()</c> search consumes. This is the final server-side gap
 /// before the live-VM "dispatch a miner" pass.
@@ -95,7 +95,7 @@ public class AsteroidExportTests
         // to its first few asteroids, with a hull that has a real scanner range.
         server.ShipSpawner = (core, mission, shipId) =>
         {
-            var sector = mission.Sectors.First(x => x.Mineable.Count > 0);
+            var sector = mission.Sectors.Single(x => x.Id == expected[0].ClusterId);
             var rock = sector.Mineable.First(a => a.Data.Position is { Length: 3 });
             var rp = rock.Data.Position!;
             var hull = core.HullTypes.Values.Where(h => h.ScannerRange >= 3000f)
@@ -122,6 +122,14 @@ public class AsteroidExportTests
             ],
         });
 
+        // P864c: native file-map generation fills empty sectors. Preserve every
+        // authored record byte-for-byte, then include top-up rocks in the wire
+        // oracle (missionigc.cpp:4048-4051).
+        var assembled = server.Missions[0].Sectors.SelectMany(s => s.Asteroids).ToArray();
+        foreach (var original in expected)
+            Assert.Equal(original.Encode(), assembled.Single(a => a.AsteroidId == original.AsteroidId).Encode());
+        expectedBytes = assembled.ToDictionary(a => Convert.ToHexString(a.Encode()), _ => true);
+
         var bot = new FltBot();
         try
         {
@@ -140,7 +148,7 @@ public class AsteroidExportTests
             // `if (pmdllink->data()->SeenBySide(pside))`), so a peer receives the
             // rocks its own side has seen, not all 134 of the map. What this test
             // still proves byte-for-byte is the wire path: every received export
-            // is a real map record, exactly once, and the set equals the mission's
+            // is a real assembled record, exactly once, and the set equals the mission's
             // own latched SeenBySide answer for the peer's side.
             var received = bot.AsteroidExports;
             Assert.NotEmpty(received);
@@ -157,8 +165,8 @@ public class AsteroidExportTests
                 .Where(a => a.SeenBySide(side))
                 .Select(a => a.Data.AsteroidId).OrderBy(x => x).ToArray();
             Assert.Equal(seen, received.Select(r => r.Asteroid.AsteroidId).Distinct().OrderBy(x => x).ToArray());
-            Assert.True(received.Count < expected.Count,
-                $"a fresh side must not receive all {expected.Count} map rocks (got {received.Count})");
+            Assert.True(received.Count < assembled.Length,
+                $"a fresh side must not receive all {assembled.Length} mission rocks (got {received.Count})");
             Assert.Contains(received, r => r.Asteroid.Name.StartsWith("He"));
         }
         finally

@@ -172,6 +172,12 @@ public class DropPartTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
+        // P864c creates starting treasure. This drop/no-drop fixture needs an
+        // empty treasure scene, without later discovery of ambient pickups.
+        foreach (var arena in server.Missions[0].Sectors)
+            foreach (var treasure in arena.Models.OfType<Treasure>().ToArray()) arena.Remove(treasure);
+        server.Missions[0].TreasureParameters.PlayerSectorTreasureRate = 0;
+        server.Missions[0].TreasureParameters.NeutralSectorTreasureRate = 0;
         // P368: default spawn now seats each side in its own home sector. This
         // test's discriminator needs the cross-side enemy CO-LOCATED with the
         // subject (a sector-wide-vs-side-wide broadcast-audience check), so we

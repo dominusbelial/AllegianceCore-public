@@ -161,6 +161,10 @@ public sealed class AsteroidsUpdateLiveTests
             return (ship, sector);
         };
         seat.Server.Boot(Config());
+        // P864c fills the file map. Preserve this per-side wire fixture's
+        // single synthetic rock and lack of other scan targets.
+        foreach (var arena in seat.Server.Missions[0].Sectors)
+            foreach (var generated in arena.Mineable.ToArray()) arena.RemoveAsteroid(generated);
         foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable mission; bypass ready-up
         var port = seat.Server.BoundPort;
 

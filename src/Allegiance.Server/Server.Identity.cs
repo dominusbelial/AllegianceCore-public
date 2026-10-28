@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Allegiance.Core.Identity;
+using Allegiance.Core.Model;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
 
@@ -17,6 +18,23 @@ public sealed class ServerIdentityConfig
 
 public partial class Server
 {
+    /// <summary>Native CFSMission::RemovePlayerByName (fsmission.cpp:1248-1273):
+    /// first case-insensitive player match in this mission, normal removal and notice.
+    /// The caller authenticates authority before entering this primitive.</summary>
+    private bool RemovePlayerByName(Mission mission, string name, QuitSideReason reason, string message = "")
+    {
+        var target = _peerShips.FirstOrDefault(p => ReferenceEquals(p.Value.Ship.Mission, mission)
+            && _peerNames.TryGetValue(p.Key, out var playerName)
+            && string.Equals(playerName, name, StringComparison.OrdinalIgnoreCase));
+        if (target.Value is null) return false;
+        // RemovePlayerFromMission sends QUIT_MISSION to the leaver as well as
+        // survivors (fsmission.cpp:482-488). A boot must bypass reconnect parking.
+        SendPeer(target.Key, FedPacket.Pack([new QuitMission
+        { ShipId = target.Value.Ship.Id, Reason = reason, Message = message }.Encode()]));
+        ReleasePeerWithReason(target.Key, reason, requested: true, message: message);
+        return true;
+    }
+
     private readonly Dictionary<ConnectionId, JoinIdentity> _peerIdentities = new();
     private readonly Dictionary<string, long> _consumedIdentityTokens = new(StringComparer.Ordinal);
     public string? AccountId(ConnectionId peer) => _peerIdentities.GetValueOrDefault(peer)?.Sub;

@@ -201,9 +201,18 @@ public sealed partial class Server
                 // Native private standalone joins refuse duplicate names, case
                 // insensitively (FedSrv/FedSrv.CPP:600-624). USEAUTH instead
                 // removes the old player (:629; fsmission.cpp:1248-1276).
-                // Refuse the newcomer explicitly: an untrusted name must never
-                // evict an existing player. Reserve names during side selection
-                // too, before allocating ids or authenticating privileges.
+                // P864c: USEAUTH replacement requires the SAME verified account.
+                // Reserve pending names too; these peers are not mission players.
+                if (req.VersionMatches && identityAccepted && !reservedConflict
+                    && !_config.AlwaysRefuseDuplicateLogons && _missions.Count > 0
+                    && AccountId(from) is { Length: > 0 } account)
+                {
+                    var old = _peerShips.FirstOrDefault(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
+                        && _peerNames.TryGetValue(p.Key, out var name)
+                        && string.Equals(name, req.CharacterName, StringComparison.OrdinalIgnoreCase));
+                    if (old.Value is not null && string.Equals(AccountId(old.Key), account, StringComparison.Ordinal))
+                        RemovePlayerByName(_missions[0], req.CharacterName ?? "", QuitSideReason.DuplicateLocalLogon);
+                }
                 var duplicateName = req.VersionMatches && _missions.Count > 0
                     && (_pendingSideSelect.Values.Any(p => string.Equals(p.Request.CharacterName ?? "", req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase))
                         || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])

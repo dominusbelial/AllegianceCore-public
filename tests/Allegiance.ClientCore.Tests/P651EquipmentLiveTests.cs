@@ -88,6 +88,10 @@ public sealed class P651EquipmentLiveTests
         SpawnWith(server, (core, m, id) =>
         {
             var sector = m.Sectors[0];
+            // P864c populates file-map rocks/treasures. Keep this fixed missile
+            // corridor free of random obstacles and pickup effects.
+            foreach (var generated in sector.Mineable.ToArray()) sector.RemoveAsteroid(generated);
+            foreach (var treasure in sector.Models.OfType<Treasure>().ToArray()) sector.Remove(treasure);
             var hull = core.HullTypes.Values.First() with { HabmCapabilities = 0, ScannerRange = 10000, Signature = 1,
                 HitPoints = 1, Ecm = 1, Thrust = 0, Length = 10,
                 CapacityMagazine = checked((short)(10 * Math.Max(1, (int)core.MissileTypes.Values.First().LauncherExpendableSize))) };

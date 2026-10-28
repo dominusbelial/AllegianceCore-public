@@ -193,6 +193,10 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
 
         server.ShipSpawner = (_, m, id) =>
         {
+            // P864c fills authored empty sectors. This isolated NPC-order
+            // fixture supplies its own only reachable rock(s).
+            foreach (var arena in m.Sectors)
+                foreach (var generated in arena.Mineable.ToArray()) arena.RemoveAsteroid(generated);
             mission = m;
             (sectorA, crossWarp, sectorB) = DiscoverPair(m);
             short peerSide = m.Sides[0].Id;

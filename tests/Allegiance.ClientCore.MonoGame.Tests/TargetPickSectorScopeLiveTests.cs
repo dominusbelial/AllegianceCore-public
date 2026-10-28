@@ -23,25 +23,16 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class LiveNetworkCollectionDefinition;
 
 /// <summary>
-/// P371 — LIVE proof that the target-pick candidate pool is narrowed to the
-/// player's OWN current sector. Two real clients connect to one real in-process
-/// server (map <c>m2xspiderw.igc</c>) and are spawned in TWO DIFFERENT sectors:
-/// one in Ganymede (1050: 4 warps, 1 station, 0 asteroids) and one in Alderan
-/// (1052: 6 warps, 0 stations, ALL 134 asteroids — P218). Every peer still
-/// receives the client's full, map-wide, unconditionally-exported warp/station/
-/// asteroid sets at join (44 warps / 2 stations / 134 asteroids in BOTH worlds),
-/// which is exactly the pool the bug used to offer to everyone. We then invoke
-/// the REAL production gather (<see cref="Game1.GatherSectorCandidates"/>) for
-/// each peer's own sector and assert the per-kind candidate counts match the
-/// REAL per-sector map data (verified independently via the <c>missiondump</c>
-/// tool against PCore001.igc+m2xspiderw.igc), i.e. no cross-sector warps,
-/// stations or asteroids ever appear.
+/// P371 — real clients in Ganymede and Alderan receive a map-wide export pool,
+/// then the production gather offers only objects in each player's own sector.
+/// P864c adds native file-map top-up: Ganymede gets 23 rocks; Alderan retains
+/// its 134 authored rocks. Both pools must stay scoped despite full discovery.
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class TargetPickSectorScopeLiveTests
 {
-    private const short Ganymede = 1050;   // 4 warps, 1 station, 0 asteroids
-    private const short Alderan = 1052;    // 6 warps, 0 stations, 134 asteroids
+    private const short Ganymede = 1050;   // 4 warps, 1 station, 23 top-up asteroids
+    private const short Alderan = 1052;    // 6 warps, 0 stations, 134 authored asteroids
 
     private static readonly string ArtRoot =
         ExternalPaths.Resolve(ExternalResourceKind.Artwork);
@@ -94,8 +85,8 @@ public sealed class TargetPickSectorScopeLiveTests
     /// determined by server seating, not connect order), but they pin the
     /// decisive invariants: every candidate belongs to that peer's own sector,
     /// the per-kind counts equal the same-sector subset of ITS map-wide pool, the
-    /// two peers are in different sectors, and the ~134-map-wide asteroid dump
-    /// reaches exactly one peer (the one in Alderan) — not both.</summary>
+    /// two peers are in different sectors, and the authored Alderan rocks plus Ganymede top-up rocks stay in
+    /// their own sector candidate pools.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void TwoClientsInDifferentSectors_EachSeesOnlyItsOwnSectorCandidates()
@@ -115,6 +106,10 @@ public sealed class TargetPickSectorScopeLiveTests
         });
 
         server.Boot(Config("P371 Two-Sector Target-Pick"));
+        int totalRocks = server.Missions[0].Sectors.Sum(s => s.Asteroids.Count);
+        Assert.Equal(23, server.Missions[0].Sectors.Single(s => s.Id == Ganymede).Asteroids.Count);
+        Assert.Equal(134, server.Missions[0].Sectors.Single(s => s.Id == Alderan).Asteroids.Count);
+        Assert.True(totalRocks > 157);
         // P797 TEST FIXTURE: this test pins per-SECTOR target scoping against a
         // map-WIDE export pool. P797 makes that pool per side (native
         // fsmission.cpp:4181/4206/4220), so reveal the whole map to the side both
@@ -141,11 +136,10 @@ public sealed class TargetPickSectorScopeLiveTests
             () => alpha.World.MyShipId is { } && bravo.World.MyShipId is { }, 4000);
         Assert.True(seated < 4000, "both peers seated");
 
-        // Both peers hold the FULL map-wide export pool at join (the "before"
-        // buggy pool) — 44 warps / 2 stations / 134 asteroids in EACH world.
+        // Both peers hold the full map-wide authored-plus-top-up export pool.
         int exported = PumpUntil(server,
-            () => alpha.World.Warps.Count >= 44 && alpha.World.Stations.Count >= 2 && alpha.World.Asteroids.Count >= 134
-               && bravo.World.Warps.Count >= 44 && bravo.World.Stations.Count >= 2 && bravo.World.Asteroids.Count >= 134,
+            () => alpha.World.Warps.Count >= 44 && alpha.World.Stations.Count >= 2 && alpha.World.Asteroids.Count >= totalRocks
+               && bravo.World.Warps.Count >= 44 && bravo.World.Stations.Count >= 2 && bravo.World.Asteroids.Count >= totalRocks,
             6000);
         Assert.True(exported < 6000, "map-wide exports reached both clients");
 
@@ -195,15 +189,13 @@ public sealed class TargetPickSectorScopeLiveTests
                          got.Count(c => c.Kind == Game1.TargetKind.Asteroid));
         }
 
-        // ⭐ The decisive anti-map-dump invariant: the ~134-map-wide asteroid dump
-        // reaches exactly ONE peer (the one in Alderan, 1052) and ZERO reach the
-        // other (Ganymede, 1050) — the bug that motivated P371 offered all 134 to
-        // every sector. Likewise the 44 map-wide warps resolve to the two sectors'
-        // real 4+6=10, and the single Ganymede garrison station to exactly one.
-        Assert.Equal(134, aGot.Count(c => c.Kind == Game1.TargetKind.Asteroid)
+        // Native top-up populates Ganymede but preserves Alderan's authored
+        // rocks (missionigc.cpp:4048-4051). Neither client gets another sector's
+        // rocks as candidates, despite holding the full map-wide export pool.
+        Assert.Equal(157, aGot.Count(c => c.Kind == Game1.TargetKind.Asteroid)
                         + bGot.Count(c => c.Kind == Game1.TargetKind.Asteroid));
-        Assert.True(aGot.Count(c => c.Kind == Game1.TargetKind.Asteroid) == 0
-                 || bGot.Count(c => c.Kind == Game1.TargetKind.Asteroid) == 0);
+        Assert.Equal(aSector == Ganymede ? 23 : 134, aGot.Count(c => c.Kind == Game1.TargetKind.Asteroid));
+        Assert.Equal(bSector == Ganymede ? 23 : 134, bGot.Count(c => c.Kind == Game1.TargetKind.Asteroid));
         Assert.Equal(10, aGot.Count(c => c.Kind == Game1.TargetKind.Warp)
                        + bGot.Count(c => c.Kind == Game1.TargetKind.Warp));
         Assert.Equal(1, aGot.Count(c => c.Kind == Game1.TargetKind.Station)

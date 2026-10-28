@@ -73,6 +73,9 @@ public sealed class MissionMapGenerator
     private readonly List<DataAsteroidIGC> _asteroids = [];
 
     private int _nextAsteroidId;
+    private HashSet<short>? _reservedAsteroidIds;
+    private ResearchSettings? _fileMapResearch;
+    private (short ClusterId, float[] Position, float Radius)[] _fileMapTreasures = [];
     private int _nextStationId;
 
     private MissionMapGenerator(MapGenContext ctx, StaticCore core, IMapRandom rng)
@@ -1163,23 +1166,66 @@ public sealed class MissionMapGenerator
             multGeneric = 1;
         }
 
+        PopulateAsteroids(clusterId, home, AmountHe3, multMine, multSpecial, multGeneric);
+    }
+
+    private void PopulateAsteroids(short clusterId, bool home, float amountHe3,
+        short multMine = 1, short multSpecial = 1, short multGeneric = 1)
+    {
         // He3 minable (c_aabmMineHe3) — the only genuinely depletable ore.
         int nMine = ApplyMultiplier(home ? _ctx.Params.PlayerSectorMineableAsteroids
                                          : _ctx.Params.NeutralSectorMineableAsteroids, multMine);
         for (int i = 0; i < nMine; i++)
-            AddAsteroid(clusterId, DataAsteroidIGC.AabmMineHe3, AmountHe3);
+            AddAsteroid(clusterId, DataAsteroidIGC.AabmMineHe3, amountHe3);
 
         // Special asteroids (c_aabmSpecial).
         int nSpecial = ApplyMultiplier(home ? _ctx.Params.PlayerSectorSpecialAsteroids
                                             : _ctx.Params.NeutralSectorSpecialAsteroids, multSpecial);
+        // File-map PopulateCluster cycles only enabled resource paths, with a
+        // random starting offset (common.cpp:3054-3057; asteroidigc.cpp:179-228).
+        var specialKinds = _fileMapResearch is { } research
+            ? new[] { research.AllowExpansionPath, research.AllowTacticalPath, research.AllowSupremacyPath }
+                .Select((enabled, index) => (enabled, index)).Where(p => p.enabled).Select(p => p.index).ToArray()
+            : [];
+        if (_fileMapResearch is not null && specialKinds.Length == 0) specialKinds = [0, 1, 2];
+        int specialOffset = specialKinds.Length > 1 ? _rng.Next(1, specialKinds.Length + 1) : 1;
         for (int i = 0; i < nSpecial; i++)
-            AddAsteroid(clusterId, DataAsteroidIGC.AabmSpecial, 0f);
+            AddAsteroid(clusterId, specialKinds.Length == 0 ? DataAsteroidIGC.AabmSpecial
+                : (short)(DataAsteroidIGC.AabmSpecial << specialKinds[(specialOffset + i) % specialKinds.Length]), 0f);
 
         // Generic buildable (c_aabmBuildable).
         int nGeneric = ApplyMultiplier(home ? _ctx.Params.PlayerSectorAsteroids
                                             : _ctx.Params.NeutralSectorAsteroids, multGeneric);
         for (int i = 0; i < nGeneric; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmBuildable, 0f);
+    }
+
+    /// <summary>File-map top-up (Igc/missionigc.cpp:3978-4007,4048-4051).
+    /// Existing rocks count towards the shared He3 budget and are never replaced.
+    /// Uses the same placement/type rules as generated maps (common.cpp:3020-3079).</summary>
+    public static void PopulateFileMapAsteroids(Mission mission, MapGenParams parameters)
+    {
+        var rng = MapRandomFactory.FromSeed(parameters.Seed);
+        var generator = new MissionMapGenerator(new MapGenContext(parameters, mission.LastUpdate, rng), mission.Core, rng);
+        generator._fileMapResearch = mission.Research;
+        generator._fileMapTreasures = mission.Sectors.SelectMany(s => s.Models.OfType<Allegiance.Core.Sim.Treasure>()
+            .Select(t => (s.Id, new[] { t.Position.X, t.Position.Y, t.Position.Z }, Allegiance.Core.Sim.Treasure.PickupRadius))).ToArray();
+        generator._warps.AddRange(mission.Warps.Select(w => w.Warp));
+        generator._stations.AddRange(mission.Sectors.SelectMany(s => s.Stations));
+        generator._asteroids.AddRange(mission.Sectors.SelectMany(s => s.Asteroids));
+        generator._reservedAsteroidIds = generator._asteroids.Select(a => a.AsteroidId).ToHashSet();
+        generator._nextAsteroidId = generator._asteroids.Count == 0 ? 0 : generator._asteroids.Max(a => (int)a.AsteroidId) + 1;
+        int existing = generator._asteroids.Count;
+        float count = mission.Sectors.Sum(s => s.Asteroids.Count == 0
+            ? (s.Cluster.HomeSector ? parameters.PlayerSectorMineableAsteroids : parameters.NeutralSectorMineableAsteroids)
+            : s.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmMineHe3) != 0));
+        float amount = count == 0 ? 0 : generator.FloatConst(9) * parameters.He3Density * mission.Sides.Count / count;
+        foreach (var sector in mission.Sectors.Where(s => s.Asteroids.Count == 0))
+            generator.PopulateAsteroids(sector.Id, sector.Cluster.HomeSector, amount);
+        foreach (var data in generator._asteroids.Skip(existing))
+        {
+            mission.PlaceAsteroid(new Allegiance.Core.Sim.Asteroid(data), mission.Sectors.First(s => s.Id == data.ClusterId));
+        }
     }
 
     /// <summary>Port of the free <c>::PopulateCluster</c> multiplier semantics
@@ -1270,6 +1316,11 @@ public sealed class MissionMapGenerator
         float[] up = Orthogonalize(fwd);
         float signature = radius / 100.0f;   // common.cpp:2866
         int id = _nextAsteroidId++;
+        if (_reservedAsteroidIds is { } used)
+        {
+            if (used.Count == 65536) throw new InvalidDataException("file map exhausted asteroid IDs");
+            while (!used.Add(unchecked((short)id))) id = _nextAsteroidId++;
+        }
 
         _asteroids.Add(new DataAsteroidIGC(
             Signature: signature,
@@ -1361,6 +1412,7 @@ public sealed class MissionMapGenerator
                 .Select(s => (Position: s.Position, Radius: _core.StationTypes[s.StationTypeId].Radius)))
             .Concat(_asteroids.Where(a => a.ClusterId == clusterId)
                 .Select(a => (Position: a.Position, Radius: (float)a.Radius)))
+            .Concat(_fileMapTreasures.Where(t => t.ClusterId == clusterId).Select(t => (t.Position, t.Radius)))
             .ToArray();
         while (true)
         {

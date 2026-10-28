@@ -233,3 +233,24 @@ without a scanner of their own. Both settings reach joining clients in the
 `MISSIONDEF(38)` parameter bitfield block and are published to the lobby
 directory (the client's GAME DETAILS panel shows `FF FIRE:` / `ALLY VIZ:`).
 See [P856](../docs/reports/P856_GAME_OPTIONS_FF_ALLIEDVIZ.md).
+
+### Verified duplicate logons (P864c)
+
+By default, a new logon using a character already seated in the mission removes
+that old player with `QSR_DuplicateLocalLogon` and admits the newcomer **only if
+both connections have the same verified lobby AccountId**. Different accounts,
+anonymous peers and pending side selections keep refusing duplicate names.
+Native source: `FedSrv/FedSrv.CPP:629`, `FedSrv/fsmission.cpp:1248-1273`.
+
+Set server JSON `"alwaysRefuseDuplicateLogons": true` to keep the former
+always-refuse policy. `ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS=1 docker compose
+up -d server` overrides JSON; `0` forces the default policy and an empty value
+preserves JSON. No legacy CD key, claimed Steam ID or character name establishes
+account ownership.
+
+File maps now replace unavailable station types using development plus the
+original station's local/effect techs, then populate only empty asteroid/treasure
+lists (`Igc/missionigc.cpp:3977-4055`). File-map resources use native Reset defaults:
+home/neutral He3 rocks 2/4, special rocks 1/1, generic rocks 20/20, starting treasures
+0/5, He3 density 1 (`Igc/igc.h:1284,1315-1328`). Generated-map presets keep their
+existing resource settings.

@@ -111,6 +111,12 @@ public sealed class InitialMinerSpawnLiveTests
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         var mission = server.Missions[0];
+        // P864c tops up empty sectors. Keep this cross-sector mining fixture's
+        // authored Alderan-only rock distribution before the first simulation tick.
+        var authoredRockIds = mission.Map.Asteroids.Select(a => a.AsteroidId).ToHashSet();
+        foreach (var arena in mission.Sectors)
+            foreach (var generated in arena.Mineable.Where(a => !authoredRockIds.Contains(a.Data.AsteroidId)).ToArray())
+                arena.RemoveAsteroid(generated);
         mission.Stage = MissionStage.Started;
 
         var miners = DockedInitialMiners(server);
@@ -180,6 +186,12 @@ public sealed class InitialMinerSpawnLiveTests
         using var server = new Srv();
         server.Boot(Config(debugMode: true));
         var mission = server.Missions[0];
+        // P864c tops up empty sectors. Keep this cross-sector mining fixture's
+        // authored Alderan-only rock distribution before the first simulation tick.
+        var authoredRockIds = mission.Map.Asteroids.Select(a => a.AsteroidId).ToHashSet();
+        foreach (var arena in mission.Sectors)
+            foreach (var generated in arena.Mineable.Where(a => !authoredRockIds.Contains(a.Data.AsteroidId)).ToArray())
+                arena.RemoveAsteroid(generated);
         var miners = DockedInitialMiners(server);
         Assert.Equal(2, miners.Count);
 

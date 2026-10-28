@@ -60,7 +60,15 @@ public sealed class P733ResearchTimeTests
         {
             var originalMap = Allegiance.Core.Model.MissionMap.Load(IgcReader.ParseFile(Path.Combine(
                 ExternalPaths.Resolve(ExternalResourceKind.Artwork), "m2xspiderw.igc")));
-            Assert.Equal(originalMap.Stations.Select(st => st.StationTypeId), mission.Sectors.SelectMany(s => s.Stations).Select(st => st.StationTypeId));
+            // P864c can replace an unavailable authored type within its class.
+            // Unlocked mode still preserves the authored identity and geometry.
+            foreach (var authored in originalMap.Stations)
+            {
+                var live = mission.Sectors.SelectMany(s => s.StationRuntimes).Single(st => st.StationId == authored.StationId);
+                Assert.Equal(mission.Core.StationTypes[authored.StationTypeId].ClassId, live.Type.ClassId);
+                Assert.Equal(authored.Name, live.Data.Name);
+                Assert.Equal(authored.Position, live.Data.Position);
+            }
         }
         var bucket = mission.Sides[0].Buckets.First(b => b.Development.HasValue && b.TimeToBuild >= 30 && b.Price > 0);
         uint native = bucket.Development!.Value.TimeToBuild;

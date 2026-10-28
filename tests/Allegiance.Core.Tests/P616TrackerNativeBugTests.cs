@@ -390,6 +390,7 @@ public class P616TrackerNativeBugTests
 
         // The destroy step — if the port had #42/#59's crash, this throws.
         var oldMission = server.Missions[0];
+        var oldTreasures = oldMission.Sectors.SelectMany(s => s.Models.OfType<Treasure>()).ToArray();
         foreach (var (b, _) in core) { b.ResetGameOvers(); b.ResetBallotSignals(); }
         DrawToGameOver(server, b0, b1, a0, a1);
         Assert.NotSame(oldMission, server.Missions[0]);
@@ -399,8 +400,11 @@ public class P616TrackerNativeBugTests
         // discarded mission is dropped wholesale, so nothing leaks).
         var fresh = server.Missions[0];
         Assert.DoesNotContain(fresh.Sectors, s => s.Models.OfType<Treasure>().Any(t => t.Data.TreasureId == 829));
-        int freshTreasureCount = fresh.Sectors.Sum(s => s.Models.OfType<Treasure>().Count());
-        Assert.Equal(0, freshTreasureCount);
+        // P864c populates new starting treasures at file-map generation.
+        // None may be an old-world object, including the explicitly seeded cash.
+        var freshTreasures = fresh.Sectors.SelectMany(s => s.Models.OfType<Treasure>()).ToArray();
+        Assert.NotEmpty(freshTreasures);
+        Assert.All(freshTreasures, t => Assert.DoesNotContain(t, oldTreasures));
 
         // (c) DIRECT DeactivateSide with live treasures present — the exact
         // native #59 crash site ("removing treasuresets during DeactivateSide")
@@ -428,7 +432,7 @@ public class P616TrackerNativeBugTests
             throw tie.InnerException;   // surface the inner exception: #59's crash would fail here
         }
         Assert.False(side.Active);
-        _output.WriteLine($"P616-59: seeded {totalSeeded} treasures → rotation clean, fresh mission has {freshTreasureCount}; DeactivateSide with treasures present returned without throwing");
+        _output.WriteLine($"P616-59: seeded {totalSeeded} treasures → rotation clean, fresh mission has {freshTreasures.Length}; DeactivateSide with treasures present returned without throwing");
     }
 
     // ── #146 — Commander defaults to Command wing across a rotation ─────────
