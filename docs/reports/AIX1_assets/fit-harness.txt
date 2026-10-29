@@ -1,0 +1,36 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Allegiance.Server;
+using Allegiance.Tools.McpSpawner;
+int count = int.Parse(args[0]);
+using var server = new Server();
+server.Boot(new ServerConfig {
+    Port = 0, SideSelectAutoSeatSeconds = 30,
+    Broadcast = new() { ParallelBuild = true, ImmutableSnapshot = true, EncodeOnce = true, ShipUpdateModel = "native", InterestTiers = false },
+    Transport = new() { Mode = "pool", MaxConnectionsPerIp = 512 },
+    Sim = new() { NativeGotoPlan = true, NativeBroadcastOrder = false },
+    Profiler = new() { Enabled = true, ReportIntervalSeconds = 5 },
+    Showcase = new() { TechMode = "research", IncomeMultiplier = 5000, ResearchTimeScale = 8 },
+    LiveSettings = new() { TimeDilation = "auto" },
+    Games = [new() { Name = "AIX1-fit", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25,3], SideNames = ["Alpha", "Bravo"], MaxPlayersPerTeam = 200, MaxTeamImbalance = 32767 }]
+});
+using var stop = new CancellationTokenSource();
+var ticker = new Thread(() => {
+    while (!stop.IsCancellationRequested) {
+        long begin = Stopwatch.GetTimestamp();
+        server.TickSim();
+        double delay = 50 - Stopwatch.GetElapsedTime(begin).TotalMilliseconds;
+        if (delay > 0) Thread.Sleep(TimeSpan.FromMilliseconds(delay));
+    }
+}) { IsBackground = true };
+ticker.Start();
+try {
+    using var manager = new BotManager(System.Net.IPAddress.Loopback.ToString(), server.BoundPort);
+    var parameters = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>($$"""{"preset":"showcase","count_a":{{count/2}},"count_b":{{count/2}},"target_sector":"Alderan","staging":true,"finale_after_minutes":0}""")!;
+    var result = McpTools.Handle("spawn_scenario", parameters, manager);
+    if (result.IsError ?? false) throw new Exception(JsonSerializer.Serialize(result));
+    var watch = Stopwatch.StartNew();
+    while (watch.Elapsed.TotalSeconds < 150) Thread.Sleep(1000);
+    var combat = manager.GetCombatSummary();
+    Console.WriteLine($"[aix-fit] bots={manager.ActiveBots().Count} peers={server.Ships.Count} seconds={watch.Elapsed.TotalSeconds:F1} shots={combat.ShotsFired} hits={combat.ShipHits} kills={combat.Kills} failures={server.SimPassStageFailures}");
+} finally { stop.Cancel(); ticker.Join(10000); }

@@ -1,0 +1,25 @@
+{
+  "label": "b55",
+  "schema": 1,
+  "metrics": {
+    "kill_rate": 0.0905227369315767,
+    "station_rate": 0.0,
+    "disconnect_rate": 0.0,
+    "stall_rate": 6.749858674833996e-05
+  },
+  "details": {
+    "mode": "battle",
+    "kills": 5325,
+    "scored_matches": 3,
+    "scored_bot_minutes": 58825.00000000001,
+    "kill_source": "finale side totals over scored completed-match windows",
+    "incident_bot_minutes": 59260.49999999999,
+    "stalls": 4,
+    "rotation_stalls_excluded": 4,
+    "disconnects": 0,
+    "station_kills": 0,
+    "mean_log_seconds": 9117.0,
+    "bot_count": 390,
+    "session_bot_minutes": 59117.50000000001
+  }
+}

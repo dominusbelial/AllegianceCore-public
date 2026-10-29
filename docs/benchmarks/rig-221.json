@@ -1,0 +1,29 @@
+{
+  "name": "rig-221",
+  "server": {
+    "cpu": "AMD Ryzen 9 6900HX",
+    "physicalCores": 8,
+    "threads": 16,
+    "ramGb": 30,
+    "runtime": "Native AOT, Docker, server GC",
+    "tickHz": 20
+  },
+  "botHosts": [
+    {
+      "cpu": "Apple M4 Max",
+      "cores": 16,
+      "ramGb": 128,
+      "link": "2.5GbE wired",
+      "botProcesses": 1,
+      "workers": 2,
+      "bots": 390
+    }
+  ],
+  "scenario": {
+    "name": "showcase march",
+    "map": "m2xspiderw.igc",
+    "sizeScale": 13,
+    "mode": "research",
+    "connections": 394
+  }
+}

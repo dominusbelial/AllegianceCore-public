@@ -270,6 +270,8 @@ not on the server or the machine you play on.
 
 ## Performance: the 200v200 baseline
 
+Compare session scores with the [Allegiance Index (AIX)](docs/PERFORMANCE.md#allegiance-index).
+
 **Target.** Two full teams of ~195 players each (≈ 394 connections) playing complete matches unattended: economy,
 research, scouting, strike waves, finale, game over, then the next match. The server ticks at 20 Hz, a 50 ms budget per
 tick; a busy window passes at p95 ≤ 40 ms and p99 ≤ 50 ms.

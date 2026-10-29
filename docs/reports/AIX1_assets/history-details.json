@@ -1,0 +1,555 @@
+{
+  "b45": {
+    "schema": 1,
+    "label": "b45",
+    "aix": 232.15699233393644,
+    "aix_per_core": 29.019624041742055,
+    "players": 394.0,
+    "players_source": "CLI --players",
+    "quality": 0.5801963993453355,
+    "headroom": 1.0629816635663034,
+    "k": 0.5,
+    "median_p95_ms": 37.63,
+    "windows": 1237,
+    "busy_windows": 1222,
+    "good_windows": 709,
+    "dilation_windows": 1222,
+    "battle": {
+      "mode": "battle",
+      "incident_bot_minutes": 39919.75,
+      "stalls": 4,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 6141.5,
+      "metrics": {
+        "kill_rate": null,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.00010020102831305306
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 40202.5,
+      "factor": 0.9850258574423129,
+      "components": {
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.9702759398299636
+      },
+      "missing_metrics": [
+        "kill_rate"
+      ],
+      "unscored_metrics": [
+        "kill_rate",
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "Partial Battle coverage: kill_rate",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b46": {
+    "schema": 1,
+    "label": "b46",
+    "aix": 177.59180432949873,
+    "aix_per_core": 22.19897554118734,
+    "players": 394.0,
+    "players_source": "CLI --players",
+    "quality": 0.48267326732673266,
+    "headroom": 0.9809932556713673,
+    "k": 0.5,
+    "median_p95_ms": 40.775,
+    "windows": 1227,
+    "busy_windows": 1212,
+    "good_windows": 585,
+    "dilation_windows": 1212,
+    "battle": {
+      "mode": "battle",
+      "incident_bot_minutes": 39832.0,
+      "stalls": 8,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 6128.0,
+      "metrics": {
+        "kill_rate": null,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.0002008435428800964
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 39877.5,
+      "factor": 0.9428453006636027,
+      "components": {
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.8889572609834395
+      },
+      "missing_metrics": [
+        "kill_rate"
+      ],
+      "unscored_metrics": [
+        "kill_rate",
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "Partial Battle coverage: kill_rate",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b47": {
+    "schema": 1,
+    "label": "b47",
+    "aix": 111.22647388514042,
+    "aix_per_core": 13.903309235642553,
+    "players": 394.0,
+    "players_source": "CLI --players",
+    "quality": 0.3094059405940594,
+    "headroom": 0.8324661810613945,
+    "k": 0.5,
+    "median_p95_ms": 48.05,
+    "windows": 1227,
+    "busy_windows": 1212,
+    "good_windows": 375,
+    "dilation_windows": 1212,
+    "battle": {
+      "mode": "battle",
+      "incident_bot_minutes": 39832.0,
+      "stalls": 0,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 6128.0,
+      "metrics": {
+        "kill_rate": null,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.0
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 39877.5,
+      "factor": 1.0,
+      "components": {
+        "disconnect_rate": 1.0,
+        "stall_rate": 1.0
+      },
+      "missing_metrics": [
+        "kill_rate"
+      ],
+      "unscored_metrics": [
+        "kill_rate",
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "Partial Battle coverage: kill_rate",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b48": {
+    "status": "unavailable",
+    "reason": "No server log supplied"
+  },
+  "b49": {
+    "schema": 1,
+    "label": "b49",
+    "aix": 217.88901233263167,
+    "aix_per_core": 27.236126541578958,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.5596432552954292,
+    "headroom": 1.0209290454313424,
+    "k": 0.5,
+    "median_p95_ms": 39.18,
+    "windows": 1813,
+    "busy_windows": 1794,
+    "good_windows": 1004,
+    "dilation_windows": 1794,
+    "battle": {
+      "mode": "battle",
+      "kills": 5277,
+      "scored_matches": 3,
+      "scored_bot_minutes": 58564.99999999999,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 58834.74999999999,
+      "stalls": 8,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 9051.5,
+      "metrics": {
+        "kill_rate": 0.09010501152565527,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.00013597406294749278
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 58922.50000000001,
+      "factor": 0.9779801826172058,
+      "components": {
+        "kill_rate": 0.9953854090134595,
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.9397209157914392
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b50": {
+    "schema": 1,
+    "label": "b50",
+    "aix": 507.50370871121726,
+    "aix_per_core": 63.43796358890216,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.955685618729097,
+    "headroom": 1.8939393939393943,
+    "k": 0.5,
+    "median_p95_ms": 21.119999999999997,
+    "windows": 1212,
+    "busy_windows": 1196,
+    "good_windows": 1143,
+    "dilation_windows": 1196,
+    "battle": {
+      "mode": "battle",
+      "kills": 4742,
+      "scored_matches": 2,
+      "scored_bot_minutes": 39065.0,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 58649.5,
+      "stalls": 8,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 9023.0,
+      "metrics": {
+        "kill_rate": 0.12138743120440292,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.00013640354990238622
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 39390.0,
+      "factor": 0.9793657433304436,
+      "components": {
+        "kill_rate": 1.0,
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.9393657621362016
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Bot/server capture durations differ by >10%; bot incidents use their own uptime; scopes may differ",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b51": {
+    "schema": 1,
+    "label": "b51",
+    "aix": 415.1270940337452,
+    "aix_per_core": 51.89088675421815,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.9305439330543933,
+    "headroom": 1.3893713094824591,
+    "k": 0.5,
+    "median_p95_ms": 28.79,
+    "windows": 1211,
+    "busy_windows": 1195,
+    "good_windows": 1112,
+    "dilation_windows": 1195,
+    "battle": {
+      "mode": "battle",
+      "kills": 4660,
+      "scored_matches": 2,
+      "scored_bot_minutes": 39130.0,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 39149.5,
+      "stalls": 8,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 6023.0,
+      "metrics": {
+        "kill_rate": 0.11909021211346793,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.00020434488307641223
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 39357.5,
+      "factor": 0.9605916613489428,
+      "components": {
+        "kill_rate": 1.0,
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.8863728336865531
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b52": {
+    "schema": 1,
+    "label": "b52",
+    "aix": 526.7406551953338,
+    "aix_per_core": 65.84258189941673,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.9638242894056848,
+    "headroom": 1.9240019240019242,
+    "k": 0.5,
+    "median_p95_ms": 20.79,
+    "windows": 1179,
+    "busy_windows": 1161,
+    "good_windows": 1119,
+    "dilation_windows": 1161,
+    "battle": {
+      "mode": "battle",
+      "kills": 2286,
+      "scored_matches": 1,
+      "scored_bot_minutes": 19467.5,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 38057.5,
+      "stalls": 0,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 5855.0,
+      "metrics": {
+        "kill_rate": 0.1174264800308206,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 0.0
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 38317.5,
+      "factor": 1.0,
+      "components": {
+        "kill_rate": 1.0,
+        "disconnect_rate": 1.0,
+        "stall_rate": 1.0
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b53": {
+    "schema": 1,
+    "label": "b53",
+    "aix": 536.1405505088206,
+    "aix_per_core": 67.01756881360258,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.9844733529164919,
+    "headroom": 1.9342359767891684,
+    "k": 0.5,
+    "median_p95_ms": 20.68,
+    "windows": 2406,
+    "busy_windows": 2383,
+    "good_windows": 2346,
+    "dilation_windows": 2383,
+    "battle": {
+      "mode": "battle",
+      "kills": 6917,
+      "scored_matches": 4,
+      "scored_bot_minutes": 77837.5,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 78162.5,
+      "stalls": 4,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 12025.0,
+      "metrics": {
+        "kill_rate": 0.08886462180825437,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 5.1175435790820406e-05
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 78195.0,
+      "factor": 0.9938566322728543,
+      "components": {
+        "kill_rate": 0.9816828878630167,
+        "disconnect_rate": 1.0,
+        "stall_rate": 1.0
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b54": {
+    "schema": 1,
+    "label": "b54",
+    "aix": 519.776652161947,
+    "aix_per_core": 64.97208152024338,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.9607699089039083,
+    "headroom": 1.9138755980861246,
+    "k": 0.5,
+    "median_p95_ms": 20.9,
+    "windows": 6862,
+    "busy_windows": 6806,
+    "good_windows": 6539,
+    "dilation_windows": 6806,
+    "battle": {
+      "mode": "battle",
+      "kills": 22930,
+      "scored_matches": 11,
+      "scored_bot_minutes": 206635.00000000003,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 250604.25000000003,
+      "stalls": 23,
+      "rotation_stalls_excluded": 0,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 38554.5,
+      "metrics": {
+        "kill_rate": 0.11096861615892756,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 9.177817215789436e-05
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 223015.00000000003,
+      "factor": 0.9925315037254645,
+      "components": {
+        "kill_rate": 1.0,
+        "disconnect_rate": 1.0,
+        "stall_rate": 0.9777614299051557
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Bot/server capture durations differ by >10%; bot incidents use their own uptime; scopes may differ",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  },
+  "b55": {
+    "schema": 1,
+    "label": "b55",
+    "aix": 544.7028544546874,
+    "aix_per_core": 68.08785680683593,
+    "players": 394,
+    "players_source": "gameover-timing (final winner summaries only)",
+    "quality": 0.9860879243183083,
+    "headroom": 1.9656019656019654,
+    "k": 0.5,
+    "median_p95_ms": 20.35,
+    "windows": 1819,
+    "busy_windows": 1797,
+    "good_windows": 1772,
+    "dilation_windows": 1797,
+    "battle": {
+      "mode": "battle",
+      "kills": 5325,
+      "scored_matches": 3,
+      "scored_bot_minutes": 58825.00000000001,
+      "kill_source": "finale side totals over scored completed-match windows",
+      "incident_bot_minutes": 59260.49999999999,
+      "stalls": 4,
+      "rotation_stalls_excluded": 4,
+      "disconnects": 0,
+      "station_kills": 0,
+      "mean_log_seconds": 9117.0,
+      "metrics": {
+        "kill_rate": 0.0905227369315767,
+        "station_rate": 0.0,
+        "disconnect_rate": 0.0,
+        "stall_rate": 6.749858674833996e-05
+      },
+      "bot_count": 390,
+      "session_bot_minutes": 59117.50000000001,
+      "factor": 1.0,
+      "components": {
+        "kill_rate": 1.0,
+        "disconnect_rate": 1.0,
+        "stall_rate": 1.0
+      },
+      "missing_metrics": [],
+      "unscored_metrics": [
+        "station_rate"
+      ]
+    },
+    "rig": "rig-221",
+    "server_physical_cores": 8,
+    "machines": 2,
+    "notes": [
+      "Profiler timestamps missing; samples cannot be aligned to those windows",
+      "No damage-backed station kills observed (rotation disappearance is excluded)",
+      "Station metric unscored: absent evidence or zero reference rate"
+    ]
+  }
+}
