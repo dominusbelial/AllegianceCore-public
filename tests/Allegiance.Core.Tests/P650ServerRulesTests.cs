@@ -15,7 +15,10 @@ public sealed class P650ServerRulesTests
     private static Cfg Config(string map = "XXV_simple.igc") => new()
     {
         ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
-        Games = [new Gm { Name = "P650 local battle", Map = map, Teams = 2, CivIds = [25, 3], SideNames = ["A", "B"] }]
+        // ShowMap on the mining fixture (same P817-era fixture stance as P528b): the
+        // mine-rate probe exercises the economy constants, not scouting, and native
+        // GotoPlan only flies routes the side has seen (common.cpp:899-927).
+        Games = [new Gm { Name = "P650 local battle", Map = map, Teams = 2, CivIds = [25, 3], SideNames = ["A", "B"], ShowMap = true }]
     };
 
     [SkippableFact, Trait("Requires", "Artwork")]
@@ -77,6 +80,17 @@ public sealed class P650ServerRulesTests
         {
             using var server = new Srv(); server.Boot(Config("m2xspiderw.igc"));
             var m = server.Missions[0]; m.Stage = MissionStage.Started;
+            // The mine-rate probe needs the miners to actually reach the Alderan
+            // field: native GotoPlan travels only along routes/targets the side has
+            // seen (common.cpp:899-927 + igc.h:4909-4913). Seed the scouted-map state
+            // the same way the P528b economic-cycle fixture does (bShowMap reveal,
+            // missionigc.cpp:4056-4071 + mapmakerigc.cpp:1002-1017, plus the field
+            // marked seen); the direct Stage write bypasses the lobby's
+            // Started-transition seed (Server.Lobby.cs:2132).
+            m.SeedStartingVisibility();
+            foreach (var sector in m.Sectors)
+                foreach (var rock in sector.Mineable)
+                    foreach (var side in m.Sides) rock.SideVisibility.SetSideVisibility(side.Id, true);
             if (oldRate) m.Core.Constants.FloatConstants[14] = 0.025f;
             var miners = m.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Where(s => s.IsNpc && s.PilotType == Ship.PilotTypeMiner).ToList();
             Assert.Equal(2, miners.Count);

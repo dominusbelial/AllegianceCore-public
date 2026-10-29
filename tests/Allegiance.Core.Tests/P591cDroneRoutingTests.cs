@@ -61,7 +61,7 @@ public sealed class P591cDroneRoutingTests
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "P591c Test", Map = map, Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P591c Test", Map = map, Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], ShowMap = true },
         ],
     };
 
@@ -155,6 +155,20 @@ public sealed class P591cDroneRoutingTests
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(Config("m2xspiderw.igc"));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        // Native GotoPlan travels only along routes the side has seen: FindPath
+        // gates every aleph edge on pship->CanSee (common.cpp:899-927) and warps are
+        // c_mtSeenBySide (warpIGC.cpp:35), so an unscouted sector has no known route
+        // and native keeps only the original target and dodges in place
+        // (common.cpp:1920-1926). These fixtures order a layer to lay in a sector the
+        // side has never visited and spawn it beyond its own scanner reach of every
+        // home aleph; a scouted map is the native precondition (commanders place
+        // minefields only on map sectors they can see). bShowMap (igc.h:1123) is
+        // native's own reveal-everything mission param — missionigc.cpp:4056-4071 runs
+        // the reveal at start and mapmakerigc.cpp:1002-1017 (RevealMap) marks every
+        // aleph seen by every side; Mission.SeedStartingVisibility is the port of that
+        // transition and is idempotent. The direct Stage write here bypasses the
+        // lobby's Started-transition seed (Server.Lobby.cs:2132), so seed explicitly.
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p591c_route");
         bot.SendLogonRequest(Request("p591c_route"));
@@ -267,6 +281,9 @@ public sealed class P591cDroneRoutingTests
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(Config("m2xspiderw.igc"));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        // Same route-visibility seeding as DriveSide (see the native cites there):
+        // the plan-target invariant is asserted on a drone whose route is known.
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p591c_plantgt");
         bot.SendLogonRequest(Request("p591c_plantgt"));

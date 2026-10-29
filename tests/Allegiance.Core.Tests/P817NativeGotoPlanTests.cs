@@ -223,9 +223,9 @@ public sealed class P817NativeGotoPlanTests
     [InlineData(true, "FALSE", false)]
     [InlineData(true, "off", false)]
     [InlineData(false, "1", true)]
-    public void Flag_defaults_off_and_environment_overrides_config(bool config, string? env, bool expected)
+    public void Flag_defaults_on_and_environment_overrides_config(bool config, string? env, bool expected)
     {
-        Assert.False(new SimConfig().NativeGotoPlan);
+        Assert.True(new SimConfig().NativeGotoPlan);
         Assert.Equal(expected, SimConfig.ResolveNativeGotoPlan(config, env));
     }
     [Fact]

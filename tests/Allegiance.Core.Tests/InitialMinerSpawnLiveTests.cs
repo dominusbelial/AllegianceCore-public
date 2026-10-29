@@ -51,7 +51,7 @@ public sealed class InitialMinerSpawnLiveTests
         LiveSettings = debugMode ? new Ls { DebugMode = true } : new Ls(),
         Games =
         [
-            new Gm { Name = "P382 Initial Miner", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P382 Initial Miner", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], ShowMap = true },
         ],
     };
 
@@ -192,6 +192,16 @@ public sealed class InitialMinerSpawnLiveTests
         foreach (var arena in mission.Sectors)
             foreach (var generated in arena.Mineable.Where(a => !authoredRockIds.Contains(a.Data.AsteroidId)).ToArray())
                 arena.RemoveAsteroid(generated);
+        // Native GotoPlan travels only along routes/targets the side has seen
+        // (common.cpp:899-927 + igc.h:4909-4913). The P387 metric — undock → first
+        // [warp] into Alderan with no player — presumes the route and field are
+        // known the way a scouted game's is: bShowMap (igc.h:1123) reveals every
+        // aleph to every side (missionigc.cpp:4056-4071, mapmakerigc.cpp:1002-1017)
+        // and the mining field is marked seen as in P528b's scouted-field fixture.
+        mission.SeedStartingVisibility();
+        foreach (var sector in mission.Sectors)
+            foreach (var rock in sector.Mineable)
+                foreach (var side in mission.Sides) rock.SideVisibility.SetSideVisibility(side.Id, true);
         var miners = DockedInitialMiners(server);
         Assert.Equal(2, miners.Count);
 

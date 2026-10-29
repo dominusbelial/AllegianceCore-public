@@ -144,6 +144,20 @@ public sealed class NpcAutopilotLiveTests
             StationTypeId: (short)type.StationTypeId, BpHull: 1, BpShield: 1, Name: $"BASE_{id}");
     }
 
+    /// <summary>P875 — spawn a LAYER drone carrying a real mine expendable (the
+    /// caller orders the lay with <c>SetLayerBuild</c>; see the movement test for
+    /// the native cites).</summary>
+    private static Ship SpawnLayingLayer(Seated seat, Vector3 pos)
+    {
+        var layerType = seat.Mission.Core.DroneTypes.Values.First(d => d.PilotType == Ship.PilotTypeLayer);
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, pos, layerType.DroneTypeId);
+        var mine = seat.Mission.Core.MineTypes.Values
+            .Where(mm => mm.MineRadius > 0f && mm.Power > 0f && mm.Lifespan >= 60f)
+            .OrderBy(mm => mm.MineRadius).First();
+        npc.LayerLaidExpendableTypeId = mine.ExpendableTypeId;
+        return npc;
+    }
+
     private static DataStationTypeIGC LandType() =>
         Core().StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmLand) != 0);
 
@@ -157,38 +171,52 @@ public sealed class NpcAutopilotLiveTests
         => typeof(Ship).GetField("_shieldFraction", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(ship, fraction);
 
     /// <summary>⭐ Scope-3 movement. A flying NPC spawned via
-    /// <see cref="Srv.SpawnNpcShip"/> with PlanTarget set to a real same-sector
-    /// station gets measurably closer to it over many real server ticks — the
-    /// first NPC in this port observed to move under its own decision.</summary>
+    /// <see cref="Srv.SpawnNpcShip"/> with a same-sector layer build order
+    /// (P875: the old data-only <c>DataStationIGC</c> PlanTarget is a command
+    /// target native cannot represent — native targets are live models,
+    /// shipIGC.h:440-460, and an invisible target ends the plan without moving,
+    /// igc.h:4909-4913 + common.cpp:1873-1874 — so the fixture now flies a native
+    /// lay delivery; see SpawnLayingLayer) gets measurably closer to it over many real server
+    /// ticks — the first NPC in this port observed to move under its own
+    /// decision.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Flying_npc_with_plan_target_moves_measurably_closer_to_station()
+    public void Flying_npc_with_waypoint_goto_moves_measurably_closer_to_target()
     {
         Require.Artwork();
         using var seat = SeatOne();
         var npcPos = new Vector3(952f, 936f, 959f);
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, npcPos);
-        var target = Target(seat.Sector, seat.PeerSide, id: 4211, x: 320f, y: 986f, z: 969f);
-        npc.PlanTarget = target;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        // P875 — a LAYER drone ordered to lay at the goal point: a layer build
+        // order IS native's "fly to this point" delivery (shipIGC.cpp:4055-4109
+        // creates the c_buoyWaypoint for a c_ptLayer c_cidBuild; :2810-2828 lays
+        // and consumes the drone on GotoPlan completion), so the goal holds until
+        // arrival — unlike a miner, whose completion frees the P652 idle economy
+        // leg and would measure that leg instead of the approach under test. The
+        // travel/arrival laws under test are pilot-generic (shipIGC.cpp:2795-2833).
+        var npc = SpawnLayingLayer(seat, npcPos);
+        var goal = new Vector3(320f, 986f, 969f);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(seat.Sector.Id, goal));
 
-        float d0 = Dist(npc, target);
+        float d0 = (goal - npc.Position).Length();
         Assert.True(d0 > 250f, "initial separation should be substantial");
 
         // 5000 ticks × 0.05 s = 250 simulated seconds — ample to accelerate,
         // approach, brake and close the gap from a standstill.
         for (int i = 0; i < 5000; i++) seat.Server.TickSim();
-        float d1 = Dist(npc, target);
+        float d1 = (goal - npc.Position).Length();
 
         Assert.True(d1 < d0 - 200f, $"NPC must close a lot: d0={d0:F1} d1={d1:F1}");
         Assert.True(npc.Position != npcPos, "the NPC must have physically left its spawn point");
-        Console.WriteLine($"P155-APPROACH: flying NPC {npc.Id} with PlanTarget→station {target.StationId}: d0={d0:F1} → d1={d1:F1} (measured closer, real server ticks)");
+        Console.WriteLine($"P155-APPROACH: flying NPC {npc.Id} with waypoint goto ({goal}): d0={d0:F1} → d1={d1:F1} (measured closer, real server ticks)");
     }
 
-    /// <summary>⭐ Scope-3 arrival. From a moderate separation the same primitive
-    /// reaches the target's vicinity and settles: the final distance is small,
-    /// and a trailing window shows no runaway overshoot/re-expansion (a
-    /// reasonable settling check, not pixel-perfect).</summary>
+    /// <summary>⭐ Scope-3 arrival. From a moderate separation the same
+    /// layer-delivery primitive (P875 rewrite; see the movement test) reaches
+    /// the goal's vicinity and settles: the final distance is small, and a
+    /// trailing window shows no runaway overshoot/re-expansion (a reasonable
+    /// settling check, not pixel-perfect). Native completes the waypoint on rest
+    /// inside the point's radius (common.cpp:1355-1362) and clears the order
+    /// (shipIGC.cpp:2802-2810), so the ship stays settled instead of thrashing.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Flying_npc_reaches_and_settles_near_target_without_runaway_oscillation()
@@ -196,17 +224,17 @@ public sealed class NpcAutopilotLiveTests
         Require.Artwork();
         using var seat = SeatOne();
         var npcPos = new Vector3(898f, 924f, 949f);
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, seat.Sector, seat.PeerSide, npcPos);
-        var target = Target(seat.Sector, seat.PeerSide, id: 4231, x: 545f, y: 997f, z: 979f);
-        npc.PlanTarget = target;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        // Same laying-layer choice as the movement test (native cites there).
+        var npc = SpawnLayingLayer(seat, npcPos);
+        var goal = new Vector3(545f, 997f, 979f);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(seat.Sector.Id, goal));
 
-        float d0 = Dist(npc, target);
+        float d0 = (goal - npc.Position).Length();
         Assert.True(d0 > 150f, "moderate initial separation for an arrival demo");
 
         // 7000 ticks × 0.05 s = 350 simulated seconds: reach the vicinity and settle.
         for (int i = 0; i < 7000; i++) seat.Server.TickSim();
-        float dSettled = Dist(npc, target);
+        float dSettled = (goal - npc.Position).Length();
 
         // Arrived: comfortably inside a small multiple of the arrival radius (60 u).
         Assert.True(dSettled < 200f, $"must settle near the target: d={dSettled:F1}");
@@ -217,7 +245,7 @@ public sealed class NpcAutopilotLiveTests
         for (int i = 0; i < 2000; i++)
         {
             seat.Server.TickSim();
-            float d = Dist(npc, target);
+            float d = (goal - npc.Position).Length();
             maxTail = MathF.Max(maxTail, d);
             minTail = MathF.Min(minTail, d);
         }

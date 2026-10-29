@@ -1358,7 +1358,7 @@ public sealed partial class Server
         mission.Lives = g.Lives;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         mission.NativeGotoPlanEnabled = _config.Sim.ResolveNativeGotoPlan();
-        Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (experimental NPC travel)");
+        Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (native NPC travel; false = legacy port steering)");
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
         if (fromMapGen) mission.PopulateGoalObjects(_simNow);

@@ -57,7 +57,7 @@ public sealed class P591bLayerPingPongTests
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "P591b Test", Map = map, Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P591b Test", Map = map, Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], ShowMap = true },
         ],
     };
 
@@ -149,6 +149,13 @@ public sealed class P591bLayerPingPongTests
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(Config("XXV_simple.igc"));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        // Native GotoPlan travels only along routes the side has seen (FindPath gates
+        // each aleph edge on pship->CanSee, common.cpp:899-927; warps are
+        // c_mtSeenBySide, warpIGC.cpp:35). Setting Stage directly bypasses the lobby's
+        // Started-transition seed (Server.Lobby.cs:2132), so seed explicitly; bShowMap
+        // (igc.h:1123) is native's own reveal-everything mission param
+        // (missionigc.cpp:4056-4071, mapmakerigc.cpp:1002-1017 via Mission.SeedStartingVisibility).
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p591b_guard");
         bot.SendLogonRequest(Request("p591b_guard"));
@@ -235,6 +242,10 @@ public sealed class P591bLayerPingPongTests
         server.SpawnInitialMinersAtBoot = false;
         server.Boot(Config("m2xspiderw.igc"));
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        // See the DriveSide-adjacent note in this class: native GotoPlan needs the
+        // route seen (common.cpp:899-927); seed bShowMap explicitly because the
+        // direct Stage write bypasses the lobby's Started-transition seed.
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p591b_route");
         bot.SendLogonRequest(Request("p591b_route"));

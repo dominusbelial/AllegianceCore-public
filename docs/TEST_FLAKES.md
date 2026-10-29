@@ -4,6 +4,50 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P875 verification observations (2026-10-29)
+
+Three Fast sweeps were run on the GotoPlan-default-ON tree (11,496 tests each).
+Sweep 2 ran while another lane's testhost (`allegiance-codex-p882b`) was
+actively executing on the same workstation, so its failures are attributed to
+that contention until re-run alone; every one of them passes solo (listed
+below). The showcase never-parks proof passed **5/5** (reached 24/24/26/24/24
+of 30; longest stopped-with-target 0.906/0.401/0/0/0 s).
+
+| Sweep | Result |
+|---|---|
+| `tiers-20261029T034058` | 11,496 tests, 2 failed: `NpcWingmanDefendLiveTests.Defender_disengages…` (pre-existing, see below) + `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner(gunner: False)` (25.7 s, also the calibrated-limit offender) |
+| `tiers-20261029T035957` | ran under the concurrent lane: 8 spread failures (`P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes…`, `P813cReconnectGraceTests.Grace_expiry…`, `NpcWingmanDefendLiveTests…`, `NpcDodgeLiveTests.Traveling_npc_steers_around_a_same_side_ship…`, `DirectNpcBuildOrderLiveTests…`, `BotFlightTests…`, `SessionLossLiveTests…`, `ShopLauncherMountNumberingLiveTests…`) — **all pass 3/3 alone**; contention-attributed |
+| `tiers-20261029T043216` | 11,496 tests, 2 failed + 1 limit offender: the pre-existing `NpcWingmanDefendLiveTests…`, `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy…` (39.9 s, legacy-arm-only, see below), MonoGame `ShopLauncherMountNumberingLiveTests…` (contention; passes alone) |
+
+- **Pre-existing master failure (both arms), not lane-caused:**
+  `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+  fails deterministically with `ALLEGIANCE_SIM_NATIVE_GOTOPLAN=0` — i.e. on the
+  byte-identical legacy path — and was reproduced on a **pristine `HEAD`
+  worktree** (`git worktree add .scratch/baseline HEAD`, local.env copied in):
+  1/1 failed there too. The Phase-1 charge-centred acquisition
+  (`UpdateWingmanDefend` → `EvaluateWingmanDefend`, cooldown 0 on the first
+  tick) runs and evaluates but does not acquire the enemy at 838 u from the
+  charge; two evaluation windows (200-tick cooldown) pass within the 400-pump
+  budget with `AttackTarget` still null. The class's other test (which sets
+  `AttackTarget` directly, bypassing acquisition) passes. Neither this lane's
+  fixture nor any wingman/defend source file was touched by P875 (git diff:
+  SimConfig default, boot log line, test fixtures only).
+- **Legacy-arm-only failure GotoPlan fixes:**
+  `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage`
+  passes 2/2 with the flag ON (≈2 s) and fails 1/1 with `=0` (37 s — the
+  legacy-steering wingman never closes on the enemy). Recorded so the legacy
+  arm's degradation is visible; the P817 default-off lane inherits it.
+- **Load-staged auto-seat flake:**
+  `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner`
+  failed once in sweep 1 (25.7 s) and passes **3/3 alone** at 3–4 s. Staging is
+  the same 30 s side-select auto-seat window already ledgered for
+  `RadarTargetHighlightLiveTests` above: under sweep parallelism the peer joins
+  after the armed-phase pump budget (600 × 40 ms = 24 s) has expired.
+- **One uncaptured class flake:** `NpcDodgeLiveTests` failed 1 of 6 in one
+  class run (the failing test was not captured); the next **14 consecutive
+  class runs passed 6/6**, and every test in the class passes 3× alone. Not
+  reproduced; no assertion was changed for it.
+
 ## P864d verification observations (2026-10-28)
 
 The P730 two-match showcase passed **5/5** (3m12s–5m09s per run, load ~10 at start).
