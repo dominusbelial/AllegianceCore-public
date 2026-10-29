@@ -611,9 +611,17 @@ public sealed partial class Server
                     {
                         ConsoleLog.Write($"[vote] ship {voterLive.Ship.Id}: VOTE for a ship with no mission — ignored");
                     }
+                    else if (!_ballots.TryGetValue(voterLive.Ship.Mission, out var list))
+                    {
+                        // P884b — read-only: a VOTE must never create the ballot
+                        // list. During a rotation a peer can still be seated in
+                        // the retiring world, and creating its entry here would
+                        // keep that retired Mission reachable after the rotation
+                        // removed it.
+                        ConsoleLog.Write($"[vote] ship {voterLive.Ship.Id}: VOTE with no pending ballots for its mission — ignored");
+                    }
                     else
                     {
-                        var list = BallotsOf(voteMission);
                         var ballot = list.FirstOrDefault(b => b.Id == vote.BallotId);
                         if (ballot is null)
                         {

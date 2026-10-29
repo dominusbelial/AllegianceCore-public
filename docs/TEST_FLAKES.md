@@ -38,6 +38,36 @@ regression (P887 changes broadcast defaults, not NPC dispatch).
 (7:57–11:15). No product code on those paths changed (P887 touches server broadcast
 transport defaults; the parking bound is bot-speed-under-load).
 
+## P884b verification observations (2026-10-29)
+
+One Fast sweep (`tiers-20261029T185943.460209Z`): **11,725 tests, 514.8 s**, infrastructure checks
+PASS. The lane changes only game-over retirement state (per-world cache retirement + latch capacity
+trim + read-only ballot lookups) plus a new Live test; five non-task failures, isolated immediately
+afterwards:
+
+| test | sweep result | isolated |
+| --- | --- | --- |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | failed once | **0/3 — fails 3/3 alone**: the pre-existing baseline failure already recorded under P872/P884 (`NpcWingmanDefendLiveTests.cs:179` guard), not a flake and not this lane's path |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | failed once (`maxLineDeviation=202.8`) | **3/3 pass** (~0.6 s each) — load flake |
+| `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` | failed once (shield never dropped below 0.74) | **3/3 pass** (~3 s each) — load flake |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | failed once (37.3 s, also a calibrated-limit offender) | **3/3 pass** (~0.6 s each) — load flake |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | failed once | **3/3 pass** (~1 s each) — the already-ledgered launcher-receipt load flake |
+
+Showcase gate: `P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+ran eight times. Seven passed (3m25s–6m10s). The single failure (8m03s, the full 480 s window) happened
+**while another lane on the same machine (`allegiance-pi-p887`) was running the same showcase test
+concurrently**; that lane's own showcase passes passed, and this lane's re-run under the same
+contention and the six other isolated runs all passed. P700 boots its server with
+`liveSettings.autoNextMatch.enabled=false`, i.e. it never rotates a world, so this task's
+rotation/ballot changes cannot be exercised by it; the failure is wall-clock contention (the test's
+terminal assertions are "≥24 of 30 ships reach their objective" and "observed gunfire and damage"
+inside a fixed 480 s window).
+
+The sweep also reported two calibrated-limit offenders: `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell`
+(18.6 s; already ledgered under P884) and `ArmedProbeLiveTests…` (37.3 s; 3/3 alone in ~0.6 s, so the
+sweep duration is contention, not the code path). No new flake class: every failure is either the
+known pre-existing wingman baseline or a load flake with a 3/3 isolated receipt above.
+
 ## P884 verification observations (2026-10-29)
 
 One Fast sweep (`tiers-20261029T125355.788869Z`): **11,677 tests, 458.1 s**, all infrastructure

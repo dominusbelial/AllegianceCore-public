@@ -360,4 +360,62 @@ public sealed partial class Server
     /// fixture assert that a refused edit left the snapshot untouched. Inert in
     /// production.</summary>
     internal MissionParamsMsg TestParamsOf(Mission mission) => ParamsOf(mission);
+
+    /// <summary>P884b test seam — sizes of the per-WORLD ship-keyed caches
+    /// <see cref="RetirePerWorldShipState"/> must retire at a rotation, plus the
+    /// per-mission ballot table, so a live test can prove a retired world leaves
+    /// nothing behind and that one world's rotation does not disturb another's
+    /// caches (P883b multi-mission scoping). Sim-thread owned; best-effort
+    /// snapshots for tests only. Inert in production.</summary>
+    internal (int Ballots, int ShipDetected, int LastTurretUpdates, int PendingTurretRelays,
+              int AlliedRearmPending, int AlliedPodRedirectPending,
+              int TeammatePositionSent, int TeammateLoadoutCache, int CrossSideShipStatusSeen)
+        WorldCacheCounts()
+        => (_ballots.Count, _shipDetected.Count, _lastTurretUpdates.Count, _pendingTurretRelays.Count,
+            _alliedRearmPending.Count, _alliedPodRedirectPending.Count,
+            _teammatePositionSent.Count, _teammateLoadoutCache.Count, _crossSideShipStatusSeen.Count);
+
+    /// <summary>P884b test seam — whether any per-world ship-keyed cache still
+    /// names <paramref name="shipId"/> (a retired world's id must never answer
+    /// true after its rotation). Inert in production.</summary>
+    internal bool WorldCacheContainsShip(short shipId)
+        => _lastTurretUpdates.ContainsKey(shipId)
+            || _shipDetected.ContainsKey(shipId)
+            || _teammateLoadoutCache.ContainsKey(shipId)
+            || _teammatePositionSent.Any(e => e.ShipId == shipId)
+            || _crossSideShipStatusSeen.Keys.Any(k => k.ShipId == shipId)
+            || _pendingTurretRelays.Any(s => s.Id == shipId)
+            || _alliedRearmPending.Any(s => s.Id == shipId)
+            || _alliedPodRedirectPending.Any(s => s.Id == shipId);
+
+    /// <summary>P884b test seam — the P332 teammate-position pairs whose subject
+    /// ship belongs to <paramref name="mission"/> (its live ships only). Lets a
+    /// multi-mission test prove another world's rotation leaves this world's
+    /// latch population intact. Inert in production.</summary>
+    internal int TestTeammatePositionPairs(Mission mission)
+    {
+        var ids = mission.GetShips().Select(s => s.Id).ToHashSet();
+        return _teammatePositionSent.Count(e => ids.Contains(e.ShipId));
+    }
+
+    /// <summary>P884b test seam — retained backing-array capacities of the
+    /// per-world latches (a .NET set keeps the widest moment it ever saw after
+    /// the entries are pruned; the rotation must release it). Inert in
+    /// production.</summary>
+    internal (int DiscoveryCapacity, int DiscoveryCount, int ShipDetectedCapacity,
+              int TurretCapacity, int LoadoutCacheCapacity) WorldCacheCapacities()
+        => (_crossSideDiscoverySent.Capacity, _crossSideDiscoverySent.Count,
+            _shipDetected.EnsureCapacity(0), _lastTurretUpdates.EnsureCapacity(0),
+            _teammateLoadoutCache.EnsureCapacity(0));
+
+    /// <summary>P884b test seam — the P332 teammate-position latch is a plain
+    /// HashSet (not a <see cref="SweepLatchSet{T}"/>), so its capacity is read
+    /// here. Inert in production.</summary>
+    internal (int Capacity, int Count) TeammatePositionLatch() => (_teammatePositionSent.EnsureCapacity(0), _teammatePositionSent.Count);
+
+    /// <summary>P884b test seam — whether the per-mission ballot table holds an
+    /// entry for <paramref name="mission"/> at all. Read paths must never create
+    /// one (a retired Mission must not be kept reachable by an empty list). Inert
+    /// in production.</summary>
+    internal bool TestHasBallotList(Mission mission) => _ballots.ContainsKey(mission);
 }
