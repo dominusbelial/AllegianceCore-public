@@ -46,6 +46,26 @@ internal sealed class WeaponCoverage
     private readonly Dictionary<ConnectionSession, (long KillSeq, long ChaffMs, object? LastStage)> _cursors = new();
     private readonly HashSet<long> _seenExpendables = new();                // missile/probe/mine object ids
     private readonly HashSet<long> _seenEvents = new();                     // broadcast hit/chaff dedupe
+    // P877 — escape-mining / aleph-field counters. Mine blast damage raises NO
+    // wire event (only the projectile path raises VICTIM_DAMAGED,
+    // Sector.cs:2401), so hits are observed the way the bots actually see
+    // them: the LAUNCHER's own world streams its victims' hull/shield
+    // fractions (cross-side HEAVY_SHIPS_UPDATE). A drop registers its likely
+    // victims (the pursuer; every enemy in the field sector) as watched
+    // targets for the mine's lifespan; a watched ship's streamed
+    // hull+shield fraction DECREASING while the mine is live counts the hit.
+    private sealed record WatchedTarget(short ShipId, byte Kind, double ExpiresAtMs);
+    private const byte MineKindEscape = 1, MineKindAleph = 2;
+    private const float HitFractionEpsilon = 1f / ExpandedPartData.FullyMounted;   // one wire quantization step
+    private readonly List<WatchedTarget> _watchedTargets = new();
+    private readonly Dictionary<short, float> _watchedFraction = new();        // ship id → last seen hull+shield
+    private readonly HashSet<short> _escapePursuersDamaged = new();
+    internal long EscapeMineDrops { get { lock (_sync) return _escapeMineDrops; } }
+    internal long AlephFieldDrops { get { lock (_sync) return _alephFieldDrops; } }
+    internal long EscapeMineHits { get { lock (_sync) return _escapeMineHits; } }
+    internal long EscapeMineKills { get { lock (_sync) return _escapeMineKills; } }
+    internal long AlephFieldHits { get { lock (_sync) return _alephFieldHits; } }
+    private long _escapeMineDrops, _alephFieldDrops, _escapeMineHits, _escapeMineKills, _alephFieldHits;
     private double _startedAtMs = double.NaN;
     private bool _endOfMatchPending;
 
@@ -60,6 +80,8 @@ internal sealed class WeaponCoverage
         {
             _parts.Clear(); _expendables.Clear(); _hulls.Clear(); _ships.Clear();
             _lastFire.Clear(); _cursors.Clear(); _seenExpendables.Clear(); _seenEvents.Clear();
+            _watchedTargets.Clear(); _watchedFraction.Clear(); _escapePursuersDamaged.Clear();
+            _escapeMineDrops = _alephFieldDrops = _escapeMineHits = _escapeMineKills = _alephFieldHits = 0;
             _startedAtMs = Environment.TickCount64;
         }
     }
@@ -136,6 +158,85 @@ internal sealed class WeaponCoverage
         _expendables[typeId] = stat with { Fired = stat.Fired + 1 };
     }
 
+    // ── P877 — escape-mining / aleph-field counters ────────────────────────
+
+    /// <summary>P877 — a mine dropped by a PURSUED bot (wake drop). The
+    /// pursuer is watched for the mine's lifespan: a streamed hull/shield
+    /// decrease counts the hit (and arms the kill attribution).</summary>
+    internal void RecordEscapeMineDrop(short launcherShipId, short pursuerShipId, short launcherPartId,
+        short mineTypeId, float mineLifespan)
+    {
+        lock (_sync)
+        {
+            _escapeMineDrops++;
+            Watch(pursuerShipId, MineKindEscape, mineLifespan);
+        }
+    }
+
+    /// <summary>P877 — a mine dropped as a FIELD in front of an arrival aleph
+    /// (duty bots): every enemy combat ship in the field sector is watched for
+    /// the field's lifespan (ships damaged on aleph exit).</summary>
+    internal void RecordAlephFieldDrop(short launcherShipId, short launcherPartId,
+        short mineTypeId, float mineLifespan, short sector, IReadOnlyCollection<short> enemyShipIds)
+    {
+        lock (_sync)
+        {
+            _alephFieldDrops++;
+            foreach (var victim in enemyShipIds)
+                Watch(victim, MineKindAleph, mineLifespan);
+        }
+    }
+
+    /// <summary>Called with _sync held.</summary>
+    private void Watch(short victimShipId, byte kind, float mineLifespan)
+    {
+        double nowMs = Environment.TickCount64;
+        _watchedTargets.RemoveAll(t => nowMs > t.ExpiresAtMs);
+        _watchedTargets.Add(new WatchedTarget(victimShipId, kind,
+            nowMs + Math.Max(1f, mineLifespan) * 1000));
+        if (_watchedTargets.Count > 128) _watchedTargets.RemoveAt(0);   // bounded per manager
+    }
+
+    /// <summary>Check the launcher's world view for watched victims whose
+    /// streamed hull+shield fraction decreased. Called with _sync held from the
+    /// launcher's sweep (its cross-side HEAVY_SHIPS_UPDATE stream carries the
+    /// fractions). A hit consumes the watch (one counted hit per drop-victim
+    /// pair) and arms kill attribution for escape mines.</summary>
+    private void CheckWatchedTargetsLocked(ClientWorld world)
+    {
+        double nowMs = Environment.TickCount64;
+        _watchedTargets.RemoveAll(t => nowMs > t.ExpiresAtMs);
+        for (int i = _watchedTargets.Count - 1; i >= 0; i--)
+        {
+            var target = _watchedTargets[i];
+            if (!world.Ships.TryGetValue(target.ShipId, out var ship) || ship.Latest is not { } latest)
+                continue;                                   // not observed this tick — keep watching
+            float current = latest.HullFraction + latest.ShieldFraction;
+            bool hit = _watchedFraction.TryGetValue(target.ShipId, out float prev)
+                && current < prev - HitFractionEpsilon;
+            _watchedFraction[target.ShipId] = current;
+            if (!hit) continue;
+            _watchedTargets.RemoveAt(i);
+            if (target.Kind == MineKindEscape)
+            {
+                _escapeMineHits++;
+                _escapePursuersDamaged.Add(target.ShipId);
+            }
+            else _alephFieldHits++;
+        }
+    }
+
+    /// <summary>P877 coverage lines for the end-of-match table.</summary>
+    internal IReadOnlyList<string> P877Lines()
+    {
+        lock (_sync)
+            return
+            [
+                $"P877 escape mines: laid-while-pursued={_escapeMineDrops} pursuerHits={_escapeMineHits} pursuerKills={_escapeMineKills}",
+                $"P877 aleph fields: laid={_alephFieldDrops} shipsDamagedOnAlephExit={_alephFieldHits}",
+            ];
+    }
+
     // ── per-bot event sweep (≈1 Hz, called from the manager loop) ──────────
 
     internal void SweepBot(ConnectionSession cs)
@@ -161,6 +262,13 @@ internal sealed class WeaponCoverage
                 lock (_sync)
                 {
                     if (!_seenEvents.Add(EventHash(k.ShipId, 0, 0, 0, 0, (long)(nowMs / 1000)))) continue;
+                    // P877 — a pursuer that took escape-mine damage and died
+                    // inside the mine's attribution window: count the kill once.
+                    if (_escapePursuersDamaged.Contains(k.ShipId))
+                    {
+                        _escapePursuersDamaged.Remove(k.ShipId);
+                        _escapeMineKills++;
+                    }
                     if (_ships.TryGetValue(k.ShipId, out var victim))
                     {
                         var h = _hulls.TryGetValue(victim.HullId, out var hs) ? hs : new HullStat(0, 0, 0);
@@ -183,6 +291,9 @@ internal sealed class WeaponCoverage
             try { damages = w.TakeNewVictimDamages(); } catch { damages = []; }
             lock (_sync)
             {
+                // P877 — mine hits: the launcher's own world streams its
+                // victims' hull fractions; a watched victim's decrease counts.
+                CheckWatchedTargetsLocked(w);
                 // Damage: the victim's own unicast — no dedupe possible or needed.
                 foreach (var (attacker, damage, _) in damages)
                 {
@@ -337,6 +448,7 @@ internal sealed class WeaponCoverage
         lock (_sync)
         {
             lines.Add($"P796 coverage table (t={ElapsedSeconds:F0}s): parts={_parts.Count} expendables={_expendables.Count} hulls={_hulls.Count}");
+            lines.AddRange(P877Lines());
             lines.Add("part | kind | equipped | fired | hits | damage");
             foreach (var (id, s) in _parts.OrderBy(kv => kv.Key))
                 lines.Add($"{id} | {PartName(core, id)} | {Kind(core, id)} | {s.Equipped} | {s.Fired} | {s.Hits} | {s.Damage:F0}");

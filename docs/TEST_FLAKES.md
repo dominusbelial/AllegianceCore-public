@@ -3804,3 +3804,22 @@ under `.scratch/base/`; the P872 deterministic base failure) and the
 observation, not a gate: one Modern Basic Flight run stalled at the M2 goal-2 pointing gate
 (`2.6`) while the previous Classic run and a rerun of the same Modern case both reached `3.6`;
 the run is reported as a convergence-timing observation, not a passing certification.
+
+## P877 (2026-10-29)
+
+Fast sweep `tiers-20261029T060400.085544Z` (P877):
+`FuelPoolAndAfterburnerTests.Live_real_server_afterburner_flight_depletes_fuel_and_cuts_out`
+failed once under the parallel sweep and passed **3/3 alone** immediately after
+(0.6 s each). P877 touches no Server/Core sim code (tools/allegiance-mcp bot
+policy + tests only), so this is a load flake of the live afterburner timing
+fixture, not a regression. `NpcWingmanDefendLiveTests.Defender_disengages…`
+also failed in the sweep — the **pre-existing base failure** ledgered in the
+P872 section above. All 10 P877 tests passed 3/3 alone.
+
+The second P877 Fast sweep `tiers-20261029T064217.980924Z` failed only on the
+already-ledgered cases: `NpcWingmanDefendLiveTests.Defender_disengages…`
+(pre-existing base failure, P872 section) and
+`AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+(ledgered load-flake, row 1959; the automatic quarantine retry failed this
+time, but the test passed 6/6 in isolation immediately after). All 1973
+ClientCore.Tests fast tests — including the 11 P877 tests — passed.

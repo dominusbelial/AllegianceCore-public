@@ -1,6 +1,8 @@
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Wire;
 using Allegiance.TestInfra;
@@ -120,10 +122,26 @@ public sealed partial class BotFixRegressionTests
         Set(bot, "WingmanBehaviour", (short)0);
         SC4Use(bot, cs, 20); Assert.Equal(10, Get<double>(bot, "LastMineAt"));
         Set(bot, "WingmanBehaviour", Showcase.WbbmUseMines);
-        cs.World.Apply(new ExportStation { Station = Station(100, 1, 1) });
+        cs.World.Apply(new ExportStation { Station = Station(100, 1, 1) });   // same id → sector no longer home
+        // P877 — an enemy NOT astern (abeam/ahead of the identity nose −Z) no
+        // longer triggers the native undirected drop; the 2500 u range check is
+        // retained only inside the astern pursuit decision.
         DefenseEnemy(cs.World, x: 2500);
         SC4Use(bot, cs, 20); Assert.Equal(10, Get<double>(bot, "LastMineAt"));
-        DefenseEnemy(cs.World, x: 2499);
+        // P877 — a PURSUER dead astern (+Z) within range does drop (escape
+        // mining; the fixture pose's zero hull fraction passes the danger gate).
+        AsternEnemy(cs.World, 9, 2499);
         SC4Use(bot, cs, 20); Assert.Equal(20, Get<double>(bot, "LastMineAt"));
+    }
+
+    /// <summary>P877 — an enemy ship dead astern of the identity-orientation
+    /// fixture bot (nose −Z, so astern is +Z), holding velocity.</summary>
+    private static void AsternEnemy(ClientWorld world, short id, float z)
+    {
+        world.Apply(new ExportShip { ShipId = id, SideId = 1, HullId = 15 });
+        world.Apply(new SingleShipUpdate { OidTarget = id, Ship = ServerShipUpdate.FromValues(id, 0,
+            new ControlData(0, 0, 0, 0), 100u, new Vector3(0, 0, z), Orientation.Identity,
+            Vector3.Zero, [0f, 0f, 0f], 1f, 1f, 1f, 1f, 1f, 0f, 1f) });
+        world.Apply(new ShipStatusMessage { ShipId = id, HullId = 15, SectorId = 1, StationId = -1 });
     }
 }

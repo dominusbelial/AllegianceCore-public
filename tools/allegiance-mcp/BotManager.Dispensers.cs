@@ -1,5 +1,8 @@
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -9,6 +12,12 @@ internal sealed partial class BotManager
     // Placement distances and pacing below are bot policy, not native limits.
     // Native human fire: FedSrv/FedSrv.CPP:5624-5779; mount/load timing:
     // Igc/dispenserigc.cpp:89-123. Read the accepted inventory, never the request.
+    // P877 — mine drops are deliberate human tactics: a PURSUED bot mines its
+    // wake (Showcase.ShouldEscapeMine) and duty bots lay long-lived fields at
+    // arrival alephs (Showcase.PreLayMineAtArrivalAleph). The native wingman
+    // undirected drop (any enemy within 2500 u, shipIGC.cpp:2651-2665) is NOT
+    // used as a bot trigger anymore — an enemy merely AHEAD gets no mines;
+    // the pure rule stays in Showcase.EnemyWithinMineRange for NPC parity.
     private static void MaybeUseDispensers(ActiveBot bot, ConnectionSession cs, double now)
     {
         var core = Catalog.RepresentativeCore();
@@ -91,25 +100,104 @@ internal sealed partial class BotManager
             else if (dispenser.Type is DataPartTypeIGC.MineLauncher m && core.MineTypes.TryGetValue(m.ExpendableTypeId, out var mine)
                 && Showcase.UsesMines(bot.WingmanBehaviour) && now - bot.LastMineAt >= Math.Max(3, mine.LoadTime))
             {
-                // Retain the native wingman proximity trigger, plus deliberate
-                // human minelaying at an owned station sector's entry/exit aleph.
+                // P877 — deliberate human minelaying only:
+                //   1. escape mining: a PURSUER behind us, closing/holding,
+                //      while we are fleeing/low/outmatched — drop in the wake
+                //      (a dispenser drops at the ship's position, so moving
+                //      forward leaves it on the pursuer's line);
+                //   2. an own-station aleph (existing defended-aleph rule); or
+                //   3. a duty bot's arrival-aleph field (long-lived mines only).
+                // An enemy merely AHEAD no longer triggers a drop (the native
+                // undirected wingman rule wastes mines on enemies we are
+                // flying toward; it stays available as pure parity code).
                 // Human fire has no enemy-range gate (FedSrv/FedSrv.CPP:5624-5779).
-                bool enemyNear = enemy && world.Ships.Values.Any(s => s.SideId >= 0 && s.SideId != bot.Side
-                    && !s.IsNotVisible && s.SectorId == sector && s.Latest is { } target
-                    && CombatTargetSelector.ClassifyTargetId(s.HullId) != BotTargetClass.MinerDrone
-                    && Showcase.EnemyWithinMineRange((target.Position - position).Length()));
+                (short PursuerId, float Distance, float Opening)? pursuit = FindPursuer(bot, world, position,
+                    pose.Velocity, pose.Orientation, sector);
+                bool escape = pursuit is not null && Showcase.ShouldEscapeMine(
+                    pursuerBehind: true, pursuit.Value.Distance, pursuit.Value.Opening,
+                    fleeing: now < bot.CombatEscapeUntil,
+                    lowHull: pose.HullFraction <= Showcase.EscapeMineLowHullFraction,
+                    lowShield: pose.ShieldFraction <= Showcase.EscapeMineLowShieldFraction,
+                    outmatched: OutmatchedInSector(bot, world, sector));
                 bool defendedAleph = Showcase.PreLayMineAtAleph(home, nearAleph, mine.Lifespan);
+                bool arrivalField = bot.AlephFieldDuty && bot.AlephFieldWarpId >= 0
+                    && bot.AlephFieldSector == sector
+                    && world.Warps.TryGetValue(bot.AlephFieldWarpId, out var fieldWarp)
+                    && fieldWarp.ClusterId == sector
+                    && fieldWarp.Position is { Length: 3 } fp
+                    && (Vec3(fp) - position).LengthSquared() < AlephFieldDropRange * AlephFieldDropRange
+                    && Showcase.PreLayMineAtArrivalAleph(atArrivalAleph: true,
+                        threatenedOrContested: true, mine.Lifespan);
                 float spacing = Math.Max(100, mine.MineRadius * 2);
                 bool covered = world.Mines.Values.Any(m => m.SideId == bot.Side && m.ClusterId == sector
                     && (m.Position - position).LengthSquared() < spacing * spacing);
-                if ((defendedAleph || enemyNear) && !covered)
+                if ((defendedAleph || escape || arrivalField) && !covered)
                 {
                     cs.SendFireExpendable(EquipmentType.Dispenser);
                     bot.LastMineAt = now;
                     WeaponCoverage.Global.RecordDispenserDrop(bot.ShipId, dispenser.PartId);   // P796
-                    Console.WriteLine($"[sc4] mine bot={bot.Name} side={bot.Side} sector={sector} part={dispenser.PartId} defendedAleph={defendedAleph} enemyWithin2500={enemyNear} lifespan={mine.Lifespan}");
+                    if (escape) WeaponCoverage.Global.RecordEscapeMineDrop(bot.ShipId,
+                        pursuit!.Value.PursuerId, dispenser.PartId, m.ExpendableTypeId, mine.Lifespan);   // P877
+                    else if (arrivalField) WeaponCoverage.Global.RecordAlephFieldDrop(bot.ShipId,
+                        dispenser.PartId, m.ExpendableTypeId, mine.Lifespan, sector,
+                        world.Ships.Values.Where(s => s.SideId >= 0 && s.SideId != bot.Side && !s.IsNotVisible
+                            && s.SectorId == sector && !s.IsDead && s.Latest is not null
+                            && CombatTargetSelector.ClassifyTargetId(s.HullId) != BotTargetClass.MinerDrone)
+                            .Select(s => s.ShipId).ToList());   // P877
+                    Console.WriteLine($"[sc4] mine bot={bot.Name} side={bot.Side} sector={sector} part={dispenser.PartId} defendedAleph={defendedAleph} escape={escape} pursuer={(escape ? pursuit!.Value.PursuerId : (short)-1)} alephField={arrivalField} warp={(arrivalField ? bot.AlephFieldWarpId : -1)} lifespan={mine.Lifespan}");
                 }
             }
         }
     }
+
+    /// <summary>P877 — the nearest enemy COMBAT actor behind us within the
+    /// mine-useful range that is closing or holding (opening speed below the
+    /// tolerance). null when nobody qualifies. Pure inputs; bot-policy rule
+    /// (not native AI — native wingmen drop at ANY enemy within 2500 u,
+    /// shipIGC.cpp:2651-2665).</summary>
+    private static (short PursuerId, float Distance, float Opening)? FindPursuer(ActiveBot bot,
+        ClientWorld world, Vector3 position, Vector3 botVel, Orientation orient, short sector)
+    {
+        Vector3 forward = orient.GetForward();
+        (short, float, float)? best = null;
+        foreach (var s in world.Ships.Values)
+        {
+            if (s.ShipId == bot.ShipId || s.SideId < 0 || s.SideId == bot.Side
+                || s.IsNotVisible || s.SectorId != sector || s.Latest is not { } target
+                || s.IsDead || CombatTargetSelector.ClassifyTargetId(s.HullId) == BotTargetClass.MinerDrone)
+                continue;
+            Vector3 toPursuer = target.Position - position;
+            float distance = toPursuer.Length();
+            if (!Showcase.IsPursuitBehind(forward, toPursuer)
+                || !Showcase.EnemyWithinMineRange(distance)) continue;
+            float opening = Showcase.PursuitOpeningSpeed(target.Position, target.Velocity,
+                position, botVel);
+            if (opening >= Showcase.PursuitOpeningTolerance) continue;   // falling behind — a wake drop is wasted
+            if (best is { } cur && distance >= cur.Item2) continue;
+            best = (s.ShipId, distance, opening);
+        }
+        return best;
+    }
+
+    /// <summary>P877 — "outmatched": more enemy combat actors than the local
+    /// side can field in this sector (the bot itself counts; drones/pods
+    /// excluded on both sides). Bot policy.</summary>
+    private static bool OutmatchedInSector(ActiveBot bot, ClientWorld world, short sector)
+    {
+        int enemies = 0, friends = 1;                       // the bot itself is a friendly
+        foreach (var s in world.Ships.Values)
+        {
+            if (s.SideId < 0 || s.IsNotVisible || s.SectorId != sector || s.IsDead || s.Latest is null
+                || CombatTargetSelector.ClassifyTargetId(s.HullId) == BotTargetClass.MinerDrone)
+                continue;
+            if (s.SideId == bot.Side) { if (s.ShipId != bot.ShipId) friends++; }
+            else enemies++;
+        }
+        return enemies > friends;
+    }
+
+    /// <summary>P877 — how close to the assigned field warp a duty bot must be
+    /// before its drops build the field (about twice the standoff offset —
+    /// the bot flies to the point and drops while approaching it).</summary>
+    private const float AlephFieldDropRange = 2 * Showcase.AlephFieldOffset;
 }

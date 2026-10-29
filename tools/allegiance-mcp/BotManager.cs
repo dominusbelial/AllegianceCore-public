@@ -517,9 +517,27 @@ internal sealed partial class BotManager : IDisposable
                     defensiveMines = slot % 3 == 0;
                 }
             }
+            // P877 — strategy-level aleph-field duty: ONE combat bot in four
+            // (a rotating slot counter per side, same pattern as the defensive
+            // mine layers) prefers the longest-lived legal mine launcher. The
+            // duty is dormant unless the side can actually buy a field-grade
+            // mine (on PCore001 only the 600 s Caltrop qualifies, base tech
+            // bit 17 = Rixian) — checked live in the drives/dispensers, never
+            // assumed here.
+            bool alephFieldDuty = false;
+            if (techRole is Showcase.HullRole.Fighter or Showcase.HullRole.Scout)
+            {
+                lock (_gate)
+                {
+                    _alephFieldSlots.TryGetValue(chosenSide, out int slot);
+                    _alephFieldSlots[chosenSide] = slot + 1;
+                    alephFieldDuty = slot % 4 == 0;
+                }
+            }
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
                 botId, role, out bool medevacScout, out bool canBuyRescueProbe,
                 techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines,
+                alephFieldMines: alephFieldDuty,
                 loadoutVariety: loadoutVariety, preferTurretBomber: techRole == Showcase.HullRole.Bomber && GunnerPolicy.Effective.Enable));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
@@ -532,6 +550,7 @@ internal sealed partial class BotManager : IDisposable
                 Difficulty = _difficulty,
                 TechLoadouts = true,
                 DefensiveMineDuty = defensiveMines,
+                AlephFieldDuty = alephFieldDuty,
                 PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
                 Launched = true,
@@ -697,6 +716,7 @@ internal sealed partial class BotManager : IDisposable
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
         int botId, string? roleName, out bool medevacScout, out bool canBuyRescueProbe,
         Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false,
+        bool alephFieldMines = false,
         bool loadoutVariety = false, bool preferTurretBomber = false)
     {
         bool pickedMedevac = false, pickedCanBuy = false;
@@ -752,7 +772,7 @@ internal sealed partial class BotManager : IDisposable
                     }
                 }
                 selected = PickTechLoadout(s, techRole ?? Showcase.HullRole.Fighter, support: support,
-                    defensiveMines: defensiveMines, medevacScout: pickedMedevac,
+                    defensiveMines: defensiveMines, medevacScout: pickedMedevac, alephFieldMines: alephFieldMines,
                     varied: loadoutVariety, varietySeed: LoadoutVarietySeed + botId * 1_000_003,
                     preferTurretBomber: preferTurretBomber,
                     boarding: ConquestGame(cs) && string.Equals(roleName, "boarder", StringComparison.OrdinalIgnoreCase));
@@ -4857,6 +4877,11 @@ bool isThreat =
 
         if (TryDriveResearchFinaleRefit(bot, cs, now)) return;
         AdvanceResearchSiegeDuty(bot, cs);
+        // P877 — aleph-field duty: a duty bot with a field-grade mine flies to
+        // the enemy's arrival aleph (or a threatened home aleph) and stations
+        // there while MaybeUseDispensers lays the field. Yields to transit,
+        // live engagements outside drop range, and every higher-priority duty.
+        if (TryDriveAlephField(bot, cs, now, CsSector(cs))) return;
 
         short defenseSector = CsSector(cs);
         if (defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
@@ -6254,6 +6279,13 @@ bool isThreat =
         public bool AttackAfterburnerHeld;
         public double LastMineAt = double.NegativeInfinity;
         public bool DefensiveMineDuty;
+        // P877 — aleph-field duty: strategy-level flag (only a fraction of
+        // combat bots), the resolved field warp (id, sector, observed position)
+        // and the last resolution attempt (retry pacing).
+        public bool AlephFieldDuty;
+        public short AlephFieldWarpId = -1;
+        public short AlephFieldSector = -1;
+        public double AlephFieldResolvedAt = double.NegativeInfinity;
         public double LastChaffAt = double.NegativeInfinity;
         public double LastProbeAt = double.NegativeInfinity;
         // P779b-1 — medevac state: the stable bot id (ship ids are re-allocated on
