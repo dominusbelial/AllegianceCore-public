@@ -836,9 +836,11 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     // ── P880b — real-model equipment/state/radar/buoy seams ─────────────────
     /// <summary>TRUE when a mounted part of the ship has the given equipment type — the read behind
     /// <c>GetShipHasCargoCondition</c> (getshiphascargocondition.cpp:29-36), which walks the ship's
-    /// mounted part list comparing each part's equipment type.</summary>
+    /// whole part list — native <c>m_parts</c> holds cargo too (shipIGC.cpp:1460-1464) — comparing
+    /// each part's equipment type; the port keeps cargo in <see cref="Ship.CargoHold"/>.</summary>
     public bool HasPartOfEquipmentType(int shipId, EquipmentType part)
-        => ResolveShip(shipId) is { } s && s.Parts.Any(p => p.EquipmentType == part);
+        => ResolveShip(shipId) is { } s
+           && (s.Parts.Any(p => p.EquipmentType == part) || s.CargoHold.Any(p => p?.EquipmentType == part));
 
     /// <summary>Snapshot a ship's real physical/equipment state (<c>ResetShipAction</c> first
     /// <c>Execute</c>, resetshipaction.cpp:22-36).</summary>

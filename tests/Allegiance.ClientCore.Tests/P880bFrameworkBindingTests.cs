@@ -86,6 +86,19 @@ public sealed class P880bFrameworkBindingTests
         Assert.True(host.Drones[drone].Parts.Count > 0, "default loadout mounts real parts");
         Assert.True(site.HasPartOfEquipmentType(new TargetRef(ObjectType.Ship, drone),
             host.Drones[drone].Parts[0].EquipmentType));
+
+        // Native m_parts holds cargo parts too (shipIGC.cpp:1460-1464): a part only in the
+        // cargo hold satisfies the condition.
+        var ship = host.Drones[drone];
+        // Default loadouts fill the hold; free slot 0 (mount -1) for the cargo-only part.
+        Assert.True(ship.TryRemoveCargoPart(-1, out _));
+        var cargoOnly = host.Mission.Core.PartTypes.Values.First(p =>
+            !ship.Parts.Any(m => m.EquipmentType == p.EquipmentType)
+            && !ship.CargoHold.Any(m => m?.EquipmentType == p.EquipmentType));
+        var target = new TargetRef(ObjectType.Ship, drone);
+        Assert.False(site.HasPartOfEquipmentType(target, cargoOnly.EquipmentType));
+        Assert.NotNull(ship.MountPart(cargoOnly, 1, unchecked((byte)-1), Allegiance.Core.Wire.ExpandedPartData.FullyMounted));
+        Assert.True(site.HasPartOfEquipmentType(target, cargoOnly.EquipmentType));
     }
 
     [Trait("Requires", "Artwork")]

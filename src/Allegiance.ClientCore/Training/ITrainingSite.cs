@@ -176,10 +176,10 @@ public interface ITrainingSite
     void StopSound(int instance);
 
     // ── P880b — equipment/state/radar/buoy primitives ─────────────────────────────
-    /// <summary>TRUE when a <em>mounted</em> part of the ship has the given equipment type —
-    /// <c>GetShipHasCargoCondition</c> (<c>getshiphascargocondition.cpp:29-36</c>): walks the
-    /// ship's mounted part list (native <c>GetParts()</c>, which does not include the cargo hold)
-    /// comparing each part's <c>GetEquipmentType()</c>.</summary>
+    /// <summary>TRUE when any part of the ship, mounted or in cargo, has the given equipment type —
+    /// <c>GetShipHasCargoCondition</c> (<c>getshiphascargocondition.cpp:29-36</c>): walks native
+    /// <c>GetParts()</c>, which holds cargo parts too (<c>shipIGC.cpp:1460-1464</c>), comparing each
+    /// part's <c>GetEquipmentType()</c>.</summary>
     bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part);
 
     /// <summary>Snapshot a ship's physical/equipment state (<c>ResetShipAction</c> first

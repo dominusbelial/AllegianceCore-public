@@ -10,11 +10,11 @@ namespace Allegiance.ClientCore.Training;
 /// </summary>
 
 /// <summary>
-/// TRUE when a mounted part of the ship has the given equipment type — port of
+/// TRUE when any part of the ship, mounted or in cargo, has the given equipment type — port of
 /// <c>GetShipHasCargoCondition</c> (<c>getshiphascargocondition.cpp:29-36</c>). Native walks the
-/// ship's mounted part list (<c>GetParts()</c>, which does <em>not</em> include the cargo hold)
-/// comparing each part's <c>GetEquipmentType()</c> to the requested type. Despite the name the check
-/// is over mounted parts and matches by <em>equipment type</em>, not a specific part id (that is
+/// ship's part list (<c>GetParts()</c>; <c>m_parts</c> also holds cargo parts, <c>shipIGC.cpp:1460-1464</c>)
+/// comparing each part's <c>GetEquipmentType()</c> to the requested type. The check matches by
+/// <em>equipment type</em>, not a specific part id (that is
 /// <c>GetShipHasMountedCondition</c>'s job). <paramref name="part"/> is an <see cref="EquipmentType"/>
 /// (native <c>ET_*</c>), e.g. <c>ET_Shield = 4</c>.
 /// </summary>
