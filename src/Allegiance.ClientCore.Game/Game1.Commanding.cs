@@ -294,7 +294,7 @@ public sealed partial class Game1
     private CommandGridRenderer? _commandGridRenderer;
     private void DrawCommandGrid(Matrix view, Matrix projection, Vector3 eye)
     {
-        if (_cameraMode != CameraMode.Command || !_commandGridVisible) return;
+        if (!CommandGridRenderer.IsVisible(_commandGridVisible, _cameraMode == CameraMode.Command)) return;
         var objects = new List<Vector3>();
         lock (_session.Gate)
         {

@@ -414,7 +414,7 @@ public class P836HudLevelTests
         string gpu = SourcePath("Game1.GpuBudget.cs");
         Assert.Contains("HUD level: ", gpu);
         Assert.Contains("case 19: _hudSettings.Level", gpu);
-        Assert.Contains("GraphicsRowCount = 20", gpu);
+        Assert.Contains("GraphicsRowCount = 21", gpu);
         Assert.True(Game1.GraphicsPanelHeight(20) > 920, "20 rows must fit the panel");
     }
 

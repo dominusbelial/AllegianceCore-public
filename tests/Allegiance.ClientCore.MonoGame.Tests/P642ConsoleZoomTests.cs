@@ -92,19 +92,19 @@ public class P642ConsoleZoomTests
         Assert.Equal(205, ExternalCameras.GenericExternal(Vector3.Zero, Vector3.UnitZ, 100, 100).Eye.Z);
     }
     [Fact]
-    public void Grid_preference_roundtrips_and_corrupt_file_defaults_visible()
+    public void Grid_preference_roundtrips_and_missing_or_corrupt_file_defaults_hidden()
     {
         string directory = Path.Combine(Path.GetTempPath(), "p642-" + Guid.NewGuid());
         string path = Path.Combine(directory, "console-settings.json");
         try
         {
-            Assert.True(CommandGridPreference.Load(path));
+            Assert.False(CommandGridPreference.Load(path));   // native LoadPreference("ShowGrid", FALSE), WinTrek.cpp:3308
             CommandGridPreference.Save(path, false);
             Assert.False(CommandGridPreference.Load(path));
             CommandGridPreference.Save(path, true);
             Assert.True(CommandGridPreference.Load(path));
             File.WriteAllText(path, "malformed");
-            Assert.True(CommandGridPreference.Load(path));
+            Assert.False(CommandGridPreference.Load(path));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }

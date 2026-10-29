@@ -127,7 +127,7 @@ public sealed partial class Game1
         /// (<c>--debris &lt;float&gt;</c>; never sent on the wire). 0 disables the
         /// field entirely (native treats <c>distancePerParticle == 0</c> as off,
         /// debrisgeo.cpp:98-106). Lower densities spawn grains less frequently.</summary>
-        public float DebrisDensity = 1.0f;
+        public float? DebrisDensity;   // --debris launch override; null = saved Debris preference
 
         /// <summary>P449b — the in-flight (chase/cockpit/missile) camera vertical FOV
         /// in degrees. Defaults to native's real default <c>s_fDefaultFOV = 50°</c>

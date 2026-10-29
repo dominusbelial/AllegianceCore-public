@@ -91,7 +91,7 @@ public sealed class DebrisGeo
     /// within 20 m) are skipped at render time (debrisgeo.cpp:177).</summary>
     public const float NearCameraSkipSquared = 400f;
 
-    private readonly float _density;      // native m_userDistancePerParticle (0 = off)
+    private float _density;               // native m_userDistancePerParticle (0 = off)
     private readonly ITrailRandom _rng;   // native random(a,b) seam
     private readonly List<DebrisPoint> _points = new();
 
@@ -118,6 +118,36 @@ public sealed class DebrisGeo
         _posLZ = initialPosition.Z;
         _timeLast = initialTime;
     }
+
+    /// <summary>The live density — native's <c>m_debrisDensity</c> is a ModifiableNumber the
+    /// geo reads every frame, so a menu change applies immediately; 0 hides the field
+    /// (native swaps in <c>Geo::GetEmpty()</c>, WinTrek.cpp:4647).</summary>
+    public float Density
+    {
+        get => _density;
+        set { _density = value; if (value <= 0f) Clear(); }
+    }
+
+    /// <summary>Native's Debris menu cycle (WinTrek.cpp:4633-4653): Low 1.5 → Medium 1.0 →
+    /// High 0.8 → Off 0 → Low. Lower values mean MORE dust (metres travelled per grain).
+    /// Any other value (e.g. a <c>--debris</c> launch override) steps to Low, as native's
+    /// final else does.</summary>
+    public static float NextDensity(float density) => density switch
+    {
+        1.5f => 1.0f,
+        1.0f => 0.8f,
+        0.8f => 0f,
+        _ => 1.5f,
+    };
+
+    /// <summary>Native <c>GetDebrisMenuString</c> (WinTrek.cpp:5539-5557).</summary>
+    public static string MenuLabel(float density) => density switch
+    {
+        0.8f => "Debris High",
+        1.0f => "Debris Medium",
+        1.5f => "Debris Low",
+        _ => "Debris Off",
+    };
 
     /// <summary>Number of live grains in the field.</summary>
     public int Count => _points.Count;

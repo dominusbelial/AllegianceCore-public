@@ -42,8 +42,9 @@ public sealed partial class Game1
     private int _graphicsRow;
     /// <summary>P828 — the number of rows in the Ctrl+F6 settings panel (13 → 16
     /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
-    /// declutter rows, 19 → 20 with the P836 HUD level row). Up/Down wrap on it.</summary>
-    private const int GraphicsRowCount = 20;
+    /// declutter rows, 19 → 20 with the P836 HUD level row, 20 → 21 with native's
+    /// Debris cycle). Up/Down wrap on it.</summary>
+    private const int GraphicsRowCount = 21;
     private Action<long, bool, double>? _receiveGpu;
     private long _budgetStart;
     private double _budgetDuration;
@@ -168,6 +169,13 @@ public sealed partial class Game1
                 // Combat/Cinematic/Auto). Auto resolves from the in-sector ship
                 // count and never selects Cinematic.
                 case 19: _hudSettings.Level = Rendering.HudLevels.Step(_hudSettings.Level, direction); break;
+                // Native Graphics Options "Debris Low/Medium/High/Off" (idmToggleDebris 'D',
+                // WinTrek.cpp:4511,4633-4653): one cycle step per press, saved, applied live.
+                case 20:
+                    _upscaling.Debris = Rendering.DebrisGeo.NextDensity(_debrisGeo.Density);
+                    _debrisGeo.Density = _upscaling.Debris;
+                    Console.WriteLine($"[p643] {Rendering.DebrisGeo.MenuLabel(_upscaling.Debris)}");
+                    break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -232,7 +240,8 @@ public sealed partial class Game1
                 // P836 — the Modern-HUD density level (Full/Tactical/Combat/
                 // Cinematic/Auto; Classic ignores it). Shows the resolved level
                 // too when Auto is active.
-                $"HUD level: {_hudSettings.Level}{( _hudSettings.Level == Rendering.HudLevel.Auto ? $" → {_hudSettings.ActiveLevel}" : "")}" };
+                $"HUD level: {_hudSettings.Level}{( _hudSettings.Level == Rendering.HudLevel.Auto ? $" → {_hudSettings.ActiveLevel}" : "")}",
+                Rendering.DebrisGeo.MenuLabel(_debrisGeo.Density) };
             int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 24);
             _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
