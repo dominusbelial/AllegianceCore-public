@@ -88,7 +88,7 @@ bool wantRemoteHermite = false;
 // P449a — client-only ambient-dust density (native's user `Debris` preference,
 // default 1.0; 0 = off). Mirrors the P378 liveSettings philosophy as a launch
 // setting; never sent on the wire.
-float debrisDensity = 1.0f;
+float? debrisDensity = null;
 // P449b — client-only in-flight camera FOV in degrees (native default 50). Mirrors
 // the P378 liveSettings philosophy as a launch setting; never sent on the wire.
 float flightFovDegrees = 50f;

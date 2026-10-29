@@ -1757,13 +1757,11 @@ public sealed partial class Game1 : Game
         // P449a — the ambient-dust field. Density mirrors native's user `Debris`
         // preference (default 1.0; 0 = off) via the --debris launch setting; the
         // RNG seam is the shared trail-random source (render-thread only).
+        float debrisDensity = opts.DebrisDensity ?? _upscaling.Debris;
         _debrisGeo = new Rendering.DebrisGeo(
-            opts.DebrisDensity, _trailRandom,
+            debrisDensity, _trailRandom,
             initialPosition: SimVec.Zero, initialTime: 0f);
-        if (opts.DebrisDensity <= 0f)
-            Console.WriteLine("[client] ambient space dust DISABLED (--debris 0)");
-        else
-            Console.WriteLine($"[client] ambient space dust: density={opts.DebrisDensity:0.###} (native Debris pref)");
+        Console.WriteLine($"[client] ambient space dust: {Rendering.DebrisGeo.MenuLabel(debrisDensity)} density={debrisDensity:0.###} ({(opts.DebrisDensity is null ? "Debris preference" : "--debris")})");
         // P338 — a chase-mode capture drives the local ship's real chase camera;
         // force that camera mode so the production chase path runs.
         if (_captureSpec is { Chase: true })

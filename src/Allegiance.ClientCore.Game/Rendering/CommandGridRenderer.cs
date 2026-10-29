@@ -17,6 +17,13 @@ public sealed class CommandGridRenderer : IDisposable
         _effect = new BasicEffect(device) { VertexColorEnabled = true };
     }
 
+    /// <summary>Native visibility (WinTrek.cpp:7293-7294): the ShowGrid toggle shows the grid
+    /// and drop lines in ANY camera, and the command camera always shows them —
+    /// <c>m_bCommandGrid || CommandCamera(m_cm) || (bAnimating &amp;&amp; CommandCamera(m_cmOld))</c>.
+    /// The port's camera switches modes without native's transition animation, so the
+    /// animating term has no port state to read.</summary>
+    public static bool IsVisible(bool showGrid, bool commandCamera) => showGrid || commandCamera;
+
     public static VertexPositionColor[] Geometry(IEnumerable<Vector3> objects, Vector3 eye)
     {
         var vertices = new List<VertexPositionColor>(4 * (Segments + 1));

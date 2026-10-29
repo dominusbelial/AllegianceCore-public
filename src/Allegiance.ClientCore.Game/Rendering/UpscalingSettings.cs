@@ -22,6 +22,10 @@ public sealed class UpscalingSettings
     public Allegiance.ClientCore.State.EffectsDetail Effects { get; set; } = Allegiance.ClientCore.State.EffectsDetail.Medium;
     public bool DynamicResolution { get; set; }
     public float TargetFrameMs { get; set; } = 16.667f;
+    /// <summary>Native <c>Debris</c> preference (<c>LoadPreference("Debris", "1.0")</c>,
+    /// WinTrek.cpp:3093; saved by the menu cycle, :4633-4653). 1.5 Low, 1.0 Medium,
+    /// 0.8 High, 0 Off.</summary>
+    public float Debris { get; set; } = 1.0f;
     public static float Scale(FsrPreset preset) => preset switch
     {
         FsrPreset.UltraQuality => 1f / 1.3f,
@@ -40,6 +44,7 @@ public sealed class UpscalingSettings
         if (!Enum.IsDefined(Preset)) Preset = FsrPreset.Quality;
         Sharpness = float.IsFinite(Sharpness) ? Math.Clamp(Sharpness, 0, 1) : 0.5f;
         TargetFrameMs = float.IsFinite(TargetFrameMs) ? Math.Clamp(TargetFrameMs, 8, 100) : 16.667f;
+        Debris = float.IsFinite(Debris) && Debris >= 0 ? Debris : 1.0f;
     }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_GRAPHICS_SETTINGS")
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Allegiance", "graphics.json");
