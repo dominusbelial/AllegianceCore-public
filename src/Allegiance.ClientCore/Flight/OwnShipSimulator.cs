@@ -101,6 +101,23 @@ public sealed class OwnShipSimulator
     public int StateM { get; private set; }
 
     /// <summary>
+    /// P881a — the native <c>turnToFace</c> hull/attitude inputs for the
+    /// training <c>TurnToAction</c> (Igc/common.cpp:152-252 — mass, torque
+    /// multiplier, effective turn torques and max turn rates plus the live turn
+    /// rates). Null until a hull resolves. Read-only; the client's
+    /// <c>TurnToFace</c> binding feeds it to <see cref="TrainingTurnTo.Compute"/>.
+    /// </summary>
+    public Allegiance.ClientCore.Training.TrainingTurnTo.TurnHull? TurnHull => !_haveHull ? null : new(
+        Mass: _inputs.Mass,
+        TorqueMultiplier: ShipKinematics.GetTorqueMultiplier(_velocity, _inputs.MaxSpeed),
+        TurnTorqueYaw: _inputs.TurnTorqueYaw,
+        TurnTorquePitch: _inputs.TurnTorquePitch,
+        MaxTurnRateYaw: _inputs.MaxTurnRateYaw,
+        MaxTurnRatePitch: _inputs.MaxTurnRatePitch,
+        CurrentTurnRateYaw: _turnRates[ControlData.AxisYaw],
+        CurrentTurnRatePitch: _turnRates[ControlData.AxisPitch]);
+
+    /// <summary>
     /// The current afterburner power (0..1), integrated with the same power,
     /// mount and fuel rules as Ship.UpdateAfterburner.
     /// </summary>

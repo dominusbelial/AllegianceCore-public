@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.Training;
+using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -17,6 +18,23 @@ public static class TrainingOverlay
 public static class TrainingRadarLod
 {
     public static volatile int Current;
+}
+
+/// <summary>
+/// P881a — the client's OWN ship state as the native client keeps it: the masked controls and
+/// state mask the flight input actually sent this frame (native <c>GetShip()-&gt;GetControls()</c> /
+/// <c>GetStateM()</c> on the client's local ship copy). The training conditions read these for the
+/// player's ship; the replicated world only carries a quantised 16-bit subset of the state (the
+/// missile-fire bit never rides the wire), so reading the server copy loses them. Written by
+/// <c>Game1.FlightInput</c> after <see cref="TrainingController.ApproveControls"/> and read by
+/// <see cref="Allegiance.ClientCore.MonoGame.ClientTrainingSite"/>; reset with the mission.
+/// </summary>
+public static class TrainingOwnState
+{
+    public static ControlData Controls { get; private set; } = ControlData.Neutral;
+    public static int StateM { get; private set; }
+    public static void Set(ControlData controls, int stateM) { Controls = controls; StateM = stateM; }
+    public static void Reset() { Controls = ControlData.Neutral; StateM = 0; }
 }
 
 /// <summary>TR-2 — central sink for training-host actions that need the embedded server's

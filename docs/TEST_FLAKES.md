@@ -3709,3 +3709,14 @@ P871b corrected it to native's 1396 (Igc/sounds.h:489 via `gcc -E`) and it is
 green 3/3. `NpcWingmanDefendLiveTests.Defender_disengages…` is the
 **pre-existing base failure** ledgered in the P872 section above (deterministic
 3/3 alone, unrelated).
+
+## P881a (2026-10-29)
+
+Fast sweep `tiers-20261029T060702.377618Z`: three failures, all pre-existing/ledgered —
+`ShopLauncherMountNumberingLiveTests` (passes 1/1 alone on the same tree),
+`NpcWingmanDefendLiveTests.Defender_disengages…` (fails identically in a clean HEAD worktree
+under `.scratch/base/`; the P872 deterministic base failure) and the
+`AddPartTests` treasure-quarantine case (the runner's automatic retry passed). Real-window
+observation, not a gate: one Modern Basic Flight run stalled at the M2 goal-2 pointing gate
+(`2.6`) while the previous Classic run and a rerun of the same Modern case both reached `3.6`;
+the run is reported as a convergence-timing observation, not a passing certification.

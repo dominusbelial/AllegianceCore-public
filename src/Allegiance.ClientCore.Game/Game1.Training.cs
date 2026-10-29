@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.Training;
+using Allegiance.Core.Wire;
 using Allegiance.SinglePlayer;
 using Microsoft.Xna.Framework.Input;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
@@ -23,6 +24,7 @@ public sealed partial class Game1
     private double _trainingStartDeadline;
     private const double TrainingStartTimeoutSeconds = 20.0;
     private double _trainingClock;
+    private float _trainingFrameDelta = 1f / 60f;
     private int _trainingMissionId;
     private int _nextTrainingSound;
     private readonly Dictionary<int, Microsoft.Xna.Framework.Audio.SoundEffectInstance> _trainingSounds = new();
@@ -149,6 +151,7 @@ public sealed partial class Game1
         var session = new TrainingSession(site, mission);
 
         TrainingController.BeginMission();
+        TrainingOwnState.Reset();
         TrainingOverlay.Current = 0;
         _trainingInputGate = new TrainingInputGate(session.RecordKeyPress);
         Rendering.KeyBindingStore.Instance.Map.ActionFilter = _trainingInputGate.Approves;
@@ -196,14 +199,24 @@ public sealed partial class Game1
             World = () => _session.World,
             Session = _session,
             ClockSeconds = () => _trainingClock,
+            FrameDeltaSeconds = () => _trainingFrameDelta,
             OwnOrientation = () =>
             {
                 if (!_ownSim.HaveHull) return null;
                 var o = _ownSim.Orientation;
                 return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
             },
+            // P881a — the own-ship simulator's real hull kinematics so TurnToAction's
+            // turnToFace (Igc/common.cpp:152-252) actually steers the player during the
+            // scripted demonstrations (M2 goal 2, M3 goals 5/7/8).
+            OwnHullKinematics = () => _ownSim.TurnHull,
             Host = _embeddedHost,
             SetupTraining = SetupTrainingView,
+            // P881a — training orders for the own ship use the real client ORDER_CHANGE path.
+            OwnOrder = SendTrainingOwnOrder,
+            OwnAutopilot = SetTrainingAutopilot,
+            SetCameraMode = mode => _cameraMode = (Rendering.CameraMode)mode,
+            ShowPane = mask => ShowTrainingPane(mask),
             DeathCamera = (focus, radius) =>
             {
                 _trainingDeadCamera = _cameraMode;
@@ -222,6 +235,84 @@ public sealed partial class Game1
                 && sound.State == Microsoft.Xna.Framework.Audio.SoundState.Playing,
             StopSound = StopTrainingSound,
     };
+
+    /// <summary>
+    /// P881a — a training <c>SetCommandAction</c> aimed at the player's own ship goes through the
+    /// same real ORDER_CHANGE the mouse pick and order menu use (WinTrek.cpp:8820-8854): the
+    /// client's command slots and the server's <c>Ship.CommandTarget</c> move together, so the
+    /// script's autopilot target and the radar selection agree without any training protocol.
+    /// </summary>
+    private void SendTrainingOwnOrder(int command, TargetRef? target, int commandId)
+    {
+        if (_session.World.MyShipId is not { } myId) return;
+        short slot = command == TrainingMissionIds.CommandAccepted
+            ? OrderChange.CmdAccepted : OrderChange.CmdCurrent;
+        if (target is { } t && TrainingTargetObjectType(t.Type) is { } ot)
+            _session.SendOrderChange(myId, (short)commandId, slot, ot, (short)t.Id);
+        else
+            _session.SendOrderChange(myId, OrderChange.CidNone, slot, (IgcObjectType)(-1), -1); // SetTarget(NULL)
+    }
+
+    /// <summary>Training <see cref="ObjectType"/> → wire <see cref="IgcObjectType"/> (igc.h:116-129).</summary>
+    private static IgcObjectType? TrainingTargetObjectType(ObjectType type) => type switch
+    {
+        ObjectType.Ship => IgcObjectType.Ship,
+        ObjectType.Station => IgcObjectType.Station,
+        ObjectType.Asteroid => IgcObjectType.Asteroid,
+        ObjectType.Probe => IgcObjectType.Probe,
+        ObjectType.Buoy => IgcObjectType.Buoy,
+        _ => null,
+    };
+
+    /// <summary>
+    /// P881a — the training <c>SetAutopilotAction</c> binding: the client flies its own ship
+    /// (P508 owns the pose), so the script engages the SAME native autopilot the G key uses
+    /// (DockApproach bay entry for a station, warp routing for another sector) toward the
+    /// order the script just issued. Completion is the server's real dock latch.
+    /// </summary>
+    private void SetTrainingAutopilot(TargetRef? target, bool on)
+    {
+        if (!on)
+        {
+            if (_autoPilotEngaged) DisengageAutopilot(AutopilotDisengageReason.ToggleOff);
+            return;
+        }
+        if (target is not { } t) return;
+        TargetKind? kind = t.Type switch
+        {
+            ObjectType.Ship => TargetKind.Ship,
+            ObjectType.Station => TargetKind.Station,
+            ObjectType.Probe => TargetKind.Probe,
+            _ => null,
+        };
+        if (kind is not { } k) return;
+        string name = k switch
+        {
+            TargetKind.Station => _session.World.Stations.TryGetValue((short)t.Id, out var st) ? st.Name : $"station {t.Id}",
+            TargetKind.Ship => _session.World.Ships.TryGetValue((short)t.Id, out var sh) ? (sh.CharacterName ?? $"ship {t.Id}") : $"ship {t.Id}",
+            TargetKind.Probe => $"probe {t.Id}",
+            _ => $"target {t.Id}",
+        };
+        EngageAutopilotToward(new AutopilotTarget(k, (short)t.Id, name, (short)TrainingMissionIds.CmdGoto, UseDefault: false),
+            "training: autopilot");
+    }
+
+    /// <summary>
+    /// P881a — <c>ShowPaneAction</c>: native turns every pane off then turns the requested
+    /// overlay flags on (showpaneaction.cpp:29-38). Maps the training pane masks to the console
+    /// pane state both HUD styles render.
+    /// </summary>
+    private void ShowTrainingPane(int paneMask)
+    {
+        _consolePanes = new Rendering.ConsolePaneState(
+            GameState: false,
+            Inventory: (paneMask & TrainingMissionIds.PaneInventory) != 0,
+            Nav: false,
+            Team: (paneMask & TrainingMissionIds.PaneExpandedTeam) != 0
+                ? Rendering.TeamConsoleSize.Expanded : Rendering.TeamConsoleSize.Hidden);
+        _minimapExpanded = _consolePanes.Nav;
+        _teamPaneVisible = _consolePanes.Team != Rendering.TeamConsoleSize.Hidden;
+    }
 
     internal static TrainingMission CreateTrainingMission(int missionId, ITrainingSite site) => missionId switch
         {
@@ -259,12 +350,14 @@ public sealed partial class Game1
                 return;
             }
         }
+        _trainingFrameDelta = (float)Math.Clamp(dt, 0.0, 0.25);
         _trainingClock = TrainingClock.Advance(dt);
         if (_embeddedHost is { } host) host.Paused = TrainingClock.IsPaused;
         if (session.Advance())
         {
             Console.WriteLine("[training] mission complete");
             ClearTrainingSounds();
+            TrainingOwnState.Reset();
             TrainingController.EndMission();
             Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
             _trainingInputGate = null;
@@ -380,6 +473,7 @@ public sealed partial class Game1
     {
         Console.WriteLine($"[training] {error}");
         ClearTrainingSounds();
+        TrainingOwnState.Reset();
         Allegiance.ClientCore.Training.TrainingController.EndMission();
         Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
         _trainingInputGate = null;

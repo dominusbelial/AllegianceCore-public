@@ -32,6 +32,9 @@ public static class TrainingMissionIds
     public const int KeyConModeInvest = 71;         // TK_ConModeInvest (igc.h:294)
     public const int KeySuicide = 92;               // TK_Suicide (igc.h:315)
     public const int KeyTargetSelf = 100;           // TK_TargetSelf (igc.h:323)
+    public const int KeyTargetFriendly = 77;        // TK_TargetFriendly (igc.h:300)
+    public const int KeyTargetEnemy = 80;           // TK_TargetEnemy (igc.h:303) — the F key
+    public const int KeyTargetCenter = 90;          // TK_TargetCenter (igc.h:313) — target nearest reticle
     public const int KeyConModeTeleport = 210;      // TK_ConModeTeleport (igc.h:436)
 
     // Command ids (src/Igc/igc.h:898-912)

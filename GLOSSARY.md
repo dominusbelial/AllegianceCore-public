@@ -625,6 +625,15 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Training/TrainingInputGate.cs` before handlers in
   both HUD styles. Mission5 starts docked; other lessons start airborne.
   Certification and remaining gaps: `docs/reports/P882a_REPORT.md`.
+- **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
+  start-to-finish through the production path: client orders/target picks use the real
+  `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied
+  controls/state are `TrainingOwnState` in `src/Allegiance.ClientCore.Game/Training/TrainingRuntime.cs`,
+  and `src/Allegiance.ClientCore.Game/Training/ClientTrainingSite.cs` binds autopilot, camera,
+  equipment swaps/rearm and damage to the embedded host. The host flies a real station plan
+  (`src/Allegiance.SinglePlayer/Training/TrainingHost.cs`) and the lesson ends on the server's
+  DOCKED latch. `src/Allegiance.ClientCore/Flight/OwnShipSimulator.cs` supplies the `turnToFace`
+  hull kinematics. Report: `docs/reports/P881a_REPORT.md`.
 
 ## 5. Bots / MCP (`src/Allegiance.Bot`, `tools/allegiance-mcp`)
 

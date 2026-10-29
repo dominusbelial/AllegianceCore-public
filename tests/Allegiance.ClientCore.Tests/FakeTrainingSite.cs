@@ -49,6 +49,9 @@ public sealed class FakeTrainingSite : ITrainingSite
 
     public float TimeSeconds { get; set; }
 
+    /// <summary>Native <c>GetWindow()-&gt;GetDeltaTime()</c> — scriptable frame step.</summary>
+    public float FrameDeltaSeconds { get; set; } = 1f / 60f;
+
     public ITrainingObject PlayerShip { get; set; }
 
     public List<string> Messages { get; } = new();
@@ -90,7 +93,7 @@ public sealed class FakeTrainingSite : ITrainingSite
     }
 
     /// <summary>Advance the clock by <paramref name="dt"/> and expire any sounds whose time has passed.</summary>
-    public void Advance(float dt) => TimeSeconds += dt;
+    public void Advance(float dt) { TimeSeconds += dt; FrameDeltaSeconds = dt; }
 
     public void PressKey(int key) => _pendingKeys.Add(key);
 

@@ -103,6 +103,7 @@ public sealed class TurnToAction : Action
     private readonly ITrainingSite _site;
     private readonly TargetRef _object;
     private readonly TargetRef _target;
+    private readonly PlayerCurrentTarget? _currentTarget;
 
     public TurnToAction(ITrainingSite site, TargetRef obj, TargetRef target)
     {
@@ -111,10 +112,22 @@ public sealed class TurnToAction : Action
         _target = target;
     }
 
+    /// <summary>Native's lazy <c>TurnToAction(ship, new CurrentTarget(new PlayerShipTarget))</c>
+    /// (<c>Mission3.cpp:604-606</c>): the target is re-resolved to the player's live command
+    /// target every Execute instead of baking the target chosen at mission-build time (which
+    /// was null and fell back to the station, so the auto-turn fought the pointing check).</summary>
+    public TurnToAction(ITrainingSite site, TargetRef obj, PlayerCurrentTarget target)
+    {
+        _site = site;
+        _object = obj;
+        _currentTarget = target;
+    }
+
     public override void Execute()
     {
         ITrainingObject? ship = _site.Resolve(_object);
-        ITrainingObject? target = _site.Resolve(_target);
+        TargetRef targetRef = _currentTarget?.Resolve() ?? _target;
+        ITrainingObject? target = _site.Resolve(targetRef);
         if (ship is { } s && target is { } t)
         {
             // turnToFace(delta, dt, ship, &g_setInputControls) then damp each turn axis by 0.5

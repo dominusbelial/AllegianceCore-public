@@ -34,9 +34,11 @@ public sealed class PlayerCurrentTarget
         {
             _fetched = cur;
         }
-        else if (cur is { } c && f.Id != c.Id)
+        else if (cur is { } c && (c.Type != f.Type || c.Id != f.Id) && _site.Resolve(f) is not null)
         {
-            // target changed without eliminating the original — re-anchor (currenttarget.cpp:39-49)
+            // Target changed while the fetched one is still alive — re-anchor
+            // (currenttarget.cpp:39-49: `pFetched` dereferences to a live model, so an
+            // eliminated original stays latched and the destroy condition observes it).
             _fetched = cur;
         }
         return _fetched;

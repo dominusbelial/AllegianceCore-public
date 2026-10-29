@@ -1398,6 +1398,17 @@ public sealed partial class Ship : Model, IShipIgc
     public bool StayDocked { get; set; }
 
     /// <summary>
+    /// The ship's native autopilot latch (<c>IshipIGC::GetAutopilot</c> /
+    /// <c>SetAutopilot</c>, <c>shipIGC.h</c>). A trainer sets it through
+    /// <c>SetAutopilotAction</c> (<c>training/setautopilotaction.cpp:41-43</c>);
+    /// the navigation pass then keeps steering a player ship that is under a
+    /// station plan even though its controls are otherwise wire-owned
+    /// (see <see cref="ApplyNpcAutopilot"/>). NPC autopilot is implicit in
+    /// their goal slots and does not read this flag.
+    /// </summary>
+    public bool Autopilot { get; set; }
+
+    /// <summary>
     /// P751 — the server-side throttle stamp for ship under-attack / friendly-
     /// fire chat warnings (<c>FedSrvSiteBase::DamageShipEvent</c>,
     /// FedSrv.CPP:12089-12178). Native never reports more than once every
@@ -5984,7 +5995,11 @@ public sealed partial class Ship : Model, IShipIgc
     private void ApplyNpcAutopilot(double now)
     {
         if (StationId is not null) return;
-        if (!IsNpc && GotoWaypoint is null) return;          // real player Controls are wire-only (P155) — UNLESS a player-issued goto is active (P403)
+        // A real player's controls are wire-only (P155) — UNLESS a player-issued
+        // goto is active (P403) or the training host engaged the native autopilot
+        // latch (SetAutopilotAction, training/setautopilotaction.cpp:41-43) so the
+        // ship flies its station plan home.
+        if (!IsNpc && GotoWaypoint is null && !(Autopilot && PlanTarget is not null)) return;
         if (Sector is not { } sector) return;
         if (!_skillAutopilot && Velocity.LengthSquared() > 1 && Mission?.Skills is { } skills)
         {

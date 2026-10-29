@@ -33,6 +33,10 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
 
     public float TimeSeconds => (float)_host.Mission.LastUpdate;
 
+    /// <summary>Nominal simulation frame (native <c>GetWindow()-&gt;GetDeltaTime()</c>); the
+    /// headless driver advances one fixed step at a time.</summary>
+    public float FrameDeltaSeconds => 0.05f;
+
     public ITrainingObject PlayerShip => WrapShip(_host.PlayerShip);
 
     public ITrainingObject? Resolve(TargetRef r)
@@ -106,14 +110,14 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
     // SetDisplayMode/SetHudOverlay are no-ops here).
     public void DealDamage(bool toHull)
     {
-        // DoDamageAction (dodamageaction.cpp:24-50) on the real host: knock the player's armour
-        // down so GetShipIsDamagedCondition can observe it.
-        _host.DamageShip(_host.PlayerShipId, toHull ? 7000f : 950f);
+        // DoDamageAction (dodamageaction.cpp:24-50) on the real host ship: the shield/hull
+        // gauges move exactly as the action describes.
+        _host.DealDamage(toHull);
     }
     public void DamageShipAdjustable(TargetRef ship, float amount) => _host.DamageShipAdjustable(ship.Id, amount);
-    public void ToggleWeapon(int mount) { }
-    public void SwapWeapon(int equipmentType, int mount) { }
-    public void RepairAndRearm() { }
+    public void ToggleWeapon(int mount) => _host.ToggleWeapon(mount);
+    public void SwapWeapon(int equipmentType, int mount) => _host.SwapWeapon(equipmentType, mount);
+    public void RepairAndRearm() => _host.RepairRearm();
     public void ShowPane(int paneMask) { }
     public void SetEyeball(bool shown) { }
     public void SetSignature(ObjectType type, int id, float signature) { }
