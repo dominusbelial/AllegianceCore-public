@@ -16,8 +16,9 @@ namespace Allegiance.Core.Transport;
 /// a fixed pool of workers that drain hash-partitioned per-peer queues
 /// (round-robin, per-peer order preserved), so a 1000+-peer server does not
 /// need 1000+ dedicated send threads. Selected at server start via
-/// <c>transport.mode</c> config / <c>ALLEGIANCE_TRANSPORT_MODE</c>; default
-/// thread-per-peer (today's behaviour, unchanged).
+/// <c>transport.mode</c> config / <c>ALLEGIANCE_TRANSPORT_MODE</c>; the server
+/// default since P887 (the rig baseline) is pool; an explicit
+/// "thread-per-peer" selects the per-peer writer threads.
 /// </summary>
 public enum TransportMode
 {
@@ -314,8 +315,9 @@ public sealed class TcpTransport : ITransport
 
     // P605 test seam (InternalsVisibleTo): the mode a transport constructed
     // without an explicit mode argument falls back to. Lets the transport test
-    // suite run the SAME body under both modes. Default thread-per-peer =
-    // today's behaviour.
+    // suite run the SAME body under both modes. (This is a transport-test
+    // fallback, independent of the SERVER config default, which since P887 is
+    // pool — the server always passes its resolved mode explicitly.)
     internal static TransportMode DefaultMode { get; set; } = TransportMode.ThreadPerPeer;
     // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
     // read loop and the overflow/disconnect path (DropPeer) try to reap it.

@@ -385,9 +385,9 @@ public class TcpTransportSendWorkerPoolTests
     /// (5) Config binding end-to-end: boot a real server with
     /// <c>transport.mode=pool</c> (and an explicit worker count) and assert the
     /// server resolves pool mode, the transport is in pool mode, and it spun up
-    /// exactly that many workers. Also pins the DEFAULT is thread-per-peer
-    /// (today's behaviour) on a default boot — so selecting the pool is an
-    /// explicit, labelled opt-in and never changes an unconfigured server.
+    /// exactly that many workers. Also pins the DEFAULT is pool since P887
+    /// (the rig baseline) on a default boot — so thread-per-peer is an
+    /// explicit, labelled opt-in, never an unconfigured server's path.
     /// </summary>
     private static Cfg Cfg(int port = 0, TrCfg? transport = null) => new()
     {
@@ -404,11 +404,25 @@ public class TcpTransportSendWorkerPoolTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Default_server_boot_stays_thread_per_peer()
+    public void Default_server_boots_in_pool_mode()
     {
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Cfg(transport: null));
+        Assert.True(server.Host.Transport!.IsPoolMode);
+        Assert.Equal(TransportMode.Pool, server._transportMode);
+        // Unset poolWorkers → about the core count.
+        Assert.Equal(Environment.ProcessorCount, server._transportPoolWorkers);
+        Assert.Equal(Environment.ProcessorCount, server.Host.Transport.PoolWorkerThreadCount());
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Explicit_thread_per_peer_config_boot_stays_thread_per_peer()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Cfg(transport: new TrCfg { Mode = "thread-per-peer" }));
         Assert.False(server.Host.Transport!.IsPoolMode);
         Assert.Equal(TransportMode.ThreadPerPeer, server._transportMode);
         Assert.Equal(0, server.Host.Transport.PoolWorkerThreadCount());
@@ -428,9 +442,9 @@ public class TcpTransportSendWorkerPoolTests
     }
 
     /// <summary>Verify the active mode is PRINTED at boot in both variants —
-    /// <c>[boot] transport mode = pool (N workers)</c> and
-    /// <c>[boot] transport mode = thread-per-peer</c> — so a live server run
-    /// (and any measurement) is self-labelling.</summary>
+    /// <c>[boot] transport mode = pool (N workers)</c> (the default) and
+    /// <c>[boot] transport mode = thread-per-peer</c> (explicit override) — so
+    /// a live server run (and any measurement) is self-labelling.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Boot_line_prints_the_active_transport_mode()
@@ -452,7 +466,9 @@ public class TcpTransportSendWorkerPoolTests
 
         Assert.Contains("[boot] transport mode = pool (3 workers)",
             BootOnce(new TrCfg { Mode = "pool", PoolWorkers = 3 }));
-        Assert.Contains("[boot] transport mode = thread-per-peer",
+        Assert.Contains($"[boot] transport mode = pool ({Environment.ProcessorCount} workers)",
             BootOnce(null));
+        Assert.Contains("[boot] transport mode = thread-per-peer",
+            BootOnce(new TrCfg { Mode = "thread-per-peer" }));
     }
 }

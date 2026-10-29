@@ -184,7 +184,7 @@ public abstract class TcpTransportPriorityLaneTestsBase
     }
 }
 
-/// <summary>P634 priority-lane suite under thread-per-peer (default) mode.</summary>
+/// <summary>P634 priority-lane suite under thread-per-peer mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportPriorityLaneThreadPerPeerTests : TcpTransportPriorityLaneTestsBase
 {

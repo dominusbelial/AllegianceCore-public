@@ -4,6 +4,40 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P887 gate observations (2026-10-29)
+
+P887 flips three server defaults to the rig baseline (parallelBuild, native ship-update
+model, pool transport). Two Fast sweeps were run during the gate
+(`tiers-20261029T175614.547114Z`, then after the test pins below,
+`tiers-20261029T181742.259466Z`); the final one: **11,726 executions, 556.8 s**,
+infrastructure PASS, with these non-task failures, each **passed 3/3 alone**
+immediately afterwards — load flakes under the parallel sweep:
+
+| test | sweep result | 3× isolated |
+| --- | --- | --- |
+| `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate` | failed once in sweep 1 (also the sweep-1 calibrated-limit offender at 14 s); passes ~100 ms alone | **3/3 pass** |
+| `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | failed once in sweep 1 ("travelled 126.161"); passes alone | **3/3 pass** |
+| `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | failed once in sweep 2 (relay list timing) | **3/3 pass** (with `DockDockingTests`, 1 s each) |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | failed once in sweep 2 (already ledgered under P872) | **3/3 pass** |
+| `P871bCreateGameClientTests.Ready_joins_the_created_mission_and_failure_stays_on_the_wizard(fail: False)` | failed once in sweep 2 (created-mission address null at line 113) | **3/3 pass** (with `P804ClientLeadTests`) |
+| `P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame` | failed once in sweep 2 (already-ledgered allocation-assertion load flake) | **3/3 pass** |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` (ClientCore) | failed once in sweep 1 (already-ledgered logon-drain order flake) | **3/3 pass** |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | failed once in sweep 1 (already-ledgered launcher-receipt flake) | **3/3 pass** |
+
+The already-ledgered `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+failed in both sweeps AND 3/3 alone (null `DefendTarget` at line 179) — the pre-existing
+baseline failure recorded under P872/P882a, identical on a clean HEAD worktree; not a P887
+regression (P887 changes broadcast defaults, not NPC dispatch).
+
+**Showcase never-parks 5×:** nine paired runs of
+`P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`
++ `P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`:
+7 clean 2/2, 2 runs (2 and 4) failed one of the pair with no assertion detail captured
+(`-v q`-style tail), matching the already-ledgered host-load class for both tests
+(9–11 min runs vs the ~1m50s base rate). **3/3 immediate isolated re-runs passed 2/2**
+(7:57–11:15). No product code on those paths changed (P887 touches server broadcast
+transport defaults; the parking bound is bot-speed-under-load).
+
 ## P884 verification observations (2026-10-29)
 
 One Fast sweep (`tiers-20261029T125355.788869Z`): **11,677 tests, 458.1 s**, all infrastructure

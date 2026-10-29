@@ -738,7 +738,10 @@ public sealed class ProfilerConfig
 
 /// <summary>
 /// P603 — the parallel per-peer broadcast-build configuration (top-level
-/// <c>broadcast</c> section). Parallel building is OFF by default. P659's
+/// <c>broadcast</c> section). Parallel building is ON by default since P887
+/// (the 200v200 rig baseline); an explicit <c>parallelBuild: false</c> or
+/// <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD=0</c> selects the serial builders.
+/// P659's
 /// independent <c>minUpdateHz</c> pose floor defaults to 2 Hz (0 restores the
 /// pre-floor ranked budget). When parallel building is on, <c>BroadcastShipStates</c> splits into a serial
 /// snapshot phase + a parallel per-peer build phase + a serial enqueue phase,
@@ -786,11 +789,14 @@ public sealed class BroadcastConfig
     public double MinUpdateHz { get; set; } = 2;
 
     /// <summary>
-    /// Parallel-build switch. <c>false</c> (the default) uses the serial builders.
-    /// Serial and parallel modes apply the same independent pose floor.
-    /// <c>true</c> enables the parallel per-peer build path (gated per build).
+    /// Parallel-build switch. <c>true</c> (the default since P887 — the rig
+    /// baseline, P603/P887) uses the parallel per-peer build path (gated per
+    /// build; payloads byte-identical to serial). <c>false</c> selects the
+    /// serial builders. Serial and parallel modes apply the same independent
+    /// pose floor. Overridable at boot by <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c>
+    /// (env wins).
     /// </summary>
-    public bool ParallelBuild { get; set; }
+    public bool ParallelBuild { get; set; } = true;
 
     /// <summary>
     /// P603 — cap on the parallel build phase's degree of parallelism
@@ -804,34 +810,37 @@ public sealed class BroadcastConfig
 
     /// <summary>
     /// P604 — which per-peer ship-state update model the server uses:
-    /// <c>"port"</c> (the default; today's per-tick O(N²) teammate
-    /// <c>SINGLE_SHIP_UPDATE(78)</c> position <c>posBatch</c> stream is sent to
-    /// every same-side peer every tick, plus the P608 owner own-ship stream) or
-    /// <c>"native"</c> (the port's per-tick teammate <c>posBatch</c> stream is
-    /// suppressed and ALL remote-ship positions travel only through the native
-    /// deviation-ranked HEAVY/LIGHT_SHIPS_UPDATE(176/175) budget — see
-    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md). Overridable at boot by
-    /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> (env wins). An unrecognized value
-    /// fails loudly at boot. The default is <c>"port"</c>; it flips to
-    /// <c>"native"</c> in a follow-up once the A/B (and a 221 run) shows it is
-    /// faster, smooth on the client, and the bots navigate.
+    /// <c>"port"</c> (the per-tick O(N²) teammate <c>SINGLE_SHIP_UPDATE(78)</c>
+    /// position <c>posBatch</c> stream is sent to every same-side peer every
+    /// tick, plus the P608 owner own-ship stream) or <c>"native"</c> (the
+    /// port's per-tick teammate <c>posBatch</c> stream is suppressed and ALL
+    /// remote-ship positions travel only through the native deviation-ranked
+    /// HEAVY/LIGHT_SHIPS_UPDATE(176/175) budget — see
+    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md). The default is
+    /// <c>"native"</c> since P887 (the rig baseline; the rig has run native
+    /// since b4x — P604's own doc comment said to flip it after the rig A/B).
+    /// An explicit <c>"port"</c> selects the old per-tick teammate stream.
+    /// Overridable at boot by <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> (env wins).
+    /// An unrecognized value fails loudly at boot.
     /// </summary>
     public string? ShipUpdateModel { get; set; }
 }
 
 /// <summary>
 /// P605 — the server transport's send-draining mode (top-level
-/// <c>transport</c> section). Absent section (the default) = thread-per-peer,
-/// today's behaviour — each peer's send queue is drained by its own
-/// dedicated writer thread. <c>mode: "pool"</c> selects the fixed send-worker
-/// pool (a bounded set of workers draining hash-partitioned per-peer queues,
-/// per-peer order preserved, slow peers skipped not blocked). See
+/// <c>transport</c> section). Absent section (the default since P887) =
+/// <c>"pool"</c>: a bounded set of send workers (about the core count)
+/// draining hash-partitioned per-peer queues. <c>mode: "thread-per-peer"</c>
+/// selects the old path — each peer's send queue is drained by its own
+/// dedicated writer thread. See
 /// docs/reports/P605_SEND_WORKER_POOL_TRANSPORT.md.
 /// </summary>
 public sealed class TransportConfig
 {
     /// <summary>
-    /// <c>"thread-per-peer"</c> (default) or <c>"pool"</c>. Case-insensitive;
+    /// <c>"pool"</c> (the default since P887 — the rig baseline, P605/P887) or
+    /// <c>"thread-per-peer"</c> (the old dedicated-writer-thread path). An
+    /// explicit <c>"thread-per-peer"</c> still selects it. Case-insensitive;
     /// overridable at boot by <c>ALLEGIANCE_TRANSPORT_MODE</c> (env wins).
     /// An unrecognized value fails loudly at boot.
     /// </summary>
@@ -1152,15 +1161,15 @@ public sealed class ServerConfig
     public ProfilerConfig? Profiler { get; set; }
 
     /// <summary>
-    /// Per-peer broadcast settings. Null/absent uses serial building, the port
-    /// ship-update model and P659's 2 Hz pose floor. See <see cref="BroadcastConfig"/>.
+    /// Per-peer broadcast settings. Null/absent uses parallel building and the
+    /// native ship-update model (the P887 rig baseline) plus P659's 2 Hz pose
+    /// floor. See <see cref="BroadcastConfig"/>.
     /// </summary>
     public BroadcastConfig? Broadcast { get; set; }
 
     /// <summary>
     /// P605 — the server transport's send-draining mode. Null/absent (the
-    /// default) = thread-per-peer, today's behaviour (unchanged). See
-    /// <see cref="TransportConfig"/>.
+    /// default since P887) = pool. See <see cref="TransportConfig"/>.
     /// </summary>
     public TransportConfig? Transport { get; set; }
 

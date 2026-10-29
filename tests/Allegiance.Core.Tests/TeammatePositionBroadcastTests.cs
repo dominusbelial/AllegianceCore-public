@@ -32,6 +32,10 @@ public class TeammatePositionBroadcastTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        // P887 — exercises the PORT per-tick teammate posBatch (SINGLE_SHIP_UPDATE)
+        // stream; pin the old model explicitly now that "native" is the default
+        // (native suppresses the posBatch stream entirely).
+        Broadcast = new() { ShipUpdateModel = "port" },
         Games =
         [
             new Gm { Name = "Teammate Position Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

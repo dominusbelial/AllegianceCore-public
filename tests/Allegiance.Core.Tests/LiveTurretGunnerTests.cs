@@ -51,6 +51,11 @@ public class LiveTurretGunnerBindingTests
         Port = port,
         UpdatesPerSecond = 20,
         SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
+        // P887 — scenario 7 asserts the P209 orientation gate on the PORT
+        // per-tick teammate posBatch (SINGLE_SHIP_UPDATE); pin the old model
+        // explicitly now that "native" is the default (native suppresses the
+        // posBatch stream; orientation rides HEAVY/LIGHT there).
+        Broadcast = new() { ShipUpdateModel = "port" },
         Games =
         [
             new Gm { Name = "Turret Gunner", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

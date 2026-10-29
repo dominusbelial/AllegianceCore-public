@@ -12,7 +12,8 @@ namespace Allegiance.Core.Tests;
 
 /// <summary>
 /// P604 — the native deviation-ranked ship-update budget model
-/// (<c>broadcast.shipUpdateModel: "native"</c>). Port mode (the default) sends
+/// (<c>broadcast.shipUpdateModel: "native"</c> — the default since P887).
+/// Port mode sends
 /// every dirty same-side teammate's position every tick as a per-tick
 /// <c>posBatch</c> SingleShipUpdate(78) stream — the O(N²) cost P600 measured at
 /// ~58% of the tick (9.5 ms @ 241 players). Native mode suppresses that stream:
@@ -76,17 +77,18 @@ public sealed class NativeShipUpdateModelTests
         return (h, l);
     }
 
-    /// <summary>⭐ Contract 1 — the flag defaults to "port" (today's behaviour,
-    /// byte-for-byte) when no config/env selects otherwise.</summary>
+    /// <summary>⭐ Contract 1 — the flag defaults to "native" since P887 (the
+    /// rig baseline) when no config/env selects otherwise; an explicit
+    /// "port" still selects the old path.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Ship_update_model_defaults_to_port()
+    public void Ship_update_model_defaults_to_native()
     {
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
-        Assert.False(server._nativeShipUpdates, "no config/env → must default to port");
-        Assert.Equal("port", server._shipUpdateModel);
+        Assert.True(server._nativeShipUpdates, "no config/env → must default to native");
+        Assert.Equal("native", server._shipUpdateModel);
     }
 
     /// <summary>A fabricated world with <paramref name="peerCount"/> same-side

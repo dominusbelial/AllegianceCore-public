@@ -15,7 +15,7 @@ namespace Allegiance.Core.Tests;
 /// <summary>
 /// P603 — byte-identity proof that the parallel per-peer broadcast build
 /// (<c>broadcast.parallelBuild</c>) emits EXACTLY the same per-peer outbound
-/// payload bytes, in the same per-peer order, as the serial (default) builder,
+/// payload bytes, in the same per-peer order, as the serial builder,
 /// across several deterministically-fabricated worlds (many peers, mixed sides,
 /// multiple sectors, docked + flying + moving ships, cluster-info payload, and
 /// same-side NPCs). It drives <c>BroadcastShipStates</c> + <c>BroadcastShipsUpdate</c>
@@ -188,14 +188,15 @@ public class ParallelBroadcastByteIdentityTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Parallel_flag_defaults_off_and_config_binds()
+    public void Parallel_flag_defaults_on_and_config_binds()
     {
-        // The flag is OFF by default (an absent broadcast section), so the serial
-        // path is selected. Verify the resolved field is false on a default boot.
+        // The flag is ON by default since P887 (the rig baseline; an absent
+        // broadcast section still selects the parallel path). Verify the
+        // resolved field is true on a default boot.
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
-        Assert.False(server._broadcastParallelBuild);
+        Assert.True(server._broadcastParallelBuild);
         Assert.True(server._broadcastMaxParallelism >= 1);
     }
 

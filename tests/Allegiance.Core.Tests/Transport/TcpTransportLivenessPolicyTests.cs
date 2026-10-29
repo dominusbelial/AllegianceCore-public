@@ -501,7 +501,7 @@ public abstract class TcpTransportLivenessPolicyTestsBase
     }
 }
 
-/// <summary>P611 liveness-policy suite under thread-per-peer (default) mode.</summary>
+/// <summary>P611 liveness-policy suite under thread-per-peer mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportLivenessPolicyThreadPerPeerTests : TcpTransportLivenessPolicyTestsBase
 {

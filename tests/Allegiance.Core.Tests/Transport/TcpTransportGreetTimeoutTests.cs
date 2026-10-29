@@ -253,8 +253,8 @@ public abstract class TcpTransportGreetTimeoutTestsBase
     }
 }
 
-/// <summary>P605 — the greet-timeout suite under thread-per-peer (today's
-/// default) transport mode.</summary>
+/// <summary>P605 — the greet-timeout suite under thread-per-peer
+/// transport mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportGreetTimeoutThreadPerPeerTests : TcpTransportGreetTimeoutTestsBase
 {
