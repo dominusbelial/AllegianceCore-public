@@ -43,6 +43,8 @@
     <ProjectReference Include="..\..\src\Allegiance.Lobby\Allegiance.Lobby.csproj" />
     <!-- P812: the native-mesh ↔ glTF prototype tool (public API exercised directly) -->
     <ProjectReference Include="..\..\tools\mdl-to-glb\mdl-to-glb.csproj" />
+    <!-- P870: native Core2Text/Text2Core static-core text round trip tool -->
+    <ProjectReference Include="..\..\tools\core2txt\core2txt.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -62,6 +62,22 @@ is time-based: the peer waits for the 30 s side-select auto-seat
 the “directly behind my facing” premise decays whenever the host is loaded. The
 fix, if anyone picks it up: freeze the enemy (`OrderIdle`) or seat the peer
 explicitly instead of relying on the auto-seat deadline.
+## P870b verification observations (2026-10-29)
+
+The one Fast sweep (`tiers-20261029T002727`) ran **11,500 cases, 19 failed, 3
+optional skips** in 815 s; infrastructure **PASS**, calibrated Fast limit 10.32 s.
+**31 P870 cases** (30 Fast + 1 Live) passed and are certified separately (3x
+alone each). The P730 two-match showcase passed **5/5** (4m15s-5m20s per run).
+
+Two distinct failure sets, none in P870 code (`src/` untouched):
+
+| Set | Methods | 3x alone | Verdict |
+|---|---|---|---|
+| NPC travel/layer steering | 16 methods in `P591bLayerPingPongTests`, `P591cDroneRoutingTests`, `NpcDodgeLiveTests`, `NpcAutopilotLiveTests`, `NpcCrossClusterMinerDecisionLiveTests`, `InitialMinerSpawnLiveTests` | **0/3 every one** | **Pre-existing at the dispatch base**, not a flake: the base already carries `d0d0acca` "Native NPC GotoPlan on by default", which changed NPC steering under these legacy non-GotoPlan tests. Reproduced on an unmodified `src/` tree (this lane changed only tools/tests/docs). For whoever owns the GotoPlan default: either re-baseline these expectations to native GotoPlan or pin `sim.nativeGotoPlan=false` for them. |
+| Load-sensitive | `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout`, `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity`, `ClientCore MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner(gunner: False)` | **3/3 each** | Load flakes (host load ~3.6 at check time; 24-CPU host shared with other lanes). The sweep also flagged 9 calibrated-limit offenders, all in the same NPC-routing set plus the miner spawn test (25-52 s vs 10.3 s). |
+
+No P870b test timed out or failed in the sweep.
+
 ## P868 verification observations (2026-10-28)
 
 The one Fast sweep retains **11,404 passed / 39 failed / 3 optional skips**

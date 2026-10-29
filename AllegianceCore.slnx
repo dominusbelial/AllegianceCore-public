@@ -25,6 +25,7 @@
     <Project Path="tools/benchmark/benchmark.csproj" />
     <Project Path="tools/skirmish-proof/skirmish-proof.csproj" />
     <Project Path="tools/igcdump/igcdump.csproj" />
+    <Project Path="tools/core2txt/core2txt.csproj" />
     <Project Path="tools/mdl-to-glb/mdl-to-glb.csproj" />
     <Project Path="tools/tech-tree/tech-tree.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />
