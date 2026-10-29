@@ -1,0 +1,73 @@
+{
+  "source_revision": "1d11f11487e02dc4a5d766b78b265ec1d0ab04d4",
+  "runtime": "SDK 10.0.400 / .NET 10 Release JIT, server GC",
+  "cpu": "Intel Core Ultra 9 285HX",
+  "physical_cores": 24,
+  "threads": 24,
+  "method": "last 18 five-second window means before each summary; 150s observation after spawn; sequential; real loopback bots",
+  "points": [
+    {
+      "bots": 60,
+      "peers": 63,
+      "median_window_mean_ms": 1.5150000000000001,
+      "q1_ms": 1.4275,
+      "q3_ms": 1.58,
+      "median_window_p95_ms": 2.175,
+      "windows": 18,
+      "measured_seconds": 150.0,
+      "shots": 32,
+      "hits": 0,
+      "kills": 0,
+      "simulation_failures": 0
+    },
+    {
+      "bots": 120,
+      "peers": 123,
+      "median_window_mean_ms": 2.3200000000000003,
+      "q1_ms": 2.2375000000000003,
+      "q3_ms": 2.4375,
+      "median_window_p95_ms": 2.865,
+      "windows": 18,
+      "measured_seconds": 150.0,
+      "shots": 13,
+      "hits": 0,
+      "kills": 0,
+      "simulation_failures": 0
+    },
+    {
+      "bots": 240,
+      "peers": 243,
+      "median_window_mean_ms": 16.305,
+      "q1_ms": 15.8925,
+      "q3_ms": 17.0925,
+      "median_window_p95_ms": 18.095,
+      "windows": 18,
+      "measured_seconds": 150.0,
+      "shots": 1248,
+      "hits": 0,
+      "kills": 0,
+      "simulation_failures": 0
+    },
+    {
+      "bots": 300,
+      "peers": 303,
+      "median_window_mean_ms": 18.39,
+      "q1_ms": 18.150000000000002,
+      "q3_ms": 18.7725,
+      "median_window_p95_ms": 20.48,
+      "windows": 18,
+      "measured_seconds": 150.0,
+      "shots": 1430,
+      "hits": 0,
+      "kills": 0,
+      "simulation_failures": 0
+    }
+  ],
+  "fit": {
+    "a": 1.754279398292064,
+    "r_squared": 0.9252744604683081,
+    "coefficient": 0.0008231026467880889,
+    "k": 0.5,
+    "accepted": false
+  }
+}

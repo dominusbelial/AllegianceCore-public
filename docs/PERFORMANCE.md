@@ -96,6 +96,89 @@ Not every row is a code default yet: see the README's "Recommended settings" for
 - **Heap per match:** the heap floor still rises from match to match without tick cost so far (investigation P884/P884b).
 - **Time dilation ≥ 0.95 in every window:** the rare surge windows (≈ 0.6 %) are the remaining gap.
 
+## Allegiance Index
+
+**AIX = Players × Quality × Headroom^k × Battle**, in effective players at
+full quality. It is a session comparison, with an absolute score and a score
+per **server physical core**. The rig card also reports total machines; bot
+hosts do not divide the score. See the [history CSV](benchmarks/aix-history.csv),
+[rig card](benchmarks/rig-221.json) and [calibration report](reports/AIX1_REPORT.md).
+
+A busy window is a 5-second `[tickprof] window` with tick-wall mean **≥ 5 ms**
+(the named `BUSY_MEAN_MS` constant). Quality is the fraction of busy windows
+with **ticks ≥ 95, p95 ≤ 40 ms and dilation ≥ 0.95 when reported**. The
+profiler label's `sim.timeScale` is used when available, with the following
+`[tidi]` line taking precedence. Missing dilation is reported as missing
+coverage. This score does not add a p99 condition to the requested bar.
+Headroom is **min(4, 40 ms / median busy-window p95)**; it can be below one.
+
+Players is the mean of the nearest UTC `peers` samples, within 10 seconds of
+each busy window. Every busy window must have a match. Otherwise the entire
+session falls back to final `[gameover-timing] ... winner=... peers=N`
+summaries, then explicit `--players N`. Intermediate declaration/migration
+lines are excluded. The supplied historical logs have no timestamps: b45–b47
+use an explicit 394 from the rig scenario card; b49–b55 use final summaries.
+A whole day's peers average is never substituted for a missing timestamp.
+
+**The exponent is calibrated, not a capacity promise.** Four sequential local
+showcase measurements use the current baseline (snapshot, encode once,
+parallel build, pool transport, native ship updates and native GotoPlan,
+server GC; interest tiers, native broadcast order and decoupled receive off).
+The power fit uses `log(cost) = log(c) + a × log(peers)`, with `k = 1/a` only
+for a positive slope and log-space R² ≥ 0.95. The measured a = 1.7543,
+R² = 0.9253 fails that bar, so **k = 0.5** is the fallback used here. The
+[report](reports/AIX1_REPORT.md) records the measured points, fit quality,
+workload limits and comparison with P600/P603/P605. All history rows share
+the same exponent; `--k` permits an explicitly documented recalibration.
+
+**Battle** uses b55 as a fixed reference. Kill rate is the sum of the sides'
+finale kills divided by bot-minutes in those completed match intervals;
+`[scoring] ... final score ... kills=` is the fallback. Bot incidents use
+their own capture uptime, since the supplied bot and server excerpts can
+differ in length. Station credit comes from scoring `baseKills`, or a
+proxy of distinct damage-backed station strike outcomes per match. A target
+that disappears at rotation without recorded hits does not prove a kill.
+Bot `[stall]` incidents within ±30 seconds of re-ready rotation markers
+(using the bot log's uptime) are excluded. Disconnects are explicit bot
+`disconnected` / `disconnect ... reason=` events.
+
+Activity ratios are `min(1, rate/reference)`. Incident ratios are
+`min(1, (1 + 1000 × reference rate)/(1 + 1000 × rate))`; the one-incident-per-
+1000-bot-minute smoothing makes a zero-incident reference usable. Battle is
+the geometric mean of comparable ratios, capped at one. Missing metrics
+and zero-reference activity rates are **unscored**, with coverage reported.
+The b55 evidence has no verified station kills, so that component is
+unscored throughout the history. b45–b47 also lack final kill totals.
+Do not compare partially observed Battle scores as though coverage were equal.
+With only profiler evidence the output is labelled **server-only**, Battle
+is omitted, and its numerical multiplier is one.
+
+Run from the repository root (Python 3.10+; standard library only):
+
+```bash
+python3 scripts/allegiance-index.py \
+  --server "$EVIDENCE/server/b55-prof-2026-10-29.log" \
+  --samples "$EVIDENCE/samples/2026-10-29.csv" \
+  --bots "$EVIDENCE/bots/b55/err.worker-1.log" "$EVIDENCE/bots/b55/err.worker-2.log" \
+  --rig docs/benchmarks/rig-221.json --label b55 --json "$OUTPUT/aix-b55.json"
+```
+
+`EVIDENCE` and `OUTPUT` name existing local directories. Repeat `--server`
+for chronological pieces (b54 needs both dates); repeat `--samples` or
+`--bots`, or supply several paths after either option. Timestamped profiler
+overlap is deduplicated; untimestamped pieces must be nonoverlapping.
+`--reference FILE` selects a reference JSON with `label` and `metrics` like
+[the default b55 reference](benchmarks/aix-b55-reference.json).
+The [batch hook](../tools/aix-batch.md) documents the operator's deploy-chain
+command; this change does not modify deployment.
+
+The supplied history rises from **AIX 217.9 at b49 to 507.5 at b50** after
+P863, and **544.7 at b55 (68.1/core, two machines)**. b54, merged across
+midnight, is 519.8. b48 is explicitly unavailable because no server log was
+supplied. Battle is only partly observed; these numbers summarize the
+captured workload, not client smoothness, WAN latency, equal battle
+intensity or guaranteed maximum player capacity.
+
 ## Reports
 
 P600, P603, P604, P605, P618, P619, P659, P668, P669, P863 and P863b in `docs/reports/` hold the local measurements and

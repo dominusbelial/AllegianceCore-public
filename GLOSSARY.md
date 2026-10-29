@@ -941,6 +941,13 @@ list in **reverse**.
 
 ## 10. Dev tooling (P811)
 
+- **Allegiance Index (AIX1)** — server-session effective-player benchmark in
+  `scripts/allegiance-index.py`, with stdlib fixture tests in
+  `scripts/tests/test_allegiance_index.py`; formula and usage in
+  `docs/PERFORMANCE.md`, batch hook in `tools/aix-batch.md`, hardware and
+  reference data under `docs/benchmarks/`. Calibration, evidence coverage and
+  history: `docs/reports/AIX1_REPORT.md`. Modern tooling; no native rule.
+
 - **`GLOSSARY.md`** — this file; update it when adding a system.
 - **`scripts/dev-stack.sh`** — one-command local stack
   (`up|down|status`; `--local` processes or `--docker` compose; `--bots`,
