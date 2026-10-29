@@ -558,6 +558,13 @@ list in **reverse**.
   `src/Allegiance.ClientCore/Training/`, and the pre/post slideshows are
   `SlideshowModel` + `TrainingSlideData` (native slides from the artwork corpus's
   tm_*.mdl) driven by `Game1.IntroScreen.cs`'s TrainingSlideshow view.
+  P873 binds loopback login to the host trainee through `ShipSpawner`, defers the
+  script until an airborne player pose is replicated, logs nested goal paths, and
+  maps mission-local voice ids in `src/Allegiance.ClientCore/Training/TrainingSoundCatalog.cs`.
+  Certification (including live binding gaps): `docs/parity/training-matrix.csv`,
+  `tools/p873-training-audit.py`, `docs/reports/P873_REPORT.md`.
+  Native training authoring commands (asteroid TSV and narration comments):
+  `tools/p873-training-tools.py`.
 
 ## 5. Bots / MCP (`src/Allegiance.Bot`, `tools/allegiance-mcp`)
 

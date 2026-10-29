@@ -36,6 +36,27 @@ public abstract class TrainingMission
 
     protected TrainingMission(ITrainingSite site) => Site = site;
 
+    /// <summary>One-based nested goal path for diagnostics; does not evaluate the graph.</summary>
+    public string ActiveGoalPath
+    {
+        get
+        {
+            var path = new List<int>();
+            Condition? node = _condition;
+            while (node is not null)
+            {
+                if (node is Goal goal) node = goal.SuccessCondition;
+                else if (node is GoalList list && list.CurrentGoal is { } current)
+                {
+                    path.Add(list.CurrentNumber);
+                    node = current;
+                }
+                else break;
+            }
+            return path.Count == 0 ? "complete" : string.Join(".", path);
+        }
+    }
+
     public abstract int GetMissionID();
     public abstract int GetStartSectorId();
     protected abstract void CreateUniverse();

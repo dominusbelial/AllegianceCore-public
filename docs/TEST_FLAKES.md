@@ -3512,3 +3512,24 @@ and cash spawns. The runner's automatic retry passes, followed by **3/3** manual
 exact-method isolated passes. The original failed receipt remains in the one
 Fast sweep. Overall original outcomes are **11,408 pass / 8 fail / 3 skip**;
 infrastructure 9/9 and the Fast timing guard pass.
+
+## P873 training verification (2026-10-28)
+
+`TR5TrainingMissions810Tests.Mission8_RunsToCompletion_AgainstTheRealEmbeddedHost`
+failed the broader training regression sweep (61 passed / 1 failed) at
+`goal 3: bomber never crossed into sector 1052`. An isolated run with the original
+`HEAD` version of `TrainingHost.cs` restored for compilation failed at exactly the
+same assertion (about 74 seconds). The P873 host was restored afterwards. This is
+an existing headless Nanite fixture/completion gap, not established intermittency;
+do not call the lesson live-certified or silently skip the test. The native/live
+binding gaps and follow-up rows are in `docs/reports/P873_REPORT.md` and
+`docs/parity/training-matrix.csv`.
+
+P873's required Fast sweep (`tiers-20261029T000219.057074Z`) ran 11,475 cases:
+11,468 passed / 4 failed / 3 optional skips. The failures repeat the existing
+read-only default profile config, radar off-screen premise, P761b queued station
+relay, and quarantined AddPart ambient-treasure observations. The AddPart retry
+passed. P750's native asteroid research test passed but took 10.623 s against
+10 s. Scratch `XDG_CONFIG_HOME` makes the profile test pass alone. All 13 new
+P873 cases passed in the sweep and 3/3 isolated suite runs. The gate is retained
+as red; no timing limits, unrelated fixtures or skips were changed.

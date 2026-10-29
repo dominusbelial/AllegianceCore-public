@@ -117,6 +117,7 @@ public static class ShipStandInModel
 
         var bone = new ModelBone { Index = 0, Transform = Matrix.Identity };
         bone.AddMesh(mesh);
+        mesh.ParentBone = bone; // AddMesh does not establish the inverse link in MonoGame.
 
         var model = new Model(gd, new List<ModelBone> { bone }, new List<ModelMesh> { mesh });
         // Single bone with no parent → the Model ctor already made it the root;
