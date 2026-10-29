@@ -220,6 +220,17 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb precise assertions
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
+        // Native GotoPlan travels only along routes/targets the side has seen
+        // (common.cpp:899-927 + igc.h:4909-4913: GetCluster(pship, model) is null when
+        // !pship->CanSee(model)). The decision cycle (P652 domain) stays
+        // visibility-blind, but the travel leg needs the route (bShowMap reveal,
+        // missionigc.cpp:4056-4071 + mapmakerigc.cpp:1002-1017) and the far rock
+        // marked the way a scouted field is — the same seeding P528b's economic-cycle
+        // fixture documents. The direct Stage write bypasses the lobby's
+        // Started-transition seed (Server.Lobby.cs:2132), so seed explicitly. The
+        // rock the fixture places (below, via ShipSpawner) is marked seen after it
+        // exists, in Phase 1.
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p158_miner");
         bot.SendLogonRequest(Request("p158_miner"));
@@ -245,6 +256,12 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         Assert.NotNull(npc.MiningAsteroidTarget);
         Assert.Equal(rock.Data.AsteroidId, npc.MiningAsteroidTarget!.Data.AsteroidId);
         Assert.Null(npc.PlanTarget);                    // mutual exclusion: mining XOR selling
+
+        // Mark the placed rock seen the way a scouted field is (P528b seeding
+        // pattern): a rock is c_mtSeenBySide (asteroidigc.cpp:36) and native
+        // GotoPlan only flies toward targets pship->CanSee (igc.h:4909-4913),
+        // which the side gains here exactly as a scout's sweep would grant it.
+        foreach (var side in mission!.Sides) rock!.SideVisibility.SetSideVisibility(side.Id, true);
 
         // ── Phase 2: travels to and transits through the connecting warp ──────
         int ti = 0;
@@ -308,6 +325,8 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb precise assertions
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
+        // Same route-visibility seeding as the mining-leg test (native cites there).
+        foreach (var __m in server.Missions) __m.SeedStartingVisibility();
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p158_seller");
         bot.SendLogonRequest(Request("p158_seller"));

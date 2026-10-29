@@ -66,14 +66,11 @@ public sealed class NpcDodgeLiveTests
         return n;
     }
 
-    private static DataStationIGC Target(Sector sector, short side, short id, float x, float y, float z)
-    {
-        var type = Core().StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmLand) != 0);
-        return new DataStationIGC(
-            Position: [x, y, z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
-            Rotation: [0f, 0f, 0f, 1f], ClusterId: sector.Id, SideId: side, StationId: id,
-            StationTypeId: (short)type.StationTypeId, BpHull: 1, BpShield: 1, Name: $"BASE_{id}");
-    }
+    // (P875 — the old data-only DataStationIGC Target(...) goal builder was removed:
+    // a station that exists only as static data is a command target native cannot
+    // represent — native targets are live models, shipIGC.h:440-460 — and under
+    // native GotoPlan an unrepresentable target is invisible (igc.h:4909-4913),
+    // so the affected fixtures now fly native layer build orders instead.)
 
     private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId) => new(
         Signature: 1.0f,
@@ -115,6 +112,29 @@ public sealed class NpcDodgeLiveTests
     /// (≈300) garrison-style stations an NPC docks at.</summary>
     private static DataStationTypeIGC SmallObstacleType() =>
         Core().StationTypes.Values.First(t => t.Radius is >= 50f and <= 80f);
+
+    /// <summary>P875 — spawn the travel NPC as a LAYER drone carrying a real
+    /// mine expendable, ordered by the caller via <c>SetLayerBuild</c> onto the
+    /// measured goal point. This is the native commanderless equivalent of the
+    /// old data-only station PlanTarget: a layer build order IS native's
+    /// "fly to this point" delivery (shipIGC.cpp:4055-4109 creates the
+    /// c_buoyWaypoint for a c_ptLayer c_cidBuild; :2810-2828 lays and consumes
+    /// the drone on GotoPlan completion), so the goal holds until arrival and
+    /// the ship terminates there — unlike a goto or miner, whose completion
+    /// frees the idle economy leg (P652 station seek / P161 rock pick) and
+    /// would measure that leg instead of the goto flight under test. The
+    /// dodge/goto laws under test are pilot-generic (GotoPlan runs for every
+    /// NPC pilot, shipIGC.cpp:2795-2833).</summary>
+    private static Ship SpawnTravelNpc(Seat seat, Sector sector, short side, Vector3 pos)
+    {
+        var layerType = seat.Mission.Core.DroneTypes.Values.First(d => d.PilotType == Ship.PilotTypeLayer);
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, side, pos, layerType.DroneTypeId);
+        var mine = seat.Mission.Core.MineTypes.Values
+            .Where(mm => mm.MineRadius > 0f && mm.Power > 0f && mm.Lifespan >= 60f)
+            .OrderBy(mm => mm.MineRadius).First();
+        npc.LayerLaidExpendableTypeId = mine.ExpendableTypeId;
+        return npc;
+    }
 
     private static float DistToPoint(Ship s, Vector3 p) => (p - s.Position).Length();
 
@@ -180,12 +200,16 @@ public sealed class NpcDodgeLiveTests
         }
     }
 
-    /// <summary>⭐ Scope-4 obstacle divergence. A Miner NPC with a same-sector
-    /// station PlanTarget flies toward it; a static asteroid sits dead on the
-    /// straight line between spawn and station. The new dodge check makes it
-    /// VISIBLY steer away — its closest approach to the rock stays clear of the
-    /// rock's surface (rather than plowing through the centre) — and once the
-    /// rock is no longer imminent it RESUMES toward the station.</summary>
+    /// <summary>⭐ Scope-4 obstacle divergence. An idle layer-drone NPC flying a same-sector
+    /// layer build order (P875: native command targets are live models,
+    /// shipIGC.h:440-460, so the old data-only station PlanTarget — a state
+    /// native cannot represent — became a native lay delivery, see
+    /// SpawnTravelNpc); a static
+    /// asteroid sits dead on the straight line between spawn and goal. Native
+    /// GotoPlan's dodge (common.cpp:1693-1790) makes it VISIBLY steer away — its
+    /// closest approach to the rock stays clear of the rock's surface (rather than
+    /// plowing through the centre) — and once the rock is no longer imminent it
+    /// RESUMES toward the goal.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes()
@@ -196,16 +220,14 @@ public sealed class NpcDodgeLiveTests
         var npcSide = seat.PeerSide;   // same side as the peer so the peer is a friendly-skip, leaving ONLY the rock as an obstacle
 
         var a = new Vector3(980f, 932f, 956f);          // spawn
-        var b = new Vector3(160f, 989f, 998f);          // station target
+        var b = new Vector3(160f, 989f, 998f);          // waypoint-buoy goal
         var mid = new Vector3((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2);
 
-        var station = Target(sector, npcSide, id: 4411, x: b.X, y: b.Y, z: b.Z);
         var rock = new Asteroid(MkAsteroid(4412, mid, radius: 60, sectorId: sector.Id));
         seat.Mission.PlaceAsteroid(rock, sector);
 
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
-        npc.PlanTarget = station;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        var npc = SpawnTravelNpc(seat, sector, npcSide, a);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(sector.Id, b));
 
         float shipHalfLen = 0.5f * npc.HullType.Length;
         float accel = npc.Mass > 0 ? npc.HullType.Thrust / npc.Mass : 0f;
@@ -243,11 +265,12 @@ public sealed class NpcDodgeLiveTests
         Console.WriteLine("P168-DODGE-RESUME: NPC rounded the asteroid and continued to its station objective.");
     }
 
-    /// <summary>⭐ Scope-4 no-obstacle unaffected. A Miner NPC with a same-sector
-    /// station PlanTarget and a NON-threatening rock present in the same sector
-    /// (well off the straight line, so never on a collision course) takes a
-    /// near-direct line to the station and arrives — proving the universal dodge
-    /// check adds zero behaviour change when nothing is imminent.</summary>
+    /// <summary>⭐ Scope-4 no-obstacle unaffected. An idle layer-drone NPC flying a same-sector
+    /// layer build order (P875 rewrite; see the asteroid-dodge test) with a
+    /// NON-threatening rock present in the same sector (well off the straight
+    /// line, so never on a collision course) takes a near-direct line to the goal
+    /// and arrives — proving native GotoPlan's dodge (common.cpp:1693-1790) adds
+    /// no detour when nothing is imminent.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Traveling_npc_with_no_imminent_obstacle_is_unaffected_and_arrives()
@@ -260,15 +283,13 @@ public sealed class NpcDodgeLiveTests
         var a = new Vector3(948f, 926f, 953f);
         var b = new Vector3(250f, 983f, 981f);
 
-        var station = Target(sector, npcSide, id: 4451, x: b.X, y: b.Y, z: b.Z);
         // A rock IS in the same sector (so the dodge scan has candidates) but far
         // off the A→B line — never an imminent collision.
         var farRock = new Asteroid(MkAsteroid(4452, new Vector3(720f, 530f, 870f), radius: 60, sectorId: sector.Id));
         seat.Mission.PlaceAsteroid(farRock, sector);
 
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
-        npc.PlanTarget = station;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        var npc = SpawnTravelNpc(seat, sector, npcSide, a);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(sector.Id, b));
 
         float maxDev = 0f;
         for (int i = 0; i < 7000; i++)
@@ -309,8 +330,6 @@ public sealed class NpcDodgeLiveTests
         var b = new Vector3(160f, 989f, 998f);
         var mid = new Vector3((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2);
 
-        var station = Target(sector, npcSide, id: 4471, x: b.X, y: b.Y, z: b.Z);
-
         // The obstacle: a plain, non-NPC ship on the SAME side, parked dead on
         // the A→B line. IsNpc defaults to false, so it never runs any decision
         // cycle (Ship.cs P148) and simply sits still for the whole test.
@@ -318,9 +337,8 @@ public sealed class NpcDodgeLiveTests
         var friendly = new Ship(9001, friendlyHull, mid, Vector3.Zero, Orientation.Identity) { SideId = npcSide };
         seat.Mission.PlaceShip(friendly, sector);
 
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
-        npc.PlanTarget = station;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        var npc = SpawnTravelNpc(seat, sector, npcSide, a);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(sector.Id, b));
 
         float shipHalfLen = 0.5f * npc.HullType.Length;
         float friendlyRadius = 0.5f * friendlyHull.Length;
@@ -363,15 +381,12 @@ public sealed class NpcDodgeLiveTests
         var b = new Vector3(160f, 989f, 998f);
         var mid = new Vector3((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2);
 
-        var station = Target(sector, npcSide, id: 4481, x: b.X, y: b.Y, z: b.Z);
-
         var enemyHull = seat.Mission.Core.HullTypes.Values.First();
         var enemy = new Ship(9002, enemyHull, mid, Vector3.Zero, Orientation.Identity) { SideId = enemySide };
         seat.Mission.PlaceShip(enemy, sector);
 
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
-        npc.PlanTarget = station;
-        npc.PlanCommandId = OrderChange.CidGoto;
+        var npc = SpawnTravelNpc(seat, sector, npcSide, a);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(sector.Id, b));
 
         Assert.True(LineDeviation(mid, a, b) < 5f, "enemy ship must be on the straight line A→B for the test to be meaningful");
 
@@ -391,17 +406,19 @@ public sealed class NpcDodgeLiveTests
     }
 
     /// <summary>⭐ P170 scope-4: a STATION obstacle on the path IS now dodged. A
-    /// Miner NPC heads to its own station goal — <c>A</c> (its
-    /// <see cref="Ship.PlanTarget"/>, a plain station-point goal exactly like
-    /// P168's) — while a DIFFERENT station <c>B</c> (unrelated to its goal,
-    /// placed in the sector as a real runtime <see cref="Station"/> so it is a
-    /// genuine candidate in the new station category) sits dead on the straight
-    /// line. The new station scan in <see cref="Ship.TryComputeDodgeGoal"/> makes
-    /// it VISIBLY steer around <c>B</c> — closest approach to <c>B</c>'s centre
-    /// stays clear of <c>B</c>'s surface (it does not plow through) — and, once
-    /// <c>B</c> is no longer imminent, RESUME toward and arrive at its real goal
-    /// <c>A</c>. Mirrors P168's asteroid-obstacle test shape exactly (goal is a
-    /// point; the obstacle is the only placed station).</summary>
+    /// layer-drone NPC flies to its lay-point goal — <c>g</c> (a
+    /// <c>SetLayerBuild</c> delivery, the P875 rewrite of the old data-only
+    /// station PlanTarget; native command targets are live models,
+    /// shipIGC.h:440-460) — while a DIFFERENT station <c>B</c> (unrelated to its
+    /// goal, placed in the sector as a real runtime <see cref="Station"/> so it is
+    /// a genuine candidate in the station category) sits dead on the straight
+    /// line. Native GotoPlan's obstacle scan (FillNativeObstacles ↔
+    /// common.cpp:1642-1690) makes it VISIBLY steer around <c>B</c> — closest
+    /// approach to <c>B</c>'s centre stays clear of <c>B</c>'s surface (it does
+    /// not plow through) — and, once <c>B</c> is no longer imminent, RESUME toward
+    /// and arrive at its real goal. <c>B</c> is enemy-owned so the idle miner's
+    /// default-order take-cover (shipIGC.cpp:1943) never adopts it as a hide-out
+    /// and the dodge measurements stay the first approach's.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal()
@@ -412,7 +429,7 @@ public sealed class NpcDodgeLiveTests
         var npcSide = seat.PeerSide;
 
         var a = new Vector3(976f, 918f, 933f);          // spawn
-        var g = new Vector3(158f, 967f, 974f);          // goal station A point (NOT placed — a pure target like P168)
+        var g = new Vector3(158f, 967f, 974f);          // waypoint-buoy goal
         // Obstacle sits near the GOAL (85% along the chord) — by the time the
         // NPC arrives there its autopilot has converged onto the straight line
         // to the goal, so it genuinely flies THROUGH the obstacle (a midpoint
@@ -420,15 +437,16 @@ public sealed class NpcDodgeLiveTests
         // would make the test tautological — see the P170 note in the writeup).
         var obsPos = a + (g - a) * 0.85f;
 
-        var goalStation = Target(sector, npcSide, id: 4661, x: g.X, y: g.Y, z: g.Z);
         // Obstacle station B — unrelated to the goal, on the straight line near
         // the goal; a small-radius type so the dodge visibly clears it (radius
-        // ~60, the same magnitude as P168's asteroid obstacle).
-        var obstacle = PlaceStationAt(seat.Mission, sector, npcSide, id: 4662, SmallObstacleType(), x: obsPos.X, y: obsPos.Y, z: obsPos.Z);
+        // ~60, the same magnitude as P168's asteroid obstacle). Enemy-owned: an
+        // idle drone's take-cover never hides there (friendly stations only), so
+        // the min-approach measurements stay the goal flight's.
+        short enemySide = seat.Mission.Sides.First(s => s.Id != npcSide).Id;
+        var obstacle = PlaceStationAt(seat.Mission, sector, enemySide, id: 4662, SmallObstacleType(), x: obsPos.X, y: obsPos.Y, z: obsPos.Z);
 
-        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
-        npc.PlanTarget = goalStation;                   // heading for A; B is a stranger on the path
-        npc.PlanCommandId = OrderChange.CidGoto;
+        var npc = SpawnTravelNpc(seat, sector, npcSide, a);
+        npc.SetLayerBuild(new Ship.LayerBuildGoal(sector.Id, g));   // heading for the buoy; B is a stranger on the path
 
         float shipHalfLen = 0.5f * npc.HullType.Length;
         float rObs = obstacle.Radius;
