@@ -33,6 +33,53 @@ public sealed class CreateWaypointAction : Action
 }
 
 /// <summary>
+/// Creates a model of the requested object type from its creation payload at mission time — port of
+/// <c>CreateObjectAction</c> (<c>createobjectaction.cpp:24-40</c>:
+/// <c>pMission->CreateObject(lastUpdate, m_objectType, pData, iDataSize)</c>). The native is the
+/// generic base of the waypoint/probe creators; this port is a dispatch over the specialised
+/// <see cref="ITrainingSite"/> creation methods so the arbitrary-type contract is available
+/// uniformly (a general primitive beside CreateWaypoint/CreateProbe/CreateDrone).
+/// </summary>
+public sealed class CreateObjectAction : Action
+{
+    private readonly ITrainingSite _site;
+    private readonly ObjectType _type;
+    private readonly int _id;
+    private readonly Vector3 _position;
+    private readonly int _sectorId;
+    private readonly int _aux;   // buoyType / probeTypeId / hullId
+
+    public CreateObjectAction(ITrainingSite site, ObjectType type, int id, Vector3 position, int sectorId, int aux = 0)
+    {
+        _site = site;
+        _type = type;
+        _id = id;
+        _position = position;
+        _sectorId = sectorId;
+        _aux = aux;
+    }
+
+    public override void Execute()
+    {
+        switch (_type)
+        {
+            case ObjectType.Buoy:
+                _site.CreateWaypoint(_id, _position, _sectorId, _aux, visible: true);
+                break;
+            case ObjectType.Probe:
+                _site.CreateProbe(_id, _aux, _position, sideId: 0, _sectorId);
+                break;
+            case ObjectType.Ship:
+                _site.CreateDrone("object", _id, _aux, sideId: 0, pilotType: 0);
+                _site.PlaceDrone(_id, _sectorId, _position, Vector3.UnitX, Vector3.UnitZ, null, TrainingMissionIds.CmdNone);
+                break;
+            default:
+                throw new NotSupportedException($"CreateObjectAction: unsupported object type {_type}");
+        }
+    }
+}
+
+/// <summary>
 /// Spawns a probe — port of <c>CreateProbeAction</c> (<c>CreateProbeAction.cpp:21-49</c>).
 /// </summary>
 public sealed class CreateProbeAction : Action

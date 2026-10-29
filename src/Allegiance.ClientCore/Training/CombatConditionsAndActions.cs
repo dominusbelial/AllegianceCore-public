@@ -180,6 +180,50 @@ public sealed class DoDamageAction : Action
 }
 
 /// <summary>
+/// Damages a specific ship by a collision amount, then resets its controls and fires all its
+/// weapons — port of <c>DoDamageAdjustableAction</c> (<c>dodamageadjustableaction.cpp:23-36</c>):
+/// <c>ReceiveDamage(c_dmgidCollision, amount, …)</c> then
+/// <c>SetStateBits(weaponsMaskIGC|buttonsMaskIGC, allWeaponsIGC)</c> and <c>SetControls</c> reset.
+/// </summary>
+public sealed class DoDamageAdjustableAction : Action
+{
+    private readonly ITrainingSite _site;
+    private readonly TargetRef _ship;
+    private readonly float _amount;
+
+    public DoDamageAdjustableAction(ITrainingSite site, TargetRef ship, float amount)
+    {
+        _site = site;
+        _ship = ship;
+        _amount = amount;
+    }
+
+    public override void Execute() => _site.DamageShipAdjustable(_ship, _amount);
+}
+
+/// <summary>
+/// TRUE when a ship's ammunition is <em>below</em> the requested count despite the
+/// "HasAmmo" name — port of the native bug in <c>GetShipHasAmmoCondition</c>
+/// (<c>getshiphasammocondition.cpp:32-34</c>: <c>GetAmmo() &gt;= count ? false : true</c>).
+/// Kept native (P873 lists the inverted meaning; the brief says keep native semantics).
+/// </summary>
+public sealed class GetShipHasAmmoCondition : Condition
+{
+    private readonly ITrainingSite _site;
+    private readonly TargetRef _ship;
+    private readonly int _count;
+
+    public GetShipHasAmmoCondition(ITrainingSite site, TargetRef ship, int count = -1)
+    {
+        _site = site;
+        _ship = ship;
+        _count = count;
+    }
+
+    public override bool Evaluate() => _site.GetAmmo(_ship) < _count;
+}
+
+/// <summary>
 /// Toggles a weapon mount — port of <c>ToggleWeaponAction</c> (<c>toggleweaponaction.cpp:28-47</c>);
 /// native forwards to the window's <c>ToggleWeapon</c>.
 /// </summary>

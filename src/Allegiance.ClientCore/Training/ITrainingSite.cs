@@ -52,6 +52,17 @@ public interface ITrainingSite
     /// <summary>TRUE when <paramref name="ship"/> has <paramref name="target"/> in scanner range
     /// (<c>IshipIGC::InScannerRange</c>, <c>shipseesobjectcondition.cpp:47-50</c>).</summary>
     bool ShipSees(TargetRef ship, TargetRef target);
+    /// <summary>The live probe count of the mission's cluster world
+    /// (<c>trekClient.GetCore()-&gt;GetProbes()-&gt;n()</c>, <c>getprobecountcondition.cpp:31</c>).
+    /// Mission 6's <c>GetProbeCountCondition</c> compares the player's deployed probes to this.</summary>
+    int GetProbeCount();
+    /// <summary>The current radar LOD mode id (<c>GetWindow()-&gt;GetRadarMode()</c>,
+    /// <c>getradarlodcondition.cpp:31</c>) — the <see cref="Rendering.RadarMode"/> integer.</summary>
+    int GetRadarLod();
+    /// <summary>The live ammunition count of <paramref name="ship"/> (<c>IshipIGC::GetAmmo()</c>,
+    /// <c>getshiphasammocondition.cpp:32-34</c>). The training condition compares this against a
+    /// threshold; a ship with no mounted ammo magazine reports 0.</summary>
+    int GetAmmo(TargetRef ship);
 
     // ── command-view / escalation state (M5/M6 seams) ─────────────────────────
     /// <summary>TRUE when <paramref name="model"/> is the object the player currently has picked in
@@ -71,6 +82,11 @@ public interface ITrainingSite
     // ── combat / equipment / UI actions (native actions) ───────────────────────────
     /// <summary>Damage the <em>player's</em> ship's shield or hull (<c>DoDamageAction.cpp:26-50</c>).</summary>
     void DealDamage(bool toHull);
+    /// <summary>Damage a specific ship by a collision amount, then reset its controls and fire all
+    /// its weapons (<c>DoDamageAdjustableAction</c>, dodamageadjustableaction.cpp:27-36 —
+    /// <c>ReceiveDamage</c> then <c>SetStateBits(weaponsMaskIGC|buttonsMaskIGC, allWeaponsIGC)</c>
+    /// and <c>SetControls</c> reset).</summary>
+    void DamageShipAdjustable(TargetRef ship, float amount);
     /// <summary>Toggle the player's selected weapon mount (<c>ToggleWeaponAction.cpp:29-47</c>).</summary>
     void ToggleWeapon(int mount);
     /// <summary>Swap a mounted part of an equipment type to a mount (<c>SwapWeaponAction.cpp:28-37</c>).</summary>

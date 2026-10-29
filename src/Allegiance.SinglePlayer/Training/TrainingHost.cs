@@ -38,6 +38,27 @@ public interface ITrainingHost
         int? commandTargetShipId, int commandId);
     void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId);
     void SetAutopilot(int shipId, bool on);
+    /// <summary>Whether a ship is currently on autopilot (<c>IshipIGC::GetAutopilot</c>;
+    /// the host flies any Goto'd ship and flags it here).</summary>
+    bool IsAutopilot(int shipId);
+    /// <summary>The live ammunition count of a ship (<c>IshipIGC::GetAmmo</c>).</summary>
+    int GetAmmo(int shipId);
+    /// <summary>The live probe count of the host's world (<c>GetProbes()->n()</c>).</summary>
+    int GetProbeCount();
+    /// <summary>Damage a ship by a collision amount, then reset controls and fire all weapons
+    /// (<c>DoDamageAdjustableAction</c>, dodamageadjustableaction.cpp:27-36).</summary>
+    void DamageShipAdjustable(int shipId, float amount);
+
+    // ── host real-model reads the client production site forwards ───────────
+    /// <summary>The current command target of a ship (<c>IshipIGC::GetCommandTarget(c_cmdCurrent)</c>).</summary>
+    TargetRef? GetCommandTarget(int shipId);
+    /// <summary>The accepted/current command id of a ship (<c>GetCommandID(c_cmdAccepted)</c>).</summary>
+    int GetCommandId(int shipId);
+    /// <summary>Whether <paramref name="ship"/> sees <paramref name="target"/> in scanner range
+    /// (<c>IshipIGC::InScannerRange</c>).</summary>
+    bool InScannerRange(int shipId, TargetRef target);
+    /// <summary>Resolve a training waypoint buoy to its live geometry (<c>GetModel(OT_buoy, id)</c>).</summary>
+    Allegiance.ClientCore.Training.ITrainingObject? ResolveWaypoint(int buoyId);
 
     // ── M5/M6 command-view / kill-credit reads (authoritative host state) ─────
     bool IsPicked(TargetRef model);
@@ -49,6 +70,9 @@ public interface ITrainingHost
     bool HasPartMounted(int shipId, int partId);
     void MountPart(int shipId, int partId);
     void DamageStation(int stationId, float amount);
+    /// <summary>Knock a ship's armour down by <paramref name="amount"/> (the damaged-but-alive
+    /// outcome behind <c>DoDamageAction</c> and Mission 8's bomber).</summary>
+    void DamageShip(int shipId, float amount);
 }
 
 /// <summary>
@@ -418,6 +442,29 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     public Vector3? TryGetStationPosition(int stationId)
         => _stations.TryGetValue(stationId, out var hs) ? hs.Position : (Vector3?)null;
 
+    /// <summary>Resolve a training waypoint buoy to its live geometry surface (native
+    /// <c>GetModel(OT_buoy, id)</c>, createwaypointaction.cpp:34-46); <c>null</c> when the buoy
+    /// has not been created. Lets the client <c>Resolve</c> a <see cref="ObjectType.Buoy"/>
+    /// through the embedded host's waypoint table.</summary>
+    public Allegiance.ClientCore.Training.ITrainingObject? ResolveWaypoint(int buoyId)
+        => _waypoints.TryGetValue(buoyId, out var wp)
+            ? new WaypointObject(new Allegiance.ClientCore.Training.TargetRef(
+                Allegiance.ClientCore.Training.ObjectType.Buoy, buoyId), wp)
+            : null;
+
+    /// <summary>Geometry surface for a host waypoint record (native <c>OT_buoy</c>).</summary>
+    private sealed class WaypointObject : Allegiance.ClientCore.Training.ITrainingObject
+    {
+        private readonly Waypoint _wp;
+        public WaypointObject(Allegiance.ClientCore.Training.TargetRef r, Waypoint wp) { Ref = r; _wp = wp; }
+        public Allegiance.ClientCore.Training.TargetRef Ref { get; }
+        public float Radius => 10f;
+        public System.Numerics.Vector3 Position => _wp.Position;
+        public System.Numerics.Vector3 Velocity => System.Numerics.Vector3.Zero;
+        public System.Numerics.Vector3 Forward => System.Numerics.Vector3.UnitX;
+        public int SectorId => _wp.SectorId;
+    }
+
     // ── ITrainingHost handlers ──────────────────────────────────────────────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
     {
@@ -457,6 +504,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
             _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
             _droneTechLevels[id] = techLevel;      // negative tech-level loadout
+            // Apply the wingman behaviour to the real sim ship so it actually behaves as
+            // configured (SetWingmanBehaviour, createdroneaction.cpp:201-203). The tech-level /
+            // constructor-base-data loadout application to the sim hull remains the TRN-0010 gap.
+            ship.WingmanBehaviour = behaviour;
             return id;
         }
     }
@@ -535,6 +586,74 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     }
 
     public bool IsAutopilot(int shipId) => _autopilot.TryGetValue((short)shipId, out var b) && b;
+
+    /// <summary>The live ammunition count of a ship (<c>IshipIGC::GetAmmo()</c>, shipIGC.cpp:…;
+    /// a ship with no mounted ammo magazine reports 0 — native <c>Ship::GetAmmo</c> sums its
+    /// mounted <c>ET_Magazine</c> parts, absent here for a bare hull).</summary>
+    public int GetAmmo(int shipId)
+        => ResolveShip(shipId) is { } s ? s.Ammo : 0;
+
+    /// <summary>The live probe count of the host's world (<c>GetProbes()-&gt;n()</c>, igc.cpp:…):
+    /// every live (undead) <see cref="Probe"/> in every sector's model list — the same real
+    /// world query the probe-visibility rule uses (<c>Mission.CanSideSeeCluster</c>).</summary>
+    public int GetProbeCount()
+    {
+        int n = 0;
+        foreach (var sector in Mission.Sectors)
+            foreach (var m in sector.Models)
+                if (m is Probe p && !p.Dead) n++;
+        return n;
+    }
+
+    /// <summary>Resolve a real asteroid from the mission's runtime <see cref="Sector.Mineable"/>
+    /// lists (native <c>pMission->GetModel(OT_asteroid, id)</c>, getsectorcondition.cpp:27-51).
+    /// An asteroid is a live runtime rock with <see cref="Asteroid.Data"/> and a
+    /// <see cref="Asteroid.Sector"/>.</summary>
+    public Asteroid? ResolveAsteroid(int id)
+    {
+        foreach (var sector in Mission.Sectors)
+            foreach (var a in sector.Mineable)
+                if (a.Data.AsteroidId == id) return a;
+        return null;
+    }
+
+    /// <summary>Resolve a real probe model from the mission's sector model lists
+    /// (native <c>pMission->GetModel(OT_probe, id)</c>); <c>null</c> when absent.</summary>
+    public Probe? ResolveProbe(int id)
+    {
+        foreach (var sector in Mission.Sectors)
+            foreach (var m in sector.Models)
+                if (m is Probe p && p.Id == id && !p.Dead) return p;
+        return null;
+    }
+
+    /// <summary>Damage a ship by a collision amount, then reset controls and fire all weapons —
+    /// <c>DoDamageAdjustableAction::Execute</c> (dodamageadjustableaction.cpp:27-36):
+    /// <c>ReceiveDamage</c> then <c>SetStateBits(weaponsMaskIGC|buttonsMaskIGC, allWeaponsIGC)</c>
+    /// and <c>SetControls(controls.Reset())</c>.</summary>
+    public void DamageShipAdjustable(int shipId, float amount)
+    {
+        lock (_simGate)
+        {
+            Ship? ship = ResolveShip(shipId);
+            if (ship is null) return;
+            var v = new Coll.Vector3(-1f, 0f, 0f);
+            ship.ReceiveDamage(CollisionDamageType, amount, Mission.LastUpdate, v, v, null);
+            // native SetStateBits(weaponsMaskIGC|buttonsMaskIGC, allWeaponsIGC): arm "every gun
+            // fires" (AllWeapons, igc.h:826) and clear the movement/button bits (igc.h:810-824).
+            ship.StateM = (ship.StateM & ~(ShipControlState.WeaponsMask | ShipControlState.MoveButtonsMask))
+                | ShipControlState.AllWeapons;
+            ship.Controls = ControlData.Neutral;
+            // Make the damage observable to GetFraction/GetShipFraction exactly like DamageShip:
+            // lower the tracked armour fraction by the same per-point scaling.
+            float cur = _shipFractions.TryGetValue(shipId, out var f) ? f : 1f;
+            _shipFractions[shipId] = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+        }
+    }
+
+    /// <summary><c>c_dmgidCollision &amp; c_dmgidMask = row 0</c> (missionigc.h:155; the same
+    /// byte <c>Sector</c> uses for its collision pass, Sector.cs:2851).</summary>
+    private const byte CollisionDamageType = 0;
 
     // ── M3/M4 combat/sensor state (native IdamageIGC / IshipIGC seams) ────────────
     /// <summary>The ship is "destroyed" when it is absent or marked destroyed (the headless driver

@@ -1901,6 +1901,7 @@ public sealed partial class Game1
         if (!composing && cycRadar && !_cycleRadarKeyWasDown)
         {
             _radarMode = Rendering.RadarLod.Next(_radarMode);
+            TrainingRadarLod.Current = (int)_radarMode;
             Console.WriteLine($"[monogame] radar mode: {Rendering.RadarLod.Label(_radarMode)}");
         }
         _cycleRadarKeyWasDown = cycRadar;

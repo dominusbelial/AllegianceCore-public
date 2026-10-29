@@ -82,6 +82,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     }
     private readonly ClientTrainingFacilities _f;
     private readonly List<int> _keys = new();
+    private readonly List<int> _chats = new();
     private readonly List<string> _messages = new();
     private int _nextInstance = 1;
     private readonly Dictionary<int, int> _instances = new();
@@ -124,15 +125,41 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
 
     public ITrainingObject? Resolve(TargetRef r)
     {
-        if (r.Type != ObjectType.Ship) return null;
         int id = r.Id == TargetRef.Na ? (World.MyShipId ?? -1) : r.Id;
         if (id < 0) return null;
-        return World.Ships.TryGetValue((short)id, out var ship) && ship.Latest is { } up
-            ? new TrainingShipObject((short)id, ship, up) : null;
+        var w = World;
+        switch (r.Type)
+        {
+            case ObjectType.Ship:
+                return w.Ships.TryGetValue((short)id, out var ship) && ship.Latest is { } up
+                    ? new TrainingShipObject((short)id, ship, up) : null;
+            case ObjectType.Station:
+                // Native GetSectorCondition also resolves stations/asteroids/probes via the
+                // mission's GetModel(OT_*, id) (getsectorcondition.cpp:27-51); the replicated
+                // world carries them as EXPORT records with a live faction slot.
+                return w.Stations.TryGetValue((short)id, out var st)
+                    ? new TrainingStaticObject(r, ToVec(st.Position), st.ClusterId, 50f) : null;
+            case ObjectType.Asteroid:
+                return w.Asteroids.TryGetValue((short)id, out var ast)
+                    ? new TrainingStaticObject(r, ToVec(ast.Position), ast.ClusterId, ast.Radius) : null;
+            case ObjectType.Probe:
+                return w.Probes.TryGetValue((short)id, out var pb)
+                    ? new TrainingStaticObject(r, ToSys(pb.Position), pb.ClusterId, 10f) : null;
+            case ObjectType.Buoy:
+                // A training waypoint buoy lives on the host's waypoint table
+                // (createwaypointaction.cpp:34-46); the client resolves it through the host.
+                return _f.Host is { } h ? h.ResolveWaypoint(r.Id) : null;
+            default:
+                return null;
+        }
     }
 
+    private static Vector3 ToVec(float[] v) => v is { Length: 3 } ? new Vector3(v[0], v[1], v[2]) : Vector3.Zero;
+    private static Vector3 ToSys(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
+
     // ── ship state reads (real replicated world) ───────────────────────────
-    public bool GetAutopilot(TargetRef ship) => false; // host-exposed flag (TR-2 host universe)
+    public bool GetAutopilot(TargetRef ship)
+        => _f.Host is { } h ? h.IsAutopilot(ResolveId(ship)) : false; // host flies Goto'd ships on autopilot
     public int GetStateM(TargetRef ship)
     {
         int id = ResolveId(ship);
@@ -144,17 +171,39 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         return id >= 0 && World.Ships.TryGetValue((short)id, out var s) && s.Latest is { } u ? u.Controls : ControlData.Neutral;
     }
     public ControlData GetInputControls() => TrainingControlState.InputControls;
-    public TargetRef? GetCommandTarget(TargetRef ship, int command) => null;
+    public TargetRef? GetCommandTarget(TargetRef ship, int command)
+        => command == TrainingMissionIds.CommandCurrent && _f.Host is { } h
+            ? h.GetCommandTarget(ResolveId(ship)) : null;
 
     // ── M3/M4 ship/combat state (replicated world + host) ─────────────────────
     /// <summary>Absent from the replicated world ⇒ destroyed (<c>getshipisdamagedcondition.cpp:53-55</c>).</summary>
     public bool IsShipDestroyed(TargetRef ship) => Resolve(ship) is null;
 
-    public bool HasCommand(TargetRef ship, int commandId) => false; // client exposes no accepted/current cmd
+    /// <summary>TRUE when the ship's accepted-or-current command id equals
+    /// <paramref name="commandId"/>, and TRUE when the ship is absent — native
+    /// <c>GetCommandCondition</c> (getcommandcondition.cpp:44-53: absent ⇒ true).</summary>
+    public bool HasCommand(TargetRef ship, int commandId)
+    {
+        int id = ResolveId(ship);
+        if (id < 0 || Resolve(ship) is null) return true;   // getcommandcondition.cpp:53 absent ⇒ true
+        return _f.Host is { } h && (h.GetCommandId(id) == commandId);
+    }
 
     public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
 
-    public bool ShipSees(TargetRef ship, TargetRef target) => false; // server-side scanner judgement
+    /// <summary>Server-side scanner judgement: same sector and within range (<c>IshipIGC::InScannerRange</c>),
+    /// answered by the host's real sim (<c>shipseesobjectcondition.cpp:47-50</c>).</summary>
+    public bool ShipSees(TargetRef ship, TargetRef target)
+        => _f.Host is { } h ? h.InScannerRange(ResolveId(ship), target) : false;
+
+    /// <summary>Live probe count of the host's world (<c>GetProbes()->n()</c>).</summary>
+    public int GetProbeCount() => _f.Host is { } h ? h.GetProbeCount() : 0;
+
+    /// <summary>The client's current radar LOD mode (<c>GetWindow()->GetRadarMode()</c>).</summary>
+    public int GetRadarLod() => TrainingRadarLod.Current;
+
+    /// <summary>Live ammo count (<c>IshipIGC::GetAmmo()</c>), answered by the host sim.</summary>
+    public int GetAmmo(TargetRef ship) => _f.Host is { } h ? h.GetAmmo(ResolveId(ship)) : 0;
 
     // ── M5/M6 command-view / escalation state (authoritative host) ──────────
     public bool GetPicked(TargetRef model) => _f.Host is { } h ? h.IsPicked(model) : false;
@@ -163,7 +212,26 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     public int GetCommandAcknowledged() => _f.Host is { } h ? h.GetCommandAcknowledged() : TrainingMissionIds.CmdDoNothing;
 
     // ── M3/M4 combat / equipment / UI actions ─────────────────────────────────
-    public void DealDamage(bool toHull) => TrainingHostLog.Log($"DealDamage(toHull:{toHull})");
+    /// <summary>Demonstrate shield/hull damage on the player's ship — <c>DoDamageAction</c>
+    /// (dodamageaction.cpp:24-50). Routed through the host's real ship so the player's armour
+    /// fraction moves (a logged no-op left nothing for <c>GetShipIsDamagedCondition</c> to see).</summary>
+    public void DealDamage(bool toHull)
+    {
+        if (_f.Host is { } h)
+        {
+            // Native shields the ship to 20% or dents it by 3% of max strength; the host's
+            // DamageShip scales a fraction drop. Use a modest, observable dent per call.
+            h.DamageShip(ResolveId(PlayerShip.Ref), toHull ? 7000f : 950f);
+        }
+        else TrainingHostLog.Log($"DealDamage(toHull:{toHull})");
+    }
+    /// <summary>Adjustable ship damage — <c>DoDamageAdjustableAction</c>
+    /// (dodamageadjustableaction.cpp:27-36): damage the given ship, reset controls, fire all weapons.</summary>
+    public void DamageShipAdjustable(TargetRef ship, float amount)
+    {
+        if (_f.Host is { } h) h.DamageShipAdjustable(ResolveId(ship), amount);
+        else TrainingHostLog.Log($"DamageShipAdjustable({ship.Id},{amount})");
+    }
     public void ToggleWeapon(int mount) => TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
     public void SwapWeapon(int equipmentType, int mount) => TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
     public void RepairAndRearm() => TrainingHostLog.Log("RepairAndRearm()");
@@ -196,8 +264,14 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         return true;
     }
     public void RecordKeyPress(int key) => _keys.Add(key);
-    public bool ConsumeChat(int recipient) => false;
-    public void RecordChat(int recipient) { }
+    public bool ConsumeChat(int recipient)
+    {
+        int i = _chats.IndexOf(recipient);
+        if (i < 0) return false;
+        _chats.RemoveAt(i);
+        return true;
+    }
+    public void RecordChat(int recipient) => _chats.Add(recipient);
 
     // ── world creation (training-host universe — TR-2b host scope) ───────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
@@ -291,4 +365,25 @@ internal sealed class TrainingShipObject : ITrainingObject
     public int SectorId => _ship.SectorId;
 
     private static Vector3 ToSys(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
+}
+
+/// <summary>
+/// Geometry surface for a replicated non-ship model (station / asteroid / probe / buoy) resolved
+/// from the client world's EXPORT records — the static counterpart of
+/// <see cref="TrainingShipObject"/>, matching native <c>GetModel(OT_*, id)</c> for the geometric
+/// conditions (<c>getsectorcondition.cpp:27-51</c>). A station/asteroid/probe/buoy has no
+/// per-tick streamed velocity/heading in the wire model, so it carries a fixed position and a
+/// default forward, exactly like the host's <c>WaypointObject</c>.
+/// </summary>
+internal sealed class TrainingStaticObject : ITrainingObject
+{
+    private readonly Vector3 _position;
+    public TrainingStaticObject(TargetRef r, Vector3 position, int sectorId, float radius)
+    { Ref = r; _position = position; SectorId = sectorId; Radius = radius; }
+    public TargetRef Ref { get; }
+    public float Radius { get; }
+    public Vector3 Position => _position;
+    public Vector3 Velocity => Vector3.Zero;
+    public Vector3 Forward => Vector3.UnitX;
+    public int SectorId { get; }
 }

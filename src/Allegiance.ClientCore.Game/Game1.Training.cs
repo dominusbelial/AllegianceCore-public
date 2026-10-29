@@ -454,6 +454,7 @@ public sealed partial class Game1
         _radarMode = TrainingActive ? Rendering.RadarMode.All : Rendering.RadarMode.Default;
         _coastToggled = false;
         _headLookYaw = 0;
+        TrainingRadarLod.Current = (int)_radarMode;   // P880a GetRadarLODCondition reads the live mode
     }
 
     // Shared by Classic and Modern: training/trainingmission.cpp:142-149,
@@ -462,6 +463,7 @@ public sealed partial class Game1
     {
         _cameraMode = missionId == 5 ? Rendering.CameraMode.Command : Rendering.CameraMode.ExternalOrbit;
         _radarMode = Rendering.RadarMode.All;
+        TrainingRadarLod.Current = (int)_radarMode;
         _consolePanes = default;
         _minimapExpanded = _teamPaneVisible = _investActive = _teleportActive = false;
         _throttle = -1;
