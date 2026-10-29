@@ -347,6 +347,22 @@ list in **reverse**.
   collected by a forced GC + no per-world cache grows with match count):
   `tests/Allegiance.ClientCore.Tests/P884RotationRetentionTests.cs`; report
   `docs/reports/P884_REPORT.md`.
+- **Per-world retirement under the rig's settings (P884b)** — the P884 caches are
+  now retired **per mission** (a server can host several worlds, P883b) by
+  `RetirePerWorldShipState` (`src/Allegiance.Server/Server.WorldRetirement.cs`),
+  which drops every ship-keyed entry that is not a live ship of ANOTHER mission:
+  the P332/P317/P493 latches, HUD-17's `_shipDetected`, native per-ship `m_atu`
+  (`_lastTurretUpdates`, `FedSrv/fsship.h:541`) and the allied-dock pending sets.
+  The same file's `TrimRetiredLatchCapacity` releases the **peak backing arrays**
+  of every `(recipient, subject)` latch after the migration sweep, so a match's
+  widest moment is not retained by the next match (the rig's per-match floor
+  step at 394 peers is the `_crossSideDiscoverySent` entry array: 10 MB → 44 MB
+  over three matches). Ballot lookups are read-only (`_ballots` is created only
+  when a ballot is), so an inbound VOTE from a peer still seated in the retiring
+  world cannot keep that world's `Mission` reachable. Proof:
+  `tests/Allegiance.ClientCore.Tests/P884bWorldRetirementTests.cs`
+  (rig settings, `shipUpdateModel=native` + a two-world scoping case); report
+  `docs/reports/P884B_REPORT.md`.
 - **Game-over world boundary (P860)** — a rotation rebuilds the same static map,
   so both worlds' stations carry the SAME `StationId`s and a received
   `EXPORT(26)` is attributable to a world only by its position in the byte

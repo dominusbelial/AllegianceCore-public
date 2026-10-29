@@ -690,33 +690,16 @@ public sealed partial class Server
         foreach (var k in _oldPlayerSideIds.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
             _oldPlayerSideIds.Remove(k);
         _scoresFinalized.Remove(mission);   // P844b/SIM-0526 — the finalized marker dies with the mission
-        // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
-        // drop them all with the old world. A missing entry reads as false.
-        _shipDetected.Clear();
-        // P884 — these three are per-WORLD state keyed by ship id, and a retired
-        // world's ids must not survive the reset: every ship in the fresh mission
-        // is a new object (native reuses the same CfsMission and resets it,
-        // fsmission.cpp:3490-3527, so no IGC ship of the old world survives
-        // either), and AllocateShipId (Server.Docking.cs:2170-2181) recycles ids
-        // in a 16-bit space, so a stale entry can also mislabel or silence a NEW
-        // ship that reuses a retired id.
-        //   * _teammatePositionSent — the P332 one-shot "this (recipient, ship)
-        //     pair has had its first position" latch. It was only ever ADDED to
-        //     (Server.Broadcast.cs:1084/1404), so every finished match left one
-        //     entry per (recipient, same-side ship) behind forever: at the rig's
-        //     394 peers that is ~77k entries per match (~+2-20 MB/match with
-        //     respawn churn) — the P884 per-match server leak. Native has no such
-        //     latch at all; the client re-learns every ship from the new world.
-        //   * _teammateLoadoutCache — per-subject loadout snapshots (keyed by ship
-        //     id, so every retired ship's PartData[] snapshot stayed reachable).
-        //   * _crossSideShipStatusSeen — the (seeing side, ship) visibility edge;
-        //     every subject is an old-world ship id.
-        // All three re-populate lazily in the fresh world, so clearing is a pure
-        // drop of unreachable state (no wire behaviour change: the fresh mission's
-        // first pose/status/export send already forces the same messages).
-        _teammatePositionSent.Clear();
-        _teammateLoadoutCache.Clear();
-        _crossSideShipStatusSeen.Clear();
+        // P884b — retire every per-WORLD, ship-keyed cache of THIS world (the
+        // P884 latches, HUD-17's Detected baseline, native's per-ship m_atu and
+        // the allied-dock pending sets) WITHOUT touching another mission's state
+        // (a server may host several worlds, P883b). Native resets the same
+        // CfsMission and every IGC ship of the old world dies with it
+        // (fsmission.cpp:3490-3527 → Igc/missionigc.cpp:3804-3828), so nothing
+        // keyed by a retired ship may survive the rotation. The complement rule
+        // also covers ships destroyed earlier in the match (no longer in any
+        // registry). See Server.WorldRetirement.cs.
+        RetirePerWorldShipState(mission);
         // P813c — a parked (reconnect-grace) seat belongs to THIS world; a game
         // over during the gap ends the grace (a peer that reconnects afterwards
         // gets a normal fresh logon into the rotated mission).
@@ -1257,6 +1240,12 @@ public sealed partial class Server
                     Console.WriteLine(FormattableString.Invariant(
                         $"[gameover-timing] part=migrate phase=latch-sweep step={step} doneMs={stepSw.Elapsed.TotalMilliseconds:0.###} peers={conns.Count}"));
                 }
+                // P884b — every collection has now dropped the retired world's
+                // entries, so release the peak backing arrays the match grew them
+                // to (a dictionary/hash-set never shrinks on its own). Without
+                // this the floor ratchets up by the difference between one match's
+                // peak and the last one's, every match.
+                TrimRetiredLatchCapacity();
                 return true;
         }
         if (sw is not null)
@@ -2542,7 +2531,14 @@ private void CompleteStartCountdown(Mission mission, double now)
     // (the P184 pending-join-request convention), driven to resolution from
     // SimPass. See docs/BALLOT_SYSTEM_P187.md.
 
-    /// <summary>Get (creating if absent) the pending-ballot list for a mission.</summary>
+    /// <summary>Get the pending-ballot list for a mission, creating it only when
+    /// a ballot is about to be added — <b>write paths only</b>, because a
+    /// read (vote resolution, an inbound VOTE) never materialises an entry: P884b
+    /// found that <c>ResolveBallots</c> was creating a list for every mission
+    /// every tick, and a VOTE drained from a peer still seated in the retiring
+    /// world could re-create the entry for a Mission that
+    /// <see cref="RotateMissionAfterGameOver"/> had just removed — which then
+    /// kept that retired world alive for the rest of the process.</summary>
     private List<PendingBallot> BallotsOf(Mission mission)
     {
         if (!_ballots.TryGetValue(mission, out var list))
@@ -2552,9 +2548,10 @@ private void CompleteStartCountdown(Mission mission, double now)
 
 /// <summary>Whether a ballot of the given type is already in flight for the
     /// mission — the port of native CFSMission::HasBallots (fsmission.cpp:
-    /// 1225-1235): only one in-flight ballot of each type at a time.</summary>
+    /// 1225-1235): only one in-flight ballot of each type at a time. Read-only:
+    /// no list, no ballots.</summary>
     private bool HasBallotOfType(Mission mission, BallotType type) =>
-        BallotsOf(mission).Any(b => b.Type == type);
+        _ballots.TryGetValue(mission, out var list) && list.Any(b => b.Type == type);
 
 /// <summary>Native's ballot-command match: cbMessage &gt; strlen(prefix) and
     /// the text starts with the prefix, case-insensitively (FedSrv.CPP:5170-5200
@@ -2757,7 +2754,8 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// a pass, then dropped. A cancelled ballot is dropped unresolved.</summary>
     private void ResolveBallots(Mission mission, double now)
     {
-        var list = BallotsOf(mission);
+        // Read-only lookup: a world with no ballots must not be given an entry.
+        if (!_ballots.TryGetValue(mission, out var list)) return;
         for (int i = list.Count - 1; i >= 0; i--)
         {
             var ballot = list[i];

@@ -8,6 +8,9 @@ internal sealed class SweepLatchSet<T>
 {
     private readonly HashSet<T> _entries = new();
     internal int Count => _entries.Count;
+    /// <summary>P884b — the latch's retained backing-array capacity (test seam:
+    /// proves the rotation releases a finished match's peak, not just its entries).</summary>
+    internal int Capacity => _entries.Capacity;
     internal bool Add(T entry) => _entries.Add(entry);
     internal long RemovalVersion { get; private set; }
     internal int RemoveWhere(Predicate<T> match)
@@ -17,6 +20,25 @@ internal sealed class SweepLatchSet<T>
         return removed;
     }
     internal void Clear() { _entries.Clear(); RemovalVersion++; }
+
+    /// <summary>P884b — release the PEAK capacity this latch ever needed. A match
+    /// populates one entry per (recipient, subject) the recipient has ever seen,
+    /// so the set's backing arrays grow to the match's widest moment and were then
+    /// never released: the rotation pruned the entries but kept the arrays, and
+    /// every match whose peak exceeded the last one re-grew them (the rig's
+    /// per-match step). Trimming at the rotation boundary makes the retained size
+    /// follow the live population again. Safe here because the sweep has just
+    /// removed this world's entries, so the surviving entries are another
+    /// mission's (P883b) or none.</summary>
+    internal void TrimExcess() => _entries.TrimExcess();
+
+    /// <summary>P884b — trim only when the set's peak is meaningfully larger than
+    /// its live population (see <c>Server.TrimRetiredLatchCapacity</c>).</summary>
+    internal void TrimExcessIfWorthwhile()
+    {
+        int count = _entries.Count;
+        if (_entries.EnsureCapacity(0) > 2 * count + 64) _entries.TrimExcess();
+    }
 }
 
 // P863: retain the completed (subject, side, audience) work, then visit only
