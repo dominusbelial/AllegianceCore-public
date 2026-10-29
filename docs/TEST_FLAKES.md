@@ -4,6 +4,24 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P884 verification observations (2026-10-29)
+
+One Fast sweep (`tiers-20261029T125355.788869Z`): **11,677 tests, 458.1 s**, all infrastructure
+checks PASS, the P884 rotation-retention test included in the ClientCore project (passing, and 3/3
+alone). Three non-task failures, each **passed 3/3 alone** immediately afterwards — load flakes under
+the parallel sweep, no code path this lane touched (it adds prune calls to two broadcast latch sets and
+clears three per-world caches at rotation):
+
+| test | sweep result | 3× isolated |
+| --- | --- | --- |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | failed once (destroy position 1155 m vs the expected ≈1848 m: the missile hit something early in that run) | **3/3 pass** (~450 ms each) |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | failed once | **3/3 pass** (5-6 s each) |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | failed once | **3/3 pass** (~1 s each) |
+
+The already-ledgered `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+also failed this sweep; it is the pre-existing baseline failure recorded under P872 above and was not
+re-isolated here.
+
 ## P869 verification observations (2026-10-28)
 
 The one Fast sweep retains **11,457 passed / 33 failed / 3 optional Meshy skips**

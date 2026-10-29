@@ -321,6 +321,19 @@ list in **reverse**.
   death/eject/missile/relaunch transcript and per-step measurements live in
   `tests/Allegiance.Core.Tests/P863bSurgeBudgetTests.cs`; report
   `docs/reports/P863b_REPORT.md`.
+- **Per-world cache retention across rotation (P884)** — every per-ship /
+  per-peer latch on the server is scoped to ONE world: native resets the same
+  `CfsMission` and nukes every cluster (`Igc/missionigc.cpp:3804-3828`, called at
+  `FedSrv/fsmission.cpp:3527`), so a retired world must become unreachable and no
+  cache may accumulate one entry per (peer, ship) per match. `ReleasePeer`
+  (`src/Allegiance.Server/Server.Lifecycle.cs`) frees the connection dimension,
+  `RunMigrationLatchSweep` (`src/Allegiance.Server/Server.Lobby.cs`) frees the
+  retired-ship dimension, and `RotateMissionAfterGameOver` clears the per-world
+  leftovers (`_teammatePositionSent`, `_teammateLoadoutCache`,
+  `_crossSideShipStatusSeen`, `_shipDetected`). Proof (retired `Mission`/`Ship`
+  collected by a forced GC + no per-world cache grows with match count):
+  `tests/Allegiance.ClientCore.Tests/P884RotationRetentionTests.cs`; report
+  `docs/reports/P884_REPORT.md`.
 - **Game-over world boundary (P860)** — a rotation rebuilds the same static map,
   so both worlds' stations carry the SAME `StationId`s and a received
   `EXPORT(26)` is attributable to a world only by its position in the byte

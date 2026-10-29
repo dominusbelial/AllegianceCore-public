@@ -1999,6 +1999,13 @@ public sealed partial class Server
     private void AnnounceFreshShip(Ship ship, short isSide, string? characterName = null)
     {
         _playerInfoSent.RemoveWhere(e => e.ShipId == ship.Id);
+        // P884 — the same recycled-id hazard applies to the per-SUBJECT loadout
+        // cache: a snapshot cached for the ship that used to hold this id would be
+        // served for the new ship (both start at LoadoutVersion 0, so the version
+        // check cannot tell them apart). One O(1) drop; the P332 first-position
+        // latch needs no equivalent here because the game-over rotation empties it
+        // with the world it belonged to (RotateMissionAfterGameOver).
+        _teammateLoadoutCache.Remove(ship.Id);
         AnnouncePlayerToMission(ship, isSide, characterName);
     }
 
