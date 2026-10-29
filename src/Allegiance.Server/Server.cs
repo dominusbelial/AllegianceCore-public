@@ -1223,6 +1223,13 @@ public sealed partial class Server : IDisposable
             DroneTypeId = droneTypeId ?? -1,
             IsNpc = true,                                   // P148: explicit drone marker (init-only)
             PilotType = pilotType,                          // P160: the drone type's real pilot type (init-only)
+            // P872/SIM-0258 — native names drones "<drone type name><object id>"
+            // in CreateStockDrone (FedSrv.CPP:2253-2262: strcpy(pszName) then
+            // _itoa(objectID)); builders use the station type's builder name.
+            // This is the name drone chatter (GetModelName) substitutes.
+            Name = (droneTypeId is { } nameId && mission.Core.DroneTypes.TryGetValue(nameId, out var namedType)
+                        ? namedType.Name
+                        : "Drone") + shipId,
         };
         ship.SideId = sideId;                               // drones are side-owned in native
         ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;   // P378: consistent live-settings override

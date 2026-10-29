@@ -3512,3 +3512,26 @@ and cash spawns. The runner's automatic retry passes, followed by **3/3** manual
 exact-method isolated passes. The original failed receipt remains in the one
 Fast sweep. Overall original outcomes are **11,408 pass / 8 fail / 3 skip**;
 infrastructure 9/9 and the Fast timing guard pass.
+
+## P872 (2026-10-28)
+
+`NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+fails **deterministically 3/3 alone** in this worktree, and fails identically with
+P872's Ship.cs/Server.cs/Server.Lobby.cs edits reverted to the dispatch base
+(`c7e91ed2`): after the charge-centered acquire, `wingman.DefendTarget` is null at
+the phase-1 guard (`NpcWingmanDefendLiveTests.cs:179`) even though `AttackTarget`
+is the expected enemy. The failure is therefore **pre-existing at base, not a
+P872 regression**; P872's SIM-0258/0259/0261 work only changed the chat text and
+added the `HasDamagingPrimaryWeapon` acquire gate (both paths proven by
+`P872NativeBehaviourTests`, 3/3 alone). Suspected cause lives in the live-tick
+NPC plot ordering (unit-level `P708ShipUpdateTests` defends pass), left for the
+lane that owns the live defend loop.
+
+Fast sweep 2026-10-28 (P872): `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected`
+failed once inside the fast sweep and **passed 3/3 alone** immediately after —
+load flake under the parallel sweep, not a P872 regression (no docking code path
+was touched; P872 edits the explosion recipient snapshot, drone chatter text,
+mission replay/context and the empty-session reap). The other two sweep
+failures are the already-ledgered pre-existing entries above
+(`RadarTargetHighlightLiveTests.LiveOffScreenEnemy…`,
+`NpcWingmanDefendLiveTests.Defender_disengages…`).

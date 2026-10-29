@@ -91,6 +91,28 @@ public sealed class Sector : IClusterIgc
     private readonly Queue<Explosion> _pendingExplosions = new();
     private bool _resolvingExplosions;
 
+    // P872/SIM-0068 — native's explosion pass caches its recipients ONCE per
+    // explosion batch, not per blast: at most c_maxDmgs = 500 damageable
+    // pickables (OT_ship/OT_asteroid/OT_station/OT_missile/OT_probe, in the
+    // sector's pickable insertion order) and at most 500 mines
+    // (Igc/clusterIGC.cpp:368-400). The 500-element cutoff is gameplay: when a
+    // sector holds more candidates, only the first 500 in insertion order can
+    // ever receive damage from any blast in the batch — a dynamically sized
+    // per-blast enumeration changes who is hit. Chained (secondary) explosions
+    // reuse the same snapshot; a target already destroyed is skipped per blast
+    // by the membership check (native GetCluster() == this, :416).
+    // Native interleaves all pickable types in ONE list (m_modelsPickable
+    // appends on the same insertion events as m_models); the port keeps
+    // stations/asteroids outside _models, so the snapshot order here is
+    // ships/missiles/probes in _models insertion order (the same order native's
+    // pickable list has for those types), then stations, then asteroids, under
+    // the shared 500 budget.
+    private const int MaxExplosionTargets = 500;
+    private readonly List<Model> _explosionPickables = [];
+    private readonly List<Asteroid> _explosionAsteroids = [];
+    private readonly List<Station> _explosionStations = [];
+    private readonly List<Mine> _explosionMines = [];
+
     // P777b — reusable per-tick buffers for the merged aleph pass
     // (ResolveAlephCollisions): the model snapshot (no _models.ToArray per
     // tick), plus the warps-with-a-position and their pre-computed cone
@@ -3929,6 +3951,10 @@ public sealed class Sector : IClusterIgc
         _resolvingExplosions = true;
         try
         {
+            // P872/SIM-0068 — capture the recipient snapshot ONCE per batch
+            // (first 500 pickables + first 500 mines in insertion order,
+            // clusterIGC.cpp:368-400) and reuse it for every chained blast.
+            SnapshotExplosionRecipients();
             bool secondary = false;
             while (_pendingExplosions.TryDequeue(out var blast))
             {
@@ -3940,13 +3966,56 @@ public sealed class Sector : IClusterIgc
         finally { _resolvingExplosions = false; }
     }
 
+    /// <summary>P872/SIM-0068 — the per-batch recipient snapshot of
+    /// clusterIGC.cpp:368-400: the first <see cref="MaxExplosionTargets"/>
+    /// eligible damageable models (ships, missiles, probes — plus the port's
+    /// separate station/asteroid runtimes) in insertion order, and the first
+    /// 500 mines, captured once and reused for every chained explosion.</summary>
+    private void SnapshotExplosionRecipients()
+    {
+        _explosionPickables.Clear();
+        _explosionAsteroids.Clear();
+        _explosionStations.Clear();
+        _explosionMines.Clear();
+        foreach (var m in _models)
+        {
+            // Not everything that can take damage can be affected by an
+            // explosion (clusterIGC.cpp:373-377): ships, missiles and probes
+            // here; the port's stations/asteroids join below. Mines are a
+            // separate cache (clusterIGC.cpp:388-397) with its own 500 budget,
+            // collected to the end of the model list regardless of the
+            // pickable cap (native scans m_mines independently).
+            switch (m)
+            {
+                case Mine mine when _explosionMines.Count < MaxExplosionTargets:
+                    _explosionMines.Add(mine);
+                    break;
+                case Ship or Missile or Probe when _explosionPickables.Count < MaxExplosionTargets:
+                    _explosionPickables.Add(m);
+                    break;
+            }
+        }
+        foreach (var st in _stationRuntimes)
+        {
+            if (_explosionPickables.Count + _explosionAsteroids.Count + _explosionStations.Count >= MaxExplosionTargets) break;
+            _explosionStations.Add(st);
+        }
+        foreach (var ast in _mineable)
+        {
+            if (_explosionPickables.Count + _explosionAsteroids.Count + _explosionStations.Count >= MaxExplosionTargets) break;
+            _explosionAsteroids.Add(ast);
+        }
+        if (_explosionMines.Count > MaxExplosionTargets) _explosionMines.RemoveRange(MaxExplosionTargets, _explosionMines.Count - MaxExplosionTargets);
+    }
     private void ApplyExplosion(Explosion e)
     {
         using var scope = TickProfiler.Enter("blast.apply");
         byte type = (byte)(e.DamageType | BlastDamage.NoWarn | BlastDamage.NoDebris); // clusterIGC.cpp:431
-        var models = _models.ToArray();
-        var stations = _stationRuntimes.ToArray();
-        var asteroids = _mineable.ToArray();
+        // P872/SIM-0068 — consume the per-batch snapshot (first 500 pickables +
+        // first 500 mines in insertion order), not a fresh per-blast scan.
+        var models = _explosionPickables;
+        var stations = _explosionStations;
+        var asteroids = _explosionAsteroids;
         foreach (var target in models)
         {
             if (!_modelMembership.ContainsKey(target)) continue; // native GetCluster()==this (clusterIGC.cpp:416)
@@ -4018,7 +4087,7 @@ public sealed class Sector : IClusterIgc
                 (Mission ?? (e.Launcher as Ship)?.Mission)?.Site.KillAsteroidEvent(asteroid, true);
             }
         }
-        foreach (var mine in models.OfType<Mine>())
+        foreach (var mine in _explosionMines)
         {
             if (!_modelMembership.ContainsKey(mine)) continue;
             // SIM-0067: native subtracts the mine's collision radius

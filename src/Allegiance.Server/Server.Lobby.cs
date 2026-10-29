@@ -709,6 +709,15 @@ public sealed partial class Server
         // and _missions are index-aligned (one mission per game).
         var swR = (ConsoleLog.Verbose || TickProfiler.Instance is not null) ? Stopwatch.StartNew() : null;
         var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls);
+        // P872/SIM-0750 — native resets the SAME CmissionIGC object and its
+        // ResetMission increments m_nReplayCount after the first generation
+        // (missionigc.cpp:3849-3857); the port rebuilds a fresh Mission, so the
+        // finished world's generation state is carried over and the replay
+        // bookkeeping (count + context-name invalidation) runs here.
+        fresh.HasGenerated = mission.HasGenerated;
+        fresh.ReplayCount = mission.ReplayCount;
+        fresh.CreatedWallTime = mission.CreatedWallTime;   // same game identity: the FIRST creation moment (missionigc.cpp:4225-4230 renders m_ftCreated, not the reset time)
+        fresh.BeginReplay();
         _missions[idx] = fresh;
         if (swR is not null)
             Console.WriteLine(FormattableString.Invariant($"[gameover-timing] part=rotate-assemble cumulativeMs={swR.Elapsed.TotalMilliseconds:0.0}"));
@@ -1443,7 +1452,10 @@ public sealed partial class Server
             GoalTeamKillsCount: mission.KillsWinGoal,
             GoalProsperityMoney: mission.Goals.TeamMoney,
             GoalArtifactsCount: mission.ArtifactWinGoal,
-            GoalFlagsCount: mission.FlagsWinGoal);
+            GoalFlagsCount: mission.FlagsWinGoal,
+            // P872/SIM-0751 — native's persisted game ID is the IGC mission's
+            // context name (fsmission.cpp:2766, RecordGameResults szGameID).
+            GameId: mission.GetContextName());
 
         // P844/SIM-0525 — the per-side rows (native RecordTeamResults, walked
         // for every side of the mission, fsmission.cpp:2804-2821).
@@ -4075,6 +4087,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         // P653 H-03: free-spawn provenance — server-granted spawn hardware has no
         // purchase cost to refund, for BOTH the default and injected spawn paths.
         ship.MarkSpawnLoadoutFree();
+
+        // P872/SIM-0258 — native names the player's ship from the logon character
+        // name (SetName at seat/logon, FedSrv.CPP:968/542); GetModelName returns
+        // it in drone chatter and team captions.
+        if (!string.IsNullOrEmpty(req.CharacterName)) ship.Name = req.CharacterName;
 
         // P841 / SIM-0521 — an old player rejoining this mission restores their
         // cached score (native AddPlayerToMission's GetOldPlayerLink branch,
