@@ -19,6 +19,9 @@ public sealed class GoalList : Condition
     private readonly List<Goal> _goals = new();
     private int _index; // the native list iterator
 
+    internal int CurrentNumber => _index + 1;
+    internal Goal? CurrentGoal => _index < _goals.Count ? _goals[_index] : null;
+
     public GoalList() => _index = _goals.Count; // end()
 
     public override bool Start()

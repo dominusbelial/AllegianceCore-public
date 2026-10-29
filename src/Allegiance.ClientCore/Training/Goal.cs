@@ -23,6 +23,8 @@ public sealed class Goal : Condition
     private readonly ConditionList _constraints = new();
     private Condition? _skipGoalCondition;
 
+    internal Condition SuccessCondition => _successCondition;
+
     public Goal(Condition successCondition) => _successCondition = successCondition;
 
     public override bool Start()

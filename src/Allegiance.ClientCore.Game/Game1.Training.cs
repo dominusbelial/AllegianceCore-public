@@ -24,6 +24,34 @@ public sealed partial class Game1
     private const double TrainingStartTimeoutSeconds = 20.0;
     private double _trainingClock;
     private int _trainingMissionId;
+    private int _nextTrainingSound;
+    private readonly Dictionary<int, Microsoft.Xna.Framework.Audio.SoundEffectInstance> _trainingSounds = new();
+
+    private int PlayTrainingSound(int missionId, int soundId)
+    {
+        string? stem = TrainingSoundCatalog.Stem(missionId, soundId);
+        Console.WriteLine($"[training] voice {stem ?? soundId.ToString()} (mission {missionId})");
+        var instance = _sound?.PlaySlideSound(stem);
+        if (instance is null) return -1;
+        // Release finished message voices too (they have no SoundFinishedCondition).
+        foreach (int key in _trainingSounds.Where(kv => kv.Value.State == Microsoft.Xna.Framework.Audio.SoundState.Stopped).Select(kv => kv.Key).ToArray())
+            StopTrainingSound(key);
+        int handle = ++_nextTrainingSound;
+        _trainingSounds.Add(handle, instance);
+        return handle;
+    }
+
+    private void StopTrainingSound(int handle)
+    {
+        if (!_trainingSounds.Remove(handle, out var sound)) return;
+        sound.Stop();
+        sound.Dispose();
+    }
+
+    private void ClearTrainingSounds()
+    {
+        foreach (int handle in _trainingSounds.Keys.ToArray()) StopTrainingSound(handle);
+    }
 
     /// <summary>P785 — the slideshow currently showing (pre-mission, post-mission or
     /// the Introduction screen itself). Null when none.</summary>
@@ -123,6 +151,10 @@ public sealed partial class Game1
                 return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
             },
             Host = _embeddedHost,
+            PlaySound = soundId => PlayTrainingSound(missionId, soundId),
+            IsSoundPlaying = handle => _trainingSounds.TryGetValue(handle, out var sound)
+                && sound.State == Microsoft.Xna.Framework.Audio.SoundState.Playing,
+            StopSound = StopTrainingSound,
         };
 
         var site = new ClientTrainingSite(facilities);
@@ -211,6 +243,7 @@ public sealed partial class Game1
         if (session.Advance())
         {
             Console.WriteLine("[training] mission complete");
+            ClearTrainingSounds();
             TrainingController.EndMission();
             if (TrainingClock.IsPaused) TrainingClock.Continue();   // trainingmission.cpp:123-125
             _embeddedHost?.Dispose();
@@ -322,6 +355,7 @@ public sealed partial class Game1
     private void AbortTrainingStart(string error)
     {
         Console.WriteLine($"[training] {error}");
+        ClearTrainingSounds();
         Allegiance.ClientCore.Training.TrainingController.EndMission();
         if (TrainingClock.IsPaused) TrainingClock.Continue();
         _embeddedHost?.Dispose();

@@ -78,6 +78,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     private readonly object _simGate = new();
     private readonly CancellationTokenSource _stop = new();
     private Thread? _ticker;
+    private bool _clientBound;
     private int _disposed;
     private readonly Dictionary<int, Waypoint> _waypoints = new();
     private readonly Dictionary<short, bool> _autopilot = new();
@@ -102,9 +103,9 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     private volatile TrainingMission? _activeMission;                  // receives real kill credit
 
     public Mission Mission { get; }
-    public Ship PlayerShip { get; }
+    public Ship PlayerShip { get; private set; }
     public Ship CommanderShip { get; }
-    public int PlayerShipId { get; }
+    public int PlayerShipId => PlayerShip.Id;
     public int CommanderShipId { get; }
     /// <summary>The player's start sector (native <c>Mission2::GetStartSectorID()</c> = 1010).</summary>
     public short StartSectorId { get; }
@@ -128,7 +129,6 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         Mission = mission;
         PlayerShip = player;
         CommanderShip = commander;
-        PlayerShipId = player.Id;
         CommanderShipId = commander.Id;
         StartSectorId = startSector;
         _viewSector = startSector;
@@ -174,7 +174,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
 
     public static TrainingHost Start(TrainingVariant variant, string? artwork = null)
     {
-        var server = new Srv();
+        var server = new Srv { SpawnInitialMinersAtBoot = false };
         var artPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
         server.Boot(TrainingConfig(variant, artPath));
         var mission = server.Missions[0];
@@ -205,7 +205,28 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         };
         mission.PlaceShip(commander, sector);
 
+        server.AnnounceNewShip(commander); // training/trainingmission.cpp:796-797: real named commander, with hull metadata
         var host = new TrainingHost(server, mission, player, commander, variant.StartSector);
+        // Native's player IS the trainee (training/trainingmission.cpp:132-140).
+        // The wire logon reserves its own id before side selection. Replace the headless
+        // placeholder with that id at the spawn seam, so ACK, host actions and replication
+        // all refer to one ship. Custom spawners bypass the ordinary initial hangar.
+        server.ShipSpawner = (_, m, id) =>
+        {
+            if (host._clientBound)
+                throw new InvalidOperationException("A training host accepts only one trainee.");
+            var old = host.PlayerShip;
+            old.Sector?.Remove(old);
+            var trainee = new Ship(id, old.HullType, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri)
+            {
+                SideId = old.SideId,
+            };
+            m.PlaceShip(trainee, sector);
+            host.PlayerShip = trainee;
+            host._clientBound = true;
+            Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, in space");
+            return (trainee, sector);
+        };
         // Route the server's real kill-credit events into the active mission's kill counter (M6), so
         // kill goals read the real credit (ejections excluded via the !bLifepod gate in BroadcastKillShip).
         server.KillCreditGranted += (launcher, victim) =>
@@ -252,7 +273,11 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
             while (!_stop.IsCancellationRequested)
             {
                 if (Paused) { Thread.Sleep(10); continue; }
-                lock (_simGate) _server.Tick();
+                lock (_simGate)
+                {
+                    _server.Tick();
+                    AdvanceAutopilot();
+                }
             }
         }
         catch (Exception)
@@ -319,13 +344,14 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         // into unintended motion; movement is driven exclusively by the host autopilot pass below
         // (and, for the player, by the mission's scripted goals, which read the decoupled applied
         // controls via TrainingHostSite.GetShipControls rather than the sim field).
-        PlayerShip.Controls = ZeroThrottle;
+        if (!_clientBound) PlayerShip.Controls = ZeroThrottle;
         CommanderShip.Controls = ZeroThrottle;
         foreach (var d in _drones.Values) d.Controls = ZeroThrottle;
 
         foreach (var ship in Ships())
         {
             if (ship.GotoWaypoint is not { } g) continue;
+            if (_clientBound && ReferenceEquals(ship, PlayerShip) && !IsAutopilot(ship.Id)) continue;
             var dir = g.Position - ship.Position;
             float dist = dir.Length();
             if (dist <= ArrivalRadius)
@@ -359,7 +385,9 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
 
     // ── ITrainingHost handlers ──────────────────────────────────────────────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
-        => _waypoints[buoyId] = new Waypoint(position, sectorId, buoyType, visible);
+    {
+        lock (_simGate) _waypoints[buoyId] = new Waypoint(position, sectorId, buoyType, visible);
+    }
 
     public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId)
     {
@@ -374,88 +402,100 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
         int behaviour, int stationType, int techLevel)
     {
-        int id = shipId == -1 ? NextId() : shipId;
-        var hull = Mission.Core.HullTypes.TryGetValue((short)hullId, out var h) ? h
-            : Mission.Core.HullTypes.Values.OrderBy(x => x.HullId).First();
-        var ship = new Ship((short)id, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, Orientation.Identity)
+        lock (_simGate)
         {
-            SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType,
-        };
-        Mission.PlaceShip(ship, Mission.Sectors[0]);
-        // P775 — native training creates the drone's player info when it
-        // creates the drone (trainingmission.cpp:620-623): announce the new
-        // drone to the whole mission, exactly like CreateStockDrone
-        // (FedSrv.CPP:2269).
-        _server.AnnounceNewShip(ship);
-        _drones[id] = ship;
-        _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
-        _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
-        _droneTechLevels[id] = techLevel;      // negative tech-level loadout
-        return id;
+            int id = shipId == -1 ? NextId() : shipId;
+            var hull = Mission.Core.HullTypes.TryGetValue((short)hullId, out var h) ? h
+                : Mission.Core.HullTypes.Values.OrderBy(x => x.HullId).First();
+            var ship = new Ship((short)id, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, Orientation.Identity)
+            {
+                SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType,
+            };
+            Mission.PlaceShip(ship, Mission.Sectors[0]);
+            // P775 — native training creates the drone's player info when it
+            // creates the drone (trainingmission.cpp:620-623): announce the new
+            // drone to the whole mission, exactly like CreateStockDrone
+            // (FedSrv.CPP:2269).
+            _server.AnnounceNewShip(ship);
+            _drones[id] = ship;
+            _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
+            _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
+            _droneTechLevels[id] = techLevel;      // negative tech-level loadout
+            return id;
+        }
     }
 
     public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         int? commandTargetShipId, int commandId)
     {
-        if (!_drones.TryGetValue(shipId, out var ship))
+        lock (_simGate)
         {
-            if (shipId == CommanderShipId) ship = CommanderShip;
-            else return;
+            if (!_drones.TryGetValue(shipId, out var ship))
+            {
+                if (shipId == CommanderShipId) ship = CommanderShip;
+                else return;
+            }
+            var ori = Orientation.Identity;
+            ori.Set(ToCore(forward), ToCore(up));
+            ship.Position = ToCore(position);
+            ship.Velocity = Coll.Vector3.Zero;   // placing a drone sets its state; clears any residual sim velocity
+            ship.SetOrientation(ori);
+            var sector = Mission.Sectors.FirstOrDefault(s => s.Id == sectorId);
+            if (sector is not null && ship.Sector != sector)
+                Mission.PlaceShip(ship, sector);
+            if (commandTargetShipId is { } && commandId == TrainingMissionIds.CmdGoto)
+                ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)sectorId, ToCore(position)));
         }
-        var ori = Orientation.Identity;
-        ori.Set(ToCore(forward), ToCore(up));
-        ship.Position = ToCore(position);
-        ship.Velocity = Coll.Vector3.Zero;   // placing a drone sets its state; clears any residual sim velocity
-        ship.SetOrientation(ori);
-        var sector = Mission.Sectors.FirstOrDefault(s => s.Id == sectorId);
-        if (sector is not null && ship.Sector != sector)
-            Mission.PlaceShip(ship, sector);
-        if (commandTargetShipId is { } && commandId == TrainingMissionIds.CmdGoto)
-            ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)sectorId, ToCore(position)));
     }
 
     public void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId)
     {
-        Ship? ship = ResolveShip(shipId);
-        if (ship is null) return;
-        // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
-        // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
-        // (A queued Goto still arms the autopilot pass here so a proof that accepts it can fly; the M8
-        // driver pins the bomber to the player's live position, so the player's own queued "meet me"
-        // flight does not break M8's within-radius gate.)
-        if (command != TrainingMissionIds.CommandQueued)
-            _commands[shipId] = commandId;
-        if (commandId == TrainingMissionIds.CmdGoto)
+        lock (_simGate)
         {
-            if (targetBuoyId is { } bid && _waypoints.TryGetValue(bid, out var wp))
+            Ship? ship = ResolveShip(shipId);
+            if (ship is null) return;
+            // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
+            // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
+            // (A queued Goto still arms the autopilot pass here so a proof that accepts it can fly; the M8
+            // driver pins the bomber to the player's live position, so the player's own queued "meet me"
+            // flight does not break M8's within-radius gate.)
+            if (command != TrainingMissionIds.CommandQueued)
+                _commands[shipId] = commandId;
+            if (commandId == TrainingMissionIds.CmdGoto)
             {
-                _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
-                ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
+                if (targetBuoyId is { } bid && _waypoints.TryGetValue(bid, out var wp))
+                {
+                    _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
+                }
+                else if (targetShipId is { } tsid && ResolveShip(tsid) is { } target)
+                {
+                    _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid);
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position));
+                }
+                else if (targetStationId is { } stid && _stations.TryGetValue(stid, out var station))
+                {
+                    _commandTargets[shipId] = new TargetRef(ObjectType.Station, stid);
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId, ToCore(station.Position)));
+                }
             }
-            else if (targetShipId is { } tsid && ResolveShip(tsid) is { } target)
+            else
             {
-                _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid);
-                ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position));
+                _commandTargets[shipId] = null;
+                ship.SetGoto(null);   // c_cidDoNothing / None clear the current target (setcommandaction.cpp:77-84)
             }
-            else if (targetStationId is { } stid && stid == StartSectorId)
-            {
-                _commandTargets[shipId] = new TargetRef(ObjectType.Station, stid);
-                ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)stid, ToCore(StationPosition)));
-            }
-        }
-        else
-        {
-            _commandTargets[shipId] = null;
-            ship.SetGoto(null);   // c_cidDoNothing / None clear the current target (setcommandaction.cpp:77-84)
         }
     }
 
     public void SetAutopilot(int shipId, bool on)
     {
-        Ship? ship = ResolveShip(shipId);
-        if (ship is null) return;
-        _autopilot[ship.Id] = on;
-        if (!on) ship.SetGoto(null);
+        lock (_simGate)
+        {
+            Ship? ship = ResolveShip(shipId);
+            if (ship is null) return;
+            _autopilot[ship.Id] = on;
+            if (!on) ship.SetGoto(null);
+        }
     }
 
     public bool IsAutopilot(int shipId) => _autopilot.TryGetValue((short)shipId, out var b) && b;

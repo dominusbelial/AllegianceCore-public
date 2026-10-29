@@ -72,9 +72,12 @@ public sealed class ClientTrainingSite : ITrainingSite
         get
         {
             var w = World;
-            return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is not null;
+            return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is not null && ship.StationId < 0 && ship.SectorId >= 0;
         }
     }
+
+    public bool PlayerDocked => World.MyShipId is { } me
+        && World.Ships.TryGetValue(me, out var ship) && ship.StationId >= 0;
 
     public ITrainingObject PlayerShip
     {
@@ -219,6 +222,7 @@ public sealed class ClientTrainingSite : ITrainingSite
     // ── output (messages / sound) ───────────────────────────────────────────
     public void ShowMessage(string text)
     {
+        Console.WriteLine($"[training] prompt: {text}");
         _messages.Add(text);
         World.PostSystemLine(text);
     }
@@ -229,7 +233,7 @@ public sealed class ClientTrainingSite : ITrainingSite
         return instance;
     }
     public bool IsSoundPlaying(int instance)
-        => _instances.TryGetValue(instance, out var handle) && (_f.IsSoundPlaying?.Invoke(handle) ?? true);
+        => _instances.TryGetValue(instance, out var handle) && (_f.IsSoundPlaying?.Invoke(handle) ?? false);
     public void StopSound(int instance)
     {
         if (_instances.TryGetValue(instance, out var handle)) _f.StopSound?.Invoke(handle);

@@ -1,0 +1,252 @@
+Mission 2, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 2 (ALLEGIANCE_TRAINING_START)
+[training] Mission 2 (Basic Flight) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1010, hull 412, in space
+[training] voice vo_sal_commencescan (mission 2)
+[training] goal 1.1 (mission 2)
+[training] mission 2 script started (player ship replicated)
+[training] goal 1.2 (mission 2)
+[training] voice tm_2_01 (mission 2)
+[training] goal 1.3 (mission 2)
+[training] voice tm_2_04 (mission 2)
+[training] goal 2.1 (mission 2)
+[training] goal 2.2 (mission 2)
+[training] voice tm_2_05 (mission 2)
+[training] goal 2.3 (mission 2)
+[training] goal 2.4 (mission 2)
+
+Mission 2, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 2 (ALLEGIANCE_TRAINING_START)
+[training] Mission 2 (Basic Flight) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1010, hull 412, in space
+[training] voice vo_sal_commencescan (mission 2)
+[training] goal 1.1 (mission 2)
+[training] mission 2 script started (player ship replicated)
+[training] goal 1.2 (mission 2)
+[training] voice tm_2_01 (mission 2)
+[training] goal 1.3 (mission 2)
+[training] voice tm_2_04 (mission 2)
+[training] goal 2.1 (mission 2)
+[training] goal 2.2 (mission 2)
+[training] voice tm_2_05 (mission 2)
+[training] goal 2.3 (mission 2)
+[training] goal 2.4 (mission 2)
+
+Mission 3, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 3 (ALLEGIANCE_TRAINING_START)
+[training] Mission 3 (Basic Weaponry) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1010, hull 414, in space
+[training] voice vo_sal_commencescan (mission 3)
+[training] goal 1.1 (mission 3)
+[training] mission 3 script started (player ship replicated)
+[training] goal 1.2 (mission 3)
+[training] voice tm_3_01 (mission 3)
+[training] goal 1.3 (mission 3)
+[training] goal 3.2 (mission 3)
+[training] voice tm_3_11 (mission 3)
+[training] goal 3.3 (mission 3)
+[training] goal 3.4 (mission 3)
+[training] prompt: Press the right mouse button to target the objects in the center of your display.
+[training] goal 3.5 (mission 3)
+
+Mission 3, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 3 (ALLEGIANCE_TRAINING_START)
+[training] Mission 3 (Basic Weaponry) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1010, hull 414, in space
+[training] voice vo_sal_commencescan (mission 3)
+[training] goal 1.1 (mission 3)
+[training] mission 3 script started (player ship replicated)
+[training] goal 1.2 (mission 3)
+[training] voice tm_3_01 (mission 3)
+[training] goal 1.3 (mission 3)
+[training] goal 3.2 (mission 3)
+[training] voice tm_3_11 (mission 3)
+[training] goal 3.3 (mission 3)
+[training] goal 3.4 (mission 3)
+[training] prompt: Press the right mouse button to target the objects in the center of your display.
+[training] goal 3.5 (mission 3)
+
+Mission 4, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 4 (ALLEGIANCE_TRAINING_START)
+[training] Mission 4 (Enemy Engagement) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1030, hull 486, in space
+[training] voice vo_sal_commencescan (mission 4)
+[training] goal 1.1 (mission 4)
+[training] mission 4 script started (player ship replicated)
+[training] goal 1.2 (mission 4)
+[training] voice tm_4_01 (mission 4)
+[training] goal 1.3 (mission 4)
+[training] goal 2.2 (mission 4)
+[training] prompt: Press the ENTER key to begin a chat.
+[training] prompt: Press the TAB key to select 'All'.
+[training] prompt: Press the ENTER key again to send the chat.
+[training] voice tm_4_03r (mission 4)
+[training] goal 2.3 (mission 4)
+
+Mission 4, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 4 (ALLEGIANCE_TRAINING_START)
+[training] Mission 4 (Enemy Engagement) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1030, hull 486, in space
+[training] voice vo_sal_commencescan (mission 4)
+[training] goal 1.1 (mission 4)
+[training] mission 4 script started (player ship replicated)
+[training] goal 1.2 (mission 4)
+[training] voice tm_4_01 (mission 4)
+[training] goal 1.3 (mission 4)
+[training] goal 2.2 (mission 4)
+[training] prompt: Press the ENTER key to begin a chat.
+[training] prompt: Press the TAB key to select 'All'.
+[training] prompt: Press the ENTER key again to send the chat.
+[training] voice tm_4_03r (mission 4)
+[training] goal 2.3 (mission 4)
+
+Mission 5, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 5 (ALLEGIANCE_TRAINING_START)
+[training] Mission 5 (Command View) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1050, hull 412, in space
+[training] goal 1.1 (mission 5)
+[training] mission 5 script started (player ship replicated)
+[training] voice tm_5_01 (mission 5)
+[training] goal 1.2 (mission 5)
+[training] goal 1.3 (mission 5)
+[training] prompt: Press the SPACEBAR when you are ready to proceed.
+[training] voice tm_5_01 (mission 5)
+[training] goal 1.2 (mission 5)
+[training] goal 1.3 (mission 5)
+[training] prompt: Press the SPACEBAR when you are ready to proceed.
+[training] voice tm_5_02 (mission 5)
+[training] goal 1.4 (mission 5)
+
+Mission 5, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 5 (ALLEGIANCE_TRAINING_START)
+[training] Mission 5 (Command View) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1050, hull 412, in space
+[training] goal 1.1 (mission 5)
+[training] mission 5 script started (player ship replicated)
+[training] voice tm_5_01 (mission 5)
+[training] goal 1.2 (mission 5)
+[training] goal 1.3 (mission 5)
+[training] prompt: Press the SPACEBAR when you are ready to proceed.
+[training] voice tm_5_01 (mission 5)
+[training] goal 1.2 (mission 5)
+[training] goal 1.3 (mission 5)
+[training] prompt: Press the SPACEBAR when you are ready to proceed.
+[training] voice tm_5_02 (mission 5)
+[training] goal 1.4 (mission 5)
+
+Mission 6, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 6 (ALLEGIANCE_TRAINING_START)
+[training] Mission 6 (Practice Arena) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 2080, hull 488, in space
+[training] voice vo_sal_commencescan (mission 6)
+[training] goal 1 (mission 6)
+[training] mission 6 script started (player ship replicated)
+[training] prompt: Hint: Press F1 to see an overview of your ship's controls.
+[training] goal 2 (mission 6)
+[training] goal 3 (mission 6)
+[training] voice tm_6_03 (mission 6)
+[training] goal 10 (mission 6)
+[training] goal 11 (mission 6)
+[training] goal 12 (mission 6)
+[training] goal 13 (mission 6)
+[training] goal 14 (mission 6)
+
+Mission 6, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 6 (ALLEGIANCE_TRAINING_START)
+[training] Mission 6 (Practice Arena) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 2080, hull 488, in space
+[training] voice vo_sal_commencescan (mission 6)
+[training] goal 1 (mission 6)
+[training] mission 6 script started (player ship replicated)
+[training] prompt: Hint: Press F1 to see an overview of your ship's controls.
+[training] goal 2 (mission 6)
+[training] goal 3 (mission 6)
+[training] voice tm_6_03 (mission 6)
+[training] goal 10 (mission 6)
+[training] goal 11 (mission 6)
+[training] goal 12 (mission 6)
+[training] goal 13 (mission 6)
+[training] goal 14 (mission 6)
+
+Mission 8, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 8 (ALLEGIANCE_TRAINING_START)
+[training] Mission 8 (Nanite) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1051, hull 685, in space
+[training] voice vo_sal_commencescan (mission 8)
+[training] goal 1.1 (mission 8)
+[training] mission 8 script started (player ship replicated)
+[training] goal 1.2 (mission 8)
+[training] voice tm_8_01 (mission 8)
+[training] goal 1.3 (mission 8)
+[training] prompt: F4 toggles the inventory. You will want it to be open.
+[training] goal 1.4 (mission 8)
+[training] voice tm_8_03 (mission 8)
+[training] goal 1.5 (mission 8)
+[training] prompt: Swap the Nanite Repair System into slot 1 by pressing Ctrl+1.
+[training] goal 1.6 (mission 8)
+
+Mission 8, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 8 (ALLEGIANCE_TRAINING_START)
+[training] Mission 8 (Nanite) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 1051, hull 685, in space
+[training] voice vo_sal_commencescan (mission 8)
+[training] goal 1.1 (mission 8)
+[training] mission 8 script started (player ship replicated)
+[training] goal 1.2 (mission 8)
+[training] voice tm_8_01 (mission 8)
+[training] goal 1.3 (mission 8)
+[training] prompt: F4 toggles the inventory. You will want it to be open.
+[training] goal 1.4 (mission 8)
+[training] voice tm_8_03 (mission 8)
+[training] goal 1.5 (mission 8)
+[training] prompt: Swap the Nanite Repair System into slot 1 by pressing Ctrl+1.
+[training] goal 1.6 (mission 8)
+
+Mission 10, Classic; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 10 (ALLEGIANCE_TRAINING_START)
+[training] Mission 10 (Free Flight) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 2080, hull 488, in space
+[training] prompt: Hint: Press F1 to see an overview of your ship's controls.
+[training] goal 1 (mission 10)
+[training] mission 10 script started (player ship replicated)
+[training] goal 2 (mission 10)
+[training] voice vo_sal_commencescan (mission 10)
+[training] goal 3 (mission 10)
+[training] voice tm_6_03 (mission 10)
+[training] goal 10 (mission 10)
+[training] goal 11 (mission 10)
+[training] goal 12 (mission 10)
+[training] goal 13 (mission 10)
+[training] goal 14 (mission 10)
+
+Mission 10, Modern; real 1280x720 window; normal exit; --exit-after 20
+[training] proof start of mission 10 (ALLEGIANCE_TRAINING_START)
+[training] Mission 10 (Free Flight) started on the embedded host
+[training] auto side-select -> side 0
+[training] trainee bound to logon ship 8096, sector 2080, hull 488, in space
+[training] prompt: Hint: Press F1 to see an overview of your ship's controls.
+[training] goal 1 (mission 10)
+[training] mission 10 script started (player ship replicated)
+[training] goal 2 (mission 10)
+[training] voice vo_sal_commencescan (mission 10)
+[training] goal 3 (mission 10)
+[training] voice tm_6_03 (mission 10)
+[training] goal 10 (mission 10)
+[training] goal 11 (mission 10)
+[training] goal 12 (mission 10)
+[training] goal 13 (mission 10)
+[training] goal 14 (mission 10)
+

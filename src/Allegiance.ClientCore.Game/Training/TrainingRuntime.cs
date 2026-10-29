@@ -35,6 +35,8 @@ public sealed class TrainingSession
 {
     private readonly ClientTrainingSite _site;
     private readonly TrainingMission _mission;
+    private string? _lastGoal;
+    private bool _wasDocked;
 
     public TrainingSession(ClientTrainingSite site, TrainingMission mission)
     {
@@ -54,6 +56,7 @@ public sealed class TrainingSession
     {
         _mission.Start();
         Started = true;
+        LogProgress();
     }
 
     /// <summary>Advance the mission by one frame (native Frame()). Returns true once complete.</summary>
@@ -61,12 +64,26 @@ public sealed class TrainingSession
     {
         if (Finished) return true;
         if (!Started) return false;   // the mission starts once the player ship exists (Game1.UpdateTraining)
+        // Native trekigc.cpp:4131 lets the training mission handle landing first;
+        // Mission2/3/4 terminate instead of opening an ordinary loadout lesson.
+        bool docked = _site.PlayerDocked;
+        if (docked && !_wasDocked) _mission.ShipLanded();
+        _wasDocked = docked;
         if (_mission.Frame())
         {
             Completed = true;
             Finished = true;
         }
+        LogProgress();
         return Finished;
+    }
+
+    private void LogProgress()
+    {
+        string goal = _mission.ActiveGoalPath;
+        if (goal == _lastGoal) return;
+        _lastGoal = goal;
+        Console.WriteLine($"[training] goal {goal} (mission {_mission.GetMissionID()})");
     }
 
     /// <summary>Route a key press from the real input path through the mission's RecordKeyPress.</summary>

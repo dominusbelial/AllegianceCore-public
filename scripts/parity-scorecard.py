@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv")
+MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv", "training-matrix.csv")
 STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n/a"}
 COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
@@ -28,6 +28,11 @@ def read_matrix(path):
                 raise ValueError(f"{path}: invalid or duplicate columns")
             if (Path(path).name == "sim-rules-matrix.csv" or "native_rule" in header) and "reachability" not in header:
                 raise ValueError(f"{path}: sim rows require a reachability column")
+            training = Path(path).name == "training-matrix.csv"
+            if training:
+                with (ROOT / "docs/parity/sim-rules-matrix.csv").open(newline="") as reference:
+                    if header != next(csv.reader(reference)):
+                        raise ValueError(f"{path}: training matrix requires the exact 17 sim-rule columns")
             rows = []
             identities = set()
             for fields in reader:
@@ -35,6 +40,11 @@ def read_matrix(path):
                 if len(fields) != len(header):
                     raise ValueError(f"{location}: expected {len(header)} columns, got {len(fields)}")
                 row = dict(zip(header, fields))
+                if training and (not row["row_id"].startswith("TRN-")
+                                 or row["port_status"] not in {"implemented", "partial", "missing", "n/a"}
+                                 or row["weight"] not in {"1", "2", "3", "4", "5"}
+                                 or any(not row[key].strip() for key in ("native_cite", "native_body", "native_rule", "port_cite_or_reason", "evidence"))):
+                    raise ValueError(f"{location}: invalid training identity, status, weight or empty rule/evidence")
                 if "reachability" in header and row["reachability"] not in REACHABILITY:
                     raise ValueError(f"{location}: invalid reachability {row['reachability']!r}")
                 if row["port_status"] not in STATUSES:
@@ -84,7 +94,7 @@ def percentage(numerator, denominator):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="*", type=Path,
-                        help="CSV paths (default: both repository matrices)")
+                        help="CSV paths (default: all registered repository matrices)")
     args = parser.parse_args(argv)
     paths = args.paths or [ROOT / "docs/parity" / name for name in MATRICES]
     try:
