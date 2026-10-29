@@ -3880,3 +3880,21 @@ script) and passed **3/3** in follow-up runs (4m24s–5m17s); load flake while
 three delegate lanes were running. Not flakes, fixed at merge: the heartbeat
 wire-shape test (new P883b fields) and P877's logon cookie (P883 refuses an
 unknown dwCookie, by design).
+
+### 2026-10-29 — P885 gate (Mission 4 native TrekKey ids)
+
+Fast sweep `tiers-20261029T135842.924649Z`: 11,699 tests, 2 failed + 1 limit
+offender, all pre-existing and untouched by P885 (client training ids only):
+
+- `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+  (contention failure, ledgered above) — **3/3 pass alone** immediately after.
+- `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+  — the known deterministic base failure (P872 section above): **3/3 FAIL
+  alone** on this gate too, same null `AttackTarget` at line 179. P885 changes
+  no wingman/defend or Core sim path; left open as ledgered.
+- `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`
+  — SLOW FAST 12.438 s vs the 10 s calibrated limit (the test itself passed);
+  **3/3 pass alone in ~1 s** — fourth occurrence of the ledgered load flake.
+
+Training gate (`run-training-tests.sh --no-build`, Fast + Live, both client
+projects): PASS clean — 75 + 58 tests, no flakes.

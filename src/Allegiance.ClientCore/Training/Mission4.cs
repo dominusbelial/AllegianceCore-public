@@ -54,16 +54,13 @@ public sealed class Mission4 : TrainingMission
     private int _nextBuoy = 700;
 
     // ----------------------------------------------------------------------------------------------
-    // Key ids (TrekKey). Native uses TK_TargetEnemy and TK_ToggleCloak (<c>mission4.cpp:707,798</c>);
-    // the official igc.h values are not wired into the port, so distinct stable ids are picked here
-    // (the site maps them to the real keycodes in TR-2). The SPACEBAR is the existing KeyFireBooster.
+    // Key ids (TrekKey). Native gates the cloak lesson on GetKeyCondition(TK_ToggleCloak)
+    // (<c>mission4.cpp:707</c>) and the miner engagement on GetKeyCondition(TK_TargetEnemy)
+    // (<c>mission4.cpp:798</c>); the port uses the shared native ids from
+    // <see cref="TrainingMissionIds"/> (KeyToggleCloak = 94, igc.h:317; KeyTargetEnemy = 80,
+    // igc.h:303) so the real client's TrainingInputGate delivers the same numbers.
+    // The SPACEBAR is the existing KeyFireBooster.
     // ----------------------------------------------------------------------------------------------
-
-    /// <summary>Picked id for the native <c>TK_TargetEnemy</c> (E key) — Target an enemy.</summary>
-    private const int KeyTargetEnemy = 111;
-
-    /// <summary>Picked id for the native <c>TK_ToggleCloak</c> (K key) — toggle the cloak.</summary>
-    private const int KeyToggleCloak = 112;
 
     // ----------------------------------------------------------------------------------------------
     // Drone pilot types (native c_pt*; <c>mission4.cpp:537,864,914</c>).

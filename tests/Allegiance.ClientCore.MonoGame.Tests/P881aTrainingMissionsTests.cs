@@ -418,6 +418,35 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.Equal(80, TrainingMissionIds.KeyTargetEnemy);
     }
 
+    /// <summary>P885 — the Mission 4 equivalent: the production input gate routes the real cloak and
+    /// target-enemy bindings to the mission's native TrekKey numbers (training/mission4.cpp:707,798
+    /// gate on GetKeyCondition(TK_ToggleCloak=94, igc.h:317) and GetKeyCondition(TK_TargetEnemy=80,
+    /// igc.h:303)).</summary>
+    [Fact]
+    public void Mission4_cloak_and_target_enemy_bindings_deliver_the_native_trek_keys()
+    {
+        using var connection = new ConnectionSession();
+        var site = new ClientTrainingSite(new ClientTrainingFacilities
+        {
+            World = () => connection.World,
+            Session = connection,
+        });
+        var mission = new Mission4(site);
+        var map = new ActionMap(InputActionCatalog.Definitions);
+        var gate = new TrainingInputGate(mission.RecordKeyPress);
+        map.ActionFilter = gate.Approves;
+        map.SetBinding("ToggleCloak", new(Keys.G, InputModifiers.None), true);
+        map.SetBinding("TargetEnemy", new(Keys.F, InputModifiers.None), true);
+        gate.Update(new(Keys.G), map);   // ToggleCloak binding = TK_ToggleCloak (94)
+        gate.Update(new(Keys.F), map);   // TargetEnemy binding = TK_TargetEnemy (80)
+        Assert.True(site.ConsumeKey(TrainingMissionIds.KeyToggleCloak));
+        Assert.True(site.ConsumeKey(TrainingMissionIds.KeyTargetEnemy));
+        Assert.Equal(94, TrainingMissionIds.KeyToggleCloak);
+        Assert.Equal(80, TrainingMissionIds.KeyTargetEnemy);
+        Assert.False(site.ConsumeKey(111) || site.ConsumeKey(112),
+            "the retired invented ids must never be delivered");
+    }
+
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner
     /// Game1.TryComputeDockSteer uses) driven from the replicated pose.</summary>
     private static (ControlData Controls, int StateM) DockControls(Trainee t)
