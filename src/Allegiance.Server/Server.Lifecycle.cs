@@ -2049,6 +2049,11 @@ public sealed partial class Server
         _teammateExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         _stationIdentitySent.RemoveWhere(e => e.Recipient == id);
         _playerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        // P884 — the P332 teammate-position latch is the same (recipient, ship)
+        // shape as _teammateExportSent and had NO release path at all: every peer
+        // that ever left (or every match that ever ended) left its pairs behind
+        // for good. Free them with the peer exactly like the sibling latches.
+        _teammatePositionSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         // P349 — the cross-side export latch gets the exact same treatment: free
         // every entry where the departing peer was the recipient OR the departing
         // ship was the subject, else it grows monotonically with connection churn.

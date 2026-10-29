@@ -608,6 +608,11 @@ public sealed partial class Server : IDisposable
     // invisible). Per-(recipient,subject), not per-ship, so a ship that is
     // placed once and left stationary is still sent to each NEW viewer that
     // joins later, not just to whoever was present at its one dirty window.
+    // The pair's lifetime is the WORLD's (P884): pruned with the peer
+    // (ReleasePeer) and emptied with the finished world at game-over rotation
+    // (RotateMissionAfterGameOver) — every subject is an old-world ship, and
+    // AllocateShipId recycles ids. Un-pruned, this set grew forever at
+    // peers x same-side-ships per match (the P884 leak).
     // Sim-thread only, like the siblings above.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePositionSent = new();
 
@@ -896,14 +901,16 @@ public sealed partial class Server : IDisposable
               int LastPingQuery, int TeammateExportSent, int PlayerInfoSent,
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
               int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick,
-              int NextTeammateRefreshTick) ConnectionScopedCacheCounts()
+              int NextTeammateRefreshTick, int TeammatePositionSent,
+              int CrossSideShipStatusSeen) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
             _lastPingQuery.Count, _teammateExportSent.Count, _playerInfoSent.Count,
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
             _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count,
-            _nextTeammateRefreshTick.Count);
+            _nextTeammateRefreshTick.Count, _teammatePositionSent.Count,
+            _crossSideShipStatusSeen.Count);
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }

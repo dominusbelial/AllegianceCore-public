@@ -693,6 +693,30 @@ public sealed partial class Server
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
+        // P884 — these three are per-WORLD state keyed by ship id, and a retired
+        // world's ids must not survive the reset: every ship in the fresh mission
+        // is a new object (native reuses the same CfsMission and resets it,
+        // fsmission.cpp:3490-3527, so no IGC ship of the old world survives
+        // either), and AllocateShipId (Server.Docking.cs:2170-2181) recycles ids
+        // in a 16-bit space, so a stale entry can also mislabel or silence a NEW
+        // ship that reuses a retired id.
+        //   * _teammatePositionSent — the P332 one-shot "this (recipient, ship)
+        //     pair has had its first position" latch. It was only ever ADDED to
+        //     (Server.Broadcast.cs:1084/1404), so every finished match left one
+        //     entry per (recipient, same-side ship) behind forever: at the rig's
+        //     394 peers that is ~77k entries per match (~+2-20 MB/match with
+        //     respawn churn) — the P884 per-match server leak. Native has no such
+        //     latch at all; the client re-learns every ship from the new world.
+        //   * _teammateLoadoutCache — per-subject loadout snapshots (keyed by ship
+        //     id, so every retired ship's PartData[] snapshot stayed reachable).
+        //   * _crossSideShipStatusSeen — the (seeing side, ship) visibility edge;
+        //     every subject is an old-world ship id.
+        // All three re-populate lazily in the fresh world, so clearing is a pure
+        // drop of unreachable state (no wire behaviour change: the fresh mission's
+        // first pose/status/export send already forces the same messages).
+        _teammatePositionSent.Clear();
+        _teammateLoadoutCache.Clear();
+        _crossSideShipStatusSeen.Clear();
         // P813c — a parked (reconnect-grace) seat belongs to THIS world; a game
         // over during the gap ends the grace (a peer that reconnects afterwards
         // gets a normal fresh logon into the rotated mission).
