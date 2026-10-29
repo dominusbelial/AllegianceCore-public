@@ -48,6 +48,11 @@ public sealed class P884RotationRetentionTests(ITestOutputHelper output)
     {
         Port = 0,
         SideSelectAutoSeatSeconds = 0.2,   // ConnectionSession peers never send POSITIONREQ
+        // P887 — this suite exercises the PORT teammate latch (per-tick
+        // SingleShipUpdate posBatch retention across game-over rotation), so it
+        // pins the old ship-update model explicitly now that "native" is the
+        // server default (the native model suppresses the posBatch stream).
+        Broadcast = new() { ShipUpdateModel = "port" },
         Transport = new() { MaxConnections = 256, MaxConnectionsPerIp = 256 },
         LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { Enabled = false } },
         Games = [new()

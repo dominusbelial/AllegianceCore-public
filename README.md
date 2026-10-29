@@ -183,39 +183,61 @@ This is the configuration we use for our 195v195 "march" battles (two full fleet
 travelling the map and meeting at Alderan, with the economy running). It's tuned for
 big battles on a LAN; a small game runs fine on the defaults.
 
+Since P887 the performance baseline below **is the server default** — a fresh server
+already runs it, so the 200v200 config only needs the per-IP connection limit and the
+map (the ~390 bots all originate from ONE Mac bot host, and the default per-IP
+ceiling of 64 would refuse them):
+
 **Server** — add these to your `server.json` (use the `m2xspiderw.igc` map for the
 showcase battles below):
 
 ```json
-"broadcast":    { "parallelBuild": true, "shipUpdateModel": "native" },
-"transport":    { "mode": "pool", "maxConnections": 2048, "maxConnectionsPerIp": 1024 },
+"transport":    { "maxConnections": 2048, "maxConnectionsPerIp": 1024 },
 "liveSettings": { "timeDilation": "auto" }
 ```
 
 …or set them per run with environment variables (same effect, no file edits):
 
 ```bash
-ALLEGIANCE_BROADCAST_PARALLEL_BUILD=1 \
-ALLEGIANCE_SHIP_UPDATE_MODEL=native \
-ALLEGIANCE_TRANSPORT_MODE=pool \
 ALLEGIANCE_TRANSPORT_MAX_CONNECTIONS=2048 \
 ALLEGIANCE_TRANSPORT_MAX_PER_IP=1024 \
 dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance.Server/server.json
 ```
 
-- `parallelBuild` builds each player's updates in parallel (byte-identical output).
-- `shipUpdateModel: native` uses the original game's prioritised ship-update budget —
-  roughly a fifth of the bandwidth of `port` at 400 players, and what keeps bot hosts
-  responsive in big battles.
-- `transport: pool` serves all connections from a small worker pool.
-- `maxConnectionsPerIp` (default 64) is raised to 1024 for the big battles because
-  the ~390 bots all originate from ONE Mac bot host — the default per-IP ceiling is a
-  sane limit for a public server but would refuse the rig.
+- `maxConnectionsPerIp` (default 64) is raised to 1024 for the big battles — the
+  default is a sane limit for a public server but would refuse the rig. Leave it at
+  64 for anything internet-facing.
 - Server GC is on by default.
 - `timeDilation: auto` (the default) is EVE-style slow motion under load: when one crowded
   sector makes ticks run long, the game slows slightly instead of stuttering. In our 200v200
   tests it kept every tick under 150 ms with no disconnects, at about 0.92× speed on
   average (0.73× at the heaviest moment). Set `"off"` to disable.
+
+### Performance settings (the P887 baseline)
+
+These are the server defaults that make up the measured performance baseline. Every
+future change is A/B'd on the 200v200 rig **on top of this baseline**.
+
+| Setting (default) | What it does | Rig evidence (batch → result) |
+|---|---|---|
+| `broadcast.immutableSnapshot` + `broadcast.encodeOnce` (on) | Capture owned wire data on the sim thread, encode each ship once per snapshot, publish off-thread. Payloads byte-identical. | b42 vs b39: clash-peak tick 44 ms vs 71–80 ms; tick overruns ~1k vs 22–40k |
+| `broadcast.parallelBuild` (on) | Builds each player's updates in parallel (byte-identical output; ≤ cores−1 workers). | P603: byte-identical payloads; clamps to cores−1 |
+| `broadcast.shipUpdateModel: "native"` (native) | Uses the original game's prioritised ship-update budget (native parity). | P604: native parity, ~1/5 the bandwidth of `port` at 400 players |
+| `sim.nativeGotoPlan` (on) | Native NPC GotoPlan steering (native parity). | b52/b55: perf neutral (16.2 ms median tick), more station kills |
+| `transport.mode: "pool"` (pool) | Serves all connections from a small send-worker pool (≈ core count) instead of one writer thread per peer. | P605: workers default ≈ core count |
+| Server GC (`ServerGarbageCollection`) | Server-grade garbage collector for the dedicated server. | baseline b55: worst GC pause 36 ms at 394 connections |
+
+P863 (b50 vs b49) — median tick 35.8 → 16.3 ms, TiDi windows 5.6 % → 0.6 %. Current
+baseline (b55, 200v200): median tick 16.2 ms, TiDi window p95 ≈ 20 ms, 0 overrun
+windows, worst GC pause 36 ms at 394 connections.
+
+**Options that stay off, and why:**
+
+- `broadcast.interestTiers` — per-viewer interest rates. Halves update age (0.22 s)
+  for +40 % bandwidth and +6–18 ms peak tick (b39–b43); not worth it at the baseline.
+- `sim.nativeBroadcastOrder` (SIM-0141, native parity) — +7 ms/tick median on b51;
+  re-test after P863b; adopt if < ~2 ms.
+- `receive.decouple` — off; local A/B only (P673), never A/B'd on the rig.
 
 Inbound decoding can also run on the existing receive workers with
 `"receive": { "decouple": true }` or `ALLEGIANCE_RECEIVE_DECOUPLE=1` (default off;

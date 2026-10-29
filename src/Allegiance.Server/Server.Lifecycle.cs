@@ -158,19 +158,20 @@ public sealed partial class Server
         // the ALLEGIANCE_BROADCAST_PARALLEL_BUILD env var (env wins), clamp the
         // degree of parallelism, and PRINT the active value so every server run
         // is labelled (and a measurement run is never mistaken for an
-        // uninstrumented one). Default OFF = today's serial byte-for-byte path.
+        // uninstrumented one). Default ON since P887 (the rig baseline); an
+        // explicit false/0 selects the original serial byte-for-byte path.
         ResolveBroadcastParallelBuild();
 
-        // P605 — resolve the transport's send-draining mode (thread-per-peer
-        // default, pool optional) from transport.mode config + the
-        // ALLEGIANCE_TRANSPORT_MODE env var, print it at boot, and stamp it
-        // into the profiler report header.
+        // P605 — resolve the transport's send-draining mode (pool default since
+        // P887, thread-per-peer via an explicit override) from transport.mode
+        // config + the ALLEGIANCE_TRANSPORT_MODE env var, print it at boot, and
+        // stamp it into the profiler report header.
         ResolveTransportMode();
 
-        // P604 — resolve the ship-state update model ("port" default, "native"
-        // optional) from broadcast.shipUpdateModel config + the
-        // ALLEGIANCE_SHIP_UPDATE_MODEL env var, print it at boot, and stamp it
-        // into the profiler report header.
+        // P604 — resolve the ship-state update model ("native" default since
+        // P887, "port" via an explicit override) from broadcast.shipUpdateModel
+        // config + the ALLEGIANCE_SHIP_UPDATE_MODEL env var, print it at boot,
+        // and stamp it into the profiler report header.
         ResolveShipUpdateModel();
 
         // P813c (EXPERIMENTAL) — resolve the reconnect grace (config
@@ -1591,14 +1592,14 @@ public sealed partial class Server
     /// the <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var (env wins), clamp
     /// the degree of parallelism to <c>[1, ProcessorCount-1]</c>, print the
     /// active value at boot, and stamp it into the profiler's report header so
-    /// every measurement is labelled. Default OFF = today's serial broadcast
-    /// path, byte-for-byte. A missing/disabled config section keeps
-    /// <see cref="Server._broadcastParallelBuild"/> false (no behaviour change).
+    /// every measurement is labelled. Default ON since P887 (the rig
+    /// baseline): parallel building with byte-identical payloads; an explicit
+    /// false/0 selects the original serial broadcast path, byte-for-byte.
     /// </summary>
     private void ResolveBroadcastParallelBuild()
     {
         var bc = _config.Broadcast;
-        bool enabled = bc?.ParallelBuild ?? false;
+        bool enabled = bc?.ParallelBuild ?? true;
 
         string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_PARALLEL_BUILD");
         if (!string.IsNullOrEmpty(env))
@@ -1613,7 +1614,7 @@ public sealed partial class Server
         Console.WriteLine(enabled
             ? $"[boot] broadcast.parallelBuild = true — per-peer broadcast building runs in parallel (max {_broadcastMaxParallelism} workers); "
               + "payloads are byte-identical to serial mode; see P603."
-            : "[boot] broadcast.parallelBuild = false — serial broadcast building (today's byte-for-byte behaviour)");
+            : "[boot] broadcast.parallelBuild = false — serial broadcast building (selected explicitly; payloads identical to parallel)");
 
         // Stamp the active value into the profiler report header so a parallel
         // measurement run can never be mistaken for a serial one.
@@ -1629,15 +1630,15 @@ public sealed partial class Server
     /// <c>ALLEGIANCE_TRANSPORT_POOL_WORKERS</c> (default about the core count).
     /// Prints the active mode at boot (so every server run is labelled) and
     /// stamps it into the profiler report header together with the broadcast
-    /// flag. Default thread-per-peer = today's behaviour, unchanged. An
-    /// unrecognized mode fails loudly (catches typos) rather than silently
-    /// picking a path the operator didn't ask for.
+    /// flag. Default pool since P887 (the rig baseline). An unrecognized mode
+    /// fails loudly (catches typos) rather than silently picking a path the
+    /// operator didn't ask for.
     /// </summary>
     private void ResolveTransportMode()
     {
         var tc = _config.Transport;
 
-        string modeStr = tc?.Mode is { Length: > 0 } m ? m : "thread-per-peer";
+        string modeStr = tc?.Mode is { Length: > 0 } m ? m : "pool";
         string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MODE");
         if (!string.IsNullOrEmpty(env)) modeStr = env;
 
@@ -1743,8 +1744,8 @@ public sealed partial class Server
     private static TransportMode ParseTransportMode(string modeStr)
         => modeStr.Trim().ToLowerInvariant() switch
         {
-            "thread-per-peer" or "threadperpeer" or "thread" or "tpp" or "default" => TransportMode.ThreadPerPeer,
-            "pool" or "workerpool" => TransportMode.Pool,
+            "thread-per-peer" or "threadperpeer" or "thread" or "tpp" => TransportMode.ThreadPerPeer,
+            "pool" or "workerpool" or "default" => TransportMode.Pool,
             _ => throw new InvalidDataException(
                 $"unknown transport.mode '{modeStr}' (expected 'thread-per-peer' or 'pool'); "
                 + "set it in server.json transport.mode or $ALLEGIANCE_TRANSPORT_MODE"),
@@ -1756,18 +1757,18 @@ public sealed partial class Server
     /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> env var (env wins), print it at
     /// boot, and stamp it into the profiler report header together with the
     /// P603 broadcast / P605 transport labels so every measurement is
-    /// unambiguous. Default <c>"port"</c> = today's per-tick teammate
-    /// <c>posBatch</c> stream, byte-for-byte unchanged. <c>"native"</c> =
-    /// suppress the per-tick teammate <c>posBatch</c> stream and carry remote-
-    /// ship positions only through the native deviation-ranked
-    /// HEAVY/LIGHT_SHIPS_UPDATE budget (P604). An unrecognized value fails
+    /// unambiguous. Default <c>"native"</c> since P887 (the rig baseline):
+    /// the per-tick teammate <c>posBatch</c> stream is suppressed and remote-
+    /// ship positions ride the native deviation-ranked HEAVY/LIGHT_SHIPS_UPDATE
+    /// budget (P604). An explicit <c>"port"</c> selects the per-tick teammate
+    /// <c>posBatch</c> stream. An unrecognized value fails
     /// loudly rather than silently picking a path the operator didn't ask for.
     /// </summary>
     private void ResolveShipUpdateModel()
     {
         var bc = _config.Broadcast;
 
-        string model = bc?.ShipUpdateModel is { Length: > 0 } m ? m : "port";
+        string model = bc?.ShipUpdateModel is { Length: > 0 } m ? m : "native";
         string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_SHIP_UPDATE_MODEL");
         if (!string.IsNullOrEmpty(env)) model = env;
 
@@ -1777,7 +1778,7 @@ public sealed partial class Server
         Console.WriteLine($"[boot] broadcast.shipUpdateModel = {_shipUpdateModel} — "
             + (_nativeShipUpdates
                 ? "native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604."
-                : "port per-tick teammate SingleShipUpdate posBatch stream (today's byte-for-byte behaviour)"));
+                : "port per-tick teammate SingleShipUpdate posBatch stream (selected explicitly)"));
 
         // Compose a single report-header label covering every switchable mode
         // (P603 broadcast + P605 transport + P604 ship-update model).
@@ -1793,8 +1794,8 @@ public sealed partial class Server
     private static string ParseShipUpdateModel(string modelStr)
         => modelStr.Trim().ToLowerInvariant() switch
         {
-            "port" or "ports" or "default" => "port",
-            "native" or "nat" => "native",
+            "port" or "ports" => "port",
+            "native" or "nat" or "default" => "native",
             _ => throw new InvalidDataException(
                 $"unknown broadcast.shipUpdateModel '{modelStr}' (expected 'port' or 'native'); "
                 + "set it in server.json broadcast.shipUpdateModel or $ALLEGIANCE_SHIP_UPDATE_MODEL"),

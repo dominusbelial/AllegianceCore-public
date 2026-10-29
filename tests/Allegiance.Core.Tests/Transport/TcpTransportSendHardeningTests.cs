@@ -314,7 +314,7 @@ public abstract class TcpTransportSendHardeningTestsBase
     }
 }
 
-/// <summary>P645 send-hardening suite under thread-per-peer (default) mode.</summary>
+/// <summary>P645 send-hardening suite under thread-per-peer mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportSendHardeningThreadPerPeerTests : TcpTransportSendHardeningTestsBase
 {

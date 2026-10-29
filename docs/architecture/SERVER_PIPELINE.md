@@ -82,7 +82,8 @@ The broadcast stages **build N personalised updates on the sim thread** (since
 P603, the build phase of `broadcastShipStates` runs on a `Parallel.For`, but
 `broadcastShipsUpdate` and the sweeps are still serial) and then hand N TCP
 connections to either thread-per-peer or the P605 worker pool. Two transports:
-thread-per-peer (default) and `pool` (P605/P606/P611). Egress is drained by the
+`pool` (P605/P606/P611 — the default since P887) and thread-per-peer (the old
+dedicated-writer-thread path, selected explicitly). Egress is drained by the
 sim thread via `SendPeer`/`SendPeerCoalescing` (coalescing the per-tick ship
 stream into batches), so the sim thread both *encodes* and *queues* every byte.
 
@@ -432,7 +433,7 @@ phase. Recommended order (cheapest / lowest-risk / highest-leverage first):
   across S sectors; 1,024 multi-sector tick ≥ 40 Hz.
 - **Ph.8 UDP lanes via GNS** (`transport.lanes`, LAN-safe default off) for
   internet scale; reliable/unreliable lane separation. Rollback: thread-per-peer
-  TCP default unchanged. Metric: 1,024 enc conns, unreliable lane never delayed
+  TCP (an explicit `transport.mode` away). Metric: 1,024 enc conns, unreliable lane never delayed
   by reliable bursts; p95 server work near sim floor. Encryption/identity phase
   before public exposure.
 

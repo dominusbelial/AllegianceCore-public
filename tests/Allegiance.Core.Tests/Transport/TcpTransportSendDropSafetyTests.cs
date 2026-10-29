@@ -32,7 +32,8 @@ namespace Allegiance.Core.Tests.Transport;
 public abstract class TcpTransportSendDropSafetyTestsBase
 {
     // P605 — parameterize the whole transport suite over send-draining mode
-    // (thread-per-peer = today's behaviour, pool = fixed worker pool), so
+    // (thread-per-peer = the old dedicated-writer path, pool = fixed worker pool, the
+    // server default since P887), so
     // every regression below is proven on BOTH transports.
     private readonly TransportMode _mode;
     protected TcpTransportSendDropSafetyTestsBase(TransportMode mode) => _mode = mode;
@@ -393,8 +394,8 @@ public abstract class TcpTransportSendDropSafetyTestsBase
     }
 }
 
-/// <summary>P605 — the send/drop-safety suite under thread-per-peer (today's
-/// default) transport mode.</summary>
+/// <summary>P605 — the send/drop-safety suite under thread-per-peer
+/// transport mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportSendDropSafetyThreadPerPeerTests : TcpTransportSendDropSafetyTestsBase
 {

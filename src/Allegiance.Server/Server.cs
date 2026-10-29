@@ -259,10 +259,12 @@ public sealed partial class Server : IDisposable
     /// (<c>broadcast.parallelBuild</c> config, overridable by the
     /// <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var; env wins). Resolved
     /// once at boot; the value is printed at boot and stamped into the profiler
-    /// report header so every measurement is labelled. When false (the default)
-    /// the broadcast code path is byte-for-byte today's serial behaviour.
+    /// report header so every measurement is labelled. The default since P887
+    /// (the rig baseline) is <c>true</c> — parallel building with byte-identical
+    /// payloads; an explicit <c>false</c> selects the original serial path.
+    /// Placeholder until boot resolves it.
     /// </summary>
-    internal bool _broadcastParallelBuild;
+    internal bool _broadcastParallelBuild = true;
 
     /// <summary>
     /// P604 — which per-peer ship-state update model is active
@@ -272,17 +274,20 @@ public sealed partial class Server : IDisposable
     /// header so every measurement is labelled. <c>true</c> = the "native"
     /// model: the per-tick teammate <c>posBatch</c> SingleShipUpdate stream is
     /// suppressed and remote-ship positions flow only through the native
-    /// deviation-ranked HEAVY/LIGHT budget. <c>false</c> (the default, "port")
-    /// = today's byte-for-byte behaviour, unchanged. See
-    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md.
+    /// deviation-ranked HEAVY/LIGHT budget. <c>true</c> is the default since
+    /// P887 (the rig baseline); <c>false</c> ("port", selected explicitly) =
+    /// the per-tick teammate stream. See
+    /// docs/reports/P604_NATIVE_SHIP_UPDATE_BUDGET.md. Placeholder until boot
+    /// resolves it.
     /// </summary>
-    internal bool _nativeShipUpdates;
+    internal bool _nativeShipUpdates = true;
 
     /// <summary>
     /// P604 — the active ship-update-model name ("port" or "native"), retained
     /// for the boot banner / profiler label. Mirrors <see cref="_nativeShipUpdates"/>.
+    /// Resolved at boot; the config default since P887 is "native".
     /// </summary>
-    internal string _shipUpdateModel = "port";
+    internal string _shipUpdateModel = "native";
 
     /// <summary>
     /// P603 — the bounded degree of parallelism for the parallel broadcast build
@@ -298,9 +303,12 @@ public sealed partial class Server : IDisposable
     /// (<c>transport.mode</c> config, overridable by
     /// <c>ALLEGIANCE_TRANSPORT_MODE</c>; env wins). Resolved once at boot; the
     /// value is printed at boot and stamped into the profiler report header.
-    /// Default <see cref="TransportMode.ThreadPerPeer"/> = today's behaviour.
+    /// The default since P887 (the rig baseline) is
+    /// <see cref="TransportMode.Pool"/>; an explicit "thread-per-peer"
+    /// selects the old dedicated-writer-thread path. Placeholder until boot
+    /// resolves it.
     /// </summary>
-    internal TransportMode _transportMode = TransportMode.ThreadPerPeer;
+    internal TransportMode _transportMode = TransportMode.Pool;
 
     /// <summary>
     /// P605 — pool mode: how many send workers to spin up

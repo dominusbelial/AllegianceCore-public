@@ -59,7 +59,12 @@ public sealed class ShipUpdateBudgetLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
-        Broadcast = new() { MinUpdateHz = 0 }, // exercises the ranked budget without P659's additive floor
+        // P219 asserts the LEGACY folded budget (4 HEAVY entries incl. the folded
+        // LIGHT tier). P887 — pin the port ship-update model explicitly now that
+        // "native" is the default: the native ranked-pose path keeps native's
+        // separate HEAVY + LIGHT messages (2 + 2), so the 4-HEAVY-entry contract
+        // only holds on the legacy projection.
+        Broadcast = new() { ShipUpdateModel = "port", MinUpdateHz = 0 }, // exercises the ranked budget without P659's additive floor
 
         Games =
         [

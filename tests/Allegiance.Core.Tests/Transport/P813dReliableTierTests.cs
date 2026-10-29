@@ -298,7 +298,7 @@ public abstract class P813dReliableTierTestsBase
     }
 }
 
-/// <summary>P813d reliable-tier suite under thread-per-peer (default) mode.</summary>
+/// <summary>P813d reliable-tier suite under thread-per-peer mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class P813dReliableTierThreadPerPeerTests : P813dReliableTierTestsBase
 {

@@ -50,6 +50,11 @@ public class OwnShipCoalesceKeyTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        // P887 — pins the own-ship key distinct FROM the PORT teammate posBatch
+        // coalesce key; pin the old model explicitly now that "native" is the
+        // default (native suppresses the posBatch stream the observer frame
+        // assertion reads).
+        Broadcast = new() { ShipUpdateModel = "port" },
         Games =
         [
             new Gm { Name = "Own-Ship Key Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

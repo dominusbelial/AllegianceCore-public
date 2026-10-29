@@ -52,6 +52,14 @@ public sealed class P803TurretGunnerLoopbackLiveTests
         Port = 0,
         UpdatesPerSecond = 20,
         SideSelectAutoSeatSeconds = 30,
+        // P887 — the boarded gunner's HUD model inputs are asserted from the
+        // PORT per-tick teammate posBatch pose of the (docked) parent ship; pin
+        // the old model explicitly now that "native" is the default. Under the
+        // native ranked-pose budget a DOCKED ship is not a cluster candidate
+        // (Sector.GetShipUpdateCandidates) and the posBatch stream is
+        // suppressed, so the docked parent's pose genuinely does not flow —
+        // flagged in docs/reports/P887_REPORT.md as a native-model observation.
+        Broadcast = new() { ShipUpdateModel = "port" },
         Games =
         [
             new Gm { Name = name, Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

@@ -454,7 +454,7 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
     }
 }
 
-/// <summary>P606 coalesce/reason suite under thread-per-peer (default) mode.</summary>
+/// <summary>P606 coalesce/reason suite under thread-per-peer mode (explicit; the server default since P887 is pool).</summary>
 [Collection("LiveNetwork")]
 public class TcpTransportCoalesceAndReasonThreadPerPeerTests : TcpTransportCoalesceAndReasonTestsBase
 {
