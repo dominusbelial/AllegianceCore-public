@@ -35,8 +35,9 @@ Fly `baseline` too: it is the control to compare against.
 | `reconnect` | P813c | server `reconnect.enabled` + `graceSeconds`; client/bots `ALLEGIANCE_RECONNECT_GRACE_SECONDS` | server + client | pull the network for 2–3 s mid-fight: you come back in the same ship; a voluntary quit is still immediate |
 | `tiers` | P813a | server `broadcast.interestTiers` (+ `promotionEpsilon`, default 200) | server | far ships still look right; manoeuvring far ships snap back fast; `[update-age]` shows bytes per tier |
 | `reliable` | P813d | server `transport.reliableOneShot` (env `ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT=1`) | server | kills/docks/chat under heavy load; mostly visible at 200v200 |
+| `gotoplan` | P817 | server `sim.nativeGotoPlan` (env `ALLEGIANCE_SIM_NATIVE_GOTOPLAN=1`) | server, NPC drones | miners and builders fly native routes (He3 +29 % in local tests); watch for stuck drones |
 | `gunners` | P814b | bot host `ALLEGIANCE_GUNNERS=on` | bots (skirmish/showcase) | bots board turret bombers/gunships and fire the turrets; a gunship slot in the fleet |
 | — | P788c | `sim.nativeBroadcastOrder` | server | in development |
 
-Bot-side experiments (`gunners`) only show in skirmish/showcase games. Suggested order: `smoothing`,
-`reconnect`, `gunners`, then `tiers` and `reliable` (those two are judged on the 221 rig).
+Bot-side experiments (`gunners`, `gotoplan` drones) only show in skirmish/showcase games. Suggested order: `smoothing`,
+`reconnect`, `gunners`, `gotoplan`, then `tiers` and `reliable` (those two are judged on the 221 rig).

@@ -5,9 +5,8 @@ namespace Allegiance.Server;
 /// JSON deserialization of an absent sim section or an empty sim object.</summary>
 public sealed class SimConfig
 {
-    /// <summary>P817 native NPC GotoPlan (Igc/common.cpp:1157-2333). Default ON since the 2026-10-28 rig A/B
-    /// (b52 vs b50); false keeps the legacy port steering. Env override wins.</summary>
-    public bool NativeGotoPlan { get; set; } = true;
+    /// <summary>P817 experimental native NPC GotoPlan. Default off; env override wins.</summary>
+    public bool NativeGotoPlan { get; set; }
 
     internal bool ResolveNativeGotoPlan() => ResolveNativeGotoPlan(NativeGotoPlan,
         Environment.GetEnvironmentVariable("ALLEGIANCE_SIM_NATIVE_GOTOPLAN"));
