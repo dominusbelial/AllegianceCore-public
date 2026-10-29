@@ -265,7 +265,22 @@ store, port or environment variable was introduced.
 
 ### Follow-up verification
 
-RESULTS_PENDING
+Codex stopped at "model at capacity" before its gate finished; Claude ran it on master after the
+merge (92f050d3, base 72a82ee9):
+
+- `dotnet build AllegianceCore.slnx`: 0 warnings; `scripts/parity-scorecard.py` passes.
+- Filtered P883/P883b/P871b/lobby/create-game/reconnect/logon tests 3×: one deterministic failure,
+  `LobbyHeartbeatTests.LobbyRegisterRequest_serializes_to_byte_identical_wire_shape` — its expected
+  wire shape predated the new `currentGames`/`maxGames` fields. Fixed at merge (expected shape
+  includes both; asserts `maxGames` 99); the class passes 8/8 ×3.
+- One Fast sweep: `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` failed 3/3 alone
+  because P877 (merged after this lane's base) logged on with `DwCookie = 877`, which a P883 server
+  correctly refuses with DPR_NoMission. Fixed at merge (NA cookie); P877 passes 11/11 ×3. The
+  remaining failures are ledgered (`AddPartTests…`, `ShopLauncherMountNumberingLiveTests…`, both
+  3/3 alone; `NpcWingmanDefendLiveTests…` line 179, pre-existing).
+- Showcase never-parks (P730 two-match) ×5: 4/5; the failing run's text was not captured, and three
+  further runs passed 3/3 (4m24s–5m17s). Ledgered.
+- Training Fast + Live (both client projects): pass.
 
 ### Deployment
 

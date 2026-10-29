@@ -190,7 +190,10 @@ public sealed class LobbyHeartbeatTests
             Players = (System.Collections.Generic.IReadOnlyList<string>?)null,
             PublishPlayers = false, Token = (string?)null,
             Game = (global::Allegiance.Server.LobbyGameParams?)null,
-            MinClientVersion = (string?)null };
+            MinClientVersion = (string?)null,
+            // P883b — the native cur/max game counts (FedSrv.CPP:8107,8850; lobby/client.cpp:361-362).
+            // Missions is omitted when null (WhenWritingNull), so it does not appear here.
+            CurrentGames = 0, MaxGames = 99 };
         string viaWebDefaults = JsonSerializer.Serialize(anon, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         Assert.Equal(viaWebDefaults, viaContext);           // byte-identical wire shape
@@ -198,6 +201,7 @@ public sealed class LobbyHeartbeatTests
         Assert.Contains("\"game\":null", viaContext);       // P806 — absent settings still emitted (no IgnoreCondition)
         Assert.Contains("\"minClientVersion\":null", viaContext); // P810 — absent requirement still emitted
         Assert.Contains("\"playerCount\":7", viaContext);   // camelCase, as before
+        Assert.Contains("\"maxGames\":99", viaContext);     // P883b — native default MaxGames advertised
     }
 
     /// <summary>P185 — <c>LobbyRegisterResponse</c> round-trips through the

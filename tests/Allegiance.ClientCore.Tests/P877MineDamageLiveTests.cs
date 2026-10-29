@@ -32,7 +32,8 @@ public sealed class P877MineDamageLiveTests
     {
         CharacterName = name, ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL",
         MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer, Time = 877,
-        DwCookie = 877, CrcFileList = -1, SteamAuthTicket = new byte[16],
+        DwCookie = uint.MaxValue, // NA = first mission (P883: an unknown cookie is DPR_NoMission)
+        CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 8770000000000000000ul, DrmHash = "p877",
     };
 

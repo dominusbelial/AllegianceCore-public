@@ -3868,3 +3868,15 @@ without source changes. Evidence: git-excluded
 `.scratch/p883b/build-isolation/hullhit-{1,2,3}.log`. The full tool gate is rerun
 in `.scratch/p883b/build-tools-final.log`; see `docs/reports/P883_REPORT.md` for
 its final result. This is a build-process failure, not a changed gameplay rule.
+
+### 2026-10-29 — P883b merge gate (92f050d3)
+
+Fast sweep: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+and `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+(both already ledgered) passed **3/3 alone**; `NpcWingmanDefendLiveTests…` is the
+pre-existing line-179 failure. `P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`
+failed 1 of 5 in the never-parks loop (failure text not captured by the gate
+script) and passed **3/3** in follow-up runs (4m24s–5m17s); load flake while
+three delegate lanes were running. Not flakes, fixed at merge: the heartbeat
+wire-shape test (new P883b fields) and P877's logon cookie (P883 refuses an
+unknown dwCookie, by design).
