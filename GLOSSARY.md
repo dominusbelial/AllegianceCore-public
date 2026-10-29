@@ -743,6 +743,17 @@ list in **reverse**.
   `docs/reports/P824_TEXTURE_PIPELINE.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
+- **`tools/core2txt` (P870/P870b)** — native `Core2Text`/`Text2Core` static-core
+  text round trip (`FedSrv/FedSrv.CPP:10385-10480`): `.igc` → editable
+  tab-delimited text (one CSV per native table, native headers/comments/columns)
+  and back. All 13 static object types are ported (`tools/core2txt/codecs/`), and
+  `tools/core2txt/CoreTable.cs` carries the shared native helpers. `.coremeta`
+  preserves the version word, the record sequence, and the sparse non-text bytes
+  (struct padding and the stale bytes after a string's NUL), which native itself
+  cannot reproduce; `SelfTest` certifies all 100 shipped static cores are
+  byte-identical after `.igc → text → .igc`. Certified by
+  `tests/Allegiance.Core.Tests/P870Core2TxtTests.cs` and
+  `tests/Allegiance.Core.Tests/P870StaticCoreLoaderTests.cs`.
 
 ## 8. Parity matrices (`docs/parity`)
 
