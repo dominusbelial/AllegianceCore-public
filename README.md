@@ -268,6 +268,31 @@ removed the arena mode) launches each side at home and sends wings through diffe
 alephs to converge on Alderan. ~390 bots are a heavy load: run the bot tool on its own wired machine,
 not on the server or the machine you play on.
 
+## Performance: the 200v200 baseline
+
+**Target.** Two full teams of ~195 players each (≈ 394 connections) playing complete matches unattended: economy,
+research, scouting, strike waves, finale, game over, then the next match. The server ticks at 20 Hz, a 50 ms budget per
+tick; a busy window passes at p95 ≤ 40 ms and p99 ≤ 50 ms.
+
+**How we measure.** A mini PC (Ryzen 9 6900HX, Native AOT server in Docker) runs the server. 390 bots run on a separate
+machine over wired Ethernet. Each change is an A/B batch of 2–3 full matches, never cut mid-match. The server's 5-second
+`[tickprof]`/`[gcprof]` windows give tick time, GC pauses, heap and time dilation. We also check that the battle stayed
+real (kills, station kills, research, strikes, disconnects). New ideas ship behind a default-off flag and are kept only
+if the A/B improves without changing native behaviour.
+
+**How it started vs. now:**
+
+| | Start (Oct 9–12, 2026) | Now (rig batch b55) |
+|---|---|---|
+| Load | ~94 players already used 93 % of one core; 301 players ran at 60 % speed | 394 connections at full speed, 0 windows behind |
+| Tick time | p95 1.2–1.8 s at 392 players (GC storms) | median 16.2 ms, window p95 ≈ 20 ms |
+| Worst GC pause | multi-second stalls | 36 ms |
+
+The steps in between: parallel per-player updates, a send-worker pool, the original game's ship-update budget, server
+GC, time dilation, an immutable encode-once broadcast snapshot, and the big-fight tick budget. These settings are now the
+**baseline**: every later change is measured against them. The full story, numbers per step, and the options we tested
+and left off are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+
 ## More
 
 - **[Sky pack](https://github.com/dominusbelial/AllegianceCore-sky)** — optional HD sky art (star field,
