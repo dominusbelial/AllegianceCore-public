@@ -3950,3 +3950,14 @@ offender, all pre-existing and untouched by P885 (client training ids only):
 
 Training gate (`run-training-tests.sh --no-build`, Fast + Live, both client
 projects): PASS clean — 75 + 58 tests, no flakes.
+
+## P887 merge gate (Claude, 2026-10-29)
+Fast tier `tiers-20261029T202701` on master 76c6355e (P887 defaults): 3 Core failures, none caused by P887.
+- `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` — the ledgered pre-existing
+  failure (3/3 alone).
+- `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` — float-boundary flake
+  (`Actual: 5.0000000000000009` vs range 4.9–5); 1/8 alone on master AND 1/8 on the pre-P887 tree (P884b worktree).
+  The assertion's upper bound needs an epsilon — follow-up.
+- `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` — failed in the
+  sweep and 1/3 alone, then 0/8 on master and 0/8 pre-P887: rare flake.
+- `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.97 s, just over the fast-tier 10 s limit (load).
