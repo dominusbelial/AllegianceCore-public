@@ -37,6 +37,9 @@ public sealed class TR4TrainingMissions56Tests
         TrainingController.BeginMission();
         mission.Start();
 
+        // Native command training stays in the station (training/mission5.cpp:84-106).
+        Assert.Equal((short)1050, host.PlayerShip.StationId);
+
         // Mission5 seeds 3 tower builders + 4 miners + 1 stealth fighter as root start actions
         // (mission5.cpp:181-247); the enemy scout spawns later in goal 3.
         Assert.True(host.Drones.Count >= 8, $"Mission 5 should seed 8 friendly drones, had {host.Drones.Count}");
@@ -118,6 +121,7 @@ public sealed class TR4TrainingMissions56Tests
         Assert.True(scoutDead, "enemy scout never destroyed (goal 4)");
         Assert.True(viewedHome, "Take-Me-To home view (goal 5) never reached");
         Assert.True(completed, "Mission 5 did not report completion");
+        Assert.Equal((short)1050, host.PlayerShip.StationId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

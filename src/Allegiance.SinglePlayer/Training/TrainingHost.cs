@@ -529,7 +529,12 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             ship.SetOrientation(ori);
             var sector = Mission.Sectors.FirstOrDefault(s => s.Id == sectorId);
             if (sector is not null && ship.Sector != sector)
+            {
+                // training/CreateDroneAction.cpp:75-80 calls SetCluster, which replaces
+                // membership (Igc/shipIGC.h:215-227), rather than adding a second entry.
+                ship.Sector?.Remove(ship);
                 Mission.PlaceShip(ship, sector);
+            }
             if (commandTargetShipId is { } && commandId == TrainingMissionIds.CmdGoto)
                 ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)sectorId, ToCore(position)));
         }
