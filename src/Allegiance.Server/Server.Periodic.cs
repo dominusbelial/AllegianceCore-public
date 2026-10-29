@@ -51,5 +51,34 @@ public sealed partial class Server
                 : "The clock has stopped. The game is a draw.";
             DeclareGameOver(mission, result.Winner?.Id ?? GameOver.NA, reason);
         }
+
+        CheckForNoShows(now);
+    }
+
+    /// <summary>P872/SIM-0146 — the port of native <c>CheckForNoShows</c>
+    /// (FedSrv.CPP:7871-7910, called from the periodic timer at :8088): a
+    /// mission nobody ever joined is deleted once it has existed for more than
+    /// ten seconds (native ages its FILETIME start time by 100000000
+    /// 100 ns-ticks = 10 s), one mission per check. Lifecycle ruling of
+    /// Domingo 2026-10-28: boot-configured and admin worlds persist — native
+    /// itself exempts admin (<c>bObjectModelCreated</c>) and custom-core games
+    /// (FedSrv.CPP:7882-7884) — so the reap applies only to
+    /// <see cref="Mission.PlayerCreated"/> sessions (which the port's
+    /// single-server-config core design always builds on the configured core,
+    /// satisfying the native default-core condition). The native
+    /// "don't show on the lobby until the creator arrives" rationale stands:
+    /// an empty player-created world is invisible to joiners, so deleting it
+    /// is unobservable to anyone but its creator.</summary>
+    private void CheckForNoShows(double now)
+    {
+        foreach (var mission in _missions.ToArray())
+        {
+            if (!mission.PlayerCreated) continue;              // configured/admin worlds persist (FedSrv.CPP:7882-7884)
+            if (HasMissionPlayers(mission)) continue;          // GetCountOfPlayers(NULL, true) == 0 (FedSrv.CPP:7885)
+            if (now - mission.CreatedAt <= 10.0) continue;     // > 100000000 FILETIME ticks = 10 s (FedSrv.CPP:7902-7903)
+            Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {_missions.IndexOf(mission)}), killing it (FedSrv.CPP:7906)");
+            _missions.Remove(mission);
+            break;                                             // deleting 1 mission per check is plenty (FedSrv.CPP:7909)
+        }
     }
 }

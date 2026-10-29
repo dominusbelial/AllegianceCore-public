@@ -3534,3 +3534,26 @@ passed. P750's native asteroid research test passed but took 10.623 s against
 10 s. Scratch `XDG_CONFIG_HOME` makes the profile test pass alone. All 13 new
 P873 cases passed in the sweep and 3/3 isolated suite runs. The gate is retained
 as red; no timing limits, unrelated fixtures or skips were changed.
+
+## P872 (2026-10-28)
+
+`NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+fails **deterministically 3/3 alone** in this worktree, and fails identically with
+P872's Ship.cs/Server.cs/Server.Lobby.cs edits reverted to the dispatch base
+(`c7e91ed2`): after the charge-centered acquire, `wingman.DefendTarget` is null at
+the phase-1 guard (`NpcWingmanDefendLiveTests.cs:179`) even though `AttackTarget`
+is the expected enemy. The failure is therefore **pre-existing at base, not a
+P872 regression**; P872's SIM-0258/0259/0261 work only changed the chat text and
+added the `HasDamagingPrimaryWeapon` acquire gate (both paths proven by
+`P872NativeBehaviourTests`, 3/3 alone). Suspected cause lives in the live-tick
+NPC plot ordering (unit-level `P708ShipUpdateTests` defends pass), left for the
+lane that owns the live defend loop.
+
+Fast sweep 2026-10-28 (P872): `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected`
+failed once inside the fast sweep and **passed 3/3 alone** immediately after —
+load flake under the parallel sweep, not a P872 regression (no docking code path
+was touched; P872 edits the explosion recipient snapshot, drone chatter text,
+mission replay/context and the empty-session reap). The other two sweep
+failures are the already-ledgered pre-existing entries above
+(`RadarTargetHighlightLiveTests.LiveOffScreenEnemy…`,
+`NpcWingmanDefendLiveTests.Defender_disengages…`).

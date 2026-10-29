@@ -452,7 +452,11 @@ public sealed record LobbyGameResult(
     short GoalTeamKillsCount,
     float GoalProsperityMoney,
     short GoalArtifactsCount,
-    short GoalFlagsCount);
+    short GoalFlagsCount,
+    /// <summary>P872/SIM-0751 — the persisted game identity: native copies
+    /// <c>GetIGCMission()->GetContextName()</c> into the game-results
+    /// <c>szGameID</c> (fsmission.cpp:2766). Null when unavailable.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? GameId = null);
 
 /// <summary>P844/SIM-0525 — one finished side's outcome row: the port of
 /// native's <c>CQTeamResults</c> query payload

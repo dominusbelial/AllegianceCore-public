@@ -1,5 +1,6 @@
 namespace Allegiance.Core.Model;
 
+using System.Globalization;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
@@ -33,6 +34,92 @@ public sealed partial class Mission : IMissionIgc
 
     /// <summary>P817 experimental native NPC travel, default off. Player and MCP controls are excluded.</summary>
     public bool NativeGotoPlanEnabled { get; set; }
+
+    /// <summary>P872/SIM-0146 — the mission's lifecycle origin. Boot-configured
+    /// and admin worlds (every mission the port assembles today) persist
+    /// forever, matching the ruling of Domingo 2026-10-28: native lets admin
+    /// (<c>bObjectModelCreated</c>) and custom-core games break the empty-mission
+    /// reap rule (<c>FedSrv.CPP:7882-7884</c>). A <b>player-created</b> session
+    /// (the lobby-directed "create mission before anyone is here" path,
+    /// FedSrv.CPP:7867-7869) sets this true and is reaped after ten seconds
+    /// empty, exactly like native's <c>CheckForNoShows</c>.</summary>
+    public bool PlayerCreated { get; set; }
+
+    /// <summary>P872/SIM-0146 — the server sim-time at which this mission was
+    /// created, the port of native's <c>GetStartTime()</c> FILETIME that
+    /// <c>CheckForNoShows</c> ages against (<c>FedSrv.CPP:7893-7902</c>). The
+    /// host sets it at creation; it stays 0 for missions assembled before the
+    /// host knew the clock.</summary>
+    public double CreatedAt { get; set; }
+
+    /// <summary>P872/SIM-0750 — the per-mission replay counter
+    /// (<c>m_nReplayCount</c>, <c>Igc/missionigc.cpp:3849-3852</c> increments
+    /// it on every <c>ResetMission</c> after the first generation and
+    /// <c>GetReplayCount</c>, <c>Igc/missionigc.cpp:4211-4214</c>, returns it).
+    /// It feeds the context name's trailing <c>%02d</c> and survives rotation:
+    /// the host carries the finished mission's count into the rebuilt world
+    /// (the port's analogue of native resetting the SAME CmissionIGC object).</summary>
+    public short ReplayCount { get; internal set; }
+
+    /// <summary>P872/SIM-0750 — native <c>m_bHasGenerated</c>
+    /// (<c>Igc/missionigc.cpp:3850-3857</c>): true once the mission world has
+    /// been generated; gates whether the next reset counts as a replay.</summary>
+    public bool HasGenerated { get; internal set; }
+
+    /// <summary>P872/SIM-0751 — native <c>m_missionID</c>
+    /// (<c>Igc/missionigc.h:613-616</c>), the identifier that appears as the
+    /// <c>%04d</c> field of the context name. The host assigns it at assembly.</summary>
+    public short MissionId { get; set; }
+
+    /// <summary>P872/SIM-0751 — the mission's creation wall-clock moment, the
+    /// port of native's <c>m_ftCreated</c> FILETIME that
+    /// <c>GetContextName</c> renders into the <c>U/Z</c> + MMDDHHmmss prefix
+    /// (<c>Igc/missionigc.cpp:4225-4230</c>). The host sets it at creation;
+    /// it defaults to assembly time.</summary>
+    public DateTimeOffset CreatedWallTime { get; internal set; } = DateTimeOffset.UtcNow;
+
+    // P872/SIM-0751 — the cached context name (native m_strContextName,
+    // missionigc.cpp:4217-4238: generated once, invalidated on reset).
+    private string? _contextName;
+
+    /// <summary>P872/SIM-0750 — the port of the replay bookkeeping inside
+    /// native <c>CmissionIGC::ResetMission</c> (<c>Igc/missionigc.cpp:3849-3857</c>):
+    /// after the first generation every reset increments the replay count and
+    /// invalidates the cached context name so it re-generates with the new
+    /// count. The host calls this on each regenerated/rotated world.</summary>
+    public void BeginReplay()
+    {
+        if (HasGenerated)
+        {
+            ReplayCount++;
+            _contextName = null;   // clear, so it re-generates (missionigc.cpp:3854-3855)
+        }
+        else
+        {
+            HasGenerated = true;
+        }
+    }
+
+    /// <summary>P872/SIM-0751 — the port of native
+    /// <c>CmissionIGC::GetContextName</c> (<c>Igc/missionigc.cpp:4217-4238</c>):
+    /// a cached 17-character string <c>%c%02d%02d%02d%02d%02d%04d%02d</c> —
+    /// <c>Z</c> for admin club games else <c>U</c>, the creation wall-time
+    /// month/day/hour/minute/second, the mission id modulo 10000, and the
+    /// replay count modulo 100. Beyond its Windows event-log origin, native
+    /// uses it as the persisted game identity
+    /// (<c>FedSrv/fsmission.cpp:2766</c> copies it into the game-results
+    /// <c>szGameID</c>), so the port binds it the same way through
+    /// <c>LobbyHeartbeat</c>'s game-results report. Only the FILETIME/COM
+    /// representation is excluded (the port stores DateTimeOffset).</summary>
+    public string GetContextName(bool adminClubGame = false)
+    {
+        if (_contextName is { } cached) return cached;
+        var st = CreatedWallTime;
+        string context = string.Create(CultureInfo.InvariantCulture,
+            $"{(adminClubGame ? 'Z' : 'U')}{st.Month:00}{st.Day:00}{st.Hour:00}{st.Minute:00}{st.Second:00}{MissionId % 10000:0000}{ReplayCount % 100:00}");
+        _contextName = context;
+        return context;
+    }
 
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }

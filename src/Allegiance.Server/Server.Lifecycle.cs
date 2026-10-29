@@ -1410,6 +1410,12 @@ public sealed partial class Server
         // P465c — attach the weapon-muzzle cache so Weapon.FireWeapon spawns
         // each round at its hardpoint frame (the server's real muzzle geometry).
         mission.WeaponMuzzles = weaponMuzzles;
+        // P872/SIM-0146/0751 — creation stamps: the sim-time age CheckForNoShows
+        // uses, the wall-clock moment GetContextName renders, and the mission id
+        // (native m_missionID — boot order, one per configured game).
+        mission.CreatedAt = _simNow;
+        mission.CreatedWallTime = DateTimeOffset.UtcNow;
+        mission.MissionId = (short)(_config.Games.IndexOf(g) + 1);   // native mission ids start at 1 (imission 0 is the NA sentinel)
         _missionConfigs[mission] = g;   // P802 — for a lobby civ's research-plan re-selection
         return mission;
     }

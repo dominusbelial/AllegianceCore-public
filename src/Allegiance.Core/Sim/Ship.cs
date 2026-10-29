@@ -1,3 +1,4 @@
+using System.Globalization;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
@@ -209,6 +210,34 @@ public sealed partial class Ship : Model, IShipIgc
 
     /// <summary>The hull's <c>DataHullTypeIGC</c> — the raw static-core record this ship is built on. (Named <c>HullType</c>, not <c>Hull</c>, to avoid clashing with <see cref="Model.Hull"/>, the collision hull.)</summary>
     public DataHullTypeIGC HullType => _hull;
+
+    /// <summary>P872 / SIM-0258..0270 — the ship's native name (<c>m_data.name</c>,
+    /// <c>Igc/shipIGC.h:52</c> <c>GetName</c>; set via <c>SetName</c>,
+    /// <c>Igc/shipIGC.cpp:101</c>). Players carry their character/callsign name
+    /// (native names the ship from the logon name, FedSrv.CPP:968); drones get
+    /// <c>&lt;drone type name&gt;&lt;ship id&gt;</c> (FedSrv.CPP:2253-2262 builds
+    /// <c>pszName + _itoa(objectID)</c> in <c>CreateStockDrone</c>). This is what
+    /// native <c>GetModelName(ImodelIGC*)</c> (<c>Igc/common.cpp:1096-1107</c>)
+    /// returns for a ship and what the drone chatter captions substitute —
+    /// NOT the numeric object id the earlier port text used.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>P872 / SIM-0258..0270 — native <c>GetModelName(ImodelIGC*)</c>
+    /// (<c>Igc/common.cpp:1096-1107</c>) for a ship argument: the stored name when
+    /// non-empty, otherwise the model-type fallback. Ships always have a name
+    /// in native (callsign or drone-type name + id, FedSrv.CPP:2253-2262), so
+    /// the fallback here is defensive only.</summary>
+    internal static string ModelName(Ship? ship) =>
+        !string.IsNullOrEmpty(ship?.Name) ? ship.Name
+        : ship is not null ? ship.HullType.Name
+        : "NULL";
+
+    /// <summary>P872 / SIM-0261 — the native <c>c_cidDefend</c> acquire guard's
+    /// weapon predicate: <c>m_mountedWeapons[0] &amp;&amp; m_mountedWeapons[0]->
+    /// GetProjectileType()->GetPower() &gt; 0.0</c> (<c>Igc/shipIGC.cpp:2683</c>) —
+    /// a mounted weapon in mount 0 whose projectile actually damages.</summary>
+    internal bool HasDamagingPrimaryWeapon =>
+        Weapons.Any(w => w.MountId == 0 && w.ProjectileType.Power > 0f);
 
     // ── P279 — the drifting Lifepod's oxygen countdown ──────────────────────
     // Native constant ids/values: c_fcidLifepodEndurance = 31 (igc.h:96),
@@ -7562,6 +7591,10 @@ public sealed partial class Ship : Model, IShipIgc
         {
             SetWingmanAttackOrder(enemy);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+            // P872/SIM-0270 — native emits "Attacking %s" with the target's
+            // model name on the accepted default attack, only when the host
+            // override returned false and a target exists (shipIGC.h:2441-2450).
+            SendDroneChat(DroneInTransitSound, $"Attacking {ModelName(enemy)}");
             ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
         }
         else
@@ -7664,6 +7697,14 @@ public sealed partial class Ship : Model, IShipIgc
             BuilderAsteroidTarget = rock; // fly before drilling; shipIGC.cpp:2810-2827
             TryStartBuilderBuild(sector.LastUpdate);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+            // P872/SIM-0269 — native builder default-order chatter: "Building
+            // %s at %s" (station type name at the asteroid's model name) is
+            // emitted only for an accepted c_cidBuild (NOT the goto branch) at
+            // SetCommand acceptance (shipIGC.h:2404-2410). The port's decision
+            // commit is the accepted build; WaitsForBuildOrder constructors
+            // (the native goto rewrite, FedSrv.CPP:11358-11366) and
+            // occupied-rock retries return above without emitting.
+            SendDroneChat(DroneInTransitSound, $"Building {stationType.Name} at {rock.Data.Name}");
             ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → traveling to build '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
         }
         else
@@ -7854,7 +7895,10 @@ public sealed partial class Ship : Model, IShipIgc
         // within WingmanDefendAcquireRadius of the charge. This is native's
         // c_cidDefend plan-slot scan (shipIGC.cpp:2689-2695) — when the Wingman
         // is guarding (plan == c_cidDefend) it hunts enemies near the charge,
-        // not near itself.
+        // not near itself. P872/SIM-0261 — the branch is entered only with a
+        // mounted, damaging primary weapon (shipIGC.cpp:2683:
+        // m_mountedWeapons[0] && projectile power > 0); an unarmed guard just
+        // escorts.
         if (AttackTarget is not { } target
             || target.Dead
             || target.StationId is not null
@@ -7866,10 +7910,16 @@ public sealed partial class Ship : Model, IShipIgc
                 ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; dropped stale attack target {AttackTarget.Id}");
                 AttackTarget = null;
             }
+            if (!HasDamagingPrimaryWeapon) return;            // shipIGC.cpp:2683 weapon gate
             float dist = WingmanDefendAcquireRadius;                 // 1500 (shipIGC.cpp:2689)
             if (FindNearestEnemyNear(charge.Position, ref dist) is { } threat)
             {
-                SendDroneChat(DroneInTransitSound, $"Attacking {threat.Id} to defend {charge.Id}");
+                // P872/SIM-0261 — native text "Attacking %s (%f) to defend %s*"
+                // (shipIGC.cpp:2692-2694): model names, the scan distance in
+                // native %f (six-decimal) formatting, and the trailing star on
+                // the defend target. Reached only with a mounted damaging
+                // primary weapon and a 200-pass cooldown (both native guards).
+                SendDroneChat(DroneInTransitSound, $"Attacking {ModelName(threat)} ({dist.ToString("F6", CultureInfo.InvariantCulture)}) to defend {ModelName(charge)}*");
                 AttackTarget = threat;                               // SetCommand(c_cmdPlan, pTarget, c_cidAttack) (:2695)
                 ConsoleLog.Write($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
             }
@@ -7891,7 +7941,10 @@ public sealed partial class Ship : Model, IShipIgc
             if (FindNearestEnemyNear(charge.Position, ref dist) is { } closer
                 && dist < (distToProtectee - WingmanDefendSwitchMargin))         // dist < distToProtectee − 1000 (:2385)
             {
-                SendDroneChat(DroneInTransitSound, $"Attacking {closer.Id} to defend {charge.Id}");
+                // P872/SIM-0258 — native text "Attacking %s (%fm) to defend %s"
+                // (shipIGC.cpp:2386-2388): model names and the new scan distance
+                // with the trailing 'm' (no star) for the >2200/<dist−1000 retarget.
+                SendDroneChat(DroneInTransitSound, $"Attacking {ModelName(closer)} ({dist.ToString("F6", CultureInfo.InvariantCulture)}m) to defend {ModelName(charge)}");
                 AttackTarget = closer;                                           // switch to the closer threat (:2389)
                 ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
             }
@@ -7914,7 +7967,10 @@ public sealed partial class Ship : Model, IShipIgc
             // DefendTarget branch steers toward the charge instead.
             ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
             AttackTarget = null;
-            SendDroneChat(DroneInTransitSound, $"Returning to defend {charge.Id}");
+            // P872/SIM-0259 — native text "Returning to defend %s" with the
+            // protectee's model name (shipIGC.cpp:2401-2403), emitted once per
+            // disengage transition with droneInTransitSound (1337).
+            SendDroneChat(DroneInTransitSound, $"Returning to defend {ModelName(charge)}");
         }
     }
 
