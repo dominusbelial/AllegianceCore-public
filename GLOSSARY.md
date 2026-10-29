@@ -763,6 +763,14 @@ list in **reverse**.
   `tools/p832a-mission-rules-audit.py` reconciles their source inventory.
 - **`docs/parity/fedmsg-wiring.csv`** — wire-message wiring audit.
 - **`docs/parity/p650-core-constants.csv`** — native float/constant tuning.
+- **P874 area matrices (`docs/parity/*-matrix.csv`)** — per-area native behaviour
+  inventories with the full 17-column sim-rule shape and a `reachability`
+  column: `lobby-matrix.csv` (lobby server), `soundengine-matrix.csv` (audio
+  behaviour), `allsrvui-matrix.csv` (server-admin capabilities), `effect-matrix.csv`
+  (gameplay-timed effects; visual families are summary `n/a` rows),
+  `bots-matrix.csv` (Pigs/Wopr bot rules, cross-refs `p819-bot-policy.csv`),
+  `model-tools-matrix.csv` (mdlc/mdledit features ported to
+  `tools/mdl-to-glb`). All wired into `scripts/parity-scorecard.py`.
 - Wave reports: `docs/reports/P664_PARITY_WAVE3.md` … `P7xx_PARITY_WAVE*.md`.
 - Every parity row needs an executable path + a test — see `docs/CI_TEST_GATES.md`.
 
