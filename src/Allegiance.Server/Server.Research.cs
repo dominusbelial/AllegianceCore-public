@@ -33,7 +33,7 @@ public sealed partial class Server
                     // sent to the seeing side's group). It rides the very packet
                     // that first instantiates the station for this peer, so the
                     // client has the station when it renders the feedback line.
-                    var (otSpotter, oidSpotter) = station.SideVisibility.LastSpotter;
+                    var (otSpotter, oidSpotter) = station.SideVisibility.LastSpotterFor(sideId);   // per side — P865b
                     var spotted = new ObjectSpotted
                     {
                         OtObject = (short)IgcObjectType.Station,

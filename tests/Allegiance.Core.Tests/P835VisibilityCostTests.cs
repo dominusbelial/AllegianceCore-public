@@ -254,15 +254,15 @@ public class P835VisibilityCostTests
 
         var stages = new List<(bool, short)>();
         mission.Update(0.25);   // stage-1 sweep
-        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotterFor(0).ObjectId));
 
         target.Position = basePos + new Vector3(1400f, 0f, 0f);   // both see it now (≤ any ga-scaled radius)
         ReSweep(mission, 1.0);
-        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotterFor(0).ObjectId));
 
         target.Position = basePos + new Vector3(50_000f, 0f, 0f); // nobody sees it
         ReSweep(mission, 6.0);
-        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotterFor(0).ObjectId));
 
         return stages;
     }

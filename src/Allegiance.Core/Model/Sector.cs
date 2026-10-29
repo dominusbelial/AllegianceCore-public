@@ -5243,7 +5243,7 @@ public sealed class Sector : IClusterIgc
                         // Seen flags identical to the full loop; spotter identity is
                         // the native sticky one (FedSrv.CPP:11026).
                         participantsById ??= BuildParticipantsIndex(scannersBySide);
-                        var (lot, loid) = t.Body.SideVisibility.LastSpotter;
+                        var (lot, loid) = t.Body.SideVisibility.LastSpotterFor(sideId);   // per side — P865b, native sv is per side
                         if (lot >= 0 && participantsById.TryGetValue((lot, loid), out var last))
                         {
                             if (VisibilityMath.InScannerRange(
@@ -5318,9 +5318,9 @@ public sealed class Sector : IClusterIgc
                     // :11119-11120). The discovery sweep reads it to fill
                     // OBJECT_SPOTTED(6)'s otSpotter/oidSpotter exactly as native does.
                     if (seen)
-                        t.Body.SideVisibility.SetLastSpotter(spotter.Ot, spotter.Oid);
+                        t.Body.SideVisibility.SetLastSpotter(sideId, spotter.Ot, spotter.Oid);
                     else
-                        t.Body.SideVisibility.ClearLastSpotter();
+                        t.Body.SideVisibility.ClearLastSpotter(sideId);
                     // P851 — the tail native runs only inside its scanner loop, on
                     // the false→true edge, for a scanner of the side's own (not the
                     // own-side rule, not an allied leg — those call ShowObject

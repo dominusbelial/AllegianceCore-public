@@ -103,6 +103,23 @@ public sealed class RadarTargetHighlightLiveTests
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
         var mission = server.Missions[0];
 
+        // The peer connects and seats FIRST. The spawned enemy is a miner
+        // (pilotType 0 — SpawnNpcShip's fallback), and a miner does not sit
+        // still: native PickDefaultOrder's c_ptMiner case issues a mine order
+        // the moment it is idle (shipIGC.h:2237-2250, the cross-cluster
+        // c_ttAnyCluster FindTarget at :2287-2300), and this port's P156/P158
+        // mining AI does the same — in a rock-less Ganymede the NPC flies
+        // toward a warp from its first tick. Spawning before the connect made
+        // the below assertion race the join burst against that flight (the
+        // enemy was sometimes ~2000 units from its spawn by identity time).
+        // Seated first, the enemy's identity+position arrive 1–2 ticks after
+        // its spawn (P349 SweepCrossSideExports) — while it is still at its
+        // spawn point.
+        using var peer = Connect(server, "AlphaPilot");
+        int seated = PumpUntil(server,
+            () => peer.World.MyShipId is { } && peer.World.MySideId is { }, 4000);
+        Assert.True(seated < 4000, "peer seated with a side");
+
         // A real ENEMY (side 1) NPC in the peer's sector, positioned on the +Z
         // axis. The peer's ship spawns at the origin facing identity (−Z, per
         // Orientation.Reset), so +Z is DIRECTLY BEHIND the peer — i.e. off-screen
@@ -111,11 +128,6 @@ public sealed class RadarTargetHighlightLiveTests
             ?? throw new InvalidOperationException("Allegiance.Server.Server.SpawnNpcShip method not found");
         var ganymede = mission.Sectors.First(s => s.Id == Ganymede);
         var enemy = (Ship)spawnNpc.Invoke(server, new object?[] { mission, ganymede, mission.Sides[1].Id, new SimVec(0, 0, 1500), null })!;
-
-        using var peer = Connect(server, "AlphaPilot");
-        int seated = PumpUntil(server,
-            () => peer.World.MyShipId is { } && peer.World.MySideId is { }, 4000);
-        Assert.True(seated < 4000, "peer seated with a side");
 
         // The peer must receive the enemy's real identity (side+hull) over the
         // real cross-side wire.
