@@ -1,4 +1,5 @@
 using System.Numerics;
+using Allegiance.Core;
 using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.Training;
@@ -173,4 +174,30 @@ public interface ITrainingSite
     bool IsSoundPlaying(int instance);
     /// <summary><c>ISoundInstance::Stop(true)</c> (<c>playsoundaction.cpp:49</c>).</summary>
     void StopSound(int instance);
+
+    // ── P880b — equipment/state/radar/buoy primitives ─────────────────────────────
+    /// <summary>TRUE when a <em>mounted</em> part of the ship has the given equipment type —
+    /// <c>GetShipHasCargoCondition</c> (<c>getshiphascargocondition.cpp:29-36</c>): walks the
+    /// ship's mounted part list (native <c>GetParts()</c>, which does not include the cargo hold)
+    /// comparing each part's <c>GetEquipmentType()</c>.</summary>
+    bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part);
+
+    /// <summary>Snapshot a ship's physical/equipment state (<c>ResetShipAction</c> first
+    /// <c>Execute</c>, resetshipaction.cpp:22-36).</summary>
+    ShipSnapshot CaptureShip(TargetRef ship);
+    /// <summary>Restore a previously captured ship state (<c>ResetShipAction</c> later
+    /// <c>Execute</c>s, resetshipaction.cpp:24-35).</summary>
+    void RestoreShip(TargetRef ship, ShipSnapshot snap);
+
+    /// <summary>Release the consumer attached to a waypoint buoy (<c>ReleaseConsumerAction</c>,
+    /// releaseconsumeraction.cpp:25-28 — <c>IbuoyIGC::ReleaseConsumer</c>).</summary>
+    void ReleaseConsumer(int buoyId);
+
+    /// <summary>Set the window's radar LOD mode (<c>SetRadarLODAction</c>,
+    /// setradarlodaction.cpp:31-36 — <c>SetRadarMode(m_radarLOD)</c> when it differs).</summary>
+    void SetRadarLod(int lod);
+
+    /// <summary>The native <c>SetCargoNanAction</c> primitive (setcargonanaction.cpp:22-52): ensure
+    /// a nanite weapon is carried and fill the cargo hold with gatling + proximity mines.</summary>
+    void SetCargoNan(TargetRef ship);
 }
