@@ -160,6 +160,20 @@ public sealed class SetAutopilotAction : Action
     public override void Execute() => _site.SetAutopilot(_ship, _newValue);
 }
 
+/// <summary>
+/// Terminates the active training mission so its next <see cref="TrainingMission.Frame"/> completes —
+/// port of <c>EndMissionAction</c> (<c>endmissionaction.cpp:31-35</c>: <c>g_pMission->Terminate()</c>).
+/// Holds the mission (the analogue of the native global) rather than the site.
+/// </summary>
+public sealed class EndMissionAction : Action
+{
+    private readonly TrainingMission _mission;
+
+    public EndMissionAction(TrainingMission mission) => _mission = mission;
+
+    public override void Execute() => _mission.Terminate();
+}
+
 /// <summary>Well-known sound ids referenced by the framework (native <c>SoundID</c> values in trainingsounddef).</summary>
 public static class SoundId
 {

@@ -24,7 +24,14 @@ public sealed class GetKeyCondition : Condition
         _key = key;
     }
 
-    public override bool Start() => false;
+    public override bool Start()
+    {
+        // getkeycondition.cpp:35-43 — Start resets the press latch, dropping any press that
+        // happened before the goal began (a stale press must not satisfy the new goal). Drain
+        // the site's key queue for this key; ConsumeKey is idempotent-per-entry.
+        while (_site.ConsumeKey(_key)) { }
+        return false;
+    }
 
     public override bool Evaluate() => _site.ConsumeKey(_key);
 }
@@ -176,4 +183,44 @@ public sealed class GetShipIsStoppedCondition : Condition
             return false;
         return ship.Velocity.LengthSquared() < 1.0f;
     }
+}
+
+/// <summary>
+/// TRUE when the mission's probe count equals the expected count — port of
+/// <c>GetProbeCountCondition</c> (<c>getprobecountcondition.cpp:26-33</c>):
+/// <c>trekClient.GetCore()-&gt;GetProbes()-&gt;n() == iProbeCount</c>. Mission 6 gates a goal on the
+/// player having deployed a specific number of probes.
+/// </summary>
+public sealed class GetProbeCountCondition : Condition
+{
+    private readonly ITrainingSite _site;
+    private readonly int _expected;
+
+    public GetProbeCountCondition(ITrainingSite site, int expected)
+    {
+        _site = site;
+        _expected = expected;
+    }
+
+    public override bool Evaluate() => _site.GetProbeCount() == _expected;
+}
+
+/// <summary>
+/// TRUE when the window's radar mode equals the expected LOD — port of
+/// <c>GetRadarLODCondition</c> (<c>getradarlodcondition.cpp:26-33</c>):
+/// <c>GetWindow()-&gt;GetRadarMode() == expectedRadarLOD</c>. The expected value is the integer
+/// <see cref="Rendering.RadarMode"/> (e.g. All/Default/Target/Minimal).
+/// </summary>
+public sealed class GetRadarLODCondition : Condition
+{
+    private readonly ITrainingSite _site;
+    private readonly int _expected;
+
+    public GetRadarLODCondition(ITrainingSite site, int expectedLod)
+    {
+        _site = site;
+        _expected = expectedLod;
+    }
+
+    public override bool Evaluate() => _site.GetRadarLod() == _expected;
 }

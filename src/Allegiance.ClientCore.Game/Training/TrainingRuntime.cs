@@ -10,6 +10,15 @@ public static class TrainingOverlay
     public static volatile int Current;
 }
 
+/// <summary>TR-2 — the client's current radar LOD mode id, the <see cref="Rendering.RadarMode"/>
+/// integer read by <c>GetRadarLODCondition</c> (getradarlodcondition.cpp:31 —
+/// <c>GetWindow()->GetRadarMode()</c>). Updated by the flight-input radar cycle
+/// (Game1.FlightInput.cs:1906) so the training condition reads the real window mode.</summary>
+public static class TrainingRadarLod
+{
+    public static volatile int Current;
+}
+
 /// <summary>TR-2 — central sink for training-host actions that need the embedded server's
 /// training universe (outside this session's scope). Kept so the binding compiles and the
 /// no-ops are explicit and auditable rather than silent.</summary>

@@ -725,6 +725,7 @@ public sealed partial class Game1
                     // forward.
                     _coastToggled = false;
                     _radarMode = Rendering.RadarMode.Default;
+                    TrainingRadarLod.Current = (int)Rendering.RadarMode.Default;
                     _headLookYaw = 0f;
                     // P853b — the pre-game host-editing panes end with the lobby
                     // (native closes its team-settings dialog on start,
@@ -1904,6 +1905,7 @@ public sealed partial class Game1
         if (!composing && cycRadar && !_cycleRadarKeyWasDown)
         {
             _radarMode = Rendering.RadarLod.Next(_radarMode);
+            TrainingRadarLod.Current = (int)_radarMode;
             Console.WriteLine($"[monogame] radar mode: {Rendering.RadarLod.Label(_radarMode)}");
         }
         _cycleRadarKeyWasDown = cycRadar;

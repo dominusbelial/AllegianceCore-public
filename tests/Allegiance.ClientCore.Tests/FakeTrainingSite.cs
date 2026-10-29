@@ -136,6 +136,23 @@ public sealed class FakeTrainingSite : ITrainingSite
 
     public bool ShipSees(TargetRef ship, TargetRef target) => false;
 
+    /// <summary>Scriptable probe count (headless stand-in for <c>GetProbes()->n()</c>).</summary>
+    public int ProbeCount { get; set; }
+    public int GetProbeCount() => ProbeCount;
+
+    /// <summary>Scriptable radar LOD mode (headless stand-in for the client window).</summary>
+    public int RadarLod { get; set; }
+    public int GetRadarLod() => RadarLod;
+
+    /// <summary>Scriptable per-ship ammo count (headless stand-in for <c>IshipIGC::GetAmmo()</c>).</summary>
+    public Dictionary<int, int> Ammo { get; } = new();
+    public int GetAmmo(TargetRef ship) => Ammo.TryGetValue(ship.Id, out var a) ? a : 0;
+
+    /// <summary>Recorded adjustable-damage calls (<c>DoDamageAdjustableAction</c>).</summary>
+    public List<(int ShipId, float Amount)> AdjustableDamage { get; } = new();
+    public void DamageShipAdjustable(TargetRef ship, float amount)
+        => AdjustableDamage.Add((ship.Id, amount));
+
     // ── M5/M6 command-view / escalation state (scriptable) ─────────────────────
     /// <summary>The model the player has picked (GetPickedCondition).</summary>
     public TargetRef? PickedTarget { get; set; }

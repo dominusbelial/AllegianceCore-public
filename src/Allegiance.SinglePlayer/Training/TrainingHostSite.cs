@@ -41,6 +41,12 @@ public sealed class TrainingHostSite : ITrainingSite
             return new HostObject(r, wp.Position, Vector3.Zero, Vector3.UnitX, wp.SectorId, 20f);
         if (r.Type == ObjectType.Station && _host.Stations.TryGetValue(r.Id, out var st))
             return new HostObject(r, st.Position, Vector3.Zero, Vector3.UnitX, st.SectorId, 50f);
+        if (r.Type == ObjectType.Asteroid)
+            return _host.ResolveAsteroid(r.Id) is { } ast && ast.Data.Position is { Length: 3 } ap && ast.Sector is { } asec
+                ? new HostObject(r, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Vector3.UnitX, asec.Id, ast.Radius) : null;
+        if (r.Type == ObjectType.Probe)
+            return _host.ResolveProbe(r.Id) is { } pb
+                ? new HostObject(r, ToNum(pb.Position), Vector3.Zero, Vector3.UnitX, pb.OwnerSector.Id, 10f) : null;
         return null;
     }
 
@@ -64,11 +70,23 @@ public sealed class TrainingHostSite : ITrainingSite
     // ── M3/M4 ship/combat state (real host mission) ─────────────────────────────
     public bool IsShipDestroyed(TargetRef ship) => _host.IsDestroyed(ship.Id);
 
-    public bool HasCommand(TargetRef ship, int commandId) => _host.GetCommandId(ship.Id) == commandId;
+    /// <summary>TRUE when the accepted-or-current command id matches, and TRUE when the ship is
+    /// absent — native <c>GetCommandCondition</c> (getcommandcondition.cpp:44-53: absent ⇒ true).</summary>
+    public bool HasCommand(TargetRef ship, int commandId)
+        => _host.ResolveShip(ship.Id) is null || _host.GetCommandId(ship.Id) == commandId;
 
     public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
 
     public bool ShipSees(TargetRef ship, TargetRef target) => _host.InScannerRange(ship.Id, target);
+    public int GetProbeCount() => _host.GetProbeCount();
+    public int GetRadarLod() => _radarLod;
+    public int GetAmmo(TargetRef ship) => _host.GetAmmo(ship.Id);
+
+    // ── scriptable radar LOD (client window concern, headless n/a) ──────────
+    private int _radarLod;
+    /// <summary>Script the radar LOD mode read by <see cref="GetRadarLod"/> (headless stand-in
+    /// for the client window's <c>GetRadarMode</c>).</summary>
+    public void SetRadarLod(int lod) => _radarLod = lod;
 
     // ── M5/M6 command-view / escalation state (real host state) ───────────────
     public bool GetPicked(TargetRef model) => _host.IsPicked(model);
@@ -81,7 +99,13 @@ public sealed class TrainingHostSite : ITrainingSite
     // fraction via DestroyDrone, command set via IssueCommand, etc.); the player's own weapon/shield/
     // pane/eyeball cosmetics are client-side rendering and are no-ops on the host site (mirroring how
     // SetDisplayMode/SetHudOverlay are no-ops here).
-    public void DealDamage(bool toHull) { }
+    public void DealDamage(bool toHull)
+    {
+        // DoDamageAction (dodamageaction.cpp:24-50) on the real host: knock the player's armour
+        // down so GetShipIsDamagedCondition can observe it.
+        _host.DamageShip(_host.PlayerShipId, toHull ? 7000f : 950f);
+    }
+    public void DamageShipAdjustable(TargetRef ship, float amount) => _host.DamageShipAdjustable(ship.Id, amount);
     public void ToggleWeapon(int mount) { }
     public void SwapWeapon(int equipmentType, int mount) { }
     public void RepairAndRearm() { }

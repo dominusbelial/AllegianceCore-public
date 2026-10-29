@@ -1335,6 +1335,11 @@ public sealed partial class Game1
             if (send.EchoLocally)
                 lock (_session.Gate)
                     _session.World.PostOwnChatLine(text, send.Target, send.OidRecipient);
+            // P880a — GetChatCondition production binding: a real player chat send routes to the
+            // active mission's RecordChat (native trainingmission.cpp:327-331 RecordChat), so the
+            // M4 "chat with the squad" goal observes the player's own chat instead of a host-injected
+            // one. Only the primary subject counts once per send loop.
+            _trainingSession?.Mission.RecordChat((int)send.Target);
         }
     }
 
