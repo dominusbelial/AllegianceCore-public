@@ -11,8 +11,10 @@ using Allegiance.TestInfra;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 [Collection("Training")]
-public sealed class P873TrainingJoinTests
+public sealed class P873TrainingJoinTests : IDisposable
 {
+    public P873TrainingJoinTests() => TrainingClock.ResetForTests();
+    public void Dispose() => TrainingClock.ResetForTests();
     [Theory]
     [InlineData(3, 3049, "tm_3_47")]
     [InlineData(4, 3049, "tm_3_49r")]
@@ -44,7 +46,7 @@ public sealed class P873TrainingJoinTests
     [InlineData(6)]
     [InlineData(8)]
     [InlineData(10)]
-    public void Logon_replicates_the_host_trainee_in_space_before_the_real_update_starts_script(int id)
+    public void Logon_replicates_the_native_trainee_before_the_real_update_starts_script(int id)
     {
         Require.Artwork();
         var variant = id switch
@@ -60,12 +62,7 @@ public sealed class P873TrainingJoinTests
         {
             World = () => connection.World, Session = connection, Host = host,
         });
-        TrainingMission mission = id switch
-        {
-            2 => new Mission2(site), 3 => new Mission3(site), 4 => new Mission4(site),
-            5 => new Mission5(site), 6 => new Mission6(site), 8 => new Mission8(site),
-            _ => new Mission10(site),
-        };
+        TrainingMission mission = Game1.CreateTrainingMission(id, site);
         var session = new TrainingSession(site, mission);
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1));
         void Set(string name, object value) => typeof(Game1).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, value);
@@ -92,11 +89,19 @@ public sealed class P873TrainingJoinTests
         while (!site.HasPlayerShip && watch.Elapsed < TimeSpan.FromSeconds(20)) Thread.Sleep(10);
         Assert.True(site.HasPlayerShip, "trainee pose never replicated in space");
         Assert.Equal(connection.Ack!.ShipID, host.PlayerShipId);
+        Assert.Equal("Cadet", host.PlayerShip.Name);
+        Assert.Equal("Cadet", connection.World.Ships[(short)host.PlayerShipId].CharacterName);
+        Assert.True(SpinWait.SpinUntil(() => connection.World.Ships.TryGetValue((short)host.CommanderShipId, out var commander)
+            && commander.HullId == 412 && commander.CharacterName == "Commander", 2000));
+        Assert.Equal(412, connection.World.Ships[(short)host.CommanderShipId].HullId);
+        Assert.Equal("Commander", connection.World.Ships[(short)host.CommanderShipId].CharacterName);
+        Assert.Equal(id == 2 ? null : (short?)host.HomeStationId, host.CommanderShip.StationId);
         Assert.Equal((short)host.PlayerShipId, connection.World.MyShipId!.Value);
-        Assert.Null(host.PlayerShip.StationId);
+        Assert.Equal(id == 5 ? (short?)1050 : null, host.PlayerShip.StationId);
         Assert.Equal(variant.PlayerHull, host.PlayerShip.HullType.HullId);
         var replicated = connection.World.Ships[connection.World.MyShipId!.Value];
-        Assert.Equal(-1, replicated.StationId);
+        // P882a restores native Mission5's docked command-view override.
+        Assert.True(SpinWait.SpinUntil(() => connection.World.Ships[(short)host.PlayerShipId].StationId == (id == 5 ? 1050 : -1), 2000));
         Assert.Equal(variant.StartSector, replicated.SectorId);
         Assert.DoesNotContain(host.Mission.Sectors.SelectMany(s => s.Models), m => m is Allegiance.Core.Sim.Ship { Id: 0 });
         Assert.Equal(host.StartSectorId, host.Stations[host.HomeStationId].SectorId);

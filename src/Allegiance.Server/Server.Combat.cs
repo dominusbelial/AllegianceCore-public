@@ -955,6 +955,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationDestroyed(Station station, Model? launcher)
     {
+        TrainingStationDeath?.Invoke(station);
         using var scope = TickProfiler.Enter("combat.stationEvents");
         short launcherId = -1;                     // NA
         if (launcher is Ship s) launcherId = s.Id;
@@ -1707,6 +1708,7 @@ public sealed partial class Server
             Console.WriteLine("[combat] KillShipEvent with a non-Ship victim — ignored");
             return;
         }
+        if (TrainingShipDeath?.Invoke(victim, launcher) == true) return;
         if (victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
             _podTrips.End(victim, now, victim.LifepodTimeToDie is { } deadline && now > deadline
                 && launcher is null ? "oxygen" : "death");

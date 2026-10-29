@@ -565,6 +565,15 @@ list in **reverse**.
   `tools/p873-training-audit.py`, `docs/reports/P873_REPORT.md`.
   Native training authoring commands (asteroid TSV and narration comments):
   `tools/p873-training-tools.py`.
+- **Local training lifecycle (P882a)** — `ITrainingLifecycleSite` in
+  `src/Allegiance.ClientCore/Training/ITrainingLifecycleSite.cs` separates setup,
+  authoritative respawn presence and death recovery from action/condition bindings.
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Lifecycle.cs` supplies real
+  equipment and queued death/last-base events; `Mission.IsTraining` keeps the lesson
+  graph in charge of completion. Normal translated keys pass through
+  `src/Allegiance.ClientCore.Game/Training/TrainingInputGate.cs` before handlers in
+  both HUD styles. Mission5 starts docked; other lessons start airborne.
+  Certification and remaining gaps: `docs/reports/P882a_REPORT.md`.
 
 ## 5. Bots / MCP (`src/Allegiance.Bot`, `tools/allegiance-mcp`)
 

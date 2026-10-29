@@ -16,6 +16,8 @@ namespace Allegiance.ClientCore.Training;
 /// </summary>
 public class Mission10 : TrainingMission
 {
+    // training/mission10.cpp:56-63: same death-camera termination as M6.
+    public override bool RestoreShip() { Terminate(); return false; }
     private const int StartSector = 2080;   // Home (mission10.cpp:52)
     private const int MarsSector = 2081;    // "Mars" sector
     private const int EnemySector = 2082;   // "Enemy" sector

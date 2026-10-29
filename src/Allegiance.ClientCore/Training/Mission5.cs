@@ -64,6 +64,10 @@ public class Mission5 : TrainingMission
     /// command-map keys pass the <see cref="TrainingMission.RecordKeyPress"/> gate (trainingmission.cpp:397-401).</summary>
     public override bool CommandViewEnabled => true;
 
+    // training/mission5.cpp:110-130: remain in the command exercise.
+    public override bool RecordKeyPress(int key) => key is not (67 or 70 or 107 or 108 or 30
+        or 31 or 32 or 33 or 34 or 35 or 36 or 37) && base.RecordKeyPress(key);
+
     protected override void CreateUniverse()
     {
         // Host-side universe construction (LoadUniverse("training_5", 412, 1050) + the commander docked

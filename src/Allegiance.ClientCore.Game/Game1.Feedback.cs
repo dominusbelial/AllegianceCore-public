@@ -233,9 +233,14 @@ public sealed partial class Game1
     /// always ends.</summary>
     private void UpdateOverrideCameraExpiry()
     {
-        if (_cameraMode != CameraMode.ExternalOverride) return;
+        if (_cameraMode != CameraMode.ExternalOverride && !_trainingDeathCameraActive) return;
         if (_nowSeconds >= _overrideUntil)
         {
+            if (_trainingDeathCameraActive && _trainingSession is { } training)
+            {
+                if (!training.Mission.RestoreShip()) _overrideUntil += 10;
+                return;
+            }
             _cameraMode = CameraMode.Chase;
             _overrideTarget = null;
             _externalCamAlignedFor = null;

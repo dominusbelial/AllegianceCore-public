@@ -141,6 +141,10 @@ public static partial class DefaultInputMap
     public static string TkName(int tk) =>
         _tkNames.TryGetValue(tk, out var name) ? name : $"TK_{tk}";
 
+    public static int? TkNumber(string name) => _tkNames
+        .Where(kv => string.Equals(kv.Value, name, StringComparison.OrdinalIgnoreCase))
+        .Select(kv => (int?)kv.Key).FirstOrDefault();
+
     // Transcribed from Igc/igc.h:226-451 (the commands the port implements are
     // the ones surfaced in InputActionCatalog; this table names any that appear).
     private static readonly Dictionary<int, string> _tkNames = new()

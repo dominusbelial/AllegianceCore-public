@@ -38,6 +38,9 @@ public sealed class ClientTrainingFacilities
     /// call on the embedded server. When null (no host), those actions keep the explicit logged
     /// no-op seams so the absence is auditable rather than silent.</summary>
     public ITrainingHost? Host { get; init; }
+    public Action<int>? SetupTraining { get; init; }
+    public Action<System.Numerics.Vector3, float>? DeathCamera { get; init; }
+    public System.Action? RestoreCamera { get; init; }
 }
 
 /// <summary>
@@ -50,8 +53,33 @@ public sealed class ClientTrainingFacilities
 /// outside this session's scope — so they are logged no-ops the host fills in; every read/query
 /// path is real.
 /// </summary>
-public sealed class ClientTrainingSite : ITrainingSite
+public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
 {
+    public int CommanderId => _f.Host is TrainingHost host ? host.CommanderShipId : -1;
+    public void SetupTraining(int missionId)
+    {
+        SetHudOverlay(0); // Training.cpp:55-56
+        _f.SetupTraining?.Invoke(missionId);
+    }
+    public bool TrainingShipExists(int shipId) => _f.Host?.TrainingShipExists(shipId)
+        ?? Resolve(new TargetRef(ObjectType.Ship, shipId)) is not null;
+    private TrainingLifecycleEvent _death;
+    public bool TryTakeLifecycleEvent(out TrainingLifecycleEvent trainingEvent)
+    {
+        if (_f.Host?.TryTakeLifecycleEvent(out trainingEvent) == true)
+        {
+            if (trainingEvent.Death) _death = trainingEvent;
+            return true;
+        }
+        trainingEvent = default;
+        return false;
+    }
+    public void TrainingShipDied() => _f.DeathCamera?.Invoke(_death.Focus, _death.Radius);
+    public void RestoreTrainingShip()
+    {
+        _f.Host?.RestoreTrainee();
+        _f.RestoreCamera?.Invoke();
+    }
     private readonly ClientTrainingFacilities _f;
     private readonly List<int> _keys = new();
     private readonly List<string> _messages = new();
@@ -72,7 +100,9 @@ public sealed class ClientTrainingSite : ITrainingSite
         get
         {
             var w = World;
-            return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is not null && ship.StationId < 0 && ship.SectorId >= 0;
+            return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship)
+                && ((ship.Latest is not null && ship.StationId < 0 && ship.SectorId >= 0)
+                    || (_f.Host is TrainingHost h && h.PlayerShipId == me && h.PlayerShip.StationId is not null && ship.StationId >= 0));
         }
     }
 
@@ -86,7 +116,9 @@ public sealed class ClientTrainingSite : ITrainingSite
             var w = World;
             return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is { } up
                 ? new TrainingShipObject(me, ship, up)
-                : throw new InvalidOperationException("Training: no player ship in the replicated world");
+                : _f.Host is TrainingHost h && w.MyShipId == h.PlayerShipId && PlayerDocked
+                    ? new TrainingHostSite(h).PlayerShip
+                    : throw new InvalidOperationException("Training: no player ship in the replicated world");
         }
     }
 

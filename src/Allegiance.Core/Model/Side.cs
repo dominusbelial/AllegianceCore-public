@@ -160,6 +160,10 @@ public sealed class Side : ISideIgc
     {
         get
         {
+            // training/trainingmission.cpp:732-738: all building techs persist
+            // even when the trainee loses a station.
+            if (Mission is { IsTraining: true } && Id == 0)
+                return new TechTreeBitMask(Enumerable.Repeat((byte)255, TechTreeBitMask.ByteCount).ToArray());
             var acc = TechTreeBitMask.Empty;
             if (Mission is not { } m) return acc;
             foreach (var sector in m.Sectors)

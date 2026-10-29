@@ -525,6 +525,7 @@ public sealed partial class Server
     /// </summary>
     private void DeclareGameOver(Mission mission, short winnerId, string reason)
     {
+        if (mission.IsTraining) return; // the lesson graph owns completion
         if (mission.Stage == MissionStage.Over) return;
         mission.Stage = MissionStage.Over;
         MarkLobbyDirty("stage-over");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)

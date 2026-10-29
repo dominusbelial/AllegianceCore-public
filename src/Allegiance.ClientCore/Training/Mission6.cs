@@ -16,6 +16,8 @@ namespace Allegiance.ClientCore.Training;
 /// </summary>
 public class Mission6 : TrainingMission
 {
+    // training/mission6.cpp:60-67 (also inherited by Mission10).
+    public override bool RestoreShip() { Terminate(); return false; }
     private const int StartSector = 2080;   // Home (mission6.cpp:56)
     private const int MarsSector = 2081;    // "Mars" sector
     private const int EnemySector = 2082;   // "Enemy" sector

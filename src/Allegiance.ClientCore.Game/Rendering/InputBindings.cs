@@ -146,6 +146,8 @@ public sealed record InputActionDef(
 /// </summary>
 public sealed class ActionMap
 {
+    /// <summary>Active lesson's translated-key approval (WinTrek.cpp:8753-8769).</summary>
+    public Func<string, bool>? ActionFilter { get; set; }
     private readonly IReadOnlyDictionary<string, InputActionDef> _defs;
     private readonly Dictionary<string, KeyBinding> _current;
 
@@ -186,6 +188,7 @@ public sealed class ActionMap
     /// Native trekinput.cpp:543-577 checks the modifier family before Any.</summary>
     public bool IsDownMostSpecific(KeyboardState ks, string action)
     {
+        if (ActionFilter?.Invoke(action) == false) return false;
         if (!IsDown(ks, action)) return false;
         var binding = BindingOf(action);
         foreach (var other in _current)

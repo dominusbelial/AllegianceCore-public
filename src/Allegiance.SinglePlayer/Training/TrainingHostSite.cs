@@ -13,8 +13,13 @@ namespace Allegiance.SinglePlayer;
 /// client uses <see cref="ClientCore.MonoGame.ClientTrainingSite"/> (ClientWorld reads) wired to the
 /// same <see cref="ITrainingHost"/> handlers.
 /// </summary>
-public sealed class TrainingHostSite : ITrainingSite
+public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
 {
+    public int CommanderId => _host.CommanderShipId;
+    public void SetupTraining(int missionId) { }
+    public void TrainingShipDied() { }
+    public void RestoreTrainingShip() => _host.RestoreTrainee();
+    public bool TrainingShipExists(int shipId) => _host.TrainingShipExists(shipId);
     private readonly TrainingHost _host;
     private readonly List<int> _keys = new();
     private readonly List<int> _chats = new();

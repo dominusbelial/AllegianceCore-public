@@ -2,6 +2,7 @@ using System.Numerics;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.ClientCore.Training;
+using Allegiance.Core.Wire;
 using Coll = Allegiance.Core.Collision;
 using Srv = Allegiance.Server.Server;
 using Cfg = Allegiance.Server.ServerConfig;
@@ -26,6 +27,9 @@ namespace Allegiance.SinglePlayer;
 /// </summary>
 public interface ITrainingHost
 {
+    bool TrainingShipExists(int shipId);
+    bool TryTakeLifecycleEvent(out TrainingLifecycleEvent trainingEvent);
+    void RestoreTrainee();
     void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible);
     void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId);
     int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
@@ -49,7 +53,7 @@ public interface ITrainingHost
 
 /// <summary>
 /// TR-2b — the embedded-server <b>training host</b>: boots the real <see cref="Srv"/> with the
-/// native training universe (PCore014 static core + <c>training_1</c> map, one Iron-League side),
+/// native training universe (PCore014 static core + authored training map, six native sides),
 /// seats the player's interceptor (hull 412) and the commander wingman (hull 412) in start sector
 /// 1010 as native does (<c>LoadUniverse</c> trainingmission.cpp:651-782, <c>Mission2::CreateUniverse</c>
 /// mission2.cpp:75-94, <c>SetupShipAndCamera</c> trainingmission.cpp:128-148), and exposes the
@@ -65,7 +69,7 @@ public interface ITrainingHost
 /// flag operate on the real <see cref="Ship"/> objects; the host-side autopilot pass flies any ship
 /// under a Goto order so the mission's scripted objectives resolve against the real sim.
 /// </remarks>
-public sealed class TrainingHost : ITrainingHost, IDisposable
+public sealed partial class TrainingHost : ITrainingHost, IDisposable
 {
     /// <summary>A training waypoint (native <c>OT_buoy</c>, createwaypointaction.cpp:34-46).</summary>
     public readonly record struct Waypoint(Vector3 Position, int SectorId, int BuoyType, bool Visible);
@@ -174,10 +178,21 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
 
     public static TrainingHost Start(TrainingVariant variant, string? artwork = null)
     {
-        var server = new Srv { SpawnInitialMinersAtBoot = false };
+        var server = new Srv { SpawnInitialMinersAtBoot = false, LocalTraining = true };
         var artPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
         server.Boot(TrainingConfig(variant, artPath));
         var mission = server.Missions[0];
+        mission.IsTraining = true;
+        // training/trainingmission.cpp:670-685,718-728: training has its own palette.
+        (byte R, byte G, byte B)[] colors = [(188, 160, 0), (0, 138, 217), (156, 16, 102),
+            (50, 140, 20), (255, 145, 145), (50, 200, 125)];
+        foreach (var side in mission.Sides)
+        {
+            var color = colors[side.Id];
+            side.ColorR = color.R / 255f; side.ColorG = color.G / 255f; side.ColorB = color.B / 255f;
+            side.ConquestPercent = 100 / 6;
+        }
+        mission.Sides[0].DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)255, TechTreeBitMask.ByteCount).ToArray());
         mission.Stage = MissionStage.Started;   // bypass the ready-up lobby (established P180 pattern)
 
         var core = mission.Core;
@@ -189,24 +204,39 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         // (trainingmission.cpp:128-134: SetOrientation(fwd(1,0,0), up(0,0,1)), pos(0,0,0)).
         var playerOri = Orientation.Identity;
         playerOri.Set(new Coll.Vector3(1f, 0f, 0f), new Coll.Vector3(0f, 0f, 1f));
-        var player = new Ship((short)0, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri) { SideId = 0 };
+        var player = new Ship((short)0, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri) { SideId = 0, Name = "Cadet" };
         mission.PlaceShip(player, sector);
+        EquipDefaultTrainingLoadout(player);
+        if (variant == CommandView) player.StationId = 1050; // training/mission5.cpp:95-96
 
         // Commander wingman (hull 412, side 0, native LoadUniverse CreateDrone("Commander",…412,0,c_ptWingman),
-        // trainingmission.cpp:836-841). Id 990 matches the ported Mission2's stable commander id
+        // trainingmission.cpp:796-797). Id 990 matches the ported Mission2's stable commander id
         // (Mission2.cs:24). Placed at (500,0,0) facing back toward the player (Mission2::CreateUniverse,
-        // mission2.cpp:82-89). IsNpc=false so the server's NPC default-order AI never wrestles control
-        // away from the host's autopilot pass — the host flies it via AdvanceAutopilot when Goto'd.
+        // mission2.cpp:82-89). The real NPC flag also keeps the commander in late-join
+        // roster/hull replication. Native training-specific AI remains separately partial.
         var cmdOri = Orientation.Identity;
         cmdOri.Set(new Coll.Vector3(-1f, 0f, 0f), new Coll.Vector3(0f, 0f, 1f));
-        var commander = new Ship((short)990, hull, new Coll.Vector3(500f, 0f, 0f), Coll.Vector3.Zero, cmdOri)
+        var commander = new Ship((short)990, core.HullTypes[412], new Coll.Vector3(500f, 0f, 0f), Coll.Vector3.Zero, cmdOri)
         {
-            SideId = 0, PilotType = Ship.PilotTypeWingman,   // c_ptWingman
+            SideId = 0, IsNpc = true, PilotType = Ship.PilotTypeWingman, Name = "Commander",
         };
         mission.PlaceShip(commander, sector);
+        EquipDefaultTrainingLoadout(commander);
 
         server.AnnounceNewShip(commander); // training/trainingmission.cpp:796-797: real named commander, with hull metadata
         var host = new TrainingHost(server, mission, player, commander, variant.StartSector);
+        if (variant != BasicFlight)
+        {
+            // Keep the instructor out of the exercise: mission3.cpp:194-199,
+            // mission4.cpp:121-128, mission5.cpp:138-145, mission6.cpp:382-389,
+            // mission8.cpp:100-104, mission10.cpp:379-385.
+            commander.StationId = host.HomeStationId;
+            commander.StayDocked = true;
+            commander.SetCommand(OrderChange.CmdAccepted, null, OrderChange.CidDoNothing);
+            commander.SetCommand(OrderChange.CmdCurrent, null, OrderChange.CidDoNothing);
+            host.IssueCommand(commander.Id, TrainingMissionIds.CommandAccepted, null, null, null, TrainingMissionIds.CmdDoNothing);
+            host.SetAutopilot(commander.Id, false);
+        }
         // Native's player IS the trainee (training/trainingmission.cpp:132-140).
         // The wire logon reserves its own id before side selection. Replace the headless
         // placeholder with that id at the spawn seam, so ACK, host actions and replication
@@ -219,12 +249,13 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
             old.Sector?.Remove(old);
             var trainee = new Ship(id, old.HullType, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri)
             {
-                SideId = old.SideId,
+                SideId = old.SideId, Name = "Cadet", StationId = old.StationId,
             };
             m.PlaceShip(trainee, sector);
+            EquipDefaultTrainingLoadout(trainee);
             host.PlayerShip = trainee;
             host._clientBound = true;
-            Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, in space");
+            Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, station {trainee.StationId?.ToString() ?? "none"}");
             return (trainee, sector);
         };
         // Route the server's real kill-credit events into the active mission's kill counter (M6), so
@@ -233,6 +264,8 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         {
             try { host.RecordKillCredit(launcher, victim); } catch { /* training-only observer */ }
         };
+        server.TrainingShipDeath = host.HandleTraineeDeath;
+        server.TrainingStationDeath = host.HandleStationDeath;
         return host;
     }
 
@@ -259,8 +292,10 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         [
             new Gm
             {
-                Name = variant.GameName, Map = variant.Map, Teams = 1,
-                CivIds = [25], SideNames = ["Iron League"],
+                Name = variant.GameName, Map = variant.Map, Teams = 6,
+                CivIds = [variant == Nanite ? 201 : 25, 35, 18, 25, 35, 18],
+                SideNames = [variant == Nanite ? "Rixian Unity" : "Iron League", "Bios", "Gigacorp",
+                    "Protectorate", "Colossal Mining Corp", "Midnight Runners"],
                 MaxPlayersPerTeam = 8, MinimumPlayersPerTeam = 0,
             },
         ],
@@ -409,7 +444,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
                 : Mission.Core.HullTypes.Values.OrderBy(x => x.HullId).First();
             var ship = new Ship((short)id, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, Orientation.Identity)
             {
-                SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType,
+                SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType, Name = name,
             };
             Mission.PlaceShip(ship, Mission.Sectors[0]);
             // P775 — native training creates the drone's player info when it
@@ -417,6 +452,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
             // drone to the whole mission, exactly like CreateStockDrone
             // (FedSrv.CPP:2269).
             _server.AnnounceNewShip(ship);
+            EquipDefaultTrainingLoadout(ship); // identity precedes equipment, training/trainingmission.cpp:620-629
             _drones[id] = ship;
             _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
             _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
@@ -648,7 +684,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     {
         if (id == PlayerShipId) return PlayerShip;
         if (id == CommanderShipId) return CommanderShip;
-        return _drones.TryGetValue(id, out var d) ? d : null;
+        return _drones.TryGetValue(id, out var d) && d.Sector is not null && !d.Dead ? d : null;
     }
 
     private int _next = 4000;

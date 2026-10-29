@@ -1934,6 +1934,8 @@ public sealed partial class Server
     /// NPC with a resolvable type — human ships keep their own names.</summary>
     private static string? NativeDroneName(Ship ship)
     {
+        // Local scripts supply names directly (training/trainingmission.cpp:603-623).
+        if (ship.Mission?.IsTraining == true && !string.IsNullOrEmpty(ship.Name)) return ship.Name;
         if (!ship.IsNpc || ship.Mission?.Core is not { } core) return null;
         if (ship.PilotType == Ship.PilotTypeBuilder && ship.BuilderStationType is { } builderType)
             return $"{builderType.BuilderName}{ship.Id}";                 // FedSrv.CPP:2252-2255
@@ -2534,6 +2536,7 @@ public sealed partial class Server
     /// falls back to a stable label.</summary>
     private string? PeerName(Ship ship)
     {
+        if (ship.Mission?.IsTraining == true && !string.IsNullOrEmpty(ship.Name)) return ship.Name;
         foreach (var kv in _peerShips)
             if (ReferenceEquals(kv.Value.Ship, ship))
                 return _peerNames.TryGetValue(kv.Key, out var n) ? n : null;
