@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Collections.Generic;
+using Allegiance.Core;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core.Sim;
 
@@ -42,8 +43,8 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
             int id = r.Id == TargetRef.Na ? _host.PlayerShipId : r.Id;
             return _host.ResolveShip(id) is { } ship ? WrapShip(ship) : null;
         }
-        if (r.Type == ObjectType.Buoy && _host.Waypoints.TryGetValue(r.Id, out var wp))
-            return new HostObject(r, wp.Position, Vector3.Zero, Vector3.UnitX, wp.SectorId, 20f);
+        if (r.Type == ObjectType.Buoy && _host.ResolveWaypoint(r.Id) is { } wb)
+            return wb;
         if (r.Type == ObjectType.Station && _host.Stations.TryGetValue(r.Id, out var st))
             return new HostObject(r, st.Position, Vector3.Zero, Vector3.UnitX, st.SectorId, 50f);
         if (r.Type == ObjectType.Asteroid)
@@ -113,14 +114,24 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
     public void DamageShipAdjustable(TargetRef ship, float amount) => _host.DamageShipAdjustable(ship.Id, amount);
     public void ToggleWeapon(int mount) { }
     public void SwapWeapon(int equipmentType, int mount) { }
-    public void RepairAndRearm() { }
+    /// <summary>Repair and re-arm the player's real ship (<c>RepairRearmAction</c>,
+    /// repairrearraction.cpp:37-74) on the host — the real model read/write.</summary>
+    public void RepairAndRearm() => _host.RepairRearm(_host.PlayerShipId);
     public void ShowPane(int paneMask) { }
     public void SetEyeball(bool shown) { }
     public void SetSignature(ObjectType type, int id, float signature) { }
 
+    // ── P880b — equipment/state/radar/buoy seams (real host state) ──────────
+    public bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part)
+        => _host.HasPartOfEquipmentType(ship.Id, part);
+    public ShipSnapshot CaptureShip(TargetRef ship) => _host.CaptureShip(ship.Id);
+    public void RestoreShip(TargetRef ship, ShipSnapshot snap) => _host.RestoreShip(ship.Id, snap);
+    public void ReleaseConsumer(int buoyId) => _host.ReleaseConsumer(buoyId);
+    public void SetCargoNan(TargetRef ship) => _host.SetCargoNan(ship.Id);
+
     // ── M8 nanite / repair / station seams (real host state) ─────────────────
     public bool HasPartMounted(TargetRef ship, int partId) => _host.HasPartMounted(ship.Id, partId);
-    public void MountPart(TargetRef ship, int partId, int mount = 0) => _host.MountPart(ship.Id, partId);
+    public void MountPart(TargetRef ship, int partId, int mount = 0) => _host.MountPart(ship.Id, partId, mount);
     public void DamageStation(int stationId, float amount) => _host.DamageStation(stationId, amount);
 
     // ── player events ─────────────────────────────────────────────────────────

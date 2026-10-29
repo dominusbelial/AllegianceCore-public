@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Collections.Generic;
+using Allegiance.Core;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.Training;
@@ -176,8 +177,15 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
             ? h.GetCommandTarget(ResolveId(ship)) : null;
 
     // ── M3/M4 ship/combat state (replicated world + host) ─────────────────────
-    /// <summary>Absent from the replicated world ⇒ destroyed (<c>getshipisdamagedcondition.cpp:53-55</c>).</summary>
-    public bool IsShipDestroyed(TargetRef ship) => Resolve(ship) is null;
+    /// <summary>Destroyed when absent from the replicated world (<c>getshipisdamagedcondition.cpp:53-55</c>)
+    /// <em>or</em> when the authoritative host reports a zero real armour fraction (a retained,
+    /// zero-armour model — the <c>GetShipIsDestroyedCondition</c> = <c>Not(GetShipIsDamaged(ship, 0.0))</c>
+    /// expansion, getshipisdestroyedcondition.h:27-28).</summary>
+    public bool IsShipDestroyed(TargetRef ship)
+    {
+        if (Resolve(ship) is null) return true;
+        return _f.Host is { } h && h.GetFraction(ship) <= 0f;
+    }
 
     /// <summary>TRUE when the ship's accepted-or-current command id equals
     /// <paramref name="commandId"/>, and TRUE when the ship is absent — native
@@ -234,7 +242,14 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     }
     public void ToggleWeapon(int mount) => TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
     public void SwapWeapon(int equipmentType, int mount) => TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
-    public void RepairAndRearm() => TrainingHostLog.Log("RepairAndRearm()");
+    /// <summary>Repair and re-arm the player's real ship (<c>RepairRearmAction</c>,
+    /// repairrearraction.cpp:37-74) through the embedded host — the real-client realisation of the
+    /// scripted free-space action.</summary>
+    public void RepairAndRearm()
+    {
+        if (_f.Host is { } h) h.RepairRearm(ResolveId(PlayerShip.Ref));
+        else TrainingHostLog.Log("RepairAndRearm()");
+    }
     public void ShowPane(int paneMask) => TrainingHostLog.Log($"ShowPane(0x{paneMask:x})");
     public void SetEyeball(bool shown) => TrainingHostLog.Log($"SetEyeball({shown})");
     public void SetSignature(ObjectType type, int id, float signature) => TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
@@ -243,13 +258,38 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     public bool HasPartMounted(TargetRef ship, int partId) => _f.Host is { } h && h.HasPartMounted(ship.Id, partId);
     public void MountPart(TargetRef ship, int partId, int mount = 0)
     {
-        if (_f.Host is { } h) h.MountPart(ship.Id, partId);
+        if (_f.Host is { } h) h.MountPart(ship.Id, partId, mount);
         else TrainingHostLog.Log($"MountPart({ship.Id},{partId}) — no embedded training host");
     }
     public void DamageStation(int stationId, float amount)
     {
         if (_f.Host is { } h) h.DamageStation(stationId, amount);
         else TrainingHostLog.Log($"DamageStation({stationId},{amount}) — no embedded training host");
+    }
+
+    // ── P880b — equipment/state/radar/buoy seams (authoritative host) ─────────
+    public bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part)
+        => _f.Host is { } h && h.HasPartOfEquipmentType(ship.Id, part);
+    public ShipSnapshot CaptureShip(TargetRef ship)
+        => _f.Host is { } h ? h.CaptureShip(ship.Id) : ShipSnapshot.Empty;
+    public void RestoreShip(TargetRef ship, ShipSnapshot snap)
+    {
+        if (_f.Host is { } h) h.RestoreShip(ship.Id, snap);
+        else TrainingHostLog.Log($"RestoreShip({ship.Id})");
+    }
+    public void ReleaseConsumer(int buoyId)
+    {
+        if (_f.Host is { } h) h.ReleaseConsumer(buoyId);
+        else TrainingHostLog.Log($"ReleaseConsumer({buoyId})");
+    }
+    /// <summary>Set the real client radar LOD mode (<c>SetRadarLODAction</c>,
+    /// setradarlodaction.cpp:31-36 — the window's <c>SetRadarMode</c>, mirrored by the
+    /// <c>TrainingRadarLod</c> tracker that <see cref="GetRadarLod"/> reads).</summary>
+    public void SetRadarLod(int lod) => TrainingRadarLod.Current = lod;
+    public void SetCargoNan(TargetRef ship)
+    {
+        if (_f.Host is { } h) h.SetCargoNan(ship.Id);
+        else TrainingHostLog.Log($"SetCargoNan({ship.Id})");
     }
 
     private static int ResolveId(TargetRef r) =>

@@ -1,4 +1,5 @@
 using System.Numerics;
+using Allegiance.Core;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core.Sim;
 
@@ -186,6 +187,40 @@ public sealed class FakeTrainingSite : ITrainingSite
     public float StationFraction(int stationId) => Fraction(stationId);
     public void RepairStation(int stationId) => _stationFractions[stationId] = 1f;
     private float Fraction(int id) => _stationFractions.TryGetValue(id, out var f) ? f : 1f;
+
+    // ── P880b — equipment/state/radar/buoy seams (scriptable) ───────────────
+    /// <summary>Scripted mounted equipment types per ship (<c>GetShipHasCargoCondition</c>).</summary>
+    public Dictionary<int, HashSet<EquipmentType>> MountedEquipmentTypes { get; } = new();
+
+    /// <summary>Waypoint-buoy ids whose consumer has been released (<c>ReleaseConsumerAction</c>).</summary>
+    public HashSet<int> ReleasedConsumers { get; } = new();
+
+    /// <summary>Recorded <c>SetCargoNanAction</c> ship ids.</summary>
+    public List<int> CargoNanApplied { get; } = new();
+
+    public bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part)
+        => MountedEquipmentTypes.TryGetValue(ship.Id, out var s) && s.Contains(part);
+
+    public ShipSnapshot CaptureShip(TargetRef ship)
+    {
+        if (Resolve(ship) is not FakeObject o) return ShipSnapshot.Empty;
+        return new ShipSnapshot { Position = o.Position, Velocity = o.Velocity };
+    }
+
+    public void RestoreShip(TargetRef ship, ShipSnapshot snap)
+    {
+        if (Resolve(ship) is FakeObject o)
+        {
+            o.Position = snap.Position;
+            o.Velocity = snap.Velocity;
+        }
+    }
+
+    public void ReleaseConsumer(int buoyId) => ReleasedConsumers.Add(buoyId);
+
+    public void SetRadarLod(int lod) => RadarLod = lod;
+
+    public void SetCargoNan(TargetRef ship) => CargoNanApplied.Add(ship.Id);
 
     public bool ConsumeKey(int key) => _pendingKeys.Remove(key);
 

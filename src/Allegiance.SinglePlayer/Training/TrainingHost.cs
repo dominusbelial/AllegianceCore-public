@@ -1,4 +1,5 @@
 using System.Numerics;
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.ClientCore.Training;
@@ -68,11 +69,30 @@ public interface ITrainingHost
 
     // ── M8 nanite / repair / station seams (authoritative host state) ─────────
     bool HasPartMounted(int shipId, int partId);
-    void MountPart(int shipId, int partId);
+    void MountPart(int shipId, int partId, int mount = 0);
     void DamageStation(int stationId, float amount);
     /// <summary>Knock a ship's armour down by <paramref name="amount"/> (the damaged-but-alive
     /// outcome behind <c>DoDamageAction</c> and Mission 8's bomber).</summary>
     void DamageShip(int shipId, float amount);
+
+    // ── P880b — real-model equipment/state/radar/buoy seams ──────────────────
+    /// <summary>TRUE when a mounted part of the ship has the given equipment type
+    /// (<c>GetShipHasCargoCondition</c>, getshiphascargocondition.cpp:29-36).</summary>
+    bool HasPartOfEquipmentType(int shipId, EquipmentType part);
+    /// <summary>Snapshot a ship's real physical/equipment state (<c>ResetShipAction</c>).</summary>
+    ShipSnapshot CaptureShip(int shipId);
+    /// <summary>Restore a ship's real state from a snapshot (<c>ResetShipAction</c>).</summary>
+    void RestoreShip(int shipId, ShipSnapshot snap);
+    /// <summary>Release a waypoint buoy's consumer (<c>ReleaseConsumerAction</c>,
+    /// releaseconsumeraction.cpp:25-28); a released buoy no longer resolves.</summary>
+    void ReleaseConsumer(int buoyId);
+    /// <summary>Set the host radar LOD mode (<c>SetRadarLODAction</c>, setradarlodaction.cpp:31-36).</summary>
+    void SetRadarLod(int lod);
+    /// <summary>The native <c>SetCargoNanAction</c> cargo recipe (setcargonanaction.cpp:22-52).</summary>
+    void SetCargoNan(int shipId);
+    /// <summary>Repair and re-arm a ship's real resources + cargo (<c>RepairRearmAction</c>,
+    /// repairrearraction.cpp:37-74).</summary>
+    void RepairRearm(int shipId);
 }
 
 /// <summary>
@@ -123,6 +143,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<int, float> _stationFractions = new(); // armour fraction (1 = full)
     private readonly Dictionary<int, float> _shipFractions = new();    // ship armour fraction (1 = full)
     private readonly HashSet<(int ShipId, int PartId)> _mountedParts = new(); // mounted part ids
+    private readonly HashSet<int> _releasedConsumers = new();                 // released waypoint-buoy consumers
 
     // M5/M6 command-view + escalation state (native trekClient view/console + TrainingMission::ShipKilled).
     private TargetRef? _pickedRef;                                     // console's picked object
@@ -447,7 +468,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// has not been created. Lets the client <c>Resolve</c> a <see cref="ObjectType.Buoy"/>
     /// through the embedded host's waypoint table.</summary>
     public Allegiance.ClientCore.Training.ITrainingObject? ResolveWaypoint(int buoyId)
-        => _waypoints.TryGetValue(buoyId, out var wp)
+        => !_releasedConsumers.Contains(buoyId) && _waypoints.TryGetValue(buoyId, out var wp)
             ? new WaypointObject(new Allegiance.ClientCore.Training.TargetRef(
                 Allegiance.ClientCore.Training.ObjectType.Buoy, buoyId), wp)
             : null;
@@ -714,7 +735,12 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     public float GetFraction(TargetRef model)
     {
         if (model.Type == ObjectType.Ship)
+        {
+            // Real-model read: a live ship reports its actual armour fraction; an absent/destroyed
+            // ship reports 0 (getshipisdamagedcondition.cpp:53-55, "assume fraction 0").
+            if (ResolveShip(model.Id) is { } live) return live.Fraction;
             return IsDestroyed(model.Id) ? 0f : (_shipFractions.TryGetValue(model.Id, out var f) ? f : 1f);
+        }
         if (model.Type == ObjectType.Station)
             return GetStationFraction(model.Id);
         return ResolveShip(model.Id) is { } ? 1f : 0f;
@@ -733,7 +759,11 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     public void DamageShip(int shipId, float amount)
     {
         float cur = IsDestroyed(shipId) ? 0f : (_shipFractions.TryGetValue(shipId, out var f) ? f : 1f);
-        _shipFractions[shipId] = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+        float nf = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+        _shipFractions[shipId] = nf;
+        // Also write the real ship armour so GetFraction's real-model read observes the damage
+        // (the damaged-but-alive outcome Mission 8's bomber gate needs).
+        if (ResolveShip(shipId) is { } s) s.SetFraction(nf);
     }
 
     /// <summary>A station's armour fraction (1 = pristine, 0 = destroyed; <c>IstationIGC</c> reads
@@ -755,13 +785,165 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// headless proof scripts it, mirroring how <see cref=\"RecordKillCredit\"/> scripts a kill).</summary>
     public void RepairStation(int stationId) => _stationFractions[stationId] = 1f;
 
-    /// <summary>TRUE when a ship has a part of the given type mounted — <c>GetShipHasMountedCondition</c>
-    /// (getshiphasmountedcondition.cpp:36-45). The driver scripts the player mounting Nanite 190;
-    /// <see cref=\"SetDroneNanAction\"/> mounts it on a nan wingman.</summary>
-    public bool HasPartMounted(int shipId, int partId) => _mountedParts.Contains((shipId, partId));
+    /// <summary>TRUE when a ship has a part of the given part type mounted — <c>GetShipHasMountedCondition</c>
+    /// (getshiphasmountedcondition.cpp:36-45): a part in the ship's real <see cref="Ship.Parts"/>
+    /// whose part-type id matches and whose mount id is &gt;= 0 (a mounted, not cargo, slot). The
+    /// scripted <see cref="_mountedParts"/> set is kept as an OR so the headless proof can still
+    /// script the mounting outcome where the sim's part model cannot represent the part.</summary>
+    public bool HasPartMounted(int shipId, int partId)
+        => _mountedParts.Contains((shipId, partId))
+           || (ResolveShip(shipId) is { } s && s.Parts.Any(p => p.PartId == partId && p.MountId >= 0));
 
-    /// <summary>Mount a part on a ship — the write behind <c>MountPart</c> (setdronenanaction.cpp:36-52).</summary>
-    public void MountPart(int shipId, int partId) => _mountedParts.Add((shipId, partId));
+    /// <summary>Mount a part on a real ship — the write behind <c>MountPart</c>
+    /// (setdronenanaction.cpp:36-52). The part type is resolved from the mission core
+    /// (<c>mission.Core.PartTypes</c>, with expenditure-launcher construction as a fallback);
+    /// the ship's existing part on the same mount/equipment-type slot is terminated first
+    /// (native's terminate-then-create), then the new part is mounted as a real <see cref="Ship.Parts"/>
+    /// entry. When the part type is unresolvable the scripted set is used so the headless proof
+    /// still records the outcome.</summary>
+    public void MountPart(int shipId, int partId, int mount = 0)
+    {
+        lock (_simGate)
+        {
+            Ship? s = ResolveShip(shipId);
+            if (s is not { Mission: { } mission })
+            {
+                _mountedParts.Add((shipId, partId));
+                return;
+            }
+            DataPartTypeIGC? resolved = null;
+            if (mission.Core.PartTypes.TryGetValue((short)partId, out var p))
+                resolved = p;
+            else if (mission.Core.TryBuildExpendableLauncher((short)partId, out p))
+                resolved = p;
+            if (resolved is not { } part || !s.HullType.CanMountPart(part, mount))
+            {
+                _mountedParts.Add((shipId, partId));
+                return;
+            }
+            // setdronenanaction.cpp:36-40 — terminate any existing part on the target slot first.
+            s.TryRemovePart(part.EquipmentType, (byte)mount, out _);
+            s.MountPart(part, short.MaxValue, unchecked((byte)mount), ExpandedPartData.FullyMounted);
+            _mountedParts.Add((shipId, partId));
+        }
+    }
+
+    // ── P880b — real-model equipment/state/radar/buoy seams ─────────────────
+    /// <summary>TRUE when a mounted part of the ship has the given equipment type — the read behind
+    /// <c>GetShipHasCargoCondition</c> (getshiphascargocondition.cpp:29-36), which walks the ship's
+    /// mounted part list comparing each part's equipment type.</summary>
+    public bool HasPartOfEquipmentType(int shipId, EquipmentType part)
+        => ResolveShip(shipId) is { } s && s.Parts.Any(p => p.EquipmentType == part);
+
+    /// <summary>Snapshot a ship's real physical/equipment state (<c>ResetShipAction</c> first
+    /// <c>Execute</c>, resetshipaction.cpp:22-36).</summary>
+    public ShipSnapshot CaptureShip(int shipId)
+    {
+        if (ResolveShip(shipId) is not { } s) return ShipSnapshot.Empty;
+        return new ShipSnapshot
+        {
+            Position = ToNum(s.Position),
+            Velocity = ToNum(s.Velocity),
+            Orientation = s.Orientation,
+            Fuel = s.Fuel,
+            Shield = s.ShieldFraction,
+            Hull = s.Fraction,
+            Ammo = s.Ammo,
+            Energy = s.Energy,
+        };
+    }
+
+    /// <summary>Restore a ship's real state from a snapshot (<c>ResetShipAction</c> later
+    /// <c>Execute</c>s, resetshipaction.cpp:24-35). A zero shield fraction leaves the shield as-is
+    /// (native only restores the shield when a shield is mounted).</summary>
+    public void RestoreShip(int shipId, ShipSnapshot snap)
+    {
+        lock (_simGate)
+        {
+            if (ResolveShip(shipId) is not { } s) return;
+            s.Position = ToCore(snap.Position);
+            s.Velocity = ToCore(snap.Velocity);
+            s.SetOrientation(snap.Orientation);
+            s.SetFuel(snap.Fuel);
+            if (snap.Shield > 0f) s.SetShieldFraction(snap.Shield);
+            s.SetFraction(snap.Hull);
+            s.Ammo = snap.Ammo;
+            s.Energy = snap.Energy;
+        }
+    }
+
+    /// <summary>Release a waypoint buoy's consumer (<c>ReleaseConsumerAction</c>,
+    /// releaseconsumeraction.cpp:25-28 — <c>IbuoyIGC::ReleaseConsumer</c>); the released buoy no
+    /// longer resolves through <see cref="ResolveWaypoint"/>.</summary>
+    public void ReleaseConsumer(int buoyId)
+    {
+        lock (_simGate) _releasedConsumers.Add(buoyId);
+    }
+
+    /// <summary>The host radar LOD mode (<c>SetRadarLODAction</c>, setradarlodaction.cpp:31-36;
+    /// the headless stand-in for the client window's <c>SetRadarMode</c>).</summary>
+    public int RadarLod { get; set; }
+    public void SetRadarLod(int lod) => RadarLod = lod;
+
+    /// <summary>The native <c>SetCargoNanAction</c> cargo recipe (setcargonanaction.cpp:22-52):
+    /// ensure a nanite weapon (part 190) is carried on the front mount and fill the cargo hold
+    /// with gatling (33) + proximity mines (59). Best-effort against the mission core — parts the
+    /// universe cannot represent are skipped, mirroring how <see cref="EquipDefaultTrainingLoadout"/>
+    /// tolerates unresolvable part ids.</summary>
+    public void SetCargoNan(int shipId)
+    {
+        lock (_simGate)
+        {
+            if (ResolveShip(shipId) is not { } s || s.Mission is not { } mission) return;
+            DataPartTypeIGC? Part(short id) => mission.Core.PartTypes.TryGetValue(id, out var p)
+                || mission.Core.TryBuildExpendableLauncher(id, out p) ? p : null;
+            // setdronenanaction.cpp:36-40 — terminate any existing front weapon, then mount nanite 190.
+            s.TryRemovePart(EquipmentType.Weapon, 0, out _);
+            if (Part(190) is { } nan && s.HullType.CanMountPart(nan, 0))
+                s.MountPart(nan, 0, 0, ExpandedPartData.FullyMounted);
+            // Fill the cargo hold: slot -1 gatling 33, remaining slots prox 59 (0x7fff amount).
+            DataPartTypeIGC? gat = Part(33);
+            DataPartTypeIGC? prox = Part(59);
+            for (int slot = 0; slot < Ship.CargoCapacity; slot++)
+            {
+                s.ClearCargoSlot(slot);
+                var item = slot == 0 ? gat : prox;
+                if (item is { } ip)
+                    s.MountPart(ip, short.MaxValue, unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
+            }
+        }
+    }
+
+    /// <summary>Repair and re-arm a ship's real resources + cargo — <c>RepairRearmAction</c>
+    /// (repairrearraction.cpp:37-74): shield+hull to 1, energy/ammo/fuel to their maxima, then fill
+    /// the first two empty cargo slots with missiles (150) and ammo (24) and the rest with missiles.
+    /// Maxima come from the real hull type (GA-scaled energy via <see cref="Ship.EffectiveMaxEnergy"/>).</summary>
+    public void RepairRearm(int shipId)
+    {
+        lock (_simGate)
+        {
+            if (ResolveShip(shipId) is not { } s) return;
+            if (s.Parts.Any(p => p.EquipmentType == EquipmentType.Shield))
+                s.SetShieldFraction(1f);
+            s.SetFraction(1f);
+            s.Energy = s.EffectiveMaxEnergy();
+            s.Ammo = s.HullType.MaxAmmo;
+            s.SetFuel(s.HullType.MaxFuel);
+            if (s.Mission is not { } mission) return;
+            DataPartTypeIGC? Part(short id) => mission.Core.PartTypes.TryGetValue(id, out var p)
+                || mission.Core.TryBuildExpendableLauncher(id, out p) ? p : null;
+            // repairrearraction.cpp:49-68 — fill empty cargo slots: 150, then 24, then 150.
+            bool first = true;
+            for (int slot = 0; slot < Ship.CargoCapacity; slot++)
+            {
+                if (s.CargoHold[slot] is not null) continue;
+                var id = first ? (short)150 : (slot == 1 ? (short)24 : (short)150);
+                if (Part(id) is { } part)
+                    s.MountPart(part, short.MaxValue, unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
+                first = false;
+            }
+        }
+    }
 
     /// <summary>Bind the mission that receives the real kill-credit count (native ShipKilled hook).</summary>
     public void SetActiveMission(TrainingMission mission) => _activeMission = mission;
