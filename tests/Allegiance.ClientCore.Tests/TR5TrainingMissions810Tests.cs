@@ -72,12 +72,18 @@ public sealed class TR5TrainingMissions810Tests
             // Goal 3: keep the bomber within 500 m of the player (the player drifts from the
             // commander-collision jiggle, so pin the bomber to the player's live position) until the
             // within-radius gate passes, then park it in sector 1052 for the crossing gate.
+            // Pin it on the player's far side from the home station: inside the station's radius
+            // an idle drone's Dodge thrusts straight away from the centre every tick
+            // (shipIGC.cpp:2334, common.cpp:1745-1747), so the "bomber stopped" gate never holds.
             if (host.Drones.ContainsKey(mission.BomberId))
             {
                 if (!waitSignal)
                 {
                     var pp = site.PlayerShip.Position;
-                    host.PlaceDrone(mission.BomberId, host.GetSectorId(host.PlayerShipId), pp + new Vector3(100f, 0f, 0f), Vector3.UnitX, Vector3.UnitZ, null, 0);
+                    var away = site.Resolve(new TargetRef(ObjectType.Station, Mission8.HomeStationId)) is { } home
+                        && Vector3.DistanceSquared(pp, home.Position) > 1f
+                        ? Vector3.Normalize(pp - home.Position) : Vector3.UnitX;
+                    host.PlaceDrone(mission.BomberId, host.GetSectorId(host.PlayerShipId), pp + away * 100f, Vector3.UnitX, Vector3.UnitZ, null, 0);
                     host.IssueCommand(mission.BomberId, CommandAccepted, null, null, null, CmdDoNothing);
                     bomberNear = true;
                 }
@@ -102,7 +108,7 @@ public sealed class TR5TrainingMissions810Tests
         Assert.True(repaired, "goal 1: home station never repaired");
         Assert.True(fightersDead, "goal 2: enemy stealth fighters never destroyed");
         Assert.True(bomberNear, "goal 3: bomber never brought within range");
-        Assert.True(bomberAtAleph, "goal 3: bomber never crossed into sector 1052");
+        Assert.True(bomberAtAleph, $"goal 3: bomber never crossed into sector 1052 (goal={mission.ActiveGoalPath})");
         Assert.True(bomberDamaged, "goal 3: bomber-hull-damaged gate never started");
         Assert.True(stationDestroyed, "goal 3: enemy outpost never destroyed");
         Assert.True(seen.Contains("Enemy outpost destroyed."), "goal 3: outpost-destroyed message never fired");

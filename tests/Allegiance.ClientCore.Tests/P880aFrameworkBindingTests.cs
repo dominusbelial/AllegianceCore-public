@@ -178,11 +178,14 @@ public sealed class P880aFrameworkBindingTests
         Require.Artwork();
         using var host = TrainingHost.Start();
         var site = new TrainingHostSite(host);
-        // DoDamageAction (dodamageaction.cpp:24-50) dents the player's shield/hull through the host.
-        float before = host.GetShipFraction(host.PlayerShipId);
+        // DoDamageAction (dodamageaction.cpp:42-48), hull demo: a shield above 25% would first be
+        // set to 20%; the default host ship mounts none, so the hull takes the 7.5-point dent.
+        var ship = host.PlayerShip;
+        Assert.False(ship.HasMountedShield, "the default host ship mounts no shield");
+        float hullBefore = ship.Fraction;
         new DoDamageAction(site, toHull: true).Execute();
-        Assert.True(host.GetShipFraction(host.PlayerShipId) < before,
-            "DealDamage(toHull:true) must lower the player's armour on the real host");
+        Assert.True(ship.Fraction < hullBefore,
+            "DealDamage(toHull:true) must dent the real hull of a shieldless ship");
     }
 
     [Trait("Requires", "Artwork")]

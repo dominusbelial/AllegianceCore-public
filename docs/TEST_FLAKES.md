@@ -3823,3 +3823,22 @@ already-ledgered cases: `NpcWingmanDefendLiveTests.Defender_disengages…`
 (ledgered load-flake, row 1959; the automatic quarantine retry failed this
 time, but the test passed 6/6 in isolation immediately after). All 1973
 ClientCore.Tests fast tests — including the 11 P877 tests — passed.
+
+### 2026-10-29 — batch 2 merge gate (P875 + P880b + P881a + P877 on master)
+
+Fast sweep `tiers-20261029T123227.665499Z`: 2 Core failures, both already
+ledgered — `NpcWingmanDefendLiveTests.Defender_disengages…` (pre-existing base
+failure, P872 section) and `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over`
+(intermittent draw-chain receipt, row above). The NPC Live re-run (3× each class
+P875 touched) also failed once each on
+`NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage`
+and `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`
+in run 3 only. All three (ballot draw, wingman attack, dodge-at-dock) passed
+**3/3 alone** immediately after; load flakes of the live combat/travel timing
+fixtures, no Core sim change in this batch beyond P875's GotoPlan default.
+
+The three training failures in the same gate were stale test drivers, fixed in
+the merge commit (not flakes): P880a's DoDamage expectation (native
+dodamageaction.cpp:42-48), TR3's Mission 3 key id + a degenerate orient basis,
+and TR5's Mission 8 bomber pinned inside the home station's radius, where native
+idle Dodge (shipIGC.cpp:2334, common.cpp:1745-1747) pushes it every tick.

@@ -21,8 +21,10 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class TR3TrainingMissions34Tests
 {
     private const int KeySpace = KeyFireBooster;    // TK_FireBooster — the SPACEBAR key
-    private const int KeyTargetEnemy = 111;         // Mission3/4's picked id for TK_TargetEnemy
-    private const int KeyToggleCloak = 112;         // Mission4's picked id for TK_ToggleCloak
+    // Mission 3 gates on the native TK_TargetEnemy (TrainingMissionIds.KeyTargetEnemy, igc.h:303);
+    // Mission 4 still uses its own picked ids until its lesson moves to the native table.
+    private const int Mission4KeyTargetEnemy = 111;  // Mission4's picked id for TK_TargetEnemy
+    private const int KeyToggleCloak = 112;          // Mission4's picked id for TK_ToggleCloak
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Mission 3 — Basic Weaponry
@@ -123,7 +125,7 @@ public sealed class TR3TrainingMissions34Tests
 
         Assert.True(spacebarPrompts >= 2, $"both SPACEBAR prompts not reached (spacebar={spacebarPrompts})");
         Assert.Equal(2, firePrompts); // native main-weapon gates in goals 5 and 8
-        Assert.True(missilePrompt, "missile-fire prompt (goal 9) never reached");
+        Assert.True(missilePrompt, $"missile-fire prompt (goal 9) never reached (goal={mission.ActiveGoalPath})");
         Assert.True(spaceKeyPrompts >= 2, $"both SPACE-key prompts not reached (spacekey={spaceKeyPrompts}, goal={mission.ActiveGoalPath})");
         Assert.True(nextDerelict >= 1003, $"three derelict kills expected, killed to {nextDerelict}");
         Assert.True(reachedLand, "landing prompt (goal 13) never reached");
@@ -246,7 +248,7 @@ public sealed class TR3TrainingMissions34Tests
                 }
                 else if (m.Contains("Target an enemy miner", StringComparison.Ordinal) && !targetedMiner)
                 {
-                    mission.RecordKeyPress(KeyTargetEnemy);    // goal 7: E key
+                    mission.RecordKeyPress(Mission4KeyTargetEnemy);    // goal 7: E key
                     host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, mission.EnemyMiner1Id));
                     host.DestroyDrone(mission.EnemyMiner1Id);  // kill the locked miner
                     targetedMiner = true;
@@ -312,7 +314,10 @@ public sealed class TR3TrainingMissions34Tests
         if (d.LengthSquared() < 1e-6f) return;
         var o = host.PlayerShip.Orientation;
         var dn = d / d.Length();
-        o.Set(new Coll.Vector3(dn.X, dn.Y, dn.Z), new Coll.Vector3(0f, 0f, 1f));
+        // Up must not be parallel to forward (a derelict straight down the Z axis would
+        // otherwise leave the basis degenerate and the ship facing away).
+        var up = MathF.Abs(dn.Z) > 0.9f ? new Coll.Vector3(0f, 1f, 0f) : new Coll.Vector3(0f, 0f, 1f);
+        o.Set(new Coll.Vector3(dn.X, dn.Y, dn.Z), up);
     }
 
     private static Vector3 ToSys(Coll.Vector3 v) => new(v.X, v.Y, v.Z);
