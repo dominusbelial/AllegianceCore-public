@@ -11,6 +11,9 @@ internal sealed partial class BotManager
     // never trigger a fleet-wide buy. The queue also bounds simultaneous dock bursts.
     private readonly LoadoutPurchasePacer _loadoutPurchasePacer = new();
     private readonly Dictionary<short, int> _fighterDispenserSlots = new();
+    // P877 — per-side rotating slot counter assigning aleph-field duty to one
+    // combat bot in four (strategy-level: never the whole fleet).
+    private readonly Dictionary<short, int> _alephFieldSlots = new();
     internal sealed class LoadoutPurchasePacer
     {
         private readonly object _sync = new();
@@ -62,7 +65,7 @@ internal sealed partial class BotManager
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
         DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
         bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed,
-        bool preferTurretBomber = false, bool boarding = false)
+        bool preferTurretBomber = false, bool boarding = false, bool alephFieldMines = false)
     {
         var core = Catalog.RepresentativeCore();
         // Native capture capability is acquired through the same legality and
@@ -75,9 +78,14 @@ internal sealed partial class BotManager
         bool rescueProbe = medevacScout && role == Showcase.HullRole.Scout;
         // P796 — varied rotation within the SAME legality. Mandated exceptions
         // keep the best selector: bomber strike loadouts (anti-base), support
-        // nanite loadouts, medevac scouts (rescue-probe ranking) and the mine
-        // layer fallback below (a defensive layer MUST carry mines).
-        if (varied && !support && !rescueProbe && role != Showcase.HullRole.Bomber)
+        // nanite loadouts, medevac scouts (rescue-probe ranking), P877 aleph
+        // field layers (longest-lived mine) and the mine layer fallback below
+        // (a defensive layer MUST carry mines).
+        // P877 — an aleph-field layer MUST carry the longest-lived legal mine
+        // (field-grade, Showcase.PreLaidMineMinLifespan), so it keeps the best
+        // selector with the aleph ranking instead of the variety rotation —
+        // same reasoning as the defensive mine layers below.
+        if (varied && !support && !rescueProbe && !alephFieldMines && role != Showcase.HullRole.Bomber)
         {
             var state = LoadoutVariety.Begin(shop.Side);
             TechLoadoutSelector.Selection? variedSelection;
@@ -110,9 +118,16 @@ internal sealed partial class BotManager
         var selected = support ? TechLoadoutSelector.SelectSupport(core, shop.Civ, shop.Techs, shop.DockType, shop.Budget)
             : TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget,
                 rescueProbe: rescueProbe, strikePref: preferTurretBomber ? TechLoadoutSelector.StrikeHullPref.TurretCarrier
-                    : TechLoadoutSelector.StrikeHullPref.Best);
+                    : TechLoadoutSelector.StrikeHullPref.Best, alephFieldMines: alephFieldMines);
         if (support && selected is null) selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, budget: shop.Budget);
-        if (selected is not null || !allowRoleFallback) return selected;
+        if (selected is not null || !allowRoleFallback)
+        {
+            // P877 — surface the duty in the purchase reason when a field-grade
+            // mine was actually mounted (dormant otherwise — no false coverage).
+            if (alephFieldMines && selected is { } aleph && aleph.Parts.Any(p => Showcase.IsFieldGradeMine(core, p.PartId)))
+                selected = aleph with { Reason = $"requested role={role}; aleph-field duty (one in four combat slots); {aleph.Reason}" };
+            return selected;
+        }
         // P821: keep the requested duty's scores and equipment priorities even
         // when this civ has no hull carrying that classifier label. All native
         // purchase gates still apply. Requested role survives until next life.
@@ -171,7 +186,7 @@ internal sealed partial class BotManager
                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
-                    defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout,
+                    defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout, alephFieldMines: bot.AlephFieldDuty,
                     varied: bot.Variety, varietySeed: bot.VarietySeed,
                     preferTurretBomber: role == Showcase.HullRole.Bomber && !bot.FinaleBomberActive,
                     boarding: ConquestGame(cs) && bot.Role.Equals("boarder", StringComparison.OrdinalIgnoreCase));

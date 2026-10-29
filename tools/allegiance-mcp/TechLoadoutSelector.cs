@@ -43,11 +43,36 @@ internal static class TechLoadoutSelector
     internal static Selection? Select(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue,
         bool preferMines = false, bool rescueProbe = false,
-        StrikeHullPref strikePref = StrikeHullPref.Best, bool boarding = false)
+        StrikeHullPref strikePref = StrikeHullPref.Best, bool boarding = false, bool alephFieldMines = false)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
-            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref, boarding: boarding);
+            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref, boarding: boarding,
+            alephFieldMines: alephFieldMines);
+    }
+
+    /// <summary>P877 — the FIELD-GRADE mine launcher part a side can actually
+    /// buy: among the core's mine launchers whose lifespan reaches
+    /// <see cref="Showcase.PreLaidMineMinLifespan"/> (the field-grade floor —
+    /// on PCore001 exactly the 600 s Caltrop) and whose
+    /// <c>LauncherTtbmRequired</c> is a subset of the side's techs, the longest
+    /// lifespan, then the highest power, ties by part id. null = the side can
+    /// buy no field-grade mine, so aleph-field duty stays dormant. Reads only
+    /// core data — never a civ name or id.</summary>
+    internal static short? PickAlephMineLauncher(StaticCore core, TechTreeBitMask techs)
+    {
+        short? best = null;
+        (float Lifespan, float Power) bestScore = (float.NegativeInfinity, float.NegativeInfinity);
+        foreach (var launcher in core.Launchers.Values.OrderBy(l => l.PartId))
+        {
+            if (!core.MineTypes.TryGetValue(launcher.ExpendabletypeId, out var mine)) continue;
+            if (mine.Lifespan < Showcase.PreLaidMineMinLifespan) continue;
+            if (!TechTreeBitMask.FromBytes(mine.LauncherTtbmRequired).IsSubsetOf(techs)) continue;
+            if (mine.Lifespan < bestScore.Lifespan
+                || (mine.Lifespan == bestScore.Lifespan && mine.Power <= bestScore.Power)) continue;
+            bestScore = (mine.Lifespan, mine.Power); best = launcher.PartId;
+        }
+        return best;
     }
 
     /// <summary>P779b-1 — the rescue-probe launcher part a side can actually buy:
@@ -310,7 +335,7 @@ internal static class TechLoadoutSelector
 
     private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target,
         bool preferMines = false, bool rescueProbe = false, StrikeHullPref strikePref = StrikeHullPref.Best,
-        FallbackPool fallbackPool = FallbackPool.None, bool boarding = false)
+        FallbackPool fallbackPool = FallbackPool.None, bool boarding = false, bool alephFieldMines = false)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
@@ -358,7 +383,13 @@ internal static class TechLoadoutSelector
                     .Select(p => (Part: p, Amount: Ship.ClampPartAmount(h, c.Core, p,
                         equipment is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher ? short.MaxValue : 1)))
                     .Where(p => p.Amount > 0 && spent + PartPrice(p.Part, p.Amount) <= c.Budget)
-                    .OrderByDescending(p => preferMines && p.Part.Type is DataPartTypeIGC.MineLauncher)
+                    // P877 — an aleph-field layer ranks FIELD-GRADE mine launchers
+                    // first (lifespan, then the existing scores) so a side that
+                    // can buy one actually mounts it.
+                    .OrderByDescending(p => alephFieldMines && p.Part.Type is DataPartTypeIGC.MineLauncher am
+                        && c.Core.MineTypes.TryGetValue(am.ExpendableTypeId, out var amt)
+                        && amt.Lifespan >= Showcase.PreLaidMineMinLifespan)
+                    .ThenByDescending(p => preferMines && p.Part.Type is DataPartTypeIGC.MineLauncher)
                     .ThenByDescending(p => SupportScore(c.Core, p.Part, role, preferMines, rescueProbe)).ThenBy(p => p.Part.PartId)
                     .FirstOrDefault(p => SupportScore(c.Core, p.Part, role, preferMines, rescueProbe) > 0);
                 if (support.Part.Type is not null) Add(support.Part, 0, support.Amount);

@@ -233,6 +233,17 @@ internal static class Showcase
         return core.MineTypes.ContainsKey(l.ExpendabletypeId);
     }
 
+    /// <summary>P877 — whether the launcher's expendable is a FIELD-GRADE mine:
+    /// a lifespan long enough to pre-lay a field and have it alive when anyone
+    /// arrives (<see cref="PreLaidMineMinLifespan"/>). On the real PCore001
+    /// corpus exactly the 600 s Caltrop qualifies.</summary>
+    public static bool IsFieldGradeMine(StaticCore core, short launcherPartId)
+    {
+        if (!core.Launchers.TryGetValue(launcherPartId, out var l)) return false;
+        return core.MineTypes.TryGetValue(l.ExpendabletypeId, out var mine)
+            && mine.Lifespan >= PreLaidMineMinLifespan;
+    }
+
     // ── Fleet parsing + validation (spawn_scenario fleet_a/fleet_b) ──────
 
     /// <summary>
@@ -277,14 +288,98 @@ internal static class Showcase
     /// the dispenser when ANY different-side combat actor is within
     /// <see cref="WingmanMineRange"/> units. The proximity test is the
     /// distance-&lt;-2500u predicate; the caller supplies whether a qualifying
-    /// enemy is present. Pure so the 2500 u rule is provable.</summary>
+    /// enemy is present. Pure so the 2500 u rule is provable. KEPT for NPC
+    /// parity reference — P877 bot policy no longer drops at an enemy merely
+    /// for being ahead (see <see cref="ShouldEscapeMine"/>).</summary>
     public static bool EnemyWithinMineRange(float distance) => distance < WingmanMineRange;
 
+    // ── P877 — escape mining (bot pursued) + arrival-aleph mine fields ──
+    // Both are HUMAN tactics (bot policy), not native AI: native wingmen only
+    // drop at any enemy within 2500 u (shipIGC.cpp:2651-2665) and never mine
+    // an aleph or their own wake. Server behaviour is untouched.
+
+    /// <summary>The mine-useful pursuit range: the same 2500 u window native
+    /// uses for its (undirected) wingman drop (shipIGC.cpp:2655-2665) — beyond
+    /// it a dropped mine is too far off the pursuer's line to matter.</summary>
+    public const float PursuitMineRange = WingmanMineRange;
+
+    /// <summary>Maximum opening speed (m/s) at which a rear enemy still counts
+    /// as "closing or holding": faster than this the pursuer is falling behind
+    /// and a wake drop is wasted. Bot policy threshold.</summary>
+    public const float PursuitOpeningTolerance = 5f;
+
+    /// <summary>Hull fraction at or below which a pursued bot considers itself
+    /// in danger and mines its wake even without a flee order. Bot policy.</summary>
+    public const float EscapeMineLowHullFraction = 0.5f;
+
+    /// <summary>Shield fraction at or below which a pursued bot considers itself
+    /// in danger and mines its wake even without a flee order. Bot policy.</summary>
+    public const float EscapeMineLowShieldFraction = 0.35f;
+
+    /// <summary>The standoff distance (units) a field is laid IN FRONT OF an
+    /// arrival aleph (P557 minefield default; <see cref="PlaceInFrontOfArrivalAleph"/>
+    /// clamps it to 60% of the aleph→centre distance).</summary>
+    public const float AlephFieldOffset = 400f;
+
+    /// <summary>Opening speed of a pursuer relative to the bot: the rate of
+    /// change of |pursuer − bot| — negative when the gap is closing, positive
+    /// when it is opening. Pure: d/dt|P−B| = (P−B)·(vP−vB)/|P−B|.</summary>
+    public static float PursuitOpeningSpeed(
+        Vector3 pursuerPos, Vector3 pursuerVel, Vector3 botPos, Vector3 botVel)
+    {
+        Vector3 gap = pursuerPos - botPos;
+        float len = gap.Length();
+        if (len <= 1e-6f) return 0f;                       // contact: not opening
+        return Dot(gap, pursuerVel - botVel) / len;
+    }
+
+    /// <summary>Whether the pursuer sits in the bot's REAR hemisphere: the
+    /// bot-to-pursuer direction has a negative component along the bot's
+    /// forward. A dispenser drops at the ship's position, so a mine laid now
+    /// stays on the pursuer's line exactly when the pursuer is behind a
+    /// forward-moving bot. Pure.</summary>
+    public static bool IsPursuitBehind(Vector3 botForward, Vector3 toPursuer)
+        => Dot(botForward, toPursuer) < 0f;
+
+    /// <summary>P877 escape-mining decision. A pursued bot mines its wake when
+    /// ALL of: (a) the pursuer is in the rear hemisphere, (b) within
+    /// <see cref="PursuitMineRange"/>, (c) closing or holding
+    /// (opening speed &lt; <see cref="PursuitOpeningTolerance"/>), and (d) the bot
+    /// is actually in danger — fleeing/retreating, low on hull or shield, or
+    /// outmatched locally. Any of (a)-(c) failing means the drop would be
+    /// wasted; an enemy merely AHEAD never qualifies. Pure.</summary>
+    public static bool ShouldEscapeMine(bool pursuerBehind, float distance, float openingSpeed,
+        bool fleeing, bool lowHull, bool lowShield, bool outmatched)
+        => pursuerBehind
+           && distance < PursuitMineRange
+           && openingSpeed < PursuitOpeningTolerance
+           && (fleeing || lowHull || lowShield || outmatched);
+
+    /// <summary>P877 — whether a mine type is worth laying as a FIELD in front
+    /// of an enemy arrival aleph. A field only pays when the mine outlives the
+    /// wait: the real PCore001 data separates cleanly — prox/EMP mines live
+    /// 15-21 s and mine packs 5 s (all verified seconds: native stores lifespan
+    /// in the DataExpendableTypeIGC base, igc.h:1947/1990-1995, consumed at
+    /// mineigc.cpp:113 as <c>m_timeExpire = m_time0 + lifespan</c> where
+    /// <c>Time + float</c> treats the float as seconds, zlib/ztime.h:149-153) —
+    /// while the Caltrop lives 600 s. The 60 s floor is the expected-arrival
+    /// proxy: nothing between 21 s and 600 s exists, so any threshold in that
+    /// gap selects exactly the caltrop-class fields; 60 s keeps the pre-existing
+    /// constant (<see cref="PreLaidMineMinLifespan"/>). Pure.</summary>
+    public static bool PreLayMineAtArrivalAleph(bool atArrivalAleph, bool threatenedOrContested, float mineLifespan)
+        => atArrivalAleph && threatenedOrContested && mineLifespan >= PreLaidMineMinLifespan;
+
     /// <summary>Shortest mine lifespan (seconds) worth laying at an own-station
-    /// aleph with no enemy in range. Pre-laying is bot policy (native wingmen only
-    /// mine an enemy within 2500 u, shipIGC.cpp:2651-2665). PCore001 mine packs
-    /// live 5 s and prox mines 15-21 s, so pre-laid ones expire before anyone
-    /// arrives. Only long-lived fields qualify, such as the 600 s Caltrop.</summary>
+    /// aleph with no enemy in range, or as a P877 arrival-aleph field
+    /// (<see cref="PreLayMineAtArrivalAleph"/>). Pre-laying is bot policy (native
+    /// wingmen only mine an enemy within 2500 u, shipIGC.cpp:2651-2665).
+    /// P877 data check against the real cores (PCore001/002/003/005b/007/011/013,
+    /// all identical) and native units: mine packs live 5 s, prox mines
+    /// 15-21 s, EMP mines 18-21 s, the Caltrop 600 s, and native consumes the
+    /// value as SECONDS (mineigc.cpp:113; Time+float = seconds→ms,
+    /// zlib/ztime.h:149-153) — so the 15-21 s port reading was correct, NOT a
+    /// loader bug. Nothing between 21 s and 600 s exists, so the 60 s floor
+    /// selects exactly the caltrop-class fields.</summary>
     public const float PreLaidMineMinLifespan = 60f;
 
     /// <summary>Whether a bot lays a mine at an own-station aleph with no
@@ -303,8 +398,8 @@ internal static class Showcase
         float lockQuality, Vector3 targetVel, Vector3 right, Vector3 up, float missileMaxLock)
     {
         if (lockQuality < 1.0f) return false;
-        float orthRight = MathF.Abs(vx(targetVel, right));
-        float orthUp = MathF.Abs(vx(targetVel, up));
+        float orthRight = MathF.Abs(Dot(targetVel, right));
+        float orthUp = MathF.Abs(Dot(targetVel, up));
         float evasionSpeed = MathF.Sqrt(orthRight + orthUp) * targetVel.Length();
         float maxEvasionSpeed = MissileEvasionBase + missileMaxLock * MissileEvasionPerLock;
         return evasionSpeed < maxEvasionSpeed;
@@ -312,7 +407,7 @@ internal static class Showcase
 
     /// <summary>Dot product of two <see cref="Vector3"/>s (this core's Vector3
     /// exposes no Dot; the algebra is the same as native's <c>·</c>).</summary>
-    private static float vx(Vector3 a, Vector3 b) =>
+    private static float Dot(Vector3 a, Vector3 b) =>
         a.X * b.X + a.Y * b.Y + a.Z * b.Z;
 
     /// <summary>Whether the <c>c_wbbmUseMines</c> flag is set in a mask.</summary>
