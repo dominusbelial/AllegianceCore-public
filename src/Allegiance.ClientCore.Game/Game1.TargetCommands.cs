@@ -145,6 +145,14 @@ public sealed partial class Game1
             _autoTarget = family.EndsWith("Base", StringComparison.Ordinal)
                 ? ChooseAcrossClusters(candidates, CandidateSector, world.Warps, sector, position, _autoTarget, direction)
                 : ChooseTarget(candidates, position, _autoTarget, direction);
+            // P886b — native target keys SetTarget(m, c_cidDefault) (WinTrek.cpp:10149,
+            // 9024 → SetCommand(c_cmdCurrent, ...) :8833), so selecting a target with a
+            // target-family key writes the server c_cmdCurrent / Ship.CommandTarget — the
+            // slot the training GetTargetCondition and the lead predictor read. The port
+            // previously only updated the client reticle here (a P886b real-window finding:
+            // M3 goal 12 "Press the B key to target the outpost" never advanced because B
+            // never reached the server CommandTarget). Commit exactly like a player pick.
+            if (_autoTarget is { } sel) CommitTargetForPlayer(sel);
             _targetNoMatchNoun = _autoTarget is null ? family : null;
             _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
             Console.WriteLine($"[p642] {family}/{direction} -> {_autoTarget?.Name ?? "none"}");

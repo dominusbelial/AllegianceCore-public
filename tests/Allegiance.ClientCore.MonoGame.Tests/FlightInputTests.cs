@@ -124,6 +124,19 @@ public class FlightInputTests
     }
 
     [Fact]
+    public void HoldingFireMissile_SetsTheMissileFireStateBit()
+    {
+        // P886b — the fire-missile key (Left Ctrl) folds the high-word missileFireIGC bit into the
+        // local stateM (FlightInput.Translate), so the training GetStateBitsCondition(MissileFire)
+        // is met by REAL key input, not an injected bit. Native sets it while the button/key is held
+        // (WinTrek.cpp:8364, 8444).
+        var on = FlightInput.Translate(FlightInputState.None with { MissileFire = true });
+        Assert.NotEqual(0, on.StateM & ShipControlState.MissileFire);
+        var off = FlightInput.Translate(FlightInputState.None);
+        Assert.Equal(0, off.StateM & ShipControlState.MissileFire);
+    }
+
+    [Fact]
     public void HoldingFire_ComposesWithMovementAndAfterburner()
     {
         // Fire is additive like afterburner — a held Space must not disturb

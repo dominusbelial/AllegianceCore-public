@@ -45,6 +45,13 @@ public readonly record struct FlightInputState(
     bool StrafeDown = false,// P624 — vertical strafe down (X) — TK_ThrustDown
     bool Afterburner = false, // Shift (either side) — TK_FireBooster
     bool Fire = false,        // Space — TK_FireWeapon (held)
+    // P886b — fire missile (TK_FireMissile, Left Ctrl / mouse-middle): HELD like
+    // Fire/Afterburner. The port sends the wire FIRE_MISSILE(70) launch request for
+    // the actual shot (Game1.FlightInput), and folds this high-word missileFireIGC
+    // bit (igc.h:830) into the local stateM here — native sets it on the ship's
+    // state when the fire-missile button/key is held (WinTrek.cpp:8364, 8444), and
+    // the training GetStateBitsCondition(MissileFire) reads it.
+    bool MissileFire = false, // Left Ctrl / mouse-middle — TK_FireMissile (held)
     bool Cloak = false,       // F — TK_ToggleCloak (latched toggle, see remarks)
     // P624 — vector lock (TK_LockVector). The LATCHED client toggle state set
     // by the L key (edge-triggered), carried in each frame exactly like Cloak;
@@ -177,6 +184,17 @@ public static class FlightInput
         // Fire input instead ORs OneWeapon | the selected mount id so exactly
         // that mount's weapon fires (see docs/WEAPON_FIRE_P221.md).
         stateM |= FireContribution(input.Fire, input.GroupFire, input.SelectedMount);
+
+        // P886b — fire missile (TK_FireMissile → ShipControlState.MissileFire, the
+        // 65536·missileFireIGC bit, igc.h:830). Native sets the missileFireIGC state
+        // bit on the ship while the fire-missile button/key is held
+        // (WinTrek.cpp:8364, 8444); the port's FireMissile key additionally sends the
+        // wire FIRE_MISSILE(70) launch request (Game1.FlightInput), but it must ALSO
+        // fold this high-word bit into the local stateM so the ship's IGC state —
+        // and the training GetStateBitsCondition(MissileFire) — sees it, exactly
+        // like native's SetStateBits. The 16-bit wire strips the high word, so this
+        // is purely the local/client state, never a duplicate server launch.
+        if (input.MissileFire) stateM |= ShipControlState.MissileFire;
 
         // P413 — cloak toggle (TK_ToggleCloak → ShipControlState.CloakActive,
         // the 0x800 bit, igc.h:820). Carried in from Game1 as the LATCHED toggle

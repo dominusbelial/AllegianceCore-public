@@ -447,6 +447,41 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             "the retired invented ids must never be delivered");
     }
 
+    [Fact]
+    public void Training_camera_ids_map_to_the_port_cockpit_not_command()
+    {
+        // P886 regression: native cmCockpit=0 (Treki.h:108-126) but the port CameraMode enum has
+        // Command=0 / Cockpit=5 (CameraMode.cs). The old raw cast `(CameraMode)nativeId` put every
+        // training mission into Command view, whose CommandCameraActive path (FlightInput.cs:2431)
+        // freezes flight controls — the M2/M3 throttle/fire lessons could never complete in a real
+        // window. The mapping must translate native cmCockpit → Cockpit.
+        var cockpit = Game1.TrainingCameraMode(TrainingMissionIds.CameraCockpit);
+        Assert.Equal(Rendering.CameraMode.Cockpit, cockpit);
+        Assert.NotEqual(Rendering.CameraMode.Command, cockpit);
+        Assert.Equal(Rendering.CameraMode.ExternalOrbit, Game1.TrainingCameraMode(TrainingMissionIds.CameraExternalOrbit));
+        Assert.Equal(Rendering.CameraMode.ExternalStation, Game1.TrainingCameraMode(TrainingMissionIds.CameraExternalStation));
+    }
+
+    [Fact]
+    public void Spacebar_routes_TK_FireBooster_through_the_real_default_map()
+    {
+        // P886 regression: native binds SPACEBAR → TK_FireBooster (the key the M2/M3 "Press the
+        // SPACEBAR" prompts wait on). The port rebinds Space→FireWeapon and afterburner→LeftShift for
+        // normal flight, so a real-window training run stalled at the SPACEBAR gate because the filter
+        // only honoured the (rebound) current binding and routed TK_FireWeapon (55) instead. The
+        // training key filter must ALSO recognise the action's NATIVE-default key (the 5th catalog
+        // arg), so SPACEBAR still reaches TK_FireBooster (50). This test uses the REAL default map —
+        // no explicit rebind — so it fails before the fix and passes after.
+        var map = new ActionMap(InputActionCatalog.Definitions);
+        var received = new List<int>();
+        var gate = new TrainingInputGate(key => { received.Add(key); return true; });
+        map.ActionFilter = gate.Approves;
+        var ks = new KeyboardState(Keys.Space);
+        gate.Update(ks, map);
+        gate.Update(default, map);   // release so the press re-edges
+        Assert.Contains(KeyFireBooster, received);
+    }
+
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner
     /// Game1.TryComputeDockSteer uses) driven from the replicated pose.</summary>
     private static (ControlData Controls, int StateM) DockControls(Trainee t)
