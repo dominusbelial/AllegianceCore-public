@@ -21,8 +21,10 @@ using Allegiance.Core.Sim;
 /// marker is deliberately empty — this class is the concrete data carrier and
 /// the marker is just the seam's object-pointer shape.
 /// </remarks>
-public sealed class ResolvedWarp : IWarpIgc, ISideVisible
+public sealed class ResolvedWarp : IWarpIgc, IModelIgc, ISideVisible
 {
+    internal Mission? ThingSiteMission;
+    internal ThingSite? ThingSite;
     /// <summary>The raw warp record.</summary>
     public DataWarpIGC Warp { get; }
 

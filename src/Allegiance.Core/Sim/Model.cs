@@ -1,4 +1,5 @@
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 
 namespace Allegiance.Core.Sim;
 
@@ -23,6 +24,8 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public abstract class Model : IModelIgc, ISideVisible
 {
+    internal Mission? ThingSiteMission;
+    internal ThingSite? ThingSite;
     private double _lastUpdate;
 
     /// <summary>Construct a model in a sector with the given id and position.</summary>

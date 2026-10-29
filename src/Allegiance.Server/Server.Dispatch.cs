@@ -230,7 +230,11 @@ public sealed partial class Server
                 var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict;
                 var failureReason = !identityAccepted ? identityFailure : duplicateName ? "character name already in use in this mission" : reservedConflict ? reservedFailure : "wrong client version";
                 if (!validated) _peerIdentities.Remove(from);
-                if (validated) AuthenticatePrivileges(from, req);
+                if (validated)
+                {
+                    AuthenticatePrivileges(from, req);
+                    if (AccountId(from) is null) _peerStandaloneIds[from] = StandaloneCharacterIds.Get(req.CharacterName ?? "");
+                }
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness
                 // grace, so a real player whose machine hiccups (OBS, a heavy
@@ -283,8 +287,11 @@ public sealed partial class Server
                 // Push the side roster AFTER the logon ack so a packet-order-
                 // fixed harness sees LOGONACK as its first frame (the roster is
                 // what the side-select screen is rendered from).
-                if (validated && _missions.Count > 0)
-                    SendSideRoster(from);
+                if (validated)
+                {
+                    SendPeer(from, FedPacket.Pack([new StaticMapInfo { Maps = _staticMaps }.Encode()]));
+                    if (_missions.Count > 0) SendSideRoster(from);
+                }
 
                 // P281 — the join/launch burst is deferred to
                 // CompleteJoinAndLaunch, called from CompleteSideSelection once
@@ -2321,6 +2328,11 @@ public sealed partial class Server
                 {
                     Console.WriteLine($"[wire] bad QUIT_SIDE from {from}: {e.Message}");
                 }
+            }
+            else if (fmid == SetMissionOwner.Fmid)
+            {
+                try { HandleSetMissionOwner(from, command.Read<SetMissionOwner>()); }
+                catch (ArgumentException e) { ConsoleLog.Write($"[wire] bad SET_MISSION_OWNER: {e.Message}"); }
             }
             else if (fmid == SetTeamLeader.Fmid)   // FM_CS_SET_TEAM_LEADER (Messages.h:767-772)
             {

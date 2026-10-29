@@ -1,0 +1,109 @@
+{
+  "base": "30e814e430d07879cf2070ceb3a5817a372b0151",
+  "wip": "113f3bd613aec07fb8c0d16f30459b09f1588638",
+  "recorded_utc": "2026-10-29T01:00:52.440408+00:00",
+  "no_commits_or_pushes": true,
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p869b/build-final.log"
+  },
+  "tools_build": {
+    "projects": 92,
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p869b/tools-build.log"
+  },
+  "native_aot": {
+    "runtime": "linux-x64",
+    "self_contained": true,
+    "warnings": 0,
+    "errors": 0,
+    "sha256": "2538bc21736dc2e2e761779b8c9cb74f710583f8d730ec60807ff746ba82cda1",
+    "log": ".scratch/p869b/aot.log"
+  },
+  "server_dll_sha256": "a8ea91ad742ecbe3bada0b9d534112c6f57c7f4dbb8bba4888a38eb9c6288b6e",
+  "ownership_cases": {
+    "per_run": 47,
+    "runs": 3,
+    "passed": 141
+  },
+  "affected_class_invocations": 42,
+  "affected_case_passes": 327,
+  "affected_baseline_failures": 3,
+  "fast": {
+    "invocations": 1,
+    "seconds": 838.3293973549735,
+    "outcomes": {
+      "Passed": 11492,
+      "NotExecuted": 3,
+      "Failed": 22
+    },
+    "passed": false,
+    "raw": ".scratch/p869b/fast-tier/",
+    "classification": "p869b-failures.csv"
+  },
+  "rotation_24": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "seconds": 1.904641,
+      "peers": 24,
+      "matches": 2
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "seconds": 1.5854032,
+      "peers": 24,
+      "matches": 2
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "seconds": 1.4839051,
+      "peers": 24,
+      "matches": 2
+    }
+  ],
+  "showcase": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "seconds": 189.6987961,
+      "longest_stopped_seconds": 0.0,
+      "summary": "P700 local 15v15: 186.0s, samples=1858, reached=24/30, longest speed<1 with target=0.000s, shots=534, hits=1, kills=0"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "seconds": 229.1902858,
+      "longest_stopped_seconds": 0.104,
+      "summary": "P700 local 15v15: 226.3s, samples=2261, reached=24/30, longest speed<1 with target=0.104s, shots=597, hits=218, kills=2"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "seconds": 225.4981755,
+      "longest_stopped_seconds": 1.109,
+      "summary": "P700 local 15v15: 222.5s, samples=2223, reached=24/30, longest speed<1 with target=1.109s, shots=1031, hits=277, kills=2"
+    },
+    {
+      "run": 4,
+      "outcome": "Passed",
+      "seconds": 194.2372525,
+      "longest_stopped_seconds": 1.116,
+      "summary": "P700 local 15v15: 191.3s, samples=1911, reached=24/30, longest speed<1 with target=1.116s, shots=266, hits=3, kills=0"
+    },
+    {
+      "run": 5,
+      "outcome": "Passed",
+      "seconds": 221.44469709999998,
+      "longest_stopped_seconds": 0.0,
+      "summary": "P700 local 15v15: 218.5s, samples=2183, reached=24/30, longest speed<1 with target=0.000s, shots=982, hits=170, kills=1"
+    }
+  ],
+  "bench": "p869b-bench.json",
+  "native_citations": "p869b-native-citations.json",
+  "rig_acceptance": "Claude: two-match 200v200 A/B for hot-path cost and rotation safety; not run by Codex"
+}

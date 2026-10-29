@@ -26,13 +26,14 @@ public sealed class NotSupportedFedMsgsTests
     }
 
     [Fact]
-    public void Registry_has_exactly_the_eleven_confirmed_entries()
+    public void Registry_has_exactly_the_ten_pending_or_excluded_entries()
     {
         // A deliberate low count guard: if this grows, it should be because
         // a new message was actually investigated and confirmed dead/N-A/
         // unrecoverable, not by accident. Update this count (and add a real
         // Explanation) when that happens. P507 dropped the count 12→11 by
         // removing SHIP_RESET(183) (now implemented) from the registry.
-        Assert.Equal(11, NotSupportedFedMsgs.All.Count);
+        // P869 removes the implemented STATIC_MAP_INFO(11), taking 11→10.
+        Assert.Equal(10, NotSupportedFedMsgs.All.Count);
     }
 }

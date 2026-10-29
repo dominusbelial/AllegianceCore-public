@@ -4,6 +4,42 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P869 verification observations (2026-10-28)
+
+The one Fast sweep retains **11,457 passed / 33 failed / 3 optional Meshy skips**
+(11,493 executions, 778.8 s), with **9/9** infrastructure checks. It was not
+repeated. Every failed method has three isolated receipts in
+[the P869 verification CSV](reports/P869_VERIFICATION.csv). The final **36 new
+cases pass 3/3**, the affected **27 client cases pass 3/3**, the **64-case
+shared-core/flight selection passes 3/3**, and P730 passes **5/5** (ten matches).
+
+- **13 registry-lifetime fixture cases repaired:** side elimination, ownership,
+  artifact/flag/kill/conquest/territory tests inspected an old mission registry
+  after retirement. They now retain the side objects before retirement while
+  preserving their state and wire assertions; native retirement empties the
+  live registry. These were P869 fixture regressions, not flakes.
+- **13 shared-core contamination cases recovered:** tests editing core constants
+  now restore them for other live consumers. The sweep observed slot 4's edited
+  launch speed **123** in later ripcord/relaunch tests expecting **50**. The final
+  shared-process selection includes the mutators, native routing, launches,
+  ripcord and mine visibility, and passes three times. Flight source was not
+  changed. The mine fixture's temporary radius edit remains owned until fixture
+  disposal, rather than ending when its seat factory returns.
+- **New shutdown fixture repaired:** its initial last-consumer assertion used a
+  core also owned by other live hosts. It now uses a unique core path, disposes
+  all test leases and verifies both publication paths remain silent after shutdown.
+- **Five environment cases:** unchanged `PlayerBundlePathsTests` discovers repo
+  `local.env` when TMPDIR is lexically inside the worktree. A `/proc` descriptor
+  alias to the same authorized scratch directory passes three isolated runs;
+  actual scratch writes remain inside the worktree. This repeats P864c's
+  environment observation.
+- **Radar remains pre-existing and intermittent:**
+  `RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight`
+  records **fail/pass/fail** on the final candidate and **fail/pass/fail** on an
+  unchanged HEAD source copy. Its moving target violates the timed off-screen
+  placement premise. Radar source remains untouched. The failed Fast result is
+  retained; it is not presented as a passing gate.
+
 ## P864d verification observations (2026-10-28)
 
 The P730 two-match showcase passed **5/5** (3m12s–5m09s per run, load ~10 at start).
@@ -3557,3 +3593,47 @@ mission replay/context and the empty-session reap). The other two sweep
 failures are the already-ledgered pre-existing entries above
 (`RadarTargetHighlightLiveTests.LiveOffScreenEnemy…`,
 `NpcWingmanDefendLiveTests.Defender_disengages…`).
+### P869b — existing P650 mining fixture (2026-10-28)
+
+`P650ServerRulesTests.Local_mining_battle_reports_income_and_leaves_drained_rocks`
+fails at the `Assert.NotNull(drilling)` after its 1,800 simulated seconds on both
+unchanged dispatch master `30e814e4` **3/3** and P869b **3/3**. The income check
+passes; the fixture then requires one of its original miners to be actively
+mining within a fixed simulation window. This is a reproducible baseline
+failure, not a passing gate or an intermittent load-flake claim. The constant
+override now clones the mission's constants rather than editing a shared core;
+no mining/flight rule was changed. Other cases in the class pass 3/3. Evidence:
+`.scratch/p869b/baseline-p650{,-2,-3}.log` and
+`.scratch/p869b/isolated-P650ServerRulesTests-{1,2,3}.log`; report:
+[reports/P869_REPORT.md](reports/P869_REPORT.md).
+
+P869b's single Fast sweep additionally recorded **22 failures** (11,492 pass,
+3 skip), classified in
+[reports/P869_assets/p869b-failures.csv](reports/P869_assets/p869b-failures.csv):
+
+- Five `PlayerBundlePathsTests` cases: the worktree-local `TMPDIR` makes their
+  nominal outside-repository directories discover this checkout's `local.env`.
+  The complete nine-case class passes **3/3** using a lexical `/proc/<parent>/fd`
+  directory alias into the same writable scratch storage. No fixture or runtime
+  resolver was changed.
+- `WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands`:
+  one missing-notice failure in the sweep; **3/3 passes on candidate and 3/3
+  passes on unchanged master** in targeted reruns. The failure was not reproduced
+  in isolation; no claim that a baseline failure was observed is made.
+- **16 persistent NPC/layer/miner fixture failures** reproduce **3/3 on both
+  candidate and unchanged dispatch `30e814e4`**, with identical assertion
+  messages: five P591c routing cases, two P591b layer cases, five NpcDodge cases,
+  one NpcCrossClusterMinerDecision case, two NpcAutopilot cases, and the
+  InitialMinerSpawn debug auto-start case. These are reproducible baseline
+  failures, not passing gates or intermittent load-flake claims. Flight/mining
+  source was not changed by P869b. The suite's >10-second warnings for several
+  of these cases remain visible; their tier tags were not changed to hide them.
+
+Raw evidence is under `.scratch/p869b/` and
+`.scratch/p869b/fast-tier/`. The 24-peer two-consecutive-rotation
+regression passes **3/3** with zero simulation-stage failures. The new ownership,
+registry, cache and disposal cases pass **47/47 in each of three runs**.
+
+P869b final never-parks gate: **5/5 passes**, durations 189.70 / 229.19 / 225.50 / 194.24 / 221.44 seconds;
+maximum stopped-with-target sample 1.116 s (limit 5 s). Final receipts:
+[reports/P869_assets/p869b-verification.json](reports/P869_assets/p869b-verification.json).

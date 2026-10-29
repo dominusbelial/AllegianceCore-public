@@ -58,7 +58,7 @@ public sealed class P739TimerLiveTests
         using var owner = new FltBot(); using var enemy = new FltBot(); using var elsewhere = new FltBot();
         Seat(server, owner, "p739owner"); Seat(server, enemy, "p739enemy"); Seat(server, elsewhere, "p739elsewhere");
         var m = server.Missions[0]; m.Stage = MissionStage.Started;
-        m.Core.Constants.FloatConstants[32] = delay;
+        using var warpBombDelay = new CoreConstantOverride(m, 32, delay);
         var launcher = server.Ships.First(s => s.Ship.Id == owner.ShipAssignment!.Ship.ShipId).Ship;
         var sector = m.Sectors.First(s => s.Warps.Count > 0); var warp = sector.Warps[0];
         var type = m.Core.MissileTypes.Values.First(t => t.HasWarpBombCapability) with { ReadyTime = 100, Lifespan = 200 };

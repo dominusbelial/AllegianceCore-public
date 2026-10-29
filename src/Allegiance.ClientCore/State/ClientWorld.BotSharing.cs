@@ -59,7 +59,11 @@ public sealed partial class ClientWorld
         if (_mission is { } mission) AttachBotWorld(mission.Cookie);
     }
 
-    internal void ReleaseBotView() => DetachBotWorld();
+    internal void ReleaseBotView()
+    {
+        DetachBotWorld();
+        ReleaseMissionCore();
+    }
 
     private void DetachBotWorld()
     {

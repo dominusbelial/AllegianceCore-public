@@ -58,6 +58,8 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Asteroid : IAsteroidIgc, ISideVisible
 {
+    internal Mission? ThingSiteMission;
+    internal ThingSite? ThingSite;
     /// <summary>The He3-minable capability bit <c>c_aabmMineHe3 = 0x01</c> (igc.h:761).</summary>
     public const short CapMineHe3 = 0x01;
 

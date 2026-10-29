@@ -23,7 +23,7 @@ public sealed class P650ServerRulesTests
     {
         Require.Artwork();
         using var server = new Srv(); server.Boot(Config());
-        var m = server.Missions[0]; m.Core.Constants.FloatConstants[3] = 123;
+        var m = server.Missions[0]; using var exitWarpSpeed = new CoreConstantOverride(m, 3, 123);
         var warp = m.Warps.First(w => w.Partner() is not null && w.Destination is not null);
         var sector = m.Sectors.First(s => s.Warps.Contains(warp));
         var ship = new Ship(30000, m.Core.HullTypes.Values.First(), Vector3.Zero, new Vector3(0, 0, 17), Orientation.Identity);
@@ -48,7 +48,7 @@ public sealed class P650ServerRulesTests
             return (ship, sector);
         };
         server.Boot(Config()); var m = server.Missions[0]; m.Stage = MissionStage.Started;
-        m.Core.Constants.FloatConstants[4] = 123;
+        using var exitStationSpeed = new CoreConstantOverride(m, 4, 123);
         using var bot = new Allegiance.Bot.Bot(); bot.Connect(server.BoundPort, "p650launch");
         bot.SendLogonRequest(new LogonRequest
         {
@@ -77,7 +77,7 @@ public sealed class P650ServerRulesTests
         {
             using var server = new Srv(); server.Boot(Config("m2xspiderw.igc"));
             var m = server.Missions[0]; m.Stage = MissionStage.Started;
-            if (oldRate) m.Core.Constants.FloatConstants[14] = 0.025f;
+            using var regeneration = new CoreConstantOverride(m, 14, oldRate ? 0.025f : m.Core.Constants.FloatConstants[14]);
             var miners = m.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Where(s => s.IsNpc && s.PilotType == Ship.PilotTypeMiner).ToList();
             Assert.Equal(2, miners.Count);
             var prev = miners.ToDictionary(s => s.Id, s => s.Ore);

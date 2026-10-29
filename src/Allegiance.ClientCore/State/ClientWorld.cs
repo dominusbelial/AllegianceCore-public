@@ -2060,7 +2060,7 @@ public sealed partial class ClientWorld
         JoinedShipId = null;
         JoinedMissionCookie = null;
         JoinError = null;
-        MissionCore = null;
+        ReleaseMissionCore();
         MySideId = null;
         // P636 — a fresh connection starts with an empty published snapshot; a
         // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
@@ -2494,6 +2494,9 @@ public sealed partial class ClientWorld
                 // P820c — the server relays a side's squad on SET_TEAM_INFO(15);
                 // store it for the team pane (appmsg.cpp:2541-2550).
                 Apply(setTeamInfo);
+                break;
+            case StaticMapInfo mapInfo:
+                Apply(mapInfo);
                 break;
             case SetMissionOwner missionOwner:
                 // P281 — whole-mission owner broadcast; gates randomize-teams.
@@ -5097,7 +5100,7 @@ public sealed partial class ClientWorld
         JoinedShipId = null;
         JoinedMissionCookie = null;
         JoinError = null;
-        MissionCore = null;
+        ReleaseMissionCore();
         Graph = null;
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;

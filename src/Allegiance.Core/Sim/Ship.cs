@@ -1916,15 +1916,43 @@ public sealed partial class Ship : Model, IShipIgc
     /// wander off to mine/sell/build while commanded. <c>null</c> = no active goto.</para>
     /// </summary>
     private GotoOrder? _gotoWaypoint;
+    private Buoy? _gotoBuoy;
+    private Mission? _gotoBuoyMission;
+    private short _gotoBuoyId;
+    internal Ship? GotoBuoyPrevious, GotoBuoyNext;
     public GotoOrder? GotoWaypoint
     {
         get => _gotoWaypoint;
         set
         {
             if (EqualityComparer<GotoOrder?>.Default.Equals(_gotoWaypoint, value)) return;
+            // Native command target ownership: shipIGC.h:736,782;
+            // last buoy consumer retires the mission registry entry (buoyigc.h:76-88).
+            ReleaseGotoBuoy();
             _gotoWaypoint = value;
+            if (value is { TargetStationId: null, TargetType: null or IgcObjectType.Buoy } && Mission is { } mission)
+            {
+                _gotoBuoyId = mission.GenerateNewBuoyID();
+                _gotoBuoyMission = mission;
+                mission.RegisterGotoBuoy(this);
+            }
             DronePlanChanged();
         }
+    }
+
+    internal void ReleaseGotoBuoy()
+    {
+        _gotoBuoyMission?.UnregisterGotoBuoy(this, _gotoBuoy);
+        _gotoBuoy = null;
+        _gotoBuoyMission = null;
+    }
+
+    internal Buoy MaterializeGotoBuoy()
+    {
+        var waypoint = _gotoWaypoint!.Value;
+        var p = waypoint.Position;
+        return _gotoBuoy ??= new Buoy(new DataBuoyIGC([p.X, p.Y, p.Z], waypoint.ClusterId,
+            (byte)waypoint.Kind, _gotoBuoyId, false));
     }
 
     /// <summary>

@@ -23,6 +23,8 @@ public sealed partial class Server
 
     private void AuthenticatePrivileges(ConnectionId from, LogonRequest req)
     {
+        if (_config.BotAuthenticationSecret is { Length: > 0 } bot
+            && FixedTimeEquals(bot, req.CDKey ?? "")) _botAuthenticated.Add(from);
         var settings = _config.LiveSettings;
         if (settings?.AdminCheats is { Enabled: true, Secret: { Length: > 0 } admin }
             && FixedTimeEquals(admin, req.CDKey ?? "")) _adminAuthenticated.Add(from);

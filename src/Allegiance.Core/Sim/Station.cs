@@ -76,6 +76,8 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Station : IStationIgc, ISideVisible
 {
+    internal Mission? ThingSiteMission;
+    internal ThingSite? ThingSite;
     // Native consumed-rock memory (Igc/clusterIGC.cpp:141-155).
     public Asteroid? ConsumedAsteroid { get; internal set; }
     public HashSet<short> StaleRockSides { get; } = [];

@@ -1,7 +1,7 @@
 namespace Allegiance.Server;
 
 /// <summary>
-/// P193 — the in-memory, <b>connection-lifetime-only</b> per-player
+/// P193 — the in-memory per-player
 /// score/rank foundation. P215 (Stage 1 of the player-scoring plan) extended
 /// it with the real kill/death counters and the Elo-style combat rating; P583
 /// (Stage 2) completes it into a faithful port of native's full
@@ -10,16 +10,10 @@ namespace Allegiance.Server;
 /// <c>igc.h:5502-5966</c>).
 /// </summary>
 /// <remarks>
-/// <para><b>One instance per connection, not persisted.</b> This port has no
-/// account/login/identity layer, so nothing survives a reconnect — one fresh
-/// instance is allocated per connection at logon (see
-/// <c>Server.AssignShip</c>, <c>Server.Lobby.cs:2537</c>) and discarded when
-/// the peer is released (<c>Server.ReleasePeer</c> → the <c>LiveShip</c> is
-/// removed from <c>_peerShips</c>). Native's persisted score object
-/// (<c>GetPersistPlayerScore(civId)</c>) and live score object
-/// (<c>GetScore()</c>) collapse to this same in-memory value (no persistence —
-/// the P583 doc says persistent stats DB / rank progression across games is
-/// out of scope).</para>
+/// <para>One live instance per seated player. The mission's old-player cache
+/// retains it across departures/rejoins (Server.TryTakeOldPlayerScore), while
+/// verified career persistence is handled separately. P869 carries the native
+/// standalone process identity independently of verified online subjects.</para>
 ///
 /// <para><b>Stage-2 counters (P583).</b> All of native
 /// <c>PlayerScoreObject</c>'s live counters are now present — kills by victim

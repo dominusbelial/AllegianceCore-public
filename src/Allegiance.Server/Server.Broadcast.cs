@@ -511,6 +511,9 @@ public sealed partial class Server
         // the shared Core LeadSolver). No native wire field was involved, so
         // nothing is kept "for compatibility".
         CompleteBroadcastSnapshot();
+        // Snapshot/encode workers now own detached data, and every mission,
+        // sector and victory callback on this tick's stack has returned.
+        DisposeRetiredMissions();
         // P606 — per-window disconnect-reason summary. Drains the transport's
         // disconnect counters (throttled to ~the profiler report cadence) so the
         // log carries a rolling "disconnects by reason" count. Every disconnect

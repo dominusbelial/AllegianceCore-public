@@ -435,6 +435,8 @@ public sealed class SideEliminationLiveTests
         var shooter = h.Ships[0];            // side A
         var bas = h.Side1Bases[0];           // side B's only restart station
         var aBot = h.Bots[0];
+        // P869: retain the pre-retirement state; the live mission registry is cleared.
+        var retiredSide = h.Mission.Sides.First(s => s.Id == h.SideB);
 
         foreach (var b in h.Bots) { b.ResetLeadershipSignals(); b.ResetGameOvers(); b.ResetChatReceived(); }
 
@@ -448,7 +450,7 @@ public sealed class SideEliminationLiveTests
         Assert.DoesNotContain(bas, h.Sector.StationRuntimes);   // killed station is gone — the elimination walk truly sees none left
 
         // Side B is now eliminated.
-        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideB).Active == false, "losing side must be deactivated");
+        Assert.True(retiredSide.Active == false, "losing side must be deactivated");
 
         // Side A's bot hears it all: SIDE_INACTIVE, the chat, and GAME_OVER naming side A.
         PumpUntil(h.Server, () => aBot.GameOvers.Count > 0, 8000);
@@ -583,6 +585,8 @@ public sealed class SideEliminationLiveTests
         var capturer = h.Ships[0];           // side A, boardable hull
         var bas = h.Side1Bases[0];           // side B's only restart station
         var aBot = h.Bots[0];
+        // P869: retain the pre-retirement state; the live mission registry is cleared.
+        var retiredSide = h.Mission.Sides.First(s => s.Id == h.SideB);
 
         foreach (var b in h.Bots) { b.ResetLeadershipSignals(); b.ResetGameOvers(); b.ResetChatReceived(); }
 
@@ -609,7 +613,7 @@ public sealed class SideEliminationLiveTests
         Assert.NotEqual(h.SideB, bas.SideId);
 
         // Side B is eliminated (lost its last restart station to the capture).
-        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideB).Active == false, "captured side must be deactivated");
+        Assert.True(retiredSide.Active == false, "captured side must be deactivated");
         PumpUntil(h.Server, () => aBot.GameOvers.Count > 0, 8000);
         Assert.True(aBot.SideInactiveBroadcasts.Any(s => s.SideId == h.SideB && !s.BActive),
             "side-A bot must receive SIDE_INACTIVE(68) for the captured-away side");
@@ -634,7 +638,8 @@ public sealed class SideEliminationLiveTests
         var h = new Harness();
         var core = Core();
         h.Core = core;
-        h.Server = new Srv();
+        using var debugServer = new Srv();
+        h.Server = debugServer;
         h.Server.SpawnInitialMinersAtBoot = false;
         h.Server.Boot(Config(debug: true));
         var mission = h.Server.Missions[0];
@@ -643,6 +648,8 @@ public sealed class SideEliminationLiveTests
         h.Sector = mission.Sectors[0];
         h.SideA = mission.Sides[0].Id;
         h.SideB = mission.Sides[1].Id;
+        // P869: retain the pre-retirement state; the live mission registry is cleared.
+        var retiredSide = mission.Sides.First(s => s.Id == h.SideB);
 
         // 0 connected players is the point of this test — connect none.
 
@@ -683,7 +690,7 @@ public sealed class SideEliminationLiveTests
         }
 
         // Elimination happened and the mission ENDED (the P388 skip must NOT swallow it).
-        Assert.True(mission.Sides.First(s => s.Id == h.SideB).Active == false, "debug eliminated side must be deactivated");
+        Assert.True(retiredSide.Active == false, "debug eliminated side must be deactivated");
         Assert.Equal(MissionStage.Over, mission.Stage);
         // The winner test dropped HasPlayers → side A wins, NOT a draw (NA).
         string captured = log.ToString();
@@ -692,6 +699,5 @@ public sealed class SideEliminationLiveTests
         Assert.DoesNotContain("iSideWinner=NA(draw)", captured);
         Console.WriteLine($"P455-LIVE-DEBUG: 0 players + debugMode -> elimination still ended the game, winner side {h.SideA} (not a draw)");
 
-        h.Server.Dispose();
     }
 }

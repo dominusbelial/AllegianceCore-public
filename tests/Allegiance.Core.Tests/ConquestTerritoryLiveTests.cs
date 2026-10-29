@@ -365,6 +365,7 @@ public sealed class ConquestTerritoryLiveTests
         var capturer = seat.Ships[0];      // slot 0 = side A, boardable
         var target = seat.Target;          // the side-B Flag station
         var mission = seat.Server.Missions[0];
+        var retiredSides = mission.Sides.ToArray(); // retain state objects across registry retirement
 
         seat.Server.FlushBroadcastSnapshots();
         foreach (var b in seat.Bots) { b.ResetGameStates(); b.ResetGameOvers(); b.ResetStationCaptures(); }
@@ -387,7 +388,7 @@ public sealed class ConquestTerritoryLiveTests
 
         // Native starts each side at 100/nTeams (missionigc.cpp:3859-3896),
         // then station events recompute actual ownership. No premature win.
-        Assert.Equal((byte)50, mission.Sides[0].ConquestPercent);
+        Assert.Equal((byte)50, retiredSides[0].ConquestPercent);
         Assert.Equal(MissionStage.Started, mission.Stage);
 
         // Fly the boardable capturer into the target's dock radius — the next
@@ -434,8 +435,8 @@ public sealed class ConquestTerritoryLiveTests
         Assert.Equal(seat.SideA, target.SideId);
 
         // Conquest recompute: side A now owns 4/5 = 80%, side B 20%.
-        Assert.Equal((byte)80, mission.Sides[0].ConquestPercent);
-        Assert.Equal((byte)20, mission.Sides[1].ConquestPercent);
+        Assert.Equal((byte)80, retiredSides[0].ConquestPercent);
+        Assert.Equal((byte)20, retiredSides[1].ConquestPercent);
 
         if (waitForRotationRankings)
         {
@@ -491,13 +492,14 @@ public sealed class ConquestTerritoryLiveTests
         using var seat = Seat(new() { TerritoryPercentage = 15 },
             new Spec(true, Far), new Spec(false, Far), new Spec(false, Far));
         var mission = seat.Server.Missions[0];
+        var winningSide = mission.Sides[0];
         Assert.False(mission.ConquestEnabled);
         Assert.Equal((short)15, mission.Goals.TerritoryPercentage);
-        Assert.Equal((byte)1, mission.Sides[0].TerritoryCount);
+        Assert.Equal((byte)1, winningSide.TerritoryCount);
         DropShield(seat.Target);
         seat.Ships[0].Position = AtTarget;
         Assert.True(PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over, 9000) < 9000);
-        Assert.Equal((byte)2, mission.Sides[0].TerritoryCount);
+        Assert.Equal((byte)2, winningSide.TerritoryCount);
         Assert.Equal(seat.SideA, seat.Target.SideId);
         PumpUntil(seat.Server, () => AllGameOvers(seat).Length > 0, 4000);
         Assert.All(AllGameOvers(seat), result => Assert.Equal(seat.SideA, result.SideWinner));

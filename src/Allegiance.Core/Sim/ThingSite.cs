@@ -1,18 +1,29 @@
 namespace Allegiance.Core.Sim;
 
-/// <summary>
-/// A minimal per-object host shim, analogous to C++ <c>ThingSite</c>
-/// (<c>src/Igc/igc.h:2986</c>). Kept to the shape the interface requires —
-/// identity/owner only. The C++ class is a large render-site surface
-/// (visibility, flares, damage decals, geometry); none of that is ported and
-/// the C++ type has <b>no</b> Update hook, so nothing further is added here.
-/// Built by <see cref="IIgcSite.CreateThingSite"/>.
-/// </summary>
+/// <summary>Per-object host identity and visibility attributes. Native
+/// FedSrv/FedSrv.CPP:10692-10709; scanner membership belongs to the cluster.</summary>
 public class ThingSite
 {
-    /// <summary>The model this shim fronts, if one was supplied at creation.</summary>
     public IModelIgc? Owner { get; init; }
+    private SideVisibilityState? _visibility;
+    // The native constructor starts with a fresh visibility array, even if a
+    // previous site for this model had seen contacts. Allocate lazily so real
+    // placement can bind the shared model state without an extra allocation.
+    public SideVisibilityState? Visibility => Owner is ISideVisible
+        ? _visibility ??= new SideVisibilityState { Predictable = Predictable } : null;
+    internal void BindVisibility(SideVisibilityState state) => _visibility = state;
+    public bool Predictable { get; }
+    public bool TracksSideVisibility { get; }
 
-    /// <summary>Constructs an unattached shim (the C++ default ignores the model).</summary>
     public ThingSite() { }
+    public ThingSite(IModelIgc model)
+    {
+        Owner = model;
+        Predictable = model is Chaff || ((model as ISideVisible)?.SideVisibility.Predictable ?? false);
+        TracksSideVisibility = model is Ship or Station or Asteroid or Probe or Mine or Treasure
+            or Missile or Allegiance.Core.Model.ResolvedWarp;
+    }
+
+    // Native ThingSiteImpl::Terminate and destructor are empty (:10705-10709).
+    // Releasing the managed owner does not erase visibility on a retained model.
 }

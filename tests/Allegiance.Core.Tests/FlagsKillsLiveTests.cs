@@ -140,6 +140,7 @@ public sealed class FlagsKillsLiveTests
         Require.Artwork();
         using var h = SeatFlagCarrier(new() { Flags = 1 });
         var mission = h.Server.Missions[0];
+        var winningSide = mission.Sides.Single(s => s.Id == h.OwnSide);
         Assert.Equal((short)1, mission.Goals.Flags);
 
         // The own base (where the carrier secures) is the injected CapLand home,
@@ -171,7 +172,7 @@ public sealed class FlagsKillsLiveTests
         int won = PumpUntil(h.Server, () => mission.Stage == MissionStage.Over, 6000);
         Assert.True(won < 6000, "securing the enemy flag never ended the mission");
         Assert.Equal(MissionStage.Over, mission.Stage);
-        Assert.Equal((short)1, mission.Sides.Single(s => s.Id == h.OwnSide).Flags);
+        Assert.Equal((short)1, winningSide.Flags);
 
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
@@ -262,6 +263,7 @@ public sealed class FlagsKillsLiveTests
         Require.Artwork();
         using var h = SeatFlagCarrier(new() { Flags = 2 });
         var mission = h.Server.Missions[0];
+        var winningSide = mission.Sides.Single(s => s.Id == h.OwnSide);
         // Both pedestals already have flags: no eligible respawn position.
         // Native tests eligible-pedestal count, even though its text says bases.
         h.Carrier.Flag = h.EnemySide;
@@ -272,8 +274,8 @@ public sealed class FlagsKillsLiveTests
         Assert.True(PumpUntil(h.Server, () => h.Bot.GameOvers.Count > 0, 3000) < 3000);
         var result = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.OwnSide, result.SideWinner);
-        Assert.Equal($"{mission.Sides.Single(s => s.Id == h.OwnSide).Name} wins. Team owning captured flag has no stations left.", result.GameoverMessage);
-        Assert.Equal(1, mission.Sides.Single(s => s.Id == h.OwnSide).Flags);
+        Assert.Equal($"{winningSide.Name} wins. Team owning captured flag has no stations left.", result.GameoverMessage);
+        Assert.Equal(1, winningSide.Flags);
     }
 
     // ── (3)+(4) kills: real deathmatch kill-threshold win / disabled no-op ──
@@ -338,6 +340,7 @@ public sealed class FlagsKillsLiveTests
         using var h = SeatKiller(new() { TeamKills = 1 });
         Assert.Equal((short)1, h.Mission.Goals.TeamKills);
 
+        var winningSide = h.Mission.Sides.Single(s => s.Id == h.KillerSide);
         var victim = SpawnEnemyVictim(h);
         h.Bot.ResetGameOvers();
 
@@ -348,12 +351,12 @@ public sealed class FlagsKillsLiveTests
         int won = PumpUntil(h.Server, () => h.Mission.Stage == MissionStage.Over, 8000);
         Assert.True(won < 8000, "scoring the goal kill never ended the mission");
         Assert.Equal(MissionStage.Over, h.Mission.Stage);
-        Assert.Equal((short)1, h.Mission.Sides.Single(s => s.Id == h.KillerSide).Kills);
+        Assert.Equal((short)1, winningSide.Kills);
 
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.KillerSide, go.SideWinner);
-        Assert.Equal($"{h.Mission.Sides.Single(s => s.Id == h.KillerSide).Name} won by killing enough of their opponents", go.GameoverMessage);
+        Assert.Equal($"{winningSide.Name} won by killing enough of their opponents", go.GameoverMessage);
 
         Console.WriteLine($"KILLS-LIVE: side {h.KillerSide} ship {h.Killer.Id} killed enemy ship {victim.Id} (side {h.EnemySide}) -> " +
                           $"kills=1/1, mission Over, GAME_OVER(62) winner={go.SideWinner}");

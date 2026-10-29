@@ -4,12 +4,20 @@ using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
 
-public sealed partial class ClientWorld
+public sealed partial class ClientWorld : IDisposable
 {
-    /// <summary>Configured before connect; resolve immutable, shareable static data.
+    /// <summary>Configured before connect; resolve shareable static data.
     /// All access/mutation follows ConnectionSession.Gate, like Apply.</summary>
     public Func<string, StaticCore?> MissionCoreResolver { get; set; } = ClientMissionCoreCache.Resolve;
     public StaticCore? MissionCore { get; private set; }
+    private StaticCoreCache.Lease? _missionCoreLease;
+    public void Dispose() => ReleaseBotView();
+    private void ReleaseMissionCore()
+    {
+        _missionCoreLease?.Dispose();
+        _missionCoreLease = null;
+        MissionCore = null;
+    }
     /// <summary>JOINED_MISSION's player identity, available before SET_CLUSTER.
     /// MyShipId retains its launch-assignment contract for pose consumers.</summary>
     public short? JoinedShipId { get; private set; }
@@ -23,14 +31,29 @@ public sealed partial class ClientWorld
         if (_mission is null) return;
         if (_botWorlds?.SideId is not null) DetachBotWorld();
         StaticCore? core;
-        try { core = MissionCoreResolver(_mission.StaticCoreFile); }
+        StaticCoreCache.Lease? lease = null;
+        try
+        {
+            if (MissionCoreResolver == (Func<string, StaticCore?>)ClientMissionCoreCache.Resolve)
+            {
+                lease = ClientMissionCoreCache.Acquire(_mission.StaticCoreFile);
+                core = lease?.Core;
+            }
+            else
+            {
+                core = MissionCoreResolver(_mission.StaticCoreFile);
+                if (core is not null) lease = StaticCoreCache.Shared.Retain(core);
+            }
+        }
         catch (Exception e) when (e is IOException or ArgumentException or InvalidOperationException)
-        { core = null; }
+        { lease?.Dispose(); core = null; }
         if (core is null)
         {
             JoinError = $"Unable to load mission core '{_mission.StaticCoreFile}'.";
             return;
         }
+        _missionCoreLease?.Dispose();
+        _missionCoreLease = lease;
         MissionCore = core;
         JoinError = null;
         JoinedMissionCookie = message.DwCookie;

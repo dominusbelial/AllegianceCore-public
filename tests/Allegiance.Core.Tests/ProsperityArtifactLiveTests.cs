@@ -254,6 +254,7 @@ public sealed partial class ProsperityArtifactLiveTests
         using var h = SeatArtifactCarrier(new() { Artifacts = 1 });
         var mission = h.Server.Missions[0];
         Assert.Equal((short)1, mission.Goals.Artifacts);
+        var recoveredSide = mission.Sides.Single(s => s.Id == h.OwnSide); // survives registry retirement for inspection
 
         // The own base (where the carrier secures) is the injected CapLand home,
         // which lives in Sectors[0] alongside the spawned carrier.
@@ -284,12 +285,12 @@ public sealed partial class ProsperityArtifactLiveTests
         int won = PumpUntil(h.Server, () => mission.Stage == MissionStage.Over, 6000);
         Assert.True(won < 6000, "returning the artifact never ended the mission");
         Assert.Equal(MissionStage.Over, mission.Stage);
-        Assert.Equal((short)1, mission.Sides.Single(s => s.Id == h.OwnSide).Artifacts);
+        Assert.Equal((short)1, recoveredSide.Artifacts);
 
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.OwnSide, go.SideWinner);
-        Assert.Equal($"{mission.Sides.Single(s => s.Id == h.OwnSide).Name} wins with the artifact recovered by acrt", go.GameoverMessage);
+        Assert.Equal($"{recoveredSide.Name} wins with the artifact recovered by acrt", go.GameoverMessage);
         Assert.True(PumpUntil(h.Server, () => h.Bot.Chats.Any(c => c.VoiceOver == 1362), 3000) < 3000);
         var cue = Assert.Single(h.Bot.Chats, c => c.VoiceOver == 1362);
         Assert.Equal((int)ChatTarget.Team, cue.ChatTarget);

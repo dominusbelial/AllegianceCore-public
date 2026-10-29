@@ -218,6 +218,7 @@ public sealed partial class Server
 
     private void QueueBroadcast(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed)
     {
+        if (_shutdown) return;
         if (_buildingBroadcastSnapshot is { } snapshot)
         {
             lock (_snapshotCaptureGate) snapshot.Deliveries.Add(new(peer, packet, key, guaranteed));
@@ -231,6 +232,7 @@ public sealed partial class Server
 
     private void PublishMemory(ConnectionId peer, ReadOnlyMemory<byte> memory, int key, bool guaranteed)
     {
+        if (_shutdown) return;
         // Capture hooks retain arrays, so give them an owned copy. Production
         // encoding and transport consume only the valid span of the lease.
         if (_captureStream is not null || _testSendCapture is not null
@@ -251,6 +253,7 @@ public sealed partial class Server
     // cadence objects are read here. Transport queues are already thread-safe.
     private void PublishBytes(ConnectionId peer, byte[] bytes, int key, bool guaranteed)
     {
+        if (_shutdown) return;
         lock (_captureLock)
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, bytes));
         TestPublicationSizeCapture?.Invoke(peer, bytes.Length, key, guaranteed);

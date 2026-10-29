@@ -169,6 +169,7 @@ public class LiveP548GameOverStageGateTests
         Assert.True(server.TryJoinSide(ShipOf(server, bId), side1));
         Flush(server);
 
+        var side0Obj = mission0.Sides.First(s => s.Id == side0);
         var side1Obj = mission0.Sides.First(s => s.Id == side1);
         Assert.True(side1Obj.Active);
 
@@ -181,7 +182,7 @@ public class LiveP548GameOverStageGateTests
 
         // side B is deactivated; side A stays active.
         Assert.False(side1Obj.Active);
-        Assert.True(mission0.Sides.First(s => s.Id == side0).Active);
+        Assert.True(side0Obj.Active);
 
         // Exactly one GAME_OVER on the survivor, native reason/winner.
         Assert.True(SpinWait.SpinUntil(() => a.GameOvers.Count >= 1, TimeSpan.FromSeconds(30)),
