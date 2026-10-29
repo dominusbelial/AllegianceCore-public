@@ -360,7 +360,7 @@ public sealed partial class Game1
             _state = ClientState.SideSelect;
             Console.WriteLine("[monogame] team lobby: local ship is on no side (-2) — team screen (pick a side)");
         }
-        var ks = _benchmark is null ? Keyboard.GetState() : new KeyboardState();
+        var ks = _benchmark is null ? ReadProofKeyboard() : new KeyboardState();
         if (UpdateGraphicsSettings(ks))
         {
             // A modal settings panel must release the last movement/fire command.
@@ -2450,6 +2450,10 @@ public sealed partial class Game1
         // constraints. Inert when no mission is running (TrainingController.IsTraining false).
         if (Allegiance.ClientCore.Training.TrainingController.IsTraining)
         {
+            // P886 — the training autoproof's synthetic state bits (missile-fire/weapons/afterburner)
+            // fold into the same masked send, so the mission's GetStateBitsCondition gates are met
+            // through the production masking path (proof-only; _proofStateM is 0 in normal play).
+            if (_proofEnabled && _proofStateM != 0) sentStateM |= _proofStateM;
             sentControls = Allegiance.ClientCore.Training.TrainingController.ApproveControls(sentControls);
             sentStateM = Allegiance.ClientCore.Training.TrainingController.ApproveActions(sentStateM);
             sentFireM = sentStateM;

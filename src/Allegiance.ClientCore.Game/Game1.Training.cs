@@ -215,7 +215,7 @@ public sealed partial class Game1
             // P881a — training orders for the own ship use the real client ORDER_CHANGE path.
             OwnOrder = SendTrainingOwnOrder,
             OwnAutopilot = SetTrainingAutopilot,
-            SetCameraMode = mode => _cameraMode = (Rendering.CameraMode)mode,
+            SetCameraMode = mode => _cameraMode = TrainingCameraMode(mode),
             ShowPane = mask => ShowTrainingPane(mask),
             DeathCamera = (focus, radius) =>
             {
@@ -314,6 +314,20 @@ public sealed partial class Game1
         _teamPaneVisible = _consolePanes.Team != Rendering.TeamConsoleSize.Hidden;
     }
 
+    /// <summary>Map a native TrekWindow camera id (<c>Treki.h:108-126</c>) to the port's
+    /// <see cref="Rendering.CameraMode"/> enum. The port enum is NOT in native order — <c>Command=0</c>,
+    /// <c>Cockpit=5</c> (<c>CameraMode.cs</c>) — so a raw cast of the native id (e.g. native
+    /// <c>cmCockpit=0</c> → <c>(CameraMode)0 = Command</c>) silently put every training mission into the
+    /// command view, whose <c>CommandCameraActive</c> path (<c>Game1.FlightInput.cs:2431</c>) freezes the
+    /// flight controls. This is the native-id → port-enum mapping <c>SetDisplayModeAction</c> must use.</summary>
+    internal static Rendering.CameraMode TrainingCameraMode(int nativeCamera) => nativeCamera switch
+    {
+        TrainingMissionIds.CameraCockpit => Rendering.CameraMode.Cockpit,
+        TrainingMissionIds.CameraExternalOrbit => Rendering.CameraMode.ExternalOrbit,
+        TrainingMissionIds.CameraExternalStation => Rendering.CameraMode.ExternalStation,
+        _ => Rendering.CameraMode.Cockpit,
+    };
+
     internal static TrainingMission CreateTrainingMission(int missionId, ITrainingSite site) => missionId switch
         {
             Tm2BasicFlight => (TrainingMission)new Mission2(site),
@@ -334,6 +348,10 @@ public sealed partial class Game1
     /// skip flag is set — and unpauses the clock (trainingmission.cpp:123-125).</summary>
     private void UpdateTraining(double dt)
     {
+        // P886 — the training autoproof (inert unless ALLEGIANCE_TRAIN_PROOF=1): drives the
+        // proof-only input seam every frame so the same frame's flight input reads the synthetic
+        // keys/state. Runs before the mission pump, like native's input feeding the mission.
+        ApplyTrainingProof();
         if (_trainingSession is not { } session) return;
         if (!session.Started)
         {
