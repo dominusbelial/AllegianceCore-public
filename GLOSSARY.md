@@ -317,6 +317,13 @@ list in **reverse**.
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **Game-flow ordering proof (P888)** — stage/result/roster/rotation frames use
+  the ordered send lane; the accelerated P660 test observes its short intermission
+  at production tick speed. Both writer modes and the optional reliable park lane
+  are covered by `tests/Allegiance.Core.Tests/Transport/TcpTransportPriorityLaneTests.cs`
+  and `tests/Allegiance.ClientCore.Tests/P660NextMatchLiveTests.cs`.
+  Native: `FedSrv/fsmission.cpp:1750-1762,3435-3438`;
+  report: `docs/reports/P888_REPORT.md`.
 - **Clash projection scheduling (P863)** — `src/Allegiance.Server/CrossSideSweepCache.cs`
   retains completed per-object/side/audience work for identity, discovery and
   status sweeps, invalidated by audience changes and authoritative latch removal;

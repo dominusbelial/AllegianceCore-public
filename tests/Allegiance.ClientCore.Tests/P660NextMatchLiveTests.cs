@@ -39,12 +39,12 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
     internal static bool Read(ConnectionSession peer, Func<bool> predicate)
     { lock (peer.Gate) return predicate(); }
 
-    internal static void Pump(Srv server, Func<bool> done, int max = 5000)
+    internal static void Pump(Srv server, Func<bool> done, int max = 5000, int tickSleepMs = 1)
     {
         for (int i = 0; i < max; i++)
         {
             if (done()) return;
-            server.TickSim(); Thread.Sleep(1);
+            server.TickSim(); Thread.Sleep(tickSleepMs);
         }
         Assert.True(done(), "loopback condition timed out");
     }
@@ -191,7 +191,13 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
         using var b = Connect(server, "P660-two-B", 66032);
         var peers = new[] { a, b };
         var sides = peers.Select(p => p.World.MySideId).ToArray();
-        server.Missions[0].Stage = MissionStage.Started;
+        // Use the real ready/countdown transition and wait until both clients
+        // have received Started before ending the first match. A direct Stage
+        // assignment bypasses the stage broadcast and leaves join traffic in flight.
+        a.SendPlayerReady(true, a.World.MyShipId!.Value);
+        b.SendPlayerReady(true, b.World.MyShipId!.Value);
+        Pump(server, () => server.Missions[0].Stage == MissionStage.Started
+            && peers.All(p => Read(p, () => p.World.Mission?.Stage == (int)MissionStage.Started)));
         for (int round = 0; round < 2; round++)
         {
             var old = server.Missions[0];
@@ -200,9 +206,12 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
             End(server);
             try
             {
+                // A 2 s simulation hold is only 40 ms with the usual accelerated
+                // pump. Pool workers can batch the join burst across that entire
+                // window, so pace this observation at the production 20 Hz rate.
                 Pump(server, () => peers.All(p => Read(p, () => p.World.IsIntermission
                     && p.World.GameOverResult is not null && p.World.GameOverPlayersList.Count == 2
-                    && p.World.GameOverPlayersList.All(e => e.Rescues == 1))));
+                    && p.World.GameOverPlayersList.All(e => e.Rescues == 1))), max: 100, tickSleepMs: 50);
             }
             catch
             {
