@@ -198,9 +198,19 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
             var oldIds = peers.Select(p => p.World.MyShipId).ToArray();
             foreach (var live in server.Ships) live.PlayerScore.AddRescue();
             End(server);
-            Pump(server, () => peers.All(p => Read(p, () => p.World.IsIntermission
-                && p.World.GameOverResult is not null && p.World.GameOverPlayersList.Count == 2
-                && p.World.GameOverPlayersList.All(e => e.Rescues == 1))));
+            try
+            {
+                Pump(server, () => peers.All(p => Read(p, () => p.World.IsIntermission
+                    && p.World.GameOverResult is not null && p.World.GameOverPlayersList.Count == 2
+                    && p.World.GameOverPlayersList.All(e => e.Rescues == 1))));
+            }
+            catch
+            {
+                foreach (var p in peers)
+                    lock (p.Gate) Console.WriteLine(($"[p660diag] round={round} intermission={p.World.IsIntermission} result={p.World.GameOverResult is not null} "
+                        + $"players=[{string.Join(",", p.World.GameOverPlayersList.Select(e => $"{e.CharacterName}:r{e.Rescues}"))}]"));
+                throw;
+            }
             foreach (var peer in peers)
                 Assert.True(Read(peer, () => peer.World.GameOverPlayersList.Select(e => e.CharacterName).Order()
                     .SequenceEqual(new[] { "P660-two-A", "P660-two-B" })));
