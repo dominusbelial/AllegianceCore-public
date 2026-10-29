@@ -37,6 +37,11 @@ public sealed class ClientTrainingFacilities
     public Func<TrainingTurnTo.TurnHull?>? OwnHullKinematics { get; init; }
     /// <summary>The player's live own-ship orientation (forward/up/right).</summary>
     public Func<(Vector3 F, Vector3 U, Vector3 R)?>? OwnOrientation { get; init; }
+    /// <summary>P886b — the player's live own-ship POSITION (system coords). The local own-ship
+    /// simulator is the client authority for the player's pose (P508), so the mission's geometric
+    /// conditions (pointing, range) must read THIS, not the lagged replicated broadcast, or they
+    /// can desync from where the ship actually is/points (the real-window pointing-goal flake).</summary>
+    public Func<Vector3?>? OwnPosition { get; init; }
     /// <summary>TR-2b — the in-process training-host API the creation/command/autopilot actions
     /// call on the embedded server. When null (no host), those actions keep the explicit logged
     /// no-op seams so the absence is auditable rather than silent.</summary>
@@ -157,8 +162,19 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         switch (r.Type)
         {
             case ObjectType.Ship:
-                return w.Ships.TryGetValue((short)id, out var ship) && ship.Latest is { } up
-                    ? new TrainingShipObject((short)id, ship, up) : null;
+                if (!w.Ships.TryGetValue((short)id, out var ship) || ship.Latest is not { } up)
+                    return null;
+                // P886b — resolve the PLAYER's own ship from the authoritative local sim pose
+                // (OwnPosition/OwnOrientation) rather than the lagged replicated broadcast, so the
+                // mission's geometric conditions (pointing, range) see where the ship actually is
+                // and points — the auto-turn steers the local sim (P508), and a stale replicated
+                // forward/position is what intermittently froze the pointing goals. Falls back to
+                // the replicated pose when the local sim hasn't resolved a hull (tests).
+                bool own = id == (w.MyShipId ?? -1);
+                var posOv = own ? _f.OwnPosition?.Invoke() : null;
+                System.Numerics.Vector3? fwdOv = null;
+                if (own && _f.OwnOrientation?.Invoke() is { } o) fwdOv = o.F;
+                return new TrainingShipObject((short)id, ship, up, posOv, fwdOv);
             case ObjectType.Station:
                 // Native GetSectorCondition also resolves stations/asteroids/probes via the
                 // mission's GetModel(OT_*, id) (getsectorcondition.cpp:27-51); the replicated
@@ -463,12 +479,17 @@ internal sealed class TrainingShipObject : ITrainingObject
     private readonly short _id;
     private readonly ShipEntity _ship;
     private readonly ServerShipUpdate _up;
-    public TrainingShipObject(short id, ShipEntity ship, ServerShipUpdate up) { _id = id; _ship = ship; _up = up; }
+    private readonly System.Numerics.Vector3? _posOverride;
+    private readonly System.Numerics.Vector3? _fwdOverride;
+    public TrainingShipObject(short id, ShipEntity ship, ServerShipUpdate up,
+        System.Numerics.Vector3? posOverride = null, System.Numerics.Vector3? fwdOverride = null)
+    { _id = id; _ship = ship; _up = up; _posOverride = posOverride; _fwdOverride = fwdOverride; }
     public TargetRef Ref => new(ObjectType.Ship, _id);
     public float Radius => 20f;
-    public Vector3 Position => ToSys(_up.Position);
+    public Vector3 Position => _posOverride ?? ToSys(_up.Position);
     public Vector3 Velocity => ToSys(_up.Velocity);
-    public Vector3 Forward => _up.Orientation.GetForward() is { } f ? ToSys(f) : Vector3.UnitZ;
+    public Vector3 Forward => _fwdOverride
+        ?? (_up.Orientation.GetForward() is { } f ? ToSys(f) : Vector3.UnitZ);
     public int SectorId => _ship.SectorId;
 
     private static Vector3 ToSys(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);

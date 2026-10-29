@@ -206,6 +206,10 @@ public sealed partial class Game1
                 var o = _ownSim.Orientation;
                 return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
             },
+            // P886b — the player's authoritative local-sim position (P508), so the training
+            // geometric conditions (pointing/range) read the truth instead of the lagged
+            // replicated broadcast (the real-window pointing-goal flake).
+            OwnPosition = () => _ownSim.HaveHull ? ToSys(_ownSim.Position) : null,
             // P881a — the own-ship simulator's real hull kinematics so TurnToAction's
             // turnToFace (Igc/common.cpp:152-252) actually steers the player during the
             // scripted demonstrations (M2 goal 2, M3 goals 5/7/8).

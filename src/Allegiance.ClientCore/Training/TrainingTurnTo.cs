@@ -54,11 +54,17 @@ public static class TrainingTurnTo
         float yaw, pitch;
         if (cosTurn < 0.98f)
         {
-            // Target somewhere other than straight ahead (common.cpp:182-190).
+            // Target somewhere other than straight ahead (common.cpp:182-190). Native scales
+            // the (twist·up)/(twist·right) projections by deltaAngle = acos(cosTurn) so the
+            // correction is in the actual angular-error units (radians); the pre-P886b port
+            // omitted the deltaAngle factor, under-commanding off-axis turns (a 90° error gave
+            // a ~1.0 saturated-sine control instead of ~π/2), weakening the pointing-goal
+            // convergence. Restore it.
+            float deltaAngle = MathF.Acos(Math.Clamp(cosTurn, -1f, 1f));
             Vector3 backward = -forward;
             Vector3 twist = Normalize(Vector3.Cross(backward, delta));
-            yaw = -(Dot(twist, up));
-            pitch = Dot(twist, right);
+            yaw = -(Dot(twist, up)) * deltaAngle;
+            pitch = Dot(twist, right) * deltaAngle;
         }
         else
         {
@@ -67,15 +73,25 @@ public static class TrainingTurnTo
             pitch = MathF.Acos(ClampDot(up, dNorm)) - 0.5f * MathF.PI;
         }
 
-        // Adjust for the drift due to our current turning rates (common.cpp:210-225).
+        // Adjust for the drift due to our current turning rates (common.cpp:210-225). P886b —
+        // cap the drift so it can NEVER reverse the correction's polarity: at the large, variable
+        // frame deltas an offscreen render produces the ship can carry a high instantaneous turn
+        // rate, and the (quadratic in turn-rate) drift term then exceeds the remaining angular
+        // error, flipping the sign and launching the divergent oscillation the real-window pointing
+        // goals intermittently hit (they never settle inside 1°). Clamping to zero (instead of
+        // reversing) keeps native's predictive reduction when it helps and is unconditionally
+        // stable at any frame rate; native only ever runs at a stable ~60 fps so never hits this.
         float tm = hull.TorqueMultiplier;
         float mass = hull.Mass;
         if (mass > 0f && tm != 0f)
         {
             float yawRate = hull.CurrentTurnRateYaw;
             float pitchRate = hull.CurrentTurnRatePitch;
+            float rawYaw = yaw, rawPitch = pitch;
             yaw -= MathF.Abs(yawRate) * (0.5f * yawRate * mass / (tm * hull.TurnTorqueYaw));
             pitch -= MathF.Abs(pitchRate) * (0.5f * pitchRate * mass / (tm * hull.TurnTorquePitch));
+            if (yaw * rawYaw < 0f) yaw = 0f;         // drift over-predicted → neutralize, don't reverse
+            if (pitch * rawPitch < 0f) pitch = 0f;
         }
 
         // Convert the angular error into control magnitudes at max rate (common.cpp:227-248).

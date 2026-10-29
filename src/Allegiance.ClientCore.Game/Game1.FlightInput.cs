@@ -1998,6 +1998,11 @@ public sealed partial class Game1
             // this port's own reasonable choice — the same justification P220
             // used for Shift→afterburner.
             Fire:            ActionDown(ks, "FireWeapon"),
+            // P886b — fire missile (TK_FireMissile, Left Ctrl / mouse-middle): held
+            // like Fire. Translate folds it into the local stateM as the
+            // missileFireIGC bit (the training MissileFire gate); the actual launch
+            // rides the FIRE_MISSILE(70) wire request handled above.
+            MissileFire:     ActionDown(ks, "FireMissile"),
             // P413 — cloak (TK_ToggleCloak): the LATCHED client toggle state set
             // by the F key above (edge-triggered), carried in each frame exactly
             // like GroupFire/SelectedMount; Translate folds it into the outgoing
@@ -2450,10 +2455,10 @@ public sealed partial class Game1
         // constraints. Inert when no mission is running (TrainingController.IsTraining false).
         if (Allegiance.ClientCore.Training.TrainingController.IsTraining)
         {
-            // P886 — the training autoproof's synthetic state bits (missile-fire/weapons/afterburner)
-            // fold into the same masked send, so the mission's GetStateBitsCondition gates are met
-            // through the production masking path (proof-only; _proofStateM is 0 in normal play).
-            if (_proofEnabled && _proofStateM != 0) sentStateM |= _proofStateM;
+            // P886b — the proof now fires weapons/missiles by holding the real keys (Space /
+            // Left Ctrl), so the WeaponsMask/MissileFire/AfterburnerButton bits come from the
+            // flight input's own key reading (FlightInput.Translate); there is no injected
+            // proof stateM anymore.
             sentControls = Allegiance.ClientCore.Training.TrainingController.ApproveControls(sentControls);
             sentStateM = Allegiance.ClientCore.Training.TrainingController.ApproveActions(sentStateM);
             sentFireM = sentStateM;

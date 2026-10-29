@@ -62,7 +62,14 @@ public static class TrainingMissionIds
     // 2048*4 = 8192, oneWeapon = 2*8192 = 16384, weaponsMask = 3*16384 = 49152,
     // allWeapons = 2*16384 = 32768.
     public const int SelectedWeaponMask = 3;    // selectedWeaponMaskIGC (igc.h:807)
-    public const int AfterburnerButton = 512;   // afterburnerButtonIGC (igc.h:817)
+    // P886b — AfterburnerButton here is 1024 (ShipControlState.AfterburnerButton), the layout the
+    // port's SHIP actually carries in its StateM: the port's sim doubled the low-word movement bits
+    // relative to native (coastButtonIGC=8 instead of 4, so native 128*4=512 became 128*8=1024).
+    // The training GetStateBitsCondition/constraints must gate the SAME bit the real input and the
+    // ship sim use, or a player's genuine afterburner input (0x400) is stripped by ApproveActions'
+    // allowable mask (0x200). P886 injected the native-layout bit directly which hid this; real-input
+    // firing (P886b) exposed it. Cloak/weapons/missile already match (2048/49152/0x10000).
+    public const int AfterburnerButton = 1024;  // afterburnerButtonIGC (igc.h:817), port sim layout
     public const int CloakActive = 2048;        // cloakActiveIGC (igc.h:820)
     public const int OneWeapon = 16384;         // oneWeaponIGC (igc.h:825)
     public const int AllWeapons = 32768;        // allWeaponsIGC (igc.h:826)
