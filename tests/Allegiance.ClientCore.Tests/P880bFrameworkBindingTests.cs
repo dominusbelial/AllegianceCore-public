@@ -194,6 +194,23 @@ public sealed class P880bFrameworkBindingTests
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     [Trait("Tier", "Live")]
+    public void RepairRearm_walks_the_cargo_hold_exactly_as_the_native_loops()
+    {
+        // repairrearmaction.cpp:51-68 — loops run i > -c_maxCargo (mount -5 never filled); the
+        // first empty mount gets missiles (150); the second loop has no break, so every other
+        // empty mount gets ammo (24) and the third loop starts exhausted.
+        Require.Artwork();
+        using var host = TrainingHost.Start();
+        var ship = host.PlayerShip;
+        for (int mount = -1; mount >= -Ship.CargoCapacity; mount--) ship.TryRemoveCargoPart(mount, out _);
+        host.RepairRearm(host.PlayerShipId);
+        short?[] ids = ship.CargoHold.Select(p => p?.PartId).ToArray();
+        Assert.Equal(new short?[] { 150, 24, 24, 24, null }, ids);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    [Trait("Tier", "Live")]
     public void GetShipIsDamagedCondition_ReadsTheRealShipFraction()
     {
         // getshipisdamagedcondition.cpp:49-59 — a damaged real ship's fraction differs from 1.0.

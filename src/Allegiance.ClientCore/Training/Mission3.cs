@@ -46,14 +46,9 @@ public class Mission3 : TrainingMission
     /// the keyboard branch is the test path (no joystick).</summary>
     protected virtual bool HasJoystick => false;
 
-    // ---------------------------------------------------------------------------------------------
-    // TrekKey ids used by Mission 3 that are not yet in TrainingMissionIds. Native TK_TargetEnemy and
-    // TK_ToggleCloak are TrekKey ids; the C# test driver has agreed on the following stable ids
-    // (values chosen to avoid colliding with existing Key* constants).
-    // ---------------------------------------------------------------------------------------------
-    private const int KeyTargetEnemy = 111;    // TK_TargetEnemy — the E key (target nearest enemy)
-    private const int KeyToggleCloak = 112;    // TK_ToggleCloak — the K key (kept for parity, unused)
-    private const int KeyTargetCenter = 113;   // TK_TargetCenter — the C key (target centre of display)
+    // TrekKey ids used by Mission 3 all come from the native igc.h table (TrainingMissionIds):
+    // TK_TargetEnemy (80, the F key), TK_FireBooster (50, SPACEBAR) and TK_TargetCenter (90).
+    // The real input gate delivers those native numbers, so no mission-local ids are invented.
 
     // Equipment types (igc.h:531-538). Only EtMagazine is referenced by Mission 3 (SwapWeaponAction).
     private const int EtWeapon = 1;      // ET_Weapon
@@ -180,16 +175,6 @@ public class Mission3 : TrainingMission
         return cond;
     }
 
-    /// <summary>
-    /// Resolves the player's current command target to a fixed <see cref="TargetRef"/>, falling back to
-    /// the home station. Native builds <c>TurnToAction(ship, new CurrentTarget(PlayerShipTarget))</c>
-    /// whose target is re-resolved lazily each frame; the C# <see cref="TurnToAction"/> takes a fixed
-    /// <see cref="TargetRef"/>, so the current target is captured once when the goal is assembled (a
-    /// documented simplification — the pointing check itself still tracks the live target via
-    /// <see cref="PlayerCurrentTarget"/>).
-    /// </summary>
-    private TargetRef ResolveCurrentTarget()
-        => Site.GetCommandTarget(Site.PlayerShip.Ref, CommandCurrent) ?? _station;
 
     protected override Condition CreateMission()
     {
@@ -403,7 +388,7 @@ public class Mission3 : TrainingMission
             var pointing = new ObjectPointingAtCondition(Site, Site.PlayerShip.Ref, new PlayerCurrentTarget(Site));
             pointing.SetMinimumAngle(1.0f);
             var goal = new Goal(pointing);
-            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, ResolveCurrentTarget());
+            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, new PlayerCurrentTarget(Site));
             goal.AddConstraintCondition(new ConditionalAction(new TrueCondition(), turnTo));
             list.AddGoal(goal);
         }
@@ -422,7 +407,7 @@ public class Mission3 : TrainingMission
             var pointing = new ObjectPointingAtCondition(Site, Site.PlayerShip.Ref, new PlayerCurrentTarget(Site));
             pointing.SetMinimumAngle(1.0f);
             var goal = new Goal(pointing);
-            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, ResolveCurrentTarget());
+            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, new PlayerCurrentTarget(Site));
             goal.AddConstraintCondition(new ConditionalAction(new TrueCondition(), turnTo));
             list.AddGoal(goal);
         }

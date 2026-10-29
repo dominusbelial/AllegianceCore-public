@@ -2453,6 +2453,10 @@ public sealed partial class Game1
             sentControls = Allegiance.ClientCore.Training.TrainingController.ApproveControls(sentControls);
             sentStateM = Allegiance.ClientCore.Training.TrainingController.ApproveActions(sentStateM);
             sentFireM = sentStateM;
+            // P881a — the training conditions read the OWN ship's applied controls/state
+            // (native GetShip()->GetControls()/GetStateM()), not the quantised replicated
+            // copy; record exactly what this frame sent.
+            TrainingOwnState.Set(sentControls, sentStateM);
         }
 
         // HUD-8 — stage the exact command this frame sent so DrawHud's snapshot

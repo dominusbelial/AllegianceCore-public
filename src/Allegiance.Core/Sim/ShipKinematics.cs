@@ -101,7 +101,7 @@ public static class ShipKinematics
                     + i.Controls.Roll * i.Controls.Roll;
             l = l > 1f ? 1f / MathF.Sqrt(l) : 1f;    // constrain desired rate to a sphere, not a box
 
-            float tm = TorqueMultiplier(velocity, i.MaxSpeed) * thrustToVelocity;
+            float tm = GetTorqueMultiplier(velocity, i.MaxSpeed) * thrustToVelocity;
             for (int k = 0; k < 3; k++)
             {
                 float desiredRate = i.Controls.TurnAxis(k) * l * MaxTurnRate(i, k);   // shipIGC.cpp:2900
@@ -206,7 +206,7 @@ public static class ShipKinematics
     /// <c>f = |v|/maxSpeed</c>. Read from the current velocity (at the moment
     /// the ramp runs) exactly as the reference reads <c>GetVelocity()</c>.
     /// </summary>
-    private static float TorqueMultiplier(Vector3 velocity, float maxSpeed)
+    public static float GetTorqueMultiplier(Vector3 velocity, float maxSpeed)
     {
         const float c = 0.50f;
         float fraction = velocity.Length() / maxSpeed;

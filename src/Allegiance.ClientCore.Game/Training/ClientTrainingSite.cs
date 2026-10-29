@@ -24,6 +24,8 @@ public sealed class ClientTrainingFacilities
     public required ConnectionSession Session { get; init; }
     /// <summary>Elapsed training-clock seconds (<c>Time::Now</c>).</summary>
     public Func<double>? ClockSeconds { get; init; }
+    /// <summary>The client frame delta (native <c>GetWindow()-&gt;GetDeltaTime()</c>).</summary>
+    public Func<double>? FrameDeltaSeconds { get; init; }
     /// <summary>Play a native sound id; returns a stable instance handle.</summary>
     public Func<int, int>? PlaySound { get; init; }
     /// <summary>Whether a sound instance is still playing.</summary>
@@ -39,6 +41,20 @@ public sealed class ClientTrainingFacilities
     /// call on the embedded server. When null (no host), those actions keep the explicit logged
     /// no-op seams so the absence is auditable rather than silent.</summary>
     public ITrainingHost? Host { get; init; }
+    /// <summary>P881a — route the own ship's <c>SetCommandAction</c> through the real client
+    /// ORDER_CHANGE path (updates the command slots and sends <c>FM_C_ORDER_CHANGE</c>), exactly
+    /// like a mouse pick or the order menu. Arguments: command slot, target, command id.</summary>
+    public Action<int, TargetRef?, int>? OwnOrder { get; init; }
+    /// <summary>P881a — engage/disengage the client's native autopilot toward the own ship's last
+    /// ordered target (the <c>SetAutopilotAction</c> binding).</summary>
+    public Action<TargetRef?, bool>? OwnAutopilot { get; init; }
+    /// <summary>P881a — real camera mode (<c>SetDisplayModeAction</c> → <c>TrekWindow::SetCameraMode</c>).</summary>
+    public Action<int>? SetCameraMode { get; init; }
+    /// <summary>P881a — console pane flags (<c>ShowPaneAction</c> → <c>TurnOffOverlayFlags</c> +
+    /// <c>TurnOnOverlayFlags</c>).</summary>
+    public Action<int>? ShowPane { get; init; }
+    /// <summary>P881a — the enemy-detection eyeball toggle (<c>ShowEyeballAction</c>).</summary>
+    public Action<bool>? SetEyeball { get; init; }
     public Action<int>? SetupTraining { get; init; }
     public Action<System.Numerics.Vector3, float>? DeathCamera { get; init; }
     public System.Action? RestoreCamera { get; init; }
@@ -87,10 +103,19 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     private readonly List<string> _messages = new();
     private int _nextInstance = 1;
     private readonly Dictionary<int, int> _instances = new();
+    private TargetRef? _ownOrderTarget;
 
     public ClientTrainingSite(ClientTrainingFacilities f) => _f = f;
 
+    /// <summary>P881a — whether <paramref name="r"/> names the client's own ship.</summary>
+    private bool IsOwnShip(TargetRef r)
+        => r.Type == ObjectType.Ship
+            && (r.Id == TargetRef.Na ? World.MyShipId is not null : World.MyShipId == (short)r.Id);
+
     public float TimeSeconds => (float)(_f.ClockSeconds?.Invoke() ?? 0.0);
+
+    /// <summary>The client's real frame delta (native <c>GetWindow()-&gt;GetDeltaTime()</c>).</summary>
+    public float FrameDeltaSeconds => (float)(_f.FrameDeltaSeconds?.Invoke() ?? 1.0 / 60.0);
 
     private ClientWorld World => _f.World();
 
@@ -163,11 +188,17 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         => _f.Host is { } h ? h.IsAutopilot(ResolveId(ship)) : false; // host flies Goto'd ships on autopilot
     public int GetStateM(TargetRef ship)
     {
+        // Own ship: the client's local state mask (native GetShip()->GetStateM()), which carries
+        // the high-word missile-fire bit the 16-bit wire update cannot. Remote ships: replicated.
+        if (IsOwnShip(ship)) return TrainingOwnState.StateM;
         int id = ResolveId(ship);
         return id >= 0 && World.Ships.TryGetValue((short)id, out var s) && s.Latest is { } u ? u.StateM : 0;
     }
     public ControlData GetShipControls(TargetRef ship)
     {
+        // The own ship reads the client's applied controls (native GetShip()->GetControls());
+        // remote ships read the replicated pose stream.
+        if (IsOwnShip(ship)) return TrainingOwnState.Controls;
         int id = ResolveId(ship);
         return id >= 0 && World.Ships.TryGetValue((short)id, out var s) && s.Latest is { } u ? u.Controls : ControlData.Neutral;
     }
@@ -177,13 +208,16 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
             ? h.GetCommandTarget(ResolveId(ship)) : null;
 
     // ── M3/M4 ship/combat state (replicated world + host) ─────────────────────
-    /// <summary>Destroyed when absent from the replicated world (<c>getshipisdamagedcondition.cpp:53-55</c>)
-    /// <em>or</em> when the authoritative host reports a zero real armour fraction (a retained,
-    /// zero-armour model — the <c>GetShipIsDestroyedCondition</c> = <c>Not(GetShipIsDamaged(ship, 0.0))</c>
-    /// expansion, getshipisdestroyedcondition.h:27-28).</summary>
+    /// <summary>Destroyed when absent from the replicated world, latched dead by the kill broadcast
+    /// (the world keeps the corpse entity briefly for the explosion), or reported at zero real armour
+    /// by the authoritative host — native <c>getshipisdamagedcondition.cpp:44-57</c> (a gone model or
+    /// armour fraction 0; <c>GetShipIsDestroyedCondition</c> = <c>Not(GetShipIsDamaged(ship, 0.0))</c>,
+    /// getshipisdestroyedcondition.h:27-28).</summary>
     public bool IsShipDestroyed(TargetRef ship)
     {
-        if (Resolve(ship) is null) return true;
+        int id = ResolveId(ship);
+        if (id < 0 || !World.Ships.TryGetValue((short)id, out var entity)) return true;
+        if (entity.IsDead || entity.Latest is null) return true;
         return _f.Host is { } h && h.GetFraction(ship) <= 0f;
     }
 
@@ -227,9 +261,10 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     {
         if (_f.Host is { } h)
         {
-            // Native shields the ship to 20% or dents it by 3% of max strength; the host's
-            // DamageShip scales a fraction drop. Use a modest, observable dent per call.
-            h.DamageShip(ResolveId(PlayerShip.Ref), toHull ? 7000f : 950f);
+            // Native: shield demo dents the mounted shield by 3% of max strength; hull demo
+            // sets the shield to 20% or dents the hull by 7.5. The host mutates the real ship,
+            // so the shield/armour HUD gauges move (dodamageaction.cpp:32-49).
+            h.DealDamage(toHull);
         }
         else TrainingHostLog.Log($"DealDamage(toHull:{toHull})");
     }
@@ -240,18 +275,31 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         if (_f.Host is { } h) h.DamageShipAdjustable(ResolveId(ship), amount);
         else TrainingHostLog.Log($"DamageShipAdjustable({ship.Id},{amount})");
     }
-    public void ToggleWeapon(int mount) => TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
-    public void SwapWeapon(int equipmentType, int mount) => TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
-    /// <summary>Repair and re-arm the player's real ship (<c>RepairRearmAction</c>,
-    /// repairrearraction.cpp:37-74) through the embedded host — the real-client realisation of the
-    /// scripted free-space action.</summary>
+    public void ToggleWeapon(int mount)
+    {
+        if (_f.Host is { } h) h.ToggleWeapon(mount);
+        else TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
+    }
+    public void SwapWeapon(int equipmentType, int mount)
+    {
+        if (_f.Host is { } h) h.SwapWeapon(equipmentType, mount);
+        else TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
+    }
     public void RepairAndRearm()
     {
         if (_f.Host is { } h) h.RepairRearm(ResolveId(PlayerShip.Ref));
         else TrainingHostLog.Log("RepairAndRearm()");
     }
-    public void ShowPane(int paneMask) => TrainingHostLog.Log($"ShowPane(0x{paneMask:x})");
-    public void SetEyeball(bool shown) => TrainingHostLog.Log($"SetEyeball({shown})");
+    public void ShowPane(int paneMask)
+    {
+        _f.ShowPane?.Invoke(paneMask);
+        if (_f.ShowPane is null) TrainingHostLog.Log($"ShowPane(0x{paneMask:x})");
+    }
+    public void SetEyeball(bool shown)
+    {
+        _f.SetEyeball?.Invoke(shown);
+        if (_f.SetEyeball is null) TrainingHostLog.Log($"SetEyeball({shown})");
+    }
     public void SetSignature(ObjectType type, int id, float signature) => TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
 
     // ── M8 nanite / repair / station seams (authoritative host) ───────────────
@@ -337,22 +385,41 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     }
     public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId)
     {
+        // The own ship's orders take the REAL client path: install the command slots and send
+        // FM_C_ORDER_CHANGE, exactly like a mouse pick / order menu (WinTrek.cpp:8820-8854), so
+        // the server's Ship.CommandTarget — the state GetTargetCondition/CurrentTarget read —
+        // and the client's MyCurrent/MyAcceptedCommand see the order. The host handler below
+        // still mirrors the scripted target for reads before the echo arrives.
+        if (IsOwnShip(ship))
+        {
+            _ownOrderTarget = target;
+            _f.OwnOrder?.Invoke(command, target, commandId);
+        }
         if (_f.Host is { } h)
             h.IssueCommand(ship.Id, command,
                 target is { Type: ObjectType.Ship } ? target.Value.Id : null,
                 target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
                 target is { Type: ObjectType.Station } ? target.Value.Id : null,
                 commandId);
-        else TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — no embedded training host");
+        else if (!IsOwnShip(ship))
+            TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — no embedded training host");
     }
 
     // ── ship / camera / HUD configuration ───────────────────────────────────
     public void SetAutopilot(TargetRef ship, bool on)
     {
+        // Own ship: engage the client's native autopilot toward the last ordered target (the
+        // client flies its own ship, P508), and mirror the latch on the host ship so the
+        // headless/no-client path and the host's own reads agree.
+        if (IsOwnShip(ship)) _f.OwnAutopilot?.Invoke(_ownOrderTarget, on);
         if (_f.Host is { } h) h.SetAutopilot(ship.Id, on);
-        else TrainingHostLog.Log($"SetAutopilot({ship.Id},{on}) — no embedded training host");
+        else if (!IsOwnShip(ship)) TrainingHostLog.Log($"SetAutopilot({ship.Id},{on}) — no embedded training host");
     }
-    public void SetDisplayMode(int cameraMode) => TrainingHostLog.Log($"SetDisplayMode({cameraMode})");
+    public void SetDisplayMode(int cameraMode)
+    {
+        _f.SetCameraMode?.Invoke(cameraMode);
+        if (_f.SetCameraMode is null) TrainingHostLog.Log($"SetDisplayMode({cameraMode})");
+    }
     public void SetHudOverlay(int overlay) => TrainingOverlay.Current = overlay;
 
     public (float Yaw, float Pitch, float Roll) TurnToFace(TargetRef ship, TargetRef target)
@@ -362,7 +429,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         if (tgt is null) return (0f, 0f, 0f);
         if (_f.OwnOrientation?.Invoke() is not { } ori || _f.OwnHullKinematics?.Invoke() is not { } h)
             return (0f, 0f, 0f);
-        return TrainingTurnTo.Compute(me.Position, tgt.Position, ori.F, ori.U, ori.R, TimeSeconds, h);
+        return TrainingTurnTo.Compute(me.Position, tgt.Position, ori.F, ori.U, ori.R, FrameDeltaSeconds, h);
     }
 
     // ── output (messages / sound) ───────────────────────────────────────────

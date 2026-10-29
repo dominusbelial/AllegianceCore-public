@@ -3793,3 +3793,14 @@ is the ledgered line-179 failure (P872). The other three are broad-run load obse
 `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire`,
 `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus`. None touches the training host P882b changed.
 `tools/run-training-tests.sh --no-build` (Fast + Live, both client projects) passed.
+
+## P881a (2026-10-29)
+
+Fast sweep `tiers-20261029T060702.377618Z`: three failures, all pre-existing/ledgered —
+`ShopLauncherMountNumberingLiveTests` (passes 1/1 alone on the same tree),
+`NpcWingmanDefendLiveTests.Defender_disengages…` (fails identically in a clean HEAD worktree
+under `.scratch/base/`; the P872 deterministic base failure) and the
+`AddPartTests` treasure-quarantine case (the runner's automatic retry passed). Real-window
+observation, not a gate: one Modern Basic Flight run stalled at the M2 goal-2 pointing gate
+(`2.6`) while the previous Classic run and a rerun of the same Modern case both reached `3.6`;
+the run is reported as a convergence-timing observation, not a passing certification.

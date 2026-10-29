@@ -93,6 +93,16 @@ public interface ITrainingHost
     /// <summary>Repair and re-arm a ship's real resources + cargo (<c>RepairRearmAction</c>,
     /// repairrearraction.cpp:37-74).</summary>
     void RepairRearm(int shipId);
+    /// <summary><c>DoDamageAction</c> (dodamageaction.cpp:24-50): demonstrate shield or hull
+    /// damage on the player's real ship — shield to 20% or a 7.5-point hull dent.</summary>
+    void DealDamage(bool toHull);
+    /// <summary><c>ToggleWeaponAction</c> (toggleweaponaction.cpp:41-47): select the weapon
+    /// mount for fire (native <c>GetWindow()->ToggleWeapon</c>).</summary>
+    void ToggleWeapon(int mount);
+    /// <summary><c>SwapWeaponAction</c> (swapweaponaction.cpp:25-32): load a part of
+    /// <paramref name="equipmentType"/> from cargo into the mount via the real
+    /// <see cref="Ship.TrySwapPartWithCargo"/> path.</summary>
+    void SwapWeapon(int equipmentType, int mount);
 }
 
 /// <summary>
@@ -444,7 +454,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
     }
 
-    private static readonly ControlData ZeroThrottle = new(0f, 0f, 0f, 0f);
+    private static readonly ControlData ZeroThrottle = ControlData.Neutral;   // Reset() throttle -1 = kill (igc.h:1666-1670)
 
     private IEnumerable<Ship> Ships()
     {
@@ -512,7 +522,12 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 : Mission.Core.HullTypes.Values.OrderBy(x => x.HullId).First();
             var ship = new Ship((short)id, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, Orientation.Identity)
             {
-                SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType, Name = name,
+                // Native's c_ptPlayer (10) is a player-piloted ship, not an NPC: it gets no
+                // server AI at all (training/mission3.cpp:222 creates the inert derelict hulls
+                // this way). Treating them as NPCs let the damage-retreat / default-order AI
+                // fly the target hulls out of the lesson. Wingman/other pilot types stay NPCs.
+                SideId = (short)sideId, IsNpc = pilotType < Ship.PilotTypePlayer,
+                PilotType = (byte)pilotType, Name = name,
             };
             Mission.PlaceShip(ship, Mission.Sectors[0]);
             // P775 — native training creates the drone's player info when it
@@ -574,6 +589,19 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             // flight does not break M8's within-radius gate.)
             if (command != TrainingMissionIds.CommandQueued)
                 _commands[shipId] = commandId;
+
+            // Mirror the write onto the real ship slots (native SetCommandAction calls
+            // pShip->SetCommand, setcommandaction.cpp:69-84) so a later read of the ship's
+            // own c_cmdCurrent/c_cmdAccepted target sees it — the same state native's
+            // GetTargetCondition/GetCommandCondition read. A buoy has no runtime Model in
+            // the training arc, so its target stays on the host's waypoint table.
+            Model? model = null;
+            if (targetShipId is { } tsid) model = ResolveShip(tsid);
+            else if (targetStationId is { } stid)
+                model = EquipmentTarget.Resolve(ship.Sector, IgcObjectType.Station, (short)stid);
+            if (model is not null && command is TrainingMissionIds.CommandCurrent or TrainingMissionIds.CommandAccepted)
+                ship.SetCommand((short)command, model, (short)commandId);
+
             if (commandId == TrainingMissionIds.CmdGoto)
             {
                 if (targetBuoyId is { } bid && _waypoints.TryGetValue(bid, out var wp))
@@ -581,15 +609,32 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                     _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
                     ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
                 }
-                else if (targetShipId is { } tsid && ResolveShip(tsid) is { } target)
+                else if (targetShipId is { } tsid2 && ResolveShip(tsid2) is { } target)
                 {
-                    _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid);
+                    _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid2);
                     ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position));
                 }
                 else if (targetStationId is { } stid && _stations.TryGetValue(stid, out var station))
                 {
                     _commandTargets[shipId] = new TargetRef(ObjectType.Station, stid);
-                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId, ToCore(station.Position)));
+                    // Native flies a station goto through the bay approach and docks on
+                    // arrival (Waypoint::c_oDock, common.cpp:1505-1545). The real ship's
+                    // plan slot drives that native approach (Ship.ApplyNpcAutopilot →
+                    // TryDockApproach); a plain waypoint goto would stop at the centre
+                    // instead and never enter a bay. Set the real station plan and clear
+                    // the waypoint goto so the plan branch owns the tick.
+                    var runtime = Mission.Sectors.SelectMany(s => s.StationRuntimes)
+                        .FirstOrDefault(s => s.StationId == stid);
+                    if (runtime is not null)
+                    {
+                        ship.PlanTarget = runtime.Data;
+                        ship.PlanCommandId = (short)commandId;
+                        ship.SetGoto(null);
+                    }
+                    else
+                    {
+                        ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId, ToCore(station.Position)));
+                    }
                 }
             }
             else
@@ -606,12 +651,16 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         {
             Ship? ship = ResolveShip(shipId);
             if (ship is null) return;
+            // Real native ship field (IshipIGC::SetAutopilot, setautopilotaction.cpp:41-43);
+            // the navigation pass reads it so a player under a station plan keeps flying.
+            ship.Autopilot = on;
             _autopilot[ship.Id] = on;
             if (!on) ship.SetGoto(null);
         }
     }
 
-    public bool IsAutopilot(int shipId) => _autopilot.TryGetValue((short)shipId, out var b) && b;
+    public bool IsAutopilot(int shipId)
+        => ResolveShip(shipId) is { } s ? s.Autopilot : _autopilot.TryGetValue((short)shipId, out var b) && b;
 
     /// <summary>The live ammunition count of a ship (<c>IshipIGC::GetAmmo()</c>, shipIGC.cpp:…;
     /// a ship with no mounted ammo magazine reports 0 — native <c>Ship::GetAmmo</c> sums its
@@ -714,9 +763,33 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         _commands[shipId] = commandId;
     }
 
-    public TargetRef? GetCommandTarget(int shipId) => _commandTargets.TryGetValue(shipId, out var t) ? t : null;
+    public TargetRef? GetCommandTarget(int shipId)
+    {
+        // A scripted target (the mission's CreateUniverse/headless driver) owns the slot;
+        // otherwise read the ship's LIVE c_cmdCurrent target (shipIGC.h:2624; the read behind
+        // GetTargetCondition, gettargetcondition.cpp:52) — the real model the server wrote from
+        // an ordinary client ORDER_CHANGE. A buoy has no runtime Model, so it only exists in
+        // the scripted slot.
+        if (_commandTargets.TryGetValue(shipId, out var scripted)) return scripted;
+        if (ResolveShip(shipId) is { } ship && ship.CommandTarget is { } model)
+        {
+            var type = EquipmentTarget.TypeOf(model);
+            ObjectType? trainingType = type switch
+            {
+                IgcObjectType.Ship => ObjectType.Ship,
+                IgcObjectType.Station => ObjectType.Station,
+                IgcObjectType.Asteroid => ObjectType.Asteroid,
+                IgcObjectType.Probe => ObjectType.Probe,
+                _ => null,
+            };
+            if (trainingType is { } t && model.Id >= 0) return new TargetRef(t, model.Id);
+        }
+        return null;
+    }
 
-    public int GetCommandId(int shipId) => _commands.TryGetValue(shipId, out var c) ? c : TrainingMissionIds.CmdNone;
+    public int GetCommandId(int shipId)
+        => _commands.TryGetValue(shipId, out var c) ? c
+            : ResolveShip(shipId) is { } ship ? ship.CurrentCommandId : TrainingMissionIds.CmdNone;
 
     // ── M5/M6 command-view + kill-credit state ──────────────────────────────────
     /// <summary>Set which model the player has picked/selected in the command view (native
@@ -741,10 +814,12 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     {
         if (model.Type == ObjectType.Ship)
         {
-            // Real-model read: a live ship reports its actual armour fraction; an absent/destroyed
-            // ship reports 0 (getshipisdamagedcondition.cpp:53-55, "assume fraction 0").
-            if (ResolveShip(model.Id) is { } live) return live.Fraction;
-            return IsDestroyed(model.Id) ? 0f : (_shipFractions.TryGetValue(model.Id, out var f) ? f : 1f);
+            if (IsDestroyed(model.Id)) return 0f;
+            // The REAL ship armour fraction (IshipIGC::GetFraction) when the model is live;
+            // the host's tracked value remains the floor for damage actions that only
+            // record a fraction (Mission 8's scripted bomber dent).
+            float tracked = _shipFractions.TryGetValue(model.Id, out var f) ? f : 1f;
+            return ResolveShip(model.Id) is { } ship ? Math.Min(tracked, ship.Fraction) : tracked;
         }
         if (model.Type == ObjectType.Station)
             return GetStationFraction(model.Id);
@@ -769,6 +844,83 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         // Also write the real ship armour so GetFraction's real-model read observes the damage
         // (the damaged-but-alive outcome Mission 8's bomber gate needs).
         if (ResolveShip(shipId) is { } s) s.SetFraction(nf);
+    }
+
+    /// <summary>
+    /// <c>DoDamageAction::Execute</c> (<c>dodamageaction.cpp:26-49</c>) on the player's real
+    /// ship: the shield demo drops a mounted shield by 3% of its max strength until it is at
+    /// 20%; the hull demo sets the shield to 20% (if above 25%) or dents the hull by 7.5
+    /// points. The HUD gauges read the real shield/hull fractions, so both are observable.
+    /// </summary>
+    public void DealDamage(bool toHull)
+    {
+        lock (_simGate)
+        {
+            var ship = PlayerShip;
+            var shield = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0);
+            if (!toHull)
+            {
+                if (shield is not null && ship.ShieldFraction > 0.2f
+                    && shield.Type.Type is DataPartTypeIGC.Shield st)
+                {
+                    ship.ReceiveDamage(CollisionDamageType, st.MaxStrength * 0.03f, Mission.LastUpdate,
+                        new Coll.Vector3(-1f, 0f, 0f), new Coll.Vector3(1f, 0f, 0f), null);
+                }
+            }
+            else if (shield is not null && ship.ShieldFraction > 0.25f)
+            {
+                ship.SetShieldFraction(0.2f);
+            }
+            else if (ship.Fraction > 0.5f)
+            {
+                ship.ReceiveDamage(CollisionDamageType, 7.5f, Mission.LastUpdate,
+                    new Coll.Vector3(-1f, 0f, 0f), new Coll.Vector3(1f, 0f, 0f), null);
+            }
+        }
+    }
+
+    /// <summary>
+    /// <c>ToggleWeaponAction::Execute</c> (<c>toggleweaponaction.cpp:41-47</c> —
+    /// <c>GetWindow()->ToggleWeapon(mount)</c>): select <paramref name="mount"/> as the
+    /// firing weapon, or switch to group fire when it is already the selected one. The
+    /// selection lives in the real <see cref="Ship.StateM"/> selected-weapon bits.
+    /// </summary>
+    public void ToggleWeapon(int mount)
+    {
+        lock (_simGate)
+        {
+            var ship = PlayerShip;
+            int selected = ship.StateM & ShipControlState.SelectedWeaponMask;
+            if (selected == (mount & ShipControlState.SelectedWeaponMask))
+                ship.StateM |= ShipControlState.AllWeapons;           // fGroupFire = true
+            else
+                ship.StateM = (ship.StateM & ~ShipControlState.SelectedWeaponMask)
+                    | (mount & ShipControlState.SelectedWeaponMask);  // SetSelectedWeapon(mount)
+        }
+    }
+
+    /// <summary>
+    /// <c>SwapWeaponAction::Execute</c> (<c>swapweaponaction.cpp:25-32</c> —
+    /// <c>GetWindow()->SwapPart(equipmentType, mount)</c>): move the first cargo part of the
+    /// requested equipment type into <paramref name="mount"/> through the real cargo-aware
+    /// swap (<see cref="Ship.TrySwapPartWithCargo"/>), which returns the part previously in
+    /// the mount to that cargo slot. Nothing in cargo is native's silent no-op.
+    /// </summary>
+    public void SwapWeapon(int equipmentType, int mount)
+    {
+        lock (_simGate)
+        {
+            var ship = PlayerShip;
+            var et = (EquipmentType)equipmentType;
+            for (int i = 0; i < ship.CargoHold.Count; i++)
+            {
+                if (ship.CargoHold[i] is { } part && part.EquipmentType == et)
+                {
+                    ship.TrySwapPartWithCargo(et, -(i + 1), mount);
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>A station's armour fraction (1 = pristine, 0 = destroyed; <c>IstationIGC</c> reads
@@ -921,34 +1073,41 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
     }
 
-    /// <summary>Repair and re-arm a ship's real resources + cargo — <c>RepairRearmAction</c>
-    /// (repairrearraction.cpp:37-74): shield+hull to 1, energy/ammo/fuel to their maxima, then fill
-    /// the first two empty cargo slots with missiles (150) and ammo (24) and the rest with missiles.
-    /// Maxima come from the real hull type (GA-scaled energy via <see cref="Ship.EffectiveMaxEnergy"/>).</summary>
+    /// <summary>Repair and re-arm a ship — <c>RepairRearmAction::Execute</c>
+    /// (repairrearmaction.cpp:37-69): the mount-0 shield and the hull to 1, energy/ammo/fuel to the
+    /// hull maxima (GA-scaled energy via <see cref="Ship.EffectiveMaxEnergy"/>), then the cargo walk
+    /// exactly as the native loops execute it. Every loop runs <c>i &gt; -c_maxCargo</c>, so mount
+    /// -c_maxCargo is never filled; the first empty mount gets a missile launcher (150); the
+    /// "second slot" loop has no <c>break</c>, so it fills <em>every</em> remaining empty mount with
+    /// ammo (24) and the "subsequent slots" loop starts exhausted. Native code, not its comments.</summary>
     public void RepairRearm(int shipId)
     {
         lock (_simGate)
         {
             if (ResolveShip(shipId) is not { } s) return;
-            if (s.Parts.Any(p => p.EquipmentType == EquipmentType.Shield))
+            if (s.Parts.Any(p => p.EquipmentType == EquipmentType.Shield && p.MountId == 0))
                 s.SetShieldFraction(1f);
             s.SetFraction(1f);
+            _shipFractions.Remove(shipId);   // the tracked dent heals with the real hull
             s.Energy = s.EffectiveMaxEnergy();
             s.Ammo = s.HullType.MaxAmmo;
             s.SetFuel(s.HullType.MaxFuel);
             if (s.Mission is not { } mission) return;
             DataPartTypeIGC? Part(short id) => mission.Core.PartTypes.TryGetValue(id, out var p)
                 || mission.Core.TryBuildExpendableLauncher(id, out p) ? p : null;
-            // repairrearraction.cpp:49-68 — fill empty cargo slots: 150, then 24, then 150.
-            bool first = true;
-            for (int slot = 0; slot < Ship.CargoCapacity; slot++)
+            void Fill(int mount, short partId)
             {
-                if (s.CargoHold[slot] is not null) continue;
-                var id = first ? (short)150 : (slot == 1 ? (short)24 : (short)150);
-                if (Part(id) is { } part)
-                    s.MountPart(part, short.MaxValue, unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
-                first = false;
+                if (Part(partId) is { } part)
+                    s.MountPart(part, short.MaxValue, unchecked((byte)mount), ExpandedPartData.FullyMounted);
             }
+            bool Empty(int mount) => s.CargoHold[Ship.CargoSlotForMount(mount)] is null;
+            int i;
+            for (i = -1; i > -Ship.CargoCapacity; i--)
+                if (Empty(i)) { Fill(i, 150); break; }
+            for (; i > -Ship.CargoCapacity; i--)
+                if (Empty(i)) Fill(i, 24);
+            for (; i > -Ship.CargoCapacity; i--)
+                if (Empty(i)) Fill(i, 150);
         }
     }
 

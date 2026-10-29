@@ -19,6 +19,12 @@ public interface ITrainingSite
     /// periodic/elapsed-time conditions (<c>periodiccondition.cpp:38</c>).</summary>
     float TimeSeconds { get; }
 
+    /// <summary>The current frame's delta — native <c>GetWindow()-&gt;GetDeltaTime()</c>, used by
+    /// <c>TurnToAction</c> to scale its corrective turn (<c>TurnToAction.cpp:61</c>;
+    /// <c>turnToFace</c>, <c>common.cpp:227-248</c>). The client supplies its real frame delta;
+    /// the headless host site a nominal simulation frame.</summary>
+    float FrameDeltaSeconds { get; }
+
     /// <summary>The player's ship, the primary subject of most conditions (native <c>trekClient.GetShip()</c>).</summary>
     ITrainingObject PlayerShip { get; }
 
