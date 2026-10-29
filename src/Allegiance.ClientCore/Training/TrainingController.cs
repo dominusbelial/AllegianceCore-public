@@ -29,6 +29,7 @@ public static class TrainingController
     /// </summary>
     public static void BeginMission()
     {
+        if (TrainingClock.IsPaused) TrainingClock.Continue();
         TrainingControlState.Reset();
         IsTraining = true;
     }
@@ -36,6 +37,7 @@ public static class TrainingController
     /// <summary>End the current mission, disarming the flag (<c>EndMission</c>, <c>Training.cpp:116-126</c>).</summary>
     public static void EndMission()
     {
+        if (TrainingClock.IsPaused) TrainingClock.Continue(); // trainingmission.cpp:123-125
         IsTraining = false;
     }
 

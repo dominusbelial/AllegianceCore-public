@@ -124,6 +124,10 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
 
+    /// <summary>Native local training owns completion, outside FedSrv match rules
+    /// (training/trainingmission.cpp:744-779).</summary>
+    public bool IsTraining { get; set; }
+
     /// <summary>The raw map this mission is assembled from.</summary>
     public MissionMap Map { get; }
 
@@ -1305,6 +1309,7 @@ public sealed partial class Mission : IMissionIgc
     /// </remarks>
     public (Side? Winner, bool Changed) RecomputeConquestAndTerritory(Station? excluded)
     {
+        if (IsTraining) return (null, false);
         // Native gate: only a Started (or Starting) mission with no winner yet
         // decided recomputes (fsmission.cpp:3575-3578). Started/Starting here
         // doubles as the idempotency guard — the host flips Stage to Over on a

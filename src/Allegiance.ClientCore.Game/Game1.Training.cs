@@ -139,42 +139,19 @@ public sealed partial class Game1
         Diagnostics.CrashLog.SetMode($"training:{variant.GameName}");
         _embeddedHost.StartBackgroundTicker();
 
-        var facilities = new ClientTrainingFacilities
-        {
-            World = () => _session.World,
-            Session = _session,
-            ClockSeconds = () => _trainingClock,
-            OwnOrientation = () =>
-            {
-                if (!_ownSim.HaveHull) return null;
-                var o = _ownSim.Orientation;
-                return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
-            },
-            Host = _embeddedHost,
-            PlaySound = soundId => PlayTrainingSound(missionId, soundId),
-            IsSoundPlaying = handle => _trainingSounds.TryGetValue(handle, out var sound)
-                && sound.State == Microsoft.Xna.Framework.Audio.SoundState.Playing,
-            StopSound = StopTrainingSound,
-        };
+        var facilities = CreateTrainingFacilities(missionId);
 
         var site = new ClientTrainingSite(facilities);
-        var mission = missionId switch
-        {
-            Tm2BasicFlight => (TrainingMission)new Mission2(site),
-            Tm3BasicWeaponry => new Mission3(site),
-            Tm4EnemyEngagement => new Mission4(site),
-            Tm5CommandView => new Mission5(site),
-            Tm6PracticeArena => new Mission6(site),
-            Tm8Nanite => new Mission8(site),
-            Tm10FreeFlight => new Mission10(site),
-            _ => throw new InvalidOperationException(),
-        };
+        var mission = CreateTrainingMission(missionId, site);
         // Bind the active mission to the embedded host so Mission 6's kill goals read the real
         // kill-credit events the server raises (ShipKilled routing).
         _embeddedHost.SetActiveMission(mission);
         var session = new TrainingSession(site, mission);
 
         TrainingController.BeginMission();
+        TrainingOverlay.Current = 0;
+        _trainingInputGate = new TrainingInputGate(session.RecordKeyPress);
+        Rendering.KeyBindingStore.Instance.Map.ActionFilter = _trainingInputGate.Approves;
         // The mission's CreateMission reads the player's ship, which only exists once the
         // loopback join below has replicated it — native runs StartMission →
         // SetupShipAndCamera before the mission script (WinTrek.cpp:7401-7421). Starting it
@@ -214,6 +191,50 @@ public sealed partial class Game1
         BeginConnect("127.0.0.1", _embeddedHost.Port);
     }
 
+    internal ClientTrainingFacilities CreateTrainingFacilities(int missionId) => new ClientTrainingFacilities
+        {
+            World = () => _session.World,
+            Session = _session,
+            ClockSeconds = () => _trainingClock,
+            OwnOrientation = () =>
+            {
+                if (!_ownSim.HaveHull) return null;
+                var o = _ownSim.Orientation;
+                return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
+            },
+            Host = _embeddedHost,
+            SetupTraining = SetupTrainingView,
+            DeathCamera = (focus, radius) =>
+            {
+                _trainingDeadCamera = _cameraMode;
+                _trainingDeathCameraActive = true;
+                RequestOverrideCamera(new(focus.X, focus.Y, focus.Z), radius, 5);
+            },
+            RestoreCamera = () =>
+            {
+                _cameraMode = _trainingDeadCamera;
+                _overrideTarget = null;
+                _externalCamAlignedFor = null;
+                _trainingDeathCameraActive = false;
+            },
+            PlaySound = soundId => PlayTrainingSound(missionId, soundId),
+            IsSoundPlaying = handle => _trainingSounds.TryGetValue(handle, out var sound)
+                && sound.State == Microsoft.Xna.Framework.Audio.SoundState.Playing,
+            StopSound = StopTrainingSound,
+    };
+
+    internal static TrainingMission CreateTrainingMission(int missionId, ITrainingSite site) => missionId switch
+        {
+            Tm2BasicFlight => (TrainingMission)new Mission2(site),
+            Tm3BasicWeaponry => new Mission3(site),
+            Tm4EnemyEngagement => new Mission4(site),
+            Tm5CommandView => new Mission5(site),
+            Tm6PracticeArena => new Mission6(site),
+            Tm8Nanite => new Mission8(site),
+            Tm10FreeFlight => new Mission10(site),
+            _ => throw new InvalidOperationException(),
+    };
+
     /// <summary>Per-frame pump of the active training mission (native TrainingMission::Frame).
     /// The mission clock runs on <see cref="TrainingClock"/> (native's static Time class):
     /// TK_PauseTM freezes it and the embedded host (zlib/ztime.cpp:15-49), the debug
@@ -245,6 +266,9 @@ public sealed partial class Game1
             Console.WriteLine("[training] mission complete");
             ClearTrainingSounds();
             TrainingController.EndMission();
+            Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
+            _trainingInputGate = null;
+            _trainingDeathCameraActive = false;
             if (TrainingClock.IsPaused) TrainingClock.Continue();   // trainingmission.cpp:123-125
             _embeddedHost?.Dispose();
             _embeddedHost = null;
@@ -357,6 +381,9 @@ public sealed partial class Game1
         Console.WriteLine($"[training] {error}");
         ClearTrainingSounds();
         Allegiance.ClientCore.Training.TrainingController.EndMission();
+        Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
+        _trainingInputGate = null;
+        _trainingDeathCameraActive = false;
         if (TrainingClock.IsPaused) TrainingClock.Continue();
         _embeddedHost?.Dispose();
         _embeddedHost = null;
@@ -383,6 +410,11 @@ public sealed partial class Game1
     private void UpdateTrainingKeys(KeyboardState ks)
     {
         if (!Allegiance.ClientCore.Training.TrainingController.IsTraining) return;
+        if (_trainingInputGate is { } gate)
+        {
+            gate.Update(ks, Rendering.KeyBindingStore.Instance.Map);
+            return;
+        }
         RouteTrainingKey(ks, "PauseTM", KeyPauseTm, ref _pauseTmWasDown);
         RouteTrainingKey(ks, "FinishTM", KeyCommandFinishTm, ref _finishTmWasDown);
         RouteTrainingKey(ks, "SkipTMGoal", KeySkipTmGoal, ref _skipTmGoalWasDown);
@@ -408,6 +440,32 @@ public sealed partial class Game1
 
     private static System.Numerics.Vector3 ToSys(Allegiance.Core.Collision.Vector3 v)
         => new(v.X, v.Y, v.Z);
+
+    private TrainingInputGate? _trainingInputGate;
+    private Rendering.CameraMode _trainingDeadCamera;
+    private bool _trainingDeathCameraActive;
+
+    // The ready-to-flight handoff runs after UpdateTraining. Preserve native
+    // training setup rather than overwriting it with multiplayer launch defaults
+    // (training/Training.cpp:95-96; training/trainingmission.cpp:142-149).
+    private void ResetInitialFlightState()
+    {
+        _throttle = TrainingActive ? -1 : Flight.FlightInput.DefaultThrottle;
+        _radarMode = TrainingActive ? Rendering.RadarMode.All : Rendering.RadarMode.Default;
+        _coastToggled = false;
+        _headLookYaw = 0;
+    }
+
+    // Shared by Classic and Modern: training/trainingmission.cpp:142-149,
+    // training/mission5.cpp:98-106; no style-specific behavior.
+    private void SetupTrainingView(int missionId)
+    {
+        _cameraMode = missionId == 5 ? Rendering.CameraMode.Command : Rendering.CameraMode.ExternalOrbit;
+        _radarMode = Rendering.RadarMode.All;
+        _consolePanes = default;
+        _minimapExpanded = _teamPaneVisible = _investActive = _teleportActive = false;
+        _throttle = -1;
+    }
 
     /// <summary>
     /// P749 — guarded training-host start. Runs <paramref name="start"/> and,

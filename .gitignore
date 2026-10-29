@@ -57,3 +57,6 @@ TestResults/
 
 # docker compose reads secrets (e.g. ALLEGIANCE_POSTGRES_PASSWORD) from .env; never commit it
 /.env
+
+# Runtime fallback configuration and logs (use a scratch XDG_CONFIG_HOME for proofs).
+/AllegianceCore/

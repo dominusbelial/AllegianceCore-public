@@ -65,6 +65,7 @@ public sealed partial class Game1
     /// </summary>
     private bool HandleDockedScreen(KeyboardState ks, bool composing)
     {
+        if (_trainingSession is { } training && (!training.AllowHangar || _trainingMissionId == 5)) return false;
         var world = _session.World;
         short me = world.MyShipId ?? -1;
         bool myDocked = world.Ships.TryGetValue(me, out _) && world.Ships[me].StationId != -1;

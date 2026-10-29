@@ -761,6 +761,14 @@ public sealed partial class Server : IDisposable
     /// </summary>
     public event Action<int, int>? KillCreditGranted;
 
+    // Embedded local training replaces multiplayer trainee death, before loot /
+    // pod / scoring. Native WinTrek/trekigc.cpp:4254-4267.
+    internal Func<Ship, IModelIgc?, bool>? TrainingShipDeath;
+    internal Action<Station>? TrainingStationDeath;
+    internal bool LocalTraining { get; set; }
+
+    internal void ReplicateTrainingRestore(Ship ship, Sector sector) => OnShipWarped(ship, sector, sector);
+
     /// <summary>The position-change threshold (world units) that marks a ship
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;

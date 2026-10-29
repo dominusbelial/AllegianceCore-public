@@ -64,10 +64,15 @@ public sealed class TrainingSession
     {
         if (Finished) return true;
         if (!Started) return false;   // the mission starts once the player ship exists (Game1.UpdateTraining)
+        while (_site.TryTakeLifecycleEvent(out var lifecycleEvent))
+        {
+            if (lifecycleEvent.Death) _mission.ShipDied();
+            else _mission.KillStationEvent();
+        }
         // Native trekigc.cpp:4131 lets the training mission handle landing first;
         // Mission2/3/4 terminate instead of opening an ordinary loadout lesson.
         bool docked = _site.PlayerDocked;
-        if (docked && !_wasDocked) _mission.ShipLanded();
+        if (docked && !_wasDocked) AllowHangar = _mission.ShipLanded();
         _wasDocked = docked;
         if (_mission.Frame())
         {
@@ -88,6 +93,8 @@ public sealed class TrainingSession
 
     /// <summary>Route a key press from the real input path through the mission's RecordKeyPress.</summary>
     public bool RecordKeyPress(int key) => _mission.RecordKeyPress(key);
+
+    public bool AllowHangar { get; private set; } = true;
 
     public void Terminate()
     {

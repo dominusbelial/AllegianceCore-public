@@ -3653,3 +3653,20 @@ registry, cache and disposal cases pass **47/47 in each of three runs**.
 P869b final never-parks gate: **5/5 passes**, durations 189.70 / 229.19 / 225.50 / 194.24 / 221.44 seconds;
 maximum stopped-with-target sample 1.116 s (limit 5 s). Final receipts:
 [reports/P869_assets/p869b-verification.json](reports/P869_assets/p869b-verification.json).
+
+## P882a integration verification (2026-10-28)
+
+The single Fast sweep `tiers-20261029T014715.740643Z` again reproduced
+`P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
+and `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`.
+Both are already ledgered above. The relay case passed its isolated follow-up;
+the defend assertion is the same null `DefendTarget` at line 179 that P872
+reproduced deterministically on its dispatch base, and is not called an
+intermittent flake. P882a does not edit the defend loop or order relay.
+
+`P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`
+passed its assertions but took 10.164 s against the calibrated 10 s Fast limit.
+It passed the isolated follow-up together with the relay case (2/2). This is
+the existing timing observation, not a changed test budget. The sweep remains
+red; the separate task-introduced key-catalog metadata failure and its fix are
+recorded in `docs/reports/P882a_REPORT.md`, not classified as a flake.

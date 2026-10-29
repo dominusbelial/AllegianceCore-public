@@ -66,6 +66,7 @@ public abstract class TrainingMission
     public void Start()
     {
         CreateUniverse();
+        if (Site is ITrainingLifecycleSite lifecycle) lifecycle.SetupTraining(GetMissionID());
         _condition = CreateMission();
         _condition.Start();
     }
@@ -80,16 +81,18 @@ public abstract class TrainingMission
     {
         if (_condition is { } cond)
         {
+            if (TrainingClock.IsPaused) return false; // trainingmission.cpp:174
             ProcessRespawns();
 
             if (_waitConditions.Count > 0)
             {
-                for (int i = _waitConditions.Count - 1; i >= 0; i--)
+                for (int i = 0; i < _waitConditions.Count;)
                 {
                     if (_waitConditions[i].Evaluate())
                     {
                         _waitConditions.RemoveAt(i);
                     }
+                    else i++;
                 }
             }
             else
@@ -107,6 +110,7 @@ public abstract class TrainingMission
     /// condition in dead space so <see cref="Frame"/> returns true on the next call.</summary>
     public void Terminate()
     {
+        if (!TrainingClock.IsPaused) TrainingClock.Pause(); // trainingmission.cpp:272-273
         _deadCondition = _condition;
         _condition = null;
     }
@@ -126,7 +130,7 @@ public abstract class TrainingMission
     /// site's key queue so <c>GetKeyCondition</c> can consume them. Returns whether the press
     /// was accepted (native returns <c>false</c> to swallow a disabled key).
     /// </summary>
-    public bool RecordKeyPress(int key)
+    public virtual bool RecordKeyPress(int key)
     {
         // trainingmission.cpp:342-413
         if (key == KeyPauseTm)
@@ -181,7 +185,7 @@ public abstract class TrainingMission
         // command view. Free Flight's hard-disabled keys fall through to this same gate (native
         // case fallthrough), so only a command-view-enabled mission lets them through.
         bool commandViewKey = key is KeyViewCommand or KeyConModeCommand or KeyToggleAutoPilot;
-        if (commandViewKey && !CommandViewEnabled)
+        if ((commandViewKey || hardDisabled) && !CommandViewEnabled)
             return false;
 
         // default branch (trainingmission.cpp:402-410): every remaining key — including
@@ -207,13 +211,21 @@ public abstract class TrainingMission
     /// the killer and eject. Repositioning is a host concern; TR-1 exposes the hook for TR-2.</summary>
     public virtual void ShipDied()
     {
+        if (Site is ITrainingLifecycleSite lifecycle) lifecycle.TrainingShipDied();
     }
 
     /// <summary><c>RestoreShip</c> (<c>trainingmission.cpp:478-512</c>) — restore the ship and add a 5s
     /// override-camera wait condition. Host physics deferred to TR-2.</summary>
     public virtual bool RestoreShip()
     {
-        AddWaitCondition(ElapsedTimeCondition.Create(5.0f, Site));
+        if (Site is ITrainingLifecycleSite lifecycle) lifecycle.RestoreTrainingShip();
+        // Native adds this without Start, leaving both the periodic timestamp
+        // and NTimes count uninitialized (periodiccondition.cpp:21-25,
+        // ntimescondition.cpp:21-27). Initialize the intended five-second wait
+        // so death recovery cannot suspend a playable lesson indefinitely.
+        var wait = ElapsedTimeCondition.Create(5.0f, Site);
+        wait.Start();
+        AddWaitCondition(wait);
         return true;
     }
 
@@ -229,12 +241,18 @@ public abstract class TrainingMission
     /// "all stations destroyed" detection; deferred to TR-2.</summary>
     public virtual void KillStationEvent()
     {
+        Site.ShowMessage("Your side's stations have all been destroyed!");
+        // Native trainingmission.cpp:553-560 deletes waits but leaves dangling list
+        // entries. Clear them too: retaining freed conditions prevents playable defeat.
+        _waitConditions.Clear();
+        _condition = new Goal(ElapsedTimeCondition.Create(4.0f, Site));
+        _condition.Start();
     }
 
     public int GetKillCount() => _killCount;
 
     /// <summary>Returns whether the player ship is in range of a "too close" guard rail.</summary>
-    public int CommanderId => -1; // m_commanderID; set by LoadUniverse in TR-2
+    public int CommanderId => Site is ITrainingLifecycleSite lifecycle ? lifecycle.CommanderId : -1;
 
     /// <summary>
     /// <c>CreatePlaySoundGoal</c> (<c>trainingmission.cpp:896-902</c>): a goal that completes when a
@@ -279,7 +297,7 @@ public abstract class TrainingMission
             var rd = _respawns[idx];
             if (rd.SpawnAction is not { } cda)
                 continue;
-            bool shipExists = Site.Resolve(new TargetRef(ObjectType.Ship, cda.ShipId)) is not null;
+            bool shipExists = ShipExists(cda.ShipId);
             bool readyToSpawn = !shipExists && Site.TimeSeconds > rd.DestroyedTime + rd.Downtime;
             if (!readyToSpawn)
                 continue;
@@ -301,7 +319,7 @@ public abstract class TrainingMission
                 {
                     if (other.SpawnGroup == rd.SpawnGroup && other.SpawnAction?.ShipId != cda.ShipId)
                     {
-                        if (Site.Resolve(new TargetRef(ObjectType.Ship, other.SpawnAction!.ShipId)) is not null)
+                        if (ShipExists(other.SpawnAction!.ShipId))
                         {
                             waveReady = false;
                             break;
@@ -309,7 +327,7 @@ public abstract class TrainingMission
                         if (other.DestroyedTime == 0)
                             other.DestroyedTime = Site.TimeSeconds;
                         if (Site.TimeSeconds > other.DestroyedTime + other.Downtime)
-                            group.Add(other);
+                            group.Insert(0, other); // native push_front, trainingmission.cpp:208
                         else
                         {
                             waveReady = false;
@@ -344,7 +362,7 @@ public abstract class TrainingMission
 
         if (spawnOnAdd)
         {
-            bool exists = Site.Resolve(new TargetRef(ObjectType.Ship, action.ShipId)) is not null;
+            bool exists = ShipExists(action.ShipId);
             if (!exists)
                 action.Execute();
             rd.DestroyedTime = 0;
@@ -356,4 +374,7 @@ public abstract class TrainingMission
 
         _respawns.Insert(0, rd);
     }
+
+    private bool ShipExists(int id) => Site is ITrainingLifecycleSite lifecycle
+        ? lifecycle.TrainingShipExists(id) : Site.Resolve(new TargetRef(ObjectType.Ship, id)) is not null;
 }

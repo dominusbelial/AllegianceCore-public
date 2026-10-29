@@ -717,15 +717,12 @@ public sealed partial class Game1
                 // key Y leaked and selected self — see PrimeInFlightKeyLatches).
                 if (_state == ClientState.Flying)
                 {
-                    _throttle = FlightInput.DefaultThrottle;
                     // P624 — per-launch reset of the new flight-pack state:
                     // vector lock off (native coast resets with the ship), radar
                     // back to Default (native loads the persisted RadarLOD, default
                     // All; the port starts each sortie on Default), head snapped to
                     // forward.
-                    _coastToggled = false;
-                    _radarMode = Rendering.RadarMode.Default;
-                    _headLookYaw = 0f;
+                    ResetInitialFlightState();
                     // P853b — the pre-game host-editing panes end with the lobby
                     // (native closes its team-settings dialog on start,
                     // teamscreen.cpp:1679-1682); a stale draft must never carry

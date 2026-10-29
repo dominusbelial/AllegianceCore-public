@@ -116,6 +116,8 @@ public sealed partial class Server
                 try { req = command.Read<LogonRequest>(); }
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
+                if (LocalTraining) req.CharacterName = "Cadet"; // training/trainingmission.cpp:775-779
+
                 // P654 (H-28) — reject an out-of-range / control-character
                 // CharacterName up front (before any allocation or seating).
                 // Native: c_cbName = c_cbNameDB + 1 = 25, usable name = 24
