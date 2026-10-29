@@ -72,7 +72,7 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 558u, DwCookie = 0x558u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 558u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 55400000000000005ul, DrmHash = "p171wingman",
     };

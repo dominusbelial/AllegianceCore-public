@@ -54,7 +54,7 @@ async Task<int> RunHost()
                 ShipID = 712,
                 FValidated = true,
                 FRetry = false,
-                Cookie = (byte)(req.DwCookie & 0xFF),
+                Cookie = 0,
             };
             host!.Send(from, FedPacket.Pack(new[] { ack.Encode() }), guaranteed: true);
             Console.WriteLine($"[host] replied FM_S_LOGONACK (shipID={ack.ShipID}, validated={ack.FValidated})");
@@ -105,7 +105,7 @@ async Task<int> RunClient(string[] args)
         MissionPassword = "pw9",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 8675309u,
-        DwCookie = 0xC0FFEEu,
+        DwCookie = uint.MaxValue,
         CrcFileList = -7,
         SteamAuthTicket = new byte[1024],
         SteamAuthTicketLength = 0,

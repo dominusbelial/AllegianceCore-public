@@ -41,7 +41,7 @@ public class P475E2eStationGaLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 918u, DwCookie = 0x918u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 918u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 9130000000000000000ul, DrmHash = "p475",
     };

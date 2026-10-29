@@ -53,7 +53,7 @@ public class P641FlightPartsLiveTests
         session.Connect(server.BoundPort, "mcp-p641");
         session.SendLogonRequest(new LogonRequest { CharacterName = "mcp-p641", ZoneTicket = [1, 2, 3, 4],
             CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-            Time = 641, DwCookie = 641, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            Time = 641, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
             SteamAuthTicketLength = 0, SteamID = 97700000000000641ul, DrmHash = "p641" });
         void Wait(string phase, Func<bool> condition)
         {
@@ -68,7 +68,7 @@ public class P641FlightPartsLiveTests
         observer.Connect(server.BoundPort, "p660b-observer");
         observer.SendLogonRequest(new LogonRequest { CharacterName = "p660b-observer", ZoneTicket = [1, 2, 3, 4],
             CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-            Time = 641, DwCookie = 641, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            Time = 641, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
             SteamAuthTicketLength = 0, SteamID = 97700000000000642ul, DrmHash = "p660b" });
         Wait("observer side selection", () => { lock (observer.Gate) return observer.World.SideRoster is not null; });
         observer.SendPositionReq(own.SideId!.Value);

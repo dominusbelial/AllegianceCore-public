@@ -134,7 +134,7 @@ static class Proof
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 463u, DwCookie = 0x463u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 463u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 97800000000000000ul, DrmHash = "hitsoundproof",
     };

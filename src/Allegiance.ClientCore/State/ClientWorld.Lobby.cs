@@ -122,7 +122,9 @@ public sealed partial class ClientWorld
     {
         _positionRequests.Remove(new(message.SideId, message.ShipId));
         var result = new PositionRequestResult(message.SideId, message.ShipId, message.Reason);
-        if (message.ShipId == (MyShipId ?? JoinedShipId)) MyPositionRequestResult = result;
+        if (message.ShipId == (MyShipId ?? JoinedShipId) || (message.SideId == -1
+            && message.Reason is DelPositionReqReason.NoMission or DelPositionReqReason.ServerPaused or DelPositionReqReason.BadPassword))
+            MyPositionRequestResult = result;
         _events.Record(result);
     }
 

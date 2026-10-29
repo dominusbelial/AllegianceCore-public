@@ -63,7 +63,7 @@ public sealed class P689StationDeathTickTests(ITestOutputHelper output)
             peer.SendLogonRequest(new LogonRequest
             {
                 CharacterName = name, ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-                FedsrvVer = LogonRequest.MsgVer, Time = 689, DwCookie = 689, CrcFileList = -1,
+                FedsrvVer = LogonRequest.MsgVer, Time = 689, DwCookie = uint.MaxValue, CrcFileList = -1,
                 SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = 68900000000000000, DrmHash = "p689"
             });
         }

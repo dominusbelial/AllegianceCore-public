@@ -32,7 +32,7 @@ internal sealed class CrossSideSweepCache : IDisposable
         internal uint MaxConnection;
         internal long Version;
     }
-    private readonly Dictionary<short, Audience> _audiences = new();
+    private readonly Dictionary<(uint Scope, short Side), Audience> _audiences = new();
     private readonly Dictionary<(object Subject, short Side), (long Audience, long Generation)> _done = new();
     private long _removalVersion = -1, _generation;
     internal CrossSideSweepCache Begin(long removalVersion)
@@ -41,10 +41,10 @@ internal sealed class CrossSideSweepCache : IDisposable
         _generation++;
         return this;
     }
-    internal void SetAudience(short side, List<ConnectionId> connections, int period)
+    internal void SetAudience(short side, List<ConnectionId> connections, int period, uint scope = 0)
     {
-        if (!_audiences.TryGetValue(side, out var audience))
-            _audiences.Add(side, audience = new());
+        if (!_audiences.TryGetValue((scope, side), out var audience))
+            _audiences.Add((scope, side), audience = new());
         if (connections.SequenceEqual(audience.Connections) && audience.Phases.Length == period) return;
         audience.Connections = connections.ToArray();
         audience.MaxConnection = connections.Count == 0 ? 0 : connections.Max(c => c.Value);
@@ -55,9 +55,9 @@ internal sealed class CrossSideSweepCache : IDisposable
             if (period > 0) audience.Phases[conn.Value % (uint)period].Add(conn);
     }
     internal IReadOnlyList<ConnectionId> Recipients(object subject, short side, short id, long tick,
-        bool force = false)
+        bool force = false, uint scope = 0)
     {
-        var audience = _audiences[side];
+        var audience = _audiences[(scope, side)];
         var key = (subject, side);
         bool complete = _done.TryGetValue(key, out var done) && done.Audience == audience.Version;
         _done[key] = (audience.Version, _generation);
@@ -74,6 +74,12 @@ internal sealed class CrossSideSweepCache : IDisposable
     {
         foreach (var entry in _done)
             if (entry.Value.Generation != _generation) _done.Remove(entry.Key);
+    }
+    internal void ForgetScope(uint scope)
+    {
+        foreach (var key in _audiences.Keys.Where(key => key.Scope == scope).ToArray())
+            _audiences.Remove(key);
+        _done.Clear(); // derived work only; authoritative send latches are unchanged
     }
     internal void Clear() { _done.Clear(); _audiences.Clear(); }
 }

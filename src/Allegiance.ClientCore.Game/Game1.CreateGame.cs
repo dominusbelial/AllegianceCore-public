@@ -26,13 +26,14 @@ public sealed partial class Game1
     private readonly object _createGameLock = new();
     private LobbyGameClient? _gameClient;
     private bool _createGameLoading;
+    private volatile bool _createGameSubmitting;
     /// <summary>P871b — one-shot latch for the ALLEGIANCE_PROOF_CREATE_GAME hook.</summary>
     private bool _createGameProofSeeded;
     private string _createGameError = "";
     /// <summary>P871b — the server the lobby accepted a create request for; the
     /// game thread consumes it and joins (native: the requester connects to the
     /// server that created its mission). Null until an ACK arrives.</summary>
-    private (string Host, int Port)? _createGameJoinPending;
+    private (string Host, int Port, uint Cookie)? _createGameJoinPending;
 
     private void EnterCreateGame()
     {
@@ -60,11 +61,16 @@ public sealed partial class Game1
         // P871b — an ACK from the previous frame? The server is provisioning the
         // mission we asked for, so join it (native ends the create flow by
         // connecting to the chosen server, lobby/client.cpp:445-465).
-        if (_createGameJoinPending is { } join)
+        (string Host, int Port, uint Cookie)? readyJoin;
+        lock (_createGameLock)
         {
+            readyJoin = _createGameJoinPending;
             _createGameJoinPending = null;
+        }
+        if (readyJoin is { } join)
+        {
             Console.WriteLine($"[create] lobby accepted — joining {join.Host}:{join.Port} (the server provisioning this game)");
-            JoinFromIntro(join.Host, join.Port);
+            JoinFromIntro(join.Host, join.Port, join.Cookie);
             return;
         }
         if (up && !_iUp) _createGame.Move(-1);
@@ -75,19 +81,22 @@ public sealed partial class Game1
             _createGame.Backspace();
         if (esc && !_iEsc) { _introView = IntroView.FindServer; _introIndex = 0; }
         if (!(enter && !_iEnter)) return;
-        if (_createGame.Cursor != CreateGameWizard.Field.Create) return;
+        if (_createGame.Cursor != CreateGameWizard.Field.Create || _createGameSubmitting) return;
         if (_createGame.TryCreate() is not { } request) return;
         _gameClient ??= new LobbyGameClient(_http, _lobbyUrl, () => _identityClient?.SessionBearer);
         var client = _gameClient;
         var target = _createGame.SelectedServer;
+        _createGameSubmitting = true;
         _ = Task.Run(async () =>
         {
             var (id, error) = await client.CreateAsync(request).ConfigureAwait(false);
+            var cookie = id is null ? null : await client.WaitForMissionAsync(id).ConfigureAwait(false);
             lock (_createGameLock)
             {
-                _createGame.Acknowledge(id, error);
-                if (id is not null && target is not null)
-                    _createGameJoinPending = (target.Address, target.Port);
+                _createGameSubmitting = false;
+                _createGame.Acknowledge(cookie is null ? null : id, error ?? (cookie is null ? "Server did not create the game." : null));
+                if (cookie is { } ready && target is not null)
+                    _createGameJoinPending = (target.Address, target.Port, ready);
             }
         });
     }
@@ -99,7 +108,7 @@ public sealed partial class Game1
         lock (_createGameLock) options = _createGame.Options;
         var rows = new (string Label, CreateGameWizard.Field Field)[]
         {
-            ("SERVER: " + (_createGame.SelectedServer?.Name ?? (_createGameLoading ? "loading…" : "none")), CreateGameWizard.Field.Server),
+            ("SERVER: " + (_createGame.SelectedServer?.DisplayName ?? (_createGameLoading ? "loading…" : "none")), CreateGameWizard.Field.Server),
             ("CORE:   " + (_createGame.SelectedCore ?? "-"), CreateGameWizard.Field.Core),
             ("MAP:    " + (_createGame.SelectedMap ?? (_createGameLoading ? "loading…" : "none")), CreateGameWizard.Field.Map),
             ("GAME NAME: " + (_createGame.GameName.Length > 0 ? _createGame.GameName : "<type a name>"), CreateGameWizard.Field.Name),

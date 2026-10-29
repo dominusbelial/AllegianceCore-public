@@ -50,6 +50,7 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(ClaimedGame))]
 [JsonSerializable(typeof(ClaimedGame[]))]
 [JsonSerializable(typeof(GameClaimRequest))]
+[JsonSerializable(typeof(GameReadyBody))]
 [JsonSerializable(typeof(LobbyMatchReport))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Allegiance.Core.Transport.EgressWindow))]

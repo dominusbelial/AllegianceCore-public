@@ -137,7 +137,7 @@ public sealed partial class Server
                 // P813c — a reconnecting peer resumes its parked seat BEFORE any
                 // of the fresh-logon machinery (duplicate-name reservation,
                 // ship-id allocation, side-select hold): the seat already exists.
-                // The token is the native LOGONREQ.dwCookie (Inc/Messages.h:43);
+                // The token is the port-only LOGONREQ resume extension (P883);
                 // a name+token match replays the join burst and this frame is
                 // done. With the feature off this is a constant false, so the
                 // path below is untouched.
@@ -178,13 +178,15 @@ public sealed partial class Server
                         ShipID = pendingLogon.Request.VersionMatches ? pendingLogon.ShipId : (short)0,
                         FValidated = pendingLogon.Request.VersionMatches,
                         FRetry = false, // FedSrv.CPP:6081: version mismatch is not retryable.
-                        Cookie = (byte)(pendingLogon.Request.DwCookie & 0xFF),
+                        Cookie = 0,
                     };
                     SendPeer(from, FedPacket.Pack(new[] { reack.Encode() }));
                     if (pendingLogon.Request.VersionMatches && _missions.Count > 0)
                         SendSideRoster(from);
                     continue;
                 }
+
+                var joinMission = ResolveJoinMission(req.DwCookie);
 
                 bool identityAccepted = BindIdentity(from, req, out var identityFailure);
 
@@ -224,15 +226,15 @@ public sealed partial class Server
                     && !_config.AlwaysRefuseDuplicateLogons && _missions.Count > 0
                     && AccountId(from) is { Length: > 0 } account)
                 {
-                    var old = _peerShips.FirstOrDefault(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
+                    var old = _peerShips.FirstOrDefault(p => ReferenceEquals(p.Value.Ship.Mission, joinMission)
                         && _peerNames.TryGetValue(p.Key, out var name)
                         && string.Equals(name, req.CharacterName, StringComparison.OrdinalIgnoreCase));
                     if (old.Value is not null && string.Equals(AccountId(old.Key), account, StringComparison.Ordinal))
-                        RemovePlayerByName(_missions[0], req.CharacterName ?? "", QuitSideReason.DuplicateLocalLogon);
+                        RemovePlayerByName(joinMission!, req.CharacterName ?? "", QuitSideReason.DuplicateLocalLogon);
                 }
                 var duplicateName = req.VersionMatches && _missions.Count > 0
-                    && (_pendingSideSelect.Values.Any(p => string.Equals(p.Request.CharacterName ?? "", req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase))
-                        || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
+                    && (_pendingSideSelect.Values.Any(p => ReferenceEquals(p.Mission, joinMission) && string.Equals(p.Request.CharacterName ?? "", req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase))
+                        || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, joinMission)
                             && _peerNames.TryGetValue(p.Key, out var name)
                             && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
                 var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict && fileListAccepted;
@@ -268,7 +270,7 @@ public sealed partial class Server
                 // post-connect side-select hold (_pendingSideSelect) until it
                 // picks a side (POSITIONREQ) or the timeout seats it.
                 short shipId = 0;
-                if (validated && _missions.Count > 0)
+                if (validated && joinMission is not null && joinMission.Stage != MissionStage.Over)
                 {
                     shipId = AllocateShipId();
                     // P281 — post-connect side select: do NOT spawn the ship
@@ -279,7 +281,7 @@ public sealed partial class Server
                     // join/launch burst sent — only once the peer chooses a
                     // side (POSITIONREQ → CompleteSideSelection) or the
                     // side-select timeout seats it.
-                    _pendingSideSelect[from] = new PendingSideSelect(shipId, req, _simNow, _nextJoinSeq++);
+                    _pendingSideSelect[from] = new PendingSideSelect(shipId, req, _simNow, _nextJoinSeq++, joinMission);
                     Console.WriteLine($"[launch] peer {from} '{req.CharacterName}' pending side-select (ship id {shipId} reserved; launch deferred to side choice)");
                 }
 
@@ -290,7 +292,7 @@ public sealed partial class Server
                     ShipID = validated ? shipId : (short)0,
                     FValidated = validated,
                     FRetry = false, // FedSrv.CPP:6081: version mismatch is not retryable.
-                    Cookie = (byte)(req.DwCookie & 0xFF),
+                    Cookie = 0,
                 };
                 SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
                 Console.WriteLine($"[logon] {from} '{req.CharacterName}' validated={validated} -> " +
@@ -302,7 +304,8 @@ public sealed partial class Server
                 if (validated)
                 {
                     SendPeer(from, FedPacket.Pack([new StaticMapInfo { Maps = _staticMaps }.Encode()]));
-                    if (_missions.Count > 0) SendSideRoster(from);
+                    if (JoinMission(from, req.DwCookie, shipId, out _, req.MissionPassword)) SendSideRoster(from);
+                    else _pendingSideSelect.Remove(from);
                 }
 
                 // P281 — the join/launch burst is deferred to
@@ -1698,9 +1701,8 @@ public sealed partial class Server
                                 ReselectSideResearchPlan(mission, ccSide);
                                 // A peer still on the side-select screen reads the
                                 // SIDE_ROSTER snapshot, not the CHANGE_TEAM_CIV relay
-                                // (side-select peers are routed to _missions[0]).
-                                if (ReferenceEquals(mission, _missions[0]))
-                                    BroadcastSideRosterToPendingPeers(mission);
+                                // for peers pending in this mission.
+                                BroadcastSideRosterToPendingPeers(mission);
                                 Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ -> {targetCiv.CivilizationId} '{targetCiv.Name}' whole-mission" +
                                                   (cc.Random ? $" (random resolved from requested {cc.CivId})" : ""));
                             }

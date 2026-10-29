@@ -57,7 +57,7 @@ public sealed class BuildingTechsLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 571u, DwCookie = 0x571u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 571u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 88900000000000000ul, DrmHash = "p444building",
     };

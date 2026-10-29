@@ -244,6 +244,7 @@ public sealed partial class Server
             foreach (var mission in missions)
                 TryAutoStart(mission);
         }
+        RefreshLobbyMissionSnapshot();
         StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
         StartBroadcastPublisher();
         PrintReady();
@@ -278,6 +279,8 @@ public sealed partial class Server
         if (HeartbeatFactory is { } factory)
         {
             _heartbeat = factory(_config.Lobby);
+            _heartbeat.LiveMissions = () => LiveMissions;
+            _heartbeat.MaxGames = _config.MaxGames;
             if (_config.Identity is not null)
                 _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
             Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
@@ -303,10 +306,10 @@ public sealed partial class Server
             // publishes on the next throttled tick.
             () => LiveGameParams,
             () => LobbyDirtyVersion,
-            // P871b — the CREATE_MISSION_REQ relay: the server only claims a
-            // lobby game request while it has an idle mission slot, exactly like
-            // native's lobby, which never sends the request to a busy server.
+            // Only claim while below native MaxGames (CreateGameDialog.h:20).
             CanHostPlayerGame);
+        _heartbeat.LiveMissions = () => LiveMissions;
+        _heartbeat.MaxGames = _config.MaxGames;
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -1326,6 +1329,7 @@ public sealed partial class Server
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
         }, goals);
+        mission.Cookie = ++_nextMissionCookie; // P883: unique for this server lifetime; never NA.
         mission.Skills = new SkillTelemetry(++_skillMatchNumber, mission.Sides.Select(s => s.Id));
         foreach (var (side, selection) in researchPlans)
         {

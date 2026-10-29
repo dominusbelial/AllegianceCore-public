@@ -52,7 +52,7 @@ public sealed class NonBlockingSendLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 42u, DwCookie = 0x42u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 42u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 99000000000000001ul, DrmHash = "nbsend",
     };

@@ -56,7 +56,7 @@ internal static class Program
             MissionPassword = "pw",
             FedsrvVer = LogonRequest.MsgVer,
             Time = 707u,
-            DwCookie = 0xDEADC0DE,
+            DwCookie = uint.MaxValue,
             CrcFileList = -1,
             SteamAuthTicket = new byte[16],
             SteamAuthTicketLength = 0,

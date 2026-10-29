@@ -52,7 +52,7 @@ public static class SkirmishSmoke
         {
             CharacterName = pilotName, FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            Time = 1, DwCookie = 727, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 72701
+            Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 72701
         });
         pilot.WaitForAck(10000);
         pilot.SendPositionReq(0);

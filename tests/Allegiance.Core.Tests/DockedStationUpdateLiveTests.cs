@@ -46,7 +46,7 @@ public sealed class DockedStationUpdateLiveTests
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 768u,
-        DwCookie = 0x768u,
+        DwCookie = uint.MaxValue,
         CrcFileList = -1,
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,

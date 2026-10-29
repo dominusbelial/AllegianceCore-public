@@ -56,7 +56,7 @@ public sealed class P650ServerRulesTests
         bot.SendLogonRequest(new LogonRequest
         {
             CharacterName = "p650launch", ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = 1, CrcFileList = -1,
+            FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1,
             SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = 72000000000000000ul, DrmHash = "p650"
         });
         void Until(Func<bool> done)

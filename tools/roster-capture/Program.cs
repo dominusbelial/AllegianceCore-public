@@ -1171,7 +1171,7 @@ internal sealed partial class RosterCapture : Game
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 1234u,
-        DwCookie = 0x33Fu,
+        DwCookie = uint.MaxValue,
         CrcFileList = -1,
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,

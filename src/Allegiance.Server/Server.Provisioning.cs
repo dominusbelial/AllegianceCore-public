@@ -11,11 +11,9 @@ namespace Allegiance.Server;
 ///
 /// <para><b>Native shape.</b> <c>CREATE_MISSION_REQ</c> → the chosen server
 /// creates the mission (<c>lobby/client.cpp:390-465</c>) → the client connects to
-/// that server and joins the mission it just created. Native hosts one mission per
-/// process; the port may host several (<c>ServerConfig.Games</c>), so a
-/// player-created mission is inserted at index 0 — the slot every join path uses
-/// (<c>AssignShip</c>, the join burst, the lobby advertisement) — and the
-/// configured worlds stay live behind it.</para>
+/// server and joins the returned cookie. Native hosts several missions per
+/// process; the port appends player-created worlds without changing existing
+/// missions or the NA/first-mission route (FedSrv.CPP:489-493).</para>
 ///
 /// <para><b>SIM-0146.</b> A mission created for a player sets
 /// <see cref="Mission.PlayerCreated"/>, which is what native's
@@ -32,14 +30,12 @@ public sealed partial class Server
     /// <summary>P871b test seam (InternalsVisibleTo): run one heartbeat/claim poll.</summary>
     internal Task PumpLobbyAsync() => _heartbeat?.PumpAsync() ?? Task.CompletedTask;
 
-    /// <summary>The idle-slot predicate the lobby says CREATE_MISSION_REQ needs:
-    /// the join target must exist, be pre-game and have no players. Native's lobby
-    /// only picks a server that is not in a game.</summary>
+    /// <summary>Additional worlds require capacity (native MaxGames,
+    /// FedSrv/FedSrv.CPP:9560-9562; WinTrek/CreateGameDialog.h:20).
+    /// Research showcases retain their provisioning refusal.</summary>
     internal bool CanHostPlayerGame()
     {
-        if (_missions is not { Count: > 0 }) return true;      // bare transport: the first request creates the world
-        var target = _missions[0];
-        return target.Stage == MissionStage.NotStarted && !HasMissionPlayers(target);
+        return _config.Showcase.TechMode != "research" && _missions.Count < _config.MaxGames;
     }
 
     /// <summary>Drain the claimed game requests the lobby heartbeat handed over
@@ -48,11 +44,14 @@ public sealed partial class Server
     {
         if (_heartbeat is null) return;
         while (_heartbeat.TryTakeClaimedGame(out var claim))
-            ProvisionPlayerGame(claim);
+        {
+            var mission = ProvisionPlayerGame(claim);
+            _heartbeat.CompleteGame(claim.Id, mission?.Cookie);
+        }
     }
 
     /// <summary>
-    /// Create the mission a claimed request asked for and make it the join target.
+    /// Create the mission a claimed request asked for, addressed by its cookie.
     /// Never throws: a bad request is logged and dropped (the lobby's request is
     /// already claimed, and native has no un-claim message).
     /// </summary>
@@ -62,6 +61,13 @@ public sealed partial class Server
         {
             Console.WriteLine($"[provision] '{claim.GameName}' refused: this server runs a research showcase world");
             return null;
+        }
+        // Recheck on the sim thread: a claim may have raced another creation
+        // since CanHostPlayerGame (native full test, CreateGameDialog.h:20).
+        if (_missions.Count >= _config.MaxGames)
+        {
+            Console.WriteLine($"[provision] '{claim.GameName}' refused: server game limit reached ({_missions.Count}/{_config.MaxGames})");
+            return null; // DrainClaimedGames reports Failed via the ready acknowledgement.
         }
         if (!PlayerGameProvisioning.TryDecodeParams(claim.ParamsWire, out var parameters, out var decodeError))
         {
@@ -100,19 +106,19 @@ public sealed partial class Server
             return null;
         }
 
-        // The wizard's world becomes slot 0 — the slot every join path uses
-        // (AssignShip, the join burst, the lobby advertisement). The configured
-        // worlds keep running behind it, and both lists stay index-aligned so the
-        // game-over rotation and GameSettings keep working.
-        _config.Games.Insert(0, config);
-        _missions.Insert(0, mission);
+        // Native identifies the created mission by cookie (lobby/client.cpp:390-465).
+        // Append so NA and existing peers keep their configured worlds.
+        _config.Games.Add(config);
+        _missions.Add(mission);
+        mission.MissionId = checked((short)_missions.Count);
+        ParamsOf(mission).StrGamePassword = parameters.StrGamePassword;
         mission.PlayerCreated = true;                            // SIM-0146: the lobby-directed lifecycle
         SpawnInitialMiners(mission);
         MarkLobbyDirty("player-game-created");
         Console.WriteLine($"[provision] mission created for '{claim.GameName}' (request {claim.Id}): "
             + $"map {config.Map}, {mission.Sectors.Count} sectors, {mission.Sides.Count} side(s), "
             + $"{mission.Warps.Count} warp(s), {mission.Sectors.Sum(s => s.Stations.Count)} station(s) — "
-            + "player-created (SIM-0146 reap armed, FedSrv.CPP:7871-7910), joins now land here");
+            + $"player-created (SIM-0146 reap armed, FedSrv.CPP:7871-7910), join by cookie {mission.Cookie}");
         return mission;
     }
 }

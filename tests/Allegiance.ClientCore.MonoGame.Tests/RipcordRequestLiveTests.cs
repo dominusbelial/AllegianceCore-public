@@ -74,7 +74,7 @@ public sealed class RipcordRequestLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 414u, DwCookie = 0x414u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 414u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 94130000000000002ul, DrmHash = "p414",
     };

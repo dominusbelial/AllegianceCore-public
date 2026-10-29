@@ -58,7 +58,7 @@ public sealed class ClientWarpApproachLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 405u, DwCookie = 0xF4Fu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 405u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 42200000000000000ul, DrmHash = "p484warp",
     };

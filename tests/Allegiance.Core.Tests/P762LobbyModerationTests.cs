@@ -338,7 +338,7 @@ public sealed class P762LobbyModerationTests
     private static LogonRequest Logon(string name, string cdKey, ulong steamId) => new()
     {
         CharacterName = name, ZoneTicket = [1, 2, 3, 4], CDKey = cdKey, MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 762u, DwCookie = 0x762u, CrcFileList = -1,
+        FedsrvVer = LogonRequest.MsgVer, Time = 762u, DwCookie = uint.MaxValue, CrcFileList = -1,
         SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = steamId, DrmHash = "p762mod",
     };
 

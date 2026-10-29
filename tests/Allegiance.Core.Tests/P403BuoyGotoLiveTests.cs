@@ -51,7 +51,7 @@ public sealed class P403BuoyGotoLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 903u, DwCookie = 0x403u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 903u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 74700000000000403ul, DrmHash = "p403goto",
     };

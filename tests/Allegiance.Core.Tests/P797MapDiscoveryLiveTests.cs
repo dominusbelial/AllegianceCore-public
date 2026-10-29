@@ -64,7 +64,7 @@ public sealed class P797MapDiscoveryLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 797u, DwCookie = 0x797u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 797u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = steamId, DrmHash = "p797discovery",
     };

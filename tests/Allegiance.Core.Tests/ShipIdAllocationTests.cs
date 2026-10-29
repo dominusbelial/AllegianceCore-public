@@ -46,7 +46,7 @@ public class ShipIdAllocationLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 888u, DwCookie = 0xabc,
+        FedsrvVer = LogonRequest.MsgVer, Time = 888u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 8810000000000000000ul, DrmHash = "ok",
     };
@@ -58,7 +58,7 @@ public class ShipIdAllocationLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = 707, Time = 889u, DwCookie = 0xabc,
+        FedsrvVer = 707, Time = 889u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 7710000000000000000ul, DrmHash = "bad",
     };

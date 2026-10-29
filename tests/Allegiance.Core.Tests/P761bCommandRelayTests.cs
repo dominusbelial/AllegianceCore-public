@@ -231,7 +231,7 @@ public sealed class P761bCommandRelayTests
         {
             CharacterName = name, ZoneTicket = [1, 2, 3, 4],
             CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            FedsrvVer = LogonRequest.MsgVer, Time = 446u, DwCookie = 0xC761u,
+            FedsrvVer = LogonRequest.MsgVer, Time = 446u, DwCookie = uint.MaxValue,
             CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
             SteamID = 90200000000000077ul, DrmHash = "p761brelay",
         });

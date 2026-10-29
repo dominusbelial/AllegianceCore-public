@@ -83,7 +83,7 @@ public sealed class AsteroidMinedLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 821u, DwCookie = 0x821u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 821u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 82200000000000000ul, DrmHash = "asteroidmined",
     };

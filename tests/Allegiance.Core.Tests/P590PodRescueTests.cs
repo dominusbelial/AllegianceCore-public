@@ -45,7 +45,7 @@ public class P590PodRescueTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-        Time = 596u, DwCookie = 0x596u, CrcFileList = -1, SteamAuthTicket = new byte[16],
+        Time = 596u, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 5990000000000000000ul, DrmHash = "p590",
     };
 

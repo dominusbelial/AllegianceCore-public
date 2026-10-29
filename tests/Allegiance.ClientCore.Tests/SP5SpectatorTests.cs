@@ -121,7 +121,7 @@ public sealed class SP5SpectatorLiveTests
         session.Connect(host.Port, "sp5-pilot");
         session.SendLogonRequest(new() { CharacterName = "sp5-pilot", FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", Time = 1,
-            DwCookie = 5, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 50501 });
+            DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 50501 });
         session.WaitForAck(10000);
         session.SendPositionReq(side);
         return session;

@@ -138,7 +138,7 @@ sealed class ProofRunner : Game
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 951u, DwCookie = 0x562u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 951u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 97300000000000000ul, DrmHash = "warpvortex",
     };

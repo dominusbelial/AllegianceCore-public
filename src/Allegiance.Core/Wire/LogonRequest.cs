@@ -44,7 +44,10 @@ public sealed class LogonRequest : IFedMessage
     // fixed fields
     public ushort FedsrvVer;
     public uint Time;
-    public uint DwCookie;
+    public uint DwCookie = uint.MaxValue; // native NA joins the first mission (FedSrv.CPP:490).
+    /// <summary>Port-only P813c/P883 reconnect token. Optional tagged trailing blob,
+    /// after all native variable items. Native fixed offsets and items are unchanged.</summary>
+    public uint ResumeToken;
     public int CrcFileList;
 
     // STEAM fixed fields (populated by modern clients)
@@ -59,7 +62,7 @@ public sealed class LogonRequest : IFedMessage
     {
         int blobChars = ZtsBlobSize(CharacterName) + ZoneTicketBlobSize(ZoneTicket)
                       + ZtsBlobSize(CDKey) + ZtsBlobSize(MissionPassword);
-        var buf = new byte[FixedSize + blobChars];
+        var buf = new byte[FixedSize + blobChars + (ResumeToken == 0 ? 0 : 8)];
         WireWriter w = new(buf);
 
         w.WriteU16(0); // cbmsg placeholder
@@ -108,6 +111,12 @@ public sealed class LogonRequest : IFedMessage
         w.WriteU16At(slotCdKeyIb, cd.ib);    w.WriteU16At(slotCdKeyCb, cd.cb);
         w.WriteU16At(slotPassIb, ps.ib);     w.WriteU16At(slotPassCb, ps.cb);
 
+        if (ResumeToken != 0)
+        {
+            w.WriteU32(0x33383850); // "P883" port-extension tag, not a native field
+            w.WriteU32(ResumeToken);
+        }
+
         // cbmsg = total length
         w.WriteU16At(0, (ushort)w.Position);
         return buf;
@@ -139,6 +148,7 @@ public sealed class LogonRequest : IFedMessage
             FedsrvVer = BitConverter.ToUInt16(buf.Slice(20)),
             Time      = BitConverter.ToUInt32(buf.Slice(24)),
             DwCookie  = BitConverter.ToUInt32(buf.Slice(28)),
+            ResumeToken = ReadResumeToken(buf, ch, zt, cd, ps),
             CrcFileList = BitConverter.ToInt32(buf.Slice(32)),
 
             SteamAuthTicket      = ChompZeros(buf.Slice(36, 1024)).ToArray(),
@@ -146,6 +156,14 @@ public sealed class LogonRequest : IFedMessage
             SteamID              = BitConverter.ToUInt64(buf.Slice(1068)),
             DrmHash              = ReadFixedAscii(buf.Slice(1076, 50)),
         };
+    }
+
+    private static uint ReadResumeToken(ReadOnlySpan<byte> buf, params VarItem[] items)
+    {
+        int end = FixedSize;
+        foreach (var item in items) if (item.IsPresent) end = Math.Max(end, item.Ib + item.Cb);
+        return buf.Length == end + 8 && BitConverter.ToUInt32(buf.Slice(end)) == 0x33383850
+            ? BitConverter.ToUInt32(buf.Slice(end + 4)) : 0;
     }
 
     public bool VersionMatches => FedsrvVer == MsgVer;

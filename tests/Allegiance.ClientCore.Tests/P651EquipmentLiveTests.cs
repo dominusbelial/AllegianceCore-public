@@ -24,7 +24,7 @@ public sealed class P651EquipmentLiveTests
     private static LogonRequest Request() => new()
     {
         CharacterName = "P651", ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = 1, CrcFileList = -1,
+        FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1,
         SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = 72000000000000000ul, DrmHash = "p651"
     };
     private static void Until(Srv server, Func<bool> condition, Action? drive = null)

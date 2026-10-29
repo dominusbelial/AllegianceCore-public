@@ -106,7 +106,7 @@ public sealed class P855TrapHackTests
     {
         CharacterName = name, ZoneTicket = [1, 2, 3, 4],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = 0xBEEFu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 72000000000000000ul, DrmHash = "p855",
     };

@@ -26,14 +26,15 @@ public static class GameEndpoints
     public sealed record CreateGameRequest(string? ServerId, string? Core, string? Map,
         string? GameName, string? ParamsWire);
     public sealed record EditParamsRequest(string? ParamsWire);
+    public sealed record ReadyRequest(string? ServerId, string? Token, uint? Cookie);
     public sealed record ClaimRequest(string? ServerId, string? Token);
     public sealed record CatalogDto(IReadOnlyList<ServerChoice> Servers, IReadOnlyList<string> Cores,
         IReadOnlyList<string> Maps);
     public sealed record ServerChoice(string Id, string Name, string Address, int Port,
-        string Core, string MissionName);
+        string Core, string MissionName, int CurrentGames = 0, int MaxGames = 20);
     public sealed record GameDto(string Id, string Owner, string ServerId, string ServerName,
         string Address, int Port, string Core, string Map, string GameName,
-        string ParamsWire, string State, DateTimeOffset CreatedUtc, DateTimeOffset UpdatedUtc);
+        string ParamsWire, string State, DateTimeOffset CreatedUtc, DateTimeOffset UpdatedUtc, uint? Cookie = null);
 
     public static void MapGames(this WebApplication app)
     {
@@ -44,7 +45,7 @@ public static class GameEndpoints
         group.MapGet("/catalog", (ServerRegistry registry, LobbySettings settings) =>
         {
             var servers = registry.List()
-                .Select(s => new ServerChoice(s.Id, s.Name, s.Address, s.Port, s.CoreFile, s.MissionName))
+                .Select(s => new ServerChoice(s.Id, s.Name, s.Address, s.Port, s.CoreFile, s.MissionName, s.CurrentGames, s.MaxGames))
                 .ToArray();
             var cores = settings.GameCores.Count > 0
                 ? settings.GameCores.ToArray()
@@ -70,6 +71,9 @@ public static class GameEndpoints
                 return Results.Unauthorized();
             if (string.IsNullOrWhiteSpace(req.ServerId) || registry.Get(req.ServerId!) is not { } server)
                 return Results.NotFound(new { error = "that server is not listed" });
+            // Same full-server refusal as native CreateGameDialog.h:20.
+            if (server.CurrentGames >= server.MaxGames)
+                return Results.BadRequest(new { error = "that server is full" });
             var catalog = new GameCreationStore.Catalog(settings.GameCores.ToArray(), settings.GameMaps.ToArray());
             if (!TryDecodeParams(req.ParamsWire, out var parameters, out var wireError))
                 return Results.BadRequest(new { error = wireError });
@@ -102,6 +106,14 @@ public static class GameEndpoints
             return games.Cancel(account.Id, id) ? Results.NoContent() : Results.NotFound();
         }).RequireRateLimiting(RateLimiting.ChatPolicy);
 
+        group.MapPost("/{id}/ready", (string id, ReadyRequest req, GameCreationStore games, ServerRegistry registry) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.ServerId) || string.IsNullOrWhiteSpace(req.Token)
+                || !registry.VerifyToken(req.ServerId, req.Token)) return Results.Unauthorized();
+            var completed = games.Complete(req.ServerId, id, req.Cookie);
+            return completed is null ? Results.NotFound() : Results.Ok(ToDto(completed, null));
+        });
+
         // Server-side claim: the selected game server proves ownership with its
         // registration token and receives the request (CREATE_MISSION_REQ forwarded,
         // lobby/client.cpp:445-455).
@@ -119,7 +131,7 @@ public static class GameEndpoints
     private static GameDto ToDto(GameCreationStore.GameCreationRequest r, string? readerAccountId) =>
         new(r.Id, r.OwnerCallsign, r.ServerId, r.ServerName, r.Address, r.Port, r.Core, r.Map,
             r.GameName, Convert.ToBase64String(r.Params.Encode()), r.RequestState.ToString(),
-            r.CreatedUtc, r.UpdatedUtc);
+            r.CreatedUtc, r.UpdatedUtc, r.Cookie);
 
     /// <summary>Decode the native <c>MissionParams</c> blob a create/edit request
     /// carries. A missing blob means "native defaults" for create (native's

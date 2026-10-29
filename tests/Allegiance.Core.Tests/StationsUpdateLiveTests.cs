@@ -86,7 +86,7 @@ public sealed class StationsUpdateLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 793u, DwCookie = 0x793u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 793u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 78200000000000000ul, DrmHash = "stationsupdate",
     };

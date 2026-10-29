@@ -3842,3 +3842,29 @@ the merge commit (not flakes): P880a's DoDamage expectation (native
 dodamageaction.cpp:42-48), TR3's Mission 3 key id + a degenerate orient basis,
 and TR5's Mission 8 bomber pinned inside the home station's radius, where native
 idle Dodge (shipIGC.cpp:2334, common.cpp:1745-1747) pushes it every tick.
+
+
+## P883 (2026-10-28)
+
+The single Fast sweep executed 11,688 tests: 11,678 passed, 7 failed, 3 skipped.
+Six failures were deterministic fixture drift from the chosen-mission change,
+not flakes: `P653EconomyLoadoutIntegrityTests` needed the explicit mission in its
+`AssignShip` reflection calls (2 cases), `P655GameStateIntegrityTests` needed the
+mission in its pending-side constructor (2 cases), and `P682MissionStateTests`
+needed to compare the per-cookie graph payload rather than the cache dictionary
+instance (2 cases). All six are fixed and passed in the focused final runs
+(87 core cases and 7 ClientCore cases). The seventh is the existing P872
+`NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+failure at line 179, as documented above. No simulation change or quarantine was
+made for it. The full-tier result remains red; it was not repeated. Raw evidence
+is under git-excluded `.scratch/p883/fast/`; see `docs/reports/P883_REPORT.md`.
+
+## P883b (2026-10-29)
+
+The first `tools/build-tools.sh` pass hit an MSBuild worker exit (`MSB4166`) in
+`tools/hullhit-proof`; cancellation also produced `MSB5021` from the MonoGame
+content task. That project built **3/3 alone**, each with zero warnings/errors,
+without source changes. Evidence: git-excluded
+`.scratch/p883b/build-isolation/hullhit-{1,2,3}.log`. The full tool gate is rerun
+in `.scratch/p883b/build-tools-final.log`; see `docs/reports/P883_REPORT.md` for
+its final result. This is a build-process failure, not a changed gameplay rule.

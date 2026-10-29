@@ -106,7 +106,8 @@ public sealed class ServerRegistry
                 req.Verified, req.IdentityServerId,
                 // P810 — the optional minimum-client-version requirement
                 // (absent stays null, not "").
-                NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)));
+                NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)), ToMissions(req.Missions), Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
+                Math.Max(1, req.MaxGames ?? 20));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -136,6 +137,9 @@ public sealed class ServerRegistry
             // exactly like the player count (the mission moves NotStarted →
             // Started, so InProgress and the goal bits can change mid-listing).
             Game = ToGameParams(req.Game),
+            Missions = ToMissions(req.Missions),
+            CurrentGames = Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
+            MaxGames = Math.Max(1, req.MaxGames ?? 20),
             Verified = req.Verified, IdentityServerId = req.IdentityServerId,
             // P810 — a heartbeat refreshes the requirement too (a server may
             // raise its minimum after a client-breaking update).
@@ -295,7 +299,7 @@ public sealed class ServerRegistry
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
-        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion);
+        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, l.Missions, l.CurrentGames, l.MaxGames);
 
     /// <summary>
     /// P806 — normalize the caller-supplied game settings. Every omitted field
@@ -306,6 +310,10 @@ public sealed class ServerRegistry
     /// <c>Game</c> object at all stays null: the directory then has no settings to
     /// publish and the client cannot evaluate a Yes/No filter against it.
     /// </summary>
+    private static IReadOnlyList<MissionListingDto>? ToMissions(List<MissionListingRequest>? missions) => missions?
+        .Where(m => m.Cookie != uint.MaxValue).DistinctBy(m => m.Cookie).Take(128)
+        .Select(m => new MissionListingDto(m.Cookie, Sanitize(m.Name, NameMax), Math.Max(0, m.PlayerCount), ToGameParams(m.Game))).ToArray();
+
     private static GameParamsDto? ToGameParams(GameParamsRequest? g)
     {
         if (g is null) return null;

@@ -41,7 +41,7 @@ public sealed class P871FileListLogonTests
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 933u,
-        DwCookie = 0x933u,
+        DwCookie = uint.MaxValue,
         CrcFileList = crc,
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,

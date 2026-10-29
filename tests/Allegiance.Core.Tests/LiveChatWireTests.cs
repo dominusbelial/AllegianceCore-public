@@ -41,7 +41,7 @@ public class LiveChatWireTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 918u, DwCookie = 0xDEADu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 918u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 74100000000000000ul, DrmHash = "livechat",
     };

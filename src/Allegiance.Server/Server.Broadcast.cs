@@ -22,6 +22,23 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed partial class Server
 {
+    // Publish a consistent mission list/count before the first heartbeat as well
+    // as after creation, reaping and rotation (lobby/client.cpp:361-362).
+    private void RefreshLobbyMissionSnapshot()
+    {
+        lock (_statsLock)
+        {
+            if (_missions.Count > 0 && !ReferenceEquals(_missions[0], _lobbySnapshotMission))
+            {
+                _lobbySnapshotMission = _missions[0];
+                _lobbyDirtyVersion++;
+            }
+            _liveGameParams = _missions.Count > 0 ? SnapshotLobbyGameParams(_missions[0]) : null;
+            _liveMissions = _missions.Select(m => new LobbyMissionListing(m.Cookie, GameSettings(m).Name,
+                _peerShips.Count(p => ReferenceEquals(p.Value.Ship.Mission, m)), SnapshotLobbyGameParams(m))).ToArray();
+        }
+    }
+
     private readonly PodTripTelemetry _podTrips = new(Console.WriteLine);
     internal PodTripTelemetry PodTrips => _podTrips;
 
@@ -74,7 +91,7 @@ public sealed partial class Server
     // cluster-warning system. Keyed [sideId][sectorId] = last AssetMask sent to
     // that side. Missing sector entries default to 0 (no threat), so the first
     // non-zero mask for a sector is broadcast the tick a side first sees it.
-    private readonly Dictionary<short, Dictionary<short, short>> _lastSectorAssetMaskBySide = new();
+    private readonly Dictionary<(uint Cookie, short Side), Dictionary<short, short>> _lastSectorAssetMaskBySide = new();
 
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
@@ -220,12 +237,7 @@ public sealed partial class Server
             // (counts/slots/countdown), and a NEW mission identity (boot or
             // rotation) marks the lobby dirty exactly like native's dirty-at-
             // construction CFSMission (fsmission.cpp:90,448).
-            if (_missions.Count > 0 && !ReferenceEquals(_missions[0], _lobbySnapshotMission))
-            {
-                _lobbySnapshotMission = _missions[0];
-                _lobbyDirtyVersion++;
-            }
-            _liveGameParams = _missions.Count > 0 ? SnapshotLobbyGameParams(_missions[0]) : null;
+            RefreshLobbyMissionSnapshot();
         }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
@@ -870,7 +882,7 @@ public sealed partial class Server
             long lastClusterInfoTick = _lastClusterInfoTick.TryGetValue(kv.Key, out var ci0) ? ci0 : -1;
             if (lastClusterInfoTick < 0 || (long)tickIndex - lastClusterInfoTick >= ClusterInfoRefreshTicks)
             {
-                if (_clusterInfoBytes is { } bytes)
+                if (ClusterInfoBytes(live.Ship.Mission) is { } bytes)
                 {
                     SendPeer(kv.Key, PackBroadcast(bytes));
                     _lastClusterInfoTick[kv.Key] = tickIndex;
@@ -890,7 +902,7 @@ public sealed partial class Server
             // skipped (handled above). Reuses MakeOwnShipStatus unchanged —
             // it already accepts an arbitrary (shipId, live) pair, not just the
             // receiver's own.
-            if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
+            if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue((live.Ship.Mission!.Cookie, recipientSide), out var mates))
             {
                 // P604b — per-recipient phase gate for the periodic same-side
                 // TEAMMATE SHIP_STATUS(90) refresh. Before this, the per-pair
@@ -1234,7 +1246,7 @@ public sealed partial class Server
         // parallel twin previously exposed NONE of its internals). The phase
         // locals escape the snapshot scope so the build/apply phases consume them.
         KeyValuePair<ConnectionId, LiveShip>[] peers;
-        Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> sameSide;
+        Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> sameSide;
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide;
         Dictionary<short, BroadcastMessage> positionEncode;
         using (TickProfiler.Enter("bss.snapshot"))
@@ -1243,12 +1255,12 @@ public sealed partial class Server
         if (peers.Length == 0) return;
 
         // Per-side same-side grouping, in `peers` order (mirror of serial :502-510).
-        sameSide = new Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>>();
+        sameSide = new Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>>();
         foreach (var gkv in peers)
         {
             if (gkv.Value.Ship.SideId is { } s)
             {
-                if (!sameSide.TryGetValue(s, out var list)) { list = new(); sameSide[s] = list; }
+                if (!sameSide.TryGetValue((gkv.Value.Ship.Mission!.Cookie, s), out var list)) { list = new(); sameSide[(gkv.Value.Ship.Mission.Cookie, s)] = list; }
                 list.Add(gkv);
             }
         }
@@ -1419,7 +1431,7 @@ public sealed partial class Server
     /// </summary>
     private BroadcastPeerBuild BuildPeerShipStates(
         KeyValuePair<ConnectionId, LiveShip>[] peers,
-        Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> sameSide,
+        Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> sameSide,
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide,
         Dictionary<short, BroadcastMessage> positionEncode,
         uint tickIndex, int idx)
@@ -1479,14 +1491,14 @@ public sealed partial class Server
         long lastClusterInfoTick = _lastClusterInfoTick.TryGetValue(conn, out var ci0) ? ci0 : -1;
         if (lastClusterInfoTick < 0 || (long)tickIndex - lastClusterInfoTick >= ClusterInfoRefreshTicks)
         {
-            if (_clusterInfoBytes is { } bytes)
+            if (ClusterInfoBytes(live.Ship.Mission) is { } bytes)
             {
                 r.Packets.Add((PackBroadcast(bytes), 0, false));
                 r.SetClusterInfo = true; r.ClusterInfoTick = tickIndex;
             }
         }
 
-        if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
+        if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue((live.Ship.Mission!.Cookie, recipientSide), out var mates))
         {
             // P604b — per-recipient phase gate (mirrors the serial builder's).
             // The snapshot phase pre-initialises `_nextTeammateRefreshTick` for
@@ -1801,29 +1813,30 @@ public sealed partial class Server
         // AND the sectors that side has a seated peer in (a peer only receives
         // ship telemetry for ships in its own cluster — see BroadcastShipsUpdate).
         _crossSideExportGeneration++;
-        var peers = SnapshotBroadcastPeers();
-        Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)> bySide = new();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
-            if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
-            e.Conns.Add(kv.Key);
-            e.Sectors.Add(kv.Value.Sector);
-        }
-        if (bySide.Count == 0) return;   // nobody seated on a real side
-        foreach (var (side, audience) in bySide)
-            sweep.SetAudience(side, audience.Conns, CrossSideIdentityRefreshTicks);
-
-        // P369 — on the slow identity-refresh cadence, the already-latched
-        // (peer, ship) identity is re-sent too (below) so a single missed EXPORT
-        // self-heals. P604b — the re-send is phase-staggered per (conn, ship)
-        // (below) instead of a global `TickIndex % interval == 0` (which fired
-        // for EVERY latched pair at once — an O(peers × ships) EXPORT re-send
-        // burst every 30 s, measured as a ~42 ms crossSideExportSweep spike on
-        // this workstation and amplified on 221).
-
         foreach (var m in _missions)
         {
+            var peers = SnapshotBroadcastPeers();
+            Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)> bySide = new();
+            foreach (var kv in peers)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, m) || kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
+                if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
+                e.Conns.Add(kv.Key);
+                e.Sectors.Add(kv.Value.Sector);
+            }
+            if (bySide.Count == 0) continue;   // nobody seated on a real side
+            foreach (var (side, audience) in bySide)
+                sweep.SetAudience(side, audience.Conns, CrossSideIdentityRefreshTicks, m.Cookie);
+
+            // P369 — on the slow identity-refresh cadence, the already-latched
+            // (peer, ship) identity is re-sent too (below) so a single missed EXPORT
+            // self-heals. P604b — the re-send is phase-staggered per (conn, ship)
+            // (below) instead of a global `TickIndex % interval == 0` (which fired
+            // for EVERY latched pair at once — an O(peers × ships) EXPORT re-send
+            // burst every 30 s, measured as a ~42 ms crossSideExportSweep spike on
+            // this workstation and amplified on 221).
+
+
             // The P132 visibility sweep only runs once the mission is
             // Started/Starting (Mission.Update early-returns otherwise), so the
             // flags we read are meaningful only then. Defensive gate, same
@@ -1861,7 +1874,7 @@ public sealed partial class Server
                         if (!e.Sectors.Contains(sector)) continue;              // no telemetry here -> no identity needed
                         if (ship.IsCloaked && !ship.SeenBySide(sideId)) continue; // cloak-hidden -> no telemetry (P270) -> none here
 
-                        foreach (var conn in TestLegacyClashProjection ? e.Conns : sweep.Recipients(ship, sideId, ship.Id, TickIndex))
+                        foreach (var conn in TestLegacyClashProjection ? e.Conns : sweep.Recipients(ship, sideId, ship.Id, TickIndex, scope: m.Cookie))
                         {
                             if (_crossSideExportSent.Add((conn, ship.Id)))
                             {
@@ -2075,18 +2088,19 @@ public sealed partial class Server
     private void SweepCrossSideMineExports()
     {
         // Per-side seated audience, exactly the ship sweep builds.
-        var peers = SnapshotBroadcastPeers();
-        Dictionary<short, List<ConnectionId>> bySide = new();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
-            if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
-            list.Add(kv.Key);
-        }
-        if (bySide.Count == 0) return;   // nobody seated on a real side
-
         foreach (var m in _missions)
         {
+            var peers = SnapshotBroadcastPeers();
+            Dictionary<short, List<ConnectionId>> bySide = new();
+            foreach (var kv in peers)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, m) || kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
+                if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
+                list.Add(kv.Key);
+            }
+            if (bySide.Count == 0) continue;   // nobody seated on a real side
+
+
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
             foreach (var sector in m.Sectors)
                 foreach (var model in sector.Models)
@@ -2166,19 +2180,20 @@ public sealed partial class Server
     private void SweepCrossSideDiscoveryExports()
     {
         using var sweep = _discoverySweepCache.Begin(_crossSideDiscoverySent.RemovalVersion);
-        var peers = SnapshotBroadcastPeers();
-        Dictionary<short, List<ConnectionId>> bySide = new();
-        foreach (var kv in peers)
-        {
-            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing side-gated
-            if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
-            list.Add(kv.Key);
-        }
-        if (bySide.Count == 0) return;   // nobody seated on a real side
-        foreach (var (side, conns) in bySide) sweep.SetAudience(side, conns, 0);
-
         foreach (var m in _missions)
         {
+            var peers = SnapshotBroadcastPeers();
+            Dictionary<short, List<ConnectionId>> bySide = new();
+            foreach (var kv in peers)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, m) || kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing side-gated
+                if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
+                list.Add(kv.Key);
+            }
+            if (bySide.Count == 0) continue;   // nobody seated on a real side
+            foreach (var (side, conns) in bySide) sweep.SetAudience(side, conns, 0, m.Cookie);
+
+
             // The P132 sweep only runs once the mission is Started/Starting, so
             // the latched SeenBySide flags are meaningful only then (the same
             // precondition the ship/mine sweeps assume).
@@ -2193,7 +2208,7 @@ public sealed partial class Server
                         if (!warp.SeenBySide(sideId)) continue;
                         byte[]? packet = null;
                         int told = 0;
-                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(warp, sideId, warp.Warp.WarpId, TickIndex))
+                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(warp, sideId, warp.Warp.WarpId, TickIndex, scope: m.Cookie))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Warp, warp.Warp.WarpId)))
                             {
                                 packet ??= DiscoveryPacket(ExportWarp.FromWarp(warp).Encode(), warp, sideId);
@@ -2209,7 +2224,7 @@ public sealed partial class Server
                         if (!rock.SeenBySide(sideId)) continue;
                         byte[]? packet = null;
                         int told = 0;
-                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(rock, sideId, rock.Data.AsteroidId, TickIndex))
+                        foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(rock, sideId, rock.Data.AsteroidId, TickIndex, scope: m.Cookie))
                             if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Asteroid, rock.Data.AsteroidId)))
                             {
                                 packet ??= AsteroidDiscoveryPacket(conn, rock, sideId);
@@ -2227,7 +2242,7 @@ public sealed partial class Server
                             if (!probe.SeenBySide(sideId)) continue;
                             byte[]? packet = null;
                             int told = 0;
-                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(probe, sideId, probe.Id, TickIndex))
+                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(probe, sideId, probe.Id, TickIndex, scope: m.Cookie))
                                 if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Probe, probe.Id)))
                                 {
                                     packet ??= ProbeDiscoveryPacket(probe);
@@ -2249,7 +2264,7 @@ public sealed partial class Server
                             if (!treasure.SeenBySide(sideId)) continue;
                             byte[]? packet = null;
                             int told = 0;
-                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(treasure, sideId, treasure.Id, TickIndex))
+                            foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(treasure, sideId, treasure.Id, TickIndex, scope: m.Cookie))
                                 if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Treasure, treasure.Id)))
                                 {
                                     packet ??= FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
@@ -2435,12 +2450,13 @@ public sealed partial class Server
     {
         using var sweep = _statusSweepCache.Begin(_statusSweepRemovalVersion);
         // Audience: the seated peers grouped by their ship's side.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;   // nobody seated on a real side
-        foreach (var (side, conns) in connsBySide) sweep.SetAudience(side, conns, CrossSideStatusRefreshTicks);
-
         foreach (var m in _missions)
         {
+            var connsBySide = GatherSideConnections(m);
+            if (connsBySide.Count == 0) continue;   // nobody seated on a real side
+            foreach (var (side, conns) in connsBySide) sweep.SetAudience(side, conns, CrossSideStatusRefreshTicks, m.Cookie);
+
+
             // The P132 visibility sweep only runs once the mission is
             // Started/Starting (Mission.Update early-returns otherwise), so the
             // SeenBySide flags we read are meaningful only then — the same
@@ -2464,7 +2480,7 @@ public sealed partial class Server
                         bool wasSeen = _crossSideShipStatusSeen.TryGetValue(key, out var w) && w;
 
                         var recipients = TestLegacyClashProjection ? conns
-                            : sweep.Recipients(ship, sideId, ship.Id, TickIndex, force: nowSeen != wasSeen);
+                            : sweep.Recipients(ship, sideId, ship.Id, TickIndex, force: nowSeen != wasSeen, scope: m.Cookie);
                         if (nowSeen != wasSeen)
                         {
                             // A genuine visibility edge: fire the spotted/hidden
@@ -2566,7 +2582,7 @@ public sealed partial class Server
         var bySide = new Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)>();
         foreach (var kv in _peerShips)
         {
-            if (kv.Value.Ship.SideId is not { } s) continue;      // unseated (team-lobby) peers see nothing cross-side
+            if (!ReferenceEquals(kv.Value.Ship.Mission, subject.Mission) || kv.Value.Ship.SideId is not { } s) continue;      // unseated (team-lobby) peers see nothing cross-side
             if (s == subjectSide.Value) continue;                  // the subject's own side — handled by the same-side caller path
             if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
             e.Conns.Add(kv.Key);
@@ -2635,44 +2651,49 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationsUpdate()
     {
-        // Side universe = the sides with seated peers (the only sides that have
-        // anyone to send to). Group the peer connections by their ship's side in
-        // one pass over a stable snapshot.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;
-
-        // P324 (M4): cadence-throttled. The per-side batch is re-encoded and
-        // re-sent only every c_nPassesPerUpdate (10) ticks — the faithful native
-        // cadence for these per-side object syncs (native sends them to a flying
-        // player on cluster entry, FedSrv fsship.cpp:817-849; to a docked player
-        // every 0.75 s) — unless a peer newly joined the side (forced immediate).
-        // On a quiet tick (not a cadence tick and no join) the whole gather is
-        // skipped, not just the encode/send.
-        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
-        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
-
-        // All runtime stations in the mission, once — read off the live sweep's
-        // subject collection (Sector.StationRuntimes), never re-derived.
-        var allStations = _missions
-            .SelectMany(m => m.Sectors)
-            .SelectMany(s => s.StationRuntimes)
-            .ToArray();
-
-        foreach (var (sideId, conns) in connsBySide)
+        foreach (var audienceMission in _missions)
         {
-            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
-                continue;                              // P324 (M4): not this side's cadence tick
 
-            // Only stations the side currently sees (P132's live SeenBySide).
-            var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
-            if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
-            ExportDiscoveredStations(sideId, conns, visible);
-            var msg = StationsUpdate.FromStations(visible);
-            var packet = PackBroadcast(Message(msg));
-            foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceStations);
+            // Side universe = the sides with seated peers (the only sides that have
+            // anyone to send to). Group the peer connections by their ship's side in
+            // one pass over a stable snapshot.
+            var connsBySide = GatherSideConnections(audienceMission);
+            if (connsBySide.Count == 0) continue;
 
-            if (ConsoleLog.Verbose) ConsoleLog.Write($"[stations] side {sideId} sees {visible.Length} station(s) " +
-                              $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: was plain Console.WriteLine — a per-cadence sim-thread write bypasses the P619c non-blocking sink (stalled stdout blocked the tick ~57 ms per line, ConsoleVerbosityLiveTests)
+            // P324 (M4): cadence-throttled. The per-side batch is re-encoded and
+            // re-sent only every c_nPassesPerUpdate (10) ticks — the faithful native
+            // cadence for these per-side object syncs (native sends them to a flying
+            // player on cluster entry, FedSrv fsship.cpp:817-849; to a docked player
+            // every 0.75 s) — unless a peer newly joined the side (forced immediate).
+            // On a quiet tick (not a cadence tick and no join) the whole gather is
+            // skipped, not just the encode/send.
+            bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+            if (!cadenceDue && _objectSyncDirtySides.Count == 0) continue;   // P324 (M4): nothing due this tick
+
+            // All runtime stations in the mission, once — read off the live sweep's
+            // subject collection (Sector.StationRuntimes), never re-derived.
+            var allStations = new[] { audienceMission }
+                .SelectMany(m => m.Sectors)
+                .SelectMany(s => s.StationRuntimes)
+                .ToArray();
+
+            foreach (var (sideId, conns) in connsBySide)
+            {
+                if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                    continue;                              // P324 (M4): not this side's cadence tick
+
+                // Only stations the side currently sees (P132's live SeenBySide).
+                var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
+                if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
+                ExportDiscoveredStations(sideId, conns, visible);
+                var msg = StationsUpdate.FromStations(visible);
+                var packet = PackBroadcast(Message(msg));
+                foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceStations);
+
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[stations] side {sideId} sees {visible.Length} station(s) " +
+                                  $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: was plain Console.WriteLine — a per-cadence sim-thread write bypasses the P619c non-blocking sink (stalled stdout blocked the tick ~57 ms per line, ConsoleVerbosityLiveTests)
+            }
+
         }
     }
 
@@ -2812,42 +2833,47 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastAsteroidsUpdate()
     {
-        // Side universe = the sides with seated peers (the only sides that have
-        // anyone to send to). Group the peer connections by their ship's side in
-        // one pass over a stable snapshot.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;
-
-        // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
-        // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks
-        // (faithful native cadence; native's own every-10 UpdateSeenBySide means
-        // the seen-set changes no faster than this anyway), forced immediately on
-        // a peer newly joining the side. Quiet ticks skip the gather entirely.
-        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
-        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
-
-        // All runtime asteroids in the mission, once — read off the live sweep's
-        // subject collection (Sector.Mineable), never re-derived.
-        var allAsteroids = _missions
-            .SelectMany(m => m.Sectors)
-            .SelectMany(s => s.Mineable)
-            .ToArray();
-
-        foreach (var (sideId, conns) in connsBySide)
+        foreach (var audienceMission in _missions)
         {
-            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
-                continue;                              // P324 (M4): not this side's cadence tick
 
-            // Only asteroids the side currently sees (P132's live SeenBySide,
-            // now scoring asteroids as targets — P134).
-            var visible = allAsteroids.Where(a => a.SeenBySide(sideId)).ToArray();
-            if (visible.Length == 0) continue;              // native: if (nAsteroids != 0)
-            var msg = AsteroidsUpdate.FromAsteroids(visible);
-            var packet = PackBroadcast(Message(msg));
-            foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceAsteroids);
+            // Side universe = the sides with seated peers (the only sides that have
+            // anyone to send to). Group the peer connections by their ship's side in
+            // one pass over a stable snapshot.
+            var connsBySide = GatherSideConnections(audienceMission);
+            if (connsBySide.Count == 0) continue;
 
-            if (ConsoleLog.Verbose) ConsoleLog.Write($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
-                              $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
+            // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
+            // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks
+            // (faithful native cadence; native's own every-10 UpdateSeenBySide means
+            // the seen-set changes no faster than this anyway), forced immediately on
+            // a peer newly joining the side. Quiet ticks skip the gather entirely.
+            bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+            if (!cadenceDue && _objectSyncDirtySides.Count == 0) continue;   // P324 (M4): nothing due this tick
+
+            // All runtime asteroids in the mission, once — read off the live sweep's
+            // subject collection (Sector.Mineable), never re-derived.
+            var allAsteroids = new[] { audienceMission }
+                .SelectMany(m => m.Sectors)
+                .SelectMany(s => s.Mineable)
+                .ToArray();
+
+            foreach (var (sideId, conns) in connsBySide)
+            {
+                if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                    continue;                              // P324 (M4): not this side's cadence tick
+
+                // Only asteroids the side currently sees (P132's live SeenBySide,
+                // now scoring asteroids as targets — P134).
+                var visible = allAsteroids.Where(a => a.SeenBySide(sideId)).ToArray();
+                if (visible.Length == 0) continue;              // native: if (nAsteroids != 0)
+                var msg = AsteroidsUpdate.FromAsteroids(visible);
+                var packet = PackBroadcast(Message(msg));
+                foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceAsteroids);
+
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
+                                  $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
+            }
+
         }
     }
 
@@ -2890,45 +2916,50 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastProbesUpdate()
     {
-        // Side universe = the sides with seated peers (the only sides that have
-        // anyone to send to). Group the peer connections by their ship's side in
-        // one pass over a stable snapshot.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;
-
-        // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
-        // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks,
-        // forced immediately on a peer newly joining the side. Probes broadcast is
-        // the last of the three throttled per-side object syncs, so it clears the
-        // join-dirty set after consuming it (next SimPass starts clean). Quiet
-        // ticks skip the gather entirely.
-        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
-        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
-
-        // All runtime probes in the mission, once — read off the live sweep's
-        // subject collection (Sector.Models, where the Probe case lives), never
-        // re-derived.
-        var allProbes = _missions
-            .SelectMany(m => m.Sectors)
-            .SelectMany(s => s.Models)
-            .OfType<Probe>()
-            .ToArray();
-
-        foreach (var (sideId, conns) in connsBySide)
+        foreach (var audienceMission in _missions)
         {
-            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
-                continue;                              // P324 (M4): not this side's cadence tick
 
-            // Only probes the side currently sees (P132's live SeenBySide,
-            // already scoring probes as targets — they are Models with a SideId).
-            var visible = allProbes.Where(p => p.SeenBySide(sideId)).ToArray();
-            if (visible.Length == 0) continue;              // native: if (nProbes != 0)
-            var msg = ProbesUpdate.FromProbes(visible);
-            var packet = PackBroadcast(Message(msg));
-            foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceProbes);
+            // Side universe = the sides with seated peers (the only sides that have
+            // anyone to send to). Group the peer connections by their ship's side in
+            // one pass over a stable snapshot.
+            var connsBySide = GatherSideConnections(audienceMission);
+            if (connsBySide.Count == 0) continue;
 
-            if (ConsoleLog.Verbose) ConsoleLog.Write($"[probes] side {sideId} sees {visible.Length} probe(s) " +
-                              $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
+            // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
+            // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks,
+            // forced immediately on a peer newly joining the side. Probes broadcast is
+            // the last of the three throttled per-side object syncs, so it clears the
+            // join-dirty set after consuming it (next SimPass starts clean). Quiet
+            // ticks skip the gather entirely.
+            bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+            if (!cadenceDue && _objectSyncDirtySides.Count == 0) continue;   // P324 (M4): nothing due this tick
+
+            // All runtime probes in the mission, once — read off the live sweep's
+            // subject collection (Sector.Models, where the Probe case lives), never
+            // re-derived.
+            var allProbes = new[] { audienceMission }
+                .SelectMany(m => m.Sectors)
+                .SelectMany(s => s.Models)
+                .OfType<Probe>()
+                .ToArray();
+
+            foreach (var (sideId, conns) in connsBySide)
+            {
+                if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                    continue;                              // P324 (M4): not this side's cadence tick
+
+                // Only probes the side currently sees (P132's live SeenBySide,
+                // already scoring probes as targets — they are Models with a SideId).
+                var visible = allProbes.Where(p => p.SeenBySide(sideId)).ToArray();
+                if (visible.Length == 0) continue;              // native: if (nProbes != 0)
+                var msg = ProbesUpdate.FromProbes(visible);
+                var packet = PackBroadcast(Message(msg));
+                foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceProbes);
+
+                if (ConsoleLog.Verbose) ConsoleLog.Write($"[probes] side {sideId} sees {visible.Length} probe(s) " +
+                                  $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");   // NT-2: gated, was plain Console.WriteLine
+            }
+
         }
     }
 
@@ -3675,49 +3706,54 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastSectorThreats()
     {
-        // Audience = the sides with seated peers (same as the per-side object
-        // syncs). Group connections by their ship's side in one pass over a
-        // stable snapshot.
-        var connsBySide = GatherSideConnections();
-        if (connsBySide.Count == 0) return;
-
-        // Drop per-side state for sides that no longer have a seated peer, so a
-        // re-populated side re-learns the current threats from a clean slate
-        // (otherwise a threat that predates the reconnect would never be reported).
-        foreach (var sid in _lastSectorAssetMaskBySide.Keys.Where(s => !connsBySide.ContainsKey(s)).ToList())
-            _lastSectorAssetMaskBySide.Remove(sid);
-
-        foreach (var (sideId, conns) in connsBySide)
+        foreach (var audienceMission in _missions)
         {
-            if (!_lastSectorAssetMaskBySide.TryGetValue(sideId, out var perSector))
-                _lastSectorAssetMaskBySide[sideId] = perSector = new Dictionary<short, short>();
 
-            foreach (var m in _missions)
-                foreach (var sector in m.Sectors)
-                {
-                    short am = ComputeSectorAssetMask(sector, sideId);
-                    short last = perSector.TryGetValue(sector.Id, out var l) ? l : (short)0;
-                    if (last == am) continue;          // nothing changed this tick
+            // Audience = the sides with seated peers (same as the per-side object
+            // syncs). Group connections by their ship's side in one pass over a
+            // stable snapshot.
+            var connsBySide = GatherSideConnections(audienceMission);
+            if (connsBySide.Count == 0) continue;
 
-                    bool hasF = (am & ClusterWarnings.AmStation) != 0;
-                    bool hasE = (am & ClusterWarnings.AmEnemyStation) != 0;
-                    bool lastF = (last & ClusterWarnings.AmStation) != 0;
-                    bool lastE = (last & ClusterWarnings.AmEnemyStation) != 0;
-                    bool secured = (hasF && !hasE) && !(lastF && !lastE);   // gained a friendly station, none enemy
-                    bool lost = !hasF && lastF;                             // lost its last friendly station
+            // Drop per-side state for sides that no longer have a seated peer, so a
+            // re-populated side re-learns the current threats from a clean slate
+            // (otherwise a threat that predates the reconnect would never be reported).
+            foreach (var sid in _lastSectorAssetMaskBySide.Keys.Where(s => s.Cookie == audienceMission.Cookie && !connsBySide.ContainsKey(s.Side)).ToList())
+                _lastSectorAssetMaskBySide.Remove(sid);
 
-                    var msg = ClusterWarningUpdate.From(
-                        sector.Id,
-                        ClusterWarnings.GetWarning(am, bInvulnerableStations: false),
-                        secured, lost);
-                    var packet = PackBroadcast(Message(msg));
-                    foreach (var t in conns) SendPeer(t, packet);
+            foreach (var (sideId, conns) in connsBySide)
+            {
+                if (!_lastSectorAssetMaskBySide.TryGetValue((audienceMission.Cookie, sideId), out var perSector))
+                    _lastSectorAssetMaskBySide[(audienceMission.Cookie, sideId)] = perSector = new Dictionary<short, short>();
 
-                    ConsoleLog.Write($"[clusterWarn] side {sideId} '{sector.Name}' -> {ClusterWarnings.GetWarningText(msg.Warning)}" +
-                                     (secured ? " (SECURED)" : "") + (lost ? " (LOST)" : ""));
+                foreach (var m in new[] { audienceMission })
+                    foreach (var sector in m.Sectors)
+                    {
+                        short am = ComputeSectorAssetMask(sector, sideId);
+                        short last = perSector.TryGetValue(sector.Id, out var l) ? l : (short)0;
+                        if (last == am) continue;          // nothing changed this tick
 
-                    perSector[sector.Id] = am;
-                }
+                        bool hasF = (am & ClusterWarnings.AmStation) != 0;
+                        bool hasE = (am & ClusterWarnings.AmEnemyStation) != 0;
+                        bool lastF = (last & ClusterWarnings.AmStation) != 0;
+                        bool lastE = (last & ClusterWarnings.AmEnemyStation) != 0;
+                        bool secured = (hasF && !hasE) && !(lastF && !lastE);   // gained a friendly station, none enemy
+                        bool lost = !hasF && lastF;                             // lost its last friendly station
+
+                        var msg = ClusterWarningUpdate.From(
+                            sector.Id,
+                            ClusterWarnings.GetWarning(am, bInvulnerableStations: false),
+                            secured, lost);
+                        var packet = PackBroadcast(Message(msg));
+                        foreach (var t in conns) SendPeer(t, packet);
+
+                        ConsoleLog.Write($"[clusterWarn] side {sideId} '{sector.Name}' -> {ClusterWarnings.GetWarningText(msg.Warning)}" +
+                                         (secured ? " (SECURED)" : "") + (lost ? " (LOST)" : ""));
+
+                        perSector[sector.Id] = am;
+                    }
+            }
+
         }
     }
 

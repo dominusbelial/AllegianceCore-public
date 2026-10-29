@@ -670,7 +670,7 @@ public sealed class P655GameStateIntegrityTests
         var field = typeof(Srv).GetField("_pendingSideSelect", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var pending = (System.Collections.IDictionary)field.GetValue(w.Server)!;
         var pendingType = field.FieldType.GenericTypeArguments[1];
-        pending[peer] = Activator.CreateInstance(pendingType, (short)200, new LogonRequest { CharacterName = "P693-pending" }, 10d, 20L)!;
+        pending[peer] = Activator.CreateInstance(pendingType, (short)200, new LogonRequest { CharacterName = "P693-pending" }, 10d, 20L, w.Mission)!;
         var saved = Console.Out;
         using var log = new StringWriter();
         bool verbose = ConsoleLog.Verbose;

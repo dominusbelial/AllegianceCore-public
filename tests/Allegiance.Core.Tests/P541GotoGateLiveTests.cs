@@ -43,7 +43,7 @@ public sealed class P541GotoGateLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 546u, DwCookie = 0x546u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 546u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 97900000000000546ul, DrmHash = "p541gate",
     };

@@ -31,7 +31,7 @@ public sealed class P762TargetFractionLiveTests
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name, ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 762u, DwCookie = 0x762u, CrcFileList = -1,
+        FedsrvVer = LogonRequest.MsgVer, Time = 762u, DwCookie = uint.MaxValue, CrcFileList = -1,
         SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = 76200000000000000ul, DrmHash = "p762target",
     };
     private static int PumpUntil(Srv server, Func<bool> done, int max)

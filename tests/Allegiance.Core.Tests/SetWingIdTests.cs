@@ -49,7 +49,7 @@ public class SetWingIdTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 424u, DwCookie = 0x2Au,
+        FedsrvVer = LogonRequest.MsgVer, Time = 424u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 34900000000000000ul, DrmHash = "setwingidtest",
     };

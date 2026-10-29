@@ -50,7 +50,8 @@ public sealed record DiscoveredServer(
     string Version,
     string DisplayName,
     bool Verified = false,
-    string? IdentityServerId = null)
+    string? IdentityServerId = null,
+    uint MissionCookie = uint.MaxValue)
 {
     public string SourceLabel => Source switch
     {
@@ -65,9 +66,9 @@ public sealed record DiscoveredServer(
     };
 
     /// <summary>Identity used for de-duplication across sources: the connect
-    /// target. Two rows from different sources with the same host:port collapse
-    /// to one (the stronger/most recent source wins the display).</summary>
-    public string HostPort => $"{Address}:{Port}";
+    /// target plus mission cookie. NA/direct discovery still deduplicates by
+    /// host:port; advertised games sharing one host remain separate rows.</summary>
+    public string HostPort => MissionCookie == uint.MaxValue ? $"{Address}:{Port}" : $"{Address}:{Port}/{MissionCookie}";
 
     /// <summary>Player-count text, e.g. "3/100" or "3" when max is unknown.</summary>
     public string PlayersText => MaxPlayers > 0

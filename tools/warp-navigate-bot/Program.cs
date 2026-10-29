@@ -42,7 +42,7 @@ session.SendLogonRequest(new LogonRequest
 {
     CharacterName = playerName, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
     CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-    FedsrvVer = LogonRequest.MsgVer, Time = 910u, DwCookie = 0xC0FFEEu,
+    FedsrvVer = LogonRequest.MsgVer, Time = 910u, DwCookie = uint.MaxValue,
     CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
     SteamID = 75000000000000000ul, DrmHash = "warp-navigate-bot",
 });

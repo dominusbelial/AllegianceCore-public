@@ -54,7 +54,7 @@ public class AddPartTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 553u, DwCookie = 0x553u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 553u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 5590000000000000000ul, DrmHash = "addparttest",
     };

@@ -52,7 +52,7 @@ public class ServerTests
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 555u,
-        DwCookie = 0xBEEFu,
+        DwCookie = uint.MaxValue,
         CrcFileList = -1,
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,

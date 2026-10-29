@@ -74,11 +74,29 @@ public sealed partial class Server
         foreach (var mission in _missions.ToArray())
         {
             if (!mission.PlayerCreated) continue;              // configured/admin worlds persist (FedSrv.CPP:7882-7884)
+            // Native AddPlayerToMission precedes side choice (fsmission.cpp:406-411).
+            // The port's deferred ship must still keep the chosen world alive.
+            if (_pendingSideSelect.Values.Any(p => ReferenceEquals(p.Mission, mission))) continue;
             if (HasMissionPlayers(mission)) continue;          // GetCountOfPlayers(NULL, true) == 0 (FedSrv.CPP:7885)
             if (now - mission.CreatedAt <= 10.0) continue;     // > 100000000 FILETIME ticks = 10 s (FedSrv.CPP:7902-7903)
             int index = _missions.IndexOf(mission);
-            Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {index}), killing it (FedSrv.CPP:7906)");
+            Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {mission.Cookie}), killing it (FedSrv.CPP:7906)");
             _missions.Remove(mission);
+            _clusterInfoBytes.Remove(mission.Cookie);
+            _exportSweepCache.ForgetScope(mission.Cookie);
+            _discoverySweepCache.ForgetScope(mission.Cookie);
+            _statusSweepCache.ForgetScope(mission.Cookie);
+            foreach (var key in _broadcastMateBuffers.Keys.Where(key => key.Cookie == mission.Cookie).ToArray())
+                _broadcastMateBuffers.Remove(key);
+            foreach (var key in _lastSectorAssetMaskBySide.Keys.Where(key => key.Cookie == mission.Cookie).ToArray())
+                _lastSectorAssetMaskBySide.Remove(key);
+            foreach (var (peer, pending) in _pendingSideSelect.ToArray())
+                if (ReferenceEquals(pending.Mission, mission))
+                {
+                    JoinMission(peer, mission.Cookie, pending.ShipId, out _);
+                    _pendingSideSelect.Remove(peer);
+                }
+            MarkLobbyDirty("player-game-reaped");
             // P871b — `_config.Games` and `_missions` are index-aligned (the
             // game-over rotation rebuilds from `_config.Games[idx]` and
             // `Mission.MissionId` is that index + 1), so a reaped mission's

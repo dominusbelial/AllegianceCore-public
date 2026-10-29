@@ -15,7 +15,7 @@ public sealed class LobbyGameClient
     public sealed record CatalogDto(IReadOnlyList<ServerChoiceDto>? Servers,
         IReadOnlyList<string>? Cores, IReadOnlyList<string>? Maps);
     public sealed record ServerChoiceDto(string Id, string Name, string Address, int Port,
-        string Core, string MissionName);
+        string Core, string MissionName, int CurrentGames = 0, int MaxGames = 20);
     // P871b — the mission parameters travel as native's packed `MissionParams`
     // struct, base64'd (`MissionParamsMsg.Encode()`), exactly as the games
     // endpoint documents. Ordinary JSON (properties only) carries the rest, so
@@ -23,7 +23,7 @@ public sealed class LobbyGameClient
     public sealed record CreateBody(string ServerId, string Core, string Map, string GameName,
         string ParamsWire);
     public sealed record EditBody(string ParamsWire);
-    public sealed record GameDto(string Id, string GameName, string State, string? ParamsWire);
+    public sealed record GameDto(string Id, string GameName, string State, string? ParamsWire, uint? Cookie = null);
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -67,7 +67,7 @@ public sealed class LobbyGameClient
             if (dto is null) return null;
             return new CreateGameWizard.Catalog(
                 (dto.Servers ?? []).Select(s => new CreateGameWizard.ServerChoice(
-                    s.Id, s.Name, s.Address, s.Port, s.Core, s.MissionName)).ToArray(),
+                    s.Id, s.Name, s.Address, s.Port, s.Core, s.MissionName, s.CurrentGames, s.MaxGames)).ToArray(),
                 dto.Cores ?? [],
                 dto.Maps ?? []);
         }
@@ -112,6 +112,30 @@ public sealed class LobbyGameClient
         {
             return (null, "Lobby unreachable.");
         }
+    }
+
+    /// <summary>Wait for the server's CREATE_MISSION_ACK equivalent, including its cookie.
+    /// The initial POST only queues a request; it cannot identify a joinable world.</summary>
+    public async Task<uint?> WaitForMissionAsync(string id, CancellationToken ct = default)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(60));
+        try
+        {
+            while (true)
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(_base, "api/games"));
+                Authorize(request);
+                using var response = await _http.SendAsync(request, timeout.Token).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                var games = await response.Content.ReadFromJsonAsync<GameDto[]>(Json, timeout.Token).ConfigureAwait(false);
+                var game = games?.FirstOrDefault(g => g.Id == id);
+                if (game?.State == "Ready" && game.Cookie is { } cookie) return cookie;
+                if (game?.State is "Failed" or "Cancelled") return null;
+                await Task.Delay(250, timeout.Token).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or OperationCanceledException or JsonException) { return null; }
     }
 
     /// <summary>Owner-only parameter edit of a created game (native kept editing

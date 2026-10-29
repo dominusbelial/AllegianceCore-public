@@ -30,7 +30,7 @@ public static class IntroFindServerList
         => maxPlayers == 0 || (maxPlayers > MinListedMaxPlayers - 1 && maxPlayers < MaxListedMaxPlayers + 1);
 
     /// <summary>Apply the whole FindGames post-processing: de-duplicate by
-    /// host:port, drop sessions failing the max-player rule, and sort by game
+    /// host:port and mission cookie, drop sessions failing the max-player rule, and sort by game
     /// name (case-insensitive, ties by host:port — the native GameNameCompare
     /// over the SortedList).</summary>
     public static List<Discovery.DiscoveredServer> FilterAndSort(IEnumerable<Discovery.DiscoveredServer> servers)
@@ -40,13 +40,13 @@ public static class IntroFindServerList
         foreach (var s in servers)
         {
             if (!PassesMaxPlayerRule(s.MaxPlayers)) continue;
-            if (!seen.Add($"{s.Address}:{s.Port}")) continue;   // DPlay8 EnumHosts duplicates
+            if (!seen.Add(s.HostPort)) continue;   // DPlay8 EnumHosts duplicates
             list.Add(s);
         }
         list.Sort((a, b) =>
         {
             int c = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-            return c != 0 ? c : string.Compare($"{a.Address}:{a.Port}", $"{b.Address}:{b.Port}", StringComparison.OrdinalIgnoreCase);
+            return c != 0 ? c : string.Compare(a.HostPort, b.HostPort, StringComparison.OrdinalIgnoreCase);
         });
         return list;
     }

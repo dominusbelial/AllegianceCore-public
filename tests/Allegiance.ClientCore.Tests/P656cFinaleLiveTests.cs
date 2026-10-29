@@ -56,7 +56,7 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
             {
                 CharacterName = "p656c", ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL",
                 MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer, Time = 656,
-                DwCookie = 656, CrcFileList = -1, SteamAuthTicket = new byte[16],
+                DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
                 SteamAuthTicketLength = 0, SteamID = 65600000000000000ul, DrmHash = "p656c",
             });
             Pump(() => Client.World.MyShipId is { } id && Client.World.MySideId == side

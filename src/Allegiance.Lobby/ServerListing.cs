@@ -40,7 +40,12 @@ internal sealed record ServerListing(
     string? IdentityServerId = null,
     /// <summary>P810 — the minimum client version this server accepts, when it
     /// declares one. Null = no requirement advertised.</summary>
-    string? MinClientVersion = null);
+    string? MinClientVersion = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<MissionListingDto>? Missions = null,
+    // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
+    // the lobby constructor's default (lobby/server.cpp:463).
+    int CurrentGames = 0, int MaxGames = 20);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -76,7 +81,12 @@ public sealed record ServerListingDto(
     /// <summary>P810 — the minimum client version this server requires, when it
     /// declares one (see the internal <see cref="ServerListing.MinClientVersion"/>).
     /// Null = no requirement advertised.</summary>
-    string? MinClientVersion = null);
+    string? MinClientVersion = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<MissionListingDto>? Missions = null,
+    // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
+    // the lobby constructor's default (lobby/server.cpp:463).
+    int CurrentGames = 0, int MaxGames = 20);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -201,6 +211,10 @@ public sealed class RegisterRequest
     /// <see cref="GameParamsDto"/>). Optional: a host that omits it registers
     /// exactly as before, and the client treats the metadata as unknown.</summary>
     public GameParamsRequest? Game { get; set; }
+    public List<MissionListingRequest>? Missions { get; set; }
+    // Native logon MaxGames is stored by lobby/server.cpp:114.
+    public int? CurrentGames { get; set; }
+    public int? MaxGames { get; set; }
 
     /// <summary>P810 — the minimum client version this server requires (see
     /// <see cref="ServerListingDto.MinClientVersion"/>). Optional; omitted =
@@ -268,4 +282,13 @@ public sealed class GameParamsRequest
 /// The result of a successful register/heartbeat call — the listing id and the
 /// ownership token the caller must present to subsequently update or delete it.
 /// </summary>
+public sealed record MissionListingDto(uint Cookie, string Name, int PlayerCount, GameParamsDto? Game);
+public sealed class MissionListingRequest
+{
+    public uint Cookie { get; set; }
+    public string? Name { get; set; }
+    public int PlayerCount { get; set; }
+    public GameParamsRequest? Game { get; set; }
+}
+
 public sealed record RegisterResponse(string Id, string Token);

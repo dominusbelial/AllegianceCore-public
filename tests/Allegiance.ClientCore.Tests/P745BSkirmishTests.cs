@@ -35,7 +35,7 @@ public sealed class P745BSkirmishTests
         {
             CharacterName = "P745B-drop-in", FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            Time = 1, DwCookie = 745, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 745505,
+            Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 745505,
         });
         pilot.WaitForAck(10000); pilot.SendPositionReq(0);
         await Until(() => { lock (pilot.Gate) return pilot.World.MyShipId is not null; });

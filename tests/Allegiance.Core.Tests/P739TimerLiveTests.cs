@@ -26,7 +26,7 @@ public sealed class P739TimerLiveTests
         bot.SendLogonRequest(new()
         {
             CharacterName = name, ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = 1, CrcFileList = -1,
+            FedsrvVer = LogonRequest.MsgVer, Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1,
             SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0, SteamID = 72000000000000000ul, DrmHash = "p739"
         });
         Until(server, () => bot.ShipAssignment is not null);

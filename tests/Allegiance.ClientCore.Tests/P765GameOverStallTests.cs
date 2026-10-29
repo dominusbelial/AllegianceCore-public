@@ -59,7 +59,7 @@ public sealed class P765GameOverStallTests(ITestOutputHelper output)
         {
             CharacterName = name, FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            Time = 1, DwCookie = 465, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = id,
+            Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = id,
         });
         Pump(server, () => Read(peer, () => peer.World.MyShipId is not null && peer.World.MySideId is not null));
         return peer;
