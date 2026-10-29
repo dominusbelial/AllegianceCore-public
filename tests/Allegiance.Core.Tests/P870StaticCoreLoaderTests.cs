@@ -96,8 +96,13 @@ public sealed class P870StaticCoreLoaderTests
         Assert.True(core!.HullTypes.Count > 100);
         Assert.True(core.Civilizations.Count >= 1);
 
-        // The extension is optional and the cache shares one immutable instance.
-        Assert.Same(core, world.MissionCoreResolver("PCore001.igc"));
+        // The extension is optional. Instance sharing holds only while a consumer leases
+        // the core (P869b, native consumer count missionigc.cpp:3033-3053); the resolver
+        // releases its lease on return, so compare content, not identity.
+        var withExtension = world.MissionCoreResolver("PCore001.igc");
+        Assert.NotNull(withExtension);
+        Assert.Equal(core.HullTypes.Keys.Order(), withExtension!.HullTypes.Keys.Order());
+        Assert.Equal(core.Civilizations.Keys.Order(), withExtension.Civilizations.Keys.Order());
 
         // Missing file: observable false/null branch.
         Assert.Null(world.MissionCoreResolver("P870_NoSuchCore"));

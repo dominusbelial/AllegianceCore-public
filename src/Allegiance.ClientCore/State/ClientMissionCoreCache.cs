@@ -17,6 +17,7 @@ internal static class ClientMissionCoreCache
         // Client asset edits must reload even while another world owns the old
         // revision. Keep server named-core sharing separate from this file key.
         var file = new FileInfo(path);
+        if (!file.Exists) return null;   // missing core: the resolver's null branch, not a throw
         string key = $"client:{path}:{file.LastWriteTimeUtc.Ticks}:{file.Length}";
         return StaticCoreCache.Shared.Load(key, path);
     }
