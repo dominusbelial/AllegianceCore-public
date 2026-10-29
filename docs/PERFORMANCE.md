@@ -80,7 +80,7 @@ third of the tick budget at the median.
 | Server GC (concurrent) | on | Built into the server project |
 | `liveSettings.timeDilation` | `"auto"` | Under overload the game slows slightly instead of stuttering |
 
-Not every row is a code default yet: see the README's "Recommended settings" for what a server needs to set today.
+Since P887 every row is a code default: a fresh server runs the baseline without any settings. The README's "Recommended settings" lists the only extra the 200v200 rig needs (the per-IP connection limit).
 
 ## Options that stay off
 

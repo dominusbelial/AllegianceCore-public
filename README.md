@@ -228,7 +228,7 @@ future change is A/B'd on the 200v200 rig **on top of this baseline**.
 | Server GC (`ServerGarbageCollection`) | Server-grade garbage collector for the dedicated server. | baseline b55: worst GC pause 36 ms at 394 connections |
 
 P863 (b50 vs b49) — median tick 35.8 → 16.3 ms, TiDi windows 5.6 % → 0.6 %. Current
-baseline (b55, 200v200): median tick 16.2 ms, TiDi window p95 ≈ 20 ms, 0 overrun
+baseline (b55, 200v200): median tick 16.2 ms, window p95 ≈ 20 ms, 0 overrun
 windows, worst GC pause 36 ms at 394 connections.
 
 **Options that stay off, and why:**
