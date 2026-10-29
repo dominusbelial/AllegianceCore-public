@@ -118,7 +118,10 @@ public sealed class P767WingmanAmmoTests
         // Native order: SetCommand FIRST, then SetGettingAmmo(true) then the
         // team chat (clintlib.cpp:3711-3716).
         Assert.Equal(1, AmmoChats(site));
-        Assert.Contains("1409", site.Calls.Single(c => c.StartsWith("DroneChatEvent(") && c.Contains("resupplies.")));
+        // P871b — native salNoAmmoSound is 1396 (Igc/sounds.h:489 with the dead
+        // `/* NYI no turrets */` block removed); P767/P871's 1409 was the +13
+        // generator shift, fixed in the generated catalog.
+        Assert.Contains("1396", site.Calls.Single(c => c.StartsWith("DroneChatEvent(") && c.Contains("resupplies.")));
 
         // Exactly once per depletion: a later debounced-past attempt (the P361
         // rate limit) neither re-chats nor re-plans while the latch holds.

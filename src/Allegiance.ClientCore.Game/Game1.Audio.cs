@@ -57,10 +57,15 @@ public sealed partial class Game1
     private void UpdateProjectileSounds()
     {
         var world = _session.World;
-        if (_sound is not { } snd) return;
+        // P871 — the local-fire detection also drives force feedback, so it runs
+        // even when the audio device is inert (native's PlayFFEffect is
+        // independent of the sound mixer).
+        var snd = _sound;
 
         long now = ClientNowMilliseconds;
         List<(ProjectileEntity Entity, float Distance)> inRange = new();
+        short? myShipId = null;
+        short? gunnerShipId = null;
 
         lock (_session.Gate)
         {
@@ -70,7 +75,14 @@ public sealed partial class Game1
             // shots never counted as local fire and the gunner heard no gun sound.
             ShipEntity? listener = null;
             if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+            {
                 listener = own.ParentId >= 0 && world.Ships.TryGetValue(own.ParentId, out var carrier) ? carrier : own;
+                // P871 — native weapon fire credits the model it passes to
+                // PlayFFEffect: the gunner's own ship when one mans the turret,
+                // else the firing ship (weaponIGC.cpp:174).
+                myShipId = me;
+                gunnerShipId = own.ParentId >= 0 ? me : null;
+            }
             if (listener?.Latest is { } meUp)
             {
                 var anchor = meUp.Position;
@@ -91,17 +103,21 @@ public sealed partial class Game1
                 case Audio.ProjectileSoundAction.Start:
                     if (cmd.IsLocalFire)
                     {
-                        snd.PlayWeaponFire();
+                        snd?.PlayWeaponFire();
+                        // P871 / SIM-0179 — effectFire for our own shot
+                        // (weaponIGC.cpp:174 through the PlayFFEffect model gate).
+                        if (myShipId is { } me2)
+                            ForceFeedbackWeaponFire(me2, gunnerShipId, myShipId);
                         Console.WriteLine("[monogame] audio: weapon fire");
                     }
-                    snd.StartProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    snd?.StartProjectileAmbient(cmd.Projectile, cmd.Volume);
                     Console.WriteLine("[monogame] audio: projectile ambient start");
                     break;
                 case Audio.ProjectileSoundAction.Update:
-                    snd.UpdateProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    snd?.UpdateProjectileAmbient(cmd.Projectile, cmd.Volume);
                     break;
                 case Audio.ProjectileSoundAction.Stop:
-                    snd.StopProjectileAmbient(cmd.Projectile);
+                    snd?.StopProjectileAmbient(cmd.Projectile);
                     Console.WriteLine("[monogame] audio: projectile ambient stop");
                     break;
             }
@@ -800,6 +816,8 @@ public sealed partial class Game1
         short? myShipId;
         short? mySector;
         SimVec? anchor;
+        short? ownSourceShipId = null;
+        Allegiance.Core.Sim.Orientation? ownOrientation = null;
         lock (_session.Gate)
         {
             events = world.TakeHitSoundEvents();
@@ -810,11 +828,25 @@ public sealed partial class Game1
             {
                 mySector = own.SectorId;
                 anchor = up.Position;
+                // P871 — native's credited-damage feedback keys on
+                // GetShip()->GetSourceShip() (WinTrek/trekigc.cpp:4295).
+                ownSourceShipId = own.ParentId >= 0 ? own.ParentId : me;
+                if (_poses.TryGetValue(me, out var pose)) ownOrientation = pose.Orientation;
             }
         }
         if (events.Count == 0) return;
         if (events.Any(e => e.SourceId == myShipId && e.TargetId != myShipId && e.ClusterId == mySector))
             _hudHitUntil = _nowSeconds + .16;
+        // P871 / SIM-0179 — positive credited damage to the local source ship
+        // rumbles with the native impact direction (WinTrek/trekigc.cpp:4296-4302).
+        if (ownSourceShipId is { } source && ownOrientation is { } orientation)
+            foreach (var hit in events)
+                if (hit.TargetId == source && hit.SourceId >= 0)
+                {
+                    int direction = Audio.ForceFeedbackRules.ImpactDirectionFromNormal(orientation, hit.Normal);
+                    ForceFeedbackCreditedDamage(hit.SourceId, hit.TargetId, source, 1f, direction);
+                    Console.WriteLine($"[monogame] audio: force feedback bounce (credited damage from {hit.SourceId}, direction {direction})");
+                }
         if (_sound is not { } snd) return;
 
         // Only hits in the local ship's own sector are audible (the same cluster
@@ -863,7 +895,7 @@ public sealed partial class Game1
     private void UpdateCollisionSounds()
     {
         var world = _session.World;
-        if (_sound is not { } snd) return;
+        var snd = _sound;
 
         List<CollisionEntity> events;
         short? myShipId;
@@ -892,13 +924,16 @@ public sealed partial class Game1
             if (jiggle > 0f)
             {
                 _flightJiggle.SetJiggle(jiggle);
+                // P871 / SIM-0179 — effectBounce for an own-ship collision
+                // (Igc/shipIGC.cpp:835,1005,1190-1194).
+                ForceFeedbackCollision(c.Party1Id == myShipId ? c.Party1Id : c.Party2Id, myShipId);
                 Console.WriteLine($"[monogame] audio: collision jiggle {jiggle:F3} (own ship {myShipId})");
             }
         }
 
         // Positional collision sound, once per party in the local sector.
         // No local anchor -> no listener -> nothing to place.
-        if (anchor is { } a)
+        if (snd is not null && anchor is { } a)
         {
             foreach (var src in Audio.CollisionFeedback.SelectSoundSources(events, mySector))
             {

@@ -1,5 +1,7 @@
 using Allegiance.Lobby;
 using Allegiance.Lobby.Career;
+using Allegiance.Lobby.Chat;
+using Allegiance.Lobby.Games;
 using Allegiance.Lobby.Events;
 using Allegiance.Lobby.Identity;
 using Allegiance.Lobby.Squad;
@@ -48,6 +50,8 @@ builder.Services.AddSingleton<IdentityStore>();
 builder.Services.AddSingleton<CareerStore>();
 builder.Services.AddSingleton<SquadStore>();
 builder.Services.AddSingleton<Allegiance.Lobby.Events.EventStore>();
+builder.Services.AddSingleton<DirectoryChat>();
+builder.Services.AddSingleton<GameCreationStore>();
 builder.Services.AddSingleton<IdentitySigningKey>();
 builder.Services.AddSingleton<PasskeyService>();
 builder.Services.AddIdentityProviders(identity);
@@ -55,6 +59,12 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.RespectNullableAnnotations = true;
     o.SerializerOptions.RespectRequiredConstructorParameters = true;
+    // P871b — the mission parameters no longer ride JSON at all: the games
+    // endpoints carry native's packed `MissionParams` struct as a base64 blob
+    // (`paramsWire`, GameEndpoints), so the lobby's serializer stays on the
+    // default contract. P871 set `IncludeFields = true` here, which added every
+    // public FIELD of every response type to EVERY endpoint's JSON (identity,
+    // career, squad, events) — see P871b's JSON snapshot tests.
 });
 builder.Services.AddLobbyRateLimiting();
 builder.Services.AddHostedService(sp => new ExpirySweepService(
@@ -90,6 +100,8 @@ app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
 app.MapCareer();
 app.MapSquad();
 app.MapEvents();
+app.MapChat();
+app.MapGames();
 app.MapZoneWeb();
 
 app.Run();

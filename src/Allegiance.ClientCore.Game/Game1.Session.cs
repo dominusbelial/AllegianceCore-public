@@ -8,6 +8,7 @@ using Allegiance.Core;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.MonoGame.Chat;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
@@ -286,6 +287,9 @@ public sealed partial class Game1
         /// are not offered and the existing server-browser behaves exactly as
         /// before (the desktop head is unchanged).</summary>
         public IConnectStore? ConnectStore;
+        /// <summary>P871b — the lobby URL came from <c>--lobby</c> on the command
+        /// line, so the remembered player.json value must not override it.</summary>
+        public bool LobbyUrlExplicit;
 
         /// <summary>P500 — the soft-keyboard text-entry seam for the connect
         /// screen. Null defaults to MonoGame's platform <see cref="KeyboardInput"/>.</summary>
@@ -1260,6 +1264,13 @@ public sealed partial class Game1
                 return;
             }
         }
+        // P871 — the HTTP lobby's directory channel (native's lobby-session chat
+        // relay); "/lobby <text>" posts there instead of the game channel.
+        if (text.StartsWith("/lobby ", StringComparison.OrdinalIgnoreCase))
+        {
+            SendDirectoryChat(text[7..].Trim());
+            return;
+        }
         Console.WriteLine($"[monogame] chat ({_chatTarget}) >> {text}");
         // P456: send to the compose's current target, not a hardcoded Everyone —
         // the recipient is client state (_chatTarget) so Tab cycling works and
@@ -1393,6 +1404,8 @@ public sealed partial class Game1
                 _pilotBuf.Append(c);
             else if (_introView == IntroView.DirectConnect && _introEditingDirect && _directBuf.Length < 128)
                 _directBuf.Append(c);
+            else if (_introView == IntroView.CreateGame)
+                _createGame.TypeName(c.ToString());   // P871 — game-name edit box
             return;
         }
 
@@ -1500,6 +1513,27 @@ public sealed partial class Game1
                     color = new Rendering.HudColor(r * scale, g * scale, b * scale, 1f);
                 }
                 colors.Add(color);
+            }
+            // P871 — the directory-wide lobby channel shares this log, so it
+            // renders identically in Classic and Modern (both draw BuildChatLines).
+            // (A headless test instance has no directory-chat log.)
+            // P871b — a directory line is never cut by MaxVisible: P871 stopped
+            // appending once the GAME lines filled the window (`break`), so a
+            // directory line that arrived after a full chat log was silently
+            // dropped from the pane. The window is now applied to the MERGED list
+            // and trims the OLDEST overflow, so both sources' newest lines show.
+            foreach (var line in _directoryChat?.Lines ?? [])
+            {
+                lines.Add(DirectoryChatLog.Format(line));
+                colors.Add(null);
+                leaders.Add(false);
+            }
+            int overflow = lines.Count - ChatRenderer.MaxVisible;
+            if (overflow > 0)
+            {
+                lines.RemoveRange(0, overflow);
+                colors.RemoveRange(0, overflow);
+                leaders.RemoveRange(0, overflow);
             }
             return (lines, colors, leaders);
         }
@@ -1754,7 +1788,9 @@ public sealed partial class Game1
         FedsrvVer = LogonRequest.MsgVer,
         Time = 1234u,
         DwCookie = 0x33Fu,
-        CrcFileList = -1,
+        // P871 — report the installed file set (native FileCRC("FileList.txt"),
+        // clintlib.cpp:1418); 0 when nothing is installed (checks disabled).
+        CrcFileList = ClientFileList.Compute(),
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,
         SteamID = 70000000000000000ul,

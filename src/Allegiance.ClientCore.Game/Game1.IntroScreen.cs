@@ -27,7 +27,7 @@ public sealed partial class Game1
     /// P785 adds the training slideshow screens (native ScreenIDTrainSlideshow /
     /// ScreenIDPostTrainSlideshow, Treki.h:31-32 — the port uses one view whose
     /// dismiss behaviour follows the slideshow kind).</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career, CreateGame }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -147,7 +147,10 @@ public sealed partial class Game1
             _pilotBuf.Append(prefs.Pilot);
             _playerName = prefs.Pilot;
         }
-        if (prefs.Lobby.Length > 0) _lobbyUrl = prefs.Lobby;
+        // P871b — an explicit --lobby wins over the remembered value (P871 let the
+        // preference overwrite it, so the wizard/directory chat talked to the
+        // default 127.0.0.1:5000 no matter what the command line said).
+        if (prefs.Lobby.Length > 0 && !_lobbyUrlExplicit) _lobbyUrl = prefs.Lobby;
         _directBuf.Clear();
         if (!string.IsNullOrWhiteSpace(prefs.Server))
         {
@@ -182,6 +185,17 @@ public sealed partial class Game1
             Console.WriteLine($"[training] proof start of mission {startProofId} (ALLEGIANCE_TRAINING_START)");
             BeginTrainingMission(startProofId);
             return;
+        }
+        // P871b  -  one-shot proof hook: open the New Game wizard straight from the
+        // intro (inert unless ALLEGIANCE_PROOF_CREATE_GAME is set), so real-window
+        // evidence can photograph the wizard against the live lobby catalog.
+        // ALLEGIANCE_AUTOSHOT (below) then takes the frame.
+        if (!_createGameProofSeeded
+            && Environment.GetEnvironmentVariable("ALLEGIANCE_PROOF_CREATE_GAME") is { Length: > 0 })
+        {
+            _createGameProofSeeded = true;
+            Console.WriteLine("[create] proof: opening the New Game wizard (ALLEGIANCE_PROOF_CREATE_GAME)");
+            EnterCreateGame();
         }
         // P731  -  one-shot proof: schedule the real-backbuffer screenshot after
         // the delay, then exit once the Draw-end flush has written it.
@@ -251,6 +265,13 @@ public sealed partial class Game1
                 }
                 if (enter && !_iEnter) JoinIntroFound();
                 if (esc && !_iEsc) LeaveIntroFindServer();
+                // P871 — native's server list also opened the Create Game wizard
+                // (NewGameScreen); N is the port's new-game key.
+                if (ks.IsKeyDown(XnaKeys.N) && !_iN) EnterCreateGame();
+                break;
+
+            case IntroView.CreateGame:
+                UpdateCreateGame(ks, up, down, enter, esc);
                 break;
 
             case IntroView.DirectConnect:
@@ -302,10 +323,13 @@ public sealed partial class Game1
 
         _iUp = up; _iDown = down; _iEnter = enter; _iEsc = esc; _iTab = tab;
         _iBack = ks.IsKeyDown(XnaKeys.Back); _iPgUp = ks.IsKeyDown(XnaKeys.PageUp); _iPgDn = ks.IsKeyDown(XnaKeys.PageDown);
+        _iN = ks.IsKeyDown(XnaKeys.N); _iLeft = ks.IsKeyDown(XnaKeys.Left); _iRight = ks.IsKeyDown(XnaKeys.Right);
     }
 
     // P757 — extra intro edge latches (manual Back/scroll).
     private bool _iBack, _iPgUp, _iPgDn;
+    // P871 — the create-game wizard's edge latches (N opens it; LEFT/RIGHT cycle).
+    private bool _iN, _iLeft, _iRight;
     // P806 — the native options MENU TREE (root + Sound/Game/Chat submenus,
     // WinTrek.cpp:4429-4442, 4502-4590) and the intro credits' scroll position
     // (native creditsTime, introscreen.cpp:643-653).
@@ -643,6 +667,7 @@ public sealed partial class Game1
                 case IntroView.Credits: DrawIntroCredits(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Help: DrawIntroHelp(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Career: DrawCareerScreen(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.CreateGame: DrawCreateGame(w, h, titleCol, dimCol, textCol); break;
             }
         }
         finally

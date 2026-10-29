@@ -293,6 +293,12 @@ public sealed partial class Game1
             SampleSessionPerformancePilotLocked(_session.World);
         }
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
+        // P871b — the directory-wide lobby chat relay. Polled from HERE (the
+        // top-level frame update) so it runs in every client state: intro, splash,
+        // server browser, connecting, side select, ready check and flight. P871
+        // polled it inside UpdateFlying only, so a player sitting on any lobby
+        // screen saw no directory chat at all.
+        UpdateDirectoryChat();
         UpdateConsoleOverlay();   // HUD-10 — native overlay-mask change + pane slides
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), including the embedded single-player pause at scale=0.
@@ -1199,6 +1205,16 @@ public sealed partial class Game1
             var result = ShellCommands.Parse(line, _session.World.Ships);
             if (!result.Handled)
             {
+                // P871b — the directory channel has no ship on the roster, so a
+                // `!mute <callsign>` naming a DIRECTORY sender falls through to the
+                // directory relay's mute (the port extension's use of native's
+                // per-player mute; clintlib/clintlib.cpp:2281-2296,
+                // WinTrek.cpp:3731-3734). Native's shell resolves by player name.
+                string arg = line.TrimStart();
+                bool unmute = arg.StartsWith("!unmute ", StringComparison.OrdinalIgnoreCase);
+                if ((unmute || arg.StartsWith("!mute ", StringComparison.OrdinalIgnoreCase))
+                    && SetDirectorySenderMuted(arg[(unmute ? "!unmute ".Length : "!mute ".Length)..].Trim(), !unmute))
+                    return;
                 Console.WriteLine($"[monogame] shell (dropped, native unknown shell line) >> {line}");
                 return;
             }
@@ -2533,8 +2549,14 @@ public sealed partial class Game1
 
         // P463c — collisions (COLLISION_EVENT(216)): the positional collision
         // one-shot once per collision in the local sector, plus P449b's camera
-        // jiggle feed when the local ship is a party.
+        // jiggle feed when the local ship is a party. P871 adds the
+        // effectBounce force-feedback producer for own collisions.
         UpdateCollisionSounds();
+
+        // P871 / SIM-0179 — effect expiry, window-focus loss and device
+        // disconnect all stop the vibration (native's DirectInput effects are
+        // one-shot starts and the device is lost with the window).
+        UpdateForceFeedback();
 
         // P574 — world explosions (EXPLOSION_EVENT(207)): the native tiered
         // positional sound for every ship/station/asteroid/mine blast in the
@@ -2766,15 +2788,40 @@ public sealed partial class Game1
                         Allegiance.Core.Sim.ShipControlState.BackwardButton
                         | Allegiance.Core.Sim.ShipControlState.LeftButton
                         | Allegiance.Core.Sim.ShipControlState.RightButton)) != 0;
+                    // P871 — the generic numeric SoundID dispatch attenuates its
+                    // positional sources against the local listener.
+                    _sound?.SetListenerPosition(ownPos);
+                    // P871 / SIM-0371 — the gunner interior loop: native resolves
+                    // GetGunnerInteriorSoundID (the SOURCE hull's mounted-turret
+                    // hardpoint interiorSound) and maintains it iff the local ship
+                    // is a gunner (trekigc.cpp:1096-1112,1300-1314), independently
+                    // of the pilot loop and of the camera view.
+                    bool boarded = mine.ParentId >= 0;
+                    short? turretMount = boarded && mine.BoardTurretId >= 0 ? mine.BoardTurretId : null;
+                    bool isGunner = Audio.GunnerInteriorSound.IsGunner(boarded, turretMount);
+                    DataHullTypeIGC? sourceHull = ownHull;
+                    if (boarded && world.Ships.TryGetValue(mine.ParentId, out var sourceShip)
+                        && _hullById.TryGetValue(sourceShip.HullId, out var carrierHull))
+                        sourceHull = carrierHull;
+                    short gunnerInteriorId = Audio.GunnerInteriorSound.Resolve(boarded, turretMount, sourceHull);
+                    _sound?.SetGunnerInteriorLoop(gunnerInteriorId, isGunner);
+                    // P871b — the cockpit-mode parameters are separated exactly
+                    // as native separates them: the CAMERA view gates the interior
+                    // mix, and bIsGunner selects the pilot-vs-gunner interior bed
+                    // (trekigc.cpp:1310-1314). A turret gunner in cockpit view
+                    // therefore still gets the engine/cockpit mix; only the
+                    // pilot's interior bed is withheld.
+                    var cockpitAudio = new Audio.CockpitAudio(_cameraMode == CameraMode.Cockpit, isGunner);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
-                        cockpitMode: _cameraMode == CameraMode.Cockpit,
+                        cockpitMode: cockpitAudio.EngineAudible,
                         afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                         deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds,
                         missileLocked: world.MissileLock.IsFullLock,   // P230 — lock beep at full lock
                         capitalHull: capitalHull,
-                        sidethrustActive: sidethrustActive);
+                        sidethrustActive: sidethrustActive,
+                        pilotInterior: cockpitAudio.PilotInterior);
 
                     // P267/P756 — the hull's maneuvering-thruster (turn) loop,
                     // driven from the local ship's real commanded turn axes (the

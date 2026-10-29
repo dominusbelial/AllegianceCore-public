@@ -114,15 +114,13 @@ public sealed class MissionSettingsForm
         && world.Mission is { Stage: (int)MissionStage.NotStarted }
         && world.Mission.Params is not null;
 
-    /// <summary>The assembled side count (SIDE_ROSTER lists every side the mission
-    /// was assembled with; the params' own <c>nTeams</c> is the shrinkable live
-    /// count, so the larger of the two is the ceiling).</summary>
-    public static short MaxTeamCount(ClientWorld world)
-    {
-        short assembled = (short)(world.SideRoster?.Sides.Length ?? 0);
-        short live = world.Mission?.Params?.NTems ?? 0;
-        return (short)Math.Max(assembled, live);
-    }
+    /// <summary>The highest team count the owner may SET. Native's team combo
+    /// spans two..<c>c_cSidesMax</c> (six) and <c>SetMissionParams</c> GROWS the
+    /// mission with <c>InitSide</c> when the count rises
+    /// (<c>FedSrv/fsmission.cpp:1846-1852</c>, <c>Igc/missionigc.cpp:3749-3779</c>),
+    /// so the ceiling is the six-slot native maximum — P871 removed the former
+    /// "assembled side count" cap that blocked a live growth.</summary>
+    public static short MaxTeamCount(ClientWorld world) => 6;
 
     /// <summary>The row the cursor is on.</summary>
     public int Cursor { get; private set; }

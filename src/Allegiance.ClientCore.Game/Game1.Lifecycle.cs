@@ -422,6 +422,13 @@ public sealed partial class Game1
         _hullById = _shopCatalog is null
             ? new Dictionary<short, DataHullTypeIGC>()
             : _shopCatalog.Hulls.ToDictionary(h => h.HullId);
+        // P871 / SIM-0223 — wire the core-type preload requests (native
+        // WinTrekClient::Preload, trekigc.cpp:4912-4937, called from
+        // Igc/hullTypeIGC.cpp:49-51 and Igc/modelIGC.cpp) to the client content
+        // loader: every hull/station/probe/missile/mine model + texture surface
+        // is warmed now, inside the native colour-key/mipmap scope, so the first
+        // use in flight does not stall.
+        PreloadCoreTypes();
         // P607 — build the guaranteed-non-null procedural stand-in model once,
         // independent of the artwork corpus and the Meshy pack, so the ship
         // colour pass can never pass null to ShipRenderer.Draw (the P607 live

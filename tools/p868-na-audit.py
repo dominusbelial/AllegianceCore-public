@@ -55,9 +55,27 @@ def validate(root=ROOT, native_root=None):
             if status not in {"na", "n/a"} or not row["action"].startswith("retain n/a:"):
                 raise ValueError(f"A must retain an explicit n/a reason: {key}")
         elif row["class"] == "C":
-            if status != "partial" or not row["action"].startswith("decision:"):
-                raise ValueError(f"C must remain partial with a decision: {key}")
+            # C rows are the "needs a product/source decision" class. They stay
+            # `partial` while the decision is open, and resolve only WITH the
+            # recorded decision: `n/a` when the decision retires the behaviour
+            # (P871b: the ICQ instant-messenger row, retired by Domingo
+            # 2026-10-28) or a complete status when it certifies behaviour the
+            # port already has (P871b: voice chat = native prerecorded
+            # quickcomms, certified). Either way the row must carry the decision,
+            # never a silent close.
+            resolved = {"na", "n/a", "done", "done-visual", "implemented"}
+            if status not in {"partial"} | resolved or not row["action"].startswith("decision:"):
+                raise ValueError(f"C must stay partial or record the resolving decision: {key}")
         else:
+            # P871b — a B row that the audit itself has RE-SCOPED out of parity
+            # (native has no such behaviour) closes as `n/a` with a
+            # "retain n/a:" reason, the same convention class A uses for
+            # exclusions; every other B row stays implemented/partial in step
+            # with its action prefix.
+            if row["action"].startswith("retain n/a:"):
+                if status not in {"na", "n/a"}:
+                    raise ValueError(f"B retain-n/a row must be n/a: {key}")
+                continue
             expected = "implemented" if row["action"].startswith("implemented:") else "partial"
             if status != expected or not row["action"].startswith(expected + ":"):
                 raise ValueError(f"B action/status mismatch: {key}")

@@ -76,8 +76,21 @@ public sealed partial class Server
             if (!mission.PlayerCreated) continue;              // configured/admin worlds persist (FedSrv.CPP:7882-7884)
             if (HasMissionPlayers(mission)) continue;          // GetCountOfPlayers(NULL, true) == 0 (FedSrv.CPP:7885)
             if (now - mission.CreatedAt <= 10.0) continue;     // > 100000000 FILETIME ticks = 10 s (FedSrv.CPP:7902-7903)
-            Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {_missions.IndexOf(mission)}), killing it (FedSrv.CPP:7906)");
+            int index = _missions.IndexOf(mission);
+            Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {index}), killing it (FedSrv.CPP:7906)");
             _missions.Remove(mission);
+            // P871b — `_config.Games` and `_missions` are index-aligned (the
+            // game-over rotation rebuilds from `_config.Games[idx]` and
+            // `Mission.MissionId` is that index + 1), so a reaped mission's
+            // config entry leaves with it. Only player-created
+            // (wizard/`CREATE_MISSION_REQ`) missions ever get here, i.e. only
+            // entries this server inserted itself.
+            if (index >= 0 && index < _config.Games.Count && ReferenceEquals(_missionConfigs.GetValueOrDefault(mission), _config.Games[index]))
+                _config.Games.RemoveAt(index);
+            _missionConfigs.Remove(mission);
+            _matchups.Remove(mission);
+            _missionParams.Remove(mission);
+            _mapGenMissions.Remove(mission);
             break;                                             // deleting 1 mission per check is plenty (FedSrv.CPP:7909)
         }
     }

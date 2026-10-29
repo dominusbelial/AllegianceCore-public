@@ -57,9 +57,21 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly Func<long>? _lobbyDirtyVersion;
     private long? _publishedDirtyVersion;
     private readonly string? _minClientVersion;
+    /// <summary>P871b — the opt-in "this server can host a new player-created
+    /// game right now" predicate. Native's lobby only sends CREATE_MISSION_REQ to
+    /// a server that is idle (no game in progress), so the poll only CLAIMS a
+    /// request while the server says it has an idle mission slot. Null (the
+    /// default) disables the whole claim path.</summary>
+    private readonly Func<bool>? _canHostPlayerGame;
+    /// <summary>P871b — claimed games waiting for the sim thread to provision
+    /// them. Filled by the poll, drained by <c>Server.DrainClaimedGames</c>.</summary>
+    private readonly System.Collections.Concurrent.ConcurrentQueue<ClaimedGame> _claimedGames = new();
+    private readonly object _claimGate = new();
+    internal const double ClaimPollSeconds = 5;
     private readonly int _intervalSeconds;
     private readonly TimeProvider _clock;
     private DateTimeOffset? _lastAttempt;
+    private DateTimeOffset _nextClaimPoll;
     private int? _publishedPlayerCount;
     private const double DirtyIntervalSeconds = 10; // FedSrv/fsmission.cpp:21,5606-5621
 
@@ -80,8 +92,9 @@ public sealed class LobbyHeartbeat : IDisposable
         string missionName, string coreFile, string version, int port,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
-        Func<long>? lobbyDirtyVersion = null)
-        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams, lobbyDirtyVersion)
+        Func<long>? lobbyDirtyVersion = null,
+        Func<bool>? canHostPlayerGame = null)
+        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame)
     {
     }
 
@@ -94,8 +107,9 @@ public sealed class LobbyHeartbeat : IDisposable
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
-        Func<long>? lobbyDirtyVersion = null)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams, lobbyDirtyVersion)
+        Func<long>? lobbyDirtyVersion = null,
+        Func<bool>? canHostPlayerGame = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame)
     {
     }
 
@@ -103,9 +117,11 @@ public sealed class LobbyHeartbeat : IDisposable
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
-        Func<long>? lobbyDirtyVersion = null)
+        Func<long>? lobbyDirtyVersion = null,
+        Func<bool>? canHostPlayerGame = null)
     {
         _clock = clock ?? TimeProvider.System;
+        _canHostPlayerGame = canHostPlayerGame;
         _http = http;
         _ownsHttp = ownsHttp;
         _enrollmentFile = config.EnrollmentFile;
@@ -163,6 +179,10 @@ public sealed class LobbyHeartbeat : IDisposable
         try
         {
             if (_enrollmentFile.Length > 0 && _enrollment is null) await EnrollAsync().ConfigureAwait(false);
+            // P871b — the CREATE_MISSION_REQ relay, before the publish coalesce
+            // window: a claimed request must reach the sim thread promptly even
+            // when the listing itself is not due to republish.
+            await PollGameRequestsAsync().ConfigureAwait(false);
             int playerCount = _livePlayerCount();
             long? dirtyVersion = _lobbyDirtyVersion?.Invoke();
             bool dirty = dirtyVersion is { } v && v != _publishedDirtyVersion;
@@ -260,6 +280,68 @@ public sealed class LobbyHeartbeat : IDisposable
             _gate.Release();
         }
     }
+
+    /// <summary>
+    /// P871b — drain the lobby's queued <b>player-created game requests</b> for
+    /// this server and CLAIM the first one. Native <c>CREATE_MISSION_REQ</c>
+    /// (lobby/client.cpp:390-465): the lobby picks a server, the server creates
+    /// the mission, the requesting client joins it. The port's server proves
+    /// ownership with its registration token (the same credential the heartbeat
+    /// already holds) and hands the request to the sim thread, which assembles
+    /// the world.
+    ///
+    /// <para>Only one request is claimed per poll, and only while the caller's
+    /// <c>canHostPlayerGame</c> predicate says an idle mission slot exists —
+    /// native's lobby never sends the request to a server that is mid-game.</para>
+    /// </summary>
+    private async Task PollGameRequestsAsync()
+    {
+        if (_canHostPlayerGame is null || _id is null || _token is null) return;
+        DateTimeOffset now = _clock.GetUtcNow();
+        lock (_claimGate)
+        {
+            if (now < _nextClaimPoll) return;
+            _nextClaimPoll = now.AddSeconds(ClaimPollSeconds);
+        }
+        if (!_canHostPlayerGame()) return;
+        try
+        {
+            string games;
+            using (var list = await _http.GetAsync("/api/games").ConfigureAwait(false))
+            {
+                if (!list.IsSuccessStatusCode) return;
+                games = await list.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
+            if (PlayerGameProvisioning.ReadGames(games) is not { } requests) return;
+            var mine = requests.FirstOrDefault(r =>
+                string.Equals(r.State, "Queued", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(r.ServerId, _id, StringComparison.Ordinal));
+            if (mine is null) return;
+
+            using var body = new StringContent(
+                JsonSerializer.Serialize(new GameClaimRequest(_id, _token),
+                    ServerJsonContext.Default.GameClaimRequest),
+                System.Text.Encoding.UTF8, "application/json");
+            using var response = await _http.PostAsync($"/api/games/{mine.Id}/claim", body).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[provision] claim of {mine.Id} refused ({(int)response.StatusCode})");
+                return;
+            }
+            string claimed = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var claimedGame = PlayerGameProvisioning.ReadGames($"[{claimed}]")?.FirstOrDefault() ?? mine;
+            _claimedGames.Enqueue(claimedGame);
+            Console.WriteLine($"[provision] claimed game request {claimedGame.Id} '{claimedGame.GameName}' "
+                + $"(map {claimedGame.Map}) — handing it to the simulation thread");
+        }
+        catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            Console.WriteLine($"[provision] game-request poll failed: {e.Message}");
+        }
+    }
+
+    /// <summary>P871b — take one claimed game request (called on the sim thread).</summary>
+    internal bool TryTakeClaimedGame(out ClaimedGame game) => _claimedGames.TryDequeue(out game!);
 
     private async Task EnrollAsync()
     {

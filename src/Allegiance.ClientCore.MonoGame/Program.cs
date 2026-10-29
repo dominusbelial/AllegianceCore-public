@@ -70,6 +70,9 @@ if (args.Length == 0)
 // loopback.
 
 string lobbyUrl = ServerListing.LobbyUrlDefault;
+// P871b — an explicit --lobby must beat the remembered player.json value (the
+// intro used to overwrite it), so the launch option records which one won.
+bool lobbyUrlExplicit = false;
 var positional = new List<string>();
 bool wantCapture = false;
 bool wantDebugMode = false;
@@ -168,10 +171,12 @@ for (int i = 0; i < args.Length; i++)
     if (a == "--lobby")
     {
         if (i + 1 < args.Length) lobbyUrl = args[++i];
+        lobbyUrlExplicit = true;
     }
     else if (a.StartsWith("--lobby=", StringComparison.Ordinal))
     {
         lobbyUrl = a.Substring("--lobby=".Length);
+        lobbyUrlExplicit = true;
     }
     else if (a == "--debris")
     {
@@ -586,6 +591,7 @@ var opts = new Game1.LaunchOptions
     BenchmarkCollectorUrl = savedPlayer?.Benchmark?.CollectorUrl ?? PlayerConfig.ReadBenchmarkCollectorUrl(),
     PlayerName = playerName,
     LobbyUrl = lobbyUrl,
+    LobbyUrlExplicit = lobbyUrlExplicit,
     Capture = capture,
     DebugMode = wantDebugMode,
     // P448b — RemoteShipDeadReckoning defaults ON in LaunchOptions; only the

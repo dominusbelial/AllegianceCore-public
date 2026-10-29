@@ -20,7 +20,7 @@ namespace Allegiance.ClientCore.MonoGame;
 /// root : Graphics Options | Sound Options &gt; | Game Options &gt; | Map Keys and Controls
 /// sound: Music on/off | Music Volume Up | Music Volume Down
 /// game : Chat/Mute/Filter &gt; | Linear Controls | Dead Zone | Flip Y | Virtual Joystick | Map Keys and Controls
-/// chat : Filter Chats To All
+/// chat : Filter Chats To All | Mute/Unmute &lt;newest directory sender&gt;
 /// </code>
 ///
 /// <para><b>What each leaf drives.</b> Only items the port genuinely implements
@@ -33,13 +33,18 @@ namespace Allegiance.ClientCore.MonoGame;
 /// switches (WinTrek.cpp:4533-4540) over the same <c>MouseFlightController</c>
 /// state the in-flight keys drive; "Map Keys and Controls" is native's
 /// <c>idmConfigure</c> ('C', WinTrek.cpp:4544); and the Chat/Mute/Filter
-/// submenu is native's <c>idmMuteFilterOptions</c> ('M', :4569) reduced to the
+/// submenu is native's <c>idmMuteFilterOptions</c> ('M', :4569) holding the
 /// switch the port really has, "Filter Chats To All"
-/// (<c>idmFilterChatsToAll</c>, :4572, the pane's <c>m_bPlayerChatsOnly</c>).
-/// Native's era-specific items with no port control — sound quality/hardware,
-/// DirectSound8 usage, the separate SFX and voice-over mixers, Force Feedback
-/// and the mouse-acceleration/wheel-delay submenu — are omitted rather than
-/// faked; the P806 report lists them.</para>
+/// (<c>idmFilterChatsToAll</c>, :4572, the pane's <c>m_bPlayerChatsOnly</c>) plus
+/// (P871b) native's per-player mute toggle (<c>idmContextMutePlayer</c> 'M',
+/// :4310 → <c>WinTrek.cpp:3731-3734</c>) acting on the newest directory-chat
+/// sender.
+/// P871 restores native's Force Feedback switch
+/// (<c>idmToggleEnableFeedback</c> 'E', :4599, default on) now that the port
+/// drives a real rumble device. Native's era-specific items with no port
+/// control — sound quality/hardware, DirectSound8 usage, the separate SFX and
+/// voice-over mixers and the mouse-acceleration/wheel-delay submenu — are
+/// omitted rather than faked; the P806 report lists them.</para>
 ///
 /// <para>Pure (no MonoGame types): the screen feeds a live
 /// <see cref="OptionsState"/> snapshot and executes the returned
@@ -63,10 +68,12 @@ public sealed class OptionsMenuModel
         MusicVolumeUp,
         MusicVolumeDown,
         ToggleFilterChatsToAll,
+        ToggleMuteChatSender,
         ToggleLinearControls,
         CycleDeadzone,
         ToggleFlipY,
         ToggleVirtualJoystick,
+        ToggleForceFeedback,
     }
 
     /// <summary>One menu line: its label (state included, like native's
@@ -81,7 +88,13 @@ public sealed class OptionsMenuModel
         bool LinearControls,
         bool FlipY,
         bool VirtualJoystick,
-        float Deadzone);
+        float Deadzone,
+        bool ForceFeedback = true,
+        // P871b — the directory-chat mute target (the port extension's use of
+        // native's context-menu mute, WinTrek.cpp:3731-3734,4310): the newest
+        // relayed sender's display name, or null when the log is empty.
+        string? ChatMuteTarget = null,
+        bool ChatMuteTargetMuted = false);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -127,6 +140,7 @@ public sealed class OptionsMenuModel
                     new Row("Mouse Dead Zone: " + DeadzoneLabel(state.Deadzone), OptionsCommand.CycleDeadzone, 'Z'),
                     new Row("Flip Y: " + OnOff(state.FlipY), OptionsCommand.ToggleFlipY, 'Y'),
                     new Row("Virtual Joystick: " + OnOff(state.VirtualJoystick), OptionsCommand.ToggleVirtualJoystick, 'J'),
+                    new Row("Force Feedback: " + OnOff(state.ForceFeedback), OptionsCommand.ToggleForceFeedback, 'E'),
                     new Row("Map Keys and Controls", OptionsCommand.MapKeysAndControls, 'C'),
                 };
             case Page.Chat:
@@ -138,6 +152,17 @@ public sealed class OptionsMenuModel
                             ? "Don't Filter Chats Sent To All"
                             : "Filter Chats Sent To All",
                         OptionsCommand.ToggleFilterChatsToAll, 'A'),
+                    // P871b — native's per-player mute, whose only native UI is the
+                    // player context menu's 'M' item (idmContextMutePlayer,
+                    // WinTrek.cpp:3731-3734,4310) toggling PlayerInfo::SetMute
+                    // (clintlib.h:326). The port has no context menu on a chat line,
+                    // so the same toggle acts on the newest directory sender — the
+                    // port extension's chat panel. Without it the lobby mute call had
+                    // no UI at all.
+                    new Row(state.ChatMuteTarget is { Length: > 0 } target
+                            ? (state.ChatMuteTargetMuted ? "Unmute " : "Mute ") + target
+                            : "Mute (no directory chat yet)",
+                        OptionsCommand.ToggleMuteChatSender, 'M'),
                 };
             default:
                 return new[]

@@ -93,6 +93,11 @@ public sealed partial class Game1
 
         void Run(OptionsMenuModel.OptionsCommand cmd)
         {
+            // P871 / SIM-0412 — every MDL button click starts its cue and forces
+            // the audio update NOW (native SoundIDEventSink, trekmdl.cpp:452-478;
+            // the click must not wait behind the button's own work).
+            if (_sound is { } buttonAudio)
+                Audio.SoundIdEventSink.Fire(buttonAudio, Allegiance.Core.Audio.NativeSoundCatalog.IdOf("mouseclickSound"));
             switch (cmd)
             {
                 case OptionsMenuModel.OptionsCommand.GraphicsSettings:   // native idmOptions
@@ -120,6 +125,9 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll: // native idmFilterChatsToAll
                     ToggleOptionsChatFilter();
                     break;
+                case OptionsMenuModel.OptionsCommand.ToggleMuteChatSender:    // native idmContextMutePlayer 'M'
+                    ToggleOptionsChatMute();
+                    break;
                 case OptionsMenuModel.OptionsCommand.ToggleLinearControls:   // native idmToggleLinearControls 'L'
                     _mouseFlight.LinearControls = !_mouseFlight.LinearControls;
                     Console.WriteLine($"[intro] game options: linear controls -> {(_mouseFlight.LinearControls ? "on" : "off")}");
@@ -141,6 +149,9 @@ public sealed partial class Game1
                     _mouseFlightEnabled = !_mouseFlightEnabled;
                     if (_mouseFlightEnabled) _mouseFlight.Enable(); else _mouseFlight.Reset();
                     Console.WriteLine($"[intro] game options: virtual joystick -> {(_mouseFlightEnabled ? "on" : "off")}");
+                    break;
+                case OptionsMenuModel.OptionsCommand.ToggleForceFeedback:     // native idmToggleEnableFeedback 'E'
+                    ToggleForceFeedback();
                     break;
             }
         }
@@ -187,7 +198,41 @@ public sealed partial class Game1
             LinearControls: _mouseFlight.LinearControls,
             FlipY: _mouseFlight.InvertPitch,
             VirtualJoystick: _mouseFlightEnabled,
-            Deadzone: _mouseFlight.Deadzone);
+            Deadzone: _mouseFlight.Deadzone,
+            ForceFeedback: _optionsPrefs.EnableForceFeedback,
+            ChatMuteTarget: NewestDirectoryLine?.Sender,
+            ChatMuteTargetMuted: NewestDirectoryLine is { } newest
+                && _directoryChat.IsMuted(newest.SenderId));
+    }
+
+    /// <summary>P871b — native <c>contextMute</c> (<c>WinTrek/WinTrek.cpp:3731-3734</c>,
+    /// the chat menu's 'M' item at :4310) toggles
+    /// <c>PlayerInfo::SetMute</c> (<c>clintlib/clintlib.h:326</c>); a muted player's
+    /// lines never reach the pane (<c>trekigc.cpp:4492</c>). The port applies it to
+    /// the newest directory-chat sender (the port extension's chat panel) and
+    /// records it on the lobby account so it survives a reconnect.</summary>
+    private void ToggleOptionsChatMute()
+    {
+        var newest = NewestDirectoryLine;
+        if (newest is null)
+        {
+            Console.WriteLine("[intro] chat options: no directory chat sender to mute yet");
+            return;
+        }
+        bool mute = !_directoryChat.IsMuted(newest.SenderId);
+        SetDirectorySenderMuted(newest.Sender, mute);
+    }
+
+    /// <summary>P871 / SIM-0179 — native <c>ToggleEnableFeedback</c>
+    /// (<c>WinTrek/WinTrek.cpp:5308-5313</c>): flip the switch, persist it, and
+    /// stop any running effect immediately when it is turned off.</summary>
+    private void ToggleForceFeedback()
+    {
+        EnsureOptionsPrefs();
+        _optionsPrefs.EnableForceFeedback = !_optionsPrefs.EnableForceFeedback;
+        _optionsPrefs.Save();
+        ForceFeedback.SetEnabled(_optionsPrefs.EnableForceFeedback);
+        Console.WriteLine($"[intro] game options: force feedback -> {(_optionsPrefs.EnableForceFeedback ? "on" : "off")}");
     }
 
     /// <summary>P806 — native <c>ToggleFilterChatsToAll</c> (WinTrek.cpp:4706-4722):

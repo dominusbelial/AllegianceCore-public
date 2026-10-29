@@ -163,6 +163,17 @@ public sealed class ServerRegistry
     }
 
     /// <summary>
+    /// P871 — does <paramref name="token"/> own the listing
+    /// <paramref name="id"/>? The server-side proof used by the new-game
+    /// wizard's claim relay (the same ownership token as register/delete).
+    /// </summary>
+    public bool VerifyToken(string id, string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return false;
+        return _entries.TryGetValue(id, out var listing) && listing.Token == token;
+    }
+
+    /// <summary>
     /// Returns every listing currently in the dictionary as a public DTO.
     ///
     /// <para>Expired entries are hidden immediately. Physical removal happens

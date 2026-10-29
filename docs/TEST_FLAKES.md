@@ -39,6 +39,29 @@ shared-core/flight selection passes 3/3**, and P730 passes **5/5** (ten matches)
   unchanged HEAD source copy. Its moving target violates the timed off-screen
   placement premise. Radar source remains untouched. The failed Fast result is
   retained; it is not presented as a passing gate.
+## P871 verification observations (2026-10-28)
+
+One Fast sweep: **11,512 tests, 480.4 s**, **11,505 passed / 6 failed / 3 optional
+skips** (`tiers-20261028T230922`). Infrastructure checks **PASS**. The requested
+P730 showcase passed **5/5** (3m09s–3m48s).
+
+Four failures were P871's own and are repaired, not flakes: the P806 options
+test (the Game submenu gained native's Force Feedback switch) and the P853b team
+cap (growth is live, so the cap is native's six slots) were stale expectations;
+three chat-pane tests hit a null directory-chat log in the headless test
+construction (guarded). All five affected classes pass after the fix
+(`P806OptionsMenuTests`, `P784ComposeTests`, `P757ChatPaneTests`,
+`P853bHostEditUiTests`).
+
+The sixth is the already-ledgered environmental
+`RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight`
+(2 pass / 1 fail in three isolated reruns this sweep; 0/3 and 1/3 recorded in the
+P864d/P868 notes). Its time-based staging premise decays under load; the P871
+lane touched no radar placement code.
+
+The quarantine retry that passed is the known
+`AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+fixture assumption (P868 recorded the same automatic retry pass).
 
 ## P864d verification observations (2026-10-28)
 
@@ -3670,3 +3693,19 @@ It passed the isolated follow-up together with the relay case (2/2). This is
 the existing timing observation, not a changed test budget. The sweep remains
 red; the separate task-introduced key-catalog metadata failure and its fix are
 recorded in `docs/reports/P882a_REPORT.md`, not classified as a flake.
+
+## P871b (2026-10-29)
+
+Fast sweep `tiers-20261029T022443` (P871b): three failures were **load flakes**
+under the parallel sweep and pass **3/3 alone** immediately after —
+`LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores`,
+`P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
+and `ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines`
+(no shared code with P871b: the lanes' only Server/Core edits are the wizard
+provisioning, the reaped-mission config alignment, the sound-id tables and
+`SalNoAmmoSound`). `P767WingmanAmmoTests.GateOn_WingmanRunsOut…` failed **for
+real** — it asserted the old sound id 1409 that P871's generator bug produced;
+P871b corrected it to native's 1396 (Igc/sounds.h:489 via `gcc -E`) and it is
+green 3/3. `NpcWingmanDefendLiveTests.Defender_disengages…` is the
+**pre-existing base failure** ledgered in the P872 section above (deterministic
+3/3 alone, unrelated).

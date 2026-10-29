@@ -10,9 +10,13 @@ import json
 from pathlib import Path
 import re
 import shutil
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / 'src/Allegiance.ClientCore.MonoGame/Content'
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from native_cpp_comments import strip_cpp_comments  # noqa: E402
 
 
 def main():
@@ -20,7 +24,10 @@ def main():
     parser.add_argument('--native-src', required=True, type=Path)
     parser.add_argument('--artwork', required=True, type=Path)
     args = parser.parse_args()
-    clean = lambda s: re.sub(r'//[^\n]*', '', s)
+    # Block comments first: Igc/sounds.h:443-459 (`/* NYI no turrets ... */`)
+    # holds 13 DEFSOUND names native never sees, so a `//`-only strip shifts
+    # every later SoundID by +13. Shared with generate-sound-catalog.py.
+    clean = strip_cpp_comments
     mdl = clean((CONTENT / 'sounddef.mdl').read_text())
     qc = clean((CONTENT / 'quickchat.mdl').read_text())
     enums = re.findall(r'\b(?:DEFSOUND|DEFEMPTYSOUND)\((\w+)\)',

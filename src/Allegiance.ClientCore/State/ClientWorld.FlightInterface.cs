@@ -88,9 +88,14 @@ public sealed partial class ClientWorld
         {
             _cameraOverrideRequests.Add(new(message.CarrierId, NowSeconds(), 3));
             if (_cameraOverrideRequests.Count > MaxCameraOverrideRequests) _cameraOverrideRequests.RemoveAt(0);
-            // Native notification: salRepairedAtCarrierSound (sounddef id 1399).
-            var voice = NativeVoiceCatalog.Resolve(1399, "");
-            if (voice is not null) RecordSoundEvent(ClientSoundEventKind.ChatVoiceOver, 1399, voice: voice);
+            // Native notification: salRepairedAtCarrierSound (Igc/sounds.h:479,
+            // WinTrek/trekigc.cpp:4236-4240).
+            // The id comes from the generated native table, not a literal: P871's
+            // literal 1399 was +13 because its generator kept the dead
+            // `/* NYI no turrets */` block (Igc/sounds.h:443-459).
+            var repairedId = NativeSoundCatalog.IdOf("salRepairedAtCarrierSound");
+            var voice = NativeVoiceCatalog.Resolve(repairedId, "");
+            if (voice is not null) RecordSoundEvent(ClientSoundEventKind.ChatVoiceOver, repairedId, voice: voice);
         }
     }
 

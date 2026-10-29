@@ -59,6 +59,14 @@ public sealed class IntroPreferences
     /// WinTrek.cpp:4572/4706-4722).</summary>
     public bool FilterChatsToAll { get; set; } = true;
 
+    /// <summary>P871 / SIM-0179 — native <c>m_bEnableFeedback</c>, loaded from
+    /// <c>EnableFeedback</c> with a default of <b>1</b> (on):
+    /// <c>m_bEnableFeedback = (LoadPreference("EnableFeedback", 1) != 0)</c>
+    /// (<c>WinTrek/WinTrek.cpp:3049</c>), toggled by the Options → Game menu's
+    /// <c>idmToggleEnableFeedback</c> (<c>:5308-5313,4599</c>) and gating every
+    /// device call (<c>:8162-8166</c>).</summary>
+    public bool EnableForceFeedback { get; set; } = true;
+
     /// <summary>P761 — the pilot's profile description, edited on the character
     /// sheet (native CharInfoScreen OnButtonApply sends
     /// CHARACTER_INFO_EDIT_DESCRIPTION to the club server; this port has no

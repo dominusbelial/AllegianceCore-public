@@ -513,10 +513,36 @@ list in **reverse**.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,
   Game1.IntroScreen.cs, Game1.ConnectScreen.cs).
+- **Native sound dispatch (P871)** — the numeric `SoundID` space and the
+  cue/loop routing: the generated `soundList` table
+  (`src/Allegiance.Core/Audio/NativeSoundCatalog.Generated.cs`, rebuilt by
+  `scripts/generate-sound-catalog.py`) plus the native gates and state machines
+  (`src/Allegiance.ClientCore.Game/Audio/NativeSoundDispatch.cs`: StartSound,
+  PlaySoundIf, PlaySoundEffect/offset/notification, gunner interior, MDL button
+  sink) and the device mixer
+  `src/Allegiance.ClientCore.Game/Audio/SoundManager.cs`. Native:
+  `WinTrek/soundinit.cpp`, `WinTrek/trekigc.cpp:930-951,4955-4983`,
+  `WinTrek/WinTrek.cpp:11271-11280`, `WinTrek/trekmdl.cpp:452-478`.
+- **Force feedback (P871)** — native `PlayFFEffect` producers and their gates:
+  own-ship/gunner weapon fire, own collisions, credited damage with the impact
+  direction, plus expiry/focus/disconnect stop and the settings toggle. Key:
+  `src/Allegiance.ClientCore.Game/Audio/ForceFeedback.cs`,
+  `Audio/MonoGameForceFeedback.cs`, `Game1.ForceFeedback.cs`,
+  `IntroPreferences.EnableForceFeedback`, `OptionsMenuModel` (native
+  `engine/dinput.cpp:1392-1445`, `WinTrek/trekigc.cpp:4296-4302,4985-4990`).
+- **Asset preload (P871)** — core-type `Preload` requests wired to the content
+  loader (model warm-up, `bmp` texture suffix, colour-key/mipmap scope). Key:
+  `src/Allegiance.ClientCore.Game/Rendering/AssetPreload.cs`,
+  `Game1.Preload.cs`; native `WinTrek/trekigc.cpp:4912-4937`.
 - **Options menu tree** — the native root + Sound/Game/Chat submenus
   (`WinTrek.cpp:4429-4442`, `:4502-4590`). Key:
   `src/Allegiance.ClientCore.Game/OptionsMenuModel.cs`, driven by
   `Game1.BenchmarkSharing.cs` (`UpdateOptionsMenu`/`DrawPrivacySettings`).
+- **New-game wizard (P871)** — server/core/map selection plus the game name and
+  owner MissionParams draft, opening from Find Server (N). Key:
+  `src/Allegiance.ClientCore.Game/Games/CreateGameWizard.cs`,
+  `Games/LobbyGameClient.cs`, `Game1.CreateGame.cs`; native
+  `WinTrek/newgamescreen.cpp:1034-1041`, `lobby/client.cpp:390-465`.
 - **Server browser model** — the listing mirror, the eight native sort columns,
   the eleven game filters and the filter dialog (native `gamescreen.cpp`). Key:
   `src/Allegiance.ClientCore.Game/ServerListing.cs`, `LobbyGameSort.cs`,
@@ -699,6 +725,30 @@ list in **reverse**.
   `GameParamsRequest`), `src/Allegiance.Server/LobbyHeartbeat.cs`
   (`LobbyGameParams.FromMission`), `src/Allegiance.Server/Server.cs`
   (`LiveGameParams`). Report `docs/reports/P806_SCREENS_LOBBY_COMMANDER.md`.
+- **Directory chat (P871, port extension)** — authenticated directory-wide chat
+  relay with sequences, own-echo suppression and per-account mute. **Native has
+  no lobby/directory chat** (every native chat target is in-mission,
+  `Igc/igc.h:2731-2734`; the lobby only ingests `FM_S_LOG_CHAT_MESSAGE(216)` for
+  moderation logging, `lobby/messagesls.h:152`), so P871's cite
+  `clintlib/appmsg.cpp:2640-2665` (the in-mission relay) is corrected here; the
+  borrowed rules are that relay's own-echo suppression and per-player mute
+  (`WinTrek/trekigc.cpp:4492`, `clintlib/clintlib.h:326`). Key:
+  `src/Allegiance.Lobby/Chat/DirectoryChat.cs`, `Chat/ChatEndpoints.cs`,
+  `src/Allegiance.ClientCore.Game/Chat/DirectoryChatLog.cs`,
+  `Chat/LobbyChatClient.cs`, `Game1.DirectoryChat.cs`.
+- **New-game requests (P871/P871b)** — the native `CREATE_MISSION_REQ`/ACK/NACK
+  flow as the lobby's HTTP wizard: authoritative server/core/map catalog,
+  authenticated create, owner-only parameter edits, cancel and a
+  token-authenticated server claim — plus the runtime provisioning that turns a
+  claim into a live mission: the heartbeat polls/claims the relay
+  (`src/Allegiance.Server/LobbyHeartbeat.cs`), the sim thread assembles the
+  wizard's world (`src/Allegiance.Server/Server.Provisioning.cs`,
+  `PlayerGameProvisioning.cs`, which maps the native `MissionParams` onto a
+  `GameConfig`), the mission becomes the join target and the client joins that
+  server on the ACK (`Game1.CreateGame.cs`). The mission parameters cross HTTP as
+  base64 of the native packed struct (`paramsWire`), never as JSON fields. Key:
+  `src/Allegiance.Lobby/Games/`,
+  `src/Allegiance.ClientCore.Game/Games/`.
 - **Version advertisement** — `GET /api/update/info` (current/minimum client
   version + the signed release feed URL), the HTTP analogue of native
   `AUTO_UPDATE_INFO(253)` (`lobby/messageslc.h:45-52`). Key:
@@ -721,6 +771,13 @@ list in **reverse**.
   over (`src/Allegiance.Server/Server.Update.cs`, `ServerUpdateGate`), applied
   before the world loads in `src/Allegiance.Server/Program.cs`. Docker keeps
   pulling images (`docker/README.md`).
+- **File-set identity (P871)** — the client's reported `LOGONREQ.crcFileList`
+  (CRC-32 of its installed file list) and the server's release policy gate. Key:
+  `src/Allegiance.Core/FileListCrc.cs`,
+  `src/Allegiance.ClientCore/Session/ClientFileList.cs`,
+  `src/Allegiance.Server/Server.Dispatch.cs` (`CheckFileList`),
+  `ServerConfig.RequireFileList`/`ExpectedFileListCrc`; native
+  `clintlib/clintlib.cpp:1418`, `lobby/client.cpp:272-281`.
 - **Feed builder** — `tools/feedbuild/` (manifest + signature + `latest.json`,
   GitHub flat-asset mode); driven by the `feed` job in
   `.github/workflows/release.yml`. Key handling: `packaging/README.md`.

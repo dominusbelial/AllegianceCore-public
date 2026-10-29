@@ -18,6 +18,11 @@ public static class RateLimiting
 
     public const string RegisterPolicy = "register";
 
+    /// <summary>P871 — directory chat: a per-IP window for the authenticated
+    /// relay POST (native's chat relay is throttled by the game's own chat
+    /// cadence, not an HTTP endpoint). Reads are unthrottled like /api/servers.</summary>
+    public const string ChatPolicy = "chat";
+
     /// <summary>P761b — named policy for the per-name find-player query
     /// (<c>GET /api/servers/findplayer</c>). The endpoint answers "is pilot X on
     /// any listed server", so unthrottled it would be a directory-wide roster
@@ -53,6 +58,17 @@ public static class RateLimiting
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = RegisterPermitLimit,
+                        Window = RegisterWindow,
+                        AutoReplenishment = true,
+                        QueueLimit = 0,
+                    }));
+
+            options.AddPolicy(ChatPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
                         Window = RegisterWindow,
                         AutoReplenishment = true,
                         QueueLimit = 0,

@@ -1342,6 +1342,8 @@ public sealed partial class Game1 : Game
     private bool _disconnectTransitioned;
 
     private string _lobbyUrl;   // P500 — no longer readonly: the connect screen edits it in-game
+    /// <summary>P871b — <c>--lobby</c> was given: player.json must not override it.</summary>
+    private bool _lobbyUrlExplicit;
     private string? _connectHost;
     private ushort _connectPort;
     private bool _returnToLobbyOnFailure;   // join-from-lobby failed → revert, don't exit
@@ -1775,6 +1777,7 @@ public sealed partial class Game1 : Game
         try { Window.AllowUserResizing = true; } catch { /* headless/unsupported */ }
 
         _lobbyUrl = opts.LobbyUrl;
+        _lobbyUrlExplicit = opts.LobbyUrlExplicit;
         _connectStore = opts.ConnectStore;
         // P761 — the character sheet's persisted profile description (applied
         // edits go to the same file; native would send them to the club server).
@@ -2054,6 +2057,7 @@ public sealed partial class Game1 : Game
         _hudNativeTextures?.Dispose();  // HUD-10 — release compose/money/command/endurance art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
         _radarIconTextures?.Dispose();   // HUD-16 — release the native radar contact icons
+        _preloader?.Dispose();           // P871 — release the preloaded core-type surfaces
         _inventoryTextures?.Dispose();   // HUD-7 — release the inventory-pane art
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();

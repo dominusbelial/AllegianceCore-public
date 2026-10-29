@@ -21,4 +21,9 @@ public readonly record struct HitSoundEntity(
     short ClusterId,
     bool AbsorbedByShield,
     short SourceId,
-    Vector3 Position);
+    Vector3 Position,
+    /// <summary>P871 — the wire hit-surface normal (<c>normalize(position1 −
+    /// position2)</c>, <c>projectileIGC.cpp:224-225</c>), which native's
+    /// credited-damage force feedback turns into the rumble direction
+    /// (<c>WinTrek/trekigc.cpp:4296-4301</c>).</summary>
+    Vector3 Normal = default);
