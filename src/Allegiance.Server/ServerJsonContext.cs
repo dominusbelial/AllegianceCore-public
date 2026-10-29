@@ -45,6 +45,11 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(MapGenConfig))]
 [JsonSerializable(typeof(LobbyRegisterRequest))]
 [JsonSerializable(typeof(LobbyRegisterResponse))]
+// P871b — the lobby's new-game relay: the requests a server may claim (an array
+// of GameDto-shaped records) and the claim body it posts back.
+[JsonSerializable(typeof(ClaimedGame))]
+[JsonSerializable(typeof(ClaimedGame[]))]
+[JsonSerializable(typeof(GameClaimRequest))]
 [JsonSerializable(typeof(LobbyMatchReport))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Allegiance.Core.Transport.EgressWindow))]

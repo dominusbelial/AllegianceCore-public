@@ -51,7 +51,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// equivalent is only needed for positioned world sounds (remote ships), which
 /// are out of the POC's scope.</para>
 /// </remarks>
-public sealed class SoundManager : IDisposable, IUiSoundSink
+public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
 {
     private readonly ContentManager _content;
     private readonly SerializedVoiceQueue _serializedVoices = new();
@@ -194,6 +194,13 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     // documented remainder).
     private SoundEffectInstance? _stationInteriorAmbient;
     private short _stationInteriorSoundId;
+    // P871 — native Window::StartSound(SoundID, ISoundPositionSource*)
+    // (WinTrek/WinTrek.cpp:11271-11280): id-keyed loops retained by the caller,
+    // plus the gunner's interior loop (PlaySoundIf, WinTrek/trekigc.cpp:1300-1314)
+    // and the listener position the positional generic cues attenuate against.
+    private readonly Dictionary<short, SoundEffectInstance> _nativeLoops = new();
+    private readonly PlaySoundIfSlot _gunnerInteriorSlot = new();
+    private Allegiance.Core.Collision.Vector3? _listenerPosition;
     private SoundEffect _shipInt = null!;   // shipint — the station-interior loop component
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
@@ -387,7 +394,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     private SoundEffect _salReloadingDispenser = null!;
     // P787a — own-ship launcher DEPLETED (reload-failure) VOs
     // (vo_sal_{missilesdepleted,chaffdepleted,dispenserempty}; sounddef.mdl:814-818
-    // family; NativeVoiceCatalog IDs 1417-1419).
+    // family; native SoundIDs 1405/1404/1406 — Igc/sounds.h:497-499 with the dead
+    // `/* NYI no turrets */` block removed; P787a's 1417-1419 was the +13 bug).
     private SoundEffect _salMissilesDepleted = null!;
     private SoundEffect _salChaffDepleted = null!;
     private SoundEffect _salDispenserEmpty = null!;
@@ -899,7 +907,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _salReloadingChaff = LoadSound("Sounds/vo_sal_reloadingchaff");
             _salReloadingDispenser = LoadSound("Sounds/vo_sal_reloadingdispenser");
             // P787a — launcher depleted VOs (vo_sal_{missilesdepleted,
-            // chaffdepleted,dispenserempty}; NativeVoiceCatalog 1417-1419).
+            // chaffdepleted,dispenserempty}; native 1405/1404/1406).
             _salMissilesDepleted = LoadSound("Sounds/vo_sal_missilesdepleted");
             _salChaffDepleted = LoadSound("Sounds/vo_sal_chaffdepleted");
             _salDispenserEmpty = LoadSound("Sounds/vo_sal_dispenserempty");
@@ -963,7 +971,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     /// <param name="sidethrustActive">True when a lateral/backward thrust button is
     /// held (native <c>PlaySidethrust()</c> = backward|left|right, trekigc.cpp:953-956) —
     /// the sidethrust loop bed (SIM-0376/0377/0382/0383) plays while strafing/braking.</param>
-    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false, bool capitalHull = false, bool sidethrustActive = false)
+    /// <param name="pilotInterior">P871b — native's <c>!bIsGunner</c>: the pilot
+    /// interior bed (<c>pht-&gt;GetInteriorSound()</c>, trekigc.cpp:1311-1312) plays
+    /// for the pilot only. A turret gunner keeps the engine/cockpit mix above but
+    /// never the pilot's interior bed. Default true = pilot.</param>
+    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false, bool capitalHull = false, bool sidethrustActive = false, bool pilotInterior = true)
     {
         if (!IsLoaded) return;
 
@@ -989,7 +1001,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
         var hum = capitalHull ? _cockpitHumCapital : _cockpitHum;
         if (hum is { } h)
         {
-            if (cockpitMode) EnsurePlaying(h);
+            // Native's pilot interior sound: iff !bIsGunner (trekigc.cpp:1311-1312)
+            // and audible only in cockpit view (SetInternalVolume, trekigc.cpp:1360-1372).
+            if (cockpitMode && pilotInterior) EnsurePlaying(h);
             else if (h.State == SoundState.Playing) Safe(h.Stop);
         }
 
@@ -1092,6 +1106,97 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     {
         if (IsLoaded) PlayOneShot(_paneSlide, SoundCategory.Interface, 1f);
     }
+
+    // ── P871 — native numeric SoundID dispatch ───────────────────────────────
+
+    /// <summary>P871 / SIM-0314 — the listener the positional generic cues
+    /// attenuate against (the local source ship's position).</summary>
+    public void SetListenerPosition(Allegiance.Core.Collision.Vector3 position) =>
+        _listenerPosition = position;
+
+    /// <summary>P871 / SIM-0412 — native <c>StartSound(m_soundId)</c> from the
+    /// MDL button sink (unpositioned).</summary>
+    public void StartSoundId(short soundId) => StartSound(soundId, null);
+
+    /// <summary>P871 / SIM-0412 — the UI-sink form of the same numeric start.</summary>
+    public void PlaySoundId(short soundId) => StartSoundId(soundId);
+
+    /// <summary>P871 / SIM-0412 — native <c>SoundEngineUpdate()</c>: run the
+    /// audio update NOW so a click is heard before the button's slow work.</summary>
+    public void FlushAudio() => UpdateAudioFrame(0f);
+
+    /// <summary>
+    /// P871 / SIM-0314 — <c>WinTrek::StartSound(SoundID, ISoundPositionSource*)</c>
+    /// (<c>WinTrek/WinTrek.cpp:11271-11280</c>): validate the numeric id against
+    /// the <c>soundList</c> table, resolve the template, and forward the requested
+    /// positional source. An invalid id, empty slot or wave-less template is a
+    /// silent NULL, exactly like native. Returns the instance native's call hands
+    /// back (the caller may retain it for <c>PlaySoundIf</c>).
+    /// </summary>
+    public SoundEffectInstance? StartSound(short soundId, NativeSoundSource? source)
+    {
+        if (!IsLoaded) return null;
+        if (!NativeSoundDispatch.TryPlan(soundId, source, _listenerPosition, out var playback)) return null;
+        var sfx = LoadVoice(playback.Stem);
+        if (sfx is null) return null;
+        if (playback.Looping)
+        {
+            if (_nativeLoops.TryGetValue(soundId, out var existing) && existing.State != SoundState.Stopped)
+                return existing;
+            SoundEffectInstance? loop = null;
+            try
+            {
+                loop = sfx.CreateInstance();
+                loop.IsLooped = true;
+                loop.Volume = Math.Clamp(playback.Volume * _masterVolume, 0f, 1f);
+                loop.Play();
+                _nativeLoops[soundId] = loop;
+                return loop;
+            }
+            catch { if (loop is not null) Safe(loop.Dispose); return null; }
+        }
+        return StartOneShot(sfx, SoundCategory.Warning, playback.Volume);
+    }
+
+    /// <summary>P871 / SIM-0346 — native <c>PlaySoundIf</c>
+    /// (<c>WinTrek/trekigc.cpp:930-951</c>): start only when the slot is empty,
+    /// stop and clear it otherwise. Nothing restarts while the retained instance
+    /// is still held.</summary>
+    public void PlaySoundIf(PlaySoundIfSlot slot, short soundId, NativeSoundSource? source, bool play)
+    {
+        switch (slot.Update(play, soundId))
+        {
+            case PlaySoundIfSlot.Action.Start:
+                var instance = StartSound(soundId, source);
+                if (instance is null) { slot.Reset(); return; }   // unplayable: stay empty so a later gate can retry
+                _retainedInstances[slot] = instance;
+                break;
+            case PlaySoundIfSlot.Action.Stop:
+                if (_retainedInstances.Remove(slot, out var playing))
+                {
+                    bool looped = playing.IsLooped;
+                    Safe(playing.Stop);
+                    Safe(playing.Dispose);
+                    if (looped)
+                        foreach (var key in _nativeLoops.Where(kv => ReferenceEquals(kv.Value, playing)).Select(kv => kv.Key).ToList())
+                            _nativeLoops.Remove(key);
+                }
+                break;
+        }
+    }
+
+    private readonly Dictionary<PlaySoundIfSlot, SoundEffectInstance> _retainedInstances = new();
+    /// <summary>P871 / SIM-0371 — maintain the gunner interior loop
+    /// (<c>WinTrek/trekigc.cpp:1300-1314</c>): play iff the local ship is boarded
+    /// as a gunner, with the mounted turret hardpoint's <c>interiorSound</c>.
+    /// Independent of the pilot interior loop and of the camera view.</summary>
+    public void SetGunnerInteriorLoop(short soundId, bool play)
+    {
+        PlaySoundIf(_gunnerInteriorSlot, soundId, null, play);
+    }
+
+    /// <summary>The id the gunner interior loop is currently holding (null = none).</summary>
+    public short? GunnerInteriorSoundId => _gunnerInteriorSlot.PlayingId;
 
     /// <summary>
     /// P785 — a slideshow slide's sound (native <c>Slideshow::NextSlide</c>,
@@ -2448,6 +2553,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _fireSound?.Dispose();
             foreach (var inst in _weaponBursts.Values) inst.Dispose();   // P465
             foreach (var inst in _weaponActivates.Values) inst.Dispose(); // P787b
+            foreach (var inst in _nativeLoops.Values) inst.Dispose();     // P871 retained numeric loops
+            _nativeLoops.Clear();
+            foreach (var inst in _retainedInstances.Values) inst.Dispose(); // P871 PlaySoundIf
+            _retainedInstances.Clear();
+            _gunnerInteriorSlot.Reset();
             _turretTurn?.Dispose();                                       // P787b
             _stationInteriorAmbient?.Dispose();                           // P787b
             foreach (var inst in _asteroidAmbients.Values) inst.Dispose(); // P787b

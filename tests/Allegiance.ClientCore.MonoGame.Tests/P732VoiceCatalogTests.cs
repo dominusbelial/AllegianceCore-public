@@ -43,8 +43,18 @@ public sealed class P732VoiceCatalogTests
     {
         Require.NativeSource();
         var native = ExternalPaths.Resolve(ExternalResourceKind.NativeSource);
-        var names = Regex.Matches(File.ReadAllText(Path.Combine(native, "src/Igc/sounds.h")), @"(?m)^DEF(?:EMPTY)?SOUND\((\w+)\)")
+        // P871b — strip C/C++ comments exactly like the native preprocessor BEFORE
+        // matching: sounds.h contains a dead `/* NYI no turrets ... */` block
+        // (Igc/sounds.h:443-459) whose 13 DEFSOUND lines must not shift the ids
+        // of everything after it (the same bug the generator had). Block comments
+        // first, then line comments.
+        string sounds = Regex.Replace(
+            File.ReadAllText(Path.Combine(native, "src/Igc/sounds.h")), @"/\*.*?\*/", "",
+            RegexOptions.Singleline);
+        sounds = Regex.Replace(sounds, @"//[^\n]*", "");
+        var names = Regex.Matches(sounds, @"(?m)^DEF(?:EMPTY)?SOUND\((\w+)\)")
             .Select(m => m.Groups[1].Value + "Sound").ToArray();
+        Assert.Equal(693, names.Length);   // `gcc -E` of sounds.h: 693 DEFSOUND names, ids 1001..1693
         var mdl = Regex.Replace(File.ReadAllText(Path.Combine(Content(), "sounddef.mdl")), @"//[^\n]*", "");
         foreach (var pair in NativeVoiceCatalog.Sounds.Where(p => p.Key > 1000))
         {

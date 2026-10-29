@@ -44,4 +44,12 @@ public interface IUiSoundSink
     /// <c>OnButtonTeleport</c> (teleportpane.cpp:319-320); the station branch
     /// plays nothing (teleportpane.cpp:325-352).</summary>
     void PlayPersonalJump();
+
+    /// <summary>P871 / SIM-0412 — native <c>SoundIDEventSink</c>'s
+    /// <c>GetWindow()-&gt;StartSound(m_soundId)</c> for an arbitrary MDL button
+    /// cue: the numeric id resolves through the native <c>soundList</c> table
+    /// (see <see cref="SoundManager.StartSound"/>). A no-op default keeps the
+    /// existing recording sinks compiling; the production
+    /// <see cref="SoundManager"/> implements it.</summary>
+    void PlaySoundId(short soundId) { }
 }

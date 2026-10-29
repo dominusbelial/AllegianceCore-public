@@ -965,6 +965,21 @@ public sealed class ServerConfig
 {
     public ServerIdentityConfig? Identity { get; set; }
 
+    /// <summary>
+    /// P871 / autoupdate::crcFileList — require the client to report a file-set
+    /// CRC (<c>LOGONREQ.crcFileList</c>, <c>Inc/Messages.h:44</c>) and accept
+    /// only <see cref="ExpectedFileListCrc"/> when that is configured. This is
+    /// the server-side gate native enforced at the lobby
+    /// (<c>lobby/client.cpp:272-281</c>); the lobby's HTTPS update feed remains
+    /// the client-side update flow. Default off (pre-P871 servers accept any
+    /// client, exactly like native with auto-update unconfigured).
+    /// </summary>
+    public bool RequireFileList { get; set; }
+
+    /// <summary>The one file-set CRC this release accepts; null = any non-zero
+    /// reported CRC (the client must still prove it HAS a file set).</summary>
+    public int? ExpectedFileListCrc { get; set; }
+
     /// <summary>Opt out of native authenticated duplicate-logon replacement
     /// (FedSrv.CPP:629). Default false: only the same verified account may
     /// replace a seated player; unverified/different accounts are always refused.</summary>

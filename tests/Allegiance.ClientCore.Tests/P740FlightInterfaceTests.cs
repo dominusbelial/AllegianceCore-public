@@ -231,7 +231,10 @@ public sealed class P740FlightInterfaceTests
         if (id == 10)
         {
             var camera = Assert.Single(s.World.TakeCameraOverrideRequests()); Assert.Equal(12, camera.FocusShipId); Assert.Equal(3, camera.DurationSeconds);
-            Assert.Equal(1399, Assert.Single(s.World.TakeSoundEvents()).Id);
+            // Native salRepairedAtCarrierSound is 1386 (Igc/sounds.h:479 with the
+            // dead `/* NYI no turrets */` block at 443-459 removed by the
+            // preprocessor); P871's 1399 was the generator's +13 bug.
+            Assert.Equal(1386, Assert.Single(s.World.TakeSoundEvents()).Id);
         }
         else { Assert.Empty(s.World.TakeCameraOverrideRequests()); Assert.Empty(s.World.TakeSoundEvents()); }
         Feed(s, new RelaunchShip { ShipId = id, CarrierId = 99, HullId = 99 }, new RelaunchShip { ShipId = 99, CarrierId = 12 });

@@ -1247,7 +1247,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                 {
                     CharacterName = _resumeName,
                     FedsrvVer = LogonRequest.MsgVer,
-                    CrcFileList = -1,
+                    // P871 — a resume reports the same file-set identity as the
+                    // first logon (the running install's manifest CRC).
+                    CrcFileList = ClientFileList.Compute(),
                 };
                 req.DwCookie = _resumeToken;
                 Send(FedPacket.Pack(new[] { req.Encode() }));

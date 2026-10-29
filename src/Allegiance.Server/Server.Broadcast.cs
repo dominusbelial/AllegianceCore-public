@@ -195,6 +195,12 @@ public sealed partial class Server
         {
             for (int i = 0; i < _missions.Count; i++) ResolveBallots(_missions[i], now);
         });
+        // P871b — the lobby's CREATE_MISSION_REQ relay: provision a mission the
+        // player just created through the new-game wizard (the request the
+        // heartbeat claimed this tick). Runs BEFORE periodicRules so the fresh
+        // mission exists (and its SIM-0146 empty-mission age starts) in the same
+        // tick it is advertised to the joining client.
+        Step("claimedGames", DrainClaimedGames);
         Step("periodicRules", () => AdvancePeriodicRules(now));
         // P853 — drop the params snapshots of rotated-out missions (a no-op
         // table scan while no mission has ever been edited).

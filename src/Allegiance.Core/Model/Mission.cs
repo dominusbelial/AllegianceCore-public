@@ -130,8 +130,15 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>Sectors, one per <c>OT_cluster</c>, in map order.</summary>
     public IReadOnlyList<Sector> Sectors { get; }
 
-    /// <summary>The caller-supplied sides, in the order given.</summary>
-    public IReadOnlyList<Side> Sides { get; }
+    /// <summary>The caller-supplied sides, in the order given. P871 — grown at
+    /// runtime by <see cref="AddSide"/> (native <c>CmissionIGC::UpdateSides</c>
+    /// creating a side per <c>InitSide</c>, <c>missionigc.cpp:3749-3779</c>).</summary>
+    public IReadOnlyList<Side> Sides => _sides;
+
+    /// <summary>The live side list. Deliberately the SAME instance
+    /// <see cref="Sector.MissionSides"/> holds, so a growth is visible to every
+    /// sector without re-wiring.</summary>
+    private readonly List<Side> _sides;
 
     /// <summary>Every warp across every sector, in map order.</summary>
     public IReadOnlyList<ResolvedWarp> Warps { get; }
@@ -752,10 +759,43 @@ public sealed partial class Mission : IMissionIgc
         Core = core;
         Map = map;
         Sectors = sectors;
-        Sides = sides;
+        _sides = sides as List<Side> ?? new List<Side>(sides);
         Warps = allWarps;
         DanglingWarps = danglingWarps;
         Site = site;
+    }
+
+    /// <summary>
+    /// P871 / MISSIONPARAMS — create a side on an already-assembled mission, the
+    /// port of <c>CFSMission::SetMissionParams</c>'s growth branch
+    /// (<c>FedSrv/fsmission.cpp:1846-1852</c>) calling
+    /// <c>CmissionIGC::UpdateSides</c> (<c>Igc/missionigc.cpp:3749-3779</c>): the
+    /// side is built from the slot id, the params' <c>rgCivID[slot]</c>, the
+    /// native side name array and the per-slot palette, with the same
+    /// development/bucket seeding <see cref="Assemble"/> gives an initial side.
+    /// The slot must be exactly the next one (native's loop is
+    /// <c>for (sid = GetSides()->n(); sid &lt; pmp-&gt;nTeams; sid++)</c>).
+    /// </summary>
+    internal Side AddSide(short sideId, string? name, DataCivilizationIGC civilization)
+    {
+        if (sideId != _sides.Count)
+            throw new InvalidOperationException($"side {sideId} cannot be appended to a {_sides.Count}-side mission");
+        var side = new Side(sideId, name, civilization,
+            Research.AllowDevelopments
+                ? BucketCatalog.ForSide(Core, Site, Research.StartingTechs(civilization),
+                    GlobalAttributeSet.FromArray(civilization.GasBaseAttributes),
+                    Goals.IsProsperityGame ? Goals.TeamMoney : 1)
+                : Array.Empty<Bucket>());
+        side.DevelopmentTechs = Research.StartingTechs(civilization);
+        side.InitialTechs = side.DevelopmentTechs;
+        var (r, g, b) = SidePalette.ColorFor(sideId);
+        side.ColorR = r;
+        side.ColorG = g;
+        side.ColorB = b;
+        _sides.Add(side);
+        side.Mission = this;
+        side.VisibilityRange = VisibilityRangeDefault;
+        return side;
     }
 
     /// <summary>Selected plans keyed by side id; consumed by the P703 commander.</summary>

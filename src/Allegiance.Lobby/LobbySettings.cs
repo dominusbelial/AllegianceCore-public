@@ -36,6 +36,16 @@ public sealed class LobbySettings
     /// Advertised only when a feed is actually deployed.</summary>
     public string? UpdateFeedUrl { get; set; }
 
+    /// <summary>P871 — the authoritative core catalog the new-game wizard may
+    /// select (IGC static file names, e.g. <c>PCore001.igc</c>). Empty = every
+    /// registered server's advertised core is selectable (the historical
+    /// behaviour, so an unconfigured lobby still works).</summary>
+    public List<string> GameCores { get; set; } = [];
+
+    /// <summary>P871 — the authoritative map catalog the wizard may select. Empty
+    /// = any name is accepted (matching a lobby that does not police maps).</summary>
+    public List<string> GameMaps { get; set; } = [];
+
     /// <summary>P820b — the configurable Zone web link shown on the client's
     /// online hub (the events screen footer). Exposed read-only via
     /// <c>GET /api/config/zone-web</c>. Empty means "not configured": the client

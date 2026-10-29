@@ -186,6 +186,12 @@ public sealed partial class Server
 
                 bool identityAccepted = BindIdentity(from, req, out var identityFailure);
 
+                // P871 / autoupdate::crcFileList — the native file-set gate
+                // (LOGONREQ.crcFileList, Inc/Messages.h:44; lobby/client.cpp:272-281).
+                bool fileListAccepted = CheckFileList(req, out var fileListFailure);
+                if (!fileListAccepted)
+                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': file-set CRC 0x{req.CrcFileList:X8} refused — {fileListFailure}");
+
                 // P808c — RESERVED CALLSIGN protection (P808a follow-up): on a
                 // server with identity configured, an ANONYMOUS logon (no lobby
                 // account bound, i.e. AllowAnonymous) must not take the name of a
@@ -227,8 +233,12 @@ public sealed partial class Server
                         || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
                             && _peerNames.TryGetValue(p.Key, out var name)
                             && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
-                var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict;
-                var failureReason = !identityAccepted ? identityFailure : duplicateName ? "character name already in use in this mission" : reservedConflict ? reservedFailure : "wrong client version";
+                var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict && fileListAccepted;
+                var failureReason = !identityAccepted ? identityFailure
+                    : !fileListAccepted ? fileListFailure
+                    : duplicateName ? "character name already in use in this mission"
+                    : reservedConflict ? reservedFailure
+                    : "wrong client version";
                 if (!validated) _peerIdentities.Remove(from);
                 if (validated) AuthenticatePrivileges(from, req);
                 // P619c — grant a connected HUMAN client (a character name NOT
@@ -2608,5 +2618,22 @@ public sealed partial class Server
     {
         float l = position.LengthSquared();
         return l > 0f && l < 90000f * 90000f;
+    }
+
+    /// <summary>
+    /// P871 — enforce <see cref="ServerConfig.RequireFileList"/> against the
+    /// client's reported LOGON <c>crcFileList</c>. A stale/forged client that
+    /// omits the value (0 = native "checks disabled") is refused when a file set
+    /// is required, and a mismatching CRC is refused with the update-flow reason.
+    /// </summary>
+    private bool CheckFileList(LogonRequest request, out string reason)
+    {
+        reason = "";
+        if (FileListCrc.IsAccepted(request.CrcFileList, _config.RequireFileList, _config.ExpectedFileListCrc))
+            return true;
+        reason = request.CrcFileList == FileListCrc.Unknown
+            ? "your client did not report its game file set — update the client and reconnect"
+            : "your game files do not match this server's release — update the client and reconnect";
+        return false;
     }
 }

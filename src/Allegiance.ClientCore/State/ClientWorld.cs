@@ -3655,7 +3655,7 @@ public sealed partial class ClientWorld
         // P463 — the same hit also feeds the hit-SOUND stream (my/other ×
         // shield/hull). Kept in its own buffer so the audio manager can drain it
         // in Update without racing the renderer's Draw-time drain of _hullHits.
-        _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.SourceId, hit.Position));
+        _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.SourceId, hit.Position, hit.Normal));
         if (_hitSoundEvents.Count > MaxHitSoundEvents) _hitSoundEvents.RemoveAt(0);
     }
 

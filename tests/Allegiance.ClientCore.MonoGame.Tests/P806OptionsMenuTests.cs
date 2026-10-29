@@ -66,18 +66,22 @@ public sealed class P806OptionsMenuTests
         menu.Row0 = 2;
         menu.Activate(State);                            // open Game Options
         var rows = menu.Rows(State);
-        Assert.Equal(6, rows.Count);
+        // P871 restored native's Force Feedback switch (idmToggleEnableFeedback
+        // 'E', WinTrek.cpp:4599), so the Game submenu is the native seven rows.
+        Assert.Equal(7, rows.Count);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenChatMenu, rows[0].Command);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleLinearControls);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.CycleDeadzone);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleFlipY);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleVirtualJoystick);
+        Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleForceFeedback);
         Assert.Equal(OptionsMenuModel.OptionsCommand.MapKeysAndControls, rows[^1].Command);
 
         // Labels are state-bearing, like the native Get...MenuString helpers.
         Assert.Contains(rows, r => r.Label == "Linear Controls: off");
         Assert.Contains(rows, r => r.Label == "Flip Y: off");
         Assert.Contains(rows, r => r.Label == "Virtual Joystick: on");
+        Assert.Contains(rows, r => r.Label == "Force Feedback: on");
         Assert.Contains(rows, r => r.Label.StartsWith("Mouse Dead Zone:"));
     }
 
@@ -91,13 +95,17 @@ public sealed class P806OptionsMenuTests
         menu.Activate(State);                            // Chat/Mute/Filter
         Assert.Equal(OptionsMenuModel.Page.Chat, menu.Current);
         var rows = menu.Rows(State);
-        var row = Assert.Single(rows);
-        Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll, row.Command);
+        // P871b added native's per-player mute toggle to this page, so the page is
+        // the filter row plus that one.
+        var row = Assert.Single(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll);
         // Native GetFilterChatsToAllMenuString (WinTrek.cpp:5664-5667): the label
         // names the ACTION, so it flips with the switch.
         Assert.Equal("Don't Filter Chats Sent To All", row.Label);
         Assert.Equal("Filter Chats Sent To All",
-            menu.Rows(State with { FilterChatsToAll = false })[0].Label);
+            menu.Rows(State with { FilterChatsToAll = false })
+                .Single(r => r.Command == OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll).Label);
+        var mute = Assert.Single(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleMuteChatSender);
+        Assert.Equal('M', mute.Hotkey);   // native idmContextMutePlayer's menu key, WinTrek.cpp:4310
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll, menu.Activate(State));
     }
 

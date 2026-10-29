@@ -362,11 +362,13 @@ public sealed class P853bHostEditUiTests
     /// assembled side count (P853's documented grow clamp: the server cannot
     /// create sides live, <c>MissionParamsMsg</c>/<c>Server.MissionParams.cs</c>).</summary>
     [Fact]
-    public void Settings_form_steps_native_values_and_caps_teams_at_the_assembled_count()
+    public void Settings_form_steps_native_values_and_caps_teams_at_the_native_six_slot_maximum()
     {
         using var session = JoinedSession(owner: true, advertised: Params(teams: 2), assembledSides: 4);
         var form = MissionSettingsForm.TryOpen(session.World)!;
-        Assert.Equal(4, form.MaxTeams);
+        // P871 — growth is live now (InitSide), so the cap is native c_cSidesMax = 6,
+        // not the assembled side count.
+        Assert.Equal(6, form.MaxTeams);
 
         Assert.Equal(MissionSettingsForm.Field.Teams, form.CursorField);   // opens on TEAMS
         form.Adjust(MissionSettingsForm.Field.Teams, +1);
@@ -374,9 +376,13 @@ public sealed class P853bHostEditUiTests
         form.Adjust(MissionSettingsForm.Field.Teams, +1);
         Assert.Equal((short)4, form.Draft.NTems);
         form.Adjust(MissionSettingsForm.Field.Teams, +1);
-        Assert.Equal((short)4, form.Draft.NTems);          // capped at the assembled 4
+        Assert.Equal((short)5, form.Draft.NTems);
+        form.Adjust(MissionSettingsForm.Field.Teams, +1);
+        Assert.Equal((short)6, form.Draft.NTems);
+        form.Adjust(MissionSettingsForm.Field.Teams, +1);
+        Assert.Equal((short)6, form.Draft.NTems);          // capped at the native six slots
         form.Adjust(MissionSettingsForm.Field.Teams, -1);
-        Assert.Equal((short)3, form.Draft.NTems);
+        Assert.Equal((short)5, form.Draft.NTems);
 
         // Lives walks native's LivesValues [32767, 0, 1, 2, 3, 4, 9].
         form.Adjust(MissionSettingsForm.Field.Lives, +1);

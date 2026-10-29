@@ -271,6 +271,16 @@ public sealed partial class Server
             return;
 
         var firstGame = _config.Games.FirstOrDefault();
+        // P871b test seam (InternalsVisibleTo): a test supplies the heartbeat so
+        // it can point it at an in-process lobby (the real one needs a socket).
+        if (HeartbeatFactory is { } factory)
+        {
+            _heartbeat = factory(_config.Lobby);
+            if (_config.Identity is not null)
+                _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
+            Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
+            return;
+        }
         _heartbeat = new LobbyHeartbeat(
             _config.Lobby,
             () => LivePlayerCount,
@@ -290,7 +300,11 @@ public sealed partial class Server
             // m_fLobbyDirty), so a host edit / stage / side / player change
             // publishes on the next throttled tick.
             () => LiveGameParams,
-            () => LobbyDirtyVersion);
+            () => LobbyDirtyVersion,
+            // P871b — the CREATE_MISSION_REQ relay: the server only claims a
+            // lobby game request while it has an idle mission slot, exactly like
+            // native's lobby, which never sends the request to a busy server.
+            CanHostPlayerGame);
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -1232,7 +1246,11 @@ public sealed partial class Server
     /// This is a pure refactor of the former loop body with byte-identical boot
     /// behaviour; boot tests must stay green.
     /// </summary>
-    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls)
+    /// <param name="playerCreated">P871b — true when this mission is being
+    /// assembled for a claimed lobby CREATE_MISSION_REQ: the wizard's own goal
+    /// parameters stay authoritative, so the showcase goal rotation is skipped and
+    /// the mission is stamped <see cref="Mission.PlayerCreated"/> (SIM-0146).</param>
+    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls, bool playerCreated = false)
     {
         // P802 — remember the config that produced this mission; the lobby civ
         // picker re-selects research plans through it (see Server.TeamCiv.cs).
@@ -1245,7 +1263,9 @@ public sealed partial class Server
         var goals = g.ResolveGoals();
         int civSeed = NextCivSeed(g);
         string goalDescription = "";
-        if (_config.Showcase.GoalRotation is { } rotation)
+        // P871b — a player-created mission keeps the goals the player chose; the
+        // operator's showcase rotation only applies to the configured worlds.
+        if (!playerCreated && _config.Showcase.GoalRotation is { } rotation)
         {
             var previous = _goalRotations.GetValueOrDefault(g, (Match: 0, Index: -1));
             int index = rotation.Select(previous.Match, civSeed, previous.Index);
@@ -1417,6 +1437,11 @@ public sealed partial class Server
         mission.CreatedWallTime = DateTimeOffset.UtcNow;
         mission.MissionId = (short)(_config.Games.IndexOf(g) + 1);   // native mission ids start at 1 (imission 0 is the NA sentinel)
         _missionConfigs[mission] = g;   // P802 — for a lobby civ's research-plan re-selection
+        // P871b / SIM-0146 — the lobby-directed lifecycle (native's
+        // "created before its players arrive", FedSrv.CPP:7867-7869): only these
+        // missions are reaped when still empty after ten seconds. Configured,
+        // admin, showcase and skirmish worlds keep the persistent default.
+        mission.PlayerCreated = playerCreated;
         return mission;
     }
 

@@ -716,6 +716,11 @@ public sealed partial class Server
         // bookkeeping (count + context-name invalidation) runs here.
         fresh.HasGenerated = mission.HasGenerated;
         fresh.ReplayCount = mission.ReplayCount;
+        // P871b / SIM-0146 — a player-created world stays player-created across
+        // its own rotation (it has players by definition once it is played), so
+        // the config entry that produced it stays in the aligned
+        // `_config.Games` slot and the reap bookkeeping is preserved.
+        fresh.PlayerCreated = mission.PlayerCreated;
         fresh.CreatedWallTime = mission.CreatedWallTime;   // same game identity: the FIRST creation moment (missionigc.cpp:4225-4230 renders m_ftCreated, not the reset time)
         fresh.BeginReplay();
         _missions[idx] = fresh;
@@ -5442,9 +5447,11 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// single peer (typically a pending side-select peer) so it can render the
     /// side list. Names/civ ids come from the mission's real Side data — never
     /// hardcoded.</summary>
-    private void SendSideRoster(ConnectionId to)
+    /// <summary>The <see cref="SideRoster"/> snapshot for one mission (P864b
+    /// includes the team-lobby pool size, the port of native
+    /// <c>SendLobbyMissionInfo</c>'s side table).</summary>
+    private (SideRoster Roster, SideRoster.SideRecord[] Records) BuildSideRoster(Mission mission)
     {
-        var mission = _missions[0];
         var recs = mission.Sides
             .Select(s => new SideRoster.SideRecord(
                 s.Id,
@@ -5457,7 +5464,29 @@ private void CompleteStartCountdown(Mission mission, double now)
         // SideTeamLobby/-2), so the client's team screen can show the lobby
         // ("Not on a team"), native clintlib.cpp:994.
         short lobby = (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == SideTeamLobby);
-        SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs, LobbyPlayerCount = lobby }.Encode() }));
+        return (new SideRoster { Sides = recs, LobbyPlayerCount = lobby }, recs);
+    }
+
+    /// <summary>P871 / MISSIONPARAMS — re-publish the side table to every peer of
+    /// a mission after a LIVE side growth (native <c>UpdateSides</c> creates the
+    /// IGC side; the native client's team table follows the mission-def/roster
+    /// traffic, and the port's <see cref="SideRoster"/> is replace-on-arrival).</summary>
+    private void BroadcastSideRoster(Mission mission)
+    {
+        var (roster, _) = BuildSideRoster(mission);
+        var packet = FedPacket.Pack(new[] { roster.Encode() });
+        foreach (var (peer, live) in _peerShips)
+            if (ReferenceEquals(live.Ship.Mission, mission))
+                SendPeer(peer, packet);
+        Console.WriteLine($"[missionparams] -> SIDE_ROSTER(211) re-published to mission peers ({roster.Sides.Length} side(s))");
+    }
+
+    private void SendSideRoster(ConnectionId to)
+    {
+        var mission = _missions[0];
+        var (roster, recs) = BuildSideRoster(mission);
+        short lobby = roster.LobbyPlayerCount;
+        SendPeer(to, FedPacket.Pack(new[] { roster.Encode() }));
         Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [+ lobby {lobby}] [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
         // P864d — native's SendLobbyMissionInfo ends with "tell them about all of
         // the players": one PLAYERINFO(10) per ship in the mission, sent to the

@@ -230,6 +230,30 @@ public sealed partial class Server
         Console.WriteLine($"[missionparams] ship {live.Ship.Id}: mission params updated (nTeams {cur.NTems}, maxPerTeam {cur.NMaxPlayersPerTeam}, rank {cur.IMinRank}..{cur.IMaxRank}) — MISSIONDEF(38) whole-mission + lobby refresh");
     }
 
+    /// <summary>The native side-name array (<c>FedSrv/fsmission.cpp:23-32</c>).</summary>
+    private static readonly string[] NativeSideNames =
+        ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6"];
+
+    /// <summary>P871 / MISSIONPARAMS — native <c>CFSMission::InitSide</c>
+    /// (<c>FedSrv/fsmission.cpp:33-62</c>) for a LIVE growth: the slot's
+    /// <c>rgCivID</c> (defaulting to an unused civilization when the params carry
+    /// NA), the native side name and the slot palette. Returns null when the core
+    /// has no civilization to back the side.</summary>
+    private static Side? InitSide(Mission mission, short sideId, MissionParamsMsg msg)
+    {
+        short civId = sideId < msg.RgCivId.Length ? msg.RgCivId[sideId] : (short)-1;
+        if (civId < 0 || !mission.Core.Civilizations.ContainsKey(civId))
+        {
+            civId = mission.Core.Civilizations.Keys
+                .FirstOrDefault(id => mission.Sides.All(s => s.Civilization.CivilizationId != id), (short)-1);
+            if (civId < 0) civId = mission.Core.Civilizations.Keys.FirstOrDefault();
+        }
+        if (!mission.Core.Civilizations.TryGetValue(civId, out var civ)) return null;
+        if (sideId < msg.RgCivId.Length) msg.RgCivId[sideId] = civId;
+        string name = sideId >= 0 && sideId < NativeSideNames.Length ? NativeSideNames[sideId] : $"Team {sideId + 1}";
+        return mission.AddSide(sideId, name, civ);
+    }
+
     /// <summary>P853 — the port of <c>CFSMission::SetMissionParams</c>
     /// (<c>fsmission.cpp:1796-1895</c>). <paramref name="cur"/> is the
     /// mission's previous params (read-only here); <paramref name="msg"/> is
@@ -256,13 +280,25 @@ public sealed partial class Server
         short newTeams = msg.NTems;
         if (newTeams > mission.Sides.Count)
         {
-            // DIVERGENCE (documented in docs/reports/P853_REPORT.md): native
-            // grows the mission with InitSide (fsmission.cpp:1846-1852); this
-            // port cannot create sides on an assembled mission (the Side list
-            // is fixed at assembly, Mission.cs:37-38), so a grow is clamped
-            // to the assembled count and logged.
-            Console.WriteLine($"[missionparams] nTeams growth {oldTeams} -> {newTeams} is not supported live in this port (would need InitSide, fsmission.cpp:1846-1852) — clamped to {mission.Sides.Count}");
-            msg.NTems = newTeams = (short)mission.Sides.Count;
+            // :1846-1852 — grow the mission with InitSide, then
+            // CmissionIGC::UpdateSides (missionigc.cpp:3749-3779) creates the IGC
+            // side from the params' rgCivID[slot], the native side-name array and
+            // the per-slot palette. P871 closes the former clamp: the port now
+            // appends the side to the live mission (Mission.AddSide) and
+            // re-publishes the roster.
+            for (short sideId = (short)mission.Sides.Count; sideId < newTeams; sideId++)
+            {
+                if (InitSide(mission, sideId, msg) is not { } created)
+                {
+                    Console.WriteLine($"[missionparams] side {sideId} could not be created (no civilization) — nTeams clamped to {sideId}");
+                    msg.NTems = newTeams = sideId;
+                    break;
+                }
+                var active = new SideInactive { SideId = sideId, BActive = true, BChangeAet = false, BAet = false };
+                SendToMissionPeers(mission, FedPacket.Pack([active.Encode()]));
+                Console.WriteLine($"[missionparams] side {sideId} '{created.Name}' created live (InitSide, civ {created.Civilization.CivilizationId}) -> SIDE_INACTIVE(68) bActive");
+            }
+            if (newTeams > oldTeams) BroadcastSideRoster(mission);
         }
         for (short sideId = (short)(mission.Sides.Count - 1); sideId >= newTeams; sideId--)
         {

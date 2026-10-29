@@ -8010,10 +8010,10 @@ public sealed partial class Ship : Model, IShipIgc
 
     /// <summary>P767 / SIM-0100 — salNoAmmoSound, the voice-over the native
     /// wingman resupply chat carries (clintlib.cpp:3713-3714, commented
-    /// "//salNoAmmoSound"). The port's generated catalog binds the
-    /// "salNoAmmoSound" definition to SoundID 1409
-    /// (NativeVoiceCatalog.Generated.cs:187,976).</summary>
-    private const short SalNoAmmoSound = 1409;
+    /// "//salNoAmmoSound"). The id is native's own: Igc/sounds.h:489 with the
+    /// dead `/* NYI no turrets */` block (443-459) removed by the preprocessor
+    /// gives 1396 — P767/P871's 1409 was the +13 generator bug (P871b).</summary>
+    private const short SalNoAmmoSound = 1396;
 
     private Asteroid? _builderAsteroidTarget;
     /// <summary>The accepted constructor build target while traveling, before
