@@ -346,6 +346,7 @@ public sealed class Sector : IClusterIgc
     {
         _stations.Add(station.Data);
         _stationRuntimes.Add(station);
+        Mission?.AddStation(station);
     }
 
     /// <summary>Native retyping detaches/re-adds the cluster membership
@@ -372,6 +373,8 @@ public sealed class Sector : IClusterIgc
     /// station's Terminate → DeleteStation, stationIGC.h:183).</summary>
     public bool RemoveStation(Station station)
     {
+        Mission?.DeleteStation(station);
+        Mission?.DetachThingSite(station);
         _stationRuntimes.Remove(station);
         bool removed = _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
         station.Mission?.Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
@@ -394,7 +397,9 @@ public sealed class Sector : IClusterIgc
     public bool RemoveWarp(ResolvedWarp warp)
     {
         ArgumentNullException.ThrowIfNull(warp);
-        return _warps.Remove(warp);
+        bool removed = _warps.Remove(warp);
+        if (removed) { Mission?.DeleteWarp(warp); Mission?.DetachThingSite(warp); }
+        return removed;
     }
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
@@ -408,6 +413,7 @@ public sealed class Sector : IClusterIgc
     {
         _asteroids.Add(asteroid.Data);
         _mineable.Add(asteroid);
+        Mission?.AddAsteroid(asteroid);
     }
     internal void AttachWarp(ResolvedWarp warp) => _warps.Add(warp);
 
@@ -468,6 +474,7 @@ public sealed class Sector : IClusterIgc
     public void Add(Model model)
     {
         ArgumentNullException.ThrowIfNull(model);
+        Mission?.RegisterModel(model);
         _models.Add(model);
         _modelMembership.TryGetValue(model, out int copies);
         _modelMembership[model] = copies + 1;
@@ -520,6 +527,7 @@ public sealed class Sector : IClusterIgc
     {
         if (!_modelMembership.ContainsKey(model)) return false;
         Mission?.Site.TerminateModelEvent(model);
+        Mission?.UnregisterModel(model);
         return Remove(model);
     }
 
@@ -538,6 +546,7 @@ public sealed class Sector : IClusterIgc
         // (FedSrv.CPP:11459-11462). Keep the port's record and runtime lists in agreement.
         _asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId);
         bool removed = _mineable.Remove(asteroid);
+        if (removed) { Mission?.DeleteAsteroid(asteroid); Mission?.DetachThingSite(asteroid); }
         if (removed && asteroid.BuildingEffect is { } effect)
             TerminateBuildingEffect(effect);
         return removed;

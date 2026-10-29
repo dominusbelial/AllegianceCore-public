@@ -1,25 +1,31 @@
-using System.Collections.Concurrent;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 
 namespace Allegiance.ClientCore.State;
 
-/// <summary>One immutable core per file/version, shared by bot sessions. Only
-/// mission entry can load; telemetry handlers never perform file IO.</summary>
+/// <summary>Mission-owned named core leases. Native cache lookup precedes IO
+/// and the last consumer retires the entry (missionigc.cpp:2390-2431,3033-3053).</summary>
 internal static class ClientMissionCoreCache
 {
-    private static readonly ConcurrentDictionary<string, Lazy<StaticCore>> Cores = new();
-
-    internal static StaticCore? Resolve(string name)
+    internal static StaticCoreCache.Lease? Acquire(string name)
     {
         // MISSIONDEF is remote input: a core name cannot escape the asset root.
         if (name.Length == 0 || name != Path.GetFileName(name) || name.Contains('\\')) return null;
         var root = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
         if (root.Length == 0) return null;
         var path = Path.Combine(root, name.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? name : name + ".igc");
-        if (!File.Exists(path)) return null;
-        var stamp = File.GetLastWriteTimeUtc(path).Ticks;
-        return Cores.GetOrAdd($"{path}:{stamp}", _ => new Lazy<StaticCore>(
-            () => StaticCore.Load(IgcReader.Parse(File.ReadAllBytes(path))))).Value;
+        // Client asset edits must reload even while another world owns the old
+        // revision. Keep server named-core sharing separate from this file key.
+        var file = new FileInfo(path);
+        string key = $"client:{path}:{file.LastWriteTimeUtc.Ticks}:{file.Length}";
+        return StaticCoreCache.Shared.Load(key, path);
+    }
+
+    // Preserve the resolver delegate shape for custom hosts. The ordinary
+    // mission-entry path acquires its lease directly, before assigning Core.
+    internal static StaticCore? Resolve(string name)
+    {
+        using var lease = Acquire(name);
+        return lease?.Core;
     }
 }

@@ -260,3 +260,16 @@ lists (`Igc/missionigc.cpp:3977-4055`). File-map resources use native Reset defa
 home/neutral He3 rocks 2/4, special rocks 1/1, generic rocks 20/20, starting treasures
 0/5, He3 density 1 (`Igc/igc.h:1284,1315-1328`). Generated-map presets keep their
 existing resource settings.
+
+Native bot ownership transfer can be enabled with `botAuthenticationSecret` in
+server JSON (default `null`, disabled). A validated bot supplies it through
+`LOGONREQ.CDKey`; admin and test-harness access do not grant this role. Keep
+credentials in a private config override. No additional service or port is needed.
+The server reads the native `maps.txt` catalog from its artwork mount and sends
+`STATIC_MAP_INFO` after validated logon. Each entry is `teams,friendly name,file`
+after a first-line entry count. Map files remain in that same artwork mount.
+
+Named core leases and standalone character IDs are process-local memory stores;
+they need no additional Docker volume. The existing artwork mount supplies core
+and map files. Core cache entries retire with their last consumer; standalone
+IDs reset when the server process exits.

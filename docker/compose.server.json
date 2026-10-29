@@ -2,6 +2,7 @@
   "artPath": "/artwork",
   "staticCore": "PCore001.igc",
   "staticCoreEncrypted": false,
+  "botAuthenticationSecret": null,
   "port": 6073,
   "updatesPerSecond": 20,
   "games": [

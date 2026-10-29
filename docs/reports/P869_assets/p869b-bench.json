@@ -1,0 +1,1496 @@
+[
+  {
+    "arm": "master",
+    "run": 1,
+    "mean": 1.93,
+    "p95": 5.72,
+    "alloc_mb": 453.6,
+    "alloc_kb_tick": 929.0,
+    "buckets": {
+      "step:update": {
+        "mean": 1.91,
+        "p95": 5.67
+      },
+      "sector:1052": {
+        "mean": 1.86,
+        "p95": 5.58
+      },
+      "sim.models": {
+        "mean": 0.63,
+        "p95": 1.6
+      },
+      "sim.combat": {
+        "mean": 0.59,
+        "p95": 1.36
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 1.17
+      },
+      "blast.resolve": {
+        "mean": 0.39,
+        "p95": 0.92
+      },
+      "blast.apply": {
+        "mean": 0.39,
+        "p95": 0.92
+      },
+      "sim.visibility": {
+        "mean": 0.37,
+        "p95": 12.05
+      },
+      "vis.scan": {
+        "mean": 0.31,
+        "p95": 11.54
+      },
+      "sim.mining": {
+        "mean": 0.16,
+        "p95": 0.41
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.13
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.17
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.13
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "vis.write": {
+        "mean": 0.04,
+        "p95": 0.26
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.07
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.16
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sector:1050": {
+        "mean": 0.0,
+        "p95": 0.02
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "master",
+    "run": 2,
+    "mean": 1.93,
+    "p95": 5.49,
+    "alloc_mb": 453.6,
+    "alloc_kb_tick": 929.1,
+    "buckets": {
+      "step:update": {
+        "mean": 1.91,
+        "p95": 5.43
+      },
+      "sector:1052": {
+        "mean": 1.85,
+        "p95": 5.3
+      },
+      "sim.models": {
+        "mean": 0.63,
+        "p95": 1.42
+      },
+      "sim.combat": {
+        "mean": 0.6,
+        "p95": 1.32
+      },
+      "combat.detect": {
+        "mean": 0.5,
+        "p95": 1.04
+      },
+      "blast.resolve": {
+        "mean": 0.4,
+        "p95": 0.85
+      },
+      "blast.apply": {
+        "mean": 0.4,
+        "p95": 0.84
+      },
+      "sim.visibility": {
+        "mean": 0.35,
+        "p95": 8.68
+      },
+      "vis.scan": {
+        "mean": 0.31,
+        "p95": 8.38
+      },
+      "sim.mining": {
+        "mean": 0.15,
+        "p95": 0.39
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.1
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.18
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.14
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sector:1050": {
+        "mean": 0.0,
+        "p95": 0.02
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "master",
+    "run": 3,
+    "mean": 1.88,
+    "p95": 5.54,
+    "alloc_mb": 453.5,
+    "alloc_kb_tick": 928.8,
+    "buckets": {
+      "step:update": {
+        "mean": 1.86,
+        "p95": 5.51
+      },
+      "sector:1052": {
+        "mean": 1.81,
+        "p95": 5.47
+      },
+      "sim.models": {
+        "mean": 0.61,
+        "p95": 1.34
+      },
+      "sim.combat": {
+        "mean": 0.58,
+        "p95": 1.27
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 1.06
+      },
+      "blast.resolve": {
+        "mean": 0.36,
+        "p95": 0.72
+      },
+      "blast.apply": {
+        "mean": 0.36,
+        "p95": 0.72
+      },
+      "sim.visibility": {
+        "mean": 0.33,
+        "p95": 8.63
+      },
+      "vis.scan": {
+        "mean": 0.28,
+        "p95": 8.39
+      },
+      "sim.mining": {
+        "mean": 0.17,
+        "p95": 0.38
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.11
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.18
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.15
+      },
+      "sector:1050": {
+        "mean": 0.0,
+        "p95": 0.02
+      },
+      "sim.rescue": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "p869-applied",
+    "run": 1,
+    "mean": 1.83,
+    "p95": 5.51,
+    "alloc_mb": 454.6,
+    "alloc_kb_tick": 930.9,
+    "buckets": {
+      "step:update": {
+        "mean": 1.81,
+        "p95": 5.49
+      },
+      "sector:1052": {
+        "mean": 1.75,
+        "p95": 5.45
+      },
+      "sim.models": {
+        "mean": 0.67,
+        "p95": 1.64
+      },
+      "sim.combat": {
+        "mean": 0.59,
+        "p95": 1.24
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 0.87
+      },
+      "blast.resolve": {
+        "mean": 0.41,
+        "p95": 1.11
+      },
+      "blast.apply": {
+        "mean": 0.41,
+        "p95": 1.11
+      },
+      "sim.visibility": {
+        "mean": 0.23,
+        "p95": 8.68
+      },
+      "vis.scan": {
+        "mean": 0.19,
+        "p95": 7.99
+      },
+      "sim.mining": {
+        "mean": 0.14,
+        "p95": 0.36
+      },
+      "combat.build": {
+        "mean": 0.08,
+        "p95": 0.11
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.18
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.07
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.15
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sector:1050": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "p869-applied",
+    "run": 2,
+    "mean": 1.89,
+    "p95": 5.69,
+    "alloc_mb": 454.6,
+    "alloc_kb_tick": 930.9,
+    "buckets": {
+      "step:update": {
+        "mean": 1.87,
+        "p95": 5.66
+      },
+      "sector:1052": {
+        "mean": 1.82,
+        "p95": 5.6
+      },
+      "sim.models": {
+        "mean": 0.64,
+        "p95": 1.49
+      },
+      "sim.combat": {
+        "mean": 0.58,
+        "p95": 1.28
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 1.05
+      },
+      "blast.resolve": {
+        "mean": 0.4,
+        "p95": 0.91
+      },
+      "blast.apply": {
+        "mean": 0.39,
+        "p95": 0.9
+      },
+      "sim.visibility": {
+        "mean": 0.33,
+        "p95": 8.65
+      },
+      "vis.scan": {
+        "mean": 0.29,
+        "p95": 4.67
+      },
+      "sim.mining": {
+        "mean": 0.15,
+        "p95": 0.38
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.17
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.13
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.19
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.07
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.16
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sector:1050": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.rescue": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "p869-applied",
+    "run": 3,
+    "mean": 1.91,
+    "p95": 5.79,
+    "alloc_mb": 454.6,
+    "alloc_kb_tick": 930.9,
+    "buckets": {
+      "step:update": {
+        "mean": 1.89,
+        "p95": 5.77
+      },
+      "sector:1052": {
+        "mean": 1.84,
+        "p95": 5.72
+      },
+      "sim.models": {
+        "mean": 0.62,
+        "p95": 1.56
+      },
+      "sim.combat": {
+        "mean": 0.58,
+        "p95": 1.34
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 1.02
+      },
+      "blast.resolve": {
+        "mean": 0.37,
+        "p95": 0.93
+      },
+      "blast.apply": {
+        "mean": 0.37,
+        "p95": 0.93
+      },
+      "sim.visibility": {
+        "mean": 0.36,
+        "p95": 9.11
+      },
+      "vis.scan": {
+        "mean": 0.32,
+        "p95": 8.62
+      },
+      "sim.mining": {
+        "mean": 0.15,
+        "p95": 0.39
+      },
+      "combat.build": {
+        "mean": 0.08,
+        "p95": 0.15
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "sim.mines": {
+        "mean": 0.02,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.18
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.14
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sector:1050": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "candidate",
+    "run": 1,
+    "mean": 1.89,
+    "p95": 5.6,
+    "alloc_mb": 454.0,
+    "alloc_kb_tick": 929.7,
+    "buckets": {
+      "step:update": {
+        "mean": 1.87,
+        "p95": 5.54
+      },
+      "sector:1052": {
+        "mean": 1.82,
+        "p95": 5.45
+      },
+      "sim.models": {
+        "mean": 0.6,
+        "p95": 1.45
+      },
+      "sim.combat": {
+        "mean": 0.57,
+        "p95": 1.33
+      },
+      "combat.detect": {
+        "mean": 0.48,
+        "p95": 1.06
+      },
+      "sim.visibility": {
+        "mean": 0.36,
+        "p95": 9.86
+      },
+      "blast.resolve": {
+        "mean": 0.35,
+        "p95": 0.76
+      },
+      "blast.apply": {
+        "mean": 0.35,
+        "p95": 0.76
+      },
+      "vis.scan": {
+        "mean": 0.32,
+        "p95": 8.38
+      },
+      "sim.mining": {
+        "mean": 0.16,
+        "p95": 0.38
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.11
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.1
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.03,
+        "p95": 0.2
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.15
+      },
+      "sector:1050": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "candidate",
+    "run": 2,
+    "mean": 1.89,
+    "p95": 5.46,
+    "alloc_mb": 453.9,
+    "alloc_kb_tick": 929.6,
+    "buckets": {
+      "step:update": {
+        "mean": 1.87,
+        "p95": 5.44
+      },
+      "sector:1052": {
+        "mean": 1.81,
+        "p95": 5.35
+      },
+      "sim.models": {
+        "mean": 0.64,
+        "p95": 1.63
+      },
+      "sim.combat": {
+        "mean": 0.57,
+        "p95": 1.23
+      },
+      "combat.detect": {
+        "mean": 0.48,
+        "p95": 0.93
+      },
+      "blast.resolve": {
+        "mean": 0.39,
+        "p95": 1.01
+      },
+      "blast.apply": {
+        "mean": 0.38,
+        "p95": 1.01
+      },
+      "sim.visibility": {
+        "mean": 0.36,
+        "p95": 9.38
+      },
+      "vis.scan": {
+        "mean": 0.31,
+        "p95": 8.57
+      },
+      "sim.mining": {
+        "mean": 0.14,
+        "p95": 0.36
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.11
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.18
+      },
+      "sim.mines": {
+        "mean": 0.02,
+        "p95": 0.04
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.15
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sector:1050": {
+        "mean": 0.0,
+        "p95": 0.03
+      },
+      "sim.rescue": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  },
+  {
+    "arm": "candidate",
+    "run": 3,
+    "mean": 1.88,
+    "p95": 5.46,
+    "alloc_mb": 453.9,
+    "alloc_kb_tick": 929.7,
+    "buckets": {
+      "step:update": {
+        "mean": 1.86,
+        "p95": 5.42
+      },
+      "sector:1052": {
+        "mean": 1.8,
+        "p95": 5.35
+      },
+      "sim.models": {
+        "mean": 0.59,
+        "p95": 1.47
+      },
+      "sim.combat": {
+        "mean": 0.58,
+        "p95": 1.31
+      },
+      "combat.detect": {
+        "mean": 0.49,
+        "p95": 1.09
+      },
+      "sim.visibility": {
+        "mean": 0.37,
+        "p95": 8.88
+      },
+      "blast.resolve": {
+        "mean": 0.35,
+        "p95": 0.82
+      },
+      "blast.apply": {
+        "mean": 0.35,
+        "p95": 0.81
+      },
+      "vis.scan": {
+        "mean": 0.32,
+        "p95": 8.55
+      },
+      "sim.mining": {
+        "mean": 0.15,
+        "p95": 0.38
+      },
+      "sim.collision": {
+        "mean": 0.07,
+        "p95": 0.16
+      },
+      "combat.build": {
+        "mean": 0.07,
+        "p95": 0.14
+      },
+      "collision.asteroid.detect": {
+        "mean": 0.05,
+        "p95": 0.12
+      },
+      "blast.evaluate": {
+        "mean": 0.04,
+        "p95": 0.11
+      },
+      "sim.mines": {
+        "mean": 0.03,
+        "p95": 0.04
+      },
+      "vis.write": {
+        "mean": 0.02,
+        "p95": 0.19
+      },
+      "combat.dispatch": {
+        "mean": 0.02,
+        "p95": 0.06
+      },
+      "sim.prepare": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "sim.warp": {
+        "mean": 0.01,
+        "p95": 0.02
+      },
+      "vis.enumerate": {
+        "mean": 0.01,
+        "p95": 0.15
+      },
+      "sector:1050": {
+        "mean": 0.01,
+        "p95": 0.03
+      },
+      "sim.rescue": {
+        "mean": 0.01,
+        "p95": 0.01
+      },
+      "sim.navigation": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sim.economy": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1053": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1051": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1054": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1055": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1056": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1058": {
+        "mean": 0.0,
+        "p95": 0.01
+      },
+      "sector:1060": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1057": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1059": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1062": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sector:1061": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.docking": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "sim.station": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "collision.asteroid.dispatch": {
+        "mean": 0.0,
+        "p95": 0.0
+      },
+      "blast.damage": {
+        "mean": 0.0,
+        "p95": 0.0
+      }
+    }
+  }
+]

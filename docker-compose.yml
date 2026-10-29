@@ -41,6 +41,8 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # Optional bot owner transfer uses botAuthenticationSecret in the mounted server JSON.
+  # null disables the role; keep real credentials in a private config override.
   server:
     build:
       context: .

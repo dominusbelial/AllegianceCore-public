@@ -1818,6 +1818,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // clintlib/appmsg.cpp:2541-2550).
                         _world.Apply(SetTeamInfo.Decode(m));
                         break;
+                    case StaticMapInfo.Fmid:
+                        _world.Apply(StaticMapInfo.Decode(m));
+                        break;
                     case SetMissionOwner.Fmid:
                         // P281 — whole-mission owner broadcast; the world keeps it
                         // so the side-select randomize-teams control is shown only

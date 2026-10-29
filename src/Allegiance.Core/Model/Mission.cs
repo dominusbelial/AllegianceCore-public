@@ -41,13 +41,13 @@ public sealed partial class Mission : IMissionIgc
     public MissionMap Map { get; }
 
     /// <summary>Sectors, one per <c>OT_cluster</c>, in map order.</summary>
-    public IReadOnlyList<Sector> Sectors { get; }
+    public IReadOnlyList<Sector> Sectors => GetClusters();
 
     /// <summary>The caller-supplied sides, in the order given.</summary>
-    public IReadOnlyList<Side> Sides { get; }
+    public IReadOnlyList<Side> Sides => GetSides();
 
     /// <summary>Every warp across every sector, in map order.</summary>
-    public IReadOnlyList<ResolvedWarp> Warps { get; }
+    public IReadOnlyList<ResolvedWarp> Warps => GetWarps();
 
     /// <summary>
     /// The subset of <see cref="Warps"/> whose destination could not be
@@ -663,10 +663,12 @@ public sealed partial class Mission : IMissionIgc
         IIgcSite site)
     {
         Core = core;
+        _coreLease = StaticCoreCache.Shared.Retain(core);
+        Site = site;
         Map = map;
-        Sectors = sectors;
-        Sides = sides;
-        Warps = allWarps;
+        foreach (var sector in sectors) AddCluster(sector);
+        foreach (var side in sides) AddSide(side);
+        foreach (var warp in allWarps) AddWarp(warp);
         DanglingWarps = danglingWarps;
         Site = site;
     }
@@ -800,7 +802,8 @@ public sealed partial class Mission : IMissionIgc
         foreach (var sector in sectors)
         {
             sector.Mission = mission;
-            foreach (var asteroid in sector.Mineable) { asteroid.Mission = mission; asteroid.Sector = sector; }
+            sector.MissionSides = mission.Sides;
+            foreach (var asteroid in sector.Mineable) { asteroid.Mission = mission; asteroid.Sector = sector; mission.AddAsteroid(asteroid); }
         }
         // P259 — wire the sides back to the mission (the analogue of the Sector
         // back-link just above) and seed each side's cluster visibility range
@@ -858,6 +861,7 @@ public sealed partial class Mission : IMissionIgc
     /// </remarks>
     public void Update(double now)
     {
+        if (IsDisposed) return;
         if (now < LastUpdate)
             throw new InvalidOperationException(
                 $"mission clock moved backwards (now = {now:R} < LastUpdate = {LastUpdate:R}); " +

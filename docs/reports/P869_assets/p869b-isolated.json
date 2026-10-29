@@ -1,0 +1,254 @@
+[
+  {
+    "file": "isolated-ConquestTerritoryLiveTests-1.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.8606474
+  },
+  {
+    "file": "isolated-ConquestTerritoryLiveTests-2.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 1.1819917
+  },
+  {
+    "file": "isolated-ConquestTerritoryLiveTests-3.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 1.0468683
+  },
+  {
+    "file": "isolated-FlagsKillsLiveTests-1.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 4.9893509
+  },
+  {
+    "file": "isolated-FlagsKillsLiveTests-2.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 5.2989716
+  },
+  {
+    "file": "isolated-FlagsKillsLiveTests-3.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 5.2908428
+  },
+  {
+    "file": "isolated-LiveP548GameOverStageGateTests-1.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 1.7238273
+  },
+  {
+    "file": "isolated-LiveP548GameOverStageGateTests-2.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 1.6568937000000001
+  },
+  {
+    "file": "isolated-LiveP548GameOverStageGateTests-3.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 1.6814438
+  },
+  {
+    "file": "isolated-LiveTeamLeadershipTests-1.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.2214431000000001
+  },
+  {
+    "file": "isolated-LiveTeamLeadershipTests-2.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.2336005
+  },
+  {
+    "file": "isolated-LiveTeamLeadershipTests-3.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.3387742
+  },
+  {
+    "file": "isolated-MineCrossSideVisibilityLiveTests-1.trx",
+    "passed": 1,
+    "failed": 0,
+    "seconds": 0.8779596
+  },
+  {
+    "file": "isolated-MineCrossSideVisibilityLiveTests-2.trx",
+    "passed": 1,
+    "failed": 0,
+    "seconds": 0.9150979
+  },
+  {
+    "file": "isolated-MineCrossSideVisibilityLiveTests-3.trx",
+    "passed": 1,
+    "failed": 0,
+    "seconds": 0.8721287
+  },
+  {
+    "file": "isolated-NotSupportedFedMsgsTests-1.trx",
+    "passed": 3,
+    "failed": 0,
+    "seconds": 0.0046235
+  },
+  {
+    "file": "isolated-NotSupportedFedMsgsTests-2.trx",
+    "passed": 3,
+    "failed": 0,
+    "seconds": 0.0062342000000000005
+  },
+  {
+    "file": "isolated-NotSupportedFedMsgsTests-3.trx",
+    "passed": 3,
+    "failed": 0,
+    "seconds": 0.0058734
+  },
+  {
+    "file": "isolated-P650ServerRulesTests-1.trx",
+    "passed": 2,
+    "failed": 1,
+    "seconds": 7.963634
+  },
+  {
+    "file": "isolated-P650ServerRulesTests-2.trx",
+    "passed": 2,
+    "failed": 1,
+    "seconds": 8.195624200000001
+  },
+  {
+    "file": "isolated-P650ServerRulesTests-3.trx",
+    "passed": 2,
+    "failed": 1,
+    "seconds": 8.4977573
+  },
+  {
+    "file": "isolated-P739TimerLiveTests-1.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.7903642
+  },
+  {
+    "file": "isolated-P739TimerLiveTests-2.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.8205792
+  },
+  {
+    "file": "isolated-P739TimerLiveTests-3.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.7691542
+  },
+  {
+    "file": "isolated-P844MissionRulesCertifyTests-1.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.4462472
+  },
+  {
+    "file": "isolated-P844MissionRulesCertifyTests-2.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.410287
+  },
+  {
+    "file": "isolated-P844MissionRulesCertifyTests-3.trx",
+    "passed": 12,
+    "failed": 0,
+    "seconds": 1.4328082
+  },
+  {
+    "file": "isolated-P869DispatchTests-1.trx",
+    "passed": 17,
+    "failed": 0,
+    "seconds": 0.4458992
+  },
+  {
+    "file": "isolated-P869DispatchTests-2.trx",
+    "passed": 17,
+    "failed": 0,
+    "seconds": 0.4145237
+  },
+  {
+    "file": "isolated-P869DispatchTests-3.trx",
+    "passed": 17,
+    "failed": 0,
+    "seconds": 0.4370122
+  },
+  {
+    "file": "isolated-P869OwnershipTests-1.trx",
+    "passed": 25,
+    "failed": 0,
+    "seconds": 0.5607211
+  },
+  {
+    "file": "isolated-P869OwnershipTests-2.trx",
+    "passed": 25,
+    "failed": 0,
+    "seconds": 0.6161767
+  },
+  {
+    "file": "isolated-P869OwnershipTests-3.trx",
+    "passed": 25,
+    "failed": 0,
+    "seconds": 0.4238054
+  },
+  {
+    "file": "isolated-P869bReviewTests-1.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.5804818
+  },
+  {
+    "file": "isolated-P869bReviewTests-2.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.5611387
+  },
+  {
+    "file": "isolated-P869bReviewTests-3.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.5501202
+  },
+  {
+    "file": "isolated-ProsperityArtifactLiveTests-1.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 8.9829893
+  },
+  {
+    "file": "isolated-ProsperityArtifactLiveTests-2.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 9.0273246
+  },
+  {
+    "file": "isolated-ProsperityArtifactLiveTests-3.trx",
+    "passed": 6,
+    "failed": 0,
+    "seconds": 9.0481485
+  },
+  {
+    "file": "isolated-SideEliminationLiveTests-1.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.8298096
+  },
+  {
+    "file": "isolated-SideEliminationLiveTests-2.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.8198114000000001
+  },
+  {
+    "file": "isolated-SideEliminationLiveTests-3.trx",
+    "passed": 5,
+    "failed": 0,
+    "seconds": 0.8217972
+  }
+]

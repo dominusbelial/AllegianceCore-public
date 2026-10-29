@@ -55,10 +55,11 @@ public sealed partial class Server
     /// <summary>
     /// Boot in the strict order dictated by the reference engine (MISSION_INIT.md
     /// §4): static core first, then sides / sectors, then the tick. Stubbed step
-    /// 5 logs that cores.txt/ranks.txt/maps.txt are intentionally not loaded.
+    /// 5 logs the deferred core download list; rank and map catalogs load normally.
     /// </summary>
     public void Boot(ServerConfig config)
     {
+        _shutdown = false;
         _config = config;
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         ValidateIdentityConfiguration();
@@ -70,6 +71,7 @@ public sealed partial class Server
         InitUpdateCadence();
         // Civ/plan rejection precedes host-reading profiler callbacks and transport.
         ValidatePaths();
+        LoadStaticMapCatalog();
         var startupCore = LoadCore();
         foreach (var game in _config.Games) PrimeShowcasePlans(startupCore, game);
         Console.WriteLine(FormattableString.Invariant($"[boot] showcase.researchTimeScale = {_config.Showcase.ResearchTimeScale}"));
@@ -196,7 +198,7 @@ public sealed partial class Server
         ValidatePaths();
         var core = startupCore;       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
-        StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
+        StubFileLists();                             // checklist item 5 (core downloads only)
         _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
         BindHostAndTransport();                      // checklist items 3 & 6
         OpenCaptureIfEnabled();                      // optional --capture (off by default)
@@ -739,12 +741,13 @@ public sealed partial class Server
     private StaticCore LoadCore()
     {
         var corePath = Path.Combine(_config.ArtPath, _config.StaticCore);
-        if (!File.Exists(corePath))
-            throw new InvalidDataException($"static core '{corePath}' not found under artPath");
-        var file = IgcReader.ParseFile(corePath, encrypted: _config.StaticCoreEncrypted);
-        if (file.Wrapper != IgcWrapper.VersionAndDataSize)
-            throw new InvalidDataException($"'{corePath}' is not a static core (wrapper {file.Wrapper})");
-        var core = StaticCore.Load(file);
+        // Native cache lookup precedes file resolution (missionigc.cpp:2393-2406).
+        try { _loadedCoreLease = StaticCoreCache.Shared.Load(corePath, corePath, _config.StaticCoreEncrypted); }
+        catch (FileNotFoundException e)
+        {
+            throw new InvalidDataException($"static core '{corePath}' not found under artPath", e);
+        }
+        var core = _loadedCoreLease.Core;
         Console.WriteLine($"[boot] static core '{_config.StaticCore}' loaded: version={core.Version}, " +
                           $"{core.Civilizations.Count} civilizations, {core.HullTypes.Count} hulls, " +
                           $"{core.StationTypes.Count} station types");
@@ -756,12 +759,9 @@ public sealed partial class Server
         return core;
     }
 
-    /// <summary>BOOT_PATH.md step 5 — cores.txt/maps.txt are stubbed (dropped)
-    /// and we say so rather than silently ignoring. ranks.txt is NOT stubbed
-    /// anymore (P130 actually loads it — see <see cref="LoadRankTable"/>), so
-    /// it is named out of this note; cores.txt/maps.txt remain deferred.</summary>
+    /// <summary>Only the core-download list remains deferred.</summary>
     private static void StubFileLists() =>
-        Console.WriteLine("[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)");
+        Console.WriteLine("[boot] cores.txt download list deferred; maps.txt and ranks.txt catalogs loaded");
 
     /// <summary>
     /// P130 — load the real standalone rank table from
@@ -963,6 +963,7 @@ public sealed partial class Server
     /// packet the server emits flows through here so capture sees all of TX.</summary>
     private void SendPeer(ConnectionId target, byte[] packet)
     {
+        if (_shutdown) return;
         if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true);
         else QueueEncodedEvent(target, packet, 0, true);
     }
@@ -982,6 +983,7 @@ public sealed partial class Server
     /// </summary>
     private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
     {
+        if (_shutdown) return;
         if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed);
         else QueueEncodedEvent(target, packet, coalesceKey, guaranteed);
     }
@@ -1272,7 +1274,7 @@ public sealed partial class Server
         }
         else
         {
-            var mapPath = Path.Combine(_config.ArtPath, g.Map);
+            var mapPath = Path.Combine(_config.ArtPath, ResolveCatalogMap(g));
             if (!File.Exists(mapPath)) throw new InvalidDataException($"map '{mapPath}' not found under artPath");
             var mapFile = IgcReader.ParseFile(mapPath);
             if (mapFile.Wrapper != IgcWrapper.DataSize)
@@ -1473,6 +1475,7 @@ public sealed partial class Server
     /// </summary>
     public void Tick()
     {
+        if (_shutdown) return;
         var sw = Stopwatch.StartNew();
         SimPass();
         sw.Stop();
@@ -1490,7 +1493,7 @@ public sealed partial class Server
     /// <summary>The simulation half of a tick, with no cadence sleep and no
     /// overrun accounting: pump + advance sim + tick every mission. Deterministic
     /// and fast, so tests can drive many ticks without wall-clock dependency.</summary>
-    public void TickSim() => SimPass();
+    public void TickSim() { if (!_shutdown) SimPass(); }
 
     /// <summary>P600 — resolve the per-tick profiler from config + the
     /// <c>ALLEGIANCE_TICK_PROFILER</c> env var (env wins), and configure the
@@ -1970,6 +1973,8 @@ public sealed partial class Server
         _peerIdentities.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
         RetireViewerUpdateCadence(id);
+        _botAuthenticated.Remove(id);
+        _peerStandaloneIds.Remove(id);
         _adminAuthenticated.Remove(id);
         _harnessAuthenticated.Remove(id);
         _spectateSector.Remove(id);
@@ -2386,6 +2391,8 @@ public sealed partial class Server
     /// background threads), then drop the host. Idempotent.</summary>
     public void Shutdown()
     {
+        if (_shutdown) return;
+        _shutdown = true;
         TickProfiler.WindowReported -= EmitEgressWindow;
         // Heartbeat constructed last in Boot → torn down first, so its best-effort
         // deregister DELETE fires before the process tears down. Independent of the
@@ -2400,6 +2407,13 @@ public sealed partial class Server
         _broadcastPublisher?.Dispose();
         _broadcastPublisher = null;
         _host?.Transport?.Shutdown();
+        if (_missions is not null) foreach (var mission in _missions) mission.Dispose();
+        _missions?.Clear();
+        DisposeRetiredMissions();
+        foreach (var tail in _pendingRotations) tail.Old.Dispose();
+        _pendingRotations.Clear();
+        _loadedCoreLease?.Dispose();
+        _loadedCoreLease = null;
         lock (_captureLock)
         {
             _captureStream?.Flush();

@@ -2133,20 +2133,9 @@ public sealed partial class Server
     /// </summary>
     private Ship? FindShipAnySide(short id, Mission? mission)
     {
-        foreach (var kv in _peerShips)
-            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.Id == id)
-                return kv.Value.Ship;
-
-        // NPC/drone ships placed via Mission.PlaceShip live in a sector's
-        // model list with no _peerShips entry (P147) — enumerate them the same
-        // way FindSameSideShip does, without the side filter.
-        if (mission is not null)
-            foreach (var sec in mission.Sectors)
-                foreach (var mdl in sec.Models)
-                    if (mdl is Ship s && s.Id == id)
-                        return s;
-
-        return null;
+        // Native GetModel(OT_ship) uses the mission registry, including ships
+        // without a peer or cluster (Igc/missionigc.cpp:3396-3397,3708-3715).
+        return mission?.GetShip(id);
     }
 
     /// <summary>P422 — resolve a runtime <see cref="Asteroid"/> by its

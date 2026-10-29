@@ -60,6 +60,21 @@ list in **reverse**.
   creates native initial flag pedestals/flags and neutral artifacts. Absent goals
   preserve the port's countdown/finale policy; `NativeDefaults()` explicitly
   selects native Reset's 100% conquest. Report: `docs/reports/P832A_GAME_GOALS.md`.
+- **Mission registries and core ownership (P869)** — live insertion-ordered,
+  identity-preserving object registries with O(1) membership/deletion, lazy
+  model-owned site wrappers, and the separate team-lobby side in
+  `src/Allegiance.Core/Model/Mission.Registry.cs`; shutdown/end-of-tick migration retirement
+  in `src/Allegiance.Core/Model/Mission.Lifetime.cs`; shared named binary-core
+  leases in `src/Allegiance.Core/Model/StaticCoreCache.cs`, also owned by
+  `src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs` and released on
+  reset/session disposal. Client file revisions include mtime in the cache key.
+  Tests editing shared constants use
+  `tests/Allegiance.Core.Tests/CoreConstantOverride.cs` to clone them. Native:
+  `Igc/missionigc.cpp:3033-3053,3506-3732`, `Igc/igc.h:5130-5197`.
+  Waypoint command ownership lazily materializes `src/Allegiance.Core/Sim/Buoy.cs`
+  when the registry is read; allocation/lifetime proofs: `tests/Allegiance.Core.Tests/P869bReviewTests.cs`.
+  Evidence: `tests/Allegiance.Core.Tests/P869OwnershipTests.cs` and
+  `docs/parity/p869-ownership.csv`; report `docs/reports/P869_REPORT.md`.
 - **File-map generation top-up (P864c / SIM-0748)** —
   `src/Allegiance.Core/Model/Mission.FileMap.cs` replaces unavailable station
   types from original local/effect plus side development techs, then fills only
@@ -267,6 +282,16 @@ list in **reverse**.
   echo their latest pose with a fresh PING clock through the same validation:
   `src/Allegiance.Core/Wire/ScriptedWarpHandshake.cs`, used by Bot and
   `src/Allegiance.ClientCore/Session/ConnectionSession.cs`.
+- **Native bot ownership / standalone IDs / map catalog (P869)** —
+  `src/Allegiance.Server/Server.NativeOwnership.cs` admits owner transfer only
+  for a validated `BotAuthenticationSecret` role (admin/harness are separate);
+  `src/Allegiance.Server/StandaloneCharacterIds.cs` retains process-lifetime,
+  case-sensitive standalone IDs separately from verified account subjects.
+  `src/Allegiance.Server/Server.StaticMaps.cs` loads native `maps.txt` and
+  sends `src/Allegiance.Core/Wire/StaticMapInfo.cs` after validated logon;
+  `src/Allegiance.ClientCore/State/ClientWorld.StaticMaps.cs` replaces and
+  selects the catalog by exact file/team pair. Native:
+  `FedSrv/FedSrv.CPP:74-82,211-244,990-998,7690-7715`.
 - **Inbound native-message certification (P867)** — the 49 active cases of
   `FedSrvSiteBase::OnAppMessage`, with sender/stage/ownership/trap guards,
   effects, handler cites and equal/classified results:

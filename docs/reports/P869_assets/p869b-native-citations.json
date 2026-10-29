@@ -1,0 +1,693 @@
+{
+  "rows": 48,
+  "implemented": 47,
+  "partial": 1,
+  "native_ranges": [
+    {
+      "row_id": "SIM-0170",
+      "file": "Igc/modelIGC.cpp",
+      "first": 117,
+      "last": 118,
+      "sha256": "d61a479b393dae590536d240eb1b4ada36f86bbddaa72358afbdea68f4d324a3"
+    },
+    {
+      "row_id": "SIM-0170",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 10692,
+      "last": 10709,
+      "sha256": "95e29f938612cb2ed14559dbde9b68b45ec9d39eb40d40286bcf75b50b9594d7"
+    },
+    {
+      "row_id": "SIM-0170",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 11223,
+      "last": 11226,
+      "sha256": "d0d703004fe0e0064e7efe10af469a638e20289496411830db16c772663ab830"
+    },
+    {
+      "row_id": "SIM-0170",
+      "file": "Igc/modelIGC.h",
+      "first": 149,
+      "last": 170,
+      "sha256": "1375af1420d67b1e7a2be59082ab1ff22cbc5bcb37c1e90817626c9859e295af"
+    },
+    {
+      "row_id": "SIM-0170",
+      "file": "Igc/igc.h",
+      "first": 4789,
+      "last": 4789,
+      "sha256": "9a6d3515fff269c9095fcd83b46fd78b0bb51d1a129cb71ab71b145fc1caf6f5"
+    },
+    {
+      "row_id": "SIM-0631",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 7690,
+      "last": 7715,
+      "sha256": "5c55b6a9c31d620a60750c43ebbdfd62a1d2beee053033a1f3ddeb1e93c75372"
+    },
+    {
+      "row_id": "SIM-0634",
+      "file": "Igc/modelIGC.cpp",
+      "first": 117,
+      "last": 118,
+      "sha256": "d61a479b393dae590536d240eb1b4ada36f86bbddaa72358afbdea68f4d324a3"
+    },
+    {
+      "row_id": "SIM-0634",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 10692,
+      "last": 10709,
+      "sha256": "95e29f938612cb2ed14559dbde9b68b45ec9d39eb40d40286bcf75b50b9594d7"
+    },
+    {
+      "row_id": "SIM-0634",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 11223,
+      "last": 11226,
+      "sha256": "d0d703004fe0e0064e7efe10af469a638e20289496411830db16c772663ab830"
+    },
+    {
+      "row_id": "SIM-0634",
+      "file": "Igc/modelIGC.h",
+      "first": 149,
+      "last": 170,
+      "sha256": "1375af1420d67b1e7a2be59082ab1ff22cbc5bcb37c1e90817626c9859e295af"
+    },
+    {
+      "row_id": "SIM-0685",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 13976,
+      "last": 13979,
+      "sha256": "6eed20c78f3768e3b210ddbd0f9af542d01d1a8fc70ac883c4d7d8dee0815aa0"
+    },
+    {
+      "row_id": "SIM-0695",
+      "file": "Igc/missionigc.cpp",
+      "first": 3033,
+      "last": 3053,
+      "sha256": "0c6cc8d6ae16c0f58675e24d49108a5725cc84c3a96281c3e81f35fc0be64a60"
+    },
+    {
+      "row_id": "SIM-0704",
+      "file": "Igc/missionigc.cpp",
+      "first": 3506,
+      "last": 3509,
+      "sha256": "785c9889340e2788bebf1b1f7e77e7d1cc7e800968d6f735d855913e2960d514"
+    },
+    {
+      "row_id": "SIM-0704",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0705",
+      "file": "Igc/missionigc.cpp",
+      "first": 3510,
+      "last": 3513,
+      "sha256": "f43975fdc256ee89683e42c6c60a1b9783896c4e82eb4815a95e60435955e812"
+    },
+    {
+      "row_id": "SIM-0705",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0706",
+      "file": "Igc/missionigc.cpp",
+      "first": 3514,
+      "last": 3517,
+      "sha256": "7d083f81d3661ac56025a1b1ce4d98a7eaa4c1fe66a33b65ab0bc586e8a5828f"
+    },
+    {
+      "row_id": "SIM-0706",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0707",
+      "file": "Igc/missionigc.cpp",
+      "first": 3518,
+      "last": 3521,
+      "sha256": "ac090089f2286693a064de39bec69ee8d39ee72e54c0010a3aa5ff5114c817e3"
+    },
+    {
+      "row_id": "SIM-0707",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0708",
+      "file": "Igc/missionigc.cpp",
+      "first": 3523,
+      "last": 3526,
+      "sha256": "fbeb805c64ee7783190625b98070d7c337bf186c05b448156bcccf63b96ec1d7"
+    },
+    {
+      "row_id": "SIM-0708",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0709",
+      "file": "Igc/missionigc.cpp",
+      "first": 3527,
+      "last": 3530,
+      "sha256": "ebe3c06d3eb092d898eefe3ee1bdefbbe3a237061e170bebbbac748f35fe0c73"
+    },
+    {
+      "row_id": "SIM-0709",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0710",
+      "file": "Igc/missionigc.cpp",
+      "first": 3531,
+      "last": 3534,
+      "sha256": "f697f88f6305c7e4eef368795385c15330d34d4f51438b50404ba5b7498be4aa"
+    },
+    {
+      "row_id": "SIM-0710",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0711",
+      "file": "Igc/missionigc.cpp",
+      "first": 3535,
+      "last": 3538,
+      "sha256": "549e684178567207c8e441fb660e1e5870953c87e80e58da4e07798043041266"
+    },
+    {
+      "row_id": "SIM-0711",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0712",
+      "file": "Igc/missionigc.cpp",
+      "first": 3540,
+      "last": 3543,
+      "sha256": "968f5c87cf616fbc78ce49f34d4267121d089430e87e8cd28e56b2cda1d8a5b7"
+    },
+    {
+      "row_id": "SIM-0712",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0713",
+      "file": "Igc/missionigc.cpp",
+      "first": 3544,
+      "last": 3547,
+      "sha256": "6611c9ccf09163f51444edf3bbd0a18e782ab6f78fdc4ff479c491389e91e47c"
+    },
+    {
+      "row_id": "SIM-0713",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0714",
+      "file": "Igc/missionigc.cpp",
+      "first": 3548,
+      "last": 3551,
+      "sha256": "bbae93051493bb5180cd06d19181fc77c9454359c06872675ef743b0af468fa6"
+    },
+    {
+      "row_id": "SIM-0714",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0715",
+      "file": "Igc/missionigc.cpp",
+      "first": 3552,
+      "last": 3555,
+      "sha256": "1e430b76f92422889e82ea0514b1eb5750e3e05d9c385565666c9aa301a5d0a1"
+    },
+    {
+      "row_id": "SIM-0715",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0716",
+      "file": "Igc/missionigc.cpp",
+      "first": 3557,
+      "last": 3560,
+      "sha256": "9548d03f1229e6c52d0c62fff38c8178647dde8b02012bf9afebfc14e1fdeef4"
+    },
+    {
+      "row_id": "SIM-0716",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0717",
+      "file": "Igc/missionigc.cpp",
+      "first": 3561,
+      "last": 3564,
+      "sha256": "1413ff01472251354f6f550ad58106429dd12cb41cb615450b0559d2765eb44e"
+    },
+    {
+      "row_id": "SIM-0717",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0718",
+      "file": "Igc/missionigc.cpp",
+      "first": 3565,
+      "last": 3568,
+      "sha256": "ee506f66336f3660de32ba12357c6388191497c014949bd2e60df8e81dd8552f"
+    },
+    {
+      "row_id": "SIM-0718",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0719",
+      "file": "Igc/missionigc.cpp",
+      "first": 3569,
+      "last": 3572,
+      "sha256": "fdc4a789cccb61825a182d3f837698fdac3669648799e63e67dd6667f15e339e"
+    },
+    {
+      "row_id": "SIM-0719",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0720",
+      "file": "Igc/missionigc.cpp",
+      "first": 3574,
+      "last": 3577,
+      "sha256": "d77d8d3c9ec4e44dc5a5aeb558f80d1537000cb9856ef3b870d1d1232e788d8e"
+    },
+    {
+      "row_id": "SIM-0720",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0721",
+      "file": "Igc/missionigc.cpp",
+      "first": 3578,
+      "last": 3581,
+      "sha256": "099113926c6c6d5254d933a4e73403382f3eadf2adfd0335052c70d0d33cb8ff"
+    },
+    {
+      "row_id": "SIM-0721",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0722",
+      "file": "Igc/missionigc.cpp",
+      "first": 3582,
+      "last": 3585,
+      "sha256": "e83e5d841cb8f38e68cf49bd23464bb80412cbc73b9021e2d02d4f95c995a70b"
+    },
+    {
+      "row_id": "SIM-0722",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0723",
+      "file": "Igc/missionigc.cpp",
+      "first": 3586,
+      "last": 3589,
+      "sha256": "35c061ca56907e96d9c7441a24b5b44f9b0603e5cc86a195042a85f90b408c42"
+    },
+    {
+      "row_id": "SIM-0723",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0724",
+      "file": "Igc/missionigc.cpp",
+      "first": 3591,
+      "last": 3594,
+      "sha256": "3f05a24a6e380590ea524ff3df32a827eb30519ab1f9574fd5c8cf195dd510c6"
+    },
+    {
+      "row_id": "SIM-0724",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0725",
+      "file": "Igc/missionigc.cpp",
+      "first": 3595,
+      "last": 3598,
+      "sha256": "9fccfde14a79f051fa36ee0dcbb719e725db30e22b84fe1c09c4b774b78877f4"
+    },
+    {
+      "row_id": "SIM-0725",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0726",
+      "file": "Igc/missionigc.cpp",
+      "first": 3599,
+      "last": 3602,
+      "sha256": "3257e27215c1f4e664d751322ecd11f52deeb3e7781dd3e5c92a92e660439356"
+    },
+    {
+      "row_id": "SIM-0726",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0727",
+      "file": "Igc/missionigc.cpp",
+      "first": 3603,
+      "last": 3606,
+      "sha256": "29bcc6ad5b5d20ea6092cdba5d71e570183e903af79b7d7fe146b0e30aadf40b"
+    },
+    {
+      "row_id": "SIM-0727",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0728",
+      "file": "Igc/missionigc.cpp",
+      "first": 3608,
+      "last": 3637,
+      "sha256": "ea4b47e5093ace8e9ce1a901de193e7655540c7cb8a2d2c3544732947de66f8a"
+    },
+    {
+      "row_id": "SIM-0728",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0729",
+      "file": "Igc/missionigc.cpp",
+      "first": 3638,
+      "last": 3641,
+      "sha256": "4ba2804c16bce313a7818ccb516fefee6ee33bdd9fb926af423588ca8ff96494"
+    },
+    {
+      "row_id": "SIM-0729",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0730",
+      "file": "Igc/missionigc.cpp",
+      "first": 3642,
+      "last": 3648,
+      "sha256": "4dac0e0837aac3da1b2d2cf49045f734106409022288e856efbd1a38f2f6fbe0"
+    },
+    {
+      "row_id": "SIM-0730",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0731",
+      "file": "Igc/missionigc.cpp",
+      "first": 3649,
+      "last": 3652,
+      "sha256": "35bbcbbf4926fdbe528b1c356cdbd30f443e3947691aac56f76be1299b23a329"
+    },
+    {
+      "row_id": "SIM-0731",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0733",
+      "file": "Igc/missionigc.cpp",
+      "first": 3683,
+      "last": 3686,
+      "sha256": "d948116a40e031a4fbaed50412cfb9b62b397c7efaf8b2f1af0176ea6a0a529e"
+    },
+    {
+      "row_id": "SIM-0733",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0734",
+      "file": "Igc/missionigc.cpp",
+      "first": 3687,
+      "last": 3690,
+      "sha256": "9c57022eaff53a696f1b7a1f033c659af0a1837415fa2ef14eae636118cea691"
+    },
+    {
+      "row_id": "SIM-0734",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0735",
+      "file": "Igc/missionigc.cpp",
+      "first": 3691,
+      "last": 3694,
+      "sha256": "66a64afeadd21035b1f7ef6c60e14a959ff9141ac43ef68f328e40393fbab3d3"
+    },
+    {
+      "row_id": "SIM-0735",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0736",
+      "file": "Igc/missionigc.cpp",
+      "first": 3695,
+      "last": 3698,
+      "sha256": "51f07b837c0f9e64cd4857c15c723f6a401a1fd48c91bff1defe11ee42b2e427"
+    },
+    {
+      "row_id": "SIM-0736",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0737",
+      "file": "Igc/missionigc.cpp",
+      "first": 3700,
+      "last": 3703,
+      "sha256": "ff319bc81054b574342a8f597e1b0de8f4245715b4eb633404b6dce071f9e361"
+    },
+    {
+      "row_id": "SIM-0737",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0738",
+      "file": "Igc/missionigc.cpp",
+      "first": 3704,
+      "last": 3707,
+      "sha256": "56bdf70c42bf1d4c3df7890ea526f3c9f639df954b97524cc0939ff895e84e0d"
+    },
+    {
+      "row_id": "SIM-0738",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0739",
+      "file": "Igc/missionigc.cpp",
+      "first": 3708,
+      "last": 3711,
+      "sha256": "23d04d97b4307d244899844d66ee175b38e35ca568a6909eef727af6804cce6b"
+    },
+    {
+      "row_id": "SIM-0739",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0740",
+      "file": "Igc/missionigc.cpp",
+      "first": 3712,
+      "last": 3715,
+      "sha256": "8c8df34b75f7dd25391f61a707ac4d17660bc4a42ba4e304e07702b3ddd0ab52"
+    },
+    {
+      "row_id": "SIM-0740",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0741",
+      "file": "Igc/missionigc.cpp",
+      "first": 3717,
+      "last": 3720,
+      "sha256": "41f0e4d27407fae441b33637c785e8c663fa5d4ec9ed5203ebd91da817462ea5"
+    },
+    {
+      "row_id": "SIM-0741",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0742",
+      "file": "Igc/missionigc.cpp",
+      "first": 3721,
+      "last": 3724,
+      "sha256": "d4453ae3f02fe87f2250b9072529480a76a029902591e59ce4ab2542c8537168"
+    },
+    {
+      "row_id": "SIM-0742",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0743",
+      "file": "Igc/missionigc.cpp",
+      "first": 3725,
+      "last": 3728,
+      "sha256": "97ac45aa696e16e05d061f4bd0fe44335aa5b41817bab153b817432be04b2985"
+    },
+    {
+      "row_id": "SIM-0743",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0744",
+      "file": "Igc/missionigc.cpp",
+      "first": 3729,
+      "last": 3732,
+      "sha256": "75ed7541a7a8309f329fafdeb63946f6c3f9aeb704df739873f60f1024bd19db"
+    },
+    {
+      "row_id": "SIM-0744",
+      "file": "Igc/igc.h",
+      "first": 5130,
+      "last": 5197,
+      "sha256": "63c4cf0b8fd120593a9cff2b6dc01b978034114c2cb141a4344f0489321f2477"
+    },
+    {
+      "row_id": "SIM-0788",
+      "file": "Igc/missionigc.cpp",
+      "first": 2390,
+      "last": 2678,
+      "sha256": "a8bdb68a91cd8c47e754e9bdd830649581723f97dd7ff699a14076a30f725038"
+    },
+    {
+      "row_id": "SIM-0837",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 74,
+      "last": 82,
+      "sha256": "6e04613bdb5cd2c4a56f6fe87acdc5bf2d55dc41b0d273cdad6b3c65c2838a33"
+    },
+    {
+      "row_id": "fedmsg::11 STATIC_MAP_INFO",
+      "file": "FedSrv/FedSrv.CPP",
+      "first": 990,
+      "last": 998,
+      "sha256": "1787e58c4cef1c5b48ea8758bb75c85a60bcc745faf6dd65d90beec80d08de29"
+    },
+    {
+      "row_id": "fedmsg::11 STATIC_MAP_INFO",
+      "file": "clintlib/appmsg.cpp",
+      "first": 3353,
+      "last": 3361,
+      "sha256": "50d4784d5af0f9b497694169ca83f48763daf3cff2e0abc45fd4411c4044d419"
+    },
+    {
+      "row_id": "fedmsg::11 STATIC_MAP_INFO",
+      "file": "Inc/Messages.h",
+      "first": 127,
+      "last": 131,
+      "sha256": "6b32aaf822a381cd73ab888e787164f71b5e99524525b67937da9f0d0c1ea197"
+    },
+    {
+      "row_id": "fedmsg::11 STATIC_MAP_INFO",
+      "file": "Inc/messagecore.h",
+      "first": 780,
+      "last": 780,
+      "sha256": "b3558159dcec07d47d8bc13422a8dc4a0b17f01f7521e08b5f9d20da59327527"
+    }
+  ]
+}

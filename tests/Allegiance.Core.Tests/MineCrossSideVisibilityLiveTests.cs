@@ -84,11 +84,13 @@ public class MineCrossSideVisibilityLiveTests
         public Sector Sector = null!;
         public Vector3 Base;                 // a clean base point far from occluders/scanners
         public bool BaseComputed;
+        public CoreConstantOverride? UniverseRadius;
 
         public void Dispose()
         {
             ABot?.Dispose();
             BBot?.Dispose();
+            UniverseRadius?.Dispose();
             Server?.Dispose();
         }
 
@@ -137,7 +139,7 @@ public class MineCrossSideVisibilityLiveTests
         seat.Server.Boot(Config());
         // This visibility fixture deliberately separates peers by 900,000 units.
         // Expand the loaded universe instead of exposing them to OOB damage.
-        foreach (var m in seat.Server.Missions) m.Core.Constants.FloatConstants[1] = 1_000_000f;
+        seat.UniverseRadius = new CoreConstantOverride(seat.Server.Missions[0], 1, 1_000_000f);
         foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // sweep only runs Started/Starting
 
         var port = seat.Server.BoundPort;
@@ -168,6 +170,7 @@ public class MineCrossSideVisibilityLiveTests
         catch
         {
             foreach (var b in bots) b.Dispose();
+            seat.UniverseRadius?.Dispose();
             seat.Server.Dispose();
             throw;
         }

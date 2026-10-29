@@ -508,6 +508,7 @@ public class LiveTeamLeadershipTests
         server.Missions[0].Stage = MissionStage.Started;       // a real started game
         b.ResetLeadershipSignals();
 
+        var retiredOwnerSide = mission0.Sides.First(s => s.Id == side0);
         a.Dispose();   // A was the last player on owner-side side0
         int settled = PumpUntil(server,
             () => !server.Ships.Any(s => s.Ship.Id == aId)
@@ -515,7 +516,7 @@ public class LiveTeamLeadershipTests
         Assert.True(settled < 800, "owner migration to the auto-elected leader (side1) did not happen");
 
         // Original mission: side0's leader cleared; ownership migrated to side1.
-        Assert.Null(mission0.Sides.First(s => s.Id == side0).LeaderShipId);
+        Assert.Null(retiredOwnerSide.LeaderShipId);
         Assert.Equal(side1, mission0.MissionOwnerSideId);
         Assert.Contains(b.SetMissionOwners, m => m.ShipId == bId && m.SideId == side1);
         // Win-by-inactivity ends the game (only side1 has players).

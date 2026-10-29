@@ -126,6 +126,8 @@ public sealed partial class Server : IDisposable
     // missionigc.cpp:3830+); this port generates at assembly time, so a
     // game-over rotation re-assembles the mission from these retained inputs.
     private StaticCore _core = null!;
+    private StaticCoreCache.Lease? _loadedCoreLease;
+    private volatile bool _shutdown;
     private HullLandingBayCache _landingBays = null!;
     private WeaponMuzzleCache _weaponMuzzles = null!;
     private StationLandingBayCache _stationLandingBays = null!;
@@ -427,6 +429,7 @@ public sealed partial class Server : IDisposable
     /// (<see cref="Server.Lobby.CompleteJoinAndLaunch"/>) it took at first
     /// seat. Freed on disconnect alongside the rest of the peer's state.</summary>
     private readonly Dictionary<ConnectionId, LogonRequest> _peerRequests = new();
+    private readonly Dictionary<ConnectionId, int> _peerStandaloneIds = new();
 
     // Each connected peer's own ready flag (P180), set from the FReady field
     // of the PLAYER_READY(45) messages it sends and consumed by the per-side

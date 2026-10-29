@@ -817,6 +817,7 @@ public sealed partial class Server
             .ToArray();
         if (migrants.Length == 0)
         {
+            _retiredMissions.Enqueue(oldMission);
             Console.WriteLine("[reseat] P480: no connected peers to migrate (all had disconnected)");
             return;
         }
@@ -845,6 +846,7 @@ public sealed partial class Server
         GameOverMigrationTicks = 0;
         _pendingRotations.Add(new PendingRotationTail
         {
+            Old = oldMission,
             Fresh = fresh,
             Index = _missions.IndexOf(fresh),
             Migrants = migrants,
@@ -884,6 +886,7 @@ public sealed partial class Server
     /// only the per-tick batch size is bounded.</summary>
     private sealed class PendingRotationTail
     {
+        public required Mission Old;
         public required Mission Fresh;
         public required int Index;
         public required (ConnectionId Conn, LiveShip Live)[] Migrants;
@@ -1147,6 +1150,10 @@ public sealed partial class Server
             BroadcastCountdownTime(tail.Fresh, deadline);
             Console.WriteLine($"[intermission] mission #{tail.Index} next match in {deadline - _simNow:0.###} sim seconds; connected players carried forward");
         }
+        // Completion may be nested inside Mission.Update's victory callback.
+        // Retire only after the outer tick's readers have unwound and its
+        // broadcasts are detached (native destructor: missionigc.cpp:3033-3053).
+        _retiredMissions.Enqueue(tail.Old);
         _pendingRotations.RemoveAt(0);
     }
 
@@ -4039,12 +4046,8 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
     }
 
-/// <summary>Creates and places a peer's ship, then registers the live record.
-    /// The registered <see cref="LiveShip"/> carries a <b>fresh</b>
-    /// <see cref="PlayerScore"/> (P193) seeded to the neutral defaults
-    /// <c>Rank=0, Score=0</c> — so every (re)connect starts from zero and the
-    /// score is never carried across connections. Nothing here reads any prior
-    /// score, because there is no persistence layer to read it from.</summary>
+/// <summary>Creates and places a peer's ship, restoring its retained mission
+    /// score on rejoin or creating a fresh score for a first seat.</summary>
     private LiveShip AssignShip(LogonRequest req, short shipId, short? requestedSideId = null)
     {
         var mission = _missions[0];
@@ -4882,10 +4885,9 @@ private void CompleteStartCountdown(Mission mission, double now)
                         _peerNames.TryGetValue(peer, out var name) ? name : "", joinInfos);
             // Every NPC of the mission, every sector (the IsShipIdLive
             // enumeration, Server.Docking.cs) — GetShips() has no human filter.
-            foreach (var sector in infoMission.Sectors)
-                foreach (var model in sector.Models)
-                    if (model is Ship { IsNpc: true } npc)
-                        AppendPlayerInfoForRecipient(from, npc, npc.SideId ?? -2, null, joinInfos);
+            foreach (var npc in infoMission.GetShips())
+                if (npc.IsNpc)
+                    AppendPlayerInfoForRecipient(from, npc, npc.SideId ?? -2, null, joinInfos);
         }
         // HUD-20 — the shared native-shape builder fills fExperience,
         // pilotType and dtidDrone too (FedSrv.CPP:2084,2088-2091).

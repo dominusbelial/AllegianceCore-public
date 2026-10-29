@@ -59,6 +59,9 @@ internal readonly record struct SessionLostEvt() : ITransportEvent;
 /// </remarks>
 internal sealed class ServerHost : IIgcSite, ITransportSite
 {
+    // FedSrv/FedSrv.CPP:11223-11226, constructor :10692-10709.
+    public ThingSite CreateThingSite(IModelIgc model) => new(model);
+
     private readonly ConcurrentQueue<ITransportEvent> _events = new();
     internal bool ReceiveDecouple { get; init; }
     internal InboundTrace? InboundTrace { get; init; }

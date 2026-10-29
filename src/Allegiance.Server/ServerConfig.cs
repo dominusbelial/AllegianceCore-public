@@ -1044,6 +1044,10 @@ public sealed class ServerConfig
     /// ordinary/decrypted artwork compatible, including files named zone_core.</summary>
     public bool StaticCoreEncrypted { get; set; }
 
+    /// <summary>Explicit bot authentication role, native szBotAuthenticationGuid.
+    /// Empty disables remote owner transfer. Supplied in LOGONREQ.CDKey.</summary>
+    public string? BotAuthenticationSecret { get; set; }
+
     /// <summary>TCP port the logon transport listens on.</summary>
     public int Port { get; set; } = 6073;
 

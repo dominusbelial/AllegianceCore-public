@@ -31,8 +31,6 @@ public static class NotSupportedFedMsgs
         SetTeamInfo = 15,
         /// <summary>107.</summary>
         IcqChatAck = 107,
-        /// <summary>11.</summary>
-        StaticMapInfo = 11,
         /// <summary>113.</summary>
         MissionParams = 113,
     }
@@ -122,12 +120,6 @@ public static class NotSupportedFedMsgs
             "WinTrek/WinTrek.cpp:11053-11060). Its standalone build guard is not proof " +
             "that this port's online identity architecture cannot support the behavior. " +
             "P868 leaves the product decision and parity row partial."),
-
-        [Fmid.StaticMapInfo] = new(Reason.PendingParity,
-            "Live map catalog: sent after validated logon (FedSrv/FedSrv.CPP:990-998) " +
-            "and consumed by the client (clintlib/appmsg.cpp:3353-3361). Boot-configured " +
-            "worlds do not make player map selection/provisioning n/a. P868 tracks " +
-            "the missing catalog/provisioning behavior as partial."),
 
         [Fmid.MissionParams] = new(Reason.PendingParity,
             "The native declaration exists at Igc/igc.h:1109-1251; the earlier " +

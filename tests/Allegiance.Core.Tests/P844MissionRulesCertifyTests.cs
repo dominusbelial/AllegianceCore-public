@@ -468,11 +468,11 @@ public class P844MissionRulesCertifyTests
         server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId = null;
         a.ResetGameOvers();
 
+        short s0 = mission.Sides[0].Id, s1 = mission.Sides[1].Id; // capture before world retirement
         InvokeVictoryCheck(server, mission);
         int seen = PumpUntil(server, () => a.GameOvers.Count > 0, 400);
         Assert.True(seen < 400, "allied zero-populated must declare game over (alliance wins, not draw)");
         var go = Assert.Single(a.GameOvers);
-        short s0 = mission.Sides[0].Id, s1 = mission.Sides[1].Id;
         Assert.True(go.SideWinner == s0 || go.SideWinner == s1,
             $"alliance must win instead of draw, got {go.SideWinner}");
         Assert.Contains("&", go.GameoverMessage);   // allied name list, fsmission.cpp:5396-5412
