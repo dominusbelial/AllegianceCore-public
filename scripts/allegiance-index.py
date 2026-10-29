@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Allegiance Index, schema 1. Python stdlib only; see docs/PERFORMANCE.md."""
+"""Allegiance Index, schema 2 rig cards (v1 cards converted on load).
+Python stdlib only; see docs/PERFORMANCE.md and docs/reports/AIX2_REPORT.md."""
 import argparse
 import bisect
 import csv
@@ -19,10 +20,22 @@ GOOD_P95_MS = 40.0
 GOOD_DILATION = 0.95
 HEADROOM_CAP = 4.0
 DEFAULT_K = 0.5  # Conservative fallback; calibration evidence in AIX1_REPORT.md.
+# AIX2 — whole-setup hardware. weighted cores = P + EFFICIENCY_WEIGHT * E; threads/SMT
+# are reported but never counted. 0.5 is the conservative default: no measured P-vs-E
+# throughput ratio for these workloads exists (AIX1 calibrated on P-cores only), so an
+# efficiency core is credited half a performance core rather than a full one. Recalibrate
+# only with a cited measurement (AIX2_REPORT.md).
+EFFICIENCY_WEIGHT = 0.5
+# AIX-S — a shared server+client machine is only good when the client keeps rendering:
+# p95 frame time <= two 60 Hz frames (one dropped vsync), the 30 fps floor.
+GOOD_CLIENT_P95_MS = 33.3
+ROLES = ('server', 'bots', 'client')
 REFERENCE = Path(__file__).resolve().parents[1] / 'docs/benchmarks/aix-b55-reference.json'
 NUMBER = r'\d+(?:\.\d+)?'
 TICK = re.compile(r'\[tickprof\] window (' + NUMBER + r')s ticks=(\d+).*?tick-wall mean=('
                   + NUMBER + r')ms p95=(' + NUMBER + r')ms')
+FRAME = re.compile(r'\[frameprof\] window (' + NUMBER + r')s frames=(\d+) frame-wall mean=('
+                   + NUMBER + r')ms p95=(' + NUMBER + r')ms')
 STAMP = re.compile(r'\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)?')
 FINAL = re.compile(r'\[gameover-timing\].*\bwinner=\S+ peers=(\d+)')
 
@@ -51,6 +64,117 @@ class Window:
     def good(self):
         return (self.ticks >= GOOD_TICKS and self.p95 <= GOOD_P95_MS
                 and (self.dilation is None or self.dilation >= GOOD_DILATION))
+
+
+@dataclass
+class FrameWindow:
+    """One [frameprof] client summary; the AIX-S client-side input."""
+    frames: int
+    mean: float
+    p95: float
+    time: float | None = None
+
+    @property
+    def good(self):
+        return self.frames > 0 and self.p95 <= GOOD_CLIENT_P95_MS
+
+
+def normalize_rig(card):
+    """Return a schema-2 card: a list of machines with roles and P/E cores.
+
+    Schema-1 cards (server dict + botHosts) convert on load: the server machine
+    keeps its physicalCores as performance cores (no efficiency cores were
+    reported), each bot host becomes a bots-role machine.
+    """
+    if not isinstance(card, dict):
+        raise ValueError('rig card must be a JSON object')
+    if 'machines' in card:
+        machines = []
+        for index, machine in enumerate(card['machines']):
+            roles = machine.get('roles') or []
+            if not roles or any(role not in ROLES for role in roles):
+                raise ValueError(f'machine {index}: roles must be a nonempty subset of {ROLES}')
+            performance = machine.get('performanceCores')
+            efficiency = machine.get('efficiencyCores', 0)
+            if not isinstance(performance, (int, float)) or not math.isfinite(performance) or performance <= 0:
+                raise ValueError(f'machine {index}: performanceCores must be positive')
+            if not isinstance(efficiency, (int, float)) or not math.isfinite(efficiency) or efficiency < 0:
+                raise ValueError(f'machine {index}: efficiencyCores must be nonnegative')
+            machines.append(dict(machine, roles=list(roles)))
+    else:
+        server = card.get('server')
+        if not isinstance(server, dict):
+            raise ValueError('rig card needs either machines[] or a server object')
+        physical = server.get('physicalCores')
+        if not isinstance(physical, (int, float)) or not math.isfinite(physical) or physical <= 0:
+            raise ValueError('rig.server.physicalCores (performanceCores) must be positive')
+        machines = [dict(server, name=card.get('name', 'server'), roles=['server'],
+                         performanceCores=physical, efficiencyCores=0)]
+        for index, host in enumerate(card.get('botHosts', [])):
+            cores = host.get('cores')
+            if not isinstance(cores, (int, float)) or not math.isfinite(cores) or cores <= 0:
+                raise ValueError(f'botHost {index}: cores (performanceCores) must be positive')
+            machines.append(dict(host, name=host.get('name', f"{card.get('name', 'rig')}-bot{index + 1}"),
+                                 roles=['bots'], performanceCores=cores, efficiencyCores=0))
+    servers = [machine for machine in machines if 'server' in machine['roles']]
+    if len(servers) != 1:
+        raise ValueError('a rig card must name exactly one server machine')
+    return dict(schema=2, name=card.get('name'), machines=machines,
+                scenario=card.get('scenario'), shared=card.get('shared', False))
+
+
+def machine_cores(machine):
+    """Weighted cores of one machine: P + EFFICIENCY_WEIGHT * E; SMT never counts."""
+    weighted = machine['performanceCores'] + EFFICIENCY_WEIGHT * machine['efficiencyCores']
+    if not math.isfinite(weighted) or weighted <= 0:
+        raise ValueError('machine weighted cores must be positive')
+    return weighted
+
+
+def read_frames(paths):
+    """Parse [frameprof] window lines (the P889 client frame-time log)."""
+    windows, notes = [], []
+    seen = {}
+    for path in paths:
+        for line in Path(path).read_text().splitlines():
+            match = FRAME.search(line)
+            if not match:
+                continue
+            seconds, frames, mean, p95 = map(float, match.groups())
+            if seconds != WINDOW_SECONDS:
+                notes.append('Ignored non-5s frameprof window')
+                continue
+            window = FrameWindow(int(frames), mean, p95, timestamp(line))
+            if window.time is not None and window.time in seen:
+                previous = seen[window.time]
+                if (previous.frames, previous.mean, previous.p95) != (window.frames, window.mean, window.p95):
+                    raise ValueError('Conflicting frameprof windows at the same timestamp')
+                continue
+            windows.append(window)
+            if window.time is not None:
+                seen[window.time] = window
+    return windows, sorted(set(notes))
+
+
+def client_good_by_window(busy, frame_windows, notes):
+    """AIX-S window rule: server-good AND a client frame window within one
+    window span whose p95 <= GOOD_CLIENT_P95_MS. Unmatched or timestampless
+    server windows fail closed (not good) and are noted."""
+    times = [window.time for window in frame_windows if window.time is not None]
+    verdicts, matched = [], 0
+    for window in busy:
+        verdict = False
+        if window.time is not None and times:
+            nearest = min(times, key=lambda time: abs(time - window.time))
+            if abs(nearest - window.time) <= WINDOW_SECONDS:
+                candidate = next(item for item in frame_windows if item.time == nearest)
+                verdict = candidate.good
+                matched += 1
+        verdicts.append(verdict)
+    if len(busy) - matched > 0:
+        notes.append(f'{len(busy) - matched} busy window(s) without an aligned client frame '
+                     f'window (within {WINDOW_SECONDS:.0f}s); they count as not good (fail-closed)')
+    return verdicts, matched
 
 
 def read_servers(paths):
@@ -196,7 +320,8 @@ def bot_metrics(paths):
 def measure_battle(windows, finals, scores, bots, players, rig, score_stations=None, has_battle=False):
     metrics = {'kill_rate': None, 'station_rate': None, 'disconnect_rate': None, 'stall_rate': None}
     details = {'mode': 'battle' if bots or finals or scores or has_battle else 'server-only'}
-    bot_count = sum(host.get('bots', 0) for host in rig.get('botHosts', [])) or players
+    hosts = [machine for machine in rig.get('machines', []) if 'bots' in machine.get('roles', [])]
+    bot_count = sum(host.get('bots', 0) for host in hosts) or players
     total_minutes = len(windows) * WINDOW_SECONDS / 60 * bot_count
     if finals:
         kills = sum(item[0] for item in finals)
@@ -266,12 +391,14 @@ def fit_exponent(points):
                 k=1 / a if accepted else .5, accepted=accepted)
 
 
-def compute(servers, samples, bots, rig, players=None, k=DEFAULT_K, reference=None, label='session'):
+def compute(servers, samples, bots, rig, players=None, k=DEFAULT_K, reference=None, label='session',
+            frames=None):
     if not math.isfinite(k) or k <= 0:
         raise ValueError('k must be finite and positive')
-    cores = rig['server']['physicalCores']
-    if not isinstance(cores, (int, float)) or not math.isfinite(cores) or cores <= 0:
-        raise ValueError('rig.server.physicalCores must be positive')
+    rig = normalize_rig(rig)
+    server_machine = next(machine for machine in rig['machines'] if 'server' in machine['roles'])
+    cores = machine_cores(server_machine)
+    total_cores = sum(machine_cores(machine) for machine in rig['machines'])
     windows, peers, finals, scores, score_stations, has_battle, notes = read_servers(servers)
     busy = [w for w in windows if w.busy]
     if not busy:
@@ -298,13 +425,38 @@ def compute(servers, samples, bots, rig, players=None, k=DEFAULT_K, reference=No
     if battle['mode'] == 'battle' and 'station_rate' not in components:
         notes.append('Station metric unscored: absent evidence or zero reference rate')
     aix = count * quality * headroom ** k * factor
-    return dict(schema=1, label=label, aix=aix, aix_per_core=aix / cores,
-                players=count, players_source=source, quality=quality, headroom=headroom, k=k,
-                median_p95_ms=median, windows=len(windows), busy_windows=len(busy),
-                good_windows=sum(w.good for w in busy),
-                dilation_windows=sum(w.dilation is not None for w in busy), battle=battle,
-                rig=rig['name'], server_physical_cores=cores,
-                machines=1 + len(rig.get('botHosts', [])), notes=notes)
+    machines = len(rig['machines'])
+    shared = bool(rig.get('shared')) or any(
+        {'server', 'client'} <= set(machine['roles']) for machine in rig['machines'])
+    result = dict(schema=2, label=label, aix=aix, aix_per_core=aix / cores,
+                  aix_per_total_core=aix / total_cores,
+                  players=count, players_source=source, quality=quality, headroom=headroom, k=k,
+                  median_p95_ms=median, windows=len(windows), busy_windows=len(busy),
+                  good_windows=sum(w.good for w in busy),
+                  dilation_windows=sum(w.dilation is not None for w in busy), battle=battle,
+                  rig=rig['name'], server_physical_cores=server_machine['performanceCores'],
+                  server_weighted_cores=cores, total_weighted_cores=total_cores,
+                  efficiency_weight=EFFICIENCY_WEIGHT, machines=machines, shared=shared, notes=notes)
+    if shared:
+        if not frames:
+            raise ValueError('shared server+client rig (AIX-S) requires --frames client frame logs')
+        frame_windows, frame_notes = read_frames(frames)
+        notes.extend(frame_notes)
+        verdicts, matched = client_good_by_window(busy, frame_windows, notes)
+        # AIX-S: a busy window is good only if the server window is good AND the
+        # client frame time in that window is good (p95 ≤ GOOD_CLIENT_P95_MS).
+        both = [window.good and verdict for window, verdict in zip(busy, verdicts)]
+        quality_shared = sum(both) / len(both)
+        aix_s = count * quality_shared * headroom ** k * factor
+        result.update(aix_s=aix_s, aix_s_per_core=aix_s / cores,
+                      aix_s_per_total_core=aix_s / total_cores, quality_shared=quality_shared,
+                      client_windows=len(frame_windows),
+                      client_matched_windows=matched,
+                      client_good_windows=sum(both),
+                      median_client_p95_ms=statistics.median(w.p95 for w in frame_windows)
+                      if frame_windows else None,
+                      client_p95_limit=GOOD_CLIENT_P95_MS)
+    return result
 
 
 def main():
@@ -312,6 +464,8 @@ def main():
     parser.add_argument('--server', action='append', nargs='+', required=True, help='chronological log pieces')
     parser.add_argument('--samples', action='append', nargs='+', default=[])
     parser.add_argument('--bots', action='append', nargs='+', default=[])
+    parser.add_argument('--frames', action='append', nargs='+', default=[],
+                        help='client [frameprof] log pieces (AIX-S, shared server+client machine)')
     parser.add_argument('--rig', required=True)
     parser.add_argument('--label', default='session')
     parser.add_argument('--players', type=float, help='last-resort connected-peer count')
@@ -324,13 +478,25 @@ def main():
         reference = json.loads(args.reference.read_text())
         result = compute(flatten(args.server), flatten(args.samples), flatten(args.bots),
                          json.loads(Path(args.rig).read_text()), args.players, args.k,
-                         reference['metrics'], args.label)
+                         reference['metrics'], args.label, flatten(args.frames))
         battle = result['battle']
         battle_term = f" × B {battle['factor']:.3f}" if battle['mode'] == 'battle' else ''
-        print(f"{args.label}: AIX {result['aix']:.0f} ({result['aix_per_core']:.1f}/core) = "
+        print(f"{args.label}: AIX {result['aix']:.0f} "
+              f"({result['aix_per_core']:.1f}/server-core, {result['aix_per_total_core']:.1f}/total-core) = "
               f"{result['players']:.1f} players × Q {result['quality']:.3f} × "
               f"H {result['headroom']:.2f}^{result['k']:.3g}{battle_term} "
-              f"[{result['rig']}, {result['machines']} machines; {battle['mode']}]")
+              f"[{result['rig']}, {result['machines']} machines, "
+              f"{result['total_weighted_cores']:.0f} weighted cores (w={result['efficiency_weight']}); "
+              f"{battle['mode']}]")
+        if result.get('shared'):
+            print(f"{args.label}: AIX-S {result['aix_s']:.0f} "
+                  f"({result['aix_s_per_core']:.1f}/server-core, {result['aix_s_per_total_core']:.1f}/total-core) = "
+                  f"{result['players']:.1f} players × Q_S {result['quality_shared']:.3f} × "
+                  f"H {result['headroom']:.2f}^{result['k']:.3g}{battle_term} "
+                  f"[{result['rig']}, {result['machines']} machine(s), "
+                  f"{result['total_weighted_cores']:.0f} weighted cores; shared server+client, "
+                  f"client p95 ≤ {result['client_p95_limit']}ms; {battle['mode']}]")
+            print('  AIX-S is the shared-machine variant; never compare it directly with dedicated AIX.')
         print(f"  {result['good_windows']}/{result['busy_windows']} busy windows good; "
               f"median p95 {result['median_p95_ms']:.2f}ms; players: {result['players_source']}; "
               f"dilation observed: {result['dilation_windows']}/{result['busy_windows']}")

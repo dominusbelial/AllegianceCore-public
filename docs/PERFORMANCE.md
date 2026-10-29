@@ -99,10 +99,23 @@ Since P887 every row is a code default: a fresh server runs the baseline without
 ## Allegiance Index
 
 **AIX = Players × Quality × Headroom^k × Battle**, in effective players at
-full quality. It is a session comparison, with an absolute score and a score
-per **server physical core**. The rig card also reports total machines; bot
-hosts do not divide the score. See the [history CSV](benchmarks/aix-history.csv),
-[rig card](benchmarks/rig-221.json) and [calibration report](reports/AIX1_REPORT.md).
+full quality. It is a session comparison with three published numbers: the
+absolute **AIX**, **AIX/server-core** (the server machine's weighted cores)
+and **AIX/total-core** (the weighted cores of every machine in the run).
+The rig card (schema 2) is a **list of machines**, each with roles (`server`,
+`bots`, `client`), CPU, performance cores, efficiency cores, threads and RAM.
+**Weighted cores = P + w·E with `EFFICIENCY_WEIGHT = 0.5`**; threads/SMT are
+reported but never counted. The 0.5 weight is the conservative default because
+no P-vs-E throughput ratio for these workloads has been measured; recalibrate
+only with a cited measurement. **Machines is a label, never a divisor.**
+Schema-1 cards (a `server` object plus `botHosts`) are still accepted and
+convert on load with zero efficiency cores. See the
+[history CSV](benchmarks/aix-history.csv), [rig card](benchmarks/rig-221.json)
+and the [AIX reports](reports/AIX1_REPORT.md).
+
+Example summary line — rig-221 (8 server P-cores + M4 Max 12 P + 4 E =
+22 weighted cores): `AIX 545 (68.1/server-core, 24.8/total-core) …
+[rig-221, 2 machines, 22 weighted cores (w=0.5); battle]`.
 
 A busy window is a 5-second `[tickprof] window` with tick-wall mean **≥ 5 ms**
 (the named `BUSY_MEAN_MS` constant). Quality is the fraction of busy windows
@@ -163,6 +176,28 @@ python3 scripts/allegiance-index.py \
   --rig docs/benchmarks/rig-221.json --label b55 --json "$OUTPUT/aix-b55.json"
 ```
 
+**Shared-machine variant AIX-S.** When one card machine holds both the
+`server` and `client` roles (single-player skirmish: game client + in-process
+server + local bot driver on one PC), or the card sets `"shared": true`, pass
+`--frames` with the client's `[frameprof]` log and the tool additionally
+prints **AIX-S**. A busy window is good for AIX-S only if the server window is
+good **and** the client frame time in that window is good: an aligned (within
+one 5-second window) `[frameprof]` window with **p95 ≤ `GOOD_CLIENT_P95_MS`
+= 33.3 ms** — two 60 Hz frames, one dropped vsync, the 30 fps floor. Missing,
+unmatched or timestampless client evidence fails closed (the window counts as
+not good) and is noted. The client frame-time input is a log line the client
+or skirmish harness writes per 5-second window (P889 must emit it):
+
+```
+2026-10-29T16:28:21.017Z [frameprof] window 5s frames=298 frame-wall mean=9.8ms p95=16.4ms
+```
+
+ISO-8601 UTC timestamp, then `frames=N` and the mean/p95 of per-frame wall
+time in milliseconds (the same stopwatch delta `Game1.SessionPerformance`
+already records; an optional `sim.timeScale=` suffix is ignored). AIX-S is a
+different measurement on different hardware: **never compare it directly with
+dedicated AIX**, and never divide by it when comparing rigs.
+
 `EVIDENCE` and `OUTPUT` name existing local directories. Repeat `--server`
 for chronological pieces (b54 needs both dates); repeat `--samples` or
 `--bots`, or supply several paths after either option. Timestamped profiler
@@ -173,9 +208,11 @@ The [batch hook](../tools/aix-batch.md) documents the operator's deploy-chain
 command; this change does not modify deployment.
 
 The supplied history rises from **AIX 217.9 at b49 to 507.5 at b50** after
-P863, and **544.7 at b55 (68.1/core, two machines)**. b54, merged across
-midnight, is 519.8. b48 is explicitly unavailable because no server log was
-supplied. Battle is only partly observed; these numbers summarize the
+P863, and **544.7 at b55 (68.1/server-core, 24.8/total-core, two machines)**.
+b54, merged across midnight, is 519.8. b56 (2026-10-29, batch metadata not
+recorded in the capture) scores 470.0 (58.8/server-core, 21.4/total-core) on
+samples-matched players. b48 is explicitly unavailable because no server log
+was supplied. Battle is only partly observed; these numbers summarize the
 captured workload, not client smoothness, WAN latency, equal battle
 intensity or guaranteed maximum player capacity.
 

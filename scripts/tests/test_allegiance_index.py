@@ -12,11 +12,18 @@ SPEC = importlib.util.spec_from_file_location('allegiance_index', SCRIPT)
 aix = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = aix
 SPEC.loader.exec_module(aix)
-RIG = {'name': 'test-rig', 'server': {'physicalCores': 8}, 'botHosts': [{'bots': 30}]}
+RIG = {'name': 'test-rig', 'server': {'physicalCores': 8}, 'botHosts': [{'bots': 30, 'cores': 16}]}
+# AIX-S shared-machine card: one machine holds both the server and client roles.
+SHARED_RIG = {'name': 'skirmish-pc', 'machines': [
+    {'name': 'pc', 'roles': ['server', 'client'], 'performanceCores': 8, 'efficiencyCores': 0}]}
 
 
 def tick(mean=10, p95=20, ticks=100, stamp=''):
     return f'{stamp}[tickprof] window 5s ticks={ticks} tick-wall mean={mean}ms p95={p95}ms max=90ms\n'
+
+
+def frame(p95=16, frames=298, mean=10, stamp=''):
+    return f'{stamp}[frameprof] window 5s frames={frames} frame-wall mean={mean}ms p95={p95}ms\n'
 
 
 class IndexTests(unittest.TestCase):
@@ -33,8 +40,8 @@ class IndexTests(unittest.TestCase):
         path.write_text(text)
         return path
 
-    def compute(self, log, **kwargs):
-        return aix.compute([self.file('server.log', log)], [], [], RIG, players=30, **kwargs)
+    def compute(self, log, rig=RIG, **kwargs):
+        return aix.compute([self.file('server.log', log)], [], [], rig, players=30, **kwargs)
 
     def test_good_window_boundaries_and_idle_exclusion(self):
         result = self.compute(tick(4.99) + tick(5, 40, 95) + tick(10, 40.01)
@@ -54,6 +61,77 @@ class IndexTests(unittest.TestCase):
         self.assertEqual(result['battle']['factor'], 1)
         self.assertEqual(result['machines'], 2)
         self.assertAlmostEqual(result['aix_per_core'], 30 * 2 ** .5 / 8)
+
+    def test_v1_card_converts_to_v2_machine_list(self):
+        rig = aix.normalize_rig(RIG)
+        self.assertEqual(rig['schema'], 2)
+        self.assertEqual([machine['roles'] for machine in rig['machines']], [['server'], ['bots']])
+        # Schema 1 reported no efficiency cores; conversion credits none.
+        self.assertEqual([aix.machine_cores(machine) for machine in rig['machines']], [8, 16])
+        self.assertEqual(aix.normalize_rig(rig)['machines'], rig['machines'])
+
+    def test_v2_weighting_counts_efficiency_cores_half(self):
+        rig = {'name': 'mixed', 'machines': [
+            {'name': 's', 'roles': ['server'], 'performanceCores': 8, 'efficiencyCores': 0},
+            {'name': 'b', 'roles': ['bots'], 'performanceCores': 12, 'efficiencyCores': 4}]}
+        result = self.compute(tick(), rig=rig)
+        self.assertEqual(result['efficiency_weight'], aix.EFFICIENCY_WEIGHT)
+        self.assertEqual(result['server_weighted_cores'], 8)
+        self.assertEqual(result['total_weighted_cores'], 22)  # 8 + 12 + 0.5 × 4
+        self.assertAlmostEqual(result['aix_per_total_core'], result['aix'] / 22)
+        self.assertAlmostEqual(result['aix_per_core'], result['aix'] / 8)
+
+    def test_threads_never_count_as_cores(self):
+        rig = {'name': 'smt', 'machines': [
+            {'name': 's', 'roles': ['server'], 'performanceCores': 8, 'efficiencyCores': 0, 'threads': 16}]}
+        result = self.compute(tick(), rig=rig)
+        self.assertEqual(result['total_weighted_cores'], 8)
+
+    def test_machines_are_a_label_and_never_divide(self):
+        one = self.compute(tick())
+        two = self.compute(tick(), rig=dict(RIG, botHosts=[
+            {'bots': 30, 'cores': 16}, {'bots': 30, 'cores': 8}]))
+        self.assertEqual(one['aix'], two['aix'])
+        self.assertEqual(one['aix_per_core'], two['aix_per_core'])
+        self.assertNotEqual(one['aix_per_total_core'], two['aix_per_total_core'])
+        self.assertEqual((one['machines'], two['machines']), (2, 3))
+
+    def test_aix_s_window_rule_needs_server_and_client_good(self):
+        log = tick(stamp='2026-10-29T10:00:05Z ') + tick(stamp='2026-10-29T10:00:10Z ')
+        frames = self.file('frames.log', frame(stamp='2026-10-29T10:00:05Z ')
+                           + frame(p95=40, stamp='2026-10-29T10:00:10Z '))
+        result = self.compute(log, rig=SHARED_RIG, frames=[frames])
+        self.assertTrue(result['shared'])
+        self.assertAlmostEqual(result['quality'], 1)  # server-only quality is unchanged
+        self.assertAlmostEqual(result['quality_shared'], .5)  # second window's client p95 is bad
+        self.assertEqual(result['client_p95_limit'], aix.GOOD_CLIENT_P95_MS)
+        self.assertAlmostEqual(result['aix_s'], result['aix'] / 2)
+        self.assertAlmostEqual(result['aix_s_per_total_core'], result['aix_s'] / 8)
+
+    def test_aix_s_client_p95_boundary_is_inclusive(self):
+        log = tick(stamp='2026-10-29T10:00:05Z ')
+        inside = self.file('in.log', frame(p95=aix.GOOD_CLIENT_P95_MS, stamp='2026-10-29T10:00:05Z '))
+        outside = self.file('out.log', frame(p95=33.4, stamp='2026-10-29T10:00:05Z '))
+        self.assertEqual(self.compute(log, rig=SHARED_RIG, frames=[inside])['quality_shared'], 1)
+        self.assertEqual(self.compute(log, rig=SHARED_RIG, frames=[outside])['quality_shared'], 0)
+
+    def test_aix_s_without_frame_logs_is_an_error(self):
+        with self.assertRaisesRegex(ValueError, 'frames'):
+            self.compute(tick(), rig=SHARED_RIG)
+
+    def test_aix_s_unmatched_server_window_fails_closed(self):
+        log = tick(stamp='2026-10-29T10:00:05Z ') + tick(stamp='2026-10-29T10:01:05Z ')
+        frames = self.file('frames.log', frame(stamp='2026-10-29T10:00:05Z '))
+        result = self.compute(log, rig=SHARED_RIG, frames=[frames])
+        self.assertEqual(result['client_matched_windows'], 1)
+        self.assertEqual(result['quality_shared'], .5)
+        self.assertTrue(any('fail-closed' in note for note in result['notes']))
+
+    def test_dedicated_rig_ignores_frame_logs_and_stays_aix(self):
+        frames = self.file('frames.log', frame(stamp='2026-10-29T10:00:05Z '))
+        result = self.compute(tick(stamp='2026-10-29T10:00:05Z '), frames=[frames])
+        self.assertFalse(result['shared'])
+        self.assertNotIn('aix_s', result)
 
     def test_b54_two_piece_merge_keeps_identical_untimed_windows(self):
         first = self.file('b54-day1.log', tick() * 2)
@@ -160,8 +238,21 @@ class IndexTests(unittest.TestCase):
                                  '--rig', str(rig), '--players', '30', '--json', str(output)],
                                 text=True, capture_output=True, check=True)
         self.assertIn('AIX 42', result.stdout)
+        self.assertIn('/server-core', result.stdout)
+        self.assertIn('/total-core', result.stdout)
+        self.assertIn('2 machines, 24 weighted cores', result.stdout)
         self.assertIn('server-only', result.stdout)
         self.assertEqual(json.loads(output.read_text())['players_source'], 'CLI --players')
+
+    def test_cli_shared_machine_prints_aix_s_label(self):
+        server = self.file('server.log', tick(stamp='2026-10-29T10:00:05Z '))
+        frames = self.file('frames.log', frame(stamp='2026-10-29T10:00:05Z '))
+        rig = self.file('rig.json', json.dumps(SHARED_RIG))
+        result = subprocess.run([sys.executable, str(SCRIPT), '--server', str(server),
+                                 '--frames', str(frames), '--rig', str(rig), '--players', '30'],
+                                text=True, capture_output=True, check=True)
+        self.assertIn('AIX-S', result.stdout)
+        self.assertIn('never compare it directly', result.stdout)
 
     def test_invalid_k_rejected(self):
         for value in (0, -1, float('nan'), float('inf')):
@@ -170,8 +261,12 @@ class IndexTests(unittest.TestCase):
 
     def test_invalid_core_count_rejected(self):
         rig = dict(RIG, server={'physicalCores': 0})
-        with self.assertRaisesRegex(ValueError, 'physicalCores'):
+        with self.assertRaisesRegex(ValueError, 'performanceCores'):
             aix.compute([self.file('server.log', tick())], [], [], rig, players=30)
+        bad_machine = {'name': 'x', 'machines': [
+            {'name': 's', 'roles': ['server'], 'performanceCores': 0}]}
+        with self.assertRaisesRegex(ValueError, 'performanceCores'):
+            aix.compute([self.file('server.log', tick())], [], [], bad_machine, players=30)
 
     def test_power_fit_and_poor_fit_fallback(self):
         fit = aix.fit_exponent([(30, .9), (60, 3.6), (120, 14.4), (240, 57.6)])

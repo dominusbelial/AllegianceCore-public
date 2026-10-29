@@ -1,12 +1,13 @@
-batch,date,commit,change,players,quality,headroom,k,battle,AIX,AIX/core,rig,players_source,battle_coverage,status
-b45,2026-10-27,78fc6162,control (snapshot+encodeOnce default),394.000000,0.580196,1.062982,0.500000,0.985026,232.157,29.020,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
-b46,2026-10-27,78fc6162,sim.nativeGotoPlan on,394.000000,0.482673,0.980993,0.500000,0.942845,177.592,22.199,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
-b47,2026-10-27,78fc6162,sim.nativeBroadcastOrder on (SIM-0141),394.000000,0.309406,0.832466,0.500000,1.000000,111.226,13.903,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
-b48,2026-10-27,78fc6162,control restored,,,,,,,,rig-221,,,unavailable: no server log supplied
-b49,2026-10-28,b37b4efe,control before P863,394.000000,0.559643,1.020929,0.500000,0.977980,217.889,27.236,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b50,2026-10-28,f12a8fa9,P863 clash tick budget,394.000000,0.955686,1.893939,0.500000,0.979366,507.504,63.438,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b51,2026-10-28,f12a8fa9,sim.nativeBroadcastOrder on,394.000000,0.930544,1.389371,0.500000,0.960592,415.127,51.891,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b52,2026-10-28,f12a8fa9,sim.nativeGotoPlan on,394.000000,0.963824,1.924002,0.500000,1.000000,526.741,65.843,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b53,2026-10-28,f12a8fa9,control restored,394.000000,0.984473,1.934236,0.500000,0.993857,536.141,67.018,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b54,2026-10-28,48cdb2de,P869b rotation dispose + P872/P873/P874b,394.000000,0.960770,1.913876,0.500000,0.992532,519.777,64.972,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
-b55,2026-10-29,72a82ee9,P875 nativeGotoPlan default + P880b/P881a/P877,394.000000,0.986088,1.965602,0.500000,1.000000,544.703,68.088,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+batch,date,commit,change,players,quality,headroom,k,battle,AIX,AIX/core,AIX/total-core,rig,players_source,battle_coverage,status
+b45,2026-10-27,78fc6162,control (snapshot+encodeOnce default),394.000000,0.580196,1.062982,0.500000,0.985026,232.157,29.020,10.553,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
+b46,2026-10-27,78fc6162,sim.nativeGotoPlan on,394.000000,0.482673,0.980993,0.500000,0.942845,177.592,22.199,8.072,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
+b47,2026-10-27,78fc6162,sim.nativeBroadcastOrder on (SIM-0141),394.000000,0.309406,0.832466,0.500000,1.000000,111.226,13.903,5.056,rig-221,CLI --players,disconnect_rate;stall_rate,partial battle
+b48,2026-10-27,78fc6162,control restored,,,,,,,,,rig-221,,,unavailable: no server log supplied
+b49,2026-10-28,b37b4efe,control before P863,394.000000,0.559643,1.020929,0.500000,0.977980,217.889,27.236,9.904,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b50,2026-10-28,f12a8fa9,P863 clash tick budget,394.000000,0.955686,1.893939,0.500000,0.979366,507.504,63.438,23.068,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b51,2026-10-28,f12a8fa9,sim.nativeBroadcastOrder on,394.000000,0.930544,1.389371,0.500000,0.960592,415.127,51.891,18.869,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b52,2026-10-28,f12a8fa9,sim.nativeGotoPlan on,394.000000,0.963824,1.924002,0.500000,1.000000,526.741,65.843,23.943,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b53,2026-10-28,f12a8fa9,control restored,394.000000,0.984473,1.934236,0.500000,0.993857,536.141,67.018,24.370,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b54,2026-10-28,48cdb2de,P869b rotation dispose + P872/P873/P874b,394.000000,0.960770,1.913876,0.500000,0.992532,519.777,64.972,23.626,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b55,2026-10-29,72a82ee9,P875 nativeGotoPlan default + P880b/P881a/P877,394.000000,0.986088,1.965602,0.500000,1.000000,544.703,68.088,24.759,rig-221,gameover-timing (final winner summaries only),kill_rate;disconnect_rate;stall_rate,partial battle
+b56,2026-10-29,,b56 capture (batch metadata not recorded in evidence),393.737052,0.970784,1.800991,0.500000,0.916293,470.023,58.753,21.365,rig-221,samples (nearest within 10s, all busy windows),kill_rate,partial battle

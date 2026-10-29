@@ -1,17 +1,25 @@
 {
+  "schema": 2,
   "name": "rig-221",
-  "server": {
-    "cpu": "AMD Ryzen 9 6900HX",
-    "physicalCores": 8,
-    "threads": 16,
-    "ramGb": 30,
-    "runtime": "Native AOT, Docker, server GC",
-    "tickHz": 20
-  },
-  "botHosts": [
+  "machines": [
     {
+      "name": "rig-221-server",
+      "roles": ["server"],
+      "cpu": "AMD Ryzen 9 6900HX",
+      "performanceCores": 8,
+      "efficiencyCores": 0,
+      "threads": 16,
+      "ramGb": 30,
+      "runtime": "Native AOT, Docker, server GC",
+      "tickHz": 20
+    },
+    {
+      "name": "rig-221-bots",
+      "roles": ["bots"],
       "cpu": "Apple M4 Max",
-      "cores": 16,
+      "performanceCores": 12,
+      "efficiencyCores": 4,
+      "threads": 16,
       "ramGb": 128,
       "link": "2.5GbE wired",
       "botProcesses": 1,
