@@ -99,17 +99,17 @@ Suggestions only. Each task has at most 20 rows, with exact membership in the ma
 
 | Suggestion | Rows | Scope (exact membership in CSV) | Lane |
 |---|---:|---|---|
-| P874a | 20 | AbstractTarget through GetShipHasAmmoCondition | Image-capable lead; Codex sim/model |
-| P874b | 20 | GetShipHasCargoCondition through SetRadarLODAction | Image-capable lead; Codex sim/model |
-| P874c | 15 | SetSignatureAction through CurrentTarget eliminated cache | Image-capable lead; Codex sim/model |
-| P875a | 20 | Mission 2: Basic Flight through M3 lesson 09 | Image-capable lead; Codex sim/model |
-| P875b | 20 | M3 lesson 10 through M5 lesson 04 | Image-capable lead; Codex sim/model |
-| P875c | 20 | M5 lesson 05 through M10 early waves | Image-capable lead; Codex sim/model |
-| P875d | 3 | M10 bomber arrival through M10 final wave | Image-capable lead; Codex sim/model |
-| P876a | 20 | Local mission factory through Last restart station lost | Image-capable lead; Codex sim/model |
-| P876b | 20 | Default drone order dispatch through No career training unlock | Image-capable lead; Codex sim/model |
-| P876c | 16 | Training HUD/keymap restore through Too-close rotating warnings | Image-capable lead; Codex sim/model |
-| P876d | 8 | Shared arena targeting, assistance, sector pursuit/patrol, paused frame and respawn retention | Codex sim/model; image-capable client acceptance |
+| P880a | 20 | AbstractTarget through GetShipHasAmmoCondition | Image-capable lead; Codex sim/model |
+| P880b | 20 | GetShipHasCargoCondition through SetRadarLODAction | Image-capable lead; Codex sim/model |
+| P880c | 15 | SetSignatureAction through CurrentTarget eliminated cache | Image-capable lead; Codex sim/model |
+| P881a | 20 | Mission 2: Basic Flight through M3 lesson 09 | Image-capable lead; Codex sim/model |
+| P881b | 20 | M3 lesson 10 through M5 lesson 04 | Image-capable lead; Codex sim/model |
+| P881c | 20 | M5 lesson 05 through M10 early waves | Image-capable lead; Codex sim/model |
+| P881d | 3 | M10 bomber arrival through M10 final wave | Image-capable lead; Codex sim/model |
+| P882a | 20 | Local mission factory through Last restart station lost | Image-capable lead; Codex sim/model |
+| P882b | 20 | Default drone order dispatch through No career training unlock | Image-capable lead; Codex sim/model |
+| P882c | 16 | Training HUD/keymap restore through Too-close rotating warnings | Image-capable lead; Codex sim/model |
+| P882d | 8 | Shared arena targeting, assistance, sector pursuit/patrol, paused frame and respawn retention | Codex sim/model; image-capable client acceptance |
 
 
 ## Hosting architecture
