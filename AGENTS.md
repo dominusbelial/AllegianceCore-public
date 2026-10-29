@@ -16,5 +16,7 @@
   push. `scripts/publish-guard.sh` (pre-push hook `.githooks/pre-push`, and CI) enforces this.
 - **Gate:** `dotnet build AllegianceCore.slnx` with 0 warnings, `tools/build-tools.sh`, new tests 3× alone, one
   `tools/run-tests.sh --tier fast`; known flakes are ledgered in `docs/TEST_FLAKES.md`.
+- **Training changes also gate Live lessons:** run `tools/run-training-tests.sh --no-build --repeat 3` with artwork.
+  It runs both client test projects serially across Fast and Live, including Nanite completion.
 - Generated maps log `seed=N`; `--map-seed N` rebuilds the same map. `scripts/dev-stack.sh up|down|status` runs a local
   server + lobby (+ bots).

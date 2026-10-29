@@ -8,10 +8,22 @@ that needs one of those must SKIP there, never fail.
 |---|---|---|
 | `ci.yml` (push/PR to master) | Test Fast tier (non-corpus gate) | `tools/run-tests.sh --tier fast --no-build` with `TEST_FILTER="Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"` |
 | `ci.yml` | Build every tools/ project | `tools/build-tools.sh --drop-bins` — every `tools/*/*.csproj` on its own (the `*-proof` tools are outside the solution) |
+| `ci.yml` | Training including Live lessons | `tools/run-training-tests.sh --no-build` — both client test projects; corpus cases skip on clean runners |
 | `release.yml` (player release) | Existing CI test gate | `dotnet test AllegianceCore.slnx --no-build --filter "Requires!=Artwork&Requires!=NativeSource&Lane!=LiveTiming"` — **all tiers** (Fast, Live, Perf), and it does *not* filter `Requires=Gpu` |
 
 The release gate is the stricter one: Live/Perf tests that `ci.yml` never runs
 are run there. Run 39702545411 (CI-1) failed on 30 such tests.
+
+Training changes require `tools/run-training-tests.sh --no-build --repeat 3` on
+a corpus-equipped machine after building. This selects the full training cohort
+(TR2–TR5, P785, P873, P880a, P882a/b, framework/masks/Mission2 and training crash
+guards) in both client projects, including **Tier=Live** lesson-completion tests.
+Each project runs serially to isolate the shared training clock and input masks.
+The script records every run's log/TRX under `.scratch/`, keeps client configuration
+and logs there through `XDG_CONFIG_HOME`, continues after failures to collect the
+whole cohort, and exits nonzero if any run fails. Nanite M8 remains an ordinary
+Live test; its historical completion failure is recorded in `docs/TEST_FLAKES.md`. A Fast-only
+sweep cannot certify training; P882a's M3/M5 regressions escaped that sweep.
 
 ## Reproduce the release gate locally
 

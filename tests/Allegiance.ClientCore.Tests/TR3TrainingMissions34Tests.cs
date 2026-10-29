@@ -50,14 +50,14 @@ public sealed class TR3TrainingMissions34Tests
         int spaceKeyPrompts = 0;          // "Press the SPACE key" occurrences → one press each
         int destroyPrompts = 0;           // "Destroy current target." occurrences → one kill each
         int retargetDelay = 0;            // frames before the radar re-targets a live hull after a kill
+        int firePrompts = 0;
+        int sampledFire = 0;
+        bool missilePrompt = false;
         bool reachedLand = false;
         bool completed = false;
 
         for (int i = 0; i < MaxSteps && !completed && !reachedLand; i++)
         {
-            // reflect the fire-readiness bits the scripted "fire" gates check (GetStateBitsCondition)
-            host.PlayerShip.StateM |= WeaponsMask | MissileFire;
-
             OrientPlayerToTarget(host);
 
             // Radar re-target: after killing the locked hull, wait a couple frames so the
@@ -68,7 +68,14 @@ public sealed class TR3TrainingMissions34Tests
                 host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, nextDerelict));
 
             host.StepLight();
+            // Headless input sample: pulse fire only at the lesson's fire prompts
+            // (training/mission3.cpp:627-649,838-848,927-951). The script reads StateM at Frame;
+            // kill outcomes below are driven separately. Holding fire through Mission.Update
+            // now fires real P882a guns and destroys the aiming target before goal 5.
+            host.PlayerShip.StateM |= sampledFire;
             completed = mission.Frame();
+            host.PlayerShip.StateM &= ~(WeaponsMask | MissileFire);
+            sampledFire = 0;
             if (completed) break;
 
             // Repeated-identical prompts (several goals share the exact same message text), so the
@@ -76,8 +83,15 @@ public sealed class TR3TrainingMissions34Tests
             int totalSpacebar = site.Messages.Count(m => m.Contains("Press the SPACEBAR", StringComparison.Ordinal));
             int totalSpaceKey = site.Messages.Count(m => m.Contains("Press the SPACE key", StringComparison.Ordinal));
             int totalDestroy = site.Messages.Count(m => m.Contains("Destroy current target.", StringComparison.Ordinal));
-            while (totalSpacebar > spacebarPrompts) { mission.RecordKeyPress(KeySpace); spacebarPrompts++; }
-            while (totalSpaceKey > spaceKeyPrompts) { mission.RecordKeyPress(KeySpace); spaceKeyPrompts++; }
+            int totalFire = site.Messages.Count(m => m.Contains("Left click to fire your main weapon.", StringComparison.Ordinal));
+            if (totalFire > firePrompts)
+            {
+                Assert.False(host.Drones[nextDerelict].Dead, "aiming target must survive until the fire prompt");
+                sampledFire = OneWeapon;
+                firePrompts = totalFire;
+            }
+            while (totalSpacebar > spacebarPrompts) { Assert.True(mission.RecordKeyPress(KeySpace)); spacebarPrompts++; }
+            while (totalSpaceKey > spaceKeyPrompts) { Assert.True(mission.RecordKeyPress(KeySpace)); spaceKeyPrompts++; }
             while (totalDestroy > destroyPrompts)
             {
                 host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, nextDerelict));
@@ -93,6 +107,11 @@ public sealed class TR3TrainingMissions34Tests
                 if (!seen.Add(m)) continue;
                 if (m.Contains("Land in a green hangar", StringComparison.Ordinal))
                     reachedLand = true;   // goal 13's landing prompt → land to finish
+                else if (m.Contains("Press 5 or Middle click", StringComparison.Ordinal))
+                {
+                    sampledFire = MissileFire;
+                    missilePrompt = true;
+                }
                 else if (m.Contains("right mouse button to target", StringComparison.Ordinal))
                     host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, nextDerelict));
                 else if (m.Contains("Target an enemy using the F key", StringComparison.Ordinal))
@@ -103,7 +122,9 @@ public sealed class TR3TrainingMissions34Tests
         }
 
         Assert.True(spacebarPrompts >= 2, $"both SPACEBAR prompts not reached (spacebar={spacebarPrompts})");
-        Assert.True(spaceKeyPrompts >= 2, $"both SPACE-key prompts not reached (spacekey={spaceKeyPrompts})");
+        Assert.Equal(2, firePrompts); // native main-weapon gates in goals 5 and 8
+        Assert.True(missilePrompt, "missile-fire prompt (goal 9) never reached");
+        Assert.True(spaceKeyPrompts >= 2, $"both SPACE-key prompts not reached (spacekey={spaceKeyPrompts}, goal={mission.ActiveGoalPath})");
         Assert.True(nextDerelict >= 1003, $"three derelict kills expected, killed to {nextDerelict}");
         Assert.True(reachedLand, "landing prompt (goal 13) never reached");
 

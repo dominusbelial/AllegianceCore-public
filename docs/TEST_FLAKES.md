@@ -3670,3 +3670,34 @@ It passed the isolated follow-up together with the relay case (2/2). This is
 the existing timing observation, not a changed test budget. The sweep remains
 red; the separate task-introduced key-catalog metadata failure and its fix are
 recorded in `docs/reports/P882a_REPORT.md`, not classified as a flake.
+
+## P882b training verification (2026-10-28)
+
+The complete training cohort (both client projects, including all 18 Live cases)
+passed **125/125 cases, three times**: 375 passes, no failures/skips. M3's stale
+headless fire input and M5's real cross-sector drone-membership defect are fixed;
+the new Live transfer/termination proof also passed **3/3 alone**. Native causes
+and individual results are recorded in `docs/reports/P882b_REPORT.md` and
+`docs/reports/P882b_training_results.csv`.
+
+The historical P873 Nanite assertion, `goal 3: bomber never crossed into sector
+1052`, **did not reproduce** on this dispatch base: M8 passed 3/3 on final source
+and 1/1 in an isolated scratch runtime using the original dispatch-base
+`TrainingHost.cs` (`a243fa4b`). A baseline M5 control still reproduced its original
+sectorless-fire exception, confirming the old host was loaded. No M8 test/graph
+was edited, and no claim is made that P882b repaired the historical Nanite gap or
+that the earlier P873 failure was intermittent.
+
+Exactly one Fast sweep ran: **11,616 cases; 11,610 passed / 3 failed / 3 optional
+skips**. The gate remains red. Infrastructure and quarantine checks passed.
+
+| Test | P882b observation and disposition |
+|---|---|
+| `StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched` | Failed at line 278 because the missile never hit, taking 16.653 s (also the sole Fast timing violation). Passed 3/3 standalone follow-ups at 0.397 / 0.402 / 0.390 s. Broad-run timing observation; this test never invokes the changed training-host placement path. Station/missile code and thresholds were not changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Same null `DefendTarget` at line 179 as the deterministic dispatch-base failure already ledgered under P872 and observed by P882a. Left open; no defend code changed. |
+| `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over` | Empty receipt collection at line 602. Three standalone follow-ups yielded pass / pass / fail at the same line. Intermittent even in isolation; related draw-chain receipt ordering is covered by the earlier TT-1b audit entry. Left open; no ballot code changed and this test never invokes training-host placement. |
+
+The standalone showcase never-parks gate passed **5/5**, with all 30 bots and
+24/30 objectives reached in every run; longest measured stops with a target were
+0.000 / 1.503 / 1.517 / 1.008 / 1.109 s. Raw logs/TRX stay git-excluded under
+`.scratch/p882b/` and `.scratch/training-20261029T034808-6499/`.

@@ -784,6 +784,7 @@ list in **reverse**.
   `docs/reports/P824_TEXTURE_PIPELINE.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
+  Training's complete Fast + Live cohort: `tools/run-training-tests.sh` (P882b).
 - **`tools/core2txt` (P870/P870b)** — native `Core2Text`/`Text2Core` static-core
   text round trip (`FedSrv/FedSrv.CPP:10385-10480`): `.igc` → editable
   tab-delimited text (one CSV per native table, native headers/comments/columns)

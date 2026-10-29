@@ -58,6 +58,11 @@ jobs:
           TEST_FILTER: "Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"
         run: tools/run-tests.sh --tier fast --no-build
 
+      - name: Test training including Live lessons
+        # Clean runners skip corpus cases. Corpus-equipped local gates run every
+        # lesson, including Nanite, and fail on any lesson completion regression.
+        run: tools/run-training-tests.sh --no-build
+
       - name: Headless replay benchmark (three deterministic runs, no server or artwork)
         run: >-
           dotnet tools/benchmark/bin/Debug/net10.0/benchmark.dll
