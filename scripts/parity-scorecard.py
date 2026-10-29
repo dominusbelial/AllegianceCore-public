@@ -8,7 +8,9 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv", "training-matrix.csv")
+MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv", "training-matrix.csv",
+            "lobby-matrix.csv", "soundengine-matrix.csv", "allsrvui-matrix.csv",
+            "effect-matrix.csv", "bots-matrix.csv", "model-tools-matrix.csv")
 STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n/a"}
 COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
