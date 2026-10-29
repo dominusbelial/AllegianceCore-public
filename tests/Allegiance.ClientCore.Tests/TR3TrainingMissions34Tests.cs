@@ -21,10 +21,8 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class TR3TrainingMissions34Tests
 {
     private const int KeySpace = KeyFireBooster;    // TK_FireBooster — the SPACEBAR key
-    // Mission 3 gates on the native TK_TargetEnemy (TrainingMissionIds.KeyTargetEnemy, igc.h:303);
-    // Mission 4 still uses its own picked ids until its lesson moves to the native table.
-    private const int Mission4KeyTargetEnemy = 111;  // Mission4's picked id for TK_TargetEnemy
-    private const int KeyToggleCloak = 112;          // Mission4's picked id for TK_ToggleCloak
+    // Missions 3 and 4 both gate on the native TrekKey numbers (TrainingMissionIds):
+    // TK_TargetEnemy = 80 (igc.h:303) and TK_ToggleCloak = 94 (igc.h:317).
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Mission 3 — Basic Weaponry
@@ -243,12 +241,12 @@ public sealed class TR3TrainingMissions34Tests
                 }
                 else if (m.Contains("activate your cloak.", StringComparison.Ordinal) && !cloakPressed)
                 {
-                    mission.RecordKeyPress(KeyToggleCloak);    // goal 6: the K key
+                    mission.RecordKeyPress(KeyToggleCloak);    // goal 6: the cloak key (TK_ToggleCloak = 94)
                     cloakPressed = true;
                 }
                 else if (m.Contains("Target an enemy miner", StringComparison.Ordinal) && !targetedMiner)
                 {
-                    mission.RecordKeyPress(Mission4KeyTargetEnemy);    // goal 7: E key
+                    mission.RecordKeyPress(KeyTargetEnemy);    // goal 7: the target-enemy key (TK_TargetEnemy = 80)
                     host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, mission.EnemyMiner1Id));
                     host.DestroyDrone(mission.EnemyMiner1Id);  // kill the locked miner
                     targetedMiner = true;

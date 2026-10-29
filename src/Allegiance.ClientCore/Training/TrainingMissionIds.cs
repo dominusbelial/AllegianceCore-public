@@ -34,6 +34,7 @@ public static class TrainingMissionIds
     public const int KeyTargetSelf = 100;           // TK_TargetSelf (igc.h:323)
     public const int KeyTargetFriendly = 77;        // TK_TargetFriendly (igc.h:300)
     public const int KeyTargetEnemy = 80;           // TK_TargetEnemy (igc.h:303) — the F key
+    public const int KeyToggleCloak = 94;           // TK_ToggleCloak (igc.h:317) — toggle the cloak
     public const int KeyTargetCenter = 90;          // TK_TargetCenter (igc.h:313) — target nearest reticle
     public const int KeyConModeTeleport = 210;      // TK_ConModeTeleport (igc.h:436)
 
