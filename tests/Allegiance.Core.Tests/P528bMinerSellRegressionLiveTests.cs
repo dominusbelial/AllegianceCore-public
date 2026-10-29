@@ -81,6 +81,12 @@ public class P528bMinerSellRegressionLiveTests
         var mission = server.Missions[0];
         // This travel regression has no scout pilots: use the configured known map.
         mission.SeedStartingVisibility();
+        // P864c tops up empty sectors (home He3 x2). Keep this cross-sector mining fixture's
+        // authored Alderan-only rock distribution before the first simulation tick.
+        var authoredRockIds = mission.Map.Asteroids.Select(a => a.AsteroidId).ToHashSet();
+        foreach (var arena in mission.Sectors)
+            foreach (var generated in arena.Mineable.Where(a => !authoredRockIds.Contains(a.Data.AsteroidId)).ToArray())
+                arena.RemoveAsteroid(generated);
         // No scout clients participate in this economic-cycle fixture. The
         // distant mining field is explicitly known, as a scouted field would be.
         foreach (var sector in mission.Sectors)
