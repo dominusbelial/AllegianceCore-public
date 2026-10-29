@@ -789,6 +789,7 @@ file-defined — there is no CLI form for the nested `games` array.
 | `artPath` | root of the artwork tree (holds the core and map files) |
 | `staticCore` | core file name, relative to `artPath` — loaded at boot (checklist item 4) |
 | `port` | TCP port the logon transport listens on; 0 selects an ephemeral port |
+| `maxGames` | per-server mission cap, default 99 and minimum 1 (native `FedSrv/FedSrv.CPP:9560-9562`); full servers refuse additional player-created games |
 | `updatesPerSecond` | tick cadence in Hz; fixed period = 1000/ups ms |
 | `games[].name` | human label, logs only |
 | `games[].map` | map file name, relative to `artPath` |

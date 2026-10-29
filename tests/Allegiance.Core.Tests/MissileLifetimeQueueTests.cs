@@ -54,7 +54,7 @@ public sealed class MissileLifetimeQueueTests
         {
             CharacterName = "missile-lifetime", FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-            Time = 1, DwCookie = 234, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
             SteamID = 87700000000000234ul,
         });
         bool Seated() { lock (session.Gate) return session.World.MyShipId is not null; }

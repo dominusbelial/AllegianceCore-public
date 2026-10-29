@@ -2,6 +2,7 @@
   "artPath": "/path/to/Artwork",
   "staticCore": "PCore001.igc",
   "port": 6073,
+  "maxGames": 99,
   "updatesPerSecond": 20,
   "sim": {
     "comment": "P629 native crowding damage and warnings are on by default. Use off for single-sector stress tests/showcases; out-of-bounds damage remains enabled.",

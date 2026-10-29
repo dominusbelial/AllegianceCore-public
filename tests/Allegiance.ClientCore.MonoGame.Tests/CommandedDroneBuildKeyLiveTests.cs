@@ -66,7 +66,7 @@ public sealed class CommandedDroneBuildKeyLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 924u, DwCookie = 0x924u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 924u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 97800000000000002ul, DrmHash = "p425client",
     };

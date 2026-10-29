@@ -48,7 +48,7 @@ public sealed class BroadcastSnapshotLoopbackTests
             Write(stream, 2, FedPacket.Pack(new LogonRequest
             {
                 CharacterName = name, ZoneTicket = [1], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-                FedsrvVer = LogonRequest.MsgVer, Time = 668, DwCookie = 668,
+                FedsrvVer = LogonRequest.MsgVer, Time = 668, DwCookie = uint.MaxValue,
                 CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
                 SteamID = (ulong)(99000000000000668 + index), DrmHash = "P668",
             }.Encode()));

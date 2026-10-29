@@ -67,7 +67,7 @@ public sealed partial class P832aGoalServerTests
         using var client = new Allegiance.ClientCore.Session.ConnectionSession();
         client.Connect(server.BoundPort, "P832e-rankings");
         client.SendLogonRequest(new() { CharacterName = "P832e-rankings", FedsrvVer = Allegiance.Core.Wire.LogonRequest.MsgVer,
-            ZoneTicket = [1, 2, 3], CDKey = "ABCDEFGHIJKL", Time = 1, DwCookie = 832, CrcFileList = -1,
+            ZoneTicket = [1, 2, 3], CDKey = "ABCDEFGHIJKL", Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1,
             SteamAuthTicket = new byte[16], SteamID = 832005 });
         Pump(server, () => client.Ack is not null);
         client.SendPositionReq(0);

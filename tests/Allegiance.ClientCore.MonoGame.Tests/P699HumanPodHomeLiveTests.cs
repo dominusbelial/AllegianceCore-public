@@ -85,7 +85,7 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
         using var session = new ConnectionSession();
         session.Connect(server.BoundPort, "P699-human");
         session.SendLogonRequest(new() { CharacterName = "P699-human", FedsrvVer = LogonRequest.MsgVer,
-            ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", Time = 1, DwCookie = 699,
+            ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", Time = 1, DwCookie = uint.MaxValue,
             CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 69901 });
         void Drain(Func<bool> done)
         {

@@ -74,7 +74,7 @@ public sealed partial class Server
         lock (_snapshotCaptureGate) _pendingTurretRelays.Clear();
         _activeTurretCandidates.Clear();
         _inactiveTurretRelays.Clear();
-        _clusterInfoBytes = null;
+        _clusterInfoBytes.Clear();
         foreach (var m in _missions)
             foreach (var s in m.Sectors)
                 foreach (var mdl in s.Models)
@@ -102,7 +102,12 @@ public sealed partial class Server
 
     /// <summary>P603 test seam — set the shared cluster-info payload (exercises the
     /// periodic CLUSTERINFO resend path when non-null).</summary>
-    internal void TestSetClusterInfoBytes(byte[]? bytes) => _clusterInfoBytes = bytes;
+    internal void TestSetClusterInfoBytes(byte[]? bytes)
+    {
+        if (TestMission is not { } mission) return;
+        if (bytes is null) _clusterInfoBytes.Remove(mission.Cookie);
+        else _clusterInfoBytes[mission.Cookie] = bytes;
+    }
 
     /// <summary>
     /// P608 — test seam like <see cref="TestCollectBroadcast"/> but records each

@@ -54,7 +54,7 @@ public sealed class SideSwitchDevMaskLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 0468u, DwCookie = 0x468u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 0468u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 00468000000000000ul, DrmHash = "side468",
     };

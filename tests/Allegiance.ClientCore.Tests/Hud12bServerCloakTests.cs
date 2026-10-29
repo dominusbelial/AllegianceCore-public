@@ -48,7 +48,7 @@ public class Hud12bServerCloakTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 1212u, DwCookie = 0x1212u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 1212u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 1212000000000000000ul + (ulong)name.Length, DrmHash = "hud12b",
     };

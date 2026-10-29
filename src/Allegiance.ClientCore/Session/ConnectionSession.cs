@@ -157,12 +157,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // socket and asks the server (whose `reconnect.enabled` flag must also be on,
     // Server.ReconnectGrace.cs) to resume the SAME seat.
     //
-    // The resume token is a session-scoped nonce carried in the EXISTING native
-    // field LOGONREQ.dwCookie (Inc/Messages.h:43) — no new wire data. Native
-    // LOGONACK.cookie is the server's in-game session cookie (FedSrv.CPP:983),
-    // so a session token on the logon message is the native-shaped slot; this
-    // port mints the nonce on the CLIENT (it never leaves the session and is
-    // NOT an account — P808a is out of scope).
+    // The resume token is a session nonce in the optional P883 tagged LOGONREQ
+    // extension. Native dwCookie selects the mission (Inc/Messages.h:43), and
+    // LOGONACK.cookie is the distinct byte gameplay cookie (FedSrv.CPP:983).
+    // Reconnect grace remains a port extension, disabled by default.
     private uint _resumeToken;
     private string? _resumeHost;
     private ushort _resumePort;
@@ -195,7 +193,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     public bool Reconnecting => _reconnecting;
 
     /// <summary>P813c — the session's resume token (sent as
-    /// <c>LOGONREQ.dwCookie</c> while auto-reconnect is on).</summary>
+    /// <c>LOGONREQ.ResumeToken</c> while auto-reconnect is on).</summary>
     public uint ResumeToken => _resumeToken;
 
     /// <summary>P813c — connection attempts made by the auto-reconnect loop.</summary>
@@ -414,14 +412,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
     public void SendLogonRequest(LogonRequest req)
     {
-        // P813c — while auto-reconnect is armed, the logon carries this
-        // session's resume token in the native LOGONREQ.dwCookie field, and the
-        // request is retained so a reconnect can re-send it verbatim (same CD
-        // key / steam ticket), re-tokenised. With the feature off the request is
-        // sent untouched (today's behaviour).
+        // P883: keep the chosen native mission cookie; reconnect has its own
+        // optional token field. Retain the request for retries.
         if (_autoReconnect)
         {
-            req.DwCookie = _resumeToken;
+            req.ResumeToken = _resumeToken;
             _resumeRequest = req;
         }
         Send(FedPacket.Pack(new[] { req.Encode() }));
@@ -1251,7 +1246,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     // first logon (the running install's manifest CRC).
                     CrcFileList = ClientFileList.Compute(),
                 };
-                req.DwCookie = _resumeToken;
+                req.ResumeToken = _resumeToken;
                 Send(FedPacket.Pack(new[] { req.Encode() }));
 
                 var ack = WaitForAck(1500);
@@ -1610,7 +1605,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(PlayerReady.Decode(m));
                         break;
                     case JoinedMission.Fmid:
-                        _world.Apply(JoinedMission.Decode(m));
+                        var joined = JoinedMission.Decode(m);
+                        if (_resumeRequest is not null) _resumeRequest.DwCookie = joined.DwCookie;
+                        _world.Apply(joined);
                         if (_world.JoinError is not null)
                         {
                             _lost = true;

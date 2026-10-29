@@ -237,7 +237,7 @@ public sealed class P695HumanShipUpdatesLiveTests(ITestOutputHelper output)
             {
                 CharacterName = "P695-human", FedsrvVer = LogonRequest.MsgVer,
                 ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-                Time = 1, DwCookie = 695, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 69501,
+                Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 69501,
             });
             var sim = new OwnShipSimulator();
             var clock = new OwnShipServerClock();

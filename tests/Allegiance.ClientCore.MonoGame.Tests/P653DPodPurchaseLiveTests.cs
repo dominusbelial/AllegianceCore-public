@@ -35,7 +35,7 @@ public sealed class P653DPodPurchaseLiveTests
         session.Connect(server.BoundPort, "p653d-human");
         session.SendLogonRequest(new LogonRequest { CharacterName = "p653d-human", ZoneTicket = [1, 2, 3, 4],
             CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-            Time = 653, DwCookie = 653, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            Time = 653, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
             SteamAuthTicketLength = 0, SteamID = 97700000000000653ul, DrmHash = "p653d" });
         void Wait(string phase, Func<bool> done)
         {

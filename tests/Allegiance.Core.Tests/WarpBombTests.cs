@@ -325,7 +325,7 @@ public sealed class WarpBombTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 988u, DwCookie = 0x988u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 988u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 99400000000000000ul, DrmHash = "warpbomb",
     };

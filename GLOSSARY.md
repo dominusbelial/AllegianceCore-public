@@ -237,6 +237,19 @@ list in **reverse**.
   (`LobbyGameParams`), `src/Allegiance.Lobby/ServerListing.cs`
   (`GameParamsDto`/`GameParamsRequest`). Native:
   `FedSrv/fsmission.cpp:3983-4096`.
+- **Mission cookies / chosen-game joins (P883)** — server-lifetime unique
+  `Mission.Cookie` addresses each configured or provisioned game; resets retain
+  the cookie. `src/Allegiance.Server/Server.MissionCookies.cs` resolves native
+  LOGONREQ `dwCookie` (NA → first), and pending peers retain their selected
+  mission. Registry `missions[]` and `/api/games` ready acknowledgements carry
+  the cookie through both client join flows. Reconnect uses the optional tagged
+  `LogonRequest.ResumeToken` extension; side choice remains POSITIONREQ.
+  `src/Allegiance.Server/Server.Broadcast.cs` and
+  `src/Allegiance.Server/CrossSideSweepCache.cs` scope audiences and topology
+  caches by mission so local side/cluster ids cannot cross game boundaries.
+  Native: `FedSrv/FedSrv.CPP:489-515`, `FedSrv/fsmission.h:229-235`.
+  Proof: `tests/Allegiance.Core.Tests/P883MissionCookieTests.cs`,
+  `tools/p883-join-proof/`; report: `docs/reports/P883_REPORT.md`.
 - **Native server counters (P866)** — `cTimeouts`/`cPacketsOut`/`cBytesOut` and
   their per-second twins as named, thread-safe counters fed where the port
   hands guaranteed frames to the per-peer send queue and where an unrequested
@@ -749,6 +762,15 @@ list in **reverse**.
   base64 of the native packed struct (`paramsWire`), never as JSON fields. Key:
   `src/Allegiance.Lobby/Games/`,
   `src/Allegiance.ClientCore.Game/Games/`.
+- **Per-server game capacity (P883b)** — `ServerConfig.MaxGames` defaults to
+  native's 99 (minimum 1); configured and player-created missions count toward
+  admission in `src/Allegiance.Server/Server.Provisioning.cs`. The heartbeat's
+  mission snapshot publishes `currentGames`/`maxGames` through
+  `src/Allegiance.Lobby/ServerRegistry.cs` and the create-game catalog. The shared
+  `src/Allegiance.ClientCore.Game/Games/CreateGameWizard.cs` displays cur/max and
+  refuses full servers. Native: `FedSrv/FedSrv.CPP:9560-9562,8107,8850`,
+  `lobby/server.cpp:114`, `lobby/client.cpp:361-362`,
+  `WinTrek/CreateGameDialog.h:20,87`. Report: `docs/reports/P883_REPORT.md`.
 - **Version advertisement** — `GET /api/update/info` (current/minimum client
   version + the signed release feed URL), the HTTP analogue of native
   `AUTO_UPDATE_INFO(253)` (`lobby/messageslc.h:45-52`). Key:

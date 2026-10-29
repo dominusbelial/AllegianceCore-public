@@ -74,20 +74,21 @@ public sealed partial class Server
         return _broadcastPeerBuffer;
     }
 
-    private readonly Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> _broadcastMates = new();
-    private readonly Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> _broadcastMateBuffers = new();
-    private Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>> GatherBroadcastMates(KeyValuePair<ConnectionId, LiveShip>[] peers)
+    private readonly Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> _broadcastMates = new();
+    private readonly Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> _broadcastMateBuffers = new();
+    private Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> GatherBroadcastMates(KeyValuePair<ConnectionId, LiveShip>[] peers)
     {
         _broadcastMates.Clear();
         foreach (var list in _broadcastMateBuffers.Values) list.Clear();
         foreach (var kv in peers)
         {
-            if (kv.Value.Ship.SideId is not { } side) continue;
-            if (!_broadcastMates.TryGetValue(side, out var list))
+            if (kv.Value.Ship.SideId is not { } side || kv.Value.Ship.Mission is not { } mission) continue;
+            var key = (mission.Cookie, side);
+            if (!_broadcastMates.TryGetValue(key, out var list))
             {
-                if (!_broadcastMateBuffers.TryGetValue(side, out list))
-                    _broadcastMateBuffers.Add(side, list = new());
-                _broadcastMates.Add(side, list);
+                if (!_broadcastMateBuffers.TryGetValue(key, out list))
+                    _broadcastMateBuffers.Add(key, list = new());
+                _broadcastMates.Add(key, list);
             }
             list.Add(kv);
         }
@@ -97,14 +98,14 @@ public sealed partial class Server
     private readonly Dictionary<short, HashSet<Sector>> _broadcastSideSectors = new();
     private readonly Dictionary<short, List<ConnectionId>> _sideConnections = new();
     private readonly Dictionary<short, List<ConnectionId>> _sideConnectionBuffers = new();
-    private Dictionary<short, List<ConnectionId>> GatherSideConnections()
+    private Dictionary<short, List<ConnectionId>> GatherSideConnections(Mission mission)
     {
         _sideConnections.Clear();
         foreach (var list in _sideConnectionBuffers.Values) list.Clear();
         foreach (var sectors in _broadcastSideSectors.Values) sectors.Clear();
         foreach (var kv in _peerShips)
         {
-            if (!IncludeShipBroadcastMission(kv.Value.Ship.Mission)) continue;
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || !IncludeShipBroadcastMission(kv.Value.Ship.Mission)) continue;
             if (kv.Value.Ship.SideId is not { } sid) continue;
             if (!_sideConnections.TryGetValue(sid, out var list))
             {

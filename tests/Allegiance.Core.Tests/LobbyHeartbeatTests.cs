@@ -288,7 +288,7 @@ public sealed class LivePlayerCountTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = Allegiance.Core.Wire.LogonRequest.MsgVer, Time = 557u, DwCookie = 0x557u,
+        FedsrvVer = Allegiance.Core.Wire.LogonRequest.MsgVer, Time = 557u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 55400000000000006ul, DrmHash = "p176count",
     };

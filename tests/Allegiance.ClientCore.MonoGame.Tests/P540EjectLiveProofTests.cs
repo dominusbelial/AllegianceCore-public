@@ -59,7 +59,7 @@ public sealed class P540EjectLiveProofTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 540u, DwCookie = 0x540u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 540u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 95400000000000002ul, DrmHash = "p540",
     };

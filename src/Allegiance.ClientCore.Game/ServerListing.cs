@@ -42,13 +42,21 @@ public sealed record ServerListing(
     /// port's advertised form of native's LOGON <c>crcFileList</c> gate,
     /// <c>clintlib/clintlib.cpp:1418</c> → <c>lobby/client.cpp:272-281</c>;
     /// design: no new data on the game-connection wire). Null/empty = none.</summary>
-    string? MinClientVersion = null)
+    string? MinClientVersion = null,
+    IReadOnlyList<ServerListing.MissionListing>? Missions = null,
+    uint MissionCookie = uint.MaxValue)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
     /// launching <c>dotnet run --project src/Allegiance.Lobby</c> (it has no
     /// appsettings/launchSettings, so Kestrel binds its default port 5000). Not a
     /// guessed port; override with <c>--lobby &lt;url&gt;</c>.</summary>
+    public sealed record MissionListing(uint Cookie, string Name, int PlayerCount, GameParams? Game);
+    public static IEnumerable<ServerListing> ExpandMissions(IEnumerable<ServerListing> servers) =>
+        servers.SelectMany(s => s.Missions is { Count: > 0 } missions
+            ? missions.Select(m => s with { MissionCookie = m.Cookie, MissionName = m.Name,
+                Name = m.Name, PlayerCount = m.PlayerCount, Game = m.Game, Missions = null }) : new[] { s });
+
     public const string LobbyUrlDefault = "http://127.0.0.1:5000";
 
     /// <summary>Case-insensitive web-JSON binding used for the lobby GET (the

@@ -1066,6 +1066,17 @@ public sealed class ServerConfig
     /// <summary>TCP port the logon transport listens on.</summary>
     public int Port { get; set; } = 6073;
 
+    private int _maxGames = 99;
+    /// <summary>Per-server mission cap, including configured worlds. Native
+    /// g.cMaxGames defaults to 99 and reads registry MaxGames
+    /// (FedSrv/FedSrv.CPP:9560-9562; FedSrv/FedSrv.H:346).</summary>
+    public int MaxGames
+    {
+        get => _maxGames;
+        set => _maxGames = value >= 1 ? value
+            : throw new InvalidDataException("maxGames must be at least 1");
+    }
+
     /// <summary>Optional numeric listener address; null keeps dedicated hosting on all interfaces.</summary>
     public string? BindAddress { get; set; }
 
@@ -1194,7 +1205,7 @@ public sealed class ServerConfig
 /// <para>When <see cref="Enabled"/> is true the server instead <b>parks</b> an
 /// unrequested drop's ship for <see cref="GraceSeconds"/> simulation seconds
 /// and lets the same pilot resume it with a session-scoped resume token (the
-/// native <c>LOGONREQ.dwCookie</c> field, <c>Inc/Messages.h:43</c>). The window
+/// port-only <c>LOGONREQ.ResumeToken</c> extension; native dwCookie selects the mission). The window
 /// expiring runs exactly the native removal above, so nothing is lost by
 /// leaving it off — and <b>off is the default</b>: with the flag off every
 /// disconnect path is byte-for-byte the pre-P813c behaviour. A voluntary

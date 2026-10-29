@@ -26,7 +26,7 @@ public static class LobbyStatusLayout
             lines.Add($"{name} awaiting approval for side {request.SideId}");
         }
         if (world.MyPositionRequestResult is { } result
-            && result.ShipId == (world.JoinedShipId ?? world.MyShipId)
+            && (result.ShipId == (world.JoinedShipId ?? world.MyShipId) || result.SideId == -1)
             && result.Reason != DelPositionReqReason.Canceled)
             lines.Add(RequestFailureText(result.Reason));
         return lines;
@@ -34,6 +34,7 @@ public static class LobbyStatusLayout
 
     public static string RequestFailureText(DelPositionReqReason reason) => reason switch
     {
+        DelPositionReqReason.BadPassword => "The game password is incorrect.",
         DelPositionReqReason.Rejected => "You have not been accepted to the team.",
         DelPositionReqReason.NoBase => "You can't join this team - it no longer owns a base.",
         DelPositionReqReason.TeamFull => "You can't join this team - it's full.",

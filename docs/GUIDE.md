@@ -259,6 +259,7 @@ cp src/Allegiance.Server/server.example.json src/Allegiance.Server/server.json
 ```
 
 Top-level fields: `artPath`, `staticCore`, `port`, `updatesPerSecond`,
+`maxGames` (default 99, minimum 1; includes configured and player-created worlds),
 `games[]` (name/map/teams/civIds/sideNames), optional `lobby` block, and
 `liveSettings` (all test aids are **opt-in and off by default**):
 

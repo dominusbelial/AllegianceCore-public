@@ -53,7 +53,7 @@ public sealed class InterestTierCombatTests
                     bot.Connect(server.BoundPort, name);
                     bot.SendLogonRequest(new LogonRequest { CharacterName = name, ZoneTicket = [1],
                         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-                        Time = 677, DwCookie = 677, CrcFileList = -1, SteamAuthTicket = new byte[16],
+                        Time = 677, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
                         SteamAuthTicketLength = 0, SteamID = (ulong)(74000000000677000 + i), DrmHash = "p677" });
                     var wait = Stopwatch.StartNew();
                     while (bot.ShipAssignment is null && wait.Elapsed.TotalSeconds < 15)

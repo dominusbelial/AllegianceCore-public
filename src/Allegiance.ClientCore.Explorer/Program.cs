@@ -63,7 +63,7 @@ internal static class Program
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 930u, DwCookie = 0x33Fu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 930u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 79100000000000000ul, DrmHash = "explorer",
     };

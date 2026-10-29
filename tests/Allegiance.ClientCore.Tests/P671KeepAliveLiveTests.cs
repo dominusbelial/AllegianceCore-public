@@ -46,7 +46,7 @@ public class P671KeepAliveLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 712u, DwCookie = 0x7B1u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 712u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 71200000000000000ul, DrmHash = "p671keepalive",
     };

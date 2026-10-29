@@ -30,13 +30,16 @@ public sealed class P871bCreateGameClientTests
         (typeof(Game1).GetMethod(name, Hidden) ?? throw new InvalidOperationException(name)).Invoke(game, args);
 
     /// <summary>Answers the catalog, then ACKs the create request.</summary>
-    private sealed class Lobby : HttpMessageHandler
+    private sealed class Lobby(bool fail = false) : HttpMessageHandler
     {
         public string? CreateBody;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             string json;
-            if (request.Method == HttpMethod.Get)
+            if (request.Method == HttpMethod.Get && request.RequestUri!.AbsolutePath == "/api/games")
+                json = fail ? """[{"id":"game1","gameName":"Client Game","state":"Failed"}]"""
+                    : """[{"id":"game1","gameName":"Client Game","state":"Ready","cookie":883}]""";
+            else if (request.Method == HttpMethod.Get)
                 json = """{"servers":[{"id":"s1","name":"Host","address":"127.0.0.1","port":6073,"core":"PCore001.igc","missionName":"Configured World"}],"cores":["PCore001.igc"],"maps":["m2xspiderw.igc"]}""";
             else
             {
@@ -66,10 +69,12 @@ public sealed class P871bCreateGameClientTests
         return game;
     }
 
-    [Fact]
-    public async Task An_ack_sends_the_player_to_the_server_that_creates_the_mission()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Ready_joins_the_created_mission_and_failure_stays_on_the_wizard(bool fail)
     {
-        var lobby = new Lobby();
+        var lobby = new Lobby(fail);
         var game = Headless(new HttpClient(lobby));
         var wizard = Get<CreateGameWizard>(game, "_createGame");
         wizard.ApplyCatalog(new CreateGameWizard.Catalog(
@@ -83,7 +88,7 @@ public sealed class P871bCreateGameClientTests
         // ENTER on the CREATE row posts the request.
         Call(game, "UpdateCreateGame", new Microsoft.Xna.Framework.Input.KeyboardState(),
             false, false, true, false);
-        for (int i = 0; i < 100 && Get<(string, int)?>(game, "_createGameJoinPending") is null; i++)
+        for (int i = 0; i < 100 && Get<bool>(game, "_createGameSubmitting"); i++)
             await Task.Delay(20);
 
         // The body carries the native struct as base64 — no JSON fields.
@@ -97,7 +102,16 @@ public sealed class P871bCreateGameClientTests
 
         // ...and the ACK points the client at the chosen server (native's "you are
         // sent to the server that created your mission").
-        Assert.Equal(("127.0.0.1", 6073), Get<(string, int)?>(game, "_createGameJoinPending"));
-        Assert.Equal("Game requested (game1).", wizard.Status);
+        Assert.False(Get<bool>(game, "_createGameSubmitting"));
+        if (fail)
+        {
+            Assert.Null(Get<(string, int, uint)?>(game, "_createGameJoinPending"));
+            Assert.Equal("Server did not create the game.", wizard.Status);
+        }
+        else
+        {
+            Assert.Equal(("127.0.0.1", 6073, 883u), Get<(string, int, uint)?>(game, "_createGameJoinPending"));
+            Assert.Equal("Game requested (game1).", wizard.Status);
+        }
     }
 }

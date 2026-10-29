@@ -48,6 +48,7 @@ public sealed partial class Server : IDisposable
     private double? _lifepodEnduranceOverrideSeconds;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
+    private uint _nextMissionCookie;
     // P841 / SIM-0521 — the old-player score cache, the port of native
     // CFSMission::m_oldPlayers (fsmission.cpp:2624-2680 SaveAsOldPlayer):
     // when a peer departs a mission, their live PlayerScore instance is
@@ -161,6 +162,8 @@ public sealed partial class Server : IDisposable
     /// <see cref="_liveShipCount"/> under <c>_statsLock</c> (see
     /// <see cref="LiveGameParams"/>).</summary>
     private LobbyGameParams? _liveGameParams;
+    private IReadOnlyList<LobbyMissionListing> _liveMissions = Array.Empty<LobbyMissionListing>();
+    public IReadOnlyList<LobbyMissionListing> LiveMissions { get { lock (_statsLock) return _liveMissions; } }
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
@@ -687,7 +690,9 @@ public sealed partial class Server : IDisposable
     // Mission-wide CLUSTERINFO payload, encoded once (identical for every
     // peer, doesn't change during a mission) rather than re-encoded on every
     // periodic resend.
-    private byte[]? _clusterInfoBytes;
+    private readonly Dictionary<uint, byte[]> _clusterInfoBytes = new();
+    private byte[]? ClusterInfoBytes(Mission? mission) => mission is not null
+        ? _clusterInfoBytes.GetValueOrDefault(mission.Cookie) : null;
 
     // P324 (M4) — sides that must force an immediate per-side object sync
     // (STATIONS/ASTEROIDS/PROBES_UPDATE) on the next SimPass, regardless of the
@@ -973,6 +978,7 @@ public sealed partial class Server : IDisposable
     {
         public short ShipId { get; }
         public LogonRequest Request { get; }
+        public Mission Mission { get; }
         public double ConnectSimTime { get; }
         /// <summary>P281 — the requested side once the peer chooses (null = not
         /// chosen yet); NA(-1) is never stored here (auto-assign is expressed by
@@ -984,14 +990,16 @@ public sealed partial class Server : IDisposable
         /// order their POSITIONREQ raced in), keeping round-robin sides and
         /// injected ShipSpawner ordering deterministic exactly as pre-P281.</summary>
         public long JoinSeq { get; }
-        public PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq)
-            : this(shipId, request, connectSimTime, joinSeq, null) { }
-        private PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, short? requestedSide)
+        public PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, Mission mission)
+            : this(shipId, request, connectSimTime, joinSeq, mission, null) { }
+        private PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, Mission mission, short? requestedSide)
         {
-            ShipId = shipId; Request = request; ConnectSimTime = connectSimTime; JoinSeq = joinSeq; RequestedSide = requestedSide;
+            ShipId = shipId; Request = request; Mission = mission; ConnectSimTime = connectSimTime; JoinSeq = joinSeq; RequestedSide = requestedSide;
         }
         public PendingSideSelect WithRequestedSide(short? side) =>
-            new(ShipId, Request, ConnectSimTime, JoinSeq, side);
+            new(ShipId, Request, ConnectSimTime, JoinSeq, Mission, side);
+        public PendingSideSelect WithMission(Mission mission) =>
+            new(ShipId, Request, ConnectSimTime, JoinSeq, mission, RequestedSide);
     }
 
     /// <summary>P281 — peers awaiting a post-connect side choice (keyed by

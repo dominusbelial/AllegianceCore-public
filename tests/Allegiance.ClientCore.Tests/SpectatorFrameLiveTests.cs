@@ -63,7 +63,7 @@ public class SpectatorFrameLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 642u, DwCookie = 0xD0Eu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 642u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 81400000000000000ul, DrmHash = "specframe",
     };

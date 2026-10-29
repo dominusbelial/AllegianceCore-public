@@ -26,7 +26,12 @@ public sealed class CreateGameWizard
     }
 
     public sealed record ServerChoice(string Id, string Name, string Address, int Port,
-        string Core, string MissionName);
+        string Core, string MissionName, int CurrentGames = 0, int MaxGames = 20)
+    {
+        // Native IsFull and cur/max display, WinTrek/CreateGameDialog.h:20,87.
+        public bool IsFull => CurrentGames >= MaxGames;
+        public string DisplayName => $"{Name} ({CurrentGames}/{MaxGames})";
+    }
 
     public enum Field { Server, Core, Map, Name, Create }
 
@@ -131,6 +136,7 @@ public sealed class CreateGameWizard
     {
         Status = "";
         if (SelectedServer is not { } server) { Status = "No server selected."; return null; }
+        if (server.IsFull) { Status = "That server is full. Choose another server."; return null; }
         if (SelectedCore is not { } core) { Status = "No core selected."; return null; }
         if (!string.Equals(core, server.Core, StringComparison.OrdinalIgnoreCase))
         {

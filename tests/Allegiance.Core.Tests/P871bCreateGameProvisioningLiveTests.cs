@@ -78,8 +78,10 @@ public sealed class P871bCreateGameProvisioningLiveTests
         },
     };
 
-    [SkippableFact]
-    public async Task A_claimed_create_game_request_becomes_the_mission_a_joiner_lands_in()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_claimed_create_game_request_becomes_ready_or_fails_if_capacity_races(bool raced)
     {
         Require.Artwork();
         // A private identity database per run (the lobby's default file is shared).
@@ -105,6 +107,7 @@ public sealed class P871bCreateGameProvisioningLiveTests
         // the FIRST heartbeat tick registers its directory listing — the id+token
         // the claim path uses are the ones it just earned.
         var config = Config(TestArtRoot.Value);
+        config.MaxGames = 2; // configured world + one player-created world
         config.Lobby = new Lcfg
         {
             Url = app.ClientOptions.BaseAddress.AbsoluteUri,
@@ -122,6 +125,12 @@ public sealed class P871bCreateGameProvisioningLiveTests
         await server.PumpLobbyAsync();                    // tick 1: register the listing
         var listing = (await lobby.GetFromJsonAsync<ServerListingDto[]>("/api/servers"))!.Single();
         Assert.Equal("Wizard Host", listing.Name);
+        Assert.Equal(1, listing.CurrentGames);
+        Assert.Equal(2, listing.MaxGames);
+        Assert.True(server.CanHostPlayerGame());
+        var catalog = (await lobby.GetFromJsonAsync<GameEndpoints.CatalogDto>("/api/games/catalog"))!;
+        Assert.Equal(1, Assert.Single(catalog.Servers).CurrentGames);
+        Assert.Equal(2, catalog.Servers[0].MaxGames);
 
         // The player signs in and submits the wizard (native's creator is a
         // lobby-session client; POST /api/games is authenticated).
@@ -147,25 +156,65 @@ public sealed class P871bCreateGameProvisioningLiveTests
         var relayed = (await lobby.GetFromJsonAsync<GameEndpoints.GameDto[]>("/api/games"))!;
         Assert.Equal("Claimed", Assert.Single(relayed).State);
 
+        // A different creation can fill the last slot AFTER the predicate allowed
+        // this claim, before the sim thread drains it (CreateGameDialog.h:20).
+        if (raced)
+        {
+            var winner = server.ProvisionPlayerGame(new Allegiance.Server.ClaimedGame("winner", listing.Id,
+                "PCore001.igc", Map, "Racing winner", Convert.ToBase64String(parameters.Encode()), "Claimed"));
+            Assert.NotNull(winner);
+            Assert.False(server.CanHostPlayerGame());
+            var before = server.Missions.ToArray();
+            var configs = config.Games.ToArray();
+            server.TickSim();
+            Assert.Equal(before, server.Missions);
+            Assert.Equal(configs, config.Games);
+            await server.PumpLobbyAsync();
+            var failed = Assert.Single((await lobby.GetFromJsonAsync<GameEndpoints.GameDto[]>("/api/games"))!);
+            Assert.Equal("Failed", failed.State);
+            Assert.Null(failed.Cookie);
+            var full = (await lobby.GetFromJsonAsync<ServerListingDto[]>("/api/servers"))!.Single();
+            Assert.Equal(2, full.CurrentGames);
+            Assert.Equal(2, full.MaxGames);
+            // Stale clients also get the full-server refusal at the HTTP boundary.
+            using var refused = await lobby.PostAsJsonAsync("/api/games", new
+            {
+                serverId = listing.Id, core = "PCore001.igc", map = Map,
+                gameName = "Too many", paramsWire = Convert.ToBase64String(parameters.Encode()),
+            });
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Contains("full", await refused.Content.ReadAsStringAsync());
+            return;
+        }
+
         // ── provisioning: the sim thread assembles the wizard's mission ───────
         server.TickSim();
         Assert.Equal(2, server.Missions.Count);
-        var mission = server.Missions[0];                 // the join target (AssignShip's slot)
+        Assert.False(server.CanHostPlayerGame());
+        var mission = server.Missions[1];                 // appended game, addressed by its cookie
         Assert.True(mission.PlayerCreated);              // SIM-0146 reap armed
-        Assert.False(server.Missions[1].PlayerCreated);  // the configured world is untouched
+        Assert.False(server.Missions[0].PlayerCreated);  // the configured world is untouched
         Assert.Equal(3, mission.Sides.Count);            // the wizard's team count
         Assert.Equal(7, mission.Goals.TeamKills);        // the wizard's winning condition
         Assert.Equal(MissionStage.NotStarted, mission.Stage);
         Assert.NotEmpty(mission.Sectors);
         Assert.NotEmpty(mission.Warps);
-        Assert.Equal("P871b Wizard Game", config.Games[0].Name);
-        Assert.Equal(12, config.Games[0].MaxPlayersPerTeam);
-        Assert.Equal(3, config.Games[0].Teams);
-        // "the client is sent there": every join path seats into Missions[0].
-        Assert.Same(mission, server.Missions[0]);
+        Assert.Equal("P871b Wizard Game", config.Games[1].Name);
+        Assert.Equal(12, config.Games[1].MaxPlayersPerTeam);
+        Assert.Equal(3, config.Games[1].Teams);
+        // The creator uses the ready cookie; NA keeps targeting the first world.
+        Assert.Same(mission, server.Missions[1]);
 
         // ── a claimed request is consumed: a further tick creates nothing ─────
         await server.PumpLobbyAsync();
+        var ready = Assert.Single((await lobby.GetFromJsonAsync<GameEndpoints.GameDto[]>("/api/games"))!);
+        Assert.Equal("Ready", ready.State);
+        Assert.Equal(mission.Cookie, ready.Cookie);
+        var registered = (await lobby.GetFromJsonAsync<ServerListingDto[]>("/api/servers"))!.Single();
+        Assert.Equal(server.Missions.Select(m => m.Cookie), registered.Missions!.Select(m => m.Cookie));
+        Assert.Equal("P871b Wizard Game", registered.Missions![1].Name);
+        Assert.Equal(2, registered.CurrentGames);
+        Assert.Equal(2, registered.MaxGames);
         server.TickSim();
         Assert.Equal(2, server.Missions.Count);
 
@@ -175,6 +224,11 @@ public sealed class P871bCreateGameProvisioningLiveTests
         Assert.Single(server.Missions);
         Assert.False(server.Missions[0].PlayerCreated);
         Assert.Single(config.Games);                     // the config entry left with it
+        Assert.True(server.CanHostPlayerGame());
+        await server.PumpLobbyAsync();
+        var reaped = (await lobby.GetFromJsonAsync<ServerListingDto[]>("/api/servers"))!.Single();
+        Assert.Equal(1, reaped.CurrentGames);
+        Assert.Equal(2, reaped.MaxGames);
     }
 
     /// <summary>Run the sim forward without wall-clock waiting: every tick adds

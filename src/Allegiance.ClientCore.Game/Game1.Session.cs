@@ -415,7 +415,7 @@ public sealed partial class Game1
             if (_lobbyResultData is { } data)
             {
                 _servers.Clear();
-                _servers.AddRange(data);
+                _servers.AddRange(ServerListing.ExpandMissions(data));
                 RebuildDisplay();   // P500 — merge saved servers + fetched listings
             }
             _lobbyResultData = null;
@@ -1078,7 +1078,9 @@ public sealed partial class Game1
     /// <see cref="Initialize"/>). On success flips to <see cref="ClientState.Flying"/>;
     /// on failure either reverts to the lobby (when joined from there) or exits
     /// (the unchanged direct-connect path).</summary>
-    private void BeginConnect(string host, ushort port)
+    private uint _connectMissionCookie = uint.MaxValue;
+
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue)
     {
         _moderation.Reset();
         _state = ClientState.Connecting;
@@ -1086,6 +1088,7 @@ public sealed partial class Game1
         // Every join (lobby, connect screen, resume) remembers where we are, so
         // the P499 resume-reconnect (NotifyResumed) and the connect screen's
         // last-used memory both work regardless of entry path.
+        _connectMissionCookie = missionCookie;
         _connectHost = host;
         _connectPort = port;
         // P789 — remote matches record their performance too (no wire change:
@@ -1112,6 +1115,7 @@ public sealed partial class Game1
             }
             _session.Connect(port, _playerName, host);
             var logon = Request(_playerName);
+            logon.DwCookie = missionCookie;
             if (_skirmish is null && _identityClient?.Account is not null)
             {
                 var listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified);
@@ -1189,7 +1193,7 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
             _connectFailureReason = null;
-            BeginConnect(_connectHost!, _connectPort);
+            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie);
             return;
         }
         _connectRetryWasDown = retry;
@@ -1237,7 +1241,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
             bool prior = _returnToLobbyOnFailure;
             _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
-            try { BeginConnect(_connectHost, _connectPort); }
+            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie); }
             finally { _returnToLobbyOnFailure = prior; }
         }
     }
@@ -1787,7 +1791,7 @@ public sealed partial class Game1
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,
         Time = 1234u,
-        DwCookie = 0x33Fu,
+        DwCookie = uint.MaxValue,
         // P871 — report the installed file set (native FileCRC("FileList.txt"),
         // clintlib.cpp:1418); 0 when nothing is installed (checks disabled).
         CrcFileList = ClientFileList.Compute(),

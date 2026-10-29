@@ -72,7 +72,7 @@ public class NpcBuilderDefaultOrderLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 563u, DwCookie = 0x563u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 563u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 66300000000000007ul, DrmHash = "p165builder",
     };

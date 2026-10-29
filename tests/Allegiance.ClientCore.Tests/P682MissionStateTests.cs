@@ -54,7 +54,9 @@ public sealed class P682MissionStateTests
         var warnings = (IDictionary)typeof(Srv).GetField("_lastSectorAssetMaskBySide", flags)!.GetValue(server)!;
         Assert.Equal(2, viewers.Count);
         Assert.NotEmpty(warnings.Keys.Cast<object>());
-        var clusterInfo = typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server);
+        var clusterCache = (IDictionary)typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server)!;
+        var clusterInfo = clusterCache[old.Cookie];
+        Assert.NotNull(clusterInfo);
         var oldStations = old.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
         var oldRocks = old.Sectors.SelectMany(s => s.Mineable).ToArray();
         var oldTreasures = old.Sectors.SelectMany(s => s.Models.OfType<Treasure>()).ToArray();
@@ -82,7 +84,7 @@ public sealed class P682MissionStateTests
         var peerBuffer = (Array)typeof(Srv).GetField("_broadcastPeerBuffer", flags)!.GetValue(server)!;
         foreach (var entry in peerBuffer)
             Assert.Null(entry!.GetType().GetProperty("Value")!.GetValue(entry));
-        Assert.NotSame(clusterInfo, typeof(Srv).GetField("_clusterInfoBytes", flags)!.GetValue(server));
+        Assert.NotSame(clusterInfo, clusterCache[old.Cookie]); // P883: graph bytes, not the cache container, are invalidated
         string accounting = server.TakeUpdateAgeReport(1);
         Assert.DoesNotContain("shipsBytes=0 ", accounting);
         var fresh = server.Missions[0];

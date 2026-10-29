@@ -68,7 +68,7 @@ public sealed class ShopLauncherMountNumberingLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 559u, DwCookie = 0x559u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 559u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 5770000000000000000ul, DrmHash = "p437shopmount",
     };

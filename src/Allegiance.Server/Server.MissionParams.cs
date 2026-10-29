@@ -411,7 +411,7 @@ public sealed partial class Server
         {
             SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
             VerIgcCore = mission.Core.Version,
-            DwCookie = 0,
+            DwCookie = mission.Cookie,
             NTems = cur.NTems,
             RgCivId = mission.Sides.Select(s => s.Civilization.CivilizationId).ToArray(),
             ISideMissionOwner = mission.MissionOwnerSideId ?? (short)-1,

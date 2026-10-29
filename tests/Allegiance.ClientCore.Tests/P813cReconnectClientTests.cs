@@ -55,7 +55,7 @@ public sealed class P813cReconnectClientTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 813u, DwCookie = 0x33Fu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 813u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
         SteamID = 8813000000000000001ul, DrmHash = "p813c-client",
     };

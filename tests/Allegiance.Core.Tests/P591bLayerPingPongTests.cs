@@ -65,7 +65,7 @@ public sealed class P591bLayerPingPongTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 615u, DwCookie = 0x615u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 615u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 67800000000000006ul, DrmHash = "p591b",
     };

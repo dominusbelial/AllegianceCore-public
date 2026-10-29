@@ -165,7 +165,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
             ship.MountPart(gun, 1, 0, 255);
             return (ship, w.Sector);
         };
-        var live = (Srv.LiveShip)w.Call("AssignShip", new LogonRequest(), (short)120, (short)0)!;
+        var live = (Srv.LiveShip)w.Call("AssignShip", w.Mission, new LogonRequest(), (short)120, (short)0)!;
         w.Server.TestSeedPeers([(w.Conn, live.Ship, live.Sector), (new ConnectionId(2), w.Mate, w.Sector)]);
         long treasury = w.Mission.Sides[0].Money;
         w.Send(new BoardShip { SidParent = w.Mate.Id });
@@ -250,7 +250,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     public void H06_Initial_bot_purchase_starts_docked_and_can_launch()
     {
         using var w = new World();
-        var live = (Srv.LiveShip)w.Call("AssignShip", new LogonRequest(), (short)120, (short)0)!;
+        var live = (Srv.LiveShip)w.Call("AssignShip", w.Mission, new LogonRequest(), (short)120, (short)0)!;
         Assert.NotNull(live.Ship.StationId);
         w.Server.TestSeedPeers([(w.Conn, live.Ship, live.Sector)]);
         w.Call("SendInitialDockState", w.Conn, live.Ship);

@@ -61,7 +61,7 @@ public sealed class TestHarnessEconomyGrantLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 973u, DwCookie = 0x973u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 973u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 9199000000000000000ul, DrmHash = "grant473",
     };

@@ -40,7 +40,7 @@ public sealed class P697GhostBattleLiveTests
         client.Connect(server.BoundPort, name);
         client.SendLogonRequest(new LogonRequest { CharacterName = name, ZoneTicket = [1],
             CDKey = "ABCDEFGHIJKL", MissionPassword = "pw", FedsrvVer = LogonRequest.MsgVer,
-            Time = 697, DwCookie = 697, CrcFileList = -1, SteamAuthTicket = new byte[16],
+            Time = 697, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16],
             SteamAuthTicketLength = 0, SteamID = name == "p697-viewer" ? 99000000000000697ul : 99000000000000698ul, DrmHash = "P697" });
         Pump(server, () => { lock (client.Gate) return client.World.MyShipId is not null; });
         return client;

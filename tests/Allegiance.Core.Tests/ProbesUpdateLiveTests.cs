@@ -75,7 +75,7 @@ public sealed class ProbesUpdateLiveTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 991u, DwCookie = 0x991u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 991u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 99000000000000000ul, DrmHash = "probesupdate",
     };

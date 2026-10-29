@@ -51,7 +51,7 @@ public sealed class P470RemovePlayerFlyableBuilderTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 0470u, DwCookie = 0x470u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 0470u, DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 4700000000000000047ul, DrmHash = "p470noplayerbldr",
     };

@@ -46,7 +46,7 @@ public class P847MissionRulesCertifyTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, seed],
         CDKey = $"P847ABCDEFGHI{seed}", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = (uint)(847 + seed), DwCookie = (uint)(0x847 + seed),
+        FedsrvVer = LogonRequest.MsgVer, Time = (uint)(847 + seed), DwCookie = uint.MaxValue,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0, SteamID = 8470000000000000000ul + seed, DrmHash = "p847",
     };

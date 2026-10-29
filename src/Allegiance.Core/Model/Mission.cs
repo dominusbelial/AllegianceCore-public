@@ -26,6 +26,10 @@ using Allegiance.Core.Sim;
 /// </remarks>
 public sealed partial class Mission : IMissionIgc
 {
+    /// <summary>Lobby identity, owned by the server (FedSrv/fsmission.h:229-235).
+    /// A reset retains it; managed world replacement copies it (fsmission.cpp:3490-3527).</summary>
+    public uint Cookie { get; set; }
+
     /// <summary>Enabled by the authoritative server; absent in client simulations.</summary>
     public SkillTelemetry? Skills { get; set; }
 

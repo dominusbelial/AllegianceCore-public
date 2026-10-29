@@ -628,8 +628,7 @@ public sealed partial class Server
     /// P439 — replace a just-finished <paramref name="mission"/> with a freshly
     /// assembled <see cref="MissionStage.NotStarted"/> mission at the SAME index
     /// of <c>_missions</c>, so every new joiner / reconnect lands on a pristine
-    /// world (they are routed to <c>_missions[0]</c> / their mission via the
-    /// existing join path, which reports the mission's REAL stage — P309).
+    /// world (their stable cookie addresses the replacement mission, which reports the mission's REAL stage — P309).
     /// Called only from <see cref="DeclareGameOver"/>, the single shared
     /// game-over path, after GAME_OVER(62) and GAME_OVER_PLAYERS(63) are on the
     /// wire (native's order: send game-over first, fsmission.cpp:3427-3429,
@@ -702,8 +701,8 @@ public sealed partial class Server
         // Clients discard the old warning state on Over. An unchanged station
         // layout must be announced again in the new world (trekigc.cpp:327-383
         // computes warnings from each fresh cluster's assets).
-        foreach (var side in mission.Sides) _lastSectorAssetMaskBySide.Remove(side.Id);
-        if (idx == 0) _clusterInfoBytes = null; // MapGen can rebuild a different graph.
+        foreach (var side in mission.Sides) _lastSectorAssetMaskBySide.Remove((mission.Cookie, side.Id));
+        _clusterInfoBytes.Remove(mission.Cookie); // MapGen can rebuild a different graph.
 
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games
@@ -724,6 +723,11 @@ public sealed partial class Server
         fresh.PlayerCreated = mission.PlayerCreated;
         fresh.CreatedWallTime = mission.CreatedWallTime;   // same game identity: the FIRST creation moment (missionigc.cpp:4225-4230 renders m_ftCreated, not the reset time)
         fresh.BeginReplay();
+        // Native resets the same CFSMission (fsmission.cpp:3490-3527), retaining dwCookie.
+        fresh.Cookie = mission.Cookie;
+        foreach (var (peer, pending) in _pendingSideSelect.ToArray())
+            if (ReferenceEquals(pending.Mission, mission))
+                _pendingSideSelect[peer] = pending.WithMission(fresh);
         _missions[idx] = fresh;
         if (swR is not null)
             Console.WriteLine(FormattableString.Invariant($"[gameover-timing] part=rotate-assemble cumulativeMs={swR.Elapsed.TotalMilliseconds:0.0}"));
@@ -1121,7 +1125,7 @@ public sealed partial class Server
                     Console.WriteLine($"[reseat] peer {p.Conn} disconnected before join burst — skipped (ship {p.NewShipId})");
                     continue;
                 }
-                CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, (byte)(p.Req.DwCookie & 0xFF), p.NewLive, announceToMission: false);
+                CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, 0, p.NewLive, announceToMission: false);
                 Console.WriteLine($"[reseat] peer {p.Conn} -> re-sent fresh-joiner join burst (ship {p.NewShipId}, stage {tail.Fresh.Stage})");
             }
             if (sw is not null) Mark("burst", slice, tail.BurstCursor, tail.Prepared.Count);
@@ -2361,8 +2365,8 @@ private void CompleteStartCountdown(Mission mission, double now)
         // mission member on the lobby side and receives the relay — so refresh the
         // snapshot (its lobby count and, via SendSideRoster's PLAYERINFO burst, the
         // lobby player list) after a park. Mirrors the CHANGE_TEAM_CIV refresh
-        // above; pending peers always belong to _missions[0].
-        if (_pendingSideSelect.Count > 0 && ReferenceEquals(mission, _missions[0]))
+        // above; pending peers are scoped to their selected mission.
+        if (_pendingSideSelect.Count > 0)
             BroadcastSideRosterToPendingPeers(mission);
         // P866 / fsmission.cpp:523 + fsship.cpp:1134 — the player joined the
         // team lobby: the lobby advertisement's player counts changed.
@@ -3970,13 +3974,18 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// </summary>
     private ConnectionId[] SelectChatTargets(ConnectionId from, IChatRoutingTarget chat, short? senderSideId)
     {
+        // Native ForwardChatMessage uses the sender's CFSMission groups
+        // (FedSrv.CPP:3355-3387); side and cluster ids are local to that mission.
+        var senderMission = ConnectionMission(from);
+        if (senderMission is null) return Array.Empty<ConnectionId>();
+        var recipients = _peerShips.Where(p => ReferenceEquals(p.Value.Ship.Mission, senderMission));
         switch (chat.ChatTarget)
         {
             case (int)ChatTarget.Everyone:      // AGCChat_Everyone = 0 (igc.h:2731)
-                return _peerShips.Keys.ToArray();
+                return recipients.Select(kv => kv.Key).ToArray();
 
             case (int)ChatTarget.Team:          // AGCChat_Team = 5 (igc.h:2733)
-                return _peerShips
+                return recipients
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)
                     .Select(kv => kv.Key)
                     .ToArray();
@@ -3986,7 +3995,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             // distinction that can't exist yet (no mute/ignore lists).
             case (int)ChatTarget.Individual:
             case (int)ChatTarget.IndividualNoFilter:      // FedSrv.CPP:3538-3556
-                return _peerShips
+                return recipients
                     .Where(kv => kv.Value.Ship.Id == chat.OidRecipient)
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)   // same-side-only simplification
                     .Select(kv => kv.Key)
@@ -4001,13 +4010,13 @@ private void CompleteStartCountdown(Mission mission, double now)
                 goto case (int)ChatTarget.Individual;
 
             case (int)ChatTarget.AllSector:               // FedSrv.CPP:3428-3441
-                return _peerShips
+                return recipients
                     .Where(kv => kv.Value.Sector.Id == chat.OidRecipient)
                     .Select(kv => kv.Key)
                     .ToArray();
 
             case (int)ChatTarget.FriendlySector:          // FedSrv.CPP:3392-3424
-                return _peerShips
+                return recipients
                     .Where(kv => kv.Value.Sector.Id == chat.OidRecipient)
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)
                     .Select(kv => kv.Key)
@@ -4052,7 +4061,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             // match is the only condition — a same-side wingmate anywhere in
             // the mission is reached.
             case (int)ChatTarget.Wing:
-                return _peerShips
+                return recipients
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)
                     .Where(kv => kv.Value.Ship.WingId == chat.OidRecipient)
                     .Select(kv => kv.Key)
@@ -4066,9 +4075,8 @@ private void CompleteStartCountdown(Mission mission, double now)
 
 /// <summary>Creates and places a peer's ship, restoring its retained mission
     /// score on rejoin or creating a fresh score for a first seat.</summary>
-    private LiveShip AssignShip(LogonRequest req, short shipId, short? requestedSideId = null)
+    private LiveShip AssignShip(Mission mission, LogonRequest req, short shipId, short? requestedSideId = null)
     {
-        var mission = _missions[0];
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId, requestedSideId);
@@ -4322,7 +4330,8 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         if (!_pendingSideSelect.Remove(from, out var pend))
             return;   // not pending (already seated/launched) — nothing to do
-        var mission = _missions[0];
+        var mission = pend.Mission;
+        if (!JoinMission(from, mission.Cookie, pend.ShipId, out _, pend.Request.MissionPassword)) return;
 
         // P854 — native MISSION-JOIN gate (FedSrv.CPP:581-594): in a private game a
         // player who is not invited to ANY side is refused at mission entry — before
@@ -4336,7 +4345,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (mission.RequiresInvitation && !mission.IsInvited(pend.Request.CharacterName ?? "", PlayerInvitationSquads(from)))
         {
             RefuseSideSelection(from, pend.ShipId, -1 /* native iSide = NA */, DelPositionReqReason.PrivateGame, pend.Request.CharacterName);
-            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
+            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq, mission);
             return;
         }
 
@@ -4354,7 +4363,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (selectionRefusal is { } denied)
         {
             RefuseSideSelection(from, pend.ShipId, requestedSideId, denied, pend.Request.CharacterName);
-            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
+            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq, mission);
             return;
         }
 
@@ -4369,7 +4378,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // TryJoinSide (leader + mission-owner election, native AddPlayerToSide);
         // that only sets SideId/leadership/roster — the ship is already in the
         // correct sector, so no relocation is needed.
-        LiveShip live = AssignShip(pend.Request, pend.ShipId,
+        LiveShip live = AssignShip(mission, pend.Request, pend.ShipId,
             autoSelection && ShipSpawner is not null ? null : requestedSideId);
         // P775 — native moment (1): announce the joiner to the whole mission
         // BEFORE it is seated (AddPlayerToMission puts the player on
@@ -4417,7 +4426,7 @@ private void CompleteStartCountdown(Mission mission, double now)
 
         // Send the full join/launch burst (registers _peerShips, then the
         // MISSIONDEF/JOINED_MISSION/EXPORT/.../SET_CLUSTER/MISSION_STAGE dance).
-        CompleteJoinAndLaunch(from, pend.Request, pend.ShipId, (byte)(pend.Request.DwCookie & 0xFF), live);
+        CompleteJoinAndLaunch(from, pend.Request, pend.ShipId, 0, live);
     }
 
     /// <summary>P468 — send one peer the <c>CREATE_BUCKETS(191)</c>
@@ -4487,17 +4496,17 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// MISSION_STAGE(Started), SHIP_STATUS, GAIN_FLAG join-sync and ENTER_GAME.
     /// Nothing here was rewritten — it is the exact pre-P281 burst, relocated so
     /// it runs once the player has chosen a side (or the timeout seated them)
-    /// rather than at logon. <paramref name="cookie"/> is the logon ack cookie
-    /// (<c>req.DwCookie &amp; 0xFF</c>).</summary>
+    /// rather than at logon. <paramref name="cookie"/> is the separate native byte
+    /// session cookie; LOGONREQ.dwCookie selects the mission.</summary>
     private void CompleteJoinAndLaunch(ConnectionId from, LogonRequest req, short shipId, byte cookie, LiveShip live, bool announceToMission = true, bool resumed = false)
     {
         // Native CFSMission::SendMissionInfo is scoped to the joining player's
         // mission (FedSrv/fsmission.cpp:4108-4341), including goals/briefing.
-        var goalMission = live.Ship.Mission ?? _missions[0];
+        var goalMission = live.Ship.Mission ?? throw new InvalidOperationException("joined ship has no mission");
         // P813c — a RESUMED seat (reconnect grace) keeps its ship and its
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
-        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.DwCookie };
+        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.ResumeToken };
         // P864 / SIM-0504 — the logon leader election (TryJoinSide in the
         // side-select flow) runs BEFORE this ship is registered in _peerShips,
         // so TransferCommandTime's _peerShips lookup could not StartCommand the
@@ -4620,8 +4629,8 @@ private void CompleteStartCountdown(Mission mission, double now)
             new MissionDef
             {
                 SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
-                VerIgcCore = _missions[0].Core.Version,
-                DwCookie = 0,
+                VerIgcCore = goalMission.Core.Version,
+                DwCookie = goalMission.Cookie,
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
                 Stage = 0,
@@ -4638,7 +4647,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 AllowAlliedViz = goalMission.AllowAlliedViz,
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
-                ILives = _missions[0].Lives,
+                ILives = goalMission.Lives,
                 // P853b — stamp the mission's WHOLE params block, exactly what
                 // native's client learns from the misdef it memcpy's out of this
                 // message (appmsg.cpp:2416 → clintlib.cpp:670-673). The owner's
@@ -4654,10 +4663,10 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ShipId = shipId,
                 DTime = 0,
                 Cookie = 0,
-                DwCookie = 0,
+                DwCookie = goalMission.Cookie,
             }.Encode(),
         }));
-        Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
+        Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{goalMission.Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
 
         // FM_S_EXPORT(26)/OT_cluster(13) cluster exports used to
         // live here (right after JOINED_MISSION). Moved to AFTER
@@ -4708,14 +4717,14 @@ private void CompleteStartCountdown(Mission mission, double now)
         // is also *why* the cluster list was observed wiped by the
         // time SET_CLUSTER ran (heap corruption from the crash).
         // Sending sides first removes the NULL entirely.
-        var mdSides = _missions[0].Sides;
+        var mdSides = goalMission.Sides;
         SendPeer(from, FedPacket.Pack(new[]
         {
             new MissionDef
             {
                 SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
-                VerIgcCore = _missions[0].Core.Version,
-                DwCookie = 0,
+                VerIgcCore = goalMission.Core.Version,
+                DwCookie = goalMission.Cookie,
                 NTems = (short)mdSides.Count,
                 RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
                 ISideMissionOwner = -1,
@@ -4729,7 +4738,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 AllowAlliedViz = goalMission.AllowAlliedViz,
                 // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
                 // badge can compute iLives − MissionDeaths (console.cpp:812-817).
-                ILives = _missions[0].Lives,
+                ILives = goalMission.Lives,
                 // P853b — stamp the mission's WHOLE params block, exactly what
                 // native's client learns from the misdef it memcpy's out of this
                 // message (appmsg.cpp:2416 → clintlib.cpp:670-673). The owner's
@@ -4936,7 +4945,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // PLAYERINFO, the point where the player is definitively seated on a side.
         if (live.Ship.SideId is { } setMoneySideId)
         {
-            var smSide = _missions[0].Sides.FirstOrDefault(s => s.Id == setMoneySideId);
+            var smSide = goalMission.Sides.FirstOrDefault(s => s.Id == setMoneySideId);
             if (smSide is not null)
             {
                 SendPeer(from, FedPacket.Pack(new[]
@@ -5036,7 +5045,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // the per-entry chance blob omitted. Mission-wide (not
         // side-specific), so it sits outside the side block, sent to
         // the joining peer only, exactly like SET_MONEY.
-        var treasureSets = _missions[0].Core.TreasureSets;
+        var treasureSets = goalMission.Core.TreasureSets;
         if (treasureSets.Count > 0)
         {
             var tsMsg = TreasureSets.FromCatalog(treasureSets.Values);
@@ -5074,9 +5083,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         // P48: cached once (mission-wide, never changes) rather than
         // re-encoded per peer/per resend -- also reused by
         // BroadcastShipStates' periodic refresh below.
-        var clusterInfo = ClusterInfo.FromSectors(_missions[0].Sectors);
-        _clusterInfoBytes ??= clusterInfo.Encode();
-        SendPeer(from, FedPacket.Pack(new[] { _clusterInfoBytes }));
+        var clusterInfo = ClusterInfo.FromSectors(goalMission.Sectors);
+        if (!_clusterInfoBytes.TryGetValue(goalMission.Cookie, out var clusterInfoBytes))
+            _clusterInfoBytes[goalMission.Cookie] = clusterInfoBytes = clusterInfo.Encode();
+        SendPeer(from, FedPacket.Pack(new[] { clusterInfoBytes }));
         _lastClusterInfoTick[from] = TickIndex;
         Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
 
@@ -5114,12 +5124,12 @@ private void CompleteStartCountdown(Mission mission, double now)
         // there is no "which one" selection logic to get wrong;
         // ~92 bytes × N sectors is negligible locally. Must land
         // BEFORE SET_CLUSTER, below.
-        var clusterExports = _missions[0].Sectors
+        var clusterExports = goalMission.Sectors
             .Select(s => ExportCluster.FromSector(s).Encode())
             .ToArray();
         SendPeer(from, FedPacket.Pack(clusterExports));
         Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
-                          string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
+                          string.Join(", ", goalMission.Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
 
         // Same peer/session, immediately after the cluster exports,
         // per sector, in the reference server's own order
@@ -5156,7 +5166,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // above. Each object also latches _crossSideDiscoverySent so the
         // mid-game discovery sweep (SweepCrossSideDiscoveryExports) never
         // re-sends what this burst already delivered.
-        var joinMission = _missions[0];
+        var joinMission = goalMission;
         int sentWarps = 0, sentStations = 0, sentAsteroids = 0, sentEffects = 0, sentProbes = 0;
         if (live.Ship.SideId is { } joinSide)
         {
@@ -5486,7 +5496,8 @@ private void CompleteStartCountdown(Mission mission, double now)
 
     private void SendSideRoster(ConnectionId to)
     {
-        var mission = _missions[0];
+        var mission = ConnectionMission(to);
+        if (mission is null) return;
         var (roster, recs) = BuildSideRoster(mission);
         short lobby = roster.LobbyPlayerCount;
         SendPeer(to, FedPacket.Pack(new[] { roster.Encode() }));
@@ -5532,8 +5543,8 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// whenever any peer's seat changes, so the on-screen counts stay current.</summary>
     private void BroadcastSideRosterToPendingPeers(Mission mission)
     {
-        foreach (var key in _pendingSideSelect.Keys.ToList())
-            SendSideRoster(key);
+        foreach (var (key, pending) in _pendingSideSelect.ToArray())
+            if (ReferenceEquals(pending.Mission, mission)) SendSideRoster(key);
     }
 
     /// <summary>

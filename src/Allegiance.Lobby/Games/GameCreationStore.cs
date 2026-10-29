@@ -37,7 +37,7 @@ public sealed class GameCreationStore
 
     public GameCreationStore(TimeProvider time) => _time = time;
 
-    public enum State { Queued, Claimed, Cancelled }
+    public enum State { Queued, Claimed, Ready, Failed, Cancelled }
 
     public sealed record GameCreationRequest(
         string Id,
@@ -53,7 +53,7 @@ public sealed class GameCreationStore
         MissionParamsMsg Params,
         State RequestState,
         DateTimeOffset CreatedUtc,
-        DateTimeOffset UpdatedUtc);
+        DateTimeOffset UpdatedUtc, uint? Cookie = null);
 
     /// <summary>The catalogs the lobby advertises as authoritative: the cores and
     /// maps this release supports. Registered servers are filtered against them
@@ -162,6 +162,20 @@ public sealed class GameCreationStore
             var claimed = _requests[index] with { RequestState = State.Claimed, UpdatedUtc = _time.GetUtcNow() };
             _requests[index] = claimed;
             return claimed;
+        }
+    }
+
+    public GameCreationRequest? Complete(string serverId, string id, uint? cookie)
+    {
+        lock (_gate)
+        {
+            int index = _requests.FindIndex(r => r.Id == id && r.ServerId == serverId);
+            if (index < 0) return null;
+            var current = _requests[index];
+            if (current.RequestState == State.Ready || current.RequestState == State.Failed) return current;
+            if (current.RequestState != State.Claimed || cookie == uint.MaxValue) return null;
+            return _requests[index] = current with { Cookie = cookie,
+                RequestState = cookie is null ? State.Failed : State.Ready, UpdatedUtc = _time.GetUtcNow() };
         }
     }
 

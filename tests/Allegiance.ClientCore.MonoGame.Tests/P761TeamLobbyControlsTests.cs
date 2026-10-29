@@ -38,7 +38,7 @@ public class P761TeamLobbyControlsTests
         {
             SzIGCStaticFile = "PCore001",
             VerIgcCore = 1,
-            DwCookie = 0xC0FFEE,
+            DwCookie = uint.MaxValue,
             ISideMissionOwner = 0,
             Stage = stage,
             BLockGameOpen = lockGameOpen,

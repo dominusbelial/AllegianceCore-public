@@ -48,6 +48,11 @@ public sealed class LobbyHeartbeat : IDisposable
     /// <summary>P806 — reads the cross-thread-safe mission-settings snapshot (the
     /// same discipline as <c>LivePlayerCount</c>/<c>LivePlayerNames</c>).</summary>
     private readonly Func<LobbyGameParams?>? _liveGameParams;
+    public Func<IReadOnlyList<LobbyMissionListing>>? LiveMissions { get; set; }
+    // Native lobby logon advertises g.cMaxGames (FedSrv/FedSrv.CPP:8107,8850).
+    internal int MaxGames { get; set; } = 99;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<GameReadyRequest> _completedGames = new();
+    internal void CompleteGame(string id, uint? cookie) => _completedGames.Enqueue(new(id, cookie));
     /// <summary>P866 — reads the server's lobby-dirty VERSION, the thread-safe
     /// form of native <c>m_fLobbyDirty</c> (<c>fsmission.cpp:5624-5628</c>). The
     /// heartbeat publishes only when this differs from the version it last
@@ -58,10 +63,8 @@ public sealed class LobbyHeartbeat : IDisposable
     private long? _publishedDirtyVersion;
     private readonly string? _minClientVersion;
     /// <summary>P871b — the opt-in "this server can host a new player-created
-    /// game right now" predicate. Native's lobby only sends CREATE_MISSION_REQ to
-    /// a server that is idle (no game in progress), so the poll only CLAIMS a
-    /// request while the server says it has an idle mission slot. Null (the
-    /// default) disables the whole claim path.</summary>
+    /// game right now" predicate. Only CLAIM while the server has capacity
+    /// (WinTrek/CreateGameDialog.h:20). Null disables the claim path.</summary>
     private readonly Func<bool>? _canHostPlayerGame;
     /// <summary>P871b — claimed games waiting for the sim thread to provision
     /// them. Filled by the poll, drained by <c>Server.DrainClaimedGames</c>.</summary>
@@ -182,6 +185,7 @@ public sealed class LobbyHeartbeat : IDisposable
             // P871b — the CREATE_MISSION_REQ relay, before the publish coalesce
             // window: a claimed request must reach the sim thread promptly even
             // when the listing itself is not due to republish.
+            await PublishCompletedGamesAsync().ConfigureAwait(false);
             await PollGameRequestsAsync().ConfigureAwait(false);
             int playerCount = _livePlayerCount();
             long? dirtyVersion = _lobbyDirtyVersion?.Invoke();
@@ -206,6 +210,7 @@ public sealed class LobbyHeartbeat : IDisposable
             // byte-identical to the anonymous type System.Net.Http.Json used to emit; the
             // Lobby binds case-insensitively). Kept local — no reference to the Web-SDK
             // Lobby assembly — so Allegiance.Server stays a plain (non-AspNetCore) app.
+            var missions = LiveMissions?.Invoke();
             var req = new LobbyRegisterRequest(
                 _displayName,
                 _publicAddress,
@@ -220,7 +225,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
                 _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
                 _enrollment?.ServerId, _enrollment?.ServerSecret,
-                _minClientVersion);             // P810 — advertised minimum client version (null = none)
+                _minClientVersion, missions, missions?.Count ?? 0, MaxGames);             // P810 — advertised minimum client version (null = none)
 
 
             HttpResponseMessage resp;
@@ -291,9 +296,21 @@ public sealed class LobbyHeartbeat : IDisposable
     /// the world.
     ///
     /// <para>Only one request is claimed per poll, and only while the caller's
-    /// <c>canHostPlayerGame</c> predicate says an idle mission slot exists —
-    /// native's lobby never sends the request to a server that is mid-game.</para>
+    /// <c>canHostPlayerGame</c> predicate says capacity remains (native full
+    /// test, WinTrek/CreateGameDialog.h:20).</para>
     /// </summary>
+    private async Task PublishCompletedGamesAsync()
+    {
+        if (_id is null || _token is null) return;
+        while (_completedGames.TryPeek(out var game))
+        {
+            using var response = await _http.PostAsJsonAsync($"/api/games/{game.Id}/ready",
+                new GameReadyBody(_id, _token, game.Cookie), ServerJsonContext.Default.GameReadyBody).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return; // retry; don't lose an acknowledgement
+            _completedGames.TryDequeue(out _);
+        }
+    }
+
     private async Task PollGameRequestsAsync()
     {
         if (_canHostPlayerGame is null || _id is null || _token is null) return;
@@ -602,7 +619,14 @@ internal sealed record LobbyRegisterRequest(
     // P810 — the optional minimum-client-version requirement this server
     // enforces (advertised form of native's LOGON crcFileList gate,
     // clintlib/clintlib.cpp:1418 → lobby/client.cpp:272-281). Absent = none.
-    string? MinClientVersion = null);
+    string? MinClientVersion = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<LobbyMissionListing>? Missions = null,
+    int CurrentGames = 0, int MaxGames = 99);
+
+public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game);
+public sealed record GameReadyBody(string ServerId, string Token, uint? Cookie);
+public sealed record GameReadyRequest(string Id, uint? Cookie);
 
 /// <summary>
 /// P806 — the game settings a server publishes to the directory, mirroring

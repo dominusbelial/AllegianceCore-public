@@ -127,7 +127,7 @@ public sealed class UpdateCadenceLoopbackTests
                 clients[i].Send(ConnectionId.Server, FedPacket.Pack(new LogonRequest
                 {
                     CharacterName = name, ZoneTicket = [1], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-                    FedsrvVer = LogonRequest.MsgVer, Time = 659, DwCookie = 659,
+                    FedsrvVer = LogonRequest.MsgVer, Time = 659, DwCookie = uint.MaxValue,
                     CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
                     SteamID = 99000000000000659ul, DrmHash = "P659",
                 }.Encode()), guaranteed: true);
