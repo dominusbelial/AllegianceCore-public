@@ -3740,3 +3740,12 @@ The standalone showcase never-parks gate passed **5/5**, with all 30 bots and
 24/30 objectives reached in every run; longest measured stops with a target were
 0.000 / 1.503 / 1.517 / 1.008 / 1.109 s. Raw logs/TRX stay git-excluded under
 `.scratch/p882b/` and `.scratch/training-20261029T034808-6499/`.
+
+## P882b merge gate (2026-10-29, Claude)
+
+One Fast sweep on master 2c20b601 (11,677 tests): 4 Core failures. `NpcWingmanDefendLiveTests.Defender_disengages…`
+is the ledgered line-179 failure (P872). The other three are broad-run load observations, each **3/3 in isolation**:
+`P780PodRescueProbeLiveTests.Probe_rescue_cancels_oxygen_timer`,
+`LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire`,
+`KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus`. None touches the training host P882b changed.
+`tools/run-training-tests.sh --no-build` (Fast + Live, both client projects) passed.
