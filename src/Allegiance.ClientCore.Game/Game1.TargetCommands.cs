@@ -211,4 +211,21 @@ public sealed partial class Game1
             "ToggleCloak" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetEnemy"),
             _ => false,
         };
+
+    /// <summary>P892c — M4 cloak (<c>TK_ToggleCloak</c>, native default key G). Pure, testable
+    /// predicate for the cloak edge: true when the cloak should actually engage. Native's cloak is
+    /// G (the catalogue 5th arg, <c>InputActionCatalog.cs:126</c>), but the port's shipped default map
+    /// binds <c>ToggleCloak</c> to F, and F stands down under training as the <c>TargetEnemy</c> key
+    /// (<see cref="YieldsToTrainingTarget"/>). So a real G press used to record <c>TK_ToggleCloak</c>
+    /// for the mission but never engaged the cloak — the M4 gap this closes. Mirroring
+    /// <see cref="RemainderTargetKeyDown"/>, while a training mission runs the native-default key is
+    /// honoured (so G really cloaks), while the bound F still yields to TargetEnemy; normal flight
+    /// (<c>training=false</c>) stays binding-only.</summary>
+    internal static bool CloakKeyDown(Rendering.ActionMap map, KeyboardState keys, bool training)
+    {
+        bool down = map.IsDownMostSpecific(keys, "ToggleCloak")
+            || (training && TrainingInputGate.NativeDefaultKeyDown(keys, "ToggleCloak"));
+        if (!down) return false;
+        return !YieldsToTrainingTarget(keys, "ToggleCloak", training);
+    }
 }

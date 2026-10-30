@@ -567,10 +567,24 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     // Native active-part additions: weaponIGC.h:109,122; afterburnerIGC.h:78,89;
     // shieldIGC.h:72,76; magazineigc.h:74,78; dispenserigc.h:74,79.
+    /// <summary>P892c — an explicit signature override (<c>SetSignatureAction</c>,
+    /// setsignatureaction.cpp:49-53 → <c>ImodelIGC::SetSignature</c>, modelIGC.h:283-290). When set,
+    /// <see cref="EffectiveSignature"/> returns it verbatim (native writes <c>m_signature</c> and ship
+    /// <c>GetSignature()</c> = <c>m_signature · m_cloaking</c>, shipIGC.h:268-270), replacing the
+    /// computed base sum. This gives the training mission a settable visibility override — Mission 4
+    /// raises the four enemy miners' signatures to 1.0e6 (mission4.cs) so they dominate the
+    /// scan-visibility math (<c>Sector.ResolveCrossSideVisibility</c>).</summary>
+    private float? _signatureOverride;
+
+    /// <summary>Set the ship's signature override (native <c>ImodelIGC::SetSignature</c>,
+    /// modelIGC.h:283-286 — a raw writable signature slot).</summary>
+    public void SetSignature(float signature) => _signatureOverride = signature;
+
     public float EffectiveSignature
     {
         get
         {
+            if (_signatureOverride is { } ov) return ov * Cloaking;
             // P817: native travel's personal-scanner check also reads this each
             // tick. Preserve the signature sums without allocating LINQ iterators.
             double weapons = 0, parts = 0; // Enumerable.Sum(float) used double accumulators.

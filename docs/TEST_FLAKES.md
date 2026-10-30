@@ -4,6 +4,26 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P892c verification observations (2026-10-30)
+
+The single Fast-tier run retained **FAIL** (`TestResults/tiers-20261030T144833.353354Z/`): 11,874 tests,
+523 s. Caveat: this lane ran its required 5× showcase (`Local_showcase_never_parks...`, ~4 min each, 30 bots)
+CONCURRENTLY with the sweep, so the timing-sensitive cases below are load-contaminated by our own run. Five
+failures, every one isolated 3× alone afterwards (no concurrent load):
+
+| Failure | Three isolated outcomes | Classification |
+|---|---|---|
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass / pass / pass | Contention only — 21.9 s sweep (SLOW offender) vs 1 s alone; mine wake path untouched by P892c. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass | Contention only; respawn latch path untouched. |
+| `P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment` | pass / pass / pass | Contention only; dispenser callback path untouched. |
+| `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (Core) | pass / pass / pass | Contention only; treasure/pickup path untouched (also failed the quarantine sweep under the same load). |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Known PRE-EXISTING baseline — same null `DefendTarget` assertion at `NpcWingmanDefendLiveTests.cs:179` fails 3/3 on unmodified HEAD; already ledgered by P872/P884/P887/P888/P890/P894/P895. Not this lane's path. |
+
+Conclusion: **zero P892c-introduced failures.** The only 3/3-alone failure is the long-recorded wingman baseline;
+the other four are contention flakes from running the fast tier beside our own showcase. All P892c tests passed in
+the training suite (ClientCore 80/80, MonoGame 63/63) and the showcase never-parks passed 5/5.
+
+
 ## P894 verification observations (2026-10-30)
 
 The single Fast-tier run retained **FAIL**, 11,787 executions in 558.8 s:

@@ -316,7 +316,17 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         _f.SetEyeball?.Invoke(shown);
         if (_f.SetEyeball is null) TrainingHostLog.Log($"SetEyeball({shown})");
     }
-    public void SetSignature(ObjectType type, int id, float signature) => TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
+    /// <summary><c>SetSignatureAction</c> (setsignatureaction.cpp:49-53): write a signature override
+    /// onto a ship of the live world. Routed through the host's real ship (Mission 4's cloak-signature
+    /// lesson raises the enemy miners to 1.0e6, mission4.cs:442). Non-ship objects have no host model,
+    /// so they keep the explicit logged seam for auditability.</summary>
+    public void SetSignature(ObjectType type, int id, float signature)
+    {
+        if (type == ObjectType.Ship && _f.Host is { } h)
+            h.SetSignature(id, signature);
+        else
+            TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
+    }
 
     // ── M8 nanite / repair / station seams (authoritative host) ───────────────
     public bool HasPartMounted(TargetRef ship, int partId) => _f.Host is { } h && h.HasPartMounted(ship.Id, partId);

@@ -103,6 +103,11 @@ public interface ITrainingHost
     /// <paramref name="equipmentType"/> from cargo into the mount via the real
     /// <see cref="Ship.TrySwapPartWithCargo"/> path.</summary>
     void SwapWeapon(int equipmentType, int mount);
+
+    /// <summary><c>SetSignatureAction</c> (setsignatureaction.cpp:49-53 → <c>ImodelIGC::SetSignature</c>,
+    /// modelIGC.h:283-290): set a ship's signature override — Mission 4 raises the four enemy miners'
+    /// signatures to 1.0e6 (mission4.cs:442) so they dominate the scan-visibility math.</summary>
+    void SetSignature(int shipId, float signature);
 }
 
 /// <summary>
@@ -987,6 +992,22 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                     return;
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// <c>SetSignatureAction::Execute</c> (<c>setsignatureaction.cpp:49-53</c> →
+    /// <c>ImodelIGC::SetSignature</c>, modelIGC.h:283-286): write a signature override onto a
+    /// real ship — the Mission 4 cloak-signature lesson (mission4.cs:442) raises the four enemy
+    /// miners' signatures to 1.0e6 so they dominate the scan-visibility math
+    /// (<c>Sector.ResolveCrossSideVisibility</c>). The override lives on the real
+    /// <see cref="Ship.EffectiveSignature"/> so visibility reads observe it.
+    /// </summary>
+    public void SetSignature(int shipId, float signature)
+    {
+        lock (_simGate)
+        {
+            if (ResolveShip(shipId) is { } s) s.SetSignature(signature);
         }
     }
 

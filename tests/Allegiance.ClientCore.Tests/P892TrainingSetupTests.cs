@@ -61,4 +61,35 @@ public sealed class P892TrainingSetupTests
         Assert.Equal(10.0f, host.Mission.Sides[0].GlobalAttributes.Get(Allegiance.Core.Model.GlobalAttributeSet.MaxEnergy));
         Assert.Equal(host.PlayerShip.HullType.MaxEnergy * 10.0f, host.PlayerShip.EffectiveMaxEnergy(), 3);
     }
+
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")]
+    public void Mission4_set_signature_writes_a_real_override_on_the_ships_effective_signature()
+    {
+        Require.Artwork();
+        using var host = TrainingHost.Start(TrainingHost.EnemyEngagement);
+
+        // The Core-level override itself: SetSignature(x) → EffectiveSignature = x · Cloaking
+        // (shipIGC.h:268-270), replacing the computed base sum.
+        host.PlayerShip.SetSignature(500f);
+        Assert.Equal(500f * host.PlayerShip.Cloaking, host.PlayerShip.EffectiveSignature, 3);
+
+        // The production site path (mission4.cs:442 — SetSignatureAction(Ship, id, 1.0e6)):
+        // routed through the host's real ship, not the old logged no-op.
+        int miner = host.CreateDrone("enemy miner", -1, 486, 1, Ship.PilotTypePlayer);
+        using var conn = new Allegiance.ClientCore.Session.ConnectionSession();
+        var site = new Allegiance.ClientCore.MonoGame.ClientTrainingSite(
+            new Allegiance.ClientCore.MonoGame.ClientTrainingFacilities
+            {
+                World = () => conn.World, Session = conn, Host = host,
+            });
+        // FAILS BEFORE THE FIX: ClientTrainingSite.SetSignature was a logged no-op, so the miner's
+        // EffectiveSignature stayed its base hull signature instead of 1.0e6.
+        site.SetSignature(ObjectType.Ship, miner, 1.0e6f);
+        Assert.True(host.Drones.TryGetValue(miner, out var drone), "drone must resolve");
+        Assert.Equal(1.0e6f * drone.Cloaking, drone.EffectiveSignature, 3);
+        // A non-ship object has no host model and stays the harmless logged seam.
+        site.SetSignature(ObjectType.Station, 1010, 5f);
+    }
 }

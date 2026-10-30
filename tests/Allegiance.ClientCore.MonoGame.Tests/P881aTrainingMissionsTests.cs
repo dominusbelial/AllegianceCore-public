@@ -522,6 +522,29 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.False(Game1.YieldsToTrainingTarget(new KeyboardState(Keys.F), "ToggleCloak", training: false));
     }
 
+    [Fact]
+    public void Cloak_engages_on_the_native_default_G_key_only_under_training()
+    {
+        // P892c — M4 cloak. Native's cloak is G (InputActionCatalog.cs:126, catalogue 5th arg), but
+        // the port's shipped default map binds ToggleCloak to F, and F stands down as the TargetEnemy
+        // key under training (YieldsToTrainingTarget). So before the fix a real G press recorded
+        // TK_ToggleCloak for the mission but never ENGAGED the cloak. CloakKeyDown honours the
+        // native-default key under training so G really cloaks, while F keeps standing down.
+        var map = new ActionMap(InputActionCatalog.Definitions);   // shipped default: ToggleCloak→F, native default G
+        // G actually cloaks under training (the M4 prompt key).
+        Assert.True(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: true));
+        // F still stands down for TargetEnemy under training — it must NOT cloak.
+        Assert.False(Game1.CloakKeyDown(map, new KeyboardState(Keys.F), training: true));
+        // Normal flight is untouched: G is unbound (binding-only), F is the cloak binding.
+        Assert.False(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: false));
+        Assert.True(Game1.CloakKeyDown(map, new KeyboardState(Keys.F), training: false));
+        // A user who rebinds ToggleCloak to G gets a real cloak from G in both modes.
+        var rebound = new ActionMap(InputActionCatalog.Definitions);
+        rebound.SetBinding("ToggleCloak", new(Keys.G, InputModifiers.None), true);
+        Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: true));
+        Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: false));
+    }
+
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner
     /// Game1.TryComputeDockSteer uses) driven from the replicated pose.</summary>
     private static (ControlData Controls, int StateM) DockControls(Trainee t)
