@@ -224,7 +224,8 @@ public sealed partial class Game1
     internal static bool CloakKeyDown(Rendering.ActionMap map, KeyboardState keys, bool training)
     {
         bool down = map.IsDownMostSpecific(keys, "ToggleCloak")
-            || (training && TrainingInputGate.NativeDefaultKeyDown(keys, "ToggleCloak"));
+            || (training && map.ActionFilter?.Invoke("ToggleCloak") != false
+                && TrainingInputGate.NativeDefaultKeyDown(keys, "ToggleCloak"));
         if (!down) return false;
         return !YieldsToTrainingTarget(keys, "ToggleCloak", training);
     }

@@ -404,3 +404,9 @@ survivors, M4 headless completion) remain outstanding and are honestly reported 
 No commits, pushes, stashes, remote hosts, synthetic CPU load or display `:0` were used. All work is inside the
 `allegiance-hermes-p892c` worktree; raw receipts (AOT output, training TRX, fast-tier logs) are under
 `.scratch/p892c/` and `TestResults/` (git-excluded).
+
+### Claude review corrections to P892c (2026-10-30)
+- `CloakKeyDown`'s native-default fallback bypassed `ActionFilter`; fixed, with a test.
+- TRN-0117 returned to `partial`: nothing has pressed G in a running Mission 4.
+- Open: the port binds G to `ToggleAutopilot`, so G under training toggles the cloak AND autopilot.
+- The signature override block moved so it no longer splits `EffectiveSignature` from its doc comment.

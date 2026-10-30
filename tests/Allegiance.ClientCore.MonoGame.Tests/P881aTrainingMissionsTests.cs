@@ -543,6 +543,9 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         rebound.SetBinding("ToggleCloak", new(Keys.G, InputModifiers.None), true);
         Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: true));
         Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: false));
+        // The mission's key filter still wins: a rejected cloak key must not engage the cloak.
+        map.ActionFilter = action => action != "ToggleCloak";
+        Assert.False(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: true));
     }
 
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner
