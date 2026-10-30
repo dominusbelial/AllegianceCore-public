@@ -30,6 +30,7 @@
     <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
     <InternalsVisibleTo Include="p655-proof" />
     <InternalsVisibleTo Include="p819-side-bias-proof" />
+    <InternalsVisibleTo Include="p896-strike-proof" />
   </ItemGroup>
 
   <ItemGroup>

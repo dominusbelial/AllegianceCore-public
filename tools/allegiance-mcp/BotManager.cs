@@ -3630,6 +3630,9 @@ bool isThreat =
                     {
                         finale.BombersKilled++;
                         bot.FinaleProtectedSince = null; bot.FinaleGrantVerified = false;
+                        // P896 — the wave-sizing loss count: bombers of this side lost
+                        // since its last commit (see FinaleVolleyRequirement).
+                        if (finale.Plans.TryGetValue(bot.Side, out var lossPlan)) lossPlan.WaveLosses++;
                         // P778a — a strike that ends without reaching launch range
                         // still logs its summary once, with survival = false.
                         if (finale.Plans.TryGetValue(bot.Side, out var deadPlan) && !deadPlan.SummaryLogged)

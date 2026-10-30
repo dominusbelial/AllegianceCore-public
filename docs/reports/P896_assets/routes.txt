@@ -1,0 +1,14 @@
+== geo-m2xspiderw-geometry.json sectors 13 warps 22
+  garrison side 0: station #4328 in sector 1050 (Ganymede)
+  garrison side 1: station #4329 in sector 1051 (Organia)
+  route side0 home -> side1 home: hops=3 alternating_paths=2 example=[1050, 1054, 1055, 1051]
+  route side1 home -> side0 home: hops=3 alternating_paths=2 example=[1051, 1055, 1054, 1050]
+  side 0 home sector 1050 warps=[1054, 1057, 1059, 1060]
+  side 1 home sector 1051 warps=[1055, 1058, 1061, 1062]
+== geo-training_6-geometry.json sectors 3 warps 2
+  garrison side 0: station #2080 in sector 2080 (Neptune)
+  garrison side 1: station #2081 in sector 2082 (Enemy)
+  route side0 home -> side1 home: hops=2 alternating_paths=1 example=[2080, 2081, 2082]
+  route side1 home -> side0 home: hops=2 alternating_paths=1 example=[2082, 2081, 2080]
+  side 0 home sector 2080 warps=[2081]
+  side 1 home sector 2082 warps=[2081]

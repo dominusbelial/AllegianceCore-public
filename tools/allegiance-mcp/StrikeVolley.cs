@@ -55,11 +55,12 @@ internal static class StrikeVolley
 
     /// <summary>Planner output. <see cref="BombersRequired"/> already includes the
     /// margin described on <see cref="Compute"/>; <see cref="KillBombers"/> is the
-    /// bare mathematical minimum.</summary>
+    /// bare mathematical minimum. <see cref="SurvivalBombers"/> is the P896 extra
+    /// (0 when the survival margin is off).</summary>
     internal readonly record struct Requirement(
         int BombersRequired, int KillBombers, int ShotsToKill, double WindowSeconds,
         double ShieldRefillSeconds, float ShieldDamagePerRound, float ArmorDamagePerRound,
-        int LoadoutCount);
+        int LoadoutCount, int SurvivalBombers = 0);
 
     /// <summary>P801 tunable: all rounds of one massed strike must land inside this
     /// window. 20 s covers a five-round SRM magazine (load time 4 s = 16 s of
@@ -144,9 +145,22 @@ internal static class StrikeVolley
     /// <see cref="VolleyWindowSeconds"/>, plus one spare bomber when the roster
     /// can field it (the "margin": a reserve hull for a miss, a ram or a
     /// defender kill). Repeatedly uses the strongest loadouts. Returns a
-    /// requirement of at least 1 for a strike-capable side.</summary>
+    /// requirement of at least 1 for a strike-capable side.
+    ///
+    /// <para><b>P896 survival margin (default off).</b> <paramref name="survivalMargin"/> = 0
+    /// is exactly the P801 behaviour above. Above 0 the wave also carries
+    /// <c>ceil(margin × max(losses, defenders))</c> extra bombers, where
+    /// <paramref name="losses"/> is how many of this side's strike bombers were
+    /// lost on the previous wave and <paramref name="defenders"/> is how many live
+    /// enemy ships this side can see in the target sector — the two ways a wave
+    /// bleeds hulls before its rounds land (P896 §2). The total is bounded by the
+    /// side's reserved bomber budget (<paramref name="hullsAvailable"/>, already
+    /// capped by <c>ShowcaseFinale.Settings.Bombers</c>) and by
+    /// <see cref="MaxPlannedBombers"/>, so a bigger wave can still be assembled
+    /// inside the staging cap instead of out-waiting the deadline.</para></summary>
     internal static Requirement Compute(StationProfile station,
-        IReadOnlyList<Loadout?> loadouts, int hullsAvailable, double window = VolleyWindowSeconds)
+        IReadOnlyList<Loadout?> loadouts, int hullsAvailable, double window = VolleyWindowSeconds,
+        double survivalMargin = 0, int losses = 0, int defenders = 0)
     {
         // A mount only counts when the core's matrix says it damages BOTH the
         // station's shield and (after the shield is down) its armor — the same
@@ -186,8 +200,15 @@ internal static class StrikeVolley
             shotsToKill = Simulate(station, group, window).ShotsFired;
         }
         int required = kill < available ? kill + 1 : kill;
-        return new(Math.Max(1, required), Math.Max(1, kill), shotsToKill, window,
-            ShieldRefillSeconds(station), cleanShieldDamage, cleanArmorDamage, usable.Length);
+        // P896 — survival margin: expected losses on the run in (observed last-wave
+        // losses) or the defenders standing in the target sector, whichever is
+        // bigger, scaled by the setting; never past the reserved budget.
+        int survival = survivalMargin <= 0 ? 0
+            : (int)Math.Ceiling(survivalMargin * Math.Max(0, Math.Max(losses, defenders)));
+        int total = Math.Clamp(required + survival, 1, available);
+        return new(total, Math.Max(1, kill), shotsToKill, window,
+            ShieldRefillSeconds(station), cleanShieldDamage, cleanArmorDamage, usable.Length,
+            Math.Max(0, total - required));
     }
 
     private static float TotalDamage(Loadout l) => l.Mounts.Sum(m => m.Power * m.Shots);

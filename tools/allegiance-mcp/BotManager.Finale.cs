@@ -47,9 +47,25 @@ internal sealed partial class BotManager
     private sealed class FinalePlan(short targetId, short targetSide, short sector,
         short targetTypeId, ShowcaseFinale.StrikeLoadout? loadout)
     {
-        internal readonly short TargetId = targetId, TargetSide = targetSide, Sector = sector;
-        internal readonly short TargetTypeId = targetTypeId;
+        // P896 — the target is no longer fixed at registration: a side that has
+        // observed no enemy station yet is armed with TargetId = -1 ("no target
+        // yet") and re-picks the moment one of ITS OWN worlds reports one. Target
+        // fields stay mutable for exactly that re-pick.
+        internal const short NoTarget = -1;
+        internal short TargetId = targetId, TargetSide = targetSide, Sector = sector;
+        internal short TargetTypeId = targetTypeId;
         internal ShowcaseFinale.StrikeLoadout? Loadout = loadout;
+        // P896 — this side really observed its target (so its later disappearance
+        // is evidence); whether the no-target line was logged; wave sizing inputs.
+        internal bool ObservedTarget = targetId >= 0, NoTargetLogged;
+        // P896 — some world of this side still held the target at this second's
+        // resolve pass. Exports reach a side's bots at different moments, so one
+        // world lacking a station proves nothing while a teammate's still holds it.
+        internal bool TargetHeldBySide;
+        internal string? KilledEvidence;
+        internal int WaveLosses, DefenderCount;
+        // P896 — the survival part of this wave's requirement (0 with the margin off).
+        internal int SurvivalBombers;
         internal double? KilledAt;
         internal int BomberBudget, EscortBudget;
         // P778a — first time a live strike bomber of this side is inside its own
@@ -68,6 +84,8 @@ internal sealed partial class BotManager
         internal bool MassLogged, OutcomeLogged;
         internal double LastSampleAt = double.NegativeInfinity;
         internal double LastStagingLogAt = double.NegativeInfinity;
+        // P896 — bounded cadence of the "no station-damaging loadout" hold line.
+        internal double LastNoStrikeLogAt = double.NegativeInfinity;
         internal float HullAtGo = -1, ShieldAtGo = -1, HullNow = -1, ShieldNow = -1;
         internal int HitsInWindow;
     }
@@ -185,15 +203,25 @@ internal sealed partial class BotManager
         var plans = new Dictionary<short, FinalePlan>();
         foreach (short side in bots.Select(b => b.Side).Distinct())
         {
-            var targets = stations.Where(s => s.SideId >= 0 && s.SideId != side
-                && core.StationTypes.ContainsKey(s.StationTypeId))
-                .OrderByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
-                .ThenBy(s => s.StationId).ToArray();
-            if (targets.Length == 0) throw new ArgumentException("spawn_scenario: finale needs an observed enemy home station");
-            var target = targets[0];
-            var observer = bots.First(b => b.Side == side);
-            var loadout = SelectFinaleLoadout(observer, core.StationTypes[target.StationTypeId], stations);
-            plans[side] = new(target.StationId, target.SideId, target.ClusterId, target.StationTypeId, loadout);
+            var sideBots = bots.Where(b => b.Side == side).ToArray();
+            // P896 — P797 honesty: a side only ever receives a target from its OWN
+            // worlds. `stations` is the fleet-wide union used for discovery
+            // bookkeeping, and handing it to every side is what let the P831 grace
+            // give side A a station only side B's world held — which the strike-end
+            // check then read as "destroyed" (false station-killed).
+            var observed = ObservedFinaleStations(side, sideBots, stations);
+            var target = PickFinaleTarget(core, side, observed);
+            if (target is not { } home)
+            {
+                // The grace can still arm a side that has seen nothing: that is a
+                // legal "no target yet" state, not a target it has not observed.
+                plans[side] = new(FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, null);
+                Console.WriteLine($"[finale] side {side}: no enemy station observed yet — armed with NO target; "
+                    + "it will pick one as soon as its own worlds report one (P896)");
+                continue;
+            }
+            var loadout = SelectFinaleLoadout(sideBots[0], core.StationTypes[home.StationTypeId], stations);
+            plans[side] = new(home.StationId, home.SideId, home.ClusterId, home.StationTypeId, loadout);
         }
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
@@ -205,6 +233,107 @@ internal sealed partial class BotManager
             (_finales ??= new()).Add(run);
         }
         return FinaleView(run, Now());
+    }
+
+    /// <summary>P896 — the enemy stations THIS side's own bot worlds hold.
+    /// <paramref name="fallback"/> is used only when no bot of the side has a
+    /// readable world at all (a fixture or driver that supplies observations); it
+    /// never tops up a readable but blind side, which is exactly the P797 honesty
+    /// rule the finale needs.</summary>
+    private static DataStationIGC[] ObservedFinaleStations(short side, ActiveBot[] bots,
+        IReadOnlyList<DataStationIGC> fallback)
+    {
+        var seen = new Dictionary<short, DataStationIGC>();
+        bool readable = false;
+        foreach (var bot in bots)
+        {
+            if (bot.Cs is not { } cs) continue;
+            lock (cs.Gate)
+            {
+                if (!cs.World.WorldReady) continue;
+                readable = true;
+                foreach (var station in cs.World.Stations.Values)
+                    if (station.SideId >= 0 && station.SideId != side) seen[station.StationId] = station;
+            }
+        }
+        return readable ? seen.Values.ToArray()
+            : fallback.Where(s => s.SideId >= 0 && s.SideId != side).ToArray();
+    }
+
+    /// <summary>P896 — the finale's target preference (the P831 order): a
+    /// restart-capable enemy station first, then the lowest station id.</summary>
+    private static DataStationIGC? PickFinaleTarget(StaticCore core, short side,
+        IReadOnlyList<DataStationIGC> observed) =>
+        observed.Where(s => s.SideId >= 0 && s.SideId != side && core.StationTypes.ContainsKey(s.StationTypeId))
+            .OrderByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
+            .ThenBy(s => s.StationId)
+            .Select(s => (DataStationIGC?)s)
+            .FirstOrDefault();
+
+    /// <summary>P896 — resolve a side's "no target yet" state once one of its OWN
+    /// worlds reports an enemy station, and record that the side really observed
+    /// the target it holds (the only way that target's later disappearance is
+    /// evidence of anything). Called once a second under the run lock, before the
+    /// strike tick and before the trigger, so a side armed blind never keeps a
+    /// target it has not seen and picks one up as soon as it has.</summary>
+    private void ResolveFinaleTargets(FinaleRun run, ActiveBot[] bots)
+    {
+        var core = Catalog.RepresentativeCore();
+        foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
+        {
+            var sideBots = run.Bots.Where(b => b.Side == side).ToArray();
+            var observed = ObservedFinaleStations(side, sideBots, []);
+            if (plan.TargetId != FinalePlan.NoTarget)
+            {
+                plan.TargetHeldBySide = observed.Any(s => s.StationId == plan.TargetId);
+                if (plan.TargetHeldBySide) plan.ObservedTarget = true;
+                continue;
+            }
+            if (PickFinaleTarget(core, side, observed) is not { } home)
+            {
+                if (!plan.NoTargetLogged)
+                {
+                    plan.NoTargetLogged = true;
+                    Console.WriteLine($"[finale] side={side} waiting for an observed enemy station before it can strike (P896)");
+                }
+                continue;
+            }
+            plan.TargetId = home.StationId;
+            plan.TargetSide = home.SideId;
+            plan.Sector = home.ClusterId;
+            plan.TargetTypeId = home.StationTypeId;
+            plan.ObservedTarget = plan.TargetHeldBySide = true;
+            // No station list: `observed` holds enemy stations only, and the loadout
+            // needs the side's OWN stations for its shop and tech.
+            plan.Loadout = SelectFinaleLoadout(sideBots[0], core.StationTypes[home.StationTypeId]);
+            Console.WriteLine($"[finale] side={side} observed enemy station#{home.StationId} in sector {home.ClusterId}: target assigned (P896)");
+            // A match whose deadline was already armed (the P831 fog grace) now gets
+            // its strike, armed exactly as the ordinary trigger would.
+            if (run.TriggeredAt is not null && run.Sides.Contains(side)) ArmFinaleSide(run, side, bots);
+        }
+    }
+
+    /// <summary>P896 — commit one side to the strike: reserve its bomber wing and
+    /// reset this strike's mass state. Extracted from the trigger so a side whose
+    /// target is observed only AFTER the trigger arms identically.</summary>
+    private void ArmFinaleSide(FinaleRun run, short side, ActiveBot[] bots)
+    {
+        var plan = run.Plans[side];
+        var bombers = bots.Where(b => b.Side == side && !IsSupport(b) && (IsFinaleBomber(b) || ResearchFinale(b)))
+            .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+            .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
+        foreach (var bot in bombers) bot.FinaleBomberReserved = true;
+        plan.BomberBudget = bombers.Length;
+        plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
+        // P801 — fresh mass for this strike. Every relaunch joins the wave
+        // forming now; none of them flies at the station alone.
+        plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
+        plan.GoTime = null;
+        plan.GoMembers.Clear();
+        plan.MassLogged = plan.OutcomeLogged = false;
+        plan.HitsInWindow = 0;
+        plan.WaveLosses = 0;        // P896 — wave sizing measures THIS strike's losses
+        plan.HullAtGo = plan.ShieldAtGo = plan.HullNow = plan.ShieldNow = -1;
     }
 
     public object[] FinaleStatus()
@@ -571,6 +700,10 @@ internal sealed partial class BotManager
             run.Maturity = run.Plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
                 bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
                 run.Bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
+            // P896 — a side armed with no target (P831 fog grace) picks one up from its
+            // OWN observations as soon as it has any; a side that already holds a
+            // target records that it really observed it.
+            ResolveFinaleTargets(run, bots);
             foreach (var bot in bots)
             {
                 var cs = bot.Cs!;
@@ -583,8 +716,19 @@ internal sealed partial class BotManager
                         run.EndReason = over.GameoverMessage;
                     }
                     if (run.TriggeredAt is not null && run.Plans.TryGetValue(bot.Side, out var plan)
-                        && plan.KilledAt is null && cs.World.WorldReady
-                        && !cs.World.Stations.ContainsKey(plan.TargetId)) plan.KilledAt = now;
+                        && plan.KilledAt is null && plan.TargetId != FinalePlan.NoTarget
+                        && cs.World.WorldReady && !cs.World.Stations.ContainsKey(plan.TargetId))
+                    {
+                        // P896 — a station is DEAD only on real evidence: the
+                        // WHOLE-MISSION STATION_DESTROYED(59) this world received, or a
+                        // station this side really observed and then lost. Absence alone
+                        // means "not observed" under P797 fog, which is not death — the
+                        // b59 M5 run reported `outcome=station-killed` for both sides
+                        // right after the trigger while neither garrison had been hit.
+                        plan.KilledEvidence = cs.World.StationWasDestroyed(plan.TargetId) ? "destroyed"
+                            : plan.ObservedTarget && !plan.TargetHeldBySide ? "observed-lost" : null;
+                        if (plan.KilledEvidence is not null) plan.KilledAt = now;
+                    }
                 }
                 if (bot.FinaleProtectedSince is { } attacked && now - attacked >= ThreatWindowSeconds)
                 {
@@ -652,21 +796,16 @@ internal sealed partial class BotManager
                         peer.SendShowcaseFinale(epoch, researchPeer.Side);
             foreach (short side in sides)
             {
-                var bombers = bots.Where(b => b.Side == side && !IsSupport(b) && (IsFinaleBomber(b) || ResearchFinale(b)))
-                    .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
-                    .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
-                foreach (var bot in bombers) bot.FinaleBomberReserved = true;
-                var plan = run.Plans[side];
-                plan.BomberBudget = bombers.Length;
-                plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
-                // P801 — fresh mass for this strike. Every relaunch joins the wave
-                // forming now; none of them flies at the station alone.
-                plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
-                plan.GoTime = null;
-                plan.GoMembers.Clear();
-                plan.MassLogged = plan.OutcomeLogged = false;
-                plan.HitsInWindow = 0;
-                plan.HullAtGo = plan.ShieldAtGo = plan.HullNow = plan.ShieldNow = -1;
+                // P896 — a side that has not observed an enemy station gets no strike:
+                // there is nothing it is allowed to target. The deadline is already
+                // armed above, so the match still ends; the strike follows the sighting.
+                if (run.Plans[side].TargetId == FinalePlan.NoTarget)
+                {
+                    Console.WriteLine($"[finale] side={side} finale armed but no enemy station observed yet — "
+                        + "no strike committed (P896)");
+                    continue;
+                }
+                ArmFinaleSide(run, side, bots);
             }
         }
     }
@@ -695,6 +834,7 @@ internal sealed partial class BotManager
             if (run.TriggeredAt is null || run.GameOverAt is not null || run.Rotated || !run.Sides.Contains(bot.Side)) return;
             var plan = run.Plans[bot.Side];
             if (bot.FinaleOriginal is not null) return; // subsequent purchases retain the assigned wing/loadout
+            if (plan.TargetId == FinalePlan.NoTarget) return;   // P896 — nothing legal to strike yet
             if (!bot.FinaleBomberReserved && !bot.FinaleEscort
                 && IsFinaleFighter(bot) && run.Bots.Count(b => b.Side == bot.Side && b.FinaleEscort) < plan.EscortBudget)
                 bot.FinaleEscort = true;
@@ -914,7 +1054,8 @@ internal sealed partial class BotManager
         // wing already on station. (The previous form also re-gated every tick
         // on a live bomber, so a bomber dying mid-transit aborted the whole
         // multi-hop transit and sent the escort home.)
-        if (run.Plans.TryGetValue(bot.Side, out var strikePlan) && ownSector != strikePlan.Sector
+        if (run.Plans.TryGetValue(bot.Side, out var strikePlan) && strikePlan.TargetId != FinalePlan.NoTarget
+            && ownSector != strikePlan.Sector
             && run.StrikeStartedAt is not null && strikePlan.KilledAt is null)
         {
             List<short>? path;

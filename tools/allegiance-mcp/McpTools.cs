@@ -95,6 +95,7 @@ internal static class McpTools
                         finale_escort_cap = new { type = "integer", @default = 12, minimum = 0, maximum = 200 },
                         finale_escort_radius = new { type = "number", @default = 1500, exclusiveMinimum = 0 },
                         finale_escort_leash = new { type = "number", @default = 2500, exclusiveMinimum = 0 },
+                        finale_survival_margin = new { type = "number", @default = 0, minimum = 0, maximum = 2, description = "P896 — survival margin for the massed wave: 0 (default) keeps the P801 bare kill + one spare; above 0 also carries ceil(margin × max(last-wave bomber losses, defenders visible in the target sector)) extra bombers, bounded by finale_bombers. Showcase/skirmish only." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
                         loadout_mode = new { type = "string", @enum = new[] { "best", "varied" }, description = "P796 — purchase policy within the existing legality: 'best' = today's per-role argmax; 'varied' = deterministic seeded least-recently-used rotation that spreads purchases across every legal, affordable hull/part of the side's real techs (role rules keep bombers on anti-base strike and support on nanite). Default: 'varied' for preset:\"showcase\" (the point of P796 — every legal weapon gets used), 'best' everywhere else." },
                         loadout_seed = new { type = "integer", @default = 796, description = "P796 — the varied policy's deterministic seed. Same seed + same usage state = same choices." },
@@ -1409,7 +1410,10 @@ internal static class McpTools
         var result = new ShowcaseFinale.Settings(Number("finale_after_minutes", showcase ? 30 : 0), side,
             Number("finale_min_relaunch_share", .5), Integer("finale_min_kills_last_5_minutes", 5),
             Integer("finale_bombers", 12), Number("finale_escort_share", .1), Integer("finale_escort_cap", 12),
-            (float)Number("finale_escort_radius", 1500), (float)Number("finale_escort_leash", 2500));
+            (float)Number("finale_escort_radius", 1500), (float)Number("finale_escort_leash", 2500),
+            // P896 — 0 (default) keeps the P801 wave the AIX baseline was measured on;
+            // a positive margin also carries run-in losses / defenders, bounded by finale_bombers.
+            Number("finale_survival_margin", 0));
         result.Validate();
         return result;
     }
