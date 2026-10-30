@@ -273,3 +273,11 @@ integer encoding, HMAC tokens, ACK coalescing, congestion pacing and thread/time
 scheduling are modern transport infrastructure, not claims of native DirectPlay
 wire compatibility. No new native gameplay rule or production parity credit is
 claimed.
+
+## Claude review notes (2026-10-30)
+
+Parsing, ACK-after-retain and retransmit filtering checked by reading the code. One change: a keepalive whose send fails
+now waits a full interval; before, a stale `LastSend` made the next wait 0 until the socket buffer drained.
+Not a report target but worth carrying into any rig run: LAN **server CPU rose to 0.715 cores vs TCP 0.465** (1.54×; it
+was 0.377 before P895b), and the longest remote gap in that LAN sample was 995 ms vs 520 ms. `PeerNextDue` walks every
+in-flight packet, stream and assembly per peer per tick, which is the first place to look.

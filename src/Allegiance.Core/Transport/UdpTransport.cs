@@ -454,7 +454,7 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             if (p.CloseSent++ < 5) { Control(p, Kind.Close); p.NextClose = now + 20; return; }
             Drop(p, "UDP graceful close"); return;
         }
-        if (now - p.LastSend >= KeepAliveInterval.TotalMilliseconds) Control(p, Kind.Ping);
+        if (now - p.LastSend >= KeepAliveInterval.TotalMilliseconds) { Control(p, Kind.Ping); p.LastSend = now; } // A failed send waits a full interval.
         p.AssemblyScratch.Clear();
         foreach (var entry in p.Assemblies) if (!entry.Value.Reliable && now - entry.Value.Created > 500) p.AssemblyScratch.Add(entry.Key);
         foreach (var key in p.AssemblyScratch) { p.ReceiveBytes -= p.Assemblies[key].Data.Length; p.Assemblies.Remove(key); }
