@@ -87,6 +87,15 @@ public static class DiscoveryProtocol
         /// <summary>The responder's bound UDP port (informational, so a client
         /// that hit a forwarded/broadcast port can see where the reply came from).</summary>
         public int ResponderPort { get; set; }
+
+        /// <summary>Optional P897 game UDP listener; absent on older/TCP-only servers.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? UdpPort { get; set; }
+
+        /// <summary>Optional route-specific host link: wired, wireless, or unknown.
+        /// A string tolerates future classes and older clients ignore it.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? HostLink { get; set; }
     }
 
     public static byte[] EncodeRequest(string nonce)

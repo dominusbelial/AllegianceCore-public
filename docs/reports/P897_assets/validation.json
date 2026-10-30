@@ -1,0 +1,347 @@
+{
+  "task": "P897",
+  "commits": false,
+  "pushes": false,
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolsBuilt": 98,
+  "aot": {
+    "runtime": "linux-x64",
+    "exitCode": 0
+  },
+  "fast": {
+    "tier": "fast",
+    "seconds": 543.4619998249982,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4580,
+        "outcomes": {
+          "Passed": 4574,
+          "NotExecuted": 3,
+          "Failed": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2050,
+        "outcomes": {
+          "Passed": 2048,
+          "Failed": 2
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5902,
+        "outcomes": {
+          "Passed": 5893,
+          "Failed": 9
+        }
+      }
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.5967404
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "1 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05916682200040668,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "isolated": {
+    "p897": [
+      {
+        "outcomes": {
+          "Passed": 774
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 774
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 774
+        },
+        "failures": []
+      }
+    ],
+    "transport": [
+      {
+        "outcomes": {
+          "Passed": 46
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 46
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 46
+        },
+        "failures": []
+      }
+    ],
+    "ui": [
+      {
+        "outcomes": {
+          "Passed": 4
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 4
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 4
+        },
+        "failures": []
+      }
+    ],
+    "paths": [
+      {
+        "outcomes": {
+          "Passed": 4,
+          "Failed": 5
+        },
+        "failures": [
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)"
+        ]
+      },
+      {
+        "outcomes": {
+          "Passed": 4,
+          "Failed": 5
+        },
+        "failures": [
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment"
+        ]
+      },
+      {
+        "outcomes": {
+          "Passed": 4,
+          "Failed": 5
+        },
+        "failures": [
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory"
+        ]
+      }
+    ],
+    "paths-alias": [
+      {
+        "outcomes": {
+          "Passed": 9
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 9
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 9
+        },
+        "failures": []
+      }
+    ],
+    "client-isolation": [
+      {
+        "outcomes": {
+          "Passed": 2
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 1,
+          "Failed": 1
+        },
+        "failures": [
+          "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose"
+        ]
+      },
+      {
+        "outcomes": {
+          "Passed": 2
+        },
+        "failures": []
+      }
+    ],
+    "core-isolation": [
+      {
+        "outcomes": {
+          "Passed": 5,
+          "Failed": 1
+        },
+        "failures": [
+          "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        ]
+      },
+      {
+        "outcomes": {
+          "Passed": 5,
+          "Failed": 1
+        },
+        "failures": [
+          "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        ]
+      },
+      {
+        "outcomes": {
+          "Passed": 5,
+          "Failed": 1
+        },
+        "failures": [
+          "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        ]
+      }
+    ],
+    "wobble": [
+      {
+        "outcomes": {
+          "Passed": 1
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 1
+        },
+        "failures": []
+      },
+      {
+        "outcomes": {
+          "Passed": 1
+        },
+        "failures": []
+      }
+    ]
+  },
+  "showcase": {
+    "1": {
+      "outcomes": {
+        "Passed": 1
+      },
+      "failures": []
+    },
+    "2": {
+      "outcomes": {
+        "Passed": 1
+      },
+      "failures": []
+    },
+    "3": {
+      "outcomes": {
+        "Passed": 1
+      },
+      "failures": []
+    },
+    "4": {
+      "outcomes": {
+        "Passed": 1
+      },
+      "failures": []
+    },
+    "5": {
+      "outcomes": {
+        "Passed": 1
+      },
+      "failures": []
+    }
+  },
+  "training": {
+    "1": {
+      "Allegiance.ClientCore.Tests": {
+        "outcomes": {
+          "Passed": 80
+        },
+        "failures": []
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "outcomes": {
+          "Passed": 67
+        },
+        "failures": []
+      }
+    },
+    "2": {
+      "Allegiance.ClientCore.Tests": {
+        "outcomes": {
+          "Passed": 80
+        },
+        "failures": []
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "outcomes": {
+          "Passed": 67
+        },
+        "failures": []
+      }
+    },
+    "3": {
+      "Allegiance.ClientCore.Tests": {
+        "outcomes": {
+          "Passed": 80
+        },
+        "failures": []
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "outcomes": {
+          "Passed": 67
+        },
+        "failures": []
+      }
+    }
+  }
+}

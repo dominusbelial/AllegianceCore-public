@@ -86,3 +86,15 @@ python3 tools/check-glossary-links.py
 
 See `README.md` and `docs/` for the wider picture, and `GLOSSARY.md` for a
 kept-current per-domain index of the codebase.
+
+### Multiplayer transport preference
+
+The client Settings panel (Ctrl+F6, also Options → Graphics Options) saves an
+Auto / TCP / UDP preference for either HUD style. Up/Down scrolls the rows;
+Left/Right changes the selected row. Auto uses TCP for a discovered LAN with
+both ends known wired, and UDP for wireless/unknown LAN links and remote sources
+when a UDP port is advertised. Without an advertised UDP port it uses TCP.
+Explicit TCP/UDP wins; `ALLEGIANCE_TRANSPORT_PROTOCOL` overrides Auto. The same
+row shows the active transport after fallback. Changes apply to the next join;
+local Skirmish/Training and default bots remain TCP. Server listener configuration
+and discovery compatibility are documented in [UDP transport](docs/UDP_TRANSPORT.md).

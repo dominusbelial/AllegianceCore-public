@@ -25,6 +25,18 @@ namespace Allegiance.ClientCore.Session;
 public sealed class ConnectionSession : ITransportSite, IDisposable
 {
     private ITransport? _transport;
+    private string? _joinedProtocol;
+    private ushort? _joinedUdpPort;
+    /// <summary>Actual transport after the bounded handshake, including TCP fallback.</summary>
+    public string ActiveTransportProtocol
+    {
+        get
+        {
+            var transport = _transport;
+            return transport?.IsConnected != true ? "disconnected"
+                : TransportFactory.ActiveTransport(transport) is UdpTransport ? "udp" : "tcp";
+        }
+    }
     /// <summary>P895: null uses ALLEGIANCE_TRANSPORT_PROTOCOL (default tcp).</summary>
     public string? TransportProtocol { get; set; }
     /// <summary>Advertised UDP port; null uses the game TCP port/environment override.</summary>
@@ -346,7 +358,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             _connectionGeneration++;
         }
 
-        _transport = TransportFactory.CreateClient(this, TransportProtocol, UdpPort);
+        // Freeze the choice for this connection, including environment resolution.
+        // Changing Settings or the environment during a match cannot affect resume.
+        _joinedProtocol = TransportProtocol ?? Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL") ?? "tcp";
+        _joinedUdpPort = UdpPort ?? port;
+        if (UdpPort is null && _joinedProtocol.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase)
+            && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } envPort)
+            _joinedUdpPort = ushort.Parse(envPort, System.Globalization.CultureInfo.InvariantCulture);
+        _transport = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
         _transport.Join(host, port, playerName);
         StartKeepAlive();
     }
@@ -1245,7 +1264,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     _connectionGeneration++;
                 }
 
-                var fresh = TransportFactory.CreateClient(this, TransportProtocol, UdpPort);
+                var fresh = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
                 _transport = fresh;
                 fresh.Join(_resumeHost!, _resumePort, _resumeName!);
 

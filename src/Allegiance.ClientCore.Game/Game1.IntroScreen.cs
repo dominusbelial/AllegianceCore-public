@@ -566,7 +566,7 @@ public sealed partial class Game1
                         Name: s.Name, Address: s.Address, Port: s.Port,
                         Source: DiscoverySource.Lobby, PingMs: 0,
                         Map: s.MissionName, Players: s.PlayerCount, MaxPlayers: s.MaxPlayers,
-                        Version: s.Version, DisplayName: "", Verified: s.Verified, IdentityServerId: s.IdentityServerId, MissionCookie: s.MissionCookie));
+                        Version: s.Version, DisplayName: "", Verified: s.Verified, IdentityServerId: s.IdentityServerId, MissionCookie: s.MissionCookie, UdpPort: s.UdpPort));
             }
         }
     }
@@ -603,12 +603,12 @@ public sealed partial class Game1
             if (list.Count == 0) return;
             target = list[Math.Min(_introFoundIndex, list.Count - 1)];
         }
-        JoinFromIntro(target.Address, target.Port, target.MissionCookie);
+        JoinFromIntro(target.Address, target.Port, target.MissionCookie, target);
     }
 
     /// <summary>Common join path for every intro route: remember in player.json,
     /// stamp the pilot name, then connect.</summary>
-    private void JoinFromIntro(string host, int port, uint missionCookie = uint.MaxValue)
+    private void JoinFromIntro(string host, int port, uint missionCookie = uint.MaxValue, DiscoveredServer? discovered = null)
     {
         if (port <= 0) { _introFindError = "Server advertises no valid port."; return; }
         if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
@@ -620,7 +620,7 @@ public sealed partial class Game1
         StopIntroScan();
         _returnToIntroOnFailure = true;   // failed joins come back to the intro
         Console.WriteLine($"[intro] joining {host}:{port} as '{_playerName}'");
-        BeginConnect(host, (ushort)port, missionCookie);
+        BeginConnect(host, (ushort)port, missionCookie, discovered);
     }
 
     /// <summary>Cancel + join the background Find Server scan (called when the

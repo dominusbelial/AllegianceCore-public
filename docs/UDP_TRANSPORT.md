@@ -1,9 +1,45 @@
-# Optional UDP transport (P895)
+# UDP transport and automatic client selection (P895 / P897)
 
-TCP with pooled send workers remains the default. The experimental UDP path aims
-to keep fresh poses moving when reliable game-flow packets need retransmission.
-It is default off pending the rig and WAN A/B described in
-[the report](reports/P895_REPORT.md).
+The game client defaults to **Auto** for remote multiplayer. In Settings
+(Ctrl+F6, or Options → Graphics Options), use Up/Down to reach **Multiplayer
+transport**, then Left/Right to cycle **Auto / TCP / UDP**. The same row shows
+what the connected session actually uses, including TCP after fallback. The
+preference is saved as `Transport` in `hud.json` for both Classic and Modern.
+It applies on the next connection; there is no mid-match switch.
+
+| Setting / connection | Selection |
+|---|---|
+| TCP | TCP, regardless of discovery/link facts |
+| UDP | Prefer UDP; bounded handshake falls back to TCP |
+| Auto, no advertised UDP port | TCP |
+| Auto, LAN/multicast/subnet, both ends wired | TCP |
+| Auto, LAN/multicast/subnet, either end wireless or unknown | UDP |
+| Auto, lobby/Tailscale/manual/favorite, UDP port advertised | UDP |
+
+`ALLEGIANCE_TRANSPORT_PROTOCOL=tcp|udp` overrides **Auto**, preserving the
+existing operator override. An explicit Settings TCP/UDP choice wins. Skirmish
+and Training always use their local TCP connection. Bots, MCP observers and
+plain `ConnectionSession` callers retain their existing TCP default (or their
+explicit protocol/environment override); they do not evaluate Auto.
+
+Link detection asks the OS for the local address routing to the server, matches
+that address to an adapter, then classifies it. Windows uses the adapter type;
+Linux checks sysfs wireless/phy80211 markers before considering a physical
+Ethernet device wired. Unix Ethernet alone does not prove a wired connection.
+An explicit Wireless80211 type is accepted on any platform; otherwise macOS,
+Android, virtual adapters, VPNs, inaccessible facts and failures stay unknown.
+Unknown favors UDP on discovered LANs. No detection packet is transmitted.
+
+Discovery v1 replies add optional `UdpPort` and `HostLink` (wired, wireless,
+unknown). The host link describes its route back to the querying client, so
+multi-adapter hosts do not advertise one unrelated global adapter. Missing
+fields on old servers mean no UDP port / unknown link; old clients ignore
+additions. Lobby/heartbeat fields are unchanged. Manual entries without port
+metadata use TCP in Auto; use explicit UDP (and the optional port override)
+when the listener is known separately.
+
+The server continues to default to TCP with pooled workers. Enable its
+additional UDP listener to make Auto selection available:
 
 Enable the additional listener in the server JSON:
 
@@ -26,7 +62,7 @@ Environment overrides:
 
 | Variable | Server | Client / bot / MCP host |
 |---|---|---|
-| `ALLEGIANCE_TRANSPORT_PROTOCOL` | `tcp` (default) or `udp` (adds UDP) | `tcp` (default) or `udp` (prefer UDP) |
+| `ALLEGIANCE_TRANSPORT_PROTOCOL` | `tcp` (default) or `udp` (adds UDP) | Overrides game Auto; plain session/bot/MCP: `tcp` default or `udp` preference |
 | `ALLEGIANCE_TRANSPORT_UDP_PORT` | Optional UDP port; zero means ordinary port | Optional direct-connect UDP port; zero means ordinary port |
 
 For example, launch the server and clients with
@@ -35,8 +71,11 @@ to three seconds, then falls back to the original TCP endpoint if UDP is blocked
 An established UDP session uses the existing session-loss/reconnect policy.
 `ConnectionSession` and `Bot` also expose `TransportProtocol` and `UdpPort`
 properties for programmatic configuration. Lobby heartbeats/public listings
-include `udpPort` only when enabled; the game browser passes that port to the
-session. The user still opts in to UDP. Classic and Modern use that same session.
+include `udpPort` only when enabled; discovery and the game browser pass that
+port to the session. Auto selects a preference once at join; reconnect freezes
+and reuses that preference and UDP port. Classic and Modern use that same session.
+One `[monogame] transport=... selected=...: reason` line records the actual
+protocol after the handshake and the selection reason.
 
 Open/forward the configured UDP port as well as the existing TCP port. Compose
 already maps both; use:

@@ -39,12 +39,12 @@ public sealed partial class Game1
     /// NOT persisted: WinTrek.cpp:2897,5074-5078,3934), default on.</summary>
     private bool _chatHistoryVisible = true;
     private KeyboardState _graphicsPrevious;
-    private int _graphicsRow;
+    private int _graphicsRow, _graphicsFirstRow;
     /// <summary>P828 — the number of rows in the Ctrl+F6 settings panel (13 → 16
     /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
     /// declutter rows, 19 → 20 with the P836 HUD level row, 20 → 21 with native's
-    /// Debris cycle). Up/Down wrap on it.</summary>
-    private const int GraphicsRowCount = 21;
+    /// Debris cycle, 21 → 22 with P897 transport). Up/Down wrap on it.</summary>
+    private const int GraphicsRowCount = 22;
     private Action<long, bool, double>? _receiveGpu;
     private long _budgetStart;
     private double _budgetDuration;
@@ -169,6 +169,10 @@ public sealed partial class Game1
                 // Combat/Cinematic/Auto). Auto resolves from the in-sector ship
                 // count and never selects Cinematic.
                 case 19: _hudSettings.Level = Rendering.HudLevels.Step(_hudSettings.Level, direction); break;
+                // Modern transport preference: apply at the next connection.
+                case 21:
+                    _hudSettings.Transport = (Discovery.ClientTransportSetting)(((int)_hudSettings.Transport + direction + 3) % 3);
+                    break;
                 // Native Graphics Options "Debris Low/Medium/High/Off" (idmToggleDebris 'D',
                 // WinTrek.cpp:4511,4633-4653): one cycle step per press, saved, applied live.
                 case 20:
@@ -187,7 +191,7 @@ public sealed partial class Game1
         }
         var mouse = Mouse.GetState();
         var slider = new Rectangle(52, 198, 300, 14);
-        if (mouse.LeftButton == ButtonState.Pressed && slider.Contains(mouse.Position))
+        if (_graphicsFirstRow == 0 && mouse.LeftButton == ButtonState.Pressed && slider.Contains(mouse.Position))
         {
             _graphicsRow = 2;
             float sharpness = Math.Clamp((mouse.X - slider.X) / (float)slider.Width, 0, 1);
@@ -195,7 +199,7 @@ public sealed partial class Game1
             _upscaling.Sharpness = sharpness;
         }
         var hudSlider = new Rectangle(360, 78 + 7 * 46 + 30, 260, 8);
-        if (mouse.LeftButton == ButtonState.Pressed && hudSlider.Contains(mouse.Position))
+        if (_graphicsFirstRow == 0 && mouse.LeftButton == ButtonState.Pressed && hudSlider.Contains(mouse.Position))
         {
             _graphicsRow = 7; changed = true;
             _hudSettings.Size = .75f + .75f * Math.Clamp((mouse.X - hudSlider.X) / (float)hudSlider.Width, 0, 1);
@@ -241,17 +245,24 @@ public sealed partial class Game1
                 // Cinematic/Auto; Classic ignores it). Shows the resolved level
                 // too when Auto is active.
                 $"HUD level: {_hudSettings.Level}{( _hudSettings.Level == Rendering.HudLevel.Auto ? $" → {_hudSettings.ActiveLevel}" : "")}",
-                Rendering.DebrisGeo.MenuLabel(_debrisGeo.Density) };
-            int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 24);
+                Rendering.DebrisGeo.MenuLabel(_debrisGeo.Density),
+                $"Multiplayer transport: {_hudSettings.Transport} (next connection); active: {_session.ActiveTransportProtocol.ToUpperInvariant()}" };
+            int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 64);
             _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
-            for (int i = 0; i < rows.Length; i++)
-                _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
-            _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
-            _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
-            _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
-            _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
-            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 78 + rows.Length * 46 + 8), Color.White);
+            int visibleRows = Math.Max(1, (panelHeight - 105) / 46);
+            int firstRow = Math.Clamp(_graphicsRow - visibleRows + 1, 0, Math.Max(0, rows.Length - visibleRows));
+            _graphicsFirstRow = firstRow;
+            for (int i = firstRow; i < Math.Min(rows.Length, firstRow + visibleRows); i++)
+                _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + (i - firstRow) * 46), _graphicsRow == i ? Color.Yellow : Color.White);
+            if (firstRow == 0)
+            {
+                _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
+            }
+            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 32 + panelHeight - 30), Color.White);
         }
         if (_frameTelemetry is not null)
         {

@@ -4430,3 +4430,40 @@ case outcomes and receipts: [P895b verification](reports/P895B_assets/verificati
 Showcase receipts and any additional qualification are recorded in the P895b
 report. No unrelated test was skipped, quarantined or weakened to turn this gate
 green.
+
+### P897 Codex gate — 2026-10-30
+
+One Fast sweep (`tiers-20261030T230601.826574Z`): **12,679 executions,
+12,662 pass / 14 fail / 3 optional skips**, plus one 10 s timing offender.
+Raw results were moved into the gitignored `.scratch/p897/fast/` after the run.
+The sweep was not repeated. Host load averages sampled during the work were
+6.74 / 4.89 / 3.03 and 11.17 / 5.96 / 3.52; no synthetic load was created.
+
+Two task-owned source assertions (`P836HudLevelTests.The_options_panel_carries_the_level_row_and_case`
+and `Hud19CentreHudTests.Graphics_overlay_has_the_joystick_row_and_it_toggles`)
+still expected 21 Settings rows after adding the transport row. Updated to 22;
+both pass **3/3** in isolation, alongside the unchanged HUD input test.
+These were fixed assertions, not classified as flakes.
+
+| Non-task failure / timing observation | Three isolated results | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass / pass / pass with writable task-local `XDG_CONFIG_HOME` | Sandbox environment: the sweep tried writing the read-only user `player.json`; profile/chat code unchanged. |
+| Five `PlayerBundlePathsTests` executions (`UsesExecutableDirectoryOutsideRepository` Artwork, `MissingDirectoryHasNoDefault` Artwork/NativeSource, `NativeSourceNeverGuessesAnInstallSubdirectory`, `LocalConfigWinsOverBundleWithBlankEnvironment`) | fail / fail / fail with worktree-local TMPDIR; all nine class cases pass / pass / pass via a `/proc/<parent>/fd/3` logical alias to that same NVMe scratch directory | Existing fixture environment assumption: an allegedly outside-repository install inherits ancestor `local.env`. No files written outside the worktree, and no resolver/assertion changed. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass | Existing loopback timing flake: sweep missed the victim's death latch after 2,500 ticks. |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | pass / fail / pass | Existing intermittent chat-receipt ordering: ChatTarget 0 rather than -2, same assertion in isolation. No chat code changed. |
+| `P813cReconnectGraceTests.Grace_expiry_runs_the_native_removal` | pass / pass / pass | Missing removal receipt under sweep load; all existing UDP/reconnect suites also passed 46/46 three times. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | all three delay cases pass / pass / pass | Existing floating boundary: delay 5 observed `5.0000000000000009` against upper bound 5. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Existing receipt/simulation-clock timing flake: sweep saw 32.1 seconds against 28–31. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Previously ledgered deterministic null target at line 179; NPC defend/flight code untouched. Remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass at 9.742 / 9.738 / 9.719 s | Passed in the sweep but took 10.597 s, exceeding the calibrated 10 s Fast limit. Existing timing class. |
+
+The 774 new P897 tests pass **3/3**, including actual discovery/session TCP and
+UDP, blocked UDP fallback within the handshake bound, TCP/UDP reconnect with
+changed preferences, default TCP bots/sessions, and both HUD styles' persisted
+Settings input. No existing transport assertions or timing bounds were changed.
+
+P897's required showcase never-parks repetitions passed **5/5**. The full
+training runner (`--no-build --repeat 3`, Fast + Live with artwork) passed
+**80/80 ClientCore + 67/67 MonoGame** in each repetition, with no skipped
+lessons. Raw logs/TRX are retained in `.scratch/p897/`; compact results are in
+[the P897 validation artifact](reports/P897_assets/validation.json).
