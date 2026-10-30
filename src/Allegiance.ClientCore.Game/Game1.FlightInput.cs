@@ -636,7 +636,7 @@ public sealed partial class Game1
         // letters in use are A C D E G H K M N Q R S T V W + modifiers). Edge-
         // triggered and composing-gated like the H help toggle, independent of
         // the starmap/help flags so the prior view resumes on close.
-        bool scoreKey = ActionDown(ks, "Scoreboard");
+        bool scoreKey = ActionDown(ks, "Scoreboard") && !YieldsToTrainingTarget(ks, "Scoreboard", Allegiance.ClientCore.Training.TrainingController.IsTraining);
         // M-2 — also gate on !_dockedActive: while the docked/teleport pane is
         // open, B is bound to "back to hangar" (HandleDockedScreen), so a single
         // press must close the pane only, not ALSO flip the scoreboard.
@@ -1627,7 +1627,7 @@ public sealed partial class Game1
         // the LOBBY server-filter key, a separate screen) and adjacent to C
         // (chaff) — both defensive countermeasures, the same "near related
         // functions" placement the C chaff binding uses.
-        bool fCloak = ActionDown(ks, "ToggleCloak");
+        bool fCloak = ActionDown(ks, "ToggleCloak") && !YieldsToTrainingTarget(ks, "ToggleCloak", Allegiance.ClientCore.Training.TrainingController.IsTraining);
         if (!composing && fCloak && !_fCloakWasDown)
         {
             _cloakToggled = !_cloakToggled;

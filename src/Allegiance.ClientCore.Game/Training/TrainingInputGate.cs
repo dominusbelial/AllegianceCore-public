@@ -31,6 +31,17 @@ public sealed class TrainingInputGate(Func<int, bool> recordKey)
 
     public bool Approves(string action) => !_rejected.Contains(action);
 
+    /// <summary>True when the action's NATIVE-default key (the key the native training prompts name,
+    /// decoded from <c>defaultinputmap.mdl</c>) is physically down. Public so the client's own
+    /// target-selection path (<c>SelectRemainderTarget</c>) can mirror the mission-routing recognition
+    /// below — the P892b B-key fix: in the port's shipped default map <c>TargetEnemy</c> /
+    /// <c>TargetFriendlyBase</c> are left <c>U()</c> (unbound; F/B are rebound to ToggleCloak /
+    /// Scoreboard), so without honouring the native-default key a real-window B/F tap never reaches
+    /// the client's <c>SelectRemainderTarget → CommitTargetForPlayer</c>, leaving M3 goal 12's
+    /// <c>GetTargetCondition(OT_station,1010)</c> unsatisfied (WinTrek.cpp:8753-8769, 10149, 9024).</summary>
+    public static bool NativeDefaultKeyDown(KeyboardState keys, string action)
+        => NativeDefaultKeys.TryGetValue(action, out var k) && keys.IsKeyDown(k);
+
     /// <summary>Whether the action's key is down, honouring the current binding OR the action's
     /// native-default key (training follows native prompts).</summary>
     private static bool IsPressed(ActionMap map, KeyboardState keys, string action)

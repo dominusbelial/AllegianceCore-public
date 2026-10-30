@@ -282,19 +282,17 @@ public sealed partial class Game1
         // native SetTarget (P886b fix — see SelectRemainderTarget), so GetTargetCondition(OT_station,
         // 1010) is met by the real key, not an ORDER_CHANGE.
         //
-        // P886c — real-window finding: the client's B targeting-commit (SelectRemainderTarget →
-        // CommitTargetForPlayer) does NOT fire during training (no [p642] edge fires for F or B),
-        // so the B tap alone leaves the server CommandTarget un-set and goal 12.3 never advances.
-        // The mission's 12.3 condition is GetTargetCondition(OT_station,1010) — it needs the server
-        // command target to BE station 1010. Commit it with the same ORDER_CHANGE a pointer pick
-        // issues (the proof's proven target path), which the server echoes into Ship.CommandTarget;
-        // B is still tapped for native fidelity.
+        // P892b — root-caused and fixed: the port's shipped default map leaves TargetFriendlyBase
+        // unbound (B is rebound to Scoreboard), so a real-window B tap never reached
+        // SelectRemainderTarget → CommitTargetForPlayer (zero [p642] edges, P886c). HandleRemainder
+        // TargetKeys now ALSO honours the action's native-default key while a training mission runs
+        // (RemainderTargetKeyDown, Game1.TargetCommands.cs) — so B selects and commits station 1010 by
+        // itself and the direct ProofOrderTarget below is no longer needed. Removed the workaround.
         int bp = ProofCount(site, "target the outpost.");
         if (bp > _pBaseSeen)
         {
             _pBaseSeen = bp; _proofM3Killing = false;
             ProofTap(Keys.B);
-            ProofOrderTarget(new TargetRef(ObjectType.Station, 1010));
             ProofMaybeShot("M3 B target outpost");
         }
 

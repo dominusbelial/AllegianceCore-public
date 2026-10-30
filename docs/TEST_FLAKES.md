@@ -4280,3 +4280,13 @@ Confirming sweep `tiers-20261030T041824` (after the P806 test fix): 11,763
   (load flake) — **3/3 pass alone**.
 - `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station`
   (load flake) — **3/3 pass alone**.
+
+## P892b verification observations (2026-10-30)
+
+Single Fast-tier run (`tools/run-tests.sh --tier fast`, `TestResults/tiers-20261030T140210.335559Z/`): all P892b-owned tests passed (P881a real-loopback M3 completion, the B-key regression test, `P892TrainingSetupTests`); the failures below are non-task (P892b touched only `Allegiance.ClientCore.Game` training/targeting, `P881aTrainingMissionsTests.cs`, the matrix and the report — none of these projects' failing paths).
+
+| Failure | Three isolated outcomes | Classification |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore) | pass / pass / pass (2 s) | Load flake: Live TCP loopback test; fails under the concurrent fast-tier sweep, 3/3 alone. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / pass / pass | Already ledgered intermittent under P890/P894; passed 3/3 alone this session. |
+| 18 `Allegiance.Lobby.Tests` cases | full project reproduced 13/122 on clean master | Not order-dependent and not P894: each test host's config file watcher hit the machine's `fs.inotify.max_user_instances` limit (128). Fixed by turning config reload off in the Lobby test assembly. |

@@ -163,7 +163,7 @@ public sealed partial class Game1
     private void HandleRemainderTargetKeys(KeyboardState keys, bool composing)
     {
         foreach (var action in RemainderTargetActions)
-            if (TargetEdgeDown(keys, action.Id) && !composing) SelectRemainderTarget(action.Family, action.Direction);
+            if (RemainderTargetEdgeDown(keys, action.Id) && !composing) SelectRemainderTarget(action.Family, action.Direction);
         if (TargetEdgeDown(keys, "TargetSelf") && !composing) SelectSelfTarget();
         if (TargetEdgeDown(keys, "OccupyNextTurret") && !composing)
         {
@@ -174,4 +174,41 @@ public sealed partial class Game1
     }
     // WinTrek.cpp:10452-10464: re-board current parent; server picks the seat.
     internal static short? NextTurretParent(short parent) => parent >= 0 ? parent : null;
+
+    /// <summary>Training-aware press edge for a remainder-target action. Outside training this is
+    /// exactly the current binding (<see cref="TargetEdgeDown"/>). While a training mission runs it
+    /// ALSO honours the action's NATIVE-default key — the key the native prompt names
+    /// (defaultinputmap.mdl) — mirroring how <see cref="TrainingInputGate"/> already routes the
+    /// mission's key press (P886). This is the P892b B-key fix: the port's shipped default map leaves
+    /// <c>TargetEnemy</c>/<c>TargetFriendlyBase</c> unbound (F/B are rebound to ToggleCloak/Scoreboard),
+    /// so a real-window B/F tap would otherwise never reach the client's
+    /// <c>SelectRemainderTarget → CommitTargetForPlayer</c>, and the server <c>Ship.CommandTarget</c>
+    /// that M3 goal 12's <c>GetTargetCondition(OT_station,1010)</c> reads would never be set
+    /// (WinTrek.cpp:10149/9024; P886c measured zero <c>[p642]</c> edges for F and B).</summary>
+    private bool RemainderTargetEdgeDown(KeyboardState keys, string action)
+        => _targetPressEdges.Observe(action, RemainderTargetKeyDown(
+            Rendering.KeyBindingStore.Instance.Map, keys, action,
+            Allegiance.ClientCore.Training.TrainingController.IsTraining));
+
+    /// <summary>Pure, testable predicate for <see cref="RemainderTargetEdgeDown"/>: true when the
+    /// action's current binding is down, or — only while a training mission is active — its
+    /// native-default key is down (training follows native prompts). Normal flight is untouched:
+    /// <paramref name="training"/> must be true for the native-default fallback.</summary>
+    internal static bool RemainderTargetKeyDown(Rendering.ActionMap map, KeyboardState keys, string action, bool training)
+    {
+        if (map.IsDownMostSpecific(keys, action)) return true;
+        return training && map.ActionFilter?.Invoke(action) != false
+            && TrainingInputGate.NativeDefaultKeyDown(keys, action);
+    }
+
+    /// <summary>While a training mission runs, a key the native prompt names means the native action,
+    /// so the port's normal-flight action on the same key stands down: B targets the base without
+    /// opening the scoreboard over the landing, F targets an enemy without toggling the cloak.</summary>
+    internal static bool YieldsToTrainingTarget(KeyboardState keys, string action, bool training)
+        => training && action switch
+        {
+            "Scoreboard" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetFriendlyBase"),
+            "ToggleCloak" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetEnemy"),
+            _ => false,
+        };
 }
