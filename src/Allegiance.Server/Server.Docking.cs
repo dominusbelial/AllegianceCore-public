@@ -2381,7 +2381,15 @@ public sealed partial class Server
             // through stations"). This was the P518 root cause.
             Cookie = NextCookie(EnsurePeerUpdate(from)),
         };
-        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        var launchPacket = FedPacket.Pack(new[] { set.Encode() });
+        SendPeer(from, launchPacket);
+        // P891: native CFSPlayer::SetCluster copies the same guaranteed launch
+        // burst to every child (FedSrv/fsship.cpp:918-929). A child's own pose
+        // never substitutes for its source ship's launch pose. This scan runs
+        // only on launch, not in the periodic ranked broadcast.
+        foreach (var peer in _peerShips)
+            if (ReferenceEquals(peer.Value.Ship.ParentShip, live.Ship))
+                SendPeer(peer.Key, launchPacket);
         SendTreasureSnapshot(from, live.Sector);
 
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";

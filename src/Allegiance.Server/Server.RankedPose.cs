@@ -11,6 +11,10 @@ public sealed partial class Server
 {
     private readonly Dictionary<Ship, HeavyPoseRecord> _rankedHeavy = new();
 
+    private static Ship? FlyingParent(Ship child, Sector sector) =>
+        child.ParentShip is { Dead: false, StationId: null } parent
+            && ReferenceEquals(parent.Sector, sector) ? parent : null;
+
     // Native FedSrv/FedSrv.CPP:3923-3950,4141-4188: retain sequential deviation
     // selection, target promotion and HEAVY/LIGHT order. Encode selected poses
     // into one owned lease, avoiding a relative DTO per viewer/ship. Only bytes
@@ -20,6 +24,8 @@ public sealed partial class Server
     {
         var self = peer.Value.Ship;
         var sector = BroadcastSectorFor(peer.Key, peer.Value.Sector);
+        var source = self.ParentShip ?? self;
+        var parent = FlyingParent(self, sector);
         bool admin = HasAdminView(peer.Key);
         ResolveTargetFractions(self, self.CommandTarget, sector, out Ship? target,
             out byte targetHull, out byte targetShield);
@@ -59,6 +65,18 @@ public sealed partial class Server
                 i++;
             }
         }
+        // P891: source telemetry has its own slot, outside the ranked remote
+        // budget. Native launch supplies SET_CLUSTER (fsship.cpp:918-929), then
+        // its local IGC predicts the parent between ranked HEAVY updates
+        // (clintlib/appmsg.cpp:805-814). Our renderer needs a fresh wire source.
+        if (parent is not null && !heavy.Contains(parent))
+        {
+            // Only child peers inspect their already selected (bounded) lists;
+            // ordinary peers retain the exact ranked scan and quotas.
+            for (int i = 0; i < light.Count; i++)
+                if (light[i].ShipId == parent.Id) { light.RemoveAt(i); break; }
+            heavy.Add(parent);
+        }
         if (cadence is not null)
         {
             foreach (var ship in heavy) cadence.MarkPose(ship.Id, now);
@@ -82,11 +100,11 @@ public sealed partial class Server
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(8), (ushort)(HeavyShipsUpdate.FixedSize + turretBytes));
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(10), (ushort)(heavy.Count * HeavyShipUpdateEntry.Width));
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(12), tick);
-        WritePoseVector(bytes.Slice(16), self.Position);
+        WritePoseVector(bytes.Slice(16), source.Position);
         bytes[28] = targetHull; bytes[29] = targetShield;
-        bytes[30] = Percent(self.Fraction); bytes[31] = Percent(self.ShieldFraction);
+        bytes[30] = Percent(source.Fraction); bytes[31] = Percent(source.ShieldFraction);
         bytes[32] = bytes[33] = bytes[34] = 240;
-        bytes[35] = Percent(self.EffectiveMineCapacity() <= 0 ? 0 : self.Ore / self.EffectiveMineCapacity());
+        bytes[35] = Percent(source.EffectiveMineCapacity() <= 0 ? 0 : source.Ore / source.EffectiveMineCapacity());
         var writer = new WireWriter(bytes.Slice(HeavyShipsUpdate.FixedSize));
         foreach (var turret in active) turret.EncodeBody(ref writer);
         int offset = HeavyShipsUpdate.FixedSize + turretBytes;
@@ -101,7 +119,7 @@ public sealed partial class Server
                     Interlocked.Increment(ref ShipEncodingCounters.HeavyRecords);
                 }
             }
-            record.WriteRelative(bytes.Slice(offset, HeavyShipUpdateEntry.Width), self.Position);
+            record.WriteRelative(bytes.Slice(offset, HeavyShipUpdateEntry.Width), source.Position);
             offset += HeavyShipUpdateEntry.Width;
         }
         if (lightBytes is not null) lightBytes.CopyTo(bytes.Slice(length));

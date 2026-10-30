@@ -4118,3 +4118,25 @@ Fast tier `tiers-20261029T202701` on master 76c6355e (P887 defaults): 3 Core fai
 - `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` — failed in the
   sweep and 1/3 alone, then 0/8 on master and 0/8 pre-P887: rare flake.
 - `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.97 s, just over the fast-tier 10 s limit (load).
+
+## P891 (2026-10-30) — native boarded source pose gate
+
+One Fast sweep `tiers-20261030T032640.368112Z`: **11,748 tests; 11,739 passed, 6 failed, 3 skipped**, plus six executions over the calibrated 10 s limit. All 20 P891/P803 cases passed in the sweep and all 60 focused executions passed. No second Fast sweep was run. Raw receipts were moved after completion to git-excluded `.scratch/p891/fast-tier/`; exact-method isolation receipts are `.scratch/p891/isolation.json` and `isolation/`.
+
+Each failed method and each timing offender was selected alone three times, serially, using server GC and artwork. Theory methods ran all of their cases each time.
+
+| Method (short name) | Three isolated results | Maximum case duration per run (s) | Assessment |
+|---|---|---|---|
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass / pass / pass | 4.273 / 3.780 / 4.229 | Passed 3/3 below the 10 s limit in isolation; sweep timing contention. No change to this fixture. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | pass / pass / pass | 6.471 / 7.182 / 5.301 | Passed 3/3 below the 10 s limit in isolation; sweep timing contention. No change to this fixture. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass | 4.031 / 3.280 / 4.539 | Passed 3/3 below the 10 s limit in isolation; sweep timing contention. No change to this fixture. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass / pass / pass | 4.344 / 4.076 / 4.694 | Passed 3/3 below the 10 s limit in isolation; sweep timing contention. No change to this fixture. |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | pass / pass / pass | 1.008 / 1.057 / 1.039 | Known timing flake (P872); 3/3 alone. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / FAIL / FAIL | 0.577 / 0.562 / 0.571 | Previously ledgered status-history intermittency; still fails alone. Original-server replay also reproduces it (7/8 pass, same stale docked status). Not claimed fixed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | FAIL / FAIL / FAIL | 1.243 / 1.260 / 1.181 | Known persistent P872/P887 baseline failure at AttackTarget assertion; unchanged NPC/defend path. |
+| `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate` | pass / pass / pass | 0.410 / 0.435 / 0.421 | Known relay/target-name receipt flake; sweep saw bare goto instead of goto Garrison. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | 10.176 / 10.117 / 10.107 | Functional 3/3, but all three remain just over 10 s; existing timing-limit offender (P887). |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | pass / pass / pass | 0.066 / 0.074 / 0.055 | Sweep observed process-wide allocation 8742.1 MB against a 0.8–16 MB bound; 3/3 alone. No profiler source change. |
+| `ProbeCombatLiveTests.Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer` | pass / pass / FAIL | 0.397 / 0.375 / 16.746 | Intermittent lethal-hit/expiry observation (sweep and one isolated run); not claimed 3/3 passing or fixed. Original-server replay passed 11/11 serial plus 6/6 at concurrency 3, so this task does NOT claim that replay reproduced the probe failure. This unboarded ordnance fixture has no new parent-routing branch; Core collision/damage code is unchanged. Retained as an open non-task fixture observation. |
+
+For the two intermittent docking/probe cases, a separate scratch build restores all four modified Server files from original HEAD `b567ee1f`; it never reverts the working tree. The same test DLL runs against that original Server binary in a separate directory. Baseline evidence: `.scratch/p891/baseline-build.log`, `baseline-results/`, and `baseline*.py`. Docking first passed 3/3, then reproduced on the eighth bounded replay. Probe did not reproduce on the original binary in the bounded replay; this distinction is retained rather than calling every red result a proven baseline failure. No assertion, quarantine, timer limit or production rule was relaxed.

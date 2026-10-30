@@ -269,6 +269,17 @@ list in **reverse**.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and
   interest-tiered. `Server.Broadcast.cs`, `BroadcastSnapshot.cs`,
   `Server.InterestTiers.cs`.
+- **Boarded source pose (P891)** — launch copies the parent's guaranteed
+  `SET_CLUSTER` to its passengers (`src/Allegiance.Server/Server.Docking.cs`);
+  `src/Allegiance.ClientCore/State/ClientWorld.cs` keeps child identity/cookie
+  while leaving the hangar. Airborne children receive a separate parent slot
+  in the existing HEAVY packet outside the remote quota, shared by
+  `src/Allegiance.Server/Server.RankedPose.cs`,
+  `src/Allegiance.Server/Server.Broadcast.cs` and
+  `src/Allegiance.Server/Server.InterestTiers.cs`. This cadence is an explicit
+  renderer adaptation: native ranks the parent and locally simulates it.
+  Native phases/classification: `docs/parity/p891-boarded-pose.csv`;
+  report: `docs/reports/P891_REPORT.md`.
 - **Turret relay (one-shot "last update kind")** — a boarded gunner's accepted
   `ACTIVE_TURRET_UPDATE(99)` is stored (`Server._lastTurretUpdates`, native
   `m_atu`) and relayed to every other cluster player by exactly ONE

@@ -52,14 +52,6 @@ public sealed class P803TurretGunnerLoopbackLiveTests
         Port = 0,
         UpdatesPerSecond = 20,
         SideSelectAutoSeatSeconds = 30,
-        // P887 — the boarded gunner's HUD model inputs are asserted from the
-        // PORT per-tick teammate posBatch pose of the (docked) parent ship; pin
-        // the old model explicitly now that "native" is the default. Under the
-        // native ranked-pose budget a DOCKED ship is not a cluster candidate
-        // (Sector.GetShipUpdateCandidates) and the posBatch stream is
-        // suppressed, so the docked parent's pose genuinely does not flow —
-        // flagged in docs/reports/P887_REPORT.md as a native-model observation.
-        Broadcast = new() { ShipUpdateModel = "port" },
         Games =
         [
             new Gm { Name = name, Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
@@ -192,6 +184,36 @@ public sealed class P803TurretGunnerLoopbackLiveTests
             Assert.Equal(gunnerName, name);
         }
 
+        // P891: hangar uses station/boarding metadata, never a docked parent pose.
+        lock (gunner.Gate)
+        {
+            Assert.True(gunner.World.Ships[gunnerId].StationId >= 0);
+            Assert.Null(gunner.World.Ships[pilotId].Latest);
+        }
+        pilot.SendDocked();
+        int launchTicks = PumpUntil(server, () => carrierShip.StationId is null, 400);
+        Assert.True(launchTicks < 400);
+        // Native launch delivers guaranteed SET_CLUSTER to every child in the
+        // launch dispatch (fsship.cpp:758-767,918-929); no further tick required.
+        bool launchedOnWire = SpinWait.SpinUntil(() =>
+        {
+            lock (gunner.Gate)
+                return gunner.World.Ships[pilotId].Latest is not null
+                    && gunner.World.Ships[gunnerId].StationId == -1;
+        }, TimeSpan.FromSeconds(5));
+        if (!launchedOnWire)
+        {
+            lock (gunner.Gate) Console.WriteLine($"P891 before: launch tick pose={gunner.World.Ships[pilotId].Latest?.Time}, child station={gunner.World.Ships[gunnerId].StationId}");
+            int delayed = PumpUntil(server, () =>
+            {
+                lock (gunner.Gate) return gunner.World.Ships[pilotId].Latest is not null
+                    && gunner.World.Ships[gunnerId].StationId == -1;
+            }, 100);
+            Console.WriteLine($"P891 before: usable flight state delayed {delayed} additional ticks ({delayed * 50} simulation ms)");
+        }
+        Assert.True(launchedOnWire, "parent launch pose and child launch state must arrive in the launch tick");
+        Console.WriteLine($"P891 launch: request processed after {launchTicks} pump ticks; parent pose delivered with zero additional ticks (50 ms server cadence)");
+
         // ── the gunner's HUD model inputs, from the GUNNER's own wire state ──
         lock (gunner.Gate)
         {
@@ -215,6 +237,30 @@ public sealed class P803TurretGunnerLoopbackLiveTests
             // against (speed × lifespan): strictly positive core data.
             Assert.True(projectileRange > 0f);
         }
+
+        // Bounded real TCP sample: two clients with 400 unboarded cluster
+        // candidates (the same candidate pressure as a 200v200 encounter).
+        var mission = carrierShip.Mission!;
+        var sector = carrierShip.Sector!;
+        int add = 400 - sector.GetShipUpdateCandidates().Count;
+        for (short i = 0; i < add; i++)
+            mission.PlaceShip(new Ship((short)(20000 + i), gunnerShip.HullType,
+                new SimVec(10000 + i * 100, 10000, 10000), SimVec.Zero, Orientation.Identity)
+                { SideId = carrierShip.SideId }, sector);
+        var costs = new List<double>();
+        for (int i = 0; i < 40; i++)
+        {
+            carrierShip.Deviation = -10000;
+            var start = System.Diagnostics.Stopwatch.GetTimestamp();
+            server.TickSim();
+            costs.Add(System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+            uint tick = (uint)server.LoopIterations;
+            Assert.True(SpinWait.SpinUntil(() =>
+            {
+                lock (gunner.Gate) return gunner.World.Ships[pilotId].LastUpdateTick >= tick;
+            }, TimeSpan.FromSeconds(5)), $"parent pose starved at pressure tick {tick}");
+        }
+        Console.WriteLine($"P891 TCP pressure: 400 candidates, 40/40 fresh source poses; tick ms mean={costs.Average():F4}, p95={costs.Order().ElementAt(37):F4}, max={costs.Max():F4}");
 
         Console.WriteLine($"P803-LOOPBACK-LIVE: gunner {gunnerId} boarded pilot {pilotId} at turret mount {slot}; both rosters name the occupant; turret weapon (range {projectileRange:0}m) resolved on the gunner's wire state");
     }

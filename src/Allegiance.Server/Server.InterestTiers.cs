@@ -17,6 +17,8 @@ public sealed partial class Server
     private void BroadcastTierPose(ConnectionId peer, Ship self, Ship? target, Sector sector,
         bool admin, uint tick, double now, byte targetHull, byte targetShield)
     {
+        var source = self.ParentShip ?? self;
+        var parent = FlyingParent(self, sector);
         var candidates = sector.GetShipUpdateCandidates();
         var cadence = _viewerPoseCadence[peer];
         cadence.Begin(candidates, self, sector, admin, now, TickProfiler.Instance is not null,
@@ -24,7 +26,11 @@ public sealed partial class Server
         var selected = cadence.SelectTierCandidates(self, target, now, _tier1Hz, _tier2Hz,
             _config.UpdatesPerSecond, tick, _promotionEpsilonSq);
         bool seesTarget = target is not null && ShipPoseVisible(self, target, admin);
-        int count = selected.Length + (seesTarget ? 1 : 0);
+        bool appendParent = parent is not null && parent != target;
+        if (appendParent)
+            foreach (ref readonly var candidate in selected)
+                if (candidate.Ship == parent) { appendParent = false; break; }
+        int count = selected.Length + (seesTarget ? 1 : 0) + (appendParent ? 1 : 0);
         var activeTurrets = CollectActiveTurretRelay(sector, self, tick);
         var inactiveTurrets = CollectInactiveTurretRelay(sector);
         byte[]? light = inactiveTurrets.Length == 0 ? null
@@ -42,20 +48,22 @@ public sealed partial class Server
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(8), (ushort)(HeavyShipsUpdate.FixedSize + turretBytes));
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(10), (ushort)(count * HeavyShipUpdateEntry.Width));
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(12), tick);
-        WritePoseVector(bytes.Slice(16), self.Position);
+        WritePoseVector(bytes.Slice(16), source.Position);
         bytes[28] = targetHull; bytes[29] = targetShield;
-        bytes[30] = Percent(self.Fraction); bytes[31] = Percent(self.ShieldFraction);
+        bytes[30] = Percent(source.Fraction); bytes[31] = Percent(source.ShieldFraction);
         bytes[32] = bytes[33] = bytes[34] = 240;
-        bytes[35] = Percent(self.EffectiveMineCapacity() <= 0 ? 0 : self.Ore / self.EffectiveMineCapacity());
+        bytes[35] = Percent(source.EffectiveMineCapacity() <= 0 ? 0 : source.Ore / source.EffectiveMineCapacity());
         var writer = new WireWriter(bytes.Slice(HeavyShipsUpdate.FixedSize));
         foreach (var turret in activeTurrets) turret.EncodeBody(ref writer);
         int offset = HeavyShipsUpdate.FixedSize + turretBytes;
-        if (seesTarget) WriteTierRecord(target!, self.Position, tick, bytes, ref offset, cadence, now);
+        if (seesTarget) WriteTierRecord(target!, source.Position, tick, bytes, ref offset, cadence, now);
         foreach (ref readonly var candidate in selected)
         {
-            WriteTierRecord(candidate.Ship, self.Position, tick, bytes, ref offset, cadence, now);
+            WriteTierRecord(candidate.Ship, source.Position, tick, bytes, ref offset, cadence, now);
             candidate.Ship.Deviation = 0;
         }
+        if (appendParent)
+            WriteTierRecord(parent!, source.Position, tick, bytes, ref offset, cadence, now);
         if (light is not null) light.CopyTo(bytes.Slice(length));
         int packetLength = length + (light?.Length ?? 0);
         packet.Seal(packetLength);

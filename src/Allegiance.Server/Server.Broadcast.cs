@@ -3127,6 +3127,8 @@ public sealed partial class Server
         // else keeps their own-sector view.
         bool adminSpectator = HasAdminView(kv.Key);
         var sector = BroadcastSectorFor(kv.Key, kv.Value.Sector);
+        var source = self.ParentShip ?? self;
+        var parent = FlyingParent(self, sector);
 
             // P270 — data-level cloak invisibility: when a ship is actually
             // CLOAKED, an enemy peer that cannot detect it (the P269 cross-side
@@ -3160,7 +3162,7 @@ public sealed partial class Server
             // 3. Scalar region: positionReference = own ship position (peer is
             //    in this cluster by construction); fractions = own fractions
             //    (FedSrv.CPP:4044-4047, 4128-4133).
-            Vector3 posRef = self.Position;
+            Vector3 posRef = source.Position;
 
             // 2. Assemble heavy entries: promoted target first, then candidates
             //    minus self minus target (FedSrv.CPP:4141-4170). P219 added the
@@ -3349,6 +3351,22 @@ public sealed partial class Server
                 }
             }
 
+            // P891: append the source only when ranking/target did not already
+            // supply it. No extra candidate walk for ordinary peers.
+            if (parent is not null)
+            {
+                bool present = false;
+                foreach (var entry in entries)
+                    if (entry.ShipId == parent.Id) { present = true; break; }
+                if (!present)
+                {
+                    if (lightEntries is not null)
+                        for (int i = 0; i < lightEntries.Count; i++)
+                            if (lightEntries[i].ShipId == parent.Id) { lightEntries.RemoveAt(i); break; }
+                    entries.Add(CaptureHeavyUpdate(tickIndex, posRef, parent, tickIndex));
+                }
+            }
+
             // P659 — preserve ranking, target promotion and deviation exactly.
             // Only HEAVY carries a pose (native igc.h:2423-2442). Append a
             // separate fair sweep; LIGHT presence never resets the pose clock.
@@ -3369,12 +3387,12 @@ public sealed partial class Server
                 ActiveTurretUpdates = CollectActiveTurretRelay(sector, self, tickIndex),
                 BpTargetHull = bpTargetHull,
                 BpTargetShield = bpTargetShield,
-                FractionsHull = Percent(self.Fraction),
-                FractionsShield = Percent(self.ShieldFraction),
+                FractionsHull = Percent(source.Fraction),
+                FractionsShield = Percent(source.ShieldFraction),
                 FractionsAmmo = 240,
                 FractionsFuel = 240,
                 FractionsEnergy = 240,
-                FractionsOre = Percent(self.EffectiveMineCapacity() <= 0f ? 0f : self.Ore / self.EffectiveMineCapacity()),
+                FractionsOre = Percent(source.EffectiveMineCapacity() <= 0f ? 0f : source.Ore / source.EffectiveMineCapacity()),
             };
 
             // 4. Per-player send of HEAVY (always — it carries the owner's own

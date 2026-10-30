@@ -2613,13 +2613,23 @@ public sealed partial class ClientWorld
         ClearSectorEffects();
         ShipWarnings.Reset();
         _treasures.Clear();
-        _ships.OwnId = set.Ship.ShipId;
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
+        _ships.OwnId = MyShipId;
 
         var e = Upsert(set.Ship.ShipId);
-        e.IsMine = true;
+        e.IsMine = set.Ship.ShipId == MyShipId;
+        // P891: a passenger receives its source ship's SET_CLUSTER, not a new
+        // player assignment (clintlib/appmsg.cpp:1009-1010,1044-1049,1061-1065).
+        // Leave its turret identity and cookie intact, but leave the hangar now.
+        if (MyShipId is { } childId && _ships.TryGetValue(childId, out var child)
+            && child.ParentId == set.Ship.ShipId)
+        {
+            child.StationId = -1;
+            child.SectorId = set.SectorId;
+            child.StatusSectorKnown = true;
+        }
         // Native SET_CLUSTER calls SetStation(NULL) (appmsg.cpp:1044-1049).
         // It confirms launch immediately, before the next periodic SHIP_STATUS.
         e.StationId = -1;
