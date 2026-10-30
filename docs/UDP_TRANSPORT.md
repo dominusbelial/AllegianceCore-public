@@ -60,6 +60,11 @@ Delivery contracts:
   superseded. Superseding one stream never skips a reliable game-flow sequence.
 * Datagrams fit 1200 bytes; larger frames are fragmented. Ordered frame delivery
   waits for missing ordered fragments; pose keys can progress independently.
+  P895b's ADU2 format shares one 128-bit token and packet ID across queued
+  frames, encodes record fields as bounded integers, and piggybacks selective
+  ACK IDs. Standalone ACKs wait at most 20 ms; data never waits to fill a batch.
+  Both UDP endpoints must use ADU2; an older UDP listener fails the bounded
+  handshake and the client uses its existing TCP fallback.
 * Address-bound cookies prevent an unvalidated source from triggering large
   replies. Tokens prevent off-path spoofing. This provides no encryption.
 * A paced, bounded Reno-style congestion window counts all data, including
@@ -85,3 +90,9 @@ actual lossy/reordering datagrams. The TCP proxy models a lost chunk with a fixe
 200 ms recovery stall; it does **not** measure kernel TCP loss recovery. Results
 must retain that distinction. The 200-client loopback pair uses the native ship
 budget, immutable snapshots, shared encoding, parallel build and server GC.
+`host-udp.json` and `client-udp.json` record packet kinds/bytes, retransmissions,
+worker wake sources and first-send queue waits, excluding warmup. Bytes exclude
+IP/UDP headers and TCP's kernel ACKs/retransmissions. Clients use blocking
+receives, immediate paced producer sends and a one-shot deadline timer; an idle
+session waits for actual socket activity or its keepalive/timeout deadline.
+See [P895b's report](reports/P895B_REPORT.md) for the before/after qualification.

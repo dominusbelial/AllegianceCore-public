@@ -21,6 +21,7 @@ public sealed class ImpairedUdpProxy : IDisposable
     public volatile bool DropAll;
     public volatile bool DropDownstream;
     public volatile bool DropServerData;
+    public volatile bool DropNextServerData;
     public volatile bool DropClientData;
     public volatile bool DropAcks;
     private long _order, _bytes, _dropped, _packets;
@@ -70,6 +71,8 @@ public sealed class ImpairedUdpProxy : IDisposable
             if (toServer) _client = (IPEndPoint)ep;
             Interlocked.Increment(ref _packets);
             bool data = n > 4 && buffer[4] == 5;
+            if (data && !toServer && DropNextServerData)
+            { DropNextServerData = false; Interlocked.Increment(ref _dropped); continue; }
             if (DropAll || DropDownstream && !toServer || (data && (toServer ? DropClientData : DropServerData)) || (DropAcks && n > 4 && buffer[4] == 6) || _rng.NextDouble() < _loss || _pendingBytes > 4 * 1024 * 1024)
             { Interlocked.Increment(ref _dropped); continue; }
             Schedule(buffer.AsSpan(0, n).ToArray(), toServer);

@@ -356,6 +356,14 @@ list in **reverse**.
   configuration: `docs/UDP_TRANSPORT.md`; proofs:
   `tests/Allegiance.Core.Tests/Transport/P895UdpTransportTests.cs`,
   `tools/p895-transport-proof/`; report: `docs/reports/P895_REPORT.md`.
+  P895b ADU2 batching/compact records, selective delayed/piggyback ACKs and
+  blocking client receives with deadline timers (server readiness set/bounded
+  deadline heap) live in
+  `src/Allegiance.Core/Transport/UdpTransport.Records.cs`,
+  `src/Allegiance.Core/Transport/UdpTransport.Scheduling.cs`; counters in
+  `src/Allegiance.Core/Transport/UdpTransport.Statistics.cs` attribute overhead.
+  Proofs: `tests/Allegiance.Core.Tests/Transport/P895bUdpOverheadTests.cs`;
+  before/after and gate: `docs/reports/P895B_REPORT.md`.
 - **Game-flow ordering proof (P888)** — stage/result/roster/rotation frames use
   the ordered send lane; the accelerated P660 test observes its short intermission
   at production tick speed. Both writer modes and the optional reliable park lane

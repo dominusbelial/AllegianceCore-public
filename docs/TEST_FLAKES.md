@@ -4280,3 +4280,33 @@ Confirming sweep `tiers-20261030T041824` (after the P806 test fix): 11,763
   (load flake) — **3/3 pass alone**.
 - `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station`
   (load flake) — **3/3 pass alone**.
+
+## P895b gate (2026-10-30)
+
+The one executed Fast sweep retained **FAIL**: 11,885 executions, 11,863 passed,
+19 failed, 3 optional skips, plus one passing timing offender (538.3 s). All
+P895/P895b/shared cases passed in the sweep. Nine tier-runner infrastructure
+checks passed. An early qualification restart left child orchestration processes
+alive after their shell wrappers were interrupted; their duplicate Fast launch
+requests waited on the runner mutex and the existing result-directory guard
+prevents a second sweep. Actual test overlap is retained as a qualification
+limitation, not hidden as an idle-machine result. The final focused cohort was
+subsequently rerun 3/3 without other task test work running.
+
+Every failed method and the passing timing offender was selected alone three
+times, serially. Theory methods included all their cases. Full method names,
+case outcomes and receipts: [P895b verification](reports/P895B_assets/verification.json).
+
+| Case / group | Three isolated results | Assessment |
+|---|---|---|
+| Eleven Lobby methods: `P655DirectoryIntegrityTests.H23_Request_body_limit_refuses_large_payload_normal_registration_works`; `P761PlayerListTests.PublicListing_CarriesNoPilotNames_EvenWhenTheServerReportsThem`; `P806ServerListLoopbackTests.Status_skill_and_settings_sort_columns_order_the_mixed_games`; `P808IdentityTests.Passkey_account_is_stable_unique_persistent_and_requires_real_proof`; `P871ChatAndGamesTests.Directory_chat_relays_to_readers_and_does_not_echo_the_sender`; six `P894ListingFieldsTests` methods (`Game_counts_and_percent_load_follow_native_c_GameFactor`, `Location_is_recorded_and_exposed`, `No_armed_start_time_is_advertised_as_null`, `Percent_load_is_the_native_formula`, `Start_time_is_normalized_against_the_directory_clock`, `Stats_report_servers_missions_players_and_load`) | Each pass / pass / pass | Sweep hit the user's 128-inotify-instance limit during ASP.NET startup; resource contention, not UDP delivery. No lobby production source changed. |
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository`, `MissingDirectoryHasNoDefault`, `NativeSourceNeverGuessesAnInstallSubdirectory`, `LocalConfigWinsOverBundleWithBlankEnvironment` (five failed theory executions) | Each FAIL / FAIL / FAIL under the same environment | Lane-required `TMPDIR` is inside the worktree. Fixtures call it an outside-repository install, but upward root discovery finds the real solution and `local.env`, including when a mock CWD has its own root. Environmental fixture assumption; no path resolver or assertions changed. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | FAIL / FAIL / FAIL with the original profile path; pass / pass / pass with `XDG_CONFIG_HOME` in task scratch | Original fixture finally-block tries to restore the existing user profile on a read-only sandbox path. Authorized writable config-root control passes; the original Fast failure is retained. No UI/profile code changed. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | FAIL / FAIL / pass | Existing status-history/docking intermittency; not claimed fixed or 3/3 green. TCP/default path; docking source unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | FAIL / FAIL / FAIL | Existing deterministic defend assertion ledgered in P872/P887/P895. No NPC policy changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Functional pass / pass / pass; 9.892 / 9.982 / 10.072 s | Sweep 10.643 s against the unchanged 10 s limit. One isolated execution also exceeds the limit; retain the near-boundary timing observation. |
+| `RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads` (separate TCP cohort, not a Fast failure) | pass / pass / pass (0.034 / 0.032 / 0.032 s); full TCP client cohort also passes 3/3 in a clean repeat | During overlap, final acceptance count was 19 rather than 20 after the closure predicate became true. Unchanged TCP-only raw-listener fixture reads acceptance before the final async accept necessarily completes. No assertion/timing was relaxed. |
+
+Showcase receipts and any additional qualification are recorded in the P895b
+report. No unrelated test was skipped, quarantined or weakened to turn this gate
+green.
