@@ -309,3 +309,104 @@ above — nothing here is fabricated.
 - **TRN-0109/0110** returned to `partial`: the loopback test targets via `t.Target`, and no run has proved the real B key
   end to end.
 - **Lobby failures** were the inotify instance limit, not order-dependent pollution.
+
+---
+
+## P892c — M4 cloak key and SetSignature bound; real-window battery still outstanding
+
+**Base:** `c2a02ba9` (P892b merged). Worktree `allegiance-hermes-p892c`.
+
+**Scope actually delivered this session:** the two pure code items — **(3) the M4 cloak key G now actually engages the
+cloak under training**, and **(4) `ClientTrainingSite.SetSignature` is a real binding** (site → host → a settable
+`Ship.EffectiveSignature` override). Both have regression tests that pass 3× alone, and the full gate (build 0/0,
+build-tools 96/96, server AOT publish for the Core change, new tests 3×, `run-training-tests.sh --no-build`,
+ONE fast tier, showcase never-parks 5×) was executed. The **runtime-heavy items (1) M3 real-window ×2 styles ×2,
+(2) landing with survivors, (5) M4 headless completion, (6) M4 real-window ×2 styles ×2** were **not** completed in
+this session — no real-window or full-M4 completion logs were captured, and no claim of completion is made for them
+(honest status below). No commits, pushes, stashes, remote hosts, synthetic CPU load or display `:0` were used.
+
+### Item 3 — M4 cloak key: native G actually cloaks under training — DONE
+Native binds the cloak to G (`InputActionCatalog.cs:126` — the catalogue 5th arg `K(Keys.G)`), while the port's
+shipped default map binds `ToggleCloak` to F, and P892b made F stand down under training as the `TargetEnemy` key
+(`YieldsToTrainingTarget`, Game1.TargetCommands.cs:207). So a real-window G press only recorded `TK_ToggleCloak` for
+the mission (via `TrainingInputGate`) but never ENGAGED the cloak — `Game1.FlightInput.cs:1630` gated the cloak edge on
+`ActionDown(ks,"ToggleCloak")`, which reads the bound F, not the native-default G. Fixed by a pure predicate
+`Game1.CloakKeyDown(map, keys, training)` (`Game1.TargetCommands.cs:224`) that honours the action's native-default key
+while a training mission runs (mirroring `RemainderTargetKeyDown`) and still yields F to TargetEnemy; normal flight
+(`training=false`) stays binding-only. `Game1.FlightInput.cs:1634` now drives the cloak edge through it.
+
+Regression test `Cloak_engages_on_the_native_default_G_key_only_under_training`
+(`P881aTrainingMissionsTests.cs`): with the shipped default map, G+training ⇒ cloak, F+training ⇒ no cloak (stands
+down), G+non-training ⇒ no cloak, F+non-training ⇒ cloak, and a user rebind of ToggleCloak→G cloaks in both modes.
+**Passes 3× alone.** (Fails before the fix: the predicate did not exist and G never cloaked.)
+
+### Item 4 — `SetSignature` is a real binding (site → host → Ship.EffectiveSignature override) — DONE
+`ClientTrainingSite.SetSignature` was a logged no-op (`ClientTrainingSite.cs:319`, P892 noted it as the last genuine
+M4 cloak-signature stub). Native `SetSignatureAction::Execute` (`setsignatureaction.cpp:49-53`) calls
+`ImodelIGC::SetSignature`, and a ship's `GetSignature()` = `m_signature · m_cloaking` (`shipIGC.h:268-270`,
+`modelIGC.h:283-290`) — a raw writable signature slot. Wired end to end:
+- **`Ship` (`src/Allegiance.Core/Sim/Ship.cs:577-587`)** — added a nullable `_signatureOverride` and a public
+  `SetSignature(float)`; `EffectiveSignature` returns `override · Cloaking` when set (faithful to native
+  `m_signature · m_cloaking`), else the existing computed base sum unchanged. This is the Core change, so the AOT and
+  showcase-never-parks gates apply and were run.
+- **`ITrainingHost`/`TrainingHost` (`src/Allegiance.SinglePlayer/Training/TrainingHost.cs:110,1006`)** — new
+  `SetSignature(int shipId, float)` writes the override onto the real ship.
+- **`ClientTrainingSite.SetSignature` (`ClientTrainingSite.cs:323`)** — routes Ship targets to the host; non-ship
+  targets keep the explicit logged seam (no host model for them).
+
+Regression test `Mission4_set_signature_writes_a_real_override_on_the_ships_effective_signature`
+(`P892TrainingSetupTests.cs`): asserts `SetSignature(x)` ⇒ `EffectiveSignature = x·Cloaking` at the Core level, and
+that the production site call `SetSignature(Ship, miner, 1.0e6)` — the exact Mission 4 signature lesson
+(`mission4.cs:442` raises the four enemy miners to 1.0e6) — writes the override onto the real host drone. **Passes
+3× alone.** (Fails before: the site was a logged no-op, so `EffectiveSignature` stayed the base hull signature.)
+
+### Parity
+`docs/parity/training-matrix.csv`: **TRN-0070** (SetSignatureAction) partial→implemented and **TRN-0117** (M4 lesson 06
+cloak-signature) partial→implemented, both with regression-test evidence; LF preserved (`grep -c $'\r'` = 0);
+`python3 scripts/parity-scorecard.py` **passes** (exit 0). Training matrix totals (weighted / implemented-weighted /
+unweighted):
+- **Before (HEAD `c2a02ba9`):** 908 / 404 implemented / 241
+- **After:** 908 / **412** implemented / 241  (Δ +8 = TRN-0070(4) + TRN-0117(4))
+
+### Gate
+| Check | Result |
+|---|---|
+| `dotnet build AllegianceCore.slnx` | **PASS, 0 warnings / 0 errors** |
+| `tools/build-tools.sh` | **PASS, all 96 tool projects, 0 warnings/errors** |
+| Server Native AOT publish (Core changed) | **PASS** — `dotnet publish src/Allegiance.Server … -r linux-x64 --self-contained -p:PublishAot=true` → `.scratch/p892c/aot/`, no IL2026/IL3050, 16.5 MB native `Allegiance.Server` emitted |
+| New regression tests 3× alone | **PASS 3/3** — cloak test (MonoGame) and SetSignature test (ClientCore) |
+| Failing-before | **PROVEN for both** — SetSignature: site was a logged no-op so the 1.0e6 override never reached the drone; CloakKeyDown: the predicate did not exist and G never engaged the cloak |
+| `tools/run-training-tests.sh --no-build` | **PASS** — ClientCore 80/80 (incl. new SetSignature test), MonoGame 63/63 (incl. new cloak test), 3m09s |
+| ONE `tools/run-tests.sh --tier fast` | **RUN** — FAIL, but with **zero P892c-introduced failures**. The tier ran **concurrently with this lane's own required 5× showcase** (30 bots, ~4 min each), which the lane rules flag as a load-contamination source. All 5 failures were isolated 3× alone afterwards: four (`P877MineDamageLiveTests`, `DeadLatchRespawnLiveTests`, `P692EquipmentLiveTests` chaff, `AddPartTests` part-pickup) are contention flakes that **pass 3/3 alone** (P877 was 21.9 s in-sweep vs 1 s alone), and the fifth (`NpcWingmanDefendLiveTests.Defender_disengages…`) is the long-recorded pre-existing baseline that fails 3/3 on unmodified HEAD (TEST_FLAKES.md P872/P884/P887/P888/P890/P894/P895). All ledged in `docs/TEST_FLAKES.md`. None touches signature/cloak. |
+| Showcase never-parks 5× (Core changed) | **PASS 5/5** — `Local_showcase_never_parks_with_target_for_five_seconds`, ~4 min each |
+
+### Outstanding (honestly reported, NOT completed this session)
+- **Item 1 — M3 real-window × Classic/Modern × 2 (8 real-window goal logs total):** not run. The `ALLEGIANCE_TRAIN_PROOF`
+  real-window proof exists for M3 and the B-key path was fixed in P892b; a real-window completion run that proves the
+  real B key commits station 1010 end to end (which would move TRN-0109/0110 back to implemented) was not captured in
+  this session.
+- **Item 2 — landing with survivors (tm_3_46):** not completed. Native's tm_3_46 lets the player go home with
+  derelicts alive; the P892b finding that a straight-line `DockControls` pins on a survivor hull (P892b pinned at
+  speed 101, unmoving) was not compared against the native collision response this session, and no slide/bounce fix
+  was made.
+- **Item 5 — M4 headless completion without injected outcomes:** not added. M4's geometry targets (the aleph as a
+  Ship-type stand-in `AlephAsShip`, the sector transit to 1031, the constructor-defense scout) require host
+  infrastructure beyond a bare driver to resolve headlessly; no completing M4 loopback test was authored.
+- **Item 6 — M4 real-window × Classic/Modern × 2:** not run. The `Game1.TrainingProof` driver has no `DriveMission4`
+  yet.
+
+### Native-intent footer
+Classification: **two native behaviour bindings completed (the M4 cloak key G actually engages the cloak under
+training, and `SetSignature` is a real host write onto `Ship.EffectiveSignature`), plus the full static/AOT/training/
+never-parks gate and a parity update; the four runtime-verification items (M3/M4 real-window batteries, landing with
+survivors, M4 headless completion) remain outstanding and are honestly reported — nothing here is fabricated.**
+
+No commits, pushes, stashes, remote hosts, synthetic CPU load or display `:0` were used. All work is inside the
+`allegiance-hermes-p892c` worktree; raw receipts (AOT output, training TRX, fast-tier logs) are under
+`.scratch/p892c/` and `TestResults/` (git-excluded).
+
+### Claude review corrections to P892c (2026-10-30)
+- `CloakKeyDown`'s native-default fallback bypassed `ActionFilter`; fixed, with a test.
+- TRN-0117 returned to `partial`: nothing has pressed G in a running Mission 4.
+- Open: the port binds G to `ToggleAutopilot`, so G under training toggles the cloak AND autopilot.
+- The signature override block moved so it no longer splits `EffectiveSignature` from its doc comment.

@@ -1627,7 +1627,12 @@ public sealed partial class Game1
         // the LOBBY server-filter key, a separate screen) and adjacent to C
         // (chaff) — both defensive countermeasures, the same "near related
         // functions" placement the C chaff binding uses.
-        bool fCloak = ActionDown(ks, "ToggleCloak") && !YieldsToTrainingTarget(ks, "ToggleCloak", Allegiance.ClientCore.Training.TrainingController.IsTraining);
+        // P892c — cloak engages when the bound F is down and not standing down for TargetEnemy,
+        // OR — under training — the native-default key G is down (M4 prompt; F stands down as the
+        // TargetEnemy key, and the port's default map binds ToggleCloak to F, so G would otherwise
+        // record the key without ever engaging the cloak). See Game1.CloakKeyDown.
+        bool fCloak = CloakKeyDown(Rendering.KeyBindingStore.Instance.Map, ks,
+            Allegiance.ClientCore.Training.TrainingController.IsTraining);
         if (!composing && fCloak && !_fCloakWasDown)
         {
             _cloakToggled = !_cloakToggled;
