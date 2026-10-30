@@ -580,8 +580,14 @@ public sealed partial class Game1
         {
             lock (_introLobbyLock)
             {
+                // P894 — same browse-time version gate as the lobby screen: an
+                // unjoinable listing is not offered, and the Find Server footer
+                // says why (with the updater pointer).
+                var (visible, hiddenOld) = ServerListing.FilterForClient(data, InstalledClientVersion);
                 _servers.Clear();
-                _servers.AddRange(ServerListing.ExpandMissions(data));
+                _servers.AddRange(ServerListing.ExpandMissions(visible));
+                if (hiddenOld > 0 && _introFindError.Length == 0)
+                    _introFindError = $"{hiddenOld} server(s) require a newer client - update from the lobby's update feed";
             }
         }
         _lobbyResultData = null;

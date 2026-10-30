@@ -45,7 +45,22 @@ internal sealed record ServerListing(
     IReadOnlyList<MissionListingDto>? Missions = null,
     // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
     // the lobby constructor's default (lobby/server.cpp:463).
-    int CurrentGames = 0, int MaxGames = 20);
+    int CurrentGames = 0, int MaxGames = 20,
+    /// <summary>P894 / LOB-0018 — native's server location string, advertised on
+    /// the server logon (<c>szLocation</c>, <c>lobby/messagesls.h:38</c>;
+    /// <c>lobby/server.cpp:105-106</c>) and drawn in the server-list LOCATION
+    /// column (<c>WinTrek/CreateGameDialog.h:79-82</c>). Empty = not advertised.</summary>
+    string Location = "",
+    /// <summary>P894 / LOB-0007 — the host's paused state, native's
+    /// <c>FM_S_PAUSE</c> (<c>lobby/server.cpp:266-272</c>). A paused server is
+    /// never advertised (<c>lobby/mission.cpp:77-78</c>,
+    /// <c>lobby/client.cpp:356</c>): it is filtered out of every listing answer,
+    /// so this flag never reaches a client — it is the hidden rule's input.</summary>
+    bool Paused = false,
+    /// <summary>P894 / LOB-0004 — the lobby protocol version the host announced
+    /// (native <c>verLobby</c>, <c>lobby/messagesls.h:43</c>). Null = the host did
+    /// not state one (pre-P894 build, accepted).</summary>
+    int? LobbyProtocolVersion = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -86,7 +101,24 @@ public sealed record ServerListingDto(
     IReadOnlyList<MissionListingDto>? Missions = null,
     // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
     // the lobby constructor's default (lobby/server.cpp:463).
-    int CurrentGames = 0, int MaxGames = 20);
+    int CurrentGames = 0, int MaxGames = 20,
+    /// <summary>P894 / LOB-0018 — native's server location
+    /// (<c>szLocation</c>, <c>lobby/messagesls.h:38</c>; stored at
+    /// <c>lobby/server.cpp:105-106</c>, drawn in the server list's LOCATION column
+    /// at <c>WinTrek/CreateGameDialog.h:79-82</c>). Empty = not advertised.</summary>
+    string Location = "",
+    /// <summary>P894 / LOB-0029 — native's computed per-server percent load
+    /// (<c>CFLServer::GetPercentLoad</c>, <c>lobby/server.h:70-73</c>):
+    /// <c>(currentGames*c_GameFactor + players)/maxLoad</c>, with native's
+    /// <c>c_GameFactor = 5</c> and <c>m_maxLoad = 300</c> defaults. 0 when the
+    /// server advertises no capacity.</summary>
+    int PercentLoad = 0,
+    /// <summary>P894 / LOB-0017 — the mission's start time resolved against the
+    /// lobby's clock, native's <c>plmi-&gt;dwStartTime += Time::Now().clock()</c>
+    /// (<c>lobby/mission.cpp:61</c>). The server sends an offset
+    /// (<see cref="GameParamsDto.StartTimeOffsetMs"/>); the directory publishes the
+    /// absolute time. Null = no start time armed.</summary>
+    DateTimeOffset? StartTimeUtc = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -221,6 +253,23 @@ public sealed class RegisterRequest
     /// no requirement, byte-identical to a pre-P810 payload.</summary>
     public string? MinClientVersion { get; set; }
 
+    /// <summary>P894 / LOB-0018 — the server's location string, native
+    /// <c>szLocation</c> on the server logon (<c>lobby/messagesls.h:38</c>,
+    /// <c>lobby/server.cpp:105-106</c>). Optional.</summary>
+    public string? Location { get; set; }
+
+    /// <summary>P894 / LOB-0007 — the host reports it is paused, native
+    /// <c>FM_S_PAUSE</c> (<c>lobby/server.cpp:266-272</c>). A paused server is not
+    /// advertised (<c>lobby/mission.cpp:77-78</c>). Optional; omitted = running.</summary>
+    public bool Paused { get; set; }
+
+    /// <summary>P894 / LOB-0004 — the lobby protocol version the host speaks
+    /// (native <c>verLobby</c>, <c>lobby/messagesls.h:43</c>). Optional: omitted =
+    /// a pre-P894 host and accepted; a stated value must equal the lobby's
+    /// (<c>LobbySettings.LobbyProtocolVersion</c>), native's exact
+    /// <c>LOBBYVER_LS</c> match (<c>lobby/server.cpp:141-144</c>).</summary>
+    public int? LobbyProtocolVersion { get; set; }
+
     /// <summary>The ownership token; null/blank means "new registration".</summary>
     public string? Token { get; set; }
 }
@@ -292,3 +341,31 @@ public sealed class MissionListingRequest
 }
 
 public sealed record RegisterResponse(string Id, string Token);
+
+/// <summary>
+/// P894 / LOB-0009 — the master core list the directory relays (native's
+/// aggregated <c>StaticCoreInfo</c> array in <c>SERVERS_LIST</c>,
+/// <c>lobby/server.cpp:100-120</c>; <c>lobby/client.cpp:377-385</c>). Each entry is
+/// one IGC static file core and the number of live servers advertising it; a
+/// curated lobby catalog entry with no server yet carries 0.
+/// </summary>
+public sealed record LobbyCoreListDto(IReadOnlyList<LobbyCoreDto> Cores, int Servers);
+
+public sealed record LobbyCoreDto(string File, int Servers);
+
+/// <summary>
+/// P894 / LOB-0027 — the operational counters native maintained
+/// (<c>LOBBY_COUNTERS</c>/<c>PER_SERVER_COUNTERS</c>, <c>lobby/counters.h:4-26</c>;
+/// populated by <c>CLobbyApp::UpdatePerfCounters</c>,
+/// <c>lobby/lobbyapp.cpp:396-423</c>). <see cref="HiddenPausedServers"/>,
+/// <see cref="HiddenPausedMissions"/> and <see cref="HiddenEmptyMissions"/> make the
+/// paused/zero-player suppression (LOB-0007/LOB-0008) visible.
+/// </summary>
+public sealed record LobbyStatsDto(
+    int Servers,
+    int Missions,
+    int Players,
+    int PercentLoad,
+    int HiddenPausedServers,
+    int HiddenPausedMissions,
+    int HiddenEmptyMissions);

@@ -44,7 +44,24 @@ public sealed record ServerListing(
     /// design: no new data on the game-connection wire). Null/empty = none.</summary>
     string? MinClientVersion = null,
     IReadOnlyList<ServerListing.MissionListing>? Missions = null,
-    uint MissionCookie = uint.MaxValue)
+    uint MissionCookie = uint.MaxValue,
+    /// <summary>P894 / LOB-0029 — the current/max game counts the server
+    /// advertises (native <c>iCurGames/iMaxGames</c>, <c>lobby/messageslc.h:122-125</c>,
+    /// set from the server logon's <c>CurGames/MaxGames</c> at
+    /// <c>lobby/server.cpp:114-117</c>). 0/0 = no advertised capacity.</summary>
+    int CurrentGames = 0, int MaxGames = 0,
+    /// <summary>P894 / LOB-0018 — the server's advertised location, native
+    /// <c>szLocation</c> on the server logon (<c>lobby/messagesls.h:38</c>;
+    /// <c>lobby/server.cpp:105-106</c>), drawn in native's server-list LOCATION
+    /// column (<c>WinTrek/CreateGameDialog.h:79-82</c>). Empty = not advertised.</summary>
+    string Location = "",
+    /// <summary>P894 / LOB-0029 — the directory's computed per-server percent load
+    /// (native <c>CFLServer::GetPercentLoad</c>, <c>lobby/server.h:70-73</c>).</summary>
+    int PercentLoad = 0,
+    /// <summary>P894 / LOB-0017 — the mission start time resolved against the
+    /// lobby's clock (native <c>plmi-&gt;dwStartTime += Time::Now()</c>,
+    /// <c>lobby/mission.cpp:61</c>). Null = no start time armed.</summary>
+    DateTimeOffset? StartTimeUtc = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
@@ -80,6 +97,39 @@ public sealed record ServerListing(
         => !string.IsNullOrWhiteSpace(MinClientVersion)
            && Allegiance.Update.UpdateVersionGate.IsTooOld(installedVersion, MinClientVersion);
 
+    /// <summary>P894 / LOB-0020, LOB-0026 — the browse-time half of the logon
+    /// version gate: drop the listings this build cannot join (native hid/locked
+    /// what its older CRC could not enter, <c>lobby/client.cpp:272-288</c>) and
+    /// report how many were hidden so the screen can point at the updater. The
+    /// authoritative refusal is the game server's logon (P894
+    /// <c>CheckClientVersion</c>); this keeps an outdated client from offering a
+    /// join it would only be refused for.</summary>
+    public static (IReadOnlyList<ServerListing> Visible, int Hidden) FilterForClient(
+        IEnumerable<ServerListing> listings, string? installedVersion)
+    {
+        var visible = new List<ServerListing>();
+        int hidden = 0;
+        foreach (var listing in listings)
+        {
+            if (listing.RequiresNewerClient(installedVersion)) hidden++;
+            else visible.Add(listing);
+        }
+        return (visible, hidden);
+    }
+
+    /// <summary>P894 — the server-list row native drew as
+    /// <c>name | location | games | ping</c> (<c>WinTrek/CreateGameDialog.h:79-100</c>):
+    /// the location the server advertised is appended when it has one.</summary>
+    private string LocationText()
+        => string.IsNullOrWhiteSpace(Location) ? "" : "  [" + Location.Trim() + "]";
+
+    /// <summary>P894 / LOB-0029 — native's server-list games column
+    /// (<c>iCurGames/iMaxGames</c>, <c>lobby/messageslc.h:122-125</c>) plus the
+    /// directory's percent load. Pure text, empty when the host advertises no
+    /// capacity.</summary>
+    private string GamesText()
+        => MaxGames > 0 ? $"  games {CurrentGames}/{MaxGames} load {PercentLoad}%" : "";
+
     /// <summary>A usable single server-row line: name, address:port, player
     /// count, mission — the columns the browser is asked to show. Lives here
     /// (rather than in a renderer) so it is pure string logic, unit-testable
@@ -93,7 +143,7 @@ public sealed record ServerListing(
             ? $"{PlayerCount}/{MaxPlayers}"
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
-        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}   {players} players   {mission}";
+        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
     }
 
     /// <summary>
@@ -198,6 +248,14 @@ public static class ServerDirectorySearch
             "VERSION: " + (string.IsNullOrWhiteSpace(l.Version) ? "-" : l.Version),
             "PLAYERS: " + l.PlayerCount + (l.MaxPlayers > 0 ? "/" + l.MaxPlayers : ""),
         };
+        // P894 / LOB-0018 — native's server metadata: LOCATION and the games /
+        // load columns of its server list (CreateGameDialog.h:79-100).
+        if (!string.IsNullOrWhiteSpace(l.Location)) lines.Add("LOCATION: " + l.Location.Trim());
+        if (l.MaxGames > 0)
+            lines.Add($"GAMES:   {l.CurrentGames}/{l.MaxGames}   load {l.PercentLoad}%");
+        // P894 / LOB-0017 — the start time the lobby normalized against its clock.
+        if (l.StartTimeUtc is { } start)
+            lines.Add("STARTS:  " + start.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
         // P806 — the directory now carries the native MissionInfo settings, so
         // the panel can show the same facts native's list paints from them:
         // the winning condition (GameType, gametypes.cpp), the developments and
@@ -221,3 +279,14 @@ public static class ServerDirectorySearch
         return lines;
     }
 }
+
+/// <summary>
+/// P894 / LOB-0009 — the client mirror of the directory's master core list
+/// (<c>GET /api/servers/cores</c>), native's aggregated <c>StaticCoreInfo</c> array
+/// in <c>SERVERS_LIST</c> (<c>lobby/server.cpp:100-120</c>;
+/// <c>lobby/client.cpp:377-385</c>). Native offered these cores before joining;
+/// the browser shows the set and how many live servers serve each.
+/// </summary>
+public sealed record LobbyCoreList(IReadOnlyList<LobbyCoreEntry> Cores, int Servers);
+
+public sealed record LobbyCoreEntry(string File, int Servers);

@@ -418,8 +418,18 @@ public sealed partial class Game1
             _lobbyError = _lobbyResultError;
             if (_lobbyResultData is { } data)
             {
+                // P894 / LOB-0020, LOB-0026 — drop the listings this build is too
+                // old to join (the advertised minClientVersion, the browse half of
+                // native's LOGON version gate) and say so, pointing at the updater.
+                var (visible, hiddenOld) = ServerListing.FilterForClient(data, InstalledClientVersion);
                 _servers.Clear();
-                _servers.AddRange(ServerListing.ExpandMissions(data));
+                _servers.AddRange(ServerListing.ExpandMissions(visible));
+                // P894 / LOB-0009 — the directory's master core list (native's
+                // SERVERS_LIST core array). Absent when an older lobby answers.
+                _lobbyCores = _lobbyCoresStaged ?? new List<LobbyCoreEntry>();
+                _lobbyCoresStaged = null;
+                if (hiddenOld > 0)
+                    _lobbyError = $"{hiddenOld} server(s) require a newer client (this build is {InstalledClientVersion}) - update from the lobby's update feed";
                 RebuildDisplay();   // P500 — merge saved servers + fetched listings
             }
             _lobbyResultData = null;
@@ -779,11 +789,26 @@ public sealed partial class Game1
     private async Task FetchServersAsync()
     {
         List<ServerListing>? data = null;
+        List<LobbyCoreEntry>? cores = null;
         string? error = null;
         try
         {
             data = await _http.GetFromJsonAsync<List<ServerListing>>(
                 "/api/servers", ServerListing.JsonOptions).ConfigureAwait(false);
+            // P894 / LOB-0009 — the master core list the directory relays with
+            // every server-list request in native (SERVERS_LIST's core array).
+            // A lobby without the endpoint just yields no summary.
+            try
+            {
+                var list = await _http.GetFromJsonAsync<LobbyCoreList>(
+                    "/api/servers/cores", ServerListing.JsonOptions).ConfigureAwait(false);
+                cores = list?.Cores is { } c ? new List<LobbyCoreEntry>(c) : null;
+            }
+            catch (Exception e) when (e is HttpRequestException or System.Text.Json.JsonException
+                                           or NotSupportedException or TaskCanceledException)
+            {
+                cores = null;   // pre-P894 lobby: no core list advertised
+            }
         }
         catch (Exception ex)
         {
@@ -793,6 +818,7 @@ public sealed partial class Game1
         // Volatile write AFTER filling the data so the main thread's volatile
         // read of _lobbyResultPending pairs correctly.
         _lobbyResultData = data;
+        _lobbyCoresStaged = cores;
         _lobbyResultError = error;
         _lobbyResultPending = true;
         _lobbyFetchInFlight = false;
@@ -835,6 +861,19 @@ public sealed partial class Game1
             string sub = polling ? $"Polling {_lobbyUrl}/api/servers" : "Manual connect (no lobby)";
             var ssz = _hudSmall.MeasureString(sub);
             _spriteBatch.DrawString(_hudSmall, sub, new Vector2((w - ssz.X) / 2f, 52f), dimCol);
+
+            // P894 / LOB-0009 — the master core list native relays in SERVERS_LIST
+            // (lobby/client.cpp:377-385): the cores a player may pick before
+            // joining, with how many live servers serve each.
+            if (polling && !connect && _lobbyCores.Count > 0)
+            {
+                string coreText = "CORES: " + string.Join(", ", _lobbyCores.Take(4).Select(c => c.File + (c.Servers > 0 ? $" ({c.Servers})" : "")))
+                    + (_lobbyCores.Count > 4 ? $" +{_lobbyCores.Count - 4} more" : "");
+                coreText = Rendering.TeamPaneRenderer.Fit(coreText, _hudSmall, w - 120f);
+                var csz = _hudSmall.MeasureString(coreText);
+                _spriteBatch.DrawString(_hudSmall, coreText, new Vector2((w - csz.X) / 2f, 74f),
+                    new Color(0.62f, 0.80f, 0.72f));
+            }
 
             if (connect)
             {
@@ -1058,6 +1097,16 @@ public sealed partial class Game1
             var rsz = _hudSmall.MeasureString(reason);
             _spriteBatch.DrawString(_hudSmall, reason, new Vector2((w - rsz.X) / 2f, h / 2f - 18f),
                 new Color(0.88f, 0.96f, 0.95f));
+            // P894 — a refused old client is told how to fix it, not just why it
+            // failed (native sent AUTO_UPDATE_INFO and dropped the connection,
+            // lobby/client.cpp:272-288).
+            if (reason.Contains("update", StringComparison.OrdinalIgnoreCase))
+            {
+                const string updateHint = "Restart the client: the lobby's update feed installs the required build.";
+                var usz = _hudSmall.MeasureString(updateHint);
+                _spriteBatch.DrawString(_hudSmall, updateHint, new Vector2((w - usz.X) / 2f, h / 2f + 44f),
+                    new Color(0.94f, 0.82f, 0.42f));
+            }
             string hint = $"{KeyOf("LobbyRefresh").Label} retry    {KeyOf("MainMenu").Label} abort";
             var hsz = _hudSmall.MeasureString(hint);
             _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hsz.X) / 2f, h / 2f + 22f),
@@ -1087,6 +1136,9 @@ public sealed partial class Game1
     private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue)
     {
         _moderation.Reset();
+        // P894 — the reconnect/resume logon reports the same client build as the
+        // first logon so the server's minimum-client-version gate answers both.
+        _session.ClientVersion = InstalledClientVersion;
         _state = ClientState.Connecting;
         // P500 — record the ACTIVE target here, not just from LaunchOptions.
         // Every join (lobby, connect screen, resume) remembers where we are, so
@@ -1131,6 +1183,15 @@ public sealed partial class Game1
             }
             _session.SendLogonRequest(logon);
             var ack = _session.WaitForAck(5000);
+            // P894 / LOB-0020, LOB-0026 — a refused logon (the server's minimum
+            // client version, the API version, a duplicate name, a reserved
+            // callsign, the file-set CRC…) carries the reason the player must see.
+            // Before this the client ignored FValidated and walked into a side
+            // select it could never complete.
+            if (!ack.FValidated)
+                throw new InvalidOperationException(ack.CharNameOrFailureReason is { Length: > 0 } why
+                    ? why
+                    : "the server refused the logon");
             Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");
             // P281 — the server now defers our spawn to a post-connect side-select
             // step: after LOGONACK it pushes a SIDE_ROSTER(211) snapshot and holds
@@ -1787,6 +1848,16 @@ public sealed partial class Game1
             : null;
     }
 
+    /// <summary>P894 — the client build this process reports at logon (the
+    /// installed release the updater wrote, "0.0.0" for a hand-installed tree).
+    /// The game server compares it with its advertised minimum client version and
+    /// refuses an older build — native's version gate, moved to the logon the port
+    /// actually performs (<c>lobby/client.cpp:272-309</c>). Resolved once: the
+    /// on-disk manifest only changes across a restart (the update applies on
+    /// restart).</summary>
+    internal static readonly string InstalledClientVersion =
+        Allegiance.Update.UpdateState.ResolveInstalledVersion(AppContext.BaseDirectory);
+
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name,
@@ -1799,6 +1870,9 @@ public sealed partial class Game1
         // P871 — report the installed file set (native FileCRC("FileList.txt"),
         // clintlib.cpp:1418); 0 when nothing is installed (checks disabled).
         CrcFileList = ClientFileList.Compute(),
+        // P894 — the P894 client-version extension (the advertised minClientVersion
+        // gate); absent bytes on the wire until this is set.
+        ClientVersion = InstalledClientVersion,
         SteamAuthTicket = new byte[16],
         SteamAuthTicketLength = 0,
         SteamID = 70000000000000000ul,

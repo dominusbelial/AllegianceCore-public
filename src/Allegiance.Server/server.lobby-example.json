@@ -16,6 +16,8 @@
     "url": "http://127.0.0.1:5147",
     "displayName": "My Allegiance Server",
     "publicAddress": "203.0.113.10",
-    "heartbeatIntervalSeconds": 25
+    "heartbeatIntervalSeconds": 25,
+    "location": "EU North",
+    "minimumClientVersion": "2.0.0"
   }
 }

@@ -62,6 +62,9 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly Func<long>? _lobbyDirtyVersion;
     private long? _publishedDirtyVersion;
     private readonly string? _minClientVersion;
+    /// <summary>P894 / LOB-0018 — the server location advertised to the lobby
+    /// (native <c>szLocation</c>, <c>lobby/messagesls.h:38</c>).</summary>
+    private readonly string _location;
     /// <summary>P871b — the opt-in "this server can host a new player-created
     /// game right now" predicate. Only CLAIM while the server has capacity
     /// (WinTrek/CreateGameDialog.h:20). Null disables the claim path.</summary>
@@ -96,8 +99,9 @@ public sealed class LobbyHeartbeat : IDisposable
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
         Func<long>? lobbyDirtyVersion = null,
-        Func<bool>? canHostPlayerGame = null)
-        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame)
+        Func<bool>? canHostPlayerGame = null,
+        string? minimumClientVersion = null)
+        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame, minimumClientVersion)
     {
     }
 
@@ -111,8 +115,9 @@ public sealed class LobbyHeartbeat : IDisposable
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
         Func<long>? lobbyDirtyVersion = null,
-        Func<bool>? canHostPlayerGame = null)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame)
+        Func<bool>? canHostPlayerGame = null,
+        string? minimumClientVersion = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams, lobbyDirtyVersion, canHostPlayerGame, minimumClientVersion)
     {
     }
 
@@ -121,7 +126,8 @@ public sealed class LobbyHeartbeat : IDisposable
         Func<IReadOnlyList<string>>? livePlayerNames = null,
         Func<LobbyGameParams?>? liveGameParams = null,
         Func<long>? lobbyDirtyVersion = null,
-        Func<bool>? canHostPlayerGame = null)
+        Func<bool>? canHostPlayerGame = null,
+        string? minimumClientVersion = null)
     {
         _clock = clock ?? TimeProvider.System;
         _canHostPlayerGame = canHostPlayerGame;
@@ -149,8 +155,13 @@ public sealed class LobbyHeartbeat : IDisposable
         // P810 — the advertised minimum-client-version requirement (native
         // enforced it at the lobby via the LOGON crcFileList,
         // clintlib/clintlib.cpp:1418 → lobby/client.cpp:272-281; the port
-        // advertises it on the listing and the client gates at browse time).
-        _minClientVersion = string.IsNullOrWhiteSpace(config.MinimumClientVersion) ? null : config.MinimumClientVersion;
+        // advertises it on the listing and enforces it at the game-server logon,
+        // P894). The explicit argument (the server's resolved minimum) wins over
+        // the legacy lobby-block field.
+        _minClientVersion = !string.IsNullOrWhiteSpace(minimumClientVersion) ? minimumClientVersion.Trim()
+            : string.IsNullOrWhiteSpace(config.MinimumClientVersion) ? null : config.MinimumClientVersion.Trim();
+        // P894 / LOB-0018 — native's server location (szLocation).
+        _location = config.Location ?? "";
         _intervalSeconds = config.HeartbeatIntervalSeconds > 0 ? config.HeartbeatIntervalSeconds : 25;
 
         _timer = new Timer(_ => Fire(), null,
@@ -225,7 +236,8 @@ public sealed class LobbyHeartbeat : IDisposable
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
                 _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
                 _enrollment?.ServerId, _enrollment?.ServerSecret,
-                _minClientVersion, missions, missions?.Count ?? 0, MaxGames);             // P810 — advertised minimum client version (null = none)
+                _minClientVersion, missions, missions?.Count ?? 0, MaxGames,
+                _location, Allegiance.Core.LobbyProtocol.Version);             // P894 — location + stated lobby protocol version
 
 
             HttpResponseMessage resp;
@@ -622,7 +634,15 @@ internal sealed record LobbyRegisterRequest(
     string? MinClientVersion = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     IReadOnlyList<LobbyMissionListing>? Missions = null,
-    int CurrentGames = 0, int MaxGames = 99);
+    int CurrentGames = 0, int MaxGames = 99,
+    // P894 — native szLocation on the server logon (lobby/messagesls.h:38) and
+    // the server's stated lobby protocol version (native verLobby, :43), which
+    // the directory checks against its own (lobby/server.cpp:141-151). Omitted
+    // when absent so the pre-P894 wire shape is unchanged.
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    string? Location = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    int? LobbyProtocolVersion = null);
 
 public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game);
 public sealed record GameReadyBody(string ServerId, string Token, uint? Cookie);

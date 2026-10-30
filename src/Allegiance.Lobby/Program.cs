@@ -40,7 +40,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(sp => new ServerRegistry(
     sp.GetRequiredService<TimeProvider>(),
     settings.MaxEntries,
-    TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
+    TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress,
+    settings.GameFactor, settings.MaxLoad));
 
 var identity = new IdentitySettings();
 builder.Configuration.GetSection("Lobby:Identity").Bind(identity);

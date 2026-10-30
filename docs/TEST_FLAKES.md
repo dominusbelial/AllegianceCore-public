@@ -4,6 +4,32 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P894 verification observations (2026-10-30)
+
+The single Fast-tier run retained **FAIL**, 11,787 executions in 558.8 s:
+**11,777 passed / 7 failed / 3 not executed**, nine infrastructure
+checks passed. Host load average was **4.97** (24 CPUs) with other lanes running, and
+the sweep parallelises the five projects, so the timing-sensitive cases below hit the
+calibrated **10 s** limit. All P894 tests passed (Lobby 119/119 including 25 new ones;
+the ClientCore P894 logon/wire/listing cases are Fast-tier and passed). Fast receipts:
+`TestResults/tiers-20261030T035024.921523Z/`; raw logs and the e2e run:
+`~/allegiance-evidence/P894/`.
+
+| Failure | Three isolated outcomes | Classification |
+|---|---|---|
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Persistent unchanged baseline failure already ledgered under P872/P887/P888 (see the P890 section); no NPC or side-select policy changed by P894. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / fail / fail (38 s each failure) | Already ledgered intermittent (P890: fail/pass/fail; another lane: 0/3). Missile-lock tip wire path untouched by P894. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | fail / pass / pass | Already ledgered float-boundary load flake (the upper bound was `7` vs `7.0000000000000009`); timer path untouched. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Already ledgered status-roster fixture intermittency (P872/P890); dock path untouched. |
+| `P803TurretGunnerLoopbackLiveTests.Live_boarded_gunner_huds_name_the_right_turret_on_both_clients` | pass / pass / pass | Already ledgered receipt/timing intermittency; unchanged fixture and renderer. |
+| `LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire` | pass / pass / pass (0.4 s each) | Contention only: 31.8 s in the parallel sweep, 0.4 s alone. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | observed fail / pass / pass, then 0/8 failures on retry | New to this ledger: the failing assert is the elapsed-time range (`Assert.InRange(elapsed, 28.0, 31.0)`) after a `29 s` sim jump, i.e. a tick-count/timing boundary under load. P894 only adds a per-LOGONREQ string comparison (inactive when no minimum is configured) and the client-version extension (absent in this test's `LogonRequest`); no side-select, auto-seat or tick path changed. |
+
+Limit offenders (>10 s, all *passed*; standalone timings): `LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire`
+31.8 s sweep / 0.4 s alone; `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 11.0 s sweep /
+9.9-10.3 s alone (already ledgered); `MissileLockLiveTests.MissileLock_BuildsPartialThenFull...`
+38.4 s sweep (a functional failure too, above).
+
 ## P890 verification observations (2026-10-29)
 
 The single Fast-tier run retained **FAIL**, 11,741 executions in 538.2 s:

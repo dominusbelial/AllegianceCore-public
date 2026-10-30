@@ -18,12 +18,35 @@ public static class LobbyEndpoints
         settings ??= app.Services.GetRequiredService<LobbySettings>();
         // Fresh registration (no token) or idempotent heartbeat/update (valid token).
         // Rate-limited: this is the single write path a public registry must protect.
-        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, Identity.IdentityStore identities, HttpContext context) =>
+        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, Identity.IdentityStore identities, LobbySettings cfg, HttpContext context) =>
         {
             // The socket source (or a configured trusted proxy's source) owns
             // the listing. A caller cannot redirect clients to a victim IP/DNS.
             if (context.Connection.RemoteIpAddress is not { } source) return Results.BadRequest("source address required");
             req.Address = source.IsIPv4MappedToIPv6 ? source.MapToIPv4().ToString() : source.ToString();
+
+            // P894 / LOB-0005 — native's approved-server filter
+            // (IsServerAllowed, lobby/server.cpp:24-84; loopback always allowed
+            // at :131, refusal reason at :138). Applied BEFORE anything is stored,
+            // exactly like native's logon path.
+            if (!ServerAllowList.IsAllowed(req.Address, cfg.AllowedServers, cfg.ServerFilterMode))
+            {
+                Console.WriteLine($"[lobby] registration refused: {req.Address} is not on the approved-server list ({cfg.ServerFilterMode})");
+                return Results.Text(ServerAllowList.RejectionReason, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // P894 / LOB-0004 — native rejects a server whose lobby protocol
+            // version is not this lobby's own (pfmLogon->verLobby != LOBBYVER_LS,
+            // lobby/server.cpp:93,141-151) with a tailored NACK reason. A host
+            // that omits the field is a pre-P894 build: accepted.
+            if (!Allegiance.Core.LobbyProtocol.IsAccepted(req.LobbyProtocolVersion, cfg.LobbyProtocolVersion))
+            {
+                string reason = Allegiance.Core.LobbyProtocol.RejectionReason(req.LobbyProtocolVersion!.Value, cfg.LobbyProtocolVersion);
+                Console.WriteLine($"[lobby] registration refused: {req.Address} speaks lobby protocol {req.LobbyProtocolVersion}, this lobby speaks {cfg.LobbyProtocolVersion}");
+                return Results.Text($"{reason} (server protocol {req.LobbyProtocolVersion}, lobby protocol {cfg.LobbyProtocolVersion})",
+                    statusCode: StatusCodes.Status409Conflict);
+            }
+
             if (req.Port is < 1 or > 65535) return Results.BadRequest("port must be in 1..65535");
             req.Verified = identities.VerifyServer(req.IdentityServerId, req.IdentityServerSecret) is not null;
             if (!req.Verified && (req.IdentityServerId is not null || req.IdentityServerSecret is not null)) return Results.Unauthorized();
@@ -49,6 +72,20 @@ public static class LobbyEndpoints
         // Public read — no auth. P761b: a player COUNT only; no pilot names
         // (the roster is not published — see ServerListingDto's remarks).
         app.MapGet("/api/servers", (ServerRegistry registry) => Results.Ok(registry.List()));
+
+        // P894 / LOB-0009 — the master core list, the HTTP analogue of the
+        // SERVERS_LIST message's core array (native aggregates every connected
+        // server's StaticCoreInfo into one list the client offers before joining,
+        // lobby/server.cpp:100-120 BuildStaticCoreInfo; lobby/client.cpp:377-385).
+        // Curated lobby catalogs (P871 gameCores) are included when configured.
+        app.MapGet("/api/servers/cores", (ServerRegistry registry, LobbySettings cfg) =>
+            Results.Ok(registry.CoreList(cfg.GameCores)));
+
+        // P894 / LOB-0027 — the operational counters native kept in shared memory
+        // (lobby/counters.h:4-26, lobby/lobbyapp.cpp:396-423): servers, missions,
+        // players in missions and the per-server percent load. The HTTP directory
+        // can answer them on demand instead of exporting perfmon counters.
+        app.MapGet("/api/servers/stats", (ServerRegistry registry) => Results.Ok(registry.Stats()));
 
         // P761b — FIND_PLAYER: the lobby is asked about exactly ONE pilot and
         // answers which server(s) that pilot sits on (native

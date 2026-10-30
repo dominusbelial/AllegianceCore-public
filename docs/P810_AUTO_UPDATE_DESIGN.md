@@ -115,9 +115,12 @@ manifest-2.0.0.json          # UpdateManifest: version + every file (path, size,
   a newer client than installed (pure rule in
   `Allegiance.ClientCore.Game/ServerListing.cs`, both lobby flows). Native
   enforced this at the lobby itself via the LOGON `crcFileList`
-  (`clintlib.cpp:1418` → `client.cpp:272-281`); the port advertises instead —
-  classified **design (modernised: no new data on the game-connection wire;
-  the join protocol stays byte-compatible)**.
+  (`clintlib.cpp:1418` → `client.cpp:272-281`); P810 advertised instead, and
+  **P894 finished the native rule**: the game server now enforces the same
+  minimum at LOGONREQ using the optional `P894` client-version extension (no
+  native field moved; a logon without the extension is byte-identical to
+  before), with the refusal reason pointing at the updater. See
+  `docs/reports/P894_REPORT.md`.
 
 ### Server (`src/Allegiance.Server`)
 

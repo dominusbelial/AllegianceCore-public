@@ -51,4 +51,37 @@ public sealed class LobbySettings
     /// <c>GET /api/config/zone-web</c>. Empty means "not configured": the client
     /// omits the link.</summary>
     public string ZoneWebUrl { get; set; } = "";
+
+    /// <summary>P894 / LOB-0004 — the lobby ⇄ server protocol version this lobby
+    /// speaks (native <c>LOBBYVER_LS</c>, <c>lobby/server.cpp:93,141-151</c>). A
+    /// registering server that advertises a different
+    /// <see cref="ServerListingDto.LobbyProtocolVersion"/> is refused, native's
+    /// <c>LOGON_SERVER_NACK</c> reason; a pre-P894 host that omits the field is
+    /// accepted. Default 1 = <see cref="Allegiance.Core.LobbyProtocol.Version"/>.</summary>
+    public int LobbyProtocolVersion { get; set; } = Allegiance.Core.LobbyProtocol.Version;
+
+    /// <summary>P894 / LOB-0005 — the approved-server list, native's
+    /// <c>Allegiance.cfg [Lobby] NumberOfServers/Server1..N</c> read by
+    /// <c>IsServerAllowed</c> (<c>lobby/server.cpp:24-84</c>). Entries are matched
+    /// with native's prefix rule (the config entry starts with the caller's IP,
+    /// e.g. <c>10.0.0.</c> or a full address) and loopback is always allowed.
+    /// <b>Empty by default</b>: an unconfigured lobby accepts every server, so
+    /// community-hosted servers keep listing.</summary>
+    public List<string> AllowedServers { get; set; } = [];
+
+    /// <summary>P894 / LOB-0005 — native's <c>[Lobby] FilterType</c>
+    /// (<c>lobby/server.cpp:39-51</c>): <c>allow</c> (default) treats
+    /// <see cref="AllowedServers"/> as an allowlist, <c>block</c> as a blocklist.
+    /// Ignored while the list is empty (native: "no entry so allow all servers").</summary>
+    public string ServerFilterMode { get; set; } = "allow";
+
+    /// <summary>P894 / LOB-0029 — native's <c>c_GameFactor = 5</c>
+    /// (<c>lobby/server.h:17</c>): a listed game weighs as many players when the
+    /// per-server percent load <c>(games*factor + players)/maxLoad</c> is computed
+    /// (<c>lobby/server.h:70-73</c>).</summary>
+    public int GameFactor { get; set; } = 5;
+
+    /// <summary>P894 / LOB-0029 — native's per-server load denominator
+    /// (<c>m_maxLoad</c>, <c>lobby/server.cpp:457</c>'s 300 default).</summary>
+    public int MaxLoad { get; set; } = 300;
 }

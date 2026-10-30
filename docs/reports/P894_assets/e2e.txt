@@ -1,0 +1,38 @@
+lobby pid 170920
+server pid 170966
+[p894-e2e] PASS the server is listed by the lobby (1 listing(s))
+[p894-e2e] PASS the listing names 127.0.0.1:26073
+[p894-e2e] row: [unverified] P894 E2E Server  127.0.0.1:26073  [Loopback Lab]   0 players   P894 E2E  games 1/99 load 0%
+[p894-e2e] PASS location advertised: 'Loopback Lab'
+[p894-e2e] PASS game capacity advertised: 1/99, load 0%
+[p894-e2e] PASS minimum client version advertised: '2.0.0'
+[p894-e2e] PASS the client's details panel shows the location
+[p894-e2e] browse gate for installed 0.0.0: 0 visible, 1 hidden
+[p894-e2e] PASS an outdated client hides the listing that requires a newer build
+[p894-e2e] PASS master core list relayed: PCore001.igc
+[p894-e2e] PASS directory counters: 1 server(s), 0 player(s)
+[p894-e2e] PASS logon with client 2.0.0 accepted -> 'P894JOIN'
+[p894-e2e] PASS joined and seated (ship id 8098)
+[p894-e2e] PASS logon with client 0.0.1 refused
+[p894-e2e] refusal reason: your client (0.0.1) is older than this server's minimum (2.0.0) - update the client and reconnect; the lobby's update feed installs it
+[p894-e2e] PASS the refusal names the required build
+[p894-e2e] PASS the refusal points at the updater
+[p894-e2e] PASS the refusal says the client is older
+[p894-e2e] PASS the refused client was never seated
+[p894-e2e] ALL CHECKS PASSED
+--- server log tail ---
+[stage] peer 1 'P894JOIN' -> MISSION_STAGE(37) NotStarted
+[entergame] peer 1 'P894JOIN' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)
+[overrun] tick cost 73.72 ms exceeded period 50 ms by 23.72 ms (sim continues at full rate)
+[conn] new connection ID: 2 IP: 127.0.0.1 name 'P894OLD' (FedSrv.CPP:4536-4546)
+[conn-drop] peer 1 left reason=ReadErrorOrEof
+[conn] peer 1 (P894JOIN) dropped without a logoff → cTimeouts=1 (FedSrv.CPP:4558-4562)
+[logoff] ship 8098 — SHIP_DELETE(20) SDR_LOGGEDOFF -> 0 peer(s)
+[autoaccept] side 0 emptied pre-game => AUTO_ACCEPT(52) fAutoAccept=true whole-mission -> 0 peer(s) (fsmission.cpp:934-941,1158)
+[autoaccept] sweep side 0: seated 0 pending requester(s), dropped 0 stale
+[quit] ship 8098 left mission (reason LinkDead): QUIT_MISSION(124) whole-mission to 0 peer(s)
+[conn] peer 1 left
+[conn] peer 2 'P894OLD' joined
+[logon] 2 'P894OLD': client version '0.0.1' refused — your client (0.0.1) is older than this server's minimum (2.0.0) — update the client and reconnect; the lobby's update feed installs it
+[logon] 2 'P894OLD' validated=False -> 'your client (0.0.1) is older than this server's minimum (2.0.0) — update the client and reconnect; the lobby's update feed installs it' (server time 895, ship 0)
+[conn-drop] peer 2 left reason=ReadErrorOrEof
