@@ -197,6 +197,18 @@ public sealed partial class Game1
     internal static bool RemainderTargetKeyDown(Rendering.ActionMap map, KeyboardState keys, string action, bool training)
     {
         if (map.IsDownMostSpecific(keys, action)) return true;
-        return training && TrainingInputGate.NativeDefaultKeyDown(keys, action);
+        return training && map.ActionFilter?.Invoke(action) != false
+            && TrainingInputGate.NativeDefaultKeyDown(keys, action);
     }
+
+    /// <summary>While a training mission runs, a key the native prompt names means the native action,
+    /// so the port's normal-flight action on the same key stands down: B targets the base without
+    /// opening the scoreboard over the landing, F targets an enemy without toggling the cloak.</summary>
+    internal static bool YieldsToTrainingTarget(KeyboardState keys, string action, bool training)
+        => training && action switch
+        {
+            "Scoreboard" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetFriendlyBase"),
+            "ToggleCloak" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetEnemy"),
+            _ => false,
+        };
 }

@@ -284,12 +284,10 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             if (enemyKey > enemyKeySeen) { enemyKeySeen++; t.PressAction("TargetEnemy", Keys.F); }
             if (basePrompt > baseSeen) { baseSeen++; t.Target(ObjectType.Station, 1010); killing = false; landing = true; }
             if (spacebar > spacebarSeen) { spacebarSeen++; t.Press(Keys.Space); }
-            // Goal 10's go-home SPACE ("Press the SPACE key when you are ready to go home"): the native
-            // derelict sphere (TRN-0218, mission3.cpp:204-229) scatters the hulls over the flight path
-            // home, so — exactly as native instructs (mission3.cpp:1069-1096: "Fly around the derelicts
-            // and destroy them... when you are ready to go home") — the trainee must destroy every
-            // derelict before leaving. A survivor between the start point and the station traps the ship
-            // short of the landing bay and stalls goal 13.2 (the P892b finding).
+            // Goal 10's go-home SPACE. Native leaves this to the player (mission3.cpp:1090: "when you are
+            // ready to go home") and a human steers round any survivors, but this driver's DockControls
+            // flies straight at the station with no avoidance and pins on a hull of the native sphere
+            // (TRN-0218). So the DRIVER clears the path first; killing all ten is not a native rule.
             if (spaceKey > spaceKeySeen && nextDerelict > 1009) { spaceKeySeen++; t.Press(Keys.Space); }
             if (t.Count("Land in a green hangar") > 0) { killing = false; landing = true; }
 
@@ -510,6 +508,18 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.False(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.F), "TargetEnemy", training: false));
         // A genuinely-bound action is recognised regardless of the training flag.
         Assert.True(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.T), "Target", training: false));
+        // The mission's key filter still wins: a key the lesson rejected must not select a target.
+        map.ActionFilter = action => action != "TargetFriendlyBase";
+        Assert.False(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.B), "TargetFriendlyBase", training: true));
+    }
+
+    [Fact]
+    public void Native_target_keys_do_not_fire_the_ports_action_on_the_same_key_under_training()
+    {
+        Assert.True(Game1.YieldsToTrainingTarget(new KeyboardState(Keys.B), "Scoreboard", training: true));
+        Assert.True(Game1.YieldsToTrainingTarget(new KeyboardState(Keys.F), "ToggleCloak", training: true));
+        Assert.False(Game1.YieldsToTrainingTarget(new KeyboardState(Keys.B), "Scoreboard", training: false));
+        Assert.False(Game1.YieldsToTrainingTarget(new KeyboardState(Keys.F), "ToggleCloak", training: false));
     }
 
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner

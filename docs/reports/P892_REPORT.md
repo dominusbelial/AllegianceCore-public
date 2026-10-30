@@ -298,3 +298,14 @@ honours native-default keys under training, so M3 goal 12 advances by the real k
 `ProofOrderTarget` workaround was removed. No visual/network/balance change. `SetSignature` (M4
 cloak-signature) and the M4 real-window/headless completions remain outstanding and are honestly reported
 above — nothing here is fabricated.
+
+### Claude review corrections (2026-10-30)
+- **Derelicts:** native does not require killing all ten (`mission3.cpp` tm_3_46: SPACE "when you are ready to go
+  home"). The stall is this driver's straight-line `DockControls`, not a native rule; the test comment is corrected.
+  Open question: whether a real client with survivors can still land.
+- **Key filter:** the native-default fallback bypassed `ActionFilter`, so a key the lesson rejected still selected a
+  target. It now honours the filter (regression test added).
+- **Key collisions:** under training B also opened the scoreboard and F also toggled the cloak; both now stand down.
+- **TRN-0109/0110** returned to `partial`: the loopback test targets via `t.Target`, and no run has proved the real B key
+  end to end.
+- **Lobby failures** were the inotify instance limit, not order-dependent pollution.
