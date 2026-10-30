@@ -74,6 +74,26 @@ over the limit. Functional passes are not presented as three timing-limit passes
 Raw TRX/logs remain in `.scratch/p888/` in the assigned worktree. The failed
 Fast gate and intermittent isolation failures are preserved.
 
+## P886c gate observations (2026-10-29/30)
+
+P886c touches only the real-window training proof driver (`Game1.TrainingProof.cs`, inert
+unless `ALLEGIANCE_TRAIN_PROOF=1`). The deterministic training subsets and the P881a Live
+suite all pass in isolation. The Fast sweep (`tiers-20261030T001936.845777Z`) reported four
+non-task failures — none on a training path — isolated as follows:
+
+| test | sweep result | isolated |
+| --- | --- | --- |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | failed once (38.3 s, also the calibrated-limit offender) | **0/3 — fails 3/3 alone** (38 s each): a pre-existing baseline failure on the missile-lock-tips wire path, untouched by this lane's training-proof work |
+| `P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment(kind: "chaff")` | failed once | flaky — passed 3rd isolated run (dispenser/chaff live path, untouched) |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | failed once | flaky — passed 3rd isolated run |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | failed once | **3/3 pass** — the already-ledgered launcher-receipt load flake |
+
+Also observed: `tools/run-training-tests.sh --no-build` (the training Fast+Live gate) intermittently
+**hangs on the shared host without producing a trx**, the same condition P886b recorded; every
+isolated training subset passes (TR3/TR4/TR5 RunsToCompletion, TrainingMission2, TrainingFramework,
+TrainingControlMask, TR2, P880a, P882b, P886b regression, and the P881a MonoGame Live M2/M3 suite
+10/10).
+
 ## P887 gate observations (2026-10-29)
 
 P887 flips three server defaults to the rig baseline (parallelBuild, native ship-update

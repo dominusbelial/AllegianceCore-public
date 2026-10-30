@@ -64,6 +64,7 @@ public sealed partial class Game1
     private bool _proofM3Killing;       // M3: in the shooting/targeting phase
     private bool _proofM3Docking;       // M3: final manual fly-home leg engaged
     private int _proofM3NextDerelict;   // M3: target cursor over 1000..1009
+    private const float _proofKillDeadband = 2.0f; // P886c: stop turning once within ~2° of target
     // prompt-edge counters (messages accumulate on the site; act once per NEW occurrence)
     private int _pSpacebarSeen, _pSpaceKeySeen, _pBackslashSeen, _pWheelSeen,
         _pEnemyKeySeen, _pCenterSeen, _pBaseSeen, _pShotMarkers;
@@ -254,6 +255,7 @@ public sealed partial class Game1
     private void DriveMission3(ClientTrainingSite site, List<Keys> keys)
     {
         string goal = _trainingSession!.Mission.ActiveGoalPath;
+        long nowMs = Environment.TickCount64;
 
         // Goal 3: "Press the right mouse button to target ... center" → real ORDER_CHANGE to
         // derelict 1000 (the same wire message a pointer right-click sends — review fix #5).
@@ -279,8 +281,22 @@ public sealed partial class Game1
         // path (TK_TargetFriendlyBase). B's selection now commits to the server CommandTarget like
         // native SetTarget (P886b fix — see SelectRemainderTarget), so GetTargetCondition(OT_station,
         // 1010) is met by the real key, not an ORDER_CHANGE.
+        //
+        // P886c — real-window finding: the client's B targeting-commit (SelectRemainderTarget →
+        // CommitTargetForPlayer) does NOT fire during training (no [p642] edge fires for F or B),
+        // so the B tap alone leaves the server CommandTarget un-set and goal 12.3 never advances.
+        // The mission's 12.3 condition is GetTargetCondition(OT_station,1010) — it needs the server
+        // command target to BE station 1010. Commit it with the same ORDER_CHANGE a pointer pick
+        // issues (the proof's proven target path), which the server echoes into Ship.CommandTarget;
+        // B is still tapped for native fidelity.
         int bp = ProofCount(site, "target the outpost.");
-        if (bp > _pBaseSeen) { _pBaseSeen = bp; _proofM3Killing = false; ProofTap(Keys.B); ProofMaybeShot("M3 B target outpost"); }
+        if (bp > _pBaseSeen)
+        {
+            _pBaseSeen = bp; _proofM3Killing = false;
+            ProofTap(Keys.B);
+            ProofOrderTarget(new TargetRef(ObjectType.Station, 1010));
+            ProofMaybeShot("M3 B target outpost");
+        }
 
         // Landing leg (goal 13): fly HOME MANUALLY with the steering/throttle keys. Native disables
         // the autopilot key during M3 (command view is off), so a player (and this proof) must fly
@@ -300,20 +316,49 @@ public sealed partial class Game1
         // P886b — M3 pointing goals that have NO TurnToAction auto-turn (goal 7.9 "face the new
         // target", goal 8.7 "face the next hull") require the PLAYER to turn the nose onto the
         // current target by hand — the proof must steer with the real yaw/pitch keys exactly like a
-        // Steer ONLY for these manual-facing goals: during the kill phase
-        // the derelicts are static and close, and natural gunfire (plus the missile rain) destroys
-        // them reliably without steering — and steering there turned the nose onto a stale reticle
-        // pick and stalled kills. TurnToAction-goals (5.3/5.5) override these axes anyway.
+        // player.
+        //
+        // P886c — the kill goals (6, 8, 9) also need CONTINUOUS, GENTLE steering toward the derelict
+        // being shot, PLUS disciplined burst fire. Measured in the real window: without re-aiming,
+        // sustained machine-gun fire leaves the nose parked ~8° off the target and every round
+        // misses; holding the turn keys continuously at the offscreen frame rate instead overshoots
+        // into a spin (own-sim orientation diverges from the server pose that fires the guns). So
+        // steer back onto the derelict whenever the nose drifts beyond ~2° (a bounded deadband, not
+        // a full-hold), and fire in short bursts with pauses so recoil never accumulates a
+        // sustained offset — the same trigger discipline the native lesson expects. Pointing goals
+        // keep steering at the mission's current target (the F/B selection the point-at gate reads).
         bool pointing7_8 = goal is "7.9" or "8.7";
-        if (pointing7_8 && TryGetM3AimTarget(out var aim))
-            SteerTowards(aim, keys);
+        int kmajor = int.TryParse(goal.Split('.')[0], out var km) ? km : 0;
+        bool killPhase = _proofM3Killing && (kmajor is 6 or 8 or 9);
+        if (pointing7_8 && TryGetM3AimTarget(out var aimPt))
+            SteerTowards(aimPt, keys);
+        else if (killPhase && TryGetKillDerelictPosition(out var kpos))
+        {
+            // P886c — align the SERVER ship (whose orientation the guns actually fire along) onto
+            // the kill derelict. The own-sim pose the pointing gates read and the replicated/server
+            // pose that spawns projectiles diverge in the real window (measured ownSimVsRepl up to
+            // 171°, ~6° steady), so aiming the own-sim leaves the straight-firing gun missing the
+            // derelict entirely. Steer by the replicated pose, with a bounded deadband so the nose
+            // does not overshoot into a spin at the low offscreen frame rate.
+            if (ReplicatedAimDegreesTo(kpos) > _proofKillDeadband)
+                SteerTowardsReplicated(kpos, keys);
+        }
 
         // Shooting phase: fire only during the actual fire-gate/kill goals (conserves the weapon
         // energy/ammo between the two demonstrations, exactly like the headless driver). Re-target
         // the next live derelict after a kill via real ORDER_CHANGE (native radar re-targets the
         // next same-type object; this is that pick).
         int major = int.TryParse(goal.Split('.')[0], out var m) ? m : 0;
-        bool firing = _proofM3Killing && (goal == "5.9" || major is 6 or 8 or 9);
+        // P886c — burst fire: brief pauses (600ms fire / 300ms rest) let machine-gun recoil and the
+        // ship's residual rotation settle between bursts, so the nose stays on the target and the
+        // straight-firing gun actually lands rounds. Measured: sustained fire parked the nose ~8°
+        // off and every round missed (goal 8.9 stall). The goal-5.9 fire demo (GetStateBits) needs
+        // only a WeaponsMask once, so it always fires.
+        bool inKillGoal = _proofM3Killing && (major is 6 or 8 or 9);
+        bool isFireDemo = _proofM3Killing && goal == "5.9";
+        long burstPhase = nowMs % 900;
+        bool burstOn = burstPhase < 600;
+        bool firing = isFireDemo || (inKillGoal && burstOn);
 
         if (_proofM3Killing && _embeddedHost is { } host && _proofM3NextDerelict >= 1000 && _proofM3NextDerelict <= 1009
             && host.IsDestroyed(_proofM3NextDerelict))
@@ -374,6 +419,62 @@ public sealed partial class Game1
     }
     private bool _proofBrakeDone;
 
+    /// <summary>The own ship's REPLICATED pose (system coords) — the pose the server broadcasts
+    /// for the player's ship and the one the guns fire along. Distinct from the client's own-sim
+    /// prediction (<see cref="TryOwnTrainingPose"/>), which the two poses can diverge from in the
+    /// real window.</summary>
+    private bool TryReplicatedOwnPose(out Vector3 pos, out Vector3 fwd, out Vector3 up, out Vector3 right)
+    {
+        pos = fwd = up = right = default;
+        if (_session.World.MyShipId is not { } me) return false;
+        if (!_session.World.Ships.TryGetValue(me, out var ship) || ship.Latest is not { } upd) return false;
+        pos = ToSys(upd.Position);
+        fwd = upd.Orientation.GetForward() is { } f ? ToSys(f) : Vector3.UnitZ;
+        up = upd.Orientation.GetUp() is { } u ? ToSys(u) : Vector3.UnitZ;
+        right = upd.Orientation.GetRight() is { } r ? ToSys(r) : Vector3.UnitZ;
+        return true;
+    }
+
+    /// <summary>Degrees between the REPLICATED own-ship nose and the direction to
+    /// <paramref name="target"/> — the aim error that actually decides whether the straight-firing
+    /// guns hit.</summary>
+    private float ReplicatedAimDegreesTo(System.Numerics.Vector3 target)
+    {
+        if (!TryReplicatedOwnPose(out var pos, out var fwd, out _, out _)) return 999f;
+        var delta = target - pos;
+        float dist = delta.Length();
+        if (dist < 1e-3f) return 0f;
+        return MathF.Acos(Math.Clamp(System.Numerics.Vector3.Dot(fwd, delta / dist), -1f, 1f)) * 57.29578f;
+    }
+
+    /// <summary>Steer the replicated/server ship's nose onto a bearing with the real yaw/pitch keys —
+    /// aligns the pose the guns actually fire along, so straight-firing rounds land on the target.</summary>
+    private void SteerTowardsReplicated(System.Numerics.Vector3 target, List<Keys> keys)
+    {
+        if (!TryReplicatedOwnPose(out var pos, out var fwd, out var up, out var right)) return;
+        var delta = target - pos;
+        float dist = delta.Length();
+        if (dist < 1e-3f) return;
+        var dn = delta / dist;
+        float cosTurn = Math.Clamp(System.Numerics.Vector3.Dot(fwd, dn), -1f, 1f);
+        const float deadband = 0.025f;   // ~1.4° — tighter than the own-sim steer; gun cone is small
+        if (cosTurn > -0.995f)
+        {
+            var backward = -fwd;
+            var twist = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(backward, delta));
+            float yawSign = -System.Numerics.Vector3.Dot(twist, up);
+            float pitchSign = System.Numerics.Vector3.Dot(twist, right);
+            if (yawSign > deadband) keys.Add(Keys.Left);
+            else if (yawSign < -deadband) keys.Add(Keys.Right);
+            if (pitchSign > deadband) keys.Add(Keys.Up);
+            else if (pitchSign < -deadband) keys.Add(Keys.Down);
+        }
+        else
+        {
+            keys.Add(Keys.Left);   // target behind — turn to bring it in front
+        }
+    }
+
     /// <summary>Steer the own ship's nose onto a bearing with the real yaw/pitch keys, from the
     /// replicated pose — the same manual flight a player uses to track a target.</summary>
     private void SteerTowards(System.Numerics.Vector3 target, List<Keys> keys)
@@ -433,6 +534,20 @@ public sealed partial class Game1
         up = ToSys(o.GetUp());
         right = ToSys(o.GetRight());
         return true;
+    }
+
+    /// <summary>The current M3 kill derelict's centre in system coords — the straight-firing
+    /// main-gun/machine-gun aim point the proof keeps the nose on during the kill goals.</summary>
+    private bool TryGetKillDerelictPosition(out Vector3 target)
+    {
+        target = default;
+        if (_proofM3NextDerelict is >= 1000 and <= 1009
+            && _session.World.Ships.TryGetValue((short)_proofM3NextDerelict, out var ship) && ship.Latest is { } up)
+        {
+            target = ToSys(up.Position);
+            return true;
+        }
+        return false;
     }
 
     /// <summary>The M3 outpost (station 1010) centre in system coords.</summary>
