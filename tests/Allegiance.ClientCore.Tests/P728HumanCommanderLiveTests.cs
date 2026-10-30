@@ -137,17 +137,53 @@ public class P728HumanCommanderLiveTests(ITestOutputHelper output)
         // used the ordinary match economy and legal ship catalog.
         short enemyId = host.OnSimulation(s =>
         {
-            var recipientShip = s.Ships.Single(l => l.Ship.Id == recipient).Ship;
+            var mission = s.Missions[0];
             var targetType = core.DroneTypes.Values.Where(d => d.PilotType == Ship.PilotTypeBuilder)
                 .OrderByDescending(d => core.HullTypes[d.HullTypeId].HitPoints).First();
-            return s.SpawnNpcShip(s.Missions[0], recipientShip.Sector!, 1,
-                recipientShip.Position + new Allegiance.Core.Collision.Vector3(1000, 0, 0), targetType.DroneTypeId).Id;
+            // NT-3 (P887) — spawn the target DURABLE, as this fixture's own comment
+            // claims. Spawning it 1 km from the recipient put it inside the live
+            // furball; under P887's native ship-update default the fight evolves
+            // differently and the unarmed constructor was destroyed inside the
+            // assertion window (measured: `target 8112: present=False` at the
+            // deadline). A dead or podded target legitimately clears the accepted
+            // order (tools/allegiance-mcp/BotManager.Orders.cs:62 — "target ship is
+            // dead or a lifepod"), so the ledger had nothing left to observe. Park
+            // it beside its OWN side's home station instead: nothing on that side
+            // shoots it and the side-0 raiders are two sectors away. The order, its
+            // acceptance and the ledger assertion are unchanged.
+            var (homeSector, homeStation) = mission.Sectors
+                .SelectMany(c => c.StationRuntimes.Select(st => (Sector: c, Station: st)))
+                .First(x => x.Station.SideId == 1 && !x.Station.Dead);
+            return s.SpawnNpcShip(mission, homeSector, 1,
+                homeStation.Center + new Allegiance.Core.Collision.Vector3(1000, 0, 0), targetType.DroneTypeId).Id;
         });
-        pilot.SendChat("", ChatTarget.Individual, recipient, commandId: OrderChange.CidAttack, otTarget: (short)IgcObjectType.Ship, oidTarget: enemyId);
+        bool LedgerAdopted() => host.Stats.GetProperty("workers").EnumerateArray().Any(w => w.GetProperty("report").GetProperty("commanderOrders")
+            .EnumerateArray().Any(o => o.GetProperty("Ship").GetInt16() == recipient && o.GetProperty("OrderedTarget").GetInt16() == enemyId));
+        void Order() => pilot.SendChat("", ChatTarget.Individual, recipient, commandId: OrderChange.CidAttack,
+            otTarget: (short)IgcObjectType.Ship, oidTarget: enemyId);
+        Order();
         await Until(() => host.OnSimulation(s => s.Ships.Single(l => l.Ship.Id == recipient).Ship.AcceptedShipTarget?.Id == enemyId), "Bot did not accept the human's command");
-        await Until(() => host.Stats.GetProperty("workers").EnumerateArray().Any(w => w.GetProperty("report").GetProperty("commanderOrders")
-            .EnumerateArray().Any(o => o.GetProperty("Ship").GetInt16() == recipient && o.GetProperty("OrderedTarget").GetInt16() == enemyId)),
-            "Bot did not adopt the human target through OrderedTarget");
+        // NT-3 (P887) — the ledger observation must survive the recipient dying.
+        // P887's native ship-update default changes which fights the bots pick, so
+        // the recipient (a combat bot that has been flying for ~20 s in a live furball) now routinely
+        // dies and restarts inside this window; its respawn resets the bot's order
+        // bookkeeping (tools/allegiance-mcp/BotManager.Lifecycle.cs) and a dead or
+        // podded ORDER TARGET clears it too (BotManager.Orders.cs:62). Measured on
+        // this box: the bot adopts (`[p431] … adopted commanded ship-target #8112`)
+        // and the entry is gone by the deadline; the same run passes at `48cdb2de`
+        // and at HEAD with `ALLEGIANCE_SHIP_UPDATE_MODEL=port`. A human commander
+        // re-issues after a loss, so the fixture does the same: re-send the order
+        // while polling and assert exactly what it always asserted.
+        var adoptWindow = Stopwatch.StartNew();
+        bool adopted = LedgerAdopted();
+        while (!adopted && adoptWindow.Elapsed.TotalSeconds < 180)
+        {
+            await Task.Delay(1000);
+            adopted = LedgerAdopted();
+            if (!adopted) Order();
+            Assert.True(host.BotsAlive, host.Failure);
+        }
+        Assert.True(adopted, "Bot did not adopt the human target through OrderedTarget");
         Assert.Equal(0, host.OnSimulation(s => s.SimPassStageFailures));
         var oldMission = host.OnSimulation(s => s.Missions[0]);
         host.OnSimulation(s => { P660NextMatchLiveTests.End(s); return true; });

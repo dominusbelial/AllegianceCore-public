@@ -4,6 +4,38 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## NT-3 nightly triage (2026-10-30 nightly, `b567ee1f`)
+
+Full triage and evidence: `docs/reports/NT3_NIGHTLY_TRIAGE.md`. Base for the
+nightly diff is `48cdb2de` (10-29 night). The 10-29 merge window flipped three
+server defaults — `sim.nativeGotoPlan` (**P875** `28052050`; `broadcast.parallelBuild`
++ `broadcast.shipUpdateModel` + `transport.mode` (**P887** `76c6355e`) — and five
+fixtures/budgets were calibrated on the old defaults. Those are fixed in the NT-3
+worktree (test-only). The rows below are the ones that are **not** reproducible
+here, plus the persistent failures the nightly keeps reporting.
+
+| Test | Three isolated outcomes | Classification |
+|---|---|---|
+| `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` (Fast) | pass / pass / pass (2 s each) + **4/4 in a bounded 4-way self-parallel run** (load 3.1–6.0 on 24 CPUs) | Load flake; already ledgered under P887 §4 ("failed once in sweep 1, `travelled 126.161`; passes alone"). Re-confirmed, no new entry needed. |
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` (Fast) | pass / pass / pass (1–2 s) + 4/4 in the same parallel run | Load flake, **new entry**: the live half of this test ticks a real server (`ApplyNpcAutopilot` + one `TickSim`); nothing in the 10-29 window touches the range-maintenance code (`Ship.ComputeWingmanRangeThrottle` untouched), and the deterministic reflection cases pass. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (Live) | pass / pass / pass (2–3 s: `[P521-2C] B saw A die … after 0 ticks`) + 4/4 in parallel | Load flake, **new entry**: two real `ConnectionSession`s over TCP; both latches are already-true-on-first-poll, so any intake delay from a busy sweep only lengthens it (no threshold close to the wire). `P890`'s dispatch change is inert here (no client poses with `Time != 0`). |
+| `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` (Live) | **fail / fail / fail** (331 / 294 / 560 s), identical assertion | **Persistent master failure, not a 10-29 regression**: fails identically at the pre-window base `48cdb2de` (`Assert.Single(sectors)` → `[1054, 1058]`, i.e. the two sides' main clash forms in different resource sectors). Open; needs a clash-selection investigation (no `src/` change in this task). |
+| `SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides` (Live) | **fail / fail / fail** (602 s each: `enough=false`) | **Regression of P877 `72f04522`** — passes at `72f04522^1` (`ea132a30`, 5 m 23 s). `homeMines` never reaches 2 because every mine is now an *escape* mine at the drop point; see the report §6. Open (bot policy; not changed by this task). |
+| `SC2SupportPhaseLiveTests.Support_pilots_follow_the_side_phase_instead_of_parking_at_home` (Live) | pass (1/1 measured, 906 s) | Not reproducible here after NT-2's P791 commander-repair hold fix; the nightly's 4/4 failures pre-date it landing. Ledgered as unreproduced; re-run on the mini before treating it as green. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` (Fast) | fail / fail / fail (unchanged) | Persistent (P872/P887/P888/P890 rows above); unchanged by the 10-29 window. |
+| `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` (Live) | 1 pass / 2 fail | Known unreliable on master (line 3537 and the P821 row): the ending is decided by native kills before the station dies. Unchanged. |
+| `P728HumanCommanderLiveTests.Human_research_spends_wallet_unlocks_bot_purchase_obeys_order_and_survives_next_match` (Live) | **fail / fail / fail** (7 m 16 s each) | Regression-by-default-flip: first bad **P887 `76c6355e`** (`pass` at `48cdb2de` 6 m 01 s; `pass` at HEAD with `ALLEGIANCE_SHIP_UPDATE_MODEL=port`). The bot adopts the order (`[p431] … adopted commanded ship-target`), then the recipient dies/restarts inside the 120 s window and its respawn resets the order bookkeeping. Fixture now re-issues the order while polling (see report §5). |
+| `PipelineCostTests.Steady_512_peer_pipeline_allocation_budget` (Perf) | **fail / fail / fail** (240,148 / 247,512 / 260,012 B/tick vs the 104,000 budget) | Regression-by-default-flip (P887 `parallelBuild`); the test now pins the serial builder it was calibrated on. Same for `Hud17DetectionAllocationTests` and the two `BroadcastSnapshotLoopbackTests.Crowded_TCP*` cases (report §1–§2). |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` (Fast) | pass / pass / pass (0.35 s each) | Sweep-only load flake seen twice in this task's fast-tier runs (`Expected: 3` — one of four join-burst status frames missed under a 5-project sweep); **new entry**, nothing in the 10-29 window touches the join burst. |
+| `MultiHopDroneLiveTests.Server_drone_crosses_two_alephs_to_a_station_two_hops_away` (Live) | **fail / fail / fail** (108–114 s) | Regression-by-default-flip (first bad **P875 `28052050`**); the fixture now stages the scouted map (report §3) and passes 3/3 (43 s). |
+
+Host note for whoever re-runs these: 3–4 concurrent live test hosts exhaust this
+box's `fs.inotify.max_user_instances` (**128**) and every ASP.NET-hosted Lobby test
+then fails with `System.IO.IOException : The configured user limit (128) on the
+number of inotify instances has been reached`. That is an environment limit, not a
+product or fixture failure — It showed up once in this task's first Fast sweep
+(23 Lobby failures, all with that stack) and clears when the extra hosts exit.
+
 ## P894 verification observations (2026-10-30)
 
 The single Fast-tier run retained **FAIL**, 11,787 executions in 558.8 s:

@@ -30,7 +30,18 @@ public sealed class Hud17DetectionAllocationTests
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(InterestTierTests.Config());
+        // P887 (triaged by NT-3) — the `broadcastShipStates` budget below is the
+        // SERIAL builder's allocation (the HUD-17 claim: the change set and the
+        // baseline are permanent fields cleared in place). P887 made
+        // `broadcast.parallelBuild` default ON, and the parallel builder gives
+        // each tick's per-peer work to worker threads, so this thread's counter
+        // no longer measures the builder (it logged 82–150 KB/tick for the same
+        // unchanged code that logs 488 B/tick serially). Pin the serial builder,
+        // per P887's own "the test that needs the old path pins it" rule; the
+        // parallel build's numbers are in docs/reports/NT3_NIGHTLY_TRIAGE.md.
+        var config = InterestTierTests.Config();
+        config.Broadcast!.ParallelBuild = false;
+        server.Boot(config);
         server.TestMission!.Stage = MissionStage.Started;
         var peers = UpdateCadenceTests.Seed(server, Peers, Peers);
         for (int i = 0; i < peers.Count; i++)
