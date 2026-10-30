@@ -837,6 +837,12 @@ public sealed class BroadcastConfig
 /// </summary>
 public sealed class TransportConfig
 {
+    /// <summary>P895: tcp (default), or udp to add a UDP listener alongside TCP.
+    /// ALLEGIANCE_TRANSPORT_PROTOCOL overrides this setting.</summary>
+    public string? Protocol { get; set; }
+    /// <summary>UDP port; omitted/zero uses the TCP port. ALLEGIANCE_TRANSPORT_UDP_PORT overrides.</summary>
+    public ushort? UdpPort { get; set; }
+
     /// <summary>
     /// <c>"pool"</c> (the default since P887 — the rig baseline, P605/P887) or
     /// <c>"thread-per-peer"</c> (the old dedicated-writer-thread path). An

@@ -53,7 +53,9 @@ public sealed partial class Server
         int workerCapacity = Math.Max(_transportPoolWorkers, Environment.ProcessorCount);
         if (_sendPeerWindows.Length < peerCapacity) _sendPeerWindows = new PeerSendWindow[peerCapacity];
         if (_sendWorkerWindows.Length < workerCapacity) _sendWorkerWindows = new SendWorkerWindow[workerCapacity];
-        var window = tcp.DrainSendWindow(_sendPeerWindows, _sendWorkerWindows);
+        var pool = tcp as TcpTransport ?? (tcp as DualTransport)?.Tcp;
+        if (pool is null) return;
+        var window = pool.DrainSendWindow(_sendPeerWindows, _sendWorkerWindows);
         Console.WriteLine(FormattableString.Invariant($"[send-pool] windowSecs={window.Seconds:0.000} workers={window.Workers} peers={window.Peers} enqueuedBytes={window.EnqueuedBytes} writtenBytes={window.WrittenBytes} queuedBytes={window.QueuedBytes} queueGrowthBytes={window.QueueGrowthBytes}"));
         for (int i = 0; i < window.Workers; i++)
         {

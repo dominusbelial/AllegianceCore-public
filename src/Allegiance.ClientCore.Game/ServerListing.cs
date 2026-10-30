@@ -44,7 +44,8 @@ public sealed record ServerListing(
     /// design: no new data on the game-connection wire). Null/empty = none.</summary>
     string? MinClientVersion = null,
     IReadOnlyList<ServerListing.MissionListing>? Missions = null,
-    uint MissionCookie = uint.MaxValue)
+    uint MissionCookie = uint.MaxValue,
+    int? UdpPort = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by

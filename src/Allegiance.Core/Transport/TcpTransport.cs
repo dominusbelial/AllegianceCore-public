@@ -137,7 +137,7 @@ public enum DisconnectReason
 /// only that connection — never the next <c>AcceptTcpClient()</c> — and a
 /// socket <c>ReceiveTimeout</c> bounds even that read.
 /// </summary>
-public sealed class TcpTransport : ITransport
+public sealed class TcpTransport : IServerTransport
 {
     private enum FrameType : byte { Greet = 0x01, Data = 0x02 }
 

@@ -51,6 +51,7 @@ public sealed class LobbyHeartbeat : IDisposable
     public Func<IReadOnlyList<LobbyMissionListing>>? LiveMissions { get; set; }
     // Native lobby logon advertises g.cMaxGames (FedSrv/FedSrv.CPP:8107,8850).
     internal int MaxGames { get; set; } = 99;
+    public int? UdpPort { get; set; }
     private readonly System.Collections.Concurrent.ConcurrentQueue<GameReadyRequest> _completedGames = new();
     internal void CompleteGame(string id, uint? cookie) => _completedGames.Enqueue(new(id, cookie));
     /// <summary>P866 — reads the server's lobby-dirty VERSION, the thread-safe
@@ -225,7 +226,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
                 _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
                 _enrollment?.ServerId, _enrollment?.ServerSecret,
-                _minClientVersion, missions, missions?.Count ?? 0, MaxGames);             // P810 — advertised minimum client version (null = none)
+                _minClientVersion, missions, missions?.Count ?? 0, MaxGames, UdpPort);             // P810 — advertised minimum client version (null = none)
 
 
             HttpResponseMessage resp;
@@ -622,7 +623,8 @@ internal sealed record LobbyRegisterRequest(
     string? MinClientVersion = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     IReadOnlyList<LobbyMissionListing>? Missions = null,
-    int CurrentGames = 0, int MaxGames = 99);
+    int CurrentGames = 0, int MaxGames = 99,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
 
 public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game);
 public sealed record GameReadyBody(string ServerId, string Token, uint? Cookie);

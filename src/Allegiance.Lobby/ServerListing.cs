@@ -45,7 +45,8 @@ internal sealed record ServerListing(
     IReadOnlyList<MissionListingDto>? Missions = null,
     // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
     // the lobby constructor's default (lobby/server.cpp:463).
-    int CurrentGames = 0, int MaxGames = 20);
+    int CurrentGames = 0, int MaxGames = 20,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -86,7 +87,8 @@ public sealed record ServerListingDto(
     IReadOnlyList<MissionListingDto>? Missions = null,
     // Native server-list capacity, lobby/client.cpp:361-362; omitted max uses
     // the lobby constructor's default (lobby/server.cpp:463).
-    int CurrentGames = 0, int MaxGames = 20);
+    int CurrentGames = 0, int MaxGames = 20,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -188,6 +190,7 @@ public sealed class RegisterRequest
     public string? Name { get; set; }
     public string? Address { get; set; }
     public int Port { get; set; }
+    public int? UdpPort { get; set; }
     public int? PlayerCount { get; set; }
     public int? MaxPlayers { get; set; }
     public string? MissionName { get; set; }

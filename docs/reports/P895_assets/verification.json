@@ -1,0 +1,610 @@
+{
+  "baseCommit": "b567ee1f",
+  "checks": [
+    {
+      "label": "build-tools-delivery",
+      "exit": 0,
+      "seconds": 107.494
+    },
+    {
+      "label": "build-solution-delivery",
+      "exit": 0,
+      "seconds": 2.872
+    },
+    {
+      "label": "glossary-delivery",
+      "exit": 0,
+      "seconds": 0.016
+    },
+    {
+      "label": "parity-delivery",
+      "exit": 0,
+      "seconds": 0.032
+    },
+    {
+      "label": "compose-delivery",
+      "exit": 0
+    }
+  ],
+  "tests": [
+    {
+      "receipt": "udp-final-1",
+      "counts": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.3612723"
+    },
+    {
+      "receipt": "udp-final-2",
+      "counts": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.3317975"
+    },
+    {
+      "receipt": "udp-final-3",
+      "counts": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0968153"
+    },
+    {
+      "receipt": "transport-final",
+      "counts": {
+        "total": 185,
+        "executed": 185,
+        "passed": 185,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0014135"
+    },
+    {
+      "receipt": "new-core-1",
+      "counts": {
+        "total": 29,
+        "executed": 29,
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0179834"
+    },
+    {
+      "receipt": "new-core-2",
+      "counts": {
+        "total": 29,
+        "executed": 29,
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.1338585"
+    },
+    {
+      "receipt": "new-core-3",
+      "counts": {
+        "total": 29,
+        "executed": 29,
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.3409764"
+    },
+    {
+      "receipt": "observed-client-1",
+      "counts": {
+        "total": 21,
+        "executed": 21,
+        "passed": 21,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0100983"
+    },
+    {
+      "receipt": "observed-client-2",
+      "counts": {
+        "total": 21,
+        "executed": 21,
+        "passed": 21,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0018346"
+    },
+    {
+      "receipt": "observed-client-3",
+      "counts": {
+        "total": 21,
+        "executed": 21,
+        "passed": 21,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:00.0003168"
+    },
+    {
+      "receipt": "retry-next-tcp",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:02.3087943"
+    },
+    {
+      "receipt": "retry-next-tcp-final-1",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:03.5607935"
+    },
+    {
+      "receipt": "retry-next-tcp-final-2",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:03.6751727"
+    },
+    {
+      "receipt": "retry-next-udp-final-1",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:04.5930090"
+    },
+    {
+      "receipt": "retry-next-udp-final-2",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:03.8082781"
+    },
+    {
+      "receipt": "retry-next-udp-final-3",
+      "counts": {
+        "total": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:00:03.3134464"
+    }
+  ],
+  "showcase": [
+    {
+      "receipt": "showcase-tcp-1",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:37.9341871",
+      "showcaseSummary": "P700 local 15v15: 213.2s, samples=2129, reached=24/30, longest speed<1 with target=0.401s, shots=883, hits=276, kills=2"
+    },
+    {
+      "receipt": "showcase-tcp-2",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:32.2331154",
+      "showcaseSummary": "P700 local 15v15: 207.9s, samples=2076, reached=25/30, longest speed<1 with target=0.000s, shots=104, hits=1, kills=0"
+    },
+    {
+      "receipt": "showcase-tcp-3",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:04:14.8548254",
+      "showcaseSummary": "P700 local 15v15: 250.9s, samples=2504, reached=24/30, longest speed<1 with target=1.111s, shots=866, hits=212, kills=2"
+    },
+    {
+      "receipt": "showcase-tcp-4",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:53.2668313",
+      "showcaseSummary": "P700 local 15v15: 228.7s, samples=2284, reached=24/30, longest speed<1 with target=1.002s, shots=1244, hits=435, kills=2"
+    },
+    {
+      "receipt": "showcase-tcp-5",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:08:04.5780378",
+      "message": "Must observe real battle gunfire and damage",
+      "showcaseSummary": "P700 local 15v15: 480.1s, samples=4792, reached=29/30, longest speed<1 with target=0.000s, shots=1038, hits=0, kills=0"
+    },
+    {
+      "receipt": "showcase-tcp-isolation-1",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:53.2408108",
+      "showcaseSummary": "P700 local 15v15: 229.6s, samples=2293, reached=24/30, longest speed<1 with target=0.401s, shots=1226, hits=207, kills=1"
+    },
+    {
+      "receipt": "showcase-tcp-isolation-2",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:15.4300488",
+      "showcaseSummary": "P700 local 15v15: 191.5s, samples=1913, reached=24/30, longest speed<1 with target=0.000s, shots=593, hits=23, kills=0"
+    },
+    {
+      "receipt": "showcase-tcp-isolation-3",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:08:03.8458147",
+      "message": "Must observe real battle gunfire and damage",
+      "showcaseSummary": "P700 local 15v15: 480.0s, samples=4792, reached=29/30, longest speed<1 with target=0.506s, shots=1102, hits=0, kills=0"
+    },
+    {
+      "receipt": "showcase-udp-1",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "duration": "00:03:19.2875597",
+      "showcaseSummary": "P700 local 15v15: 194.6s, samples=1945, reached=24/30, longest speed<1 with target=0.000s, shots=275, hits=2, kills=0"
+    }
+  ],
+  "aot": {
+    "publish": "pass",
+    "IL2026": 0,
+    "IL3050": 0,
+    "runtimeSmoke": "AOT_SMOKE transport=UdpTransport validated=True"
+  },
+  "fast": "See fast.json; original single run retained FAIL",
+  "measurementCases": 18,
+  "measurementCpuWindow": "captured before post-sample quantiles; all cases rerun",
+  "finalHarnessBuild": {
+    "projects": 95,
+    "warnings": 0,
+    "errors": 0,
+    "result": "pass"
+  },
+  "scratchRetention": "Optional recursive cleanup was blocked by automatic approval review (rm -f style commands prohibited); ignored evidence/build artifacts retained."
+}

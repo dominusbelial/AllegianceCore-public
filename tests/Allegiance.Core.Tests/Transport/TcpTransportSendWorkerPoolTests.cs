@@ -409,11 +409,11 @@ public class TcpTransportSendWorkerPoolTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Cfg(transport: null));
-        Assert.True(server.Host.Transport!.IsPoolMode);
+        Assert.True(Assert.IsType<TcpTransport>(server.Host.Transport).IsPoolMode);
         Assert.Equal(TransportMode.Pool, server._transportMode);
         // Unset poolWorkers → about the core count.
         Assert.Equal(Environment.ProcessorCount, server._transportPoolWorkers);
-        Assert.Equal(Environment.ProcessorCount, server.Host.Transport.PoolWorkerThreadCount());
+        Assert.Equal(Environment.ProcessorCount, Assert.IsType<TcpTransport>(server.Host.Transport).PoolWorkerThreadCount());
     }
 
     [Trait("Requires", "Artwork")]
@@ -423,9 +423,9 @@ public class TcpTransportSendWorkerPoolTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Cfg(transport: new TrCfg { Mode = "thread-per-peer" }));
-        Assert.False(server.Host.Transport!.IsPoolMode);
+        Assert.False(Assert.IsType<TcpTransport>(server.Host.Transport).IsPoolMode);
         Assert.Equal(TransportMode.ThreadPerPeer, server._transportMode);
-        Assert.Equal(0, server.Host.Transport.PoolWorkerThreadCount());
+        Assert.Equal(0, Assert.IsType<TcpTransport>(server.Host.Transport).PoolWorkerThreadCount());
     }
 
     [Trait("Requires", "Artwork")]
@@ -437,8 +437,8 @@ public class TcpTransportSendWorkerPoolTests
         server.Boot(Cfg(transport: new TrCfg { Mode = "pool", PoolWorkers = 3 }));
         Assert.Equal(TransportMode.Pool, server._transportMode);
         Assert.Equal(3, server._transportPoolWorkers);
-        Assert.True(server.Host.Transport!.IsPoolMode);
-        Assert.Equal(3, server.Host.Transport.PoolWorkerThreadCount());
+        Assert.True(Assert.IsType<TcpTransport>(server.Host.Transport).IsPoolMode);
+        Assert.Equal(3, Assert.IsType<TcpTransport>(server.Host.Transport).PoolWorkerThreadCount());
     }
 
     /// <summary>Verify the active mode is PRINTED at boot in both variants —

@@ -39,7 +39,7 @@ public sealed partial class Server
             // diagnostic goes to the server log instead.
             string name = _peerNames.GetValueOrDefault(from) ?? "?";
             Console.WriteLine($"[wire] corrupt message from {name}({from}): {error.Message} — dropping the peer (FedSrv.CPP:4591-4603)");
-            (_host.Transport as TcpTransport)?.ClosePeer(from, DisconnectReason.BadCrc);
+            _host.Transport?.ClosePeer(from, DisconnectReason.BadCrc);
             return;
         }
 
@@ -53,7 +53,7 @@ public sealed partial class Server
         {
             // A packet may have been queued before LOGOFF retired the peer.
             // Native never reuses that player connection (FedSrv/FedSrv.CPP:5787-5800).
-            if (_host.Transport is TcpTransport transport && transport.IsPeerClosed(from)) return;
+            if (_host.Transport is { } transport && transport.IsPeerClosed(from)) return;
             var m = command.Bytes;
             if (command.BadHeader)
             {
@@ -258,7 +258,7 @@ public sealed partial class Server
                 // TcpTransport (e.g. a test fake), nothing happens.
                 if (validated && req.CharacterName is { Length: > 0 } cn
                     && !cn.StartsWith(HarnessPrefix, StringComparison.Ordinal))
-                    (_host.Transport as TcpTransport)?.SetPeerHuman(from, true);
+                    _host.Transport?.SetPeerHuman(from, true);
                 // P316: allocate a ship id ONLY for a validated logon with a
                 // mission to join, AFTER the validation check — an
                 // unauthenticated/invalid LOGONREQ flood burns no ids at all
@@ -1922,7 +1922,7 @@ public sealed partial class Server
                     // The echo may still sit in the broadcast snapshot being
                     // built (default since the 2026-10-27 rig A/B): close only
                     // after it reaches the transport, or the client never sees it.
-                    var tcp = _host.Transport as TcpTransport;
+                    var tcp = _host.Transport;
                     if (tcp is not null) AfterQueuedSends(() => tcp.ClosePeerAfterFlush(from));
                     Console.WriteLine($"[logoff] peer {from} logged off (echo queued, released, close after drain — H-14)");
                 }

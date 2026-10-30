@@ -1,0 +1,28 @@
+{
+  "executions": 11763,
+  "outcomes": {
+    "Passed": 11757,
+    "NotExecuted": 3,
+    "Failed": 3
+  },
+  "seconds": 536.262584023003,
+  "errors": [
+    "Allegiance.Core.Tests: main failed",
+    "1 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "timingOffenders": [
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 10.6555784
+    }
+  ],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.04498009599046782,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

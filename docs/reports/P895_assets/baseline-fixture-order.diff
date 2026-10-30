@@ -1,0 +1,13 @@
+--- HEAD/tests/Allegiance.Core.Tests/LiveLifepodEnduranceDisplayTests.cs
++++ schedule-control/tests/Allegiance.Core.Tests/LiveLifepodEnduranceDisplayTests.cs
+@@ -182,8 +182,8 @@
+         using var driver = new WireClient();
+         using var b = new WireClient();
+         using var c = new WireClient();
+-        driver.Connect(server.BoundPort, "DRIVER"); b.Connect(server.BoundPort, "BWATCH"); c.Connect(server.BoundPort, "CWATCH");
+-        driver.Logon(Request("DRIVER")); b.Logon(Request("BWATCH")); c.Logon(Request("CWATCH"));
++        b.Connect(server.BoundPort, "BWATCH"); driver.Connect(server.BoundPort, "DRIVER"); c.Connect(server.BoundPort, "CWATCH");
++        b.Logon(Request("BWATCH")); driver.Logon(Request("DRIVER")); c.Logon(Request("CWATCH"));
+         PumpUntil(server,
+             () => driver.ShipAssignment is not null && b.ShipAssignment is not null && c.ShipAssignment is not null,
+             4000);

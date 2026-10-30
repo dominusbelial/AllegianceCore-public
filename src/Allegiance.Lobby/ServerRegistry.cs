@@ -107,7 +107,7 @@ public sealed class ServerRegistry
                 // P810 — the optional minimum-client-version requirement
                 // (absent stays null, not "").
                 NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)), ToMissions(req.Missions), Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
-                Math.Max(1, req.MaxGames ?? 20));
+                Math.Max(1, req.MaxGames ?? 20), NormalizeUdpPort(req.UdpPort));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -125,6 +125,7 @@ public sealed class ServerRegistry
             Name = Sanitize(req.Name, NameMax),
             Address = Sanitize(req.Address, AddressMax),
             Port = NormalizePort(req.Port),
+            UdpPort = NormalizeUdpPort(req.UdpPort),
             PlayerCount = Math.Max(0, req.PlayerCount ?? 0),
             MaxPlayers = Math.Max(0, req.MaxPlayers ?? 0),
             MissionName = Sanitize(req.MissionName, NameMax),
@@ -251,6 +252,8 @@ public sealed class ServerRegistry
     /// <summary>P810 — an absent optional field stays null (never an empty
     /// string) so the DTO shape matches the pre-P810 wire for hosts that do not
     /// declare a minimum client version.</summary>
+    private static int? NormalizeUdpPort(int? port) => port is > 0 and <= 65535 ? port : null;
+
     private static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
 
     private static string Sanitize(string? value, int maxLen)
@@ -299,7 +302,7 @@ public sealed class ServerRegistry
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
-        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, l.Missions, l.CurrentGames, l.MaxGames);
+        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, l.Missions, l.CurrentGames, l.MaxGames, l.UdpPort);
 
     /// <summary>
     /// P806 — normalize the caller-supplied game settings. Every omitted field

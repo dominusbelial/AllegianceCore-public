@@ -44,10 +44,10 @@ public interface ITransport
     /// conventionally <see cref="ConnectionId.Server"/> but any value routes to
     /// the single connected socket.
     /// </summary>
-    /// <remarks><paramref name="guaranteed"/> is accepted and ignored: TCP is a
-    /// reliable stream, so best-effort adds nothing here (the two best-effort
-    /// call sites in the C++, §3.2 of TRANSPORT_SEAM.md, are covered by a
-    /// runtime bool and not on the bot path).</remarks>
+    /// <remarks>Key-zero traffic retains FIFO delivery on both transports.
+    /// TCP is always reliable. UDP also makes key-zero traffic reliable, so
+    /// dropping a best-effort unkeyed frame cannot leave an ordered sequence hole.
+    /// Use SendCoalescing with a nonzero key for unreliable latest-wins UDP.</remarks>
     void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed);
 
     /// <summary>

@@ -7,7 +7,7 @@ using Allegiance.Core.Wire;
 namespace Allegiance.Bot;
 
 /// <summary>
-/// A bot — a <see cref="TcpTransport"/> client that speaks the real ported
+/// A bot — an <see cref="ITransport"/> client that speaks the real ported
 /// messages. Connects, logs on, waits for its <c>SET_CLUSTER(7)</c> ship
 /// assignment, sends <c>SHIP_UPDATE(24)</c> control input, collects
 /// <c>SINGLE_SHIP_UPDATE(78)</c> observations of its own ship's position, and
@@ -25,7 +25,12 @@ namespace Allegiance.Bot;
 /// </remarks>
 public sealed class Bot : ITransportSite, IDisposable
 {
-    private TcpTransport? _transport;
+    private ITransport? _transport;
+    /// <summary>P895: null uses ALLEGIANCE_TRANSPORT_PROTOCOL (default tcp).</summary>
+    public string? TransportProtocol { get; set; }
+    /// <summary>Advertised UDP port; null uses the game TCP port/environment override.</summary>
+    public ushort? UdpPort { get; set; }
+
     private readonly object _gate = new();
 
     // P671 — native keep-alive, ported from BaseClient::CheckServerLag
@@ -1729,7 +1734,7 @@ public sealed class Bot : ITransportSite, IDisposable
     /// the identical fix/rationale on ConnectionSession.Connect, 2026-09-15).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
-        _transport = new TcpTransport(this);
+        _transport = TransportFactory.CreateClient(this, TransportProtocol, UdpPort);
         _transport.Join(host, port, playerName);
         StartKeepAlive();
     }
