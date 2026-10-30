@@ -410,3 +410,264 @@ No commits, pushes, stashes, remote hosts, synthetic CPU load or display `:0` we
 - TRN-0117 returned to `partial`: nothing has pressed G in a running Mission 4.
 - Open: the port binds G to `ToggleAutopilot`, so G under training toggles the cloak AND autopilot.
 - The signature override block moved so it no longer splits `EffectiveSignature` from its doc comment.
+
+---
+
+## P892d — M3/M4 real-window completion in both HUD styles (2026-10-30)
+
+**All eight required windows completed:** M3 Classic ×2, M3 Modern ×2, M4 Classic ×2,
+M4 Modern ×2. Every M3 run selected station 1010 through the real B handler and landed
+with **seven derelicts alive**. Every M4 run activated cloak with G, crossed into Mars,
+killed the constructor-defense scout with real projectiles, waited for real station
+construction, and docked at the new expansion. The new M4 TCP headless test completes
+without injected kills, sector changes, build completion, or docking.
+
+Changes remain in the working tree. No commits, pushes, stashes, remote hosts, synthetic
+load, display `:0`, or new repository media were used. Native reference was read-only.
+Raw evidence is gitignored under `.scratch/p892d/` and the standard Fast runner's
+`TestResults/tiers-20261030T161617.474357Z/`. The final
+[evidence manifest](../../.scratch/p892d/evidence-manifest.json) indexes retained raw
+receipts with hashes; package/build caches are removed after qualification. Visual
+claims refer only to the four images explicitly inspected below.
+
+### Eight final window receipts
+
+One window ran at a time. Each used a fresh HUD settings file, `SDL_VIDEODRIVER=offscreen`,
+`DISPLAY=`, writable scratch preferences, real artwork, and
+`timeout 1250 … --exit-after 1200`. The opt-in proof presses keys/text-input events in
+normal client handlers. It exits two seconds after the post-mission slideshow, within
+the outer bounds. The reproducible invocation is retained in
+[window.sh](../../.scratch/p892d/window.sh); the checked run summary is
+[window-summary.json](../../.scratch/p892d/window-summary.json).
+
+| Mission / HUD / repetition | Run log | Final goal | Actual dock | Live drones at completion |
+|---|---|---|---|---:|
+| M3 Classic 1 | [log](../../.scratch/p892d/m3-Classic-final1/run.log) | complete | station 1010 | 7 derelicts |
+| M3 Classic 2 | [log](../../.scratch/p892d/m3-Classic-final2/run.log) | complete | station 1010 | 7 derelicts |
+| M3 Modern 1 | [log](../../.scratch/p892d/m3-Modern-final1/run.log) | complete | station 1010 | 7 derelicts |
+| M3 Modern 2 | [log](../../.scratch/p892d/m3-Modern-final2/run.log) | complete | station 1010 | 7 derelicts |
+| M4 Classic 1 | [log](../../.scratch/p892d/m4-Classic-final1/run.log) | complete | Expansion (Adv), station 9187 | 4 miners |
+| M4 Classic 2 | [log](../../.scratch/p892d/m4-Classic-final2/run.log) | complete | Expansion (Adv), station 9187 | 4 miners |
+| M4 Modern 1 | [log](../../.scratch/p892d/m4-Modern-final1/run.log) | complete | Expansion (Adv), station 9187 | 4 miners |
+| M4 Modern 2 | [log](../../.scratch/p892d/m4-Modern-final2/run.log) | complete | Expansion (Adv), station 9187 | 4 miners |
+
+Each M3 log contains `[p642] TargetFriendlyBase/Next -> Base (Station #1010)`,
+`M3 B result: host current target=TargetRef { Type = Station, Id = 1010 … }`,
+`FM_S_DOCKED(61) station 1010`, and `mission complete; final goal=complete; survivors=7`.
+`ProofOrderTarget` has been removed entirely. Target-center/apostrophe, F and B enter the
+ordinary selection/commit handlers; the proof does not send a target/order directly.
+
+Each M4 log contains `cloak ON (CloakActive)`, a real host Cloaking value below 1,
+`ship 1100 killed by ship 8096`, real builder consumption/station creation, and
+`FM_S_DOCKED(61) station 9187` before final completion. The sampled host Cloaking values
+are 0.477 / 0.340 / 0.565 / 0.787 (the last run also samples 0.790 while uncloaking).
+Every such sample has autopilot false. Some five-second samples occur just after the
+proof releases cloak to shoot; these are real residual model values, not an assertion
+that the UI toggle was still on in every sample. Lesson 7 can finish when its selected
+miner leaves the sector, as native allows; these runs do **not** claim four miner kills.
+The four surviving M4 drones are miners, not the killed scout or consumed constructor.
+
+### Survivors and the native collision comparison
+
+Native `training/mission3.cpp:1090-1096` (`tm_3_46`) waits for SPACE when the player is
+ready to go home. It does not require all ten derelicts to die. Native
+`Igc/shipIGC.cpp:514-616` separates contacting hulls, `:1072-1124` blends inelastic and
+elastic two-body velocities with elasticity 0.75 while retaining tangential motion,
+and `:1160-1164` writes both corrected positions/velocities.
+
+The existing port already contains this response:
+`src/Allegiance.Core/Model/Sector.cs:3162-3295` calls `Separate.SeparateColliders` and
+applies the same two-body formulas. The existing ship/convex-hull collision tests pass
+**12/12** ([log](../../.scratch/p892d/collisions.log)). No missing slide/bounce rule was
+found to port, and no Core physics was changed. The historical speed-101 pinned case
+is not claimed reproduced and fixed as a separate engine defect. The current manual
+proof chooses a green bay and approach, then enters it through player flight keys;
+four completed landings with seven survivors prove that destroying every derelict is
+not necessary. The old straight-line headless `DockControls` did not provide obstacle avoidance.
+It was also retired from the M3 headless fixture after the full baseline gate exposed
+a goal-13.2 docking timeout even after all ten derelicts had died. M3 now uses the
+same chosen-bay digital manual approach as M4; no collision or docking rule was altered.
+
+### G, P, and other native training keys
+
+Native `defaultinputmap.mdl:12-16,55` binds `[` and INSERT to AcceptCommand, P to
+`TK_ToggleAutoPilot` (43), and G to `TK_ToggleCloak` (94). M4 specifically waits for
+cloak 94 (`training/mission4.cpp:707-738`) and target-enemy F/80 (`:798`). M3's target
+keys must really commit the selected model (`WinTrek/WinTrek.cpp:10149,9024,8833`).
+
+Training now reserves **G for cloak**, **F for enemy targeting**, **B for the friendly
+base**, and **[/INSERT for accepting orders**. The port's conflicting autopilot,
+cloak, scoreboard, previous-weapon and strafe actions stand down on those native keys.
+Native key modifiers are retained, so B does not also deliver Ctrl+B. Ordinary user
+rebinds still reach the lesson filter, and rejected actions never bypass it.
+
+**P does not engage user autopilot in M2/M3/M4.** Native
+`training/trainingmission.cpp:397-401` rejects ToggleAutoPilot while command view is
+disabled. The command-view lessons enable it (`mission5.cpp:160`, `mission6.cpp:375`,
+`mission8.cpp:150`, `mission10.cpp:372`), so P can engage there. M4's scripted waypoint
+autopilot is a mission action, not a user P press, and must still work. The regression
+`Training_G_only_cloaks_and_P_only_toggles_autopilot` tests allowed/rejected P, G-only
+cloak, F stand-down, modifier specificity and both accept keys. Existing Classic and
+Modern rebound-key regressions also pass after the final predicate correction.
+
+### M4 host support, headless completion, and window driver
+
+The fake Ship-type aleph is gone: both sites resolve real **Warp** targets, including
+geometry in the authored training universe before the client discovers another
+sector. Restored rules are tracked in the training matrix:
+
+- The first waypoint uses the native quarter-distance plus aleph-up offset
+  (`mission4.cpp:333-335`; `Igc/warpIGC.cpp:45-46`). Local buoy geometry and CHATBUOY
+  imports make the actual queued order legal to accept (`WinTrek/trekigc.cpp:4494-4496`).
+  M4's omitted queued Warp-1030 Goto is restored (`mission4.cpp:449`).
+- Manual training masks precede the scripted autopilot controls
+  (`WinTrek.cpp:8381-8382`, `Igc/shipIGC.cpp:2061-2068`). Previously the late mask zeroed
+  M4's autopilot and left goal 3.8 at the origin. Repeated SetAutopilot(true) calls now
+  retain the planner, matching the native idempotent setter (`shipIGC.cpp:3974-3981`).
+- Real flight crosses Warp 1030 into sector 1031 (`mission4.cpp:497,526`). Miners spawn
+  around real Warp 1032 with native cube scatter (`:534-561`); fixed seeds make these
+  samples reproducible, following the existing M3 test convention.
+- The constructor spawns at Warp 1030 plus forward ×100, carries station type 112,
+  and receives real asteroid-10332 Build orders (`mission4.cpp:862-871`,
+  `CreateDroneAction.cpp:86-87`). It waits after the lesson's DoNothing order
+  (`mission4.cpp:930-931`) and real simulation construction creates the expansion.
+- The scout spawns with native cube scatter and attacks the constructor
+  (`mission4.cpp:913-923`). A killed replicated ship with a retained last pose resolves
+  absent, matching native `GetCommandCondition.cpp:43-54`, rather than trapping goal 8.7.
+- Only networked M4 delegates these NPC plans to the real sim; it bypasses the host's
+  old source-sector position nudges. Other variants retain their scripted movement
+  owner. The full training gate exposed a Nanite regression when these two owners
+  were initially mixed; restricting the new NPC plan handling to M4 fixes it.
+
+`P881aTrainingMissionsTests.Mission4_completes_with_real_transit_guns_constructor_and_landing`
+uses the production ClientTrainingSite/TrainingSession, real TCP host, actual queued
+orders, native accept-key gate, translated fire input and real projectiles. Headless
+selection uses an ordinary ORDER_CHANGE target pick, not a host target mutation; it
+does not certify the full GUI F-handler path, which the four windows exercise. Chat
+uses a real send and the corresponding sent-chat training event. Scripted autopilot
+remains a lesson action. The final leg uses authored green-bay geometry and translated
+digital flight inputs. Transit, scout death, constructor consumption and docking are
+observed/asserted from the real simulation; none is supplied as a scripted outcome.
+The old TR3 graph-only fixture remains a separate scripted unit test and is not used
+as runtime completion evidence.
+
+`DriveMission4` in `Game1.TrainingProof.cs:184` uses Enter/Tab/text input for chat,
+SPACE acknowledgements, [/INSERT acceptance, G cloak, F targeting, ordinary lead
+prediction, arrows/W for flight, Back to stop cruise, and B plus manual bay entry for
+landing. It routes back through the real aleph if chasing a miner took the player out
+of Mars. It never calls a proof-only target/order/autopilot shortcut.
+
+### Exploratory stalls and corrections
+
+Failed/interrupted probes remain visible; only the eight `*-final*` logs above count
+as the final battery.
+
+| Probe / furthest goal | Cause and correction |
+|---|---|
+| [Classic probe 1](../../.scratch/p892d/m4-Classic-probe1/run.log), 2.3 | Driver's timed chat cycle lost phase when Enter first dismissed the briefing. `Game1.TrainingProof.cs:197-205` now observes briefing/composer/recipient state before pressing Enter/Tab or sending text. Driver defect. |
+| [Classic probe 2](../../.scratch/p892d/m4-Classic-probe2/run.log), 3.8 | Port's late training mask zeroed scripted autopilot controls. Fixed by `Game1.Training.cs:22` / `Game1.FlightInput.cs:2467` composition and the locked-controls regression. |
+| [Classic probe 3](../../.scratch/p892d/m4-Classic-probe3/run.log), 8.4 | Driver chased a miner through its aleph, overwrote its stop tap with G, and could not follow a builder whose remote pose was absent. `Game1.TrainingProof.cs:219-255` holds Back independently, angle-gates thrust, and routes back to Mars before escorting. Driver defect. |
+| [Headless 1](../../.scratch/p892d/headless-1.log) / [2](../../.scratch/p892d/headless-2.log), 3.5 | Queued buoy had wire type -1 / missing client geometry, so it was illegal to accept. `TrainingHost.cs:689-694`, `ClientTrainingSite.cs:397`, `ClientWorld.Orders.cs:74-95` now register/import the real buoy and use its native wire type. Port defects. |
+| [Headless 3](../../.scratch/p892d/headless-3.log) / [6](../../.scratch/p892d/headless-6.log), 8.7 | Combat driver failed to finish scout defense and the player eventually died. Lead now follows the actual combat target and includes native muzzle offset (`P881aTrainingMissionsTests.cs:461-465`; native `Igc/common.cpp:121-149`); no combat outcome is injected. |
+| [Headless 4](../../.scratch/p892d/headless-4.log), 8.7 | Scout really died at sim 178.55, but its retained client entity/last pose still resolved as a live model. `ClientTrainingSite.cs:165` now rejects `IsDead`; regression checks native absent-ship behavior. Port defect. |
+| [Earlier isolated attempt](../../.scratch/p892d/isolated-1.log), 10.2 | Analog compact-wire docking controls parked outside the bay. `P881aTrainingMissionsTests.cs:782` now uses digital player turns/thrust for manual approach/entry; the Core collision/docking rules are unchanged. |
+
+The first baseline full training attempt also exposed the older M3 headless helper
+timing out at 13.2 ([raw attempt](../../.scratch/p892d/training-before-m3-digital/)).
+A separate old-binary diagnostic reproduced that four-minute timeout
+([log](../../.scratch/p892d/m3-digital-1.log)). The former stateless analog
+`DockControls` fixture was replaced with `ManualBayLanding` at
+`P881aTrainingMissionsTests.cs:326-332`; it retains one authored bay approach and
+uses translated digital turns/thrust through the compact controls wire. The original
+all-ten-destroyed and real-docking assertions remain. The exact old-helper stuck pose
+was not recorded, so this is reported as a fixture correction, not an invented Core
+collision diagnosis. The revised M3 fixture passes three times alone, with actual DOCKED(61) at station 1010 in every run (about 2m19s each): [run 2](../../.scratch/p892d/m3-digital-2.log), [run 3](../../.scratch/p892d/m3-digital-3.log), [run 4](../../.scratch/p892d/m3-digital-4.log).
+
+Headless 5 and 7 completed during development; the final three class repetitions and
+full training gate below are the qualification receipts. The earlier Nanite gate
+failure is retained in [training-gate.log](../../.scratch/p892d/training-gate.log) and
+[training-before-nanite-fix](../../.scratch/p892d/training-before-nanite-fix/).
+It failed 3/3 alone before the M4-only movement-owner correction and passes 3/3 after it
+([nanite-fixed-1](../../.scratch/p892d/nanite-fixed-1.log),
+[2](../../.scratch/p892d/nanite-fixed-2.log), [3](../../.scratch/p892d/nanite-fixed-3.log)).
+
+### Screenshot inspection
+
+These four images were opened and visually inspected; screenshots stay in scratch:
+
+- [M3 Classic](../../.scratch/p892d/m3-Classic-final1/shots/proof_t100.0_sNeptune_ccockpit.png):
+  circular Classic instruments, blue station truss/hull, derelict labels and low speed.
+- [M3 Modern](../../.scratch/p892d/m3-Modern-final1/shots/proof_t100.0_sNeptune_ccockpit.png):
+  cyan Modern instruments, speed 12, full armor/shield and the Base target near the blue station.
+- [M4 Classic](../../.scratch/p892d/m4-Classic-final1/shots/proof_t191.9_sMars_ccockpit.png):
+  circular instruments, EW Sniper weapons, aleph/asteroids and red “PUSH G TO TOGGLE CLOAK”.
+- [M4 Modern](../../.scratch/p892d/m4-Modern-final1/shots/proof_t191.6_sMars_ccockpit.png):
+  cyan armor/shield/speed instruments, Mars aleph/asteroids and the red G prompt; the
+  right-hand text is clipped in this capture. No claim of perfect visual fidelity or
+  cloak alpha is made from this frame; actual cloak activation is established by logs.
+
+### Matrix before / after
+
+**TRN-0109, TRN-0110 and TRN-0117** move partial → implemented (+12 weight).
+Review also returns **TRN-0022** to partial (−4): the legacy single-ID host API does
+not compare distinct accepted and current command IDs with native’s full OR semantics
+(`GetCommandCondition.cpp:49`). Dead-model absence and the real M4 path are covered;
+that broader framework rule is not claimed complete. Net production credit is +8.
+Other M4 rows receive corrected runtime evidence/notes but retain partial: this battery
+does not certify every native quickcomm, scanner or sector-map UI rule. TRN-0010 also
+retains partial for remaining drone recipes despite the now-real constructor base data.
+
+| Accounting | Before | After |
+|---|---:|---:|
+| Raw training CSV (all 241 rows, weight 908; includes test-only and excluded rows) | 113 implemented / weight 408 | 115 implemented / weight 416 |
+| Scorecard's production credit (237 eligible rows, weight 904) | 100 / 237; 376 / 904 (41.59%) | 102 / 237; 384 / 904 (42.48%) |
+
+The distinction matters: test-only rows do not earn production credit.
+[Before](../../.scratch/p892d/matrix-before.json),
+[after](../../.scratch/p892d/matrix-after.json),
+[production accounting](../../.scratch/p892d/production-matrix-summary.json),
+[scorecard validation](../../.scratch/p892d/parity-final.log).
+CSV stays LF (zero CR bytes); `python3 scripts/parity-scorecard.py` passes.
+
+### Gate
+
+| Check | Result / receipt |
+|---|---|
+| Solution build | **PASS**, zero warnings/errors; [build-final.log](../../.scratch/p892d/build-final.log). |
+| `tools/build-tools.sh` | **PASS**, all 96 projects, all 96 summaries zero warnings/errors; [build-tools-forced.log](../../.scratch/p892d/build-tools-forced.log). A read-only default NuGet HTTP cache caused earlier restore failures; a writable task cache and forced restore resolved them without suppressing audits/warnings. |
+| New/affected tests 3× alone | **PASS**, P881a class 17/17 each run (51 passes), including the new full M4 and key regressions; these precede the last M3-only fixture correction, whose final three isolated receipts are listed above; M4 durations 6m37s / 6m37s / 6m07s. TR3 graph fixture 3/3 ×3, P885 native-key fixture 3/3 ×3, rebound/G group 3/3 ×3; [ordered TRX summary](../../.scratch/p892d/test-summary.json), [class logs 1](../../.scratch/p892d/final-isolated-1.log), [2](../../.scratch/p892d/final-isolated-2.log), [3](../../.scratch/p892d/final-isolated-3.log). |
+| Nanite regression isolation | **PASS 3/3 after fix**; the original assertion and completion requirement remain intact. Before-fix failures and after-fix receipts are described above. |
+| `tools/run-training-tests.sh --no-build --repeat 3` with artwork | **PASS all three baseline rounds**, ClientCore **80/80 ×3**, MonoGame **67/67 ×3**, **441/441 passed with zero skips**; includes Nanite and full M2/M3/M4 completions. M4 durations 00:06:37.0765373, 00:06:37.9488877, 00:06:34.1384090. [Runner log](../../.scratch/p892d/training-qualified.log), [six project receipts](../../.scratch/p892d/training-qualified/), [checked summary/settings](../../.scratch/p892d/training-qualified-summary.json); command exit 0. |
+| ONE `tools/run-tests.sh --tier fast` | **Executed, FAIL retained**: 11,877 passed / 11 failed / 3 optional skips, 11,891 executions, 523.2 s; all nine infrastructure checks pass. [Summary](../../TestResults/tiers-20261030T161617.474357Z/summary.json), [runner log](../../.scratch/p892d/fast.log). No whole-tier rerun. |
+| Fast failures and slow cases | Five task failures were corrected after the sweep and their original filtered cases pass 3× (P882a rebind predicate, P885 geometric fixture). Each of the six unrelated failures and all three slow methods was selected 3×; [isolation summary](../../.scratch/p892d/isolation-summary.json), [raw receipts](../../.scratch/p892d/fast-isolation/), [ledger](../TEST_FLAKES.md). Only the known wingman null-DefendTarget failure persists functionally 3/3; P777 functionally passes but still exceeds 10 s alone. The P838 counter/interleaving trigger is not claimed fully diagnosed. |
+| Native collision comparison | **PASS**, existing 12 ship/convex-hull collision tests; four actual survivor landings. |
+| Server AOT / never-parks 5× | **Not required by this brief**: neither `src/Allegiance.Server` nor `src/Allegiance.Core` changed. No server, Core, bot or collision implementation change. |
+| Matrix / glossary / hygiene | **PASS**, scorecard validates all matrices; glossary checks 379 paths; CSV has zero CR bytes; `git diff --check` clean. No new service/deployment setting or tracked media; no personal email, secret or home path added to code. |
+
+The eight windows and the three isolated headless qualifications explicitly use server GC,
+parallel broadcast build, pool transport, native ship updates and native Goto plans.
+The final full training invocation also exports those baseline switches
+([reproduction command](../../.scratch/p892d/run-training-qualified.sh)). The Fast sweep
+retains its captured fixture/default settings and is not presented as a new baseline
+performance qualification. An extra compatibility training invocation used inherited
+serial/thread-per-peer defaults. Its six project TRX files show 80/80 + 67/67 in all
+three rounds; the interrupted parent left its child runner alive, and relocating
+its output early caused a wrapper `cat`/exit error. A reused log name also caused an
+early relocation of the first baseline attempt, whose M3 timeout is retained above.
+Neither wrapper result is presented as the final clean gate. These diagnostics remain in
+[training-compatibility](../../.scratch/p892d/training-compatibility/) and
+[its log](../../.scratch/p892d/training-compatibility.log). The final qualification uses
+unique paths and leaves its results in place until all three rounds finish.
+The runner's completed raw training directory is relocated under task scratch; original
+TRX/log contents retain the runner's original output paths.
+
+### Native-intent footer
+
+**Classification: native behavior restoration and runtime verification.** The changes
+restore typed aleph/waypoint orders, native input ownership, actual constructor/scout
+simulation and absent-dead-model behavior; the rules and native file:line references
+are listed above and tracked in `docs/parity/training-matrix.csv`. Training input is
+shared by Classic and Modern. Existing native collision response was audited and left
+unchanged. M3 survivor landings, G-only cloak, real M4 transit/combat/construction and
+docking are demonstrated by eight completing windows and the new headless test.
+Whole-M4 parity and the unrelated Fast-suite/timing failures are not claimed closed.

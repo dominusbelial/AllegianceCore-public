@@ -37,6 +37,7 @@ public enum ObjectType
     Asteroid = 5,
     Probe = 4,
     Buoy = 9,
+    Warp = 7,
 }
 
 /// <summary>

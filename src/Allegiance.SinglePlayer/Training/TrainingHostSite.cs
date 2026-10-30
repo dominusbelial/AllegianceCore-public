@@ -47,6 +47,13 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
             int id = r.Id == TargetRef.Na ? _host.PlayerShipId : r.Id;
             return _host.ResolveShip(id) is { } ship ? WrapShip(ship) : null;
         }
+        if (r.Type == ObjectType.Warp)
+        {
+            foreach (var sector in _host.Mission.Sectors)
+                if (sector.Warps.FirstOrDefault(w => w.Warp.WarpId == r.Id) is { } warp)
+                    return new HostObject(r, ToNum(warp.Position), Vector3.Zero,
+                        new Vector3(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2]), sector.Id, warp.Radius);
+        }
         if (r.Type == ObjectType.Buoy && _host.ResolveWaypoint(r.Id) is { } wb)
             return wb;
         if (r.Type == ObjectType.Station && _host.Stations.TryGetValue(r.Id, out var st))
@@ -121,7 +128,8 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
     public void RepairAndRearm() => _host.RepairRearm(_host.PlayerShipId);
     public void ShowPane(int paneMask) { }
     public void SetEyeball(bool shown) { }
-    public void SetSignature(ObjectType type, int id, float signature) { }
+    public void SetSignature(ObjectType type, int id, float signature)
+    { if (type == ObjectType.Ship) _host.SetSignature(id, signature); }
 
     // ── P880b — equipment/state/radar/buoy seams (real host state) ──────────
     public bool HasPartOfEquipmentType(TargetRef ship, EquipmentType part)
@@ -175,7 +183,8 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
             target is { Type: ObjectType.Ship } ? target.Value.Id : null,
             target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
             target is { Type: ObjectType.Station } ? target.Value.Id : null,
-            commandId);
+            commandId, target is { Type: ObjectType.Asteroid } ? target.Value.Id : null,
+            target is { Type: ObjectType.Warp } ? target.Value.Id : null);
 
     // ── ship / camera / HUD ───────────────────────────────────────────────────
     public void SetAutopilot(TargetRef ship, bool on) => _host.SetAutopilot(ship.Id, on);

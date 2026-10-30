@@ -752,6 +752,14 @@ list in **reverse**.
   DOCKED latch. `src/Allegiance.ClientCore/Flight/OwnShipSimulator.cs` supplies the `turnToFace`
   hull kinematics. Report: `docs/reports/P881a_REPORT.md`.
 
+- **Training waypoint orders (P892d)** — native Warp targets resolve in both training sites;
+  `src/Allegiance.ClientCore/State/ClientWorld.Orders.cs` retains local/CHATBUOY command
+  geometry for legal queued-order acceptance. M4 queues its aleph order and the host applies
+  constructor station data, asteroid build targets and scout attack targets in
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.cs`. The key-only window driver lives in
+  `src/Allegiance.ClientCore.Game/Game1.TrainingProof.cs`; native P remains subject to the
+  command-view filter, while G cloaks. Report: `docs/reports/P892_REPORT.md`.
+
 ## 5. Bots / MCP (`src/Allegiance.Bot`, `tools/allegiance-mcp`)
 
 - **BotClass client** — the minimal real-client used by bots.

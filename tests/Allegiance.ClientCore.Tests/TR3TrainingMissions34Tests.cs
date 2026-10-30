@@ -154,10 +154,10 @@ public sealed class TR3TrainingMissions34Tests
         Assert.Contains(host.Mission.Sectors, s => s.Id == 1030);
         Assert.Contains(host.Mission.Sectors, s => s.Id == 1031);
 
-        // Marker for the OT_warp stand-in: the aleph (Ship-type target carrying id 1030) must resolve
-        // for the ObjectWithinRadius "fly to the aleph" gate (mission4.cpp:497). Park it beside the player.
-        int alephMarker = host.CreateDrone("Aleph", 1030, 412, 0, 2);
-        host.PlaceDrone(alephMarker, 1030, new Vector3(100f, 0f, 0f), Vector3.UnitX, Vector3.UnitZ, null, CmdDoNothing);
+        // This legacy graph fixture scripts outcomes; P892d's loopback/window proofs use actual flight.
+        // Resolve the real native aleph namespace (mission4.cpp:497), rather than a fake Ship marker.
+        var aleph = host.Mission.Sectors.SelectMany(sec => sec.Warps).Single(w => w.Warp.WarpId == 1030);
+        Assert.NotNull(site.Resolve(new TargetRef(ObjectType.Warp, 1030)));
 
         const int MaxSteps = 40000;
         int insertBracketPrompts = 0;      // "Press the INSERT or '[' key" (goals 3,4)
@@ -173,6 +173,10 @@ public sealed class TR3TrainingMissions34Tests
 
         for (int i = 0; i < MaxSteps && !completed && !reachedLand; i++)
         {
+            // Keep this scripted graph fixture's scout rendezvous local after switching from
+            // the old fake 100m aleph to the authored map's real 6km aleph.
+            if (mission.ActiveGoalPath == "8.4" && host.Drones.TryGetValue(mission.EnemyScoutId, out var scout))
+                host.PlayerShip.Position = scout.Position + new Coll.Vector3(500, 0, 0);
             OrientPlayerToTarget(host);
             host.StepLight();
             completed = mission.Frame();
@@ -231,12 +235,16 @@ public sealed class TR3TrainingMissions34Tests
                     site.SendTrainingChat(ChatEveryone);      // goal 2: chat to All
                     chatSent = true;
                 }
-                else if (m.Contains("Fly to the aleph", StringComparison.Ordinal))
-                    host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, 1030));
+                else if (m.Contains("Fly to the aleph", StringComparison.Ordinal) && !transited)
+                {
+                    host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Warp, 1030));
+                    if (!transited) host.PlayerShip.Position = aleph.Position;
+                }
                 else if (m.Contains("Flying through the aleph", StringComparison.Ordinal) && !transited)
                 {
                     var mars = host.Mission.Sectors.First(s => s.Id == 1031); // transit gate (goal 5)
                     host.Mission.PlaceShip(host.PlayerShip, mars);
+                    host.PlayerShip.Position = Coll.Vector3.Zero; // scripted graph fixture, not a runtime transit proof
                     transited = true;
                 }
                 else if (m.Contains("activate your cloak.", StringComparison.Ordinal) && !cloakPressed)
@@ -260,7 +268,7 @@ public sealed class TR3TrainingMissions34Tests
         Assert.True(cloakPressed, "cloak key (goal 6) never pressed");
         Assert.True(targetedMiner, "enemy miner engagement (goal 7) never happened");
         Assert.True(acceptPrompts >= 1, "goal 8/9 accept prompt never reached");
-        Assert.True(builderGone, "builder build-complete (goal 9) never resolved");
+        Assert.True(builderGone, $"builder build-complete (goal 9) never resolved; goal={mission.ActiveGoalPath}");
         Assert.True(reachedLand, "landing prompt (goal 10) never reached");
 
         mission.ShipLanded();      // Mission4::ShipLanded -> Terminate (mission4.cpp:98-105)

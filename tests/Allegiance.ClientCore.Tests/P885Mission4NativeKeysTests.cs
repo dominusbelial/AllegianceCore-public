@@ -26,9 +26,9 @@ public class P885Mission4NativeKeysTests
     private static FakeTrainingSite BuildSite()
     {
         var site = new FakeTrainingSite();
-        // The aleph stand-in (Ship-type target carrying the aleph's object id 1030) parked at the
-        // goal-3 waypoint position (800,0,0) so the "fly to the aleph" radius gate resolves.
-        site.AddObject(ObjectType.Ship, 1030, new Vector3(800f, 0f, 0f), Vector3.UnitX);
+        // Use the native Warp namespace. The real geometry/flight is covered by P892d's
+        // loopback and window proofs; this fake fixture isolates the cloak/target key numbers.
+        site.AddObject(ObjectType.Warp, 1030, new Vector3(800f, 0f, 0f), Vector3.UnitX);
         return site;
     }
 
@@ -64,18 +64,13 @@ public class P885Mission4NativeKeysTests
             "SPACEBAR prompt 2 never appeared");
         mission.RecordKeyPress(KeyFireBooster);
 
-        // Goal 3: the mission's own queued goto makes the accept gate already true (the skip rule,
-        // goal.cpp:40, elides that prompt on the fake site); stand on the waypoint (800,0,0) so the
-        // radius goal completes.
-        ((FakeObject)site.PlayerShip).Position = new Vector3(800f, 0f, 0f);
+        // This fake auto-accepts queued orders. Both goals 3 and 4 now queue their native
+        // goto (mission4.cpp:337,449), so their accept prompts may be skipped by goal.cpp:40.
+        // Stand on the actual quarter-distance waypoint instead of its retired fixed (800,0,0).
+        Assert.True(StepUntil(site, mission, () => site.Resolve(new TargetRef(ObjectType.Buoy, 700)) is not null, 6000));
+        ((FakeObject)site.PlayerShip).Position = site.Resolve(new TargetRef(ObjectType.Buoy, 700))!.Position;
 
-        // Goal 4: its command-clearing start actions run first, so the accept gate needs a fresh
-        // goto — wait for the (first) INSERT-or prompt, then accept it.
-        Assert.True(StepUntil(site, mission, () => Count(site, "Press the INSERT or '[' key") >= 1, 6000),
-            "goal 4 accept prompt never appeared");
-        site.IssueCommand(site.PlayerShip.Ref, 0, null, CmdGoto);
-
-        // Goal 5: the aleph-radius gate is already true (we stand on the aleph stand-in), so the
+        // Goal 5: the aleph-radius gate is already true (we stand on the aleph), so the
         // native skip rule elides its prompt; wait for the transit prompt and then move to Mars.
         Assert.True(StepUntil(site, mission, () => Count(site, "Flying through the aleph") >= 1, 6000),
             "goal 5 transit prompt never appeared; goal=" + mission.ActiveGoalPath

@@ -110,7 +110,7 @@ public sealed partial class Game1
         {
             IgcObjectType.Ship => TargetKind.Ship, IgcObjectType.Station => TargetKind.Station,
             IgcObjectType.Asteroid => TargetKind.Asteroid, IgcObjectType.Warp => TargetKind.Warp,
-            IgcObjectType.Probe => TargetKind.Probe, IgcObjectType.Treasure => TargetKind.Treasure, _ => null,
+            IgcObjectType.Probe => TargetKind.Probe, IgcObjectType.Buoy => TargetKind.Buoy, IgcObjectType.Treasure => TargetKind.Treasure, _ => null,
         };
         // HUD-12b — native TK_TargetCommand copies the ACCEPTED slot's id
         // verbatim into c_cmdCurrent (WinTrek.cpp:10408-10412), including
@@ -138,6 +138,7 @@ public sealed partial class Game1
     {
         TargetKind.Ship => IgcObjectType.Ship, TargetKind.Station => IgcObjectType.Station,
         TargetKind.Asteroid => IgcObjectType.Asteroid, TargetKind.Warp => IgcObjectType.Warp,
+        TargetKind.Buoy => IgcObjectType.Buoy,
         TargetKind.Probe => IgcObjectType.Probe, TargetKind.Treasure => IgcObjectType.Treasure,
         _ => null,
     };

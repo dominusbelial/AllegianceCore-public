@@ -50,6 +50,11 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         public readonly TrainingMission Mission;
         public readonly ActionMap Map = new(InputActionCatalog.Definitions);
         public readonly TrainingInputGate Gate;
+        public bool Eyeball;
+        public Coll.Vector3? BayApproach;
+        public Coll.Vector3 BayEntry;
+        public bool BayAligned;
+        private TargetRef? _scriptedAutopilotTarget;
 
         public Trainee(TrainingHost.TrainingVariant variant, int missionId)
         {
@@ -59,6 +64,9 @@ public sealed class P881aTrainingMissionsTests : IDisposable
                 World = () => Connection.World,
                 Session = Connection,
                 Host = Host,
+                SetEyeball = shown => Eyeball = shown,
+                OwnAutopilot = variant == TrainingHost.EnemyEngagement
+                    ? (target, on) => _scriptedAutopilotTarget = on ? target : null : null,
                 ClockSeconds = () => Host.Mission.LastUpdate,
                 // The client's real own-ship kinematics: the replicated own pose supplies the
                 // attitude and the training host's interceptor supplies the hull stats. In the
@@ -99,6 +107,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             while (!Site.HasPlayerShip && watch.Elapsed < TimeSpan.FromSeconds(20)) Thread.Sleep(5);
             Assert.True(Site.HasPlayerShip, "trainee pose never replicated in space");
             // The production Game1 pump starts the script once the own ship has a replicated pose.
+            TrainingController.BeginMission();
             Session.Start();
         }
 
@@ -130,6 +139,13 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         {
             var masked = TrainingController.ApproveControls(controls);
             int maskedState = TrainingController.ApproveActions(stateM);
+            // Game1 applies scripted autopilot AFTER the lesson's manual-input mask.
+            if (_scriptedAutopilotTarget is { } ap && Site.Resolve(ap) is { } point)
+            {
+                var pose = MyPose;
+                masked = AutopilotSteering.Pursue(pose.Position, pose.Orientation,
+                    new Coll.Vector3(point.Position.X, point.Position.Y, point.Position.Z));
+            }
             TrainingOwnState.Set(masked, maskedState);
             Connection.CommandControls(masked, maskedState);
         }
@@ -285,9 +301,9 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             if (basePrompt > baseSeen) { baseSeen++; t.Target(ObjectType.Station, 1010); killing = false; landing = true; }
             if (spacebar > spacebarSeen) { spacebarSeen++; t.Press(Keys.Space); }
             // Goal 10's go-home SPACE. Native leaves this to the player (mission3.cpp:1090: "when you are
-            // ready to go home") and a human steers round any survivors, but this driver's DockControls
-            // flies straight at the station with no avoidance and pins on a hull of the native sphere
-            // (TRN-0218). So the DRIVER clears the path first; killing all ten is not a native rule.
+            // ready to go home") and a human steers round survivors. This headless shooting fixture
+            // still clears all ten before its manual bay approach; the four real-window proofs
+            // independently demonstrate landing with seven survivors (P892d).
             if (spaceKey > spaceKeySeen && nextDerelict > 1009) { spaceKeySeen++; t.Press(Keys.Space); }
             if (t.Count("Land in a green hangar") > 0) { killing = false; landing = true; }
 
@@ -309,7 +325,11 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             int stateM = 0;
             if (landing)
             {
-                (controls, stateM) = DockControls(t);
+                var home = t.Host.Mission.Sectors.SelectMany(s => s.StationRuntimes)
+                    .Single(s => s.StationId == 1010);
+                var bayCommand = ManualBayLanding(t, home);
+                controls = bayCommand.Controls;
+                stateM = bayCommand.StateM;
             }
             else
             {
@@ -336,6 +356,132 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.True(nextDerelict >= 1010, $"all ten derelicts should have died to real projectiles (next {nextDerelict})");
         Assert.True(t.Host.PlayerShip.StationId is not null, "trainee never docked at the outpost");
         Assert.True(spacebarSeen >= 2 && spaceKeySeen >= 2, "both SPACEBAR and SPACE-key acknowledgements fired");
+    }
+
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")]
+    public void Mission4_completes_with_real_transit_guns_constructor_and_landing()
+    {
+        Require.Artwork();
+        using var t = new Trainee(TrainingHost.EnemyEngagement, Tm4EnemyEngagement);
+        Assert.False(t.Session.RecordKeyPress(KeyToggleAutoPilot)); // native command-view gate
+        var commandKeys = new Allegiance.ClientCore.MonoGame.Flight.CommandActionInput();
+        var clock = Stopwatch.StartNew();
+        string last = "";
+        int spaceSeen = 0;
+        short? pickedMiner = null;
+        double logAt = 0;
+        bool chatted = false, cloaked = false, transited = false, scoutSeen = false;
+        while (!t.Session.Finished && clock.Elapsed.TotalSeconds < 900)
+        {
+            string goal = t.Mission.ActiveGoalPath;
+            if (goal != last)
+            { Console.WriteLine($"[p892d] M4 {goal} sector={t.Host.PlayerShip.Sector?.Id} pos={t.Host.PlayerShip.Position}"); last = goal; }
+            if (goal == "2.3" && !chatted)
+            {
+                t.Connection.SendChat("x", ChatTarget.Everyone);
+                t.Mission.RecordChat(ChatEveryone); // actual send event, Game1.Session.cs SendChatLine
+                chatted = true;
+            }
+            int space = t.Count("Press the SPACEBAR");
+            if (space > spaceSeen) { spaceSeen = space; t.Press(Keys.Space); }
+            if (clock.Elapsed.TotalSeconds > logAt)
+            {
+                logAt = clock.Elapsed.TotalSeconds + 5;
+                var q = t.World.MyQueuedCommand;
+                if (t.Host.Drones.TryGetValue(1105, out var constructor))
+                    Console.WriteLine($"[p892d] constructor pos={constructor.Position} velocity={constructor.Velocity} fraction={constructor.Fraction} stationType={constructor.BuilderStationType?.StationTypeId} rock={constructor.BuilderAsteroidTarget?.Data.AsteroidId} rockPos={constructor.BuilderAsteroidTarget?.Data.Position[0]},{constructor.BuilderAsteroidTarget?.Data.Position[1]},{constructor.BuilderAsteroidTarget?.Data.Position[2]} building={constructor.IsBuilding} runaway={constructor.IsRunningAway} plan={constructor.PlanCommandId} goto={constructor.GotoWaypoint}");
+                Console.WriteLine($"[p892d] state goal={goal} pos={t.Host.PlayerShip.Position} vel={t.Host.PlayerShip.Velocity} q={q} accepted={t.Host.PlayerShip.AcceptedShipCommandId} buoys={t.World.CommandBuoys.Count} legal={(q is { } queued && t.World.LegalQueuedCommand(queued))} ammo={t.Host.PlayerShip.Ammo} weapons={t.Host.PlayerShip.Weapons.Count} drones={string.Join(';', t.Host.Drones.Values.Select(d => $"{d.Id}:{d.Fraction:F2}@{d.Sector?.Id}"))}");
+            }
+            if (t.World.MyQueuedCommand is not null)
+            {
+                var key = new KeyboardState(Keys.OemOpenBrackets);
+                t.Gate.Update(key, t.Map);
+                var result = commandKeys.Step(key, false, t.Map, t.World);
+                if (result.Request is { } req) t.Connection.SendOrderChange(req.ShipID, req.CommandId, req.Command, req.ObjectType, req.ObjectID);
+                if (result.ChangeSelection && result.Selection is { } selected)
+                {
+                    t.World.SetCurrentCommand(selected);
+                    t.Connection.SendOrderChange(t.MyId, selected.CommandId, OrderChange.CmdCurrent, selected.TargetType, selected.TargetId);
+                }
+                t.Gate.Update(default, t.Map);
+                commandKeys.Step(default, false, t.Map, t.World);
+            }
+            if (t.Count("G key to activate") > 0 && !cloaked)
+            { t.PressAction("ToggleCloak", Keys.G); cloaked = true; }
+            var ship = t.Host.PlayerShip;
+            if (ship.Sector?.Id == 1031) transited = true;
+            scoutSeen |= t.Host.Drones.ContainsKey(1100);
+            int state = 0;
+            ControlData controls = ControlData.Neutral;
+            Coll.Vector3? aim = null;
+            bool fire = false;
+            Ship? combatTarget = null;
+            if (goal.StartsWith("3.") && t.Host.Waypoints.TryGetValue(700, out var wp))
+                aim = new(wp.Position.X, wp.Position.Y, wp.Position.Z);
+            if (goal.StartsWith("5.") && ship.Sector?.Warps.FirstOrDefault(w => w.Warp.WarpId == 1030) is { } warp)
+                aim = warp.Position;
+            if (goal.StartsWith("7."))
+            {
+                if (pickedMiner is null && t.Count("Target an enemy miner") > 0)
+                {
+                    t.PressAction("TargetEnemy", Keys.F);
+                    var pick = t.Host.Drones.Values.Where(d => d.Id is >= 1101 and <= 1104 && !d.Dead && d.Sector == ship.Sector)
+                        .OrderBy(d => (d.Position - ship.Position).LengthSquared()).FirstOrDefault();
+                    if (pick is not null) { pickedMiner = pick.Id; t.Target(ObjectType.Ship, pick.Id); }
+                }
+                if (pickedMiner is { } id && t.Host.Drones.TryGetValue(id, out var miner) && miner.Sector == ship.Sector)
+                { aim = miner.Position; combatTarget = miner; fire = goal == "7.7"; }
+            }
+            if (goal.StartsWith("8.") && t.Host.Drones.TryGetValue(1105, out var builder))
+            {
+                if (builder.Sector != ship.Sector && ship.Sector?.FindPathToward(builder.Sector!) is { } route) aim = route.Position;
+                else aim = builder.Position;
+                if (t.Host.Drones.TryGetValue(1100, out var scout) && !scout.Dead && scout.Sector == ship.Sector)
+                { aim = scout.Position; combatTarget = scout; fire = goal == "8.7"; }
+            }
+            if (goal.StartsWith("10."))
+            {
+                var station = ship.Sector?.StationRuntimes.FirstOrDefault(st => st.SideId == ship.SideId);
+                if (station is not null)
+                {
+                    var command = ManualBayLanding(t, station);
+                    controls = command.Controls; state = command.StateM;
+                }
+            }
+            else if (aim is { } point)
+            {
+                var pose = t.MyPose;
+                float distance = (point - pose.Position).Length();
+                var leadPoint = point;
+                if (fire && ship.Weapons.FirstOrDefault() is { } weapon)
+                {
+                    var target = combatTarget;
+                    if (target is not null && LeadSolver.SolveForLead(new LeadSolver.Input(
+                        pose.Position, ship.Velocity, point, target.Velocity,
+                        (ship.Mission?.WeaponMuzzles?.Position(ship.HullType, weapon.MountId) ?? Coll.Vector3.Zero) * pose.Orientation,
+                        weapon.ProjectileType.Speed, weapon.ProjectileType.AbsoluteF, target.Radius), out var lead) < LeadSolver.NoSolutionTime)
+                        leadPoint = pose.Position + lead * Math.Max(distance, 100);
+                }
+                var steer = AutopilotSteering.Pursue(pose.Position, pose.Orientation, leadPoint);
+                controls = steer with { Throttle = fire && distance < 600 ? -1f : steer.Throttle };
+                float cosine = distance > .001f ? pose.Orientation.GetForward() * ((leadPoint - pose.Position).Normalize()) : 1f;
+                var keys = fire && cosine > .995f && distance < 1000 ? new KeyboardState(Keys.Space) : default;
+                var input = Allegiance.ClientCore.MonoGame.Flight.FlightInputState.None with
+                { Fire = t.Map.IsDownMostSpecific(keys, "FireWeapon"), GroupFire = true };
+                state = Allegiance.ClientCore.MonoGame.Flight.FlightInput.Translate(input).StateM;
+            }
+            t.Advance(controls, state);
+        }
+        Console.WriteLine($"[p892d] M4 final={t.Mission.ActiveGoalPath} complete={t.Session.Completed} transit={transited} scout={scoutSeen} dock={t.Host.PlayerShip.StationId}");
+        Assert.True(t.Session.Completed, $"M4 stalled at {t.Mission.ActiveGoalPath}; position={t.Host.PlayerShip.Position}; sector={t.Host.PlayerShip.Sector?.Id}");
+        Assert.True(transited);
+        Assert.True(cloaked);
+        Assert.True(scoutSeen);
+        Assert.True(t.Host.IsDestroyed(1100));
+        Assert.True(t.Host.IsDestroyed(1105));
+        Assert.NotNull(t.Host.PlayerShip.StationId);
     }
 
     [SkippableFact]
@@ -523,6 +669,89 @@ public sealed class P881aTrainingMissionsTests : IDisposable
     }
 
     [Fact]
+    public void Training_locks_manual_controls_without_locking_scripted_autopilot()
+    {
+        TrainingController.BeginMission();
+        Array.Fill(TrainingControlState.AllowableControlScalars, 0f);
+        TrainingControlState.AllowableActionMask = 0;
+        var manual = new Allegiance.ClientCore.MonoGame.Flight.FlightCommand(new(.7f, .8f, .3f, 1f), WeaponsMask);
+        var automatic = new Allegiance.ClientCore.MonoGame.Flight.FlightCommand(new(.2f, -.3f, 0, 1f), ShipControlState.ForwardButton);
+        var locked = Game1.ComposeTrainingFlight(manual, null);
+        Assert.Equal(ControlData.Neutral, locked.Controls);
+        Assert.Equal(0, locked.StateM);
+        Assert.Equal(automatic, Game1.ComposeTrainingFlight(manual, automatic));
+        Assert.Equal(manual.Controls, TrainingControlState.InputControls);
+    }
+
+    [Fact]
+    public void Training_dead_ship_is_absent_and_waypoint_order_accepts_the_native_key()
+    {
+        using var connection = new ConnectionSession();
+        var world = connection.World;
+        var pose = ServerShipUpdate.FromValues(11, 0, default, 0, Coll.Vector3.Zero,
+            Orientation.Identity, Coll.Vector3.Zero, [0, 0, 0], 1, 1, 1, 1, 1, 0, 1);
+        world.Apply(new SetCluster { SectorId = 1030, Ship = pose });
+        world.Apply(new ExportShip { ShipId = 11, SideId = 0, CharacterName = "trainee" });
+        var site = new ClientTrainingSite(new ClientTrainingFacilities { World = () => world, Session = connection });
+        var target = new TargetRef(ObjectType.Ship, 11);
+        Assert.NotNull(site.Resolve(target));
+        world.Apply(ShipDelete.ForKilledShip(11));
+        Assert.NotNull(world.Ships[11].Latest); // the retained receipt must not look like a live IGC model
+        Assert.Null(site.Resolve(target));
+        Assert.True(site.HasCommand(target, CmdGoto)); // native GetCommandCondition: absent => true
+
+        world.Apply(new SetCluster { SectorId = 1030, Ship = pose });
+        site.CreateWaypoint(700, new(800, 100, 0), 1030, 0, true);
+        world.Apply(new QueuedCommandUpdate { CommandId = OrderChange.CidGoto,
+            TargetType = IgcObjectType.Buoy, TargetId = 700 });
+        var map = new ActionMap(InputActionCatalog.Definitions);
+        TrainingController.BeginMission();
+        var input = new Allegiance.ClientCore.MonoGame.Flight.CommandActionInput();
+        var result = input.Step(new(Keys.OemOpenBrackets), false, map, world);
+        Assert.Equal(OrderChange.CmdQueued, result.Request!.Command);
+        Assert.Equal(700, world.MyAcceptedCommand!.Value.TargetId);
+        Assert.Equal(Game1.TargetKind.Buoy, Game1.CommandSelection(world, result.Selection)!.Value.Kind);
+        Assert.Null(world.MyQueuedCommand);
+    }
+
+    [Fact]
+    public void Training_G_only_cloaks_and_P_only_toggles_autopilot()
+    {
+        Assert.True(Game1.YieldsToTrainingTarget(new(Keys.OemOpenBrackets), "PrevWeapon", true));
+        Assert.False(Game1.YieldsToTrainingTarget(new(Keys.OemOpenBrackets), "PrevWeapon", false));
+        Assert.False(TrainingInputGate.NativeDefaultKeyDown(new(Keys.B), "TargetFriendlyBasePrev"));
+        Assert.True(TrainingInputGate.NativeDefaultKeyDown(new(Keys.LeftControl, Keys.B), "TargetFriendlyBasePrev"));
+        Assert.False(TrainingInputGate.NativeDefaultKeyDown(new(Keys.LeftControl, Keys.B), "TargetFriendlyBase"));
+        var map = new ActionMap(InputActionCatalog.Definitions);
+        var recorded = new List<int>();
+        var gate = new TrainingInputGate(k => { recorded.Add(k); return true; });
+        map.ActionFilter = gate.Approves;
+        gate.Update(new(Keys.Insert), map);
+        Assert.Contains(40, recorded);
+        Assert.DoesNotContain(46, recorded); // INSERT accepts; it must not also strafe up
+        gate.Update(default, map);
+        recorded.Clear();
+        gate.Update(new(Keys.F), map);
+        Assert.Contains(KeyTargetEnemy, recorded);
+        Assert.DoesNotContain(KeyToggleCloak, recorded);
+        gate.Update(default, map);
+        recorded.Clear();
+        gate.Update(new(Keys.G), map);
+        Assert.True(Game1.CloakKeyDown(map, new(Keys.G), true));
+        Assert.False(Game1.AutopilotKeyDown(map, new(Keys.G), true));
+        Assert.DoesNotContain(DefaultInputMap.TkNumber("TK_ToggleAutoPilot")!.Value, recorded);
+        gate.Update(default, map);
+        gate.Update(new(Keys.P), map);
+        Assert.True(Game1.AutopilotKeyDown(map, new(Keys.P), true));
+        Assert.False(Game1.CloakKeyDown(map, new(Keys.P), true));
+        Assert.Contains(DefaultInputMap.TkNumber("TK_ToggleAutoPilot")!.Value, recorded);
+        Assert.True(Game1.AutopilotKeyDown(map, new(Keys.G), false));
+        Assert.False(Game1.AutopilotKeyDown(map, new(Keys.P), false));
+        map.ActionFilter = _ => false;
+        Assert.False(Game1.AutopilotKeyDown(map, new(Keys.P), true));
+    }
+
+    [Fact]
     public void Cloak_engages_on_the_native_default_G_key_only_under_training()
     {
         // P892c — M4 cloak. Native's cloak is G (InputActionCatalog.cs:126, catalogue 5th arg), but
@@ -548,36 +777,43 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.False(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: true));
     }
 
-    /// <summary>The client's real station docking autopilot (DockApproach, the same planner
-    /// Game1.TryComputeDockSteer uses) driven from the replicated pose.</summary>
-    private static (ControlData Controls, int StateM) DockControls(Trainee t)
+    // Headless controls cross the compact wire. Fly with digital keyboard inputs, as the
+    // real-window driver does, so tiny analog pivot commands cannot round to zero at a bay.
+    private static Allegiance.ClientCore.MonoGame.Flight.FlightCommand ManualBayLanding(Trainee t, Station station)
     {
-        var station = t.Host.Mission.Sectors.SelectMany(s => s.StationRuntimes)
-            .FirstOrDefault(s => s.StationId == t.Host.PlayerShip.StationId)
-            ?? t.Host.Mission.Sectors.SelectMany(s => s.StationRuntimes)
-                .First(s => s.StationId == t.Host.HomeStationId);
         var pose = t.MyPose;
-        var sector = t.Host.PlayerShip.Sector!;
-        var geom = sector.StationLandingBays?.Bay(station.Type);
-        if (geom is null || geom.LandSlots.Count == 0)
-            return (AutopilotSteering.Pursue(pose.Position, pose.Orientation, station.Center), 0);
-        var bays = geom.LandSlots.Select(slot => new DockApproach.DockBay(
-            slot.Planes[0].Position * station.Orientation,
-            slot.Planes[0].Direction.Normalize() * station.Orientation)).ToList();
         var ship = t.Host.PlayerShip;
+        var geometry = ship.Sector!.StationLandingBays!.Bay(station.Type)!;
+        Assert.NotEmpty(geometry.LandSlots);
+        if (t.BayApproach is null)
+        {
+            var bay = geometry.LandSlots.Select(slot => slot.Planes[0])
+                .Select(plane => (Center: station.Center + plane.Position * station.Orientation,
+                    Direction: plane.Direction.Normalize() * station.Orientation))
+                .OrderBy(b => (b.Center + b.Direction * (station.Radius + 200) - pose.Position).LengthSquared()).First();
+            t.BayApproach = bay.Center + bay.Direction * (station.Radius + 200);
+            t.BayEntry = bay.Center - bay.Direction * 100;
+            Console.WriteLine($"[p892d] manual bay approach={t.BayApproach} entry={t.BayEntry}");
+        }
+        if (!t.BayAligned && (t.BayApproach.Value - pose.Position).Length() < 35)
+        { t.BayAligned = true; Console.WriteLine("[p892d] manual bay aligned; entering"); }
+        var point = t.BayAligned ? t.BayEntry : t.BayApproach.Value;
+        var delta = point - pose.Position;
+        float distance = delta.Length();
+        var direction = distance > .001f ? delta / distance : pose.Orientation.GetForward();
+        float cosine = pose.Orientation.GetForward() * direction;
+        var body = pose.Orientation.TimesInverse(Coll.Vector3.CrossProduct(pose.Orientation.GetForward(), direction));
         float speed = ship.Velocity.Length();
-        float distanceRest = DockApproach.StoppingDistance(speed, ship.EffectiveThrust(), ship.Mass,
+        float stopping = DockApproach.StoppingDistance(speed, ship.EffectiveThrust(), ship.Mass,
             ship.EffectiveMaxSpeed(), ship.HullType.BackMultiplier);
-        var positionRest = speed > .1f ? ship.Position + ship.Velocity * (distanceRest / speed) : ship.Position;
-        float totalRadius = 0.5f * ship.HullType.Length + station.Radius + 10f;
-        var step = DockApproach.DockStation(pose.Position, ship.Velocity, pose.Orientation, station.Center,
-            bays, DockApproach.StationBaysForClass(true, bays, geom.CapLandSlots),
-            distanceRest, positionRest, totalRadius,
-            ship.TurnRates[ControlData.AxisYaw], ship.TurnRates[ControlData.AxisPitch],
-            experimental: false);
-        var turn = DockApproach.TurnState.FromShip(ship);
-        return (DockApproach.Steer(step, pose.Position, pose.Orientation, ship.Velocity, distanceRest,
-                dt: 0.05f, maxTurnRateRoll: ship.EffectiveMaxTurnRate(ControlData.AxisRoll), turnState: turn),
-            DockApproach.MovementButtons(step, pose.Position, pose.Orientation, ship.Velocity, turn));
+        var input = Allegiance.ClientCore.MonoGame.Flight.FlightInputState.None with
+        {
+            YawLeft = cosine < -.999f || body.Y > .015f, YawRight = cosine >= -.999f && body.Y < -.015f,
+            PitchUp = -body.X > .015f, PitchDown = -body.X < -.015f,
+            Throttle = !t.BayAligned && distance > Math.Max(400, stopping + 200) && cosine > .98f ? 1f : -1f,
+            ThrottleForward = speed < 12 && cosine > .985f,
+        };
+        return Allegiance.ClientCore.MonoGame.Flight.FlightInput.Translate(input);
     }
+
 }
