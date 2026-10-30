@@ -4,6 +4,18 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## 2026-10-30 Claude triage: batch sweep `73b375bc`, merged master `c395ed6a`
+
+| Test | Evidence | Verdict |
+| --- | --- | --- |
+| `P801StrikeMassLiveTests.Fogged_showcase_masses_strikes_and_at_least_one_station_dies` | Alternating on one host: `a57fc22b` (before P896) 4/5 pass, `c395ed6a` 2/5 pass, all failures at the `kills` assert after 600 s. No failed run reached the finale trigger: side 1 never observed an enemy station (one base, two merged runs) or kills stayed 0 so maturity never passed (one merged run). No `finale holding` line in any run. Passed 8/8 on the runner before this. | Intermittent fog-discovery stall, also before P896. The rate difference is not significant at n=5; recheck on the runner. |
+| `SC3CloakLiveTests.Research_showcase_cloaks_on_both_sides_and_bomber_decloaks_to_strike` | Sweep fail, then fail / pass / pass alone on `a57fc22b`. | Intermittent, same 15 min budget failure. |
+| `SC5CloakLiveTests.Rig_civs_at_research_eight_use_real_cloaks_on_both_sides` | Sweep fail, 3/3 pass alone. Also failed in the 10-28 nightly. | Load or budget intermittent. |
+| `P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog` | Sweep fail (Brawl, 2 captures), 3/3 pass alone. Also failed in the 10-29 nightly. | Load or budget intermittent. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | Fast fail on `c395ed6a`, then fail / fail / pass alone. No Core or Server file changed in P896. | Intermittent alone, needs its own look. |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | Fast fail, 3/3 pass alone. | Load flake. |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Fast fail, 3/3 pass alone. | Load flake. |
+
 ## P892d verification observations (2026-10-30)
 
 The one Fast sweep remains **FAIL**: **11,877 passed / 11 failed / 3 optional skips**, 11,891
