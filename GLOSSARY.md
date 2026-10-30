@@ -580,6 +580,19 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Audio/SoundManager.cs`. Native:
   `WinTrek/soundinit.cpp`, `WinTrek/trekigc.cpp:930-951,4955-4983`,
   `WinTrek/WinTrek.cpp:11271-11280`, `WinTrek/trekmdl.cpp:452-478`.
+- **Positional 3D sound (P893)** — the native DirectSound3D model for world
+  sounds as pure math + a per-frame mix pass: native log rolloff from the
+  per-family `ThreeDSound(minDistance)` values, Doppler from emitter/listener
+  velocities, stereo pan from the camera basis, cones (ported, unused by
+  artwork), and the −60 dB audibility radius feeding the voice budget. Key:
+  `src/Allegiance.ClientCore.Game/Audio/Sound3D.cs` (`Sound3DModel`,
+  `Native3DMix`, `Sound3DMix`), the 3D pass in
+  `src/Allegiance.ClientCore.Game/Audio/SoundManager.cs`
+  (`ApplyVoiceBudget`), listener feeds `Game1.FlightInput.cs` (velocity) /
+  `Game1.Rendering.cs` (camera pose), option `IntroPreferences.Enable3DSound` +
+  `OptionsMenuModel` Sound row. Native: `soundengine/ds3dvirtualbuffer.cpp:692-830`,
+  `soundengine/ds3dbuffer.h:12-15`, `soundengine/ds3dengine.cpp:236-237`,
+  `WinTrek/WinTrek.cpp:646-708`, `WinTrek/treksound.cpp:60-120`.
 - **Force feedback (P871)** — native `PlayFFEffect` producers and their gates:
   own-ship/gunner weapon fire, own collisions, credited damage with the impact
   direction, plus expiry/focus/disconnect stop and the settings toggle. Key:

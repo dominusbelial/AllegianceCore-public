@@ -449,6 +449,12 @@ public sealed partial class Game1
                     // every mode benefits; jiggle below perturbs the smoothed view.
                     ApplyCameraSmoothing(ref view, ref proj, ref cameraEye, aspect, chaseDt);
                 }
+                // P893 — the 3D listener IS the camera in every view mode
+                // (native CameraListener, WinTrek.cpp:646-708): feed the smoothed
+                // camera eye + view basis to the sound manager so the world mix
+                // pans/attenuates against what's actually on screen. Velocity was
+                // fed from the flight-input path (the own ship's, native's quirk).
+                _sound?.SetListenerCamera(cameraEye, view);
                 if ((_benchmark is not null || _benchmarkApplied) && _cameraMode != CameraMode.Command)
                     proj = WithBenchmarkViewDistance(proj, _benchmarkViewDistance);
                 // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets

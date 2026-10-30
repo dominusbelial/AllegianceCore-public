@@ -108,17 +108,22 @@ public sealed class ProbeSoundPlanner
     /// probe list (one entry per probe in the listener's sector, paired with its
     /// listener distance and attribution). Returns a fresh command list each call;
     /// the caller replays it against the audio backend. Empty input stops every
-    /// tracked ambient.
-    /// </summary>
-    public List<ProbeSoundCommand> Plan(IReadOnlyCollection<ProbeSoundSample> live)
+    /// tracked ambient. <paramref name="audibleRadiusOverride"/> (P893) widens
+    /// the ambient start/stop gate while 3D is on: native admits every in-sector
+    /// sound and lets the positional engine + voice budget decide (the −60 dB
+    /// range for the probe's ThreeDSound(200) template is 200,000 units), so the
+    /// 3D path passes that range instead of the hand-tuned curve radius.</summary>
+    public List<ProbeSoundCommand> Plan(IReadOnlyCollection<ProbeSoundSample> live,
+        float? audibleRadiusOverride = null)
     {
+        float range = audibleRadiusOverride ?? ProbeAmbientSoundCurve.AudibleRadius;
         var commands = new List<ProbeSoundCommand>(live.Count + 2);
         var seen = new HashSet<short>();
 
         foreach (var s in live)
         {
             seen.Add(s.ProbeId);
-            bool inRange = s.DistanceToListener <= ProbeAmbientSoundCurve.AudibleRadius;
+            bool inRange = s.DistanceToListener <= range;
 
             if (_known.Add(s.ProbeId))
             {

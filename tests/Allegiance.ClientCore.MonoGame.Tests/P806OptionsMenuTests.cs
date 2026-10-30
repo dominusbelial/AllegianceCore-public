@@ -48,15 +48,21 @@ public sealed class P806OptionsMenuTests
         menu.Row0 = 1;
         menu.Activate(State);                            // open Sound Options
         var rows = menu.Rows(State);
-        Assert.Equal(3, rows.Count);
+        // P893 added the positional-3D switch (a port addition — native's sound
+        // menu has no 3D toggle), so the submenu is music ×3 + 3D = 4 rows.
+        Assert.Equal(4, rows.Count);
         Assert.Equal("Music: on", rows[0].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleMusic, rows[0].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.MusicVolumeUp, rows[1].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.MusicVolumeDown, rows[2].Command);
+        Assert.Equal("Positional 3D Sound: on", rows[3].Label);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.Toggle3DSound, rows[3].Command);
 
-        // The label reflects live state (native Get...MenuString).
-        var off = State with { MusicOn = false };
-        Assert.Equal("Music: off", menu.Rows(off)[0].Label);
+        // The labels reflect live state (native Get...MenuString).
+        var off = State with { MusicOn = false, Sound3DOn = false };
+        var offRows = menu.Rows(off);
+        Assert.Equal("Music: off", offRows[0].Label);
+        Assert.Equal("Positional 3D Sound: off", offRows[3].Label);
     }
 
     [Fact]

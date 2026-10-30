@@ -967,6 +967,9 @@ public sealed partial class Game1
         // gracefully to silent rather than throwing.
         _sound = new Audio.SoundManager(Content);
         _sound.Load();
+        // P893 — the positional-3D switch (Sound Options) persists in player.json;
+        // default ON = native behaviour.
+        _sound.Sound3DEnabled = IntroPreferences.Load().Enable3DSound;
         // P614 — the voice-budget telemetry console line (active voices by
         // category + drops/s) is opt-in via env var for quiet normal-play logs.
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_AUDIO_TELEMETRY") == "1")

@@ -64,6 +64,10 @@ public sealed partial class Game1
 
         long now = ClientNowMilliseconds;
         List<(ProjectileEntity Entity, float Distance)> inRange = new();
+        // P893 — per-projectile world pose, captured under the Gate and replayed
+        // with the planner's commands so each ambient loop carries the native 3D
+        // emitter (er_beam's ThreeDSound(200), sounddef.mdl:14).
+        var poses = new Dictionary<ProjectileEntity, (SimVec Pos, SimVec Vel)>();
         short? myShipId = null;
         short? gunnerShipId = null;
 
@@ -86,12 +90,29 @@ public sealed partial class Game1
             if (listener?.Latest is { } meUp)
             {
                 var anchor = meUp.Position;
+                // P893 — while 3D is on, admit loops out to the native −60 dB
+                // audibility range (Sound3DModel.AudibleRange), not the hand-tuned
+                // curve radius — the voice budget then ranks by native gain, like
+                // native's virtual-buffer priority (ds3dengine.cpp:372-443).
+                float range = Audio.ProjectileAmbientSoundCurve.AudibleRadius;
+                if (snd?.Sound3DEnabled == true)
+                    range = MathF.Max(range, Audio.Native3DMix.AudibleRange(Audio.Native3DRole.ProjectileAmbient));
                 foreach (var pj in world.Projectiles)
                 {
                     var pos = pj.PositionAt(now);
                     float dist = (pos - anchor).Length();
-                    if (dist > Audio.ProjectileAmbientSoundCurve.AudibleRadius) continue;
+                    if (dist > range) continue;
                     inRange.Add((pj, dist));
+                    poses[pj] = (pos, pj.Velocity);
+                }
+                // P893 — bound the started loops to the 64 nearest bolts (the
+                // port's stand-in for native's cheap software virtual buffers:
+                // OpenAL sources are a 256-shared pool, so a 200-bolt storm must
+                // not materialise every one of them as a live instance).
+                if (inRange.Count > 64)
+                {
+                    inRange.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+                    inRange.RemoveRange(64, inRange.Count - 64);
                 }
             }
         }
@@ -110,11 +131,13 @@ public sealed partial class Game1
                             ForceFeedbackWeaponFire(me2, gunnerShipId, myShipId);
                         Console.WriteLine("[monogame] audio: weapon fire");
                     }
-                    snd?.StartProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    snd?.StartProjectileAmbient(cmd.Projectile, cmd.Volume,
+                        poses.TryGetValue(cmd.Projectile, out var pose) ? pose.Pos : null);
                     Console.WriteLine("[monogame] audio: projectile ambient start");
                     break;
                 case Audio.ProjectileSoundAction.Update:
-                    snd?.UpdateProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    snd?.UpdateProjectileAmbient(cmd.Projectile, cmd.Volume,
+                        poses.TryGetValue(cmd.Projectile, out var pose2) ? pose2.Pos : null);
                     break;
                 case Audio.ProjectileSoundAction.Stop:
                     snd?.StopProjectileAmbient(cmd.Projectile);
@@ -167,7 +190,9 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _missileSoundPlanner.Plan(inSector))
+        foreach (var cmd in _missileSoundPlanner.Plan(inSector,
+            // P893 — while 3D is on, admit missiles out to the native −60 dB range.
+            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.MissileFlight) : null))
         {
             switch (cmd.Action)
             {
@@ -176,18 +201,20 @@ public sealed partial class Game1
                     Console.WriteLine("[monogame] audio: missile launch");
                     break;
                 case Audio.MissileSoundAction.AmbientStart:
-                    snd.StartMissileAmbient(cmd.MissileId, cmd.Volume);
+                    snd.StartMissileAmbient(cmd.MissileId, cmd.Volume,
+                        cmd.Position);
                     Console.WriteLine("[monogame] audio: missile ambient start");
                     break;
                 case Audio.MissileSoundAction.AmbientUpdate:
-                    snd.UpdateMissileAmbient(cmd.MissileId, cmd.Volume);
+                    snd.UpdateMissileAmbient(cmd.MissileId, cmd.Volume,
+                        cmd.Position);
                     break;
                 case Audio.MissileSoundAction.AmbientStop:
                     snd.StopMissileAmbient(cmd.MissileId);
                     Console.WriteLine("[monogame] audio: missile ambient stop");
                     break;
                 case Audio.MissileSoundAction.Explosion:
-                    snd.PlayMissileExplosion(cmd.Tier, cmd.Volume);
+                    snd.PlayMissileExplosion(cmd.Tier, cmd.Volume, cmd.Position);
                     Console.WriteLine($"[monogame] audio: missile explosion (tier {cmd.Tier})");
                     break;
             }
@@ -268,7 +295,9 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _probeSoundPlanner.Plan(inSector))
+        foreach (var cmd in _probeSoundPlanner.Plan(inSector,
+            // P893 — while 3D is on, admit probes out to the native −60 dB range.
+            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.ProbeAmbient) : null))
         {
             switch (cmd.Action)
             {
@@ -277,11 +306,11 @@ public sealed partial class Game1
                     Console.WriteLine("[monogame] audio: probe deploy");
                     break;
                 case Audio.ProbeSoundAction.AmbientStart:
-                    snd.StartProbeAmbient(cmd.ProbeId, cmd.Volume);
+                    snd.StartProbeAmbient(cmd.ProbeId, cmd.Volume, cmd.Position);
                     Console.WriteLine("[monogame] audio: probe ambient start");
                     break;
                 case Audio.ProbeSoundAction.AmbientUpdate:
-                    snd.UpdateProbeAmbient(cmd.ProbeId, cmd.Volume);
+                    snd.UpdateProbeAmbient(cmd.ProbeId, cmd.Volume, cmd.Position);
                     break;
                 case Audio.ProbeSoundAction.AmbientStop:
                     snd.StopProbeAmbient(cmd.ProbeId);
@@ -316,6 +345,9 @@ public sealed partial class Game1
         if (_sound is not { } snd) return;
 
         var inRange = new List<(short WarpId, float Distance)>();
+        // P893 — per-warp world position for the native 3D emitter
+        // (alephSound's ThreeDSound(200), sounddef.mdl:385).
+        var warpPos = new Dictionary<short, SimVec>();
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me
@@ -324,12 +356,19 @@ public sealed partial class Game1
             {
                 var anchor = meUp.Position;
                 short mySector = own.SectorId;
+                // P893 — while 3D is on, admit loops out to the native −60 dB
+                // audibility range, not the hand-tuned curve radius.
+                float range = Audio.WarpAmbientSoundCurve.AudibleRadius;
+                if (snd.Sound3DEnabled)
+                    range = MathF.Max(range, Audio.Native3DMix.AudibleRange(Audio.Native3DRole.WarpAmbient));
                 foreach (var (warpId, wp) in world.Warps)
                 {
                     if (wp.ClusterId != mySector) continue;
-                    float dist = (Vec(wp.Position) - anchor).Length();
-                    if (dist > Audio.WarpAmbientSoundCurve.AudibleRadius) continue;
+                    var wpos = Vec(wp.Position);
+                    float dist = (wpos - anchor).Length();
+                    if (dist > range) continue;
                     inRange.Add((warpId, dist));
+                    warpPos[warpId] = wpos;
                 }
             }
         }
@@ -339,11 +378,11 @@ public sealed partial class Game1
             switch (cmd.Action)
             {
                 case Audio.WarpSoundAction.Start:
-                    snd.StartWarpAmbient(cmd.WarpId, cmd.Volume);
+                    snd.StartWarpAmbient(cmd.WarpId, cmd.Volume, warpPos.GetValueOrDefault(cmd.WarpId));
                     Console.WriteLine($"[monogame] audio: warp ambient start (warp {cmd.WarpId}, vol {cmd.Volume:F3})");
                     break;
                 case Audio.WarpSoundAction.Update:
-                    snd.UpdateWarpAmbient(cmd.WarpId, cmd.Volume);
+                    snd.UpdateWarpAmbient(cmd.WarpId, cmd.Volume, warpPos.GetValueOrDefault(cmd.WarpId));
                     break;
                 case Audio.WarpSoundAction.Stop:
                     snd.StopWarpAmbient(cmd.WarpId);
@@ -371,6 +410,9 @@ public sealed partial class Game1
         if (_sound is not { } snd) return;
 
         var inRange = new List<(short StationId, float Distance)>();
+        // P893 — per-station world position for the native 3D emitter
+        // (ILStationExternalSound's ThreeDSound(200), sounddef.mdl:1156).
+        var stationPos = new Dictionary<short, SimVec>();
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me
@@ -379,12 +421,19 @@ public sealed partial class Game1
             {
                 var anchor = meUp.Position;
                 short mySector = own.SectorId;
+                // P893 — while 3D is on, admit loops out to the native −60 dB
+                // audibility range, not the hand-tuned curve radius.
+                float range = Audio.StationAmbientSoundCurve.AudibleRadius;
+                if (snd.Sound3DEnabled)
+                    range = MathF.Max(range, Audio.Native3DMix.AudibleRange(Audio.Native3DRole.StationAmbient));
                 foreach (var (stationId, st) in world.Stations)
                 {
                     if (st.ClusterId != mySector) continue;
-                    float dist = (Vec(st.Position) - anchor).Length();
-                    if (dist > Audio.StationAmbientSoundCurve.AudibleRadius) continue;
+                    var spos = Vec(st.Position);
+                    float dist = (spos - anchor).Length();
+                    if (dist > range) continue;
                     inRange.Add((stationId, dist));
+                    stationPos[stationId] = spos;
                 }
             }
         }
@@ -394,11 +443,11 @@ public sealed partial class Game1
             switch (cmd.Action)
             {
                 case Audio.StationSoundAction.Start:
-                    snd.StartStationAmbient(cmd.StationId, cmd.Volume);
+                    snd.StartStationAmbient(cmd.StationId, cmd.Volume, stationPos.GetValueOrDefault(cmd.StationId));
                     Console.WriteLine($"[monogame] audio: station ambient start (station {cmd.StationId}, vol {cmd.Volume:F3})");
                     break;
                 case Audio.StationSoundAction.Update:
-                    snd.UpdateStationAmbient(cmd.StationId, cmd.Volume);
+                    snd.UpdateStationAmbient(cmd.StationId, cmd.Volume, stationPos.GetValueOrDefault(cmd.StationId));
                     break;
                 case Audio.StationSoundAction.Stop:
                     snd.StopStationAmbient(cmd.StationId);
@@ -428,6 +477,8 @@ public sealed partial class Game1
 
         var inRange = _asteroidSoundScratch;
         inRange.Clear();
+        // P893 — per-rock world position for the native 3D emitter.
+        var asteroidPos = new Dictionary<short, SimVec>();
         lock (_session.Gate)
         {
             // A boarded gunner hears from the carrier (native source ship, as the
@@ -439,13 +490,29 @@ public sealed partial class Game1
             {
                 var anchor = meUp.Position;
                 short mySector = source.SectorId;
+                // P893 — while 3D is on, admit rock loops out to the native
+                // −60 dB audibility range (asteroidSound's ThreeDSound(200),
+                // sounddef.mdl:382); the voice budget then ranks by native gain.
+                float range = Audio.AsteroidAmbientSoundCurve.AudibleRadius;
+                if (snd.Sound3DEnabled)
+                    range = MathF.Max(range, Audio.Native3DMix.AudibleRange(Audio.Native3DRole.AsteroidAmbient));
                 foreach (var (asteroidId, rock) in world.Asteroids)
                 {
                     if (rock.ClusterId != mySector) continue;
                     var pos = rock.Position;
-                    float dist = (new SimVec(pos[0], pos[1], pos[2]) - anchor).Length();
-                    if (dist > Audio.AsteroidAmbientSoundCurve.AudibleRadius) continue;
+                    var rpos = new SimVec(pos[0], pos[1], pos[2]);
+                    float dist = (rpos - anchor).Length();
+                    if (dist > range) continue;
                     inRange.Add((asteroidId, dist));
+                    asteroidPos[asteroidId] = rpos;
+                }
+                // P893 — bound the started rock loops to the 64 nearest (see the
+                // projectile gather note: OpenAL's 256-source pool must survive
+                // a 200-rock field).
+                if (inRange.Count > 64)
+                {
+                    inRange.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+                    inRange.RemoveRange(64, inRange.Count - 64);
                 }
             }
         }
@@ -455,11 +522,11 @@ public sealed partial class Game1
             switch (cmd.Action)
             {
                 case Audio.StationSoundAction.Start:
-                    snd.StartAsteroidAmbient(cmd.StationId, cmd.Volume);
+                    snd.StartAsteroidAmbient(cmd.StationId, cmd.Volume, asteroidPos.GetValueOrDefault(cmd.StationId));
                     Console.WriteLine($"[monogame] audio: asteroid ambient start (rock {cmd.StationId}, vol {cmd.Volume:F3})");
                     break;
                 case Audio.StationSoundAction.Update:
-                    snd.UpdateAsteroidAmbient(cmd.StationId, cmd.Volume);
+                    snd.UpdateAsteroidAmbient(cmd.StationId, cmd.Volume, asteroidPos.GetValueOrDefault(cmd.StationId));
                     break;
                 case Audio.StationSoundAction.Stop:
                     snd.StopAsteroidAmbient(cmd.StationId);
@@ -870,7 +937,7 @@ public sealed partial class Game1
                 volume = Audio.HitSoundCurve.OtherVolume(dist);
                 if (volume <= 0f) continue;                     // out of audible range
             }
-            snd.PlayHitSound(kind, volume);
+            snd.PlayHitSound(kind, volume, pos);
             Console.WriteLine($"[monogame] audio: hit sound {kind} (target {targetId}, vol {volume:F3})");
         }
     }
@@ -940,7 +1007,7 @@ public sealed partial class Game1
                 float dist = (src.Position - a).Length();
                 float volume = Audio.CollisionSoundCurve.Volume(dist);
                 if (volume <= 0f) continue;
-                snd.PlayCollisionSound(volume);
+                snd.PlayCollisionSound(volume, src.Position);
                 Console.WriteLine($"[monogame] audio: collision sound (party {src.PartyId}, vol {volume:F3})");
             }
         }
@@ -985,9 +1052,9 @@ public sealed partial class Game1
         }
         if (events.Count == 0) return;
 
-        foreach (var (eType, tier, volume) in Audio.ExplosionSoundRouter.Resolve(events, mySector, anchor))
+        foreach (var (eType, tier, volume, position) in Audio.ExplosionSoundRouter.Resolve(events, mySector, anchor))
         {
-            snd.PlayWorldExplosion(tier, volume);
+            snd.PlayWorldExplosion(tier, volume, position);
             Console.WriteLine($"[monogame] audio: world explosion (type {eType}, tier {tier}, vol {volume:F3})");
         }
     }

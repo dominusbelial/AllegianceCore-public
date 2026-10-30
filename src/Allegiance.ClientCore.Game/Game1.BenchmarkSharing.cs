@@ -116,6 +116,9 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.ToggleMusic:         // native idmToggleMusic
                     _music?.Toggle();
                     break;
+                case OptionsMenuModel.OptionsCommand.Toggle3DSound:       // P893 — port addition (no native counterpart)
+                    ToggleOptions3DSound();
+                    break;
                 case OptionsMenuModel.OptionsCommand.MusicVolumeUp:       // native idmMusicVolumeUp
                     _music?.VolumeUp();
                     break;
@@ -200,6 +203,7 @@ public sealed partial class Game1
             VirtualJoystick: _mouseFlightEnabled,
             Deadzone: _mouseFlight.Deadzone,
             ForceFeedback: _optionsPrefs.EnableForceFeedback,
+            Sound3DOn: _sound?.Sound3DEnabled ?? _optionsPrefs.Enable3DSound,
             ChatMuteTarget: NewestDirectoryLine?.Sender,
             ChatMuteTargetMuted: NewestDirectoryLine is { } newest
                 && _directoryChat.IsMuted(newest.SenderId));
@@ -221,6 +225,19 @@ public sealed partial class Game1
         }
         bool mute = !_directoryChat.IsMuted(newest.SenderId);
         SetDirectorySenderMuted(newest.Sender, mute);
+    }
+
+    /// <summary>P893 — flip the positional-3D sound switch (Sound Options →
+    /// "Positional 3D Sound"): persist it and drive the live sound manager
+    /// immediately so the mix changes without a restart. With it off the mix is
+    /// exactly the pre-P893 curve path.</summary>
+    private void ToggleOptions3DSound()
+    {
+        EnsureOptionsPrefs();
+        _optionsPrefs.Enable3DSound = !_optionsPrefs.Enable3DSound;
+        _optionsPrefs.Save();
+        if (_sound is { } snd) snd.Sound3DEnabled = _optionsPrefs.Enable3DSound;
+        Console.WriteLine($"[intro] sound options: positional 3D -> {(_optionsPrefs.Enable3DSound ? "on" : "off")}");
     }
 
     /// <summary>P871 / SIM-0179 — native <c>ToggleEnableFeedback</c>

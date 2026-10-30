@@ -67,6 +67,14 @@ public sealed class IntroPreferences
     /// device call (<c>:8162-8166</c>).</summary>
     public bool EnableForceFeedback { get; set; } = true;
 
+    /// <summary>P893 — the positional-3D sound switch (Sound Options →
+    /// "Positional 3D Sound"). <b>Default true = native behaviour</b>: native
+    /// plays every world sound through DirectSound3D and never shipped a 3D
+    /// on/off toggle (its only sound options are quality + hardware acceleration,
+    /// WinTrek.cpp:3022-3024) — the switch is a port addition so the native
+    /// 3D mix can be A/B'd by ear against the pre-P893 curve mix.</summary>
+    public bool Enable3DSound { get; set; } = true;
+
     /// <summary>P761 — the pilot's profile description, edited on the character
     /// sheet (native CharInfoScreen OnButtonApply sends
     /// CHARACTER_INFO_EDIT_DESCRIPTION to the club server; this port has no

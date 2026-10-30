@@ -32,12 +32,13 @@ public static class ExplosionSoundRouter
     /// <summary>Resolve the one-shots to play. <paramref name="mySector"/>/<paramref name="anchor"/>
     /// are the local ship's sector and position (null when not flying — then no
     /// positional sound can be placed). Returns an ordered list of
-    /// (category-type, tier, volume); entries with an inaudible distance are
-    /// dropped.</summary>
-    public static List<(int Type, ExplosionSoundTier Tier, float Volume)> Resolve(
+    /// (category-type, tier, volume, blast position); entries with an inaudible distance are
+    /// dropped. (P893 adds the blast position so the caller can place the
+    /// native 3D emitter.)</summary>
+    public static List<(int Type, ExplosionSoundTier Tier, float Volume, SimVec Position)> Resolve(
         IEnumerable<ExplosionSoundEntity> events, short? mySector, SimVec? anchor)
     {
-        var result = new List<(int, ExplosionSoundTier, float)>();
+        var result = new List<(int, ExplosionSoundTier, float, SimVec)>();
         foreach (var e in events)
         {
             // Already voiced by MissileSoundPlanner — skip to avoid double-play.
@@ -47,7 +48,7 @@ public static class ExplosionSoundRouter
             float dist = (e.Position - a).Length();
             float volume = ExplosionSoundCurve.Volume(dist);
             if (volume <= 0f) continue;
-            result.Add((e.Type, ExplosionSoundTierMapper.ForScale(e.Scale), volume));
+            result.Add((e.Type, ExplosionSoundTierMapper.ForScale(e.Scale), volume, e.Position));
         }
         return result;
     }
