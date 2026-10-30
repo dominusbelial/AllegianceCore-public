@@ -116,6 +116,40 @@ public class P674ParityScorecardTests
         finally { File.Delete(path); }
     }
     [Fact]
+    public void DesignReplaced_rows_stay_in_denominator_and_appear_in_the_replaced_column()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "area,native_item,native_cite,port_status,port_cite_or_reason,weight,native_class\n" +
+                "area,one,native,implemented,reason,2,design\n" +
+                "area,two,native,implemented,\"REPLACED: HTTP directory\",3,design-replaced\n" +
+                "area,three,native,missing,reason,5,design\n");
+            var result = Run(path);
+            Assert.True(result.ExitCode == 0, result.Output);
+            Assert.Contains("area | 50.00% (5/10) | 66.67% (2/3) | visual 0 | replaced 3", result.Output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Theory]
+    [InlineData("implemented,missing prefix")]
+    [InlineData("missing,\"REPLACED: not built yet\"")]
+    public void DesignReplaced_must_be_complete_with_REPLACED_prefix(string statusAndReason)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "area,native_item,native_cite,port_status,port_cite_or_reason,weight,native_class\n" +
+                $"area,one,native,{statusAndReason},3,design-replaced\n");
+            var result = Run(path);
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("design-replaced row must be complete with a 'REPLACED:' reason", result.Output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public void Nonproduction_implementations_remain_in_denominator_without_credit()
     {
         var path = Path.GetTempFileName();

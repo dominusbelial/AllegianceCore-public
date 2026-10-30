@@ -1010,7 +1010,7 @@ list in **reverse**.
   `tools/p868-na-audit.py` checks coverage, statuses and citation integrity;
   `docs/reports/P868_REPORT.md` records decisions, remaining branches and gates.
 - **`docs/parity/parity-matrix.csv`** — the master native-behaviour parity
-  matrix (rows closed with `done` / `done-visual` / `n/a` per the lane rules).
+  matrix (rows closed with `done` / `done-visual` / `n/a` per the lane rules; a `design-replaced` native_class row is credited only when complete with a `REPLACED:` reason and is reported in its own scorecard column).
 - **`docs/parity/sim-rules-matrix.csv`** — sim-rule equivalence rows.
 - **Rule reachability (P832a)** — every sim row is `production`, `config-only`
   (experimental opt-in), or `test-only` (including missing executable paths).

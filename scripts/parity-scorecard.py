@@ -15,6 +15,11 @@ STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n
 COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
 REACHABILITY = {"production", "config-only", "test-only"}
+# A native mechanism whose player-facing outcome the port delivers through a different,
+# modern design (e.g. the DirectPlay routing lobby -> the HTTP directory). It stays in
+# the denominator and earns credit only when complete with a "REPLACED:" reason naming
+# the port mechanism; the scorecard prints its weight separately so it stays visible.
+DESIGN_REPLACED = "design-replaced"
 
 
 def read_matrix(path):
@@ -51,6 +56,11 @@ def read_matrix(path):
                     raise ValueError(f"{location}: invalid reachability {row['reachability']!r}")
                 if row["port_status"] not in STATUSES:
                     raise ValueError(f"{location}: invalid status {row['port_status']!r}")
+                if row.get("native_class") == DESIGN_REPLACED and (
+                        row["port_status"] not in COMPLETE
+                        or not row["port_cite_or_reason"].startswith("REPLACED:")):
+                    raise ValueError(
+                        f"{location}: design-replaced row must be complete with a 'REPLACED:' reason")
                 if row["port_status"] == "done-visual":
                     if not row["port_cite_or_reason"].startswith("VISUAL:"):
                         raise ValueError(
@@ -81,7 +91,9 @@ def score(rows):
     weight = sum((Decimal(row["weight"]) for row in eligible), Decimal(0))
     credit = sum((Decimal(row["weight"]) for row in completed), Decimal(0))
     visual_weight = sum((Decimal(row["weight"]) for row in visual), Decimal(0))
-    return len(completed), len(eligible), credit, weight, visual_weight
+    replaced_weight = sum((Decimal(row["weight"]) for row in completed
+                           if row.get("native_class") == DESIGN_REPLACED), Decimal(0))
+    return len(completed), len(eligible), credit, weight, visual_weight, replaced_weight
 
 
 def scorecard(rows):
@@ -106,10 +118,11 @@ def main(argv=None):
         return 1
     for path, rows in matrices:
         print(f"{path.name}: validated {len(rows)} rows")
-        print("area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight")
-        for area, (done, count, credit, weight, visual_weight) in scorecard(rows):
+        print("area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight")
+        for area, (done, count, credit, weight, visual_weight, replaced_weight) in scorecard(rows):
             print(f"{area} | {percentage(credit, weight)} ({credit}/{weight}) | "
-                  f"{percentage(done, count)} ({done}/{count}) | visual {visual_weight}")
+                  f"{percentage(done, count)} ({done}/{count}) | visual {visual_weight} | "
+                  f"replaced {replaced_weight}")
         if rows and "reachability" in rows[0]:
             print("Reachability (non-production stays in the denominator; earns no headline credit):")
             for reachability in sorted(REACHABILITY):
