@@ -964,12 +964,16 @@ list in **reverse**.
 
 ## 10. Dev tooling (P811)
 
-- **Allegiance Index (AIX1)** — server-session effective-player benchmark in
+- **Allegiance Index (AIX1/AIX2)** — session effective-player benchmark in
   `scripts/allegiance-index.py`, with stdlib fixture tests in
   `scripts/tests/test_allegiance_index.py`; formula and usage in
   `docs/PERFORMANCE.md`, batch hook in `tools/aix-batch.md`, hardware and
   reference data under `docs/benchmarks/`. Calibration, evidence coverage and
-  history: `docs/reports/AIX1_REPORT.md`. Modern tooling; no native rule.
+  history: `docs/reports/AIX1_REPORT.md`. AIX2 adds schema-2 rig cards (a
+  machine list with roles and P/E cores), weighted cores (P + 0.5·E),
+  AIX/server-core and AIX/total-core, and the shared-machine AIX-S variant
+  with the client `[frameprof]` frame-time log: `docs/reports/AIX2_REPORT.md`.
+  Modern tooling; no native rule.
 
 - **`GLOSSARY.md`** — this file; update it when adding a system.
 - **`scripts/dev-stack.sh`** — one-command local stack
