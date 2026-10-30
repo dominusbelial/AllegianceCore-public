@@ -284,7 +284,13 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             if (enemyKey > enemyKeySeen) { enemyKeySeen++; t.PressAction("TargetEnemy", Keys.F); }
             if (basePrompt > baseSeen) { baseSeen++; t.Target(ObjectType.Station, 1010); killing = false; landing = true; }
             if (spacebar > spacebarSeen) { spacebarSeen++; t.Press(Keys.Space); }
-            if (spaceKey > spaceKeySeen) { spaceKeySeen++; t.Press(Keys.Space); }
+            // Goal 10's go-home SPACE ("Press the SPACE key when you are ready to go home"): the native
+            // derelict sphere (TRN-0218, mission3.cpp:204-229) scatters the hulls over the flight path
+            // home, so — exactly as native instructs (mission3.cpp:1069-1096: "Fly around the derelicts
+            // and destroy them... when you are ready to go home") — the trainee must destroy every
+            // derelict before leaving. A survivor between the start point and the station traps the ship
+            // short of the landing bay and stalls goal 13.2 (the P892b finding).
+            if (spaceKey > spaceKeySeen && nextDerelict > 1009) { spaceKeySeen++; t.Press(Keys.Space); }
             if (t.Count("Land in a green hangar") > 0) { killing = false; landing = true; }
 
             // After a target dies the real client radar re-targets the next object of the same
@@ -295,11 +301,12 @@ public sealed class P881aTrainingMissionsTests : IDisposable
                 if (nextDerelict <= 1009) t.Target(ObjectType.Ship, nextDerelict);
             }
 
-            // Fire only from the weapon lesson onwards (native asks for a shot in goal 5, then
-            // keeps the player firing through the kills); flying the earlier lessons with the
-            // trigger held would empty the magazine before the first target dies.
+            // Fire from the weapon lesson onwards (native asks for a shot in goal 5, then keeps the
+            // player firing through the kills, INCLUDING goals 10/11's derelict-destruction phase —
+            // mission3.cpp:1069-1096: all controls enabled, "destroy them"); flying the earlier
+            // lessons with the trigger held would empty the magazine before the first target dies.
             int major = int.TryParse(goal.Split('.')[0], out var m) ? m : 0;
-            bool firing = killing && (goal == "5.9" || major is 6 or 8 or 9);
+            bool firing = killing && (goal == "5.9" || major is 6 or 8 or 9 or 10 or 11);
             ControlData controls;
             int stateM = 0;
             if (landing)
@@ -328,7 +335,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
 
         Assert.True(t.Session.Finished, $"mission did not complete (goal {t.Mission.ActiveGoalPath})");
         Assert.True(t.Session.Completed, "mission should report completion");
-        Assert.True(nextDerelict >= 1003, $"three derelicts should have died to real projectiles (next {nextDerelict})");
+        Assert.True(nextDerelict >= 1010, $"all ten derelicts should have died to real projectiles (next {nextDerelict})");
         Assert.True(t.Host.PlayerShip.StationId is not null, "trainee never docked at the outpost");
         Assert.True(spacebarSeen >= 2 && spaceKeySeen >= 2, "both SPACEBAR and SPACE-key acknowledgements fired");
     }
@@ -480,6 +487,29 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         gate.Update(ks, map);
         gate.Update(default, map);   // release so the press re-edges
         Assert.Contains(KeyFireBooster, received);
+    }
+
+    [Fact]
+    public void RemainderTargetKeys_honor_native_default_key_only_under_training()
+    {
+        // P892b — the B-key fix. The port's shipped default map (InputActionCatalog.Definitions)
+        // leaves TargetFriendlyBase / TargetEnemy UNBOUND (U()) — plain F/B are rebound to
+        // ToggleCloak / Scoreboard — so a real-window tap of the native prompt keys F/B never
+        // reached SelectRemainderTarget → CommitTargetForPlayer (zero [p642] edges, P886c), and M3
+        // goal 12's GetTargetCondition(OT_station,1010) could not advance. HandleRemainderTargetKeys
+        // must ALSO honour each action's native-default key (defaultinputmap.mdl: TK_TargetFriendlyBase
+        // = B, TK_TargetEnemy = F) while a training mission runs — mirroring TrainingInputGate — and
+        // must NOT change normal flight (training=false stays binding-only).
+        var map = new ActionMap(InputActionCatalog.Definitions);   // shipped default bindings
+        // FAILS BEFORE THE FIX: with only the binding consulted, B is down but TargetFriendlyBase is
+        // unbound → false. After the fix the native-default fallback (training=true) makes it true.
+        Assert.True(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.B), "TargetFriendlyBase", training: true));
+        Assert.True(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.F), "TargetEnemy", training: true));
+        // Normal flight is untouched: the same keys without a training mission stay binding-only.
+        Assert.False(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.B), "TargetFriendlyBase", training: false));
+        Assert.False(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.F), "TargetEnemy", training: false));
+        // A genuinely-bound action is recognised regardless of the training flag.
+        Assert.True(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.T), "Target", training: false));
     }
 
     /// <summary>The client's real station docking autopilot (DockApproach, the same planner
