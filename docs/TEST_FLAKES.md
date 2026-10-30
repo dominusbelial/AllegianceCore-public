@@ -4,6 +4,76 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P888 verification observations (2026-10-29)
+
+One Fast-tier run was retained as **FAIL**: **11,736 executions, 531.5 s,
+11,719 passed / 14 failed / 3 optional skips**, with **9/9 infrastructure
+checks passing** and six calibrated-limit violations. All four new transport
+ordering cases and the corrected P660 two-match scenario passed in that run.
+There was no second full Fast run. No production source changed in P888.
+
+The five standalone pool/native/server-GC P700 never-parks runs **passed 5/5**
+(3m27s–6m43s); their largest observed period below 1 m/s with a target was
+**2.015 s**, below the five-second limit. The optional 30-bot P660 showcase was
+enabled in every full P660 repetition. Final explicit-server-GC repetitions
+retain pool 118/120 and thread-per-peer 120/120 P660 case passes;
+the corrected two-match scenario passes 10/10 in each mode and both new ordering
+variants pass all 40 executions. Both final P660 failures are the same unchanged
+countdown-bound fixture covered by the 12/12 isolated parameter-case receipts
+below. Per-run results are recorded in [P888](reports/P888_REPORT.md).
+
+All failed methods were selected alone three times. The [isolation CSV](reports/P888_assets/isolation.csv)
+retains ordered pass/fail sequences, including failures that persist:
+
+| Method / observation | Three isolated runs | Classification |
+| --- | --- | --- |
+| `P803TurretGunnerLoopbackLiveTests.Live_boarded_gunner_huds_name_the_right_turret_on_both_clients` | pass / pass / pass | Receipt/timing intermittency; unchanged fixture and renderer |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | pass / pass / pass | Sweep saw ChatTarget 0 instead of -2; unchanged source |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / pass / fail | Intermittent missing partial-tip observation even though final lock is 1.000; not claimed fixed or 3/3 passing |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | Sweep measured 8.25 s against a 4–8 s fixture bound |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / pass / pass | Previously ledgered status-roster fixture intermittency; not claimed 3/3 passing |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Persistent unchanged baseline failure already recorded under P872/P887 |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | pass / pass / pass (all four parameter cases each time) | Initial diagnostic pool runs 5, 6 and 10 measured 14.90 s against 14.94–15.06 s for disabled/off; the pre-existing P813b-ledgered clock-observation fixture |
+
+Eight Fast failures were environment/setup effects, not load flakes. They also
+failed all three exact-method rechecks with the original environment, then
+passed all three with only their environment corrected:
+
+- **Five `PlayerBundlePathsTests` cases** (`UsesExecutableDirectoryOutsideRepository`,
+  `MissingDirectoryHasNoDefault`, `LocalConfigWinsOverBundleWithBlankEnvironment`,
+  `NativeSourceNeverGuessesAnInstallSubdirectory`): worktree-local TMPDIR lets the
+  mock install discover the real ancestor `local.env`. An open-directory
+  `/proc/<parent>/fd/<fd>` alias to the same authorized NVMe scratch directory
+  prevents that lexical ancestor discovery. All selected parameter cases pass
+  3/3, with actual files still under `.scratch/p888/path-test-tmp/`.
+- **`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`:**
+  default user preferences are read-only in this lane. It passes 3/3 with
+  `XDG_CONFIG_HOME` in task scratch. Real preferences and product code were unchanged.
+- **`TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer`**
+  and **`Boot_line_prints_the_active_transport_mode`:** this run mistakenly
+  exported `ALLEGIANCE_TRANSPORT_MODE=pool` globally, overriding their explicitly
+  selected legacy-mode configs. Each passes 3/3 when that overriding environment
+  variable is absent; the code default is still pool. These are run-setup errors,
+  not product regressions or load flakes.
+
+The six timing violations were also checked. The failed missile-lock case is
+included above. The five passing timing-only cases each passed three selected
+isolated runs, with unchanged assertions:
+
+| Case | Sweep seconds | Three isolated seconds |
+| --- | --- | --- |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | 10.273 | 4.083 / 4.026 / 4.400 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 12.351 | 3.203 / 3.213 / 3.364 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 10.312 | 3.412 / 3.310 / 3.335 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 11.719 | 3.278 / 3.028 / 3.045 |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 11.197 | 9.855 / 10.028 / 9.982 |
+
+The warp-exit fixture remains on the ten-second boundary: one isolation is still
+over the limit. Functional passes are not presented as three timing-limit passes.
+[Timing receipts](reports/P888_assets/timing-isolation.csv) retain the exact selections.
+Raw TRX/logs remain in `.scratch/p888/` in the assigned worktree. The failed
+Fast gate and intermittent isolation failures are preserved.
+
 ## P887 gate observations (2026-10-29)
 
 P887 flips three server defaults to the rig baseline (parallelBuild, native ship-update

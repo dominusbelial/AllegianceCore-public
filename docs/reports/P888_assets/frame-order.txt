@@ -1,0 +1,146 @@
+P888 pre-fix buffered captures (2026-10-29). Production src unchanged.
+Client recording timestamps are microseconds since each recorder was attached after Connect.
+Server hook: TestPublicationCapture, immediately before host send; key=0 = ordered, guaranteed.
+No reliableOneShot config override: OFF in these server runs.
+Only relevant game-flow frames shown; all actual packet fmids are preserved for selected frames.
+
+pool (failed round-0 result wait)
+Server publication sequence:
+peer=1 key=0 guaranteed=True fmids=38,95 stages=
+peer=1 key=0 guaranteed=True fmids=38 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=0
+peer=2 key=0 guaranteed=True fmids=38,95 stages=
+peer=2 key=0 guaranteed=True fmids=38 stages=
+peer=2 key=0 guaranteed=True fmids=37 stages=0
+peer=1 key=0 guaranteed=True fmids=62,63 stages=
+peer=2 key=0 guaranteed=True fmids=62,63 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=3
+peer=2 key=0 guaranteed=True fmids=37 stages=3
+peer=1 key=0 guaranteed=True fmids=38,95 stages=
+peer=1 key=0 guaranteed=True fmids=38 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=0
+peer=2 key=0 guaranteed=True fmids=38,95 stages=
+peer=2 key=0 guaranteed=True fmids=38 stages=
+peer=2 key=0 guaranteed=True fmids=37 stages=0
+peer=1 key=0 guaranteed=True fmids=37 stages=1
+peer=2 key=0 guaranteed=True fmids=37 stages=1
+peer=1 key=0 guaranteed=True fmids=37 stages=2
+peer=2 key=0 guaranteed=True fmids=37 stages=2
+
+Client A receipt sequence:
+14679us fmids=[62, 63] 
+16020us fmids=[37] 37.stage=3
+44580us fmids=[38, 95] 38.stage=0
+46876us fmids=[38] 38.stage=0
+110961us fmids=[37] 37.stage=0
+110970us fmids=[35, 14] 
+110989us fmids=[35, 14] 
+119422us fmids=[37] 37.stage=1
+119426us fmids=[35, 14] 
+890573us fmids=[37] 37.stage=2
+
+Client B receipt sequence:
+14193us fmids=[62, 63] 
+15490us fmids=[37] 37.stage=3
+45522us fmids=[38, 95] 38.stage=0
+46352us fmids=[38] 38.stage=0
+105076us fmids=[37] 37.stage=0
+107079us fmids=[35, 14] 
+107942us fmids=[35, 14] 
+115818us fmids=[37] 37.stage=1
+115867us fmids=[35, 14] 
+890050us fmids=[37] 37.stage=2
+
+Distinct polled client states (sim seconds; consecutive duplicates collapsed):
+poll sim=63.84999999999851 stage=0 intermission=False result=True rescues=1,1 / stage=0 intermission=False result=True rescues=1,1
+poll sim=65.9499999999984 stage=1 intermission=False result=False rescues=1,1 / stage=1 intermission=False result=False rescues=1,1
+poll sim=80.94999999999754 stage=1 intermission=False result=False rescues=1,1 / stage=2 intermission=False result=False rescues=1,1
+poll sim=80.99999999999754 stage=2 intermission=False result=False rescues=1,1 / stage=2 intermission=False result=False rescues=1,1
+
+thread-per-peer (passed both rounds)
+Server publication sequence:
+peer=1 key=0 guaranteed=True fmids=38,95 stages=
+peer=1 key=0 guaranteed=True fmids=38 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=0
+peer=2 key=0 guaranteed=True fmids=38,95 stages=
+peer=2 key=0 guaranteed=True fmids=38 stages=
+peer=2 key=0 guaranteed=True fmids=37 stages=0
+peer=1 key=0 guaranteed=True fmids=62,63 stages=
+peer=2 key=0 guaranteed=True fmids=62,63 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=3
+peer=2 key=0 guaranteed=True fmids=37 stages=3
+peer=1 key=0 guaranteed=True fmids=38,95 stages=
+peer=1 key=0 guaranteed=True fmids=38 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=0
+peer=2 key=0 guaranteed=True fmids=38,95 stages=
+peer=2 key=0 guaranteed=True fmids=38 stages=
+peer=2 key=0 guaranteed=True fmids=37 stages=0
+peer=1 key=0 guaranteed=True fmids=37 stages=1
+peer=2 key=0 guaranteed=True fmids=37 stages=1
+peer=1 key=0 guaranteed=True fmids=37 stages=2
+peer=2 key=0 guaranteed=True fmids=37 stages=2
+peer=1 key=0 guaranteed=True fmids=62,63 stages=
+peer=2 key=0 guaranteed=True fmids=62,63 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=3
+peer=2 key=0 guaranteed=True fmids=37 stages=3
+peer=1 key=0 guaranteed=True fmids=38,95 stages=
+peer=1 key=0 guaranteed=True fmids=38 stages=
+peer=1 key=0 guaranteed=True fmids=37 stages=0
+peer=2 key=0 guaranteed=True fmids=38,95 stages=
+peer=2 key=0 guaranteed=True fmids=38 stages=
+peer=2 key=0 guaranteed=True fmids=37 stages=0
+peer=1 key=0 guaranteed=True fmids=37 stages=1
+peer=2 key=0 guaranteed=True fmids=37 stages=1
+peer=1 key=0 guaranteed=True fmids=37 stages=2
+peer=2 key=0 guaranteed=True fmids=37 stages=2
+
+Client A receipt sequence:
+18755us fmids=[62, 63] 
+20259us fmids=[37] 37.stage=3
+56554us fmids=[38, 95] 38.stage=0
+58821us fmids=[38] 38.stage=0
+63371us fmids=[37] 37.stage=0
+63376us fmids=[35, 14] 
+63391us fmids=[35, 14] 
+118569us fmids=[37] 37.stage=1
+118575us fmids=[35, 14] 
+879881us fmids=[37] 37.stage=2
+887969us fmids=[62, 63] 
+888060us fmids=[37] 37.stage=3
+899323us fmids=[38, 95] 38.stage=0
+900650us fmids=[38] 38.stage=0
+904506us fmids=[37] 37.stage=0
+904512us fmids=[35, 14] 
+904542us fmids=[35, 14] 
+949975us fmids=[37] 37.stage=1
+949986us fmids=[35, 14] 
+1508288us fmids=[37] 37.stage=2
+
+Client B receipt sequence:
+18109us fmids=[62, 63] 
+19526us fmids=[37] 37.stage=3
+57071us fmids=[38, 95] 38.stage=0
+58250us fmids=[38] 38.stage=0
+61993us fmids=[37] 37.stage=0
+61999us fmids=[35, 14] 
+62834us fmids=[35, 14] 
+117942us fmids=[37] 37.stage=1
+117982us fmids=[35, 14] 
+879238us fmids=[37] 37.stage=2
+887258us fmids=[62, 63] 
+887358us fmids=[37] 37.stage=3
+899996us fmids=[38, 95] 38.stage=0
+900148us fmids=[38] 38.stage=0
+904563us fmids=[37] 37.stage=0
+904567us fmids=[35, 14] 
+904600us fmids=[35, 14] 
+949097us fmids=[37] 37.stage=1
+949109us fmids=[35, 14] 
+1507554us fmids=[37] 37.stage=2
+
+Distinct polled client states (sim seconds; consecutive duplicates collapsed):
+poll sim=60.4499999999987 stage=0 intermission=False result=True rescues=1,1 / stage=0 intermission=False result=True rescues=1,1
+poll sim=60.4999999999987 stage=0 intermission=False result=True rescues=1,1 / stage=0 intermission=True result=True rescues=1,1
+poll sim=77.59999999999773 stage=0 intermission=False result=True rescues=1,1 / stage=0 intermission=False result=True rescues=1,1
+poll sim=77.74999999999773 stage=0 intermission=True result=True rescues=1,1 / stage=0 intermission=True result=True rescues=1,1
+

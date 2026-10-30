@@ -1,0 +1,6 @@
+run,outcome,duration,summary
+1,Passed,00:03:34.4217408,"P700 local 15v15: 210.6s, samples=2103, reached=24/30, longest speed<1 with target=0.000s, shots=150, hits=1, kills=0"
+2,Passed,00:03:27.2958213,"P700 local 15v15: 203.8s, samples=2035, reached=24/30, longest speed<1 with target=2.015s, shots=1564, hits=461, kills=3"
+3,Passed,00:06:42.9851710,"P700 local 15v15: 398.7s, samples=3981, reached=24/30, longest speed<1 with target=1.513s, shots=1694, hits=506, kills=4"
+4,Passed,00:03:37.3852808,"P700 local 15v15: 213.1s, samples=2129, reached=24/30, longest speed<1 with target=0.000s, shots=590, hits=27, kills=0"
+5,Passed,00:04:02.2245751,"P700 local 15v15: 238.3s, samples=2380, reached=24/30, longest speed<1 with target=0.505s, shots=1670, hits=413, kills=2"

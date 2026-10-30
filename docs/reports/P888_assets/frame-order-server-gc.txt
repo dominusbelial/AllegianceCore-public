@@ -1,0 +1,226 @@
+P888 full game-flow capture with explicit server GC. Production src unchanged.
+All four probes use the deployment defaults and DOTNET_gcServer=1.
+Accelerated probes duplicate the original direct-Started + immediate GameOver fixture.
+Paced probes use ready packets, observe Started on both clients, then 50 ms ticks.
+Server logs include every packet carrying 14/37/38/62/63/95, with all fmids in that packet.
+Client receipt timestamps are per-recorder microseconds; recorder attaches after Connect.
+
+pool / accelerated
+Server publications and changed polled client states:
+883.277ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+885.564ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+886.220ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1710.938ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1710.963ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1711.298ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+END sim=64.44999999999848 serverGC=True
+1791.922ms peer=1 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+1791.952ms peer=2 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+1793.161ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+1793.173ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+1830.008ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1830.043ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1831.396ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1831.771ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1831.835ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1831.857ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1832.870ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1832.880ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1834.060ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1834.074ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+POLL sim=64.44999999999848 stage=0 intermission=False result=True rescues=[1,1] / stage=0 intermission=False result=True rescues=[1,1]
+1893.303ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1893.332ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1893.336ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1893.342ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+POLL sim=66.54999999999836 stage=1 intermission=False result=False rescues=[1,1] / stage=1 intermission=False result=False rescues=[1,1]
+2577.998ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+2578.017ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+POLL sim=81.54999999999751 stage=1 intermission=False result=False rescues=[1,1] / stage=2 intermission=False result=False rescues=[1,1]
+POLL sim=81.59999999999751 stage=2 intermission=False result=False rescues=[1,1] / stage=2 intermission=False result=False rescues=[1,1]
+observed=False paced=False
+
+Client A receipt sequence:
+18279us fmids=[62, 63] 
+19689us fmids=[37] 37.stage=3
+56339us fmids=[38, 95] 38.stage=0
+58087us fmids=[38] 38.stage=0
+122269us fmids=[37] 37.stage=0
+122273us fmids=[35, 14] 
+123260us fmids=[35, 14] 
+130714us fmids=[37] 37.stage=1
+130804us fmids=[35, 14] 
+805570us fmids=[37] 37.stage=2
+
+Client B receipt sequence:
+17457us fmids=[62, 63] 
+18814us fmids=[37] 37.stage=3
+57307us fmids=[38, 95] 38.stage=0
+57395us fmids=[38] 38.stage=0
+119747us fmids=[37] 37.stage=0
+121757us fmids=[35, 14] 
+122491us fmids=[35, 14] 
+130794us fmids=[37] 37.stage=1
+130804us fmids=[35, 14] 
+804677us fmids=[37] 37.stage=2
+
+pool / paced
+Server publications and changed polled client states:
+840.999ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+842.282ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+844.066ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1634.799ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1634.823ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1635.293ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1727.019ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1727.036ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1727.056ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1727.064ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2375.780ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+2375.796ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+END sim=79.54999999999762 serverGC=True
+2394.186ms peer=1 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+2394.202ms peer=2 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+2395.022ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+2395.032ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+2425.763ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+2425.794ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+2427.013ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+2427.036ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2427.077ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+2427.090ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+2427.898ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+2427.906ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2430.769ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2430.777ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+POLL sim=79.54999999999762 stage=0 intermission=False result=True rescues=[1,1] / stage=0 intermission=False result=True rescues=[1,1]
+POLL sim=79.64999999999762 stage=0 intermission=True result=True rescues=[1,1] / stage=0 intermission=True result=True rescues=[1,1]
+observed=True paced=True
+
+Client A receipt sequence:
+37087us fmids=[37] 37.stage=1
+37100us fmids=[35, 14] 
+686688us fmids=[37] 37.stage=2
+703769us fmids=[62, 63] 
+705257us fmids=[37] 37.stage=3
+735662us fmids=[38, 95] 38.stage=0
+740123us fmids=[38] 38.stage=0
+803572us fmids=[37] 37.stage=0
+803578us fmids=[35, 14] 
+805700us fmids=[35, 14] 
+
+Client B receipt sequence:
+624us fmids=[37] 37.stage=0
+36368us fmids=[37] 37.stage=1
+36408us fmids=[35, 14] 
+686015us fmids=[37] 37.stage=2
+703047us fmids=[62, 63] 
+704598us fmids=[37] 37.stage=3
+736741us fmids=[38, 95] 38.stage=0
+739451us fmids=[38] 38.stage=0
+800829us fmids=[37] 37.stage=0
+800844us fmids=[35, 14] 
+802970us fmids=[35, 14] 
+
+thread-per-peer / accelerated
+Server publications and changed polled client states:
+861.512ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+863.469ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+864.237ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1617.686ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1617.705ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1618.097ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+END sim=60.5499999999987 serverGC=True
+1638.090ms peer=1 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+1638.109ms peer=2 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+1639.297ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+1639.309ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+1679.212ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1679.249ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1680.602ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1680.886ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1680.937ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1680.953ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1681.921ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1681.931ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1682.991ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1683.000ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+POLL sim=60.5499999999987 stage=0 intermission=False result=True rescues=[1,1] / stage=0 intermission=False result=True rescues=[1,1]
+POLL sim=60.599999999998694 stage=0 intermission=True result=True rescues=[1,1] / stage=0 intermission=True result=True rescues=[1,1]
+observed=True paced=False
+
+Client A receipt sequence:
+18580us fmids=[62, 63] 
+19831us fmids=[37] 37.stage=3
+59400us fmids=[38, 95] 38.stage=0
+61100us fmids=[38] 38.stage=0
+65688us fmids=[37] 37.stage=0
+65692us fmids=[35, 14] 
+66381us fmids=[35, 14] 
+
+Client B receipt sequence:
+17851us fmids=[62, 63] 
+19188us fmids=[37] 37.stage=3
+60382us fmids=[38, 95] 38.stage=0
+60456us fmids=[38] 38.stage=0
+64758us fmids=[37] 37.stage=0
+64763us fmids=[35, 14] 
+65737us fmids=[35, 14] 
+
+thread-per-peer / paced
+Server publications and changed polled client states:
+870.525ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+872.619ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+873.346ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1643.210ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+1643.227ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+1643.672ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+1680.856ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1680.865ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[1]
+1680.867ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+1680.870ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2293.575ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+2293.591ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[2]
+END sim=75.69999999999784 serverGC=True
+2314.802ms peer=1 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+2314.822ms peer=2 key=0 guaranteed=True lane=ordered fmids=[62,63] stages=[]
+2315.853ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+2315.866ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[3]
+2349.850ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+2349.874ms peer=1 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+2350.855ms peer=1 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+2350.869ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2350.898ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38,95] stages=[]
+2350.908ms peer=2 key=0 guaranteed=True lane=ordered fmids=[38] stages=[]
+2352.955ms peer=2 key=0 guaranteed=True lane=ordered fmids=[37] stages=[0]
+2352.966ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2353.363ms peer=1 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+2353.369ms peer=2 key=0 guaranteed=True lane=ordered fmids=[35,14] stages=[]
+POLL sim=75.69999999999784 stage=0 intermission=False result=True rescues=[1,1] / stage=0 intermission=False result=True rescues=[1,1]
+POLL sim=75.74999999999784 stage=0 intermission=True result=True rescues=[1,1] / stage=0 intermission=True result=True rescues=[1,1]
+observed=True paced=True
+
+Client A receipt sequence:
+34827us fmids=[37] 37.stage=1
+34875us fmids=[35, 14] 
+648289us fmids=[37] 37.stage=2
+668221us fmids=[62, 63] 
+669626us fmids=[37] 37.stage=3
+703349us fmids=[38, 95] 38.stage=0
+706340us fmids=[38] 38.stage=0
+711030us fmids=[37] 37.stage=0
+711034us fmids=[35, 14] 
+711064us fmids=[35, 14] 
+
+Client B receipt sequence:
+34307us fmids=[37] 37.stage=1
+34313us fmids=[35, 14] 
+647681us fmids=[37] 37.stage=2
+667643us fmids=[62, 63] 
+669033us fmids=[37] 37.stage=3
+705301us fmids=[38, 95] 38.stage=0
+705896us fmids=[38] 38.stage=0
+710210us fmids=[37] 37.stage=0
+710214us fmids=[35, 14] 
+710259us fmids=[35, 14] 
+

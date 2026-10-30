@@ -1,0 +1,21 @@
+mode,run,p660_passed,p660_total,two_match,showcase,failures,transport_passed,transport_total
+pool,1,12,12,Passed,Passed,,2,2
+pool,2,12,12,Passed,Passed,,2,2
+pool,3,12,12,Passed,Passed,,2,2
+pool,4,12,12,Passed,Passed,,2,2
+pool,5,11,12,Passed,Passed,"Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: ""off"")",2,2
+pool,6,11,12,Passed,Passed,"Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: ""off"")",2,2
+pool,7,12,12,Passed,Passed,,2,2
+pool,8,12,12,Passed,Passed,,2,2
+pool,9,12,12,Passed,Passed,,2,2
+pool,10,11,12,Passed,Passed,"Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: ""off"")",2,2
+thread-per-peer,1,12,12,Passed,Passed,,2,2
+thread-per-peer,2,12,12,Passed,Passed,,2,2
+thread-per-peer,3,12,12,Passed,Passed,,2,2
+thread-per-peer,4,12,12,Passed,Passed,,2,2
+thread-per-peer,5,12,12,Passed,Passed,,2,2
+thread-per-peer,6,12,12,Passed,Passed,,2,2
+thread-per-peer,7,12,12,Passed,Passed,,2,2
+thread-per-peer,8,12,12,Passed,Passed,,2,2
+thread-per-peer,9,12,12,Passed,Passed,,2,2
+thread-per-peer,10,12,12,Passed,Passed,,2,2

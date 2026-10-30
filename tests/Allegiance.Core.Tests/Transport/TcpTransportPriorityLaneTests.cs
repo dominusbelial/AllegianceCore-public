@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
 
 namespace Allegiance.Core.Tests.Transport;
 
@@ -134,6 +135,81 @@ public abstract class TcpTransportPriorityLaneTestsBase
             Assert.True(NextDrainedIsOrdered(ps),
                 "join/world (ordered) data must be the next drained frame, ahead of the position stream");
             client.Dispose();
+        }
+        finally { host.Shutdown(); }
+    }
+
+    // Native guarantees stage and result traffic on the same ordered channel:
+    // FedSrv/fsmission.cpp:1750-1762,3435-3438; _Utility/Messages.cpp:556-563.
+    // Queue the entire flow before either writer can drain: this proves order
+    // independently of the scheduling luck that hid P888 in thread-per-peer mode.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(bool reliableOneShot)
+    {
+        var site = new Site();
+        var host = NewHost(site);
+        host.ReliableOneShot = reliableOneShot;
+        try
+        {
+            host.Host(0);
+            var (id, client) = ConnectRawPeer(host, site, "GAME-FLOW");
+            using (client)
+            {
+                client.ReceiveTimeout = 5000;
+                var sides = Enumerable.Repeat(default(SideEndgameInfo) with { SideName = "" }, GameOver.MaxSides).ToArray();
+                IFedMessage[] flow =
+                [
+                    new MissionStageMessage { Stage = MissionStageMessage.StageStarting },
+                    new SetStartTime { TimeStart = 15000 },
+                    new MissionStageMessage { Stage = MissionStageMessage.StageStarted },
+                    new GameOver { Sides = sides, SideWinner = 0, GameoverMessage = "first result" },
+                    new GameOverPlayers { Entries = [new("pilot", 0, 0, 1, Rescues: 1)] },
+                    new MissionStageMessage { Stage = MissionStageMessage.StageOver },
+                    new MissionDef { Stage = MissionStageMessage.StageNotStarted },
+                    new JoinedMission { ShipId = 2 },
+                    new MissionStageMessage { Stage = MissionStageMessage.StageNotStarted },
+                    new SetStartTime { TimeStart = 17000 },
+                    new MissionStageMessage { Stage = MissionStageMessage.StageStarting },
+                    new SetStartTime { TimeStart = 32000 },
+                    new MissionStageMessage { Stage = MissionStageMessage.StageStarted },
+                    new GameOver { Sides = sides, SideWinner = 1, GameoverMessage = "second result" },
+                    new GameOverPlayers { Entries = [new("pilot", 0, 0, 2, Rescues: 1)] },
+                ];
+                var expected = flow.Select(m => FedPacket.Pack([m.Encode()])).ToArray();
+                var sender = PeerSenderFor(host, id);
+                byte[] latestPose = [0xA5];
+                byte[] latestOwnPose = [0xB5];
+                using (new PausedSendQueue(sender, TcpTransport.CapacityBytes))
+                {
+                    for (int i = 0; i < expected.Length; i++)
+                    {
+                        // Both pose classes coalesce; all game-flow frames must
+                        // retain their order and drain ahead of these streams.
+                        host.Send(id, new byte[] { (byte)i }, guaranteed: false, coalesceKey: 42);
+                        host.Send(id, new byte[] { (byte)i }, guaranteed: true, coalesceKey: 43);
+                        host.Send(id, expected[i], guaranteed: true, coalesceKey: 0);
+                    }
+                    host.Send(id, latestPose, guaranteed: false, coalesceKey: 42);
+                    host.Send(id, latestOwnPose, guaranteed: true, coalesceKey: 43);
+                }
+                var stream = client.GetStream();
+                byte[] ReadFrame()
+                {
+                    var header = new byte[5];
+                    stream.ReadExactly(header);
+                    Assert.Equal(2, header[0]);
+                    int length = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(1));
+                    Assert.InRange(length, 1, 65536);
+                    var body = new byte[length];
+                    stream.ReadExactly(body);
+                    return body;
+                }
+                foreach (var frame in expected) Assert.Equal(frame, ReadFrame());
+                Assert.Equal(latestPose, ReadFrame());
+                Assert.Equal(latestOwnPose, ReadFrame());
+            }
         }
         finally { host.Shutdown(); }
     }
