@@ -2805,6 +2805,10 @@ public sealed partial class Game1
                     // P871 — the generic numeric SoundID dispatch attenuates its
                     // positional sources against the local listener.
                     _sound?.SetListenerPosition(ownPos);
+                    // P893 — the 3D listener's velocity: the OWN SHIP's velocity,
+                    // exactly what native's CameraListener.GetVelocity reports
+                    // (WinTrek.cpp:686-691) regardless of the camera mode.
+                    _sound?.SetListenerVelocity(mineUp.Velocity);
                     // P871 / SIM-0371 — the gunner interior loop: native resolves
                     // GetGunnerInteriorSoundID (the SOURCE hull's mounted-turret
                     // hardpoint interiorSound) and maintains it iff the local ship

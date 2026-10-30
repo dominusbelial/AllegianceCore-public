@@ -67,6 +67,7 @@ public sealed class OptionsMenuModel
         ToggleMusic,
         MusicVolumeUp,
         MusicVolumeDown,
+        Toggle3DSound,
         ToggleFilterChatsToAll,
         ToggleMuteChatSender,
         ToggleLinearControls,
@@ -90,6 +91,9 @@ public sealed class OptionsMenuModel
         bool VirtualJoystick,
         float Deadzone,
         bool ForceFeedback = true,
+        // P893 — the positional-3D sound switch (port addition; native never had
+        // a 3D toggle, so there is no native hotkey to mirror — 'P' is free).
+        bool Sound3DOn = true,
         // P871b — the directory-chat mute target (the port extension's use of
         // native's context-menu mute, WinTrek.cpp:3731-3734,4310): the newest
         // relayed sender's display name, or null when the log is empty.
@@ -131,6 +135,10 @@ public sealed class OptionsMenuModel
                     new Row("Music: " + OnOff(state.MusicOn), OptionsCommand.ToggleMusic, 'M'),
                     new Row("Music Volume Up", OptionsCommand.MusicVolumeUp, 'U'),
                     new Row("Music Volume Down", OptionsCommand.MusicVolumeDown, 'D'),
+                    // P893 — the positional-3D switch. Native had no such option
+                    // (its sound menu is quality/hardware only), so this is a port
+                    // addition for A/B-ing the 3D mix by ear.
+                    new Row("Positional 3D Sound: " + OnOff(state.Sound3DOn), OptionsCommand.Toggle3DSound, 'P'),
                 };
             case Page.Game:
                 return new[]

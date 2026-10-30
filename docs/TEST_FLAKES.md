@@ -4174,3 +4174,40 @@ selects the parallel build): 11,766 tests, 3 Core failures, all pre-existing/loa
 - `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage`
   — SLOW FAST 39.056 s (calibrated 10 s limit); **3/3 pass alone in ~0.9 s**.
   Load flake (the sweep overlapped other agents' builds).
+## P893 gate (2026-10-30)
+
+Fast sweep `tiers-20261030T035703` on the P893 tree: 11,763 tests, 4 failed + 1 limit offender.
+
+- `P806OptionsMenuTests.Sound_submenu_lists_the_ports_real_music_controls` — real
+  P893 change (the Sound submenu gained the 4th "Positional 3D Sound" row);
+  test updated in the same lane, passes.
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+  (38.2 s, the calibrated-limit offender) — the ledgered pre-existing baseline
+  failure (see P893-era entries above); not retried here.
+- `NpcWingmanDefendLiveTests.Defender_disengages…` — the known deterministic
+  baseline failure (P872/P887 sections); not a flake.
+- `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`
+  (contention) — **3/3 pass alone** immediately after the sweep.
+- `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7/5)`
+  ×2 (contention) — **5/5 pass alone** immediately after (bothTheory cases, 3 repeats).
+- `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position`
+  (quarantine, flaky) — the already-ledgered quarantine flake (P883b section).
+
+Confirming sweep `tiers-20261030T041824` (after the P806 test fix): 11,763
+ tests, 5 failed + 6 limit offenders, all pre-existing/contention, none on the
+ P893 path:
+
+- `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
+  (contention, the ledgered P885 case) — **3/3 pass alone**.
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+  (38.3 s, limit offender) — ledgered baseline failure.
+- `NpcWingmanDefendLiveTests.Defender_disengages…` — ledgered baseline failure.
+- `NpcAsteroidContentionLiveTests.Two_same_side_idle_miners…` (18.4 s, limit
+  offender, contention) — **3/3 pass alone** (<1 s each).
+- `P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines…` (37.1 s,
+  limit offender, contention) — **3/3 pass alone** (~8 s each).
+- Other limit offenders (`NpcDodgeLiveTests` 10.2 s, `P750NativeAsteroidTypesTests`
+  10.0 s, `P777WarpExitWobbleTests` 10.7 s) passed and are the ledgered
+  near-threshold load flakes.
+- The P806 options test now passes in-sweep (3796 MonoGame passes with the
+  only failure being the ShopLauncher contention case above).

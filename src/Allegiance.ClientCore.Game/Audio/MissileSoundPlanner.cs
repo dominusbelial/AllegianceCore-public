@@ -109,17 +109,23 @@ public sealed class MissileSoundPlanner
     /// missile list (one entry per missile in the listener's sector, paired with
     /// its listener distance). Returns a fresh command list each call; the caller
     /// replays it against the audio backend. Empty input stops every tracked
-    /// missile and booms any that were live.
-    /// </summary>
-    public List<MissileSoundCommand> Plan(IReadOnlyCollection<MissileSoundSample> live)
+    /// missile and booms any that were live. <paramref name="audibleRadiusOverride"/>
+    /// (P893) widens the ambient start/stop gate while 3D is on: native admits
+    /// every in-sector sound and lets the positional engine + voice budget decide
+    /// (the −60 dB range for the missile's ThreeDSound(100) template is
+    /// 100,000 units), so the 3D path passes that range instead of the hand-tuned
+    /// curve radius.</summary>
+    public List<MissileSoundCommand> Plan(IReadOnlyCollection<MissileSoundSample> live,
+        float? audibleRadiusOverride = null)
     {
+        float range = audibleRadiusOverride ?? MissileAmbientSoundCurve.AudibleRadius;
         var commands = new List<MissileSoundCommand>(live.Count + 2);
         var seen = new HashSet<short>();
 
         foreach (var s in live)
         {
             seen.Add(s.MissileId);
-            bool inRange = s.DistanceToListener <= MissileAmbientSoundCurve.AudibleRadius;
+            bool inRange = s.DistanceToListener <= range;
 
             if (_known.Add(s.MissileId))
             {

@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using System.Linq;
@@ -46,10 +47,17 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// (the app keeps rendering/flying). This is a deliberate divergence from the
 /// hard-exit-on-content-failure pattern used for the essential ship model in
 /// <see cref="Game1"/>.</para>
-/// <para><b>No positional 3D here.</b> These are cockpit/own-ship sounds; the
-/// modern <see cref="SoundEffectInstance.Apply3D(AudioListener, AudioEmitter)"/>
-/// equivalent is only needed for positioned world sounds (remote ships), which
-/// are out of the POC's scope.</para>
+/// <para><b>Positional 3D (P893).</b> World sounds (remote ambients, weapons,
+/// impacts, explosions, missiles) play through the native DirectSound3D model
+/// ported in <see cref="Audio.Sound3DModel"/>: listener-relative gain from the
+/// native log rolloff (per-family <c>ThreeDSound(minDistance)</c> values),
+/// Doppler pitch from the emitter/listener velocities, and stereo pan from the
+/// camera basis — driven per frame by <see cref="Sound3DMix.Solve"/> and
+/// applied in the voice-budget settle. Cockpit/own-ship sounds stay
+/// head-relative exactly as native (a source at the listener's position skips
+/// 3D processing, ds3dvirtualbuffer.cpp:723-726). A
+/// <see cref="Sound3DEnabled"/> option (Sound Options) turns the whole path
+/// off, restoring the pre-P893 per-loop distance curves.</para>
 /// </remarks>
 public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
 {
@@ -201,6 +209,23 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private readonly Dictionary<short, SoundEffectInstance> _nativeLoops = new();
     private readonly PlaySoundIfSlot _gunnerInteriorSlot = new();
     private Allegiance.Core.Collision.Vector3? _listenerPosition;
+
+    // P893 — the positional-3D listener (native's CameraListener,
+    // WinTrek.cpp:646-708): the CAMERA position/basis fed by the render path and
+    // the OWN SHIP's velocity fed by the flight-input path — exactly native's
+    // combination (its own REVIEW note at WinTrek.cpp:686-691 acknowledges that
+    // the camera's velocity "is not the same as the ships!" and uses the ship's).
+    private Vector3 _listener3DPosition;
+    private Vector3 _listener3DVelocity;
+    private Vector3 _listener3DRight;          // camera right axis, for stereo pan
+    private bool _listener3DHasBasis;          // false until the first view matrix arrives
+    // P893 — the 3D-sound on/off option. Default ON = native behaviour (native
+    // plays every world sound through DirectSound3D; it never had a 3D toggle —
+    // its only sound options are quality + hardware acceleration,
+    // WinTrek.cpp:3022-3024). Off = the pre-P893 mix (per-loop distance curves,
+    // no pan/doppler), so Domingo can A/B by ear.
+    private bool _sound3DEnabled = true;
+    private int _voices3DLastFrame;
     private SoundEffect _shipInt = null!;   // shipint — the station-interior loop component
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
@@ -490,6 +515,20 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         public bool Started;        // one-shot: was played at spawn
         public float Born;          // age clock value at registration
         public bool LastAdmitted;   // held an audible buffer last frame (drop detect)
+
+        // P893 — positional-3D state. Non-null only on world sounds played with
+        // a position (native attaches a source to every world sound; cockpit/
+        // own-ship beds have none and stay head-relative as in native).
+        public Native3DRole Role3D;
+        public World3DEmitter Emitter;       // Position valid only when HasEmitter
+        public bool HasEmitter;
+        public Vector3 EmitterVel;           // finite-difference estimate (native GetVelocity)
+        public Vector3 LastEmitterPos;
+        public double LastEmitterClock;
+        public bool HasLastEmitter;
+        public float BasePitch;              // template pitch (octaves) the 3D pass adds Doppler onto
+        public float Pan;                    // last 3D solve result
+        public float PitchDelta;
     }
 
     private readonly List<Voice> _managedVoices = new();
@@ -535,7 +574,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     }
 
     private long Track(SoundEffectInstance inst, SoundCategory cat, bool isLoop,
-        bool essential, float loudness, bool audible, bool started)
+        bool essential, float loudness, bool audible, bool started,
+        Native3DRole role3D = Native3DRole.ProbeAmbient, float basePitch = 0f,
+        bool has3DEmitter = false)
     {
         var id = _nextVoiceId++;
         _managedVoices.Add(new Voice
@@ -543,6 +584,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             Id = id, Category = cat, Instance = inst, IsLoop = isLoop,
             Essential = essential, Loudness = loudness, Audible = audible,
             Started = started, Born = _voiceAgeClock,
+            Role3D = role3D, BasePitch = basePitch, HasEmitter = has3DEmitter,
         });
         return id;
     }
@@ -657,6 +699,56 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             }
         }
 
+        // P893 — the positional-3D pass (native DS3DVirtualSoundBuffer::Update,
+        // ds3dvirtualbuffer.cpp:692-830, run per virtual buffer per frame):
+        // recompute every tracked world voice's listener-relative gain/pan/doppler
+        // from its current emitter pose and the camera listener. While 3D is off
+        // this pass is skipped entirely and the mix is exactly the pre-P893 one.
+        int voices3D = 0;
+        if (_sound3DEnabled)
+        {
+            var listener = new Listener3D(_listener3DPosition, _listener3DVelocity,
+                _listener3DRight, _listener3DHasBasis);
+            double now = SoundNow;
+            foreach (var v in _managedVoices)
+            {
+                if (!v.HasEmitter) continue;
+
+                // Estimate the emitter velocity by finite difference of its
+                // streamed position (native reads the model's GetVelocity,
+                // trekigc.cpp:518-527; the port's 20 Hz wire carries no
+                // missile/projectile velocity, so the difference over ≥50 ms
+                // stands in — exponentially smoothed, reset on teleport-sized
+                // jumps to keep a respawn from reading as a huge doppler).
+                if (v.HasLastEmitter)
+                {
+                    float dtv = (float)(now - v.LastEmitterClock);
+                    if (dtv >= 0.05f)
+                    {
+                        var vel = (v.Emitter.Position - v.LastEmitterPos) * (1f / dtv);
+                        v.EmitterVel = dtv < 1.0f ? Vector3.Lerp(v.EmitterVel, vel, 0.5f) : vel;
+                    }
+                }
+                v.LastEmitterPos = v.Emitter.Position;
+                v.LastEmitterClock = now;
+                v.HasLastEmitter = true;
+
+                var result = Sound3DMix.Solve(
+                    new Voice3DState(v.Loudness, v.BasePitch, v.Emitter, v.Role3D),
+                    listener, enabled3D: true);
+                // The 3D gain REPLACES the curve loudness (the planner's curve
+                // value returns next frame via SetTrackedLoudness); audibility
+                // feeds the budget like native's −100 priority kick
+                // (ds3dvirtualbuffer.cpp:804-806).
+                v.Loudness = result.Loudness;
+                v.Audible = result.Audible;
+                v.Pan = result.Pan;
+                v.PitchDelta = result.PitchDelta;
+                voices3D++;
+            }
+        }
+        _voices3DLastFrame = voices3D;
+
         // Rank all audible voices; admit the top budget, subject to group caps.
         var candidates = new List<BudgetSound>(_managedVoices.Count);
         foreach (var v in _managedVoices)
@@ -685,6 +777,15 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             if (!v.IsLoop)
             {
                 if (!ad) { if (v.Instance is { } o) { if (o.State == SoundState.Playing) Safe(o.Stop); Safe(o.Dispose); } }
+                // P893 — positioned one-shots keep tracking the listener while
+                // they play (native updates every virtual buffer each frame).
+                else if (v.HasEmitter && _sound3DEnabled && v.Instance is { } pos)
+                {
+                    float g3d = v.Loudness * CategoryVolume(v.Category) * _masterVolume * duck;
+                    Safe(() => pos.Volume = Math.Clamp(g3d, 0f, 1f));
+                    Safe(() => pos.Pan = v.Pan);
+                    Safe(() => pos.Pitch = Math.Clamp(v.BasePitch + v.PitchDelta, -2f, 2f));
+                }
                 continue;
             }
             if (v.Instance is not { } inst) continue;
@@ -692,6 +793,12 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             {
                 float g = v.Loudness * CategoryVolume(v.Category) * _masterVolume * duck;
                 Safe(() => inst.Volume = Math.Clamp(g, 0f, 1f));
+                // P893 — stereo pan + Doppler pitch for positioned loops.
+                if (v.HasEmitter && _sound3DEnabled)
+                {
+                    Safe(() => inst.Pan = v.Pan);
+                    Safe(() => inst.Pitch = Math.Clamp(v.BasePitch + v.PitchDelta, -2f, 2f));
+                }
                 if (inst.State != SoundState.Playing) Safe(inst.Play);
             }
             else
@@ -712,7 +819,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
                 .Select(c => $"{c.Category}={c.Active}"));
             Console.WriteLine(
                 $"[monogame] audio budget: audible={t.AudibleVoices}/{_voiceBudgetCfg.DesiredVoices} " +
-                $"(essential {t.EssentialVoices}) drops/s={t.DropsPerSecond:F1} | {cats}");
+                $"(essential {t.EssentialVoices}) drops/s={t.DropsPerSecond:F1} 3D={_voices3DLastFrame} | {cats}");
         }
     }
 
@@ -1113,6 +1220,83 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// attenuate against (the local source ship's position).</summary>
     public void SetListenerPosition(Allegiance.Core.Collision.Vector3 position) =>
         _listenerPosition = position;
+
+    /// <summary>P893 — the 3D-sound on/off option (Sound Options →
+    /// "Positional 3D Sound"). Default ON = native behaviour. While off, no
+    /// voice is 3D-processed: the mix is exactly the pre-P893 one.</summary>
+    public bool Sound3DEnabled
+    {
+        get => _sound3DEnabled;
+        set => _sound3DEnabled = value;
+    }
+
+    /// <summary>How many world voices the 3D pass updated on the last budget
+    /// frame (the per-frame cost measurement surface — the 3D pass is one
+    /// distance/doppler solve per positioned voice).</summary>
+    public int Last3DVoiceCount => _voices3DLastFrame;
+
+    /// <summary>P893 — the listener's velocity: the OWN SHIP's velocity, like
+    /// native's <c>CameraListener.GetVelocity</c> (WinTrek.cpp:686-691, which
+    /// deliberately reports the ship's velocity, not the camera's).</summary>
+    public void SetListenerVelocity(Allegiance.Core.Collision.Vector3 velocity) =>
+        _listener3DVelocity = ToXna(velocity);
+
+    /// <summary>P893 — the listener's camera pose: native's listener IS the
+    /// camera (<c>CameraListener.GetPosition/GetOrientation/GetUpDirection</c>,
+    /// WinTrek.cpp:661-684), in every view mode — cockpit and chase differ only
+    /// in where the camera sits. The view matrix supplies the world-space right
+    /// axis for stereo pan (a CreateLookAt view stores its basis in its first
+    /// three rows).</summary>
+    public void SetListenerCamera(Vector3 eye, Matrix view)
+    {
+        _listener3DPosition = eye;
+        _listener3DRight = new Vector3(view.M11, view.M12, view.M13);
+        _listener3DHasBasis = true;
+    }
+
+    private static Vector3 ToXna(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
+
+    /// <summary>P893 — attach (or, with a null position, detach) a world emitter
+    /// to an already-tracked instance: the per-frame position/velocity source
+    /// native's <c>ModelPointSoundSource</c> provides (trekigc.cpp:453-541).</summary>
+    private void SetWorldEmitter(SoundEffectInstance inst, Native3DRole role,
+        Allegiance.Core.Collision.Vector3? position)
+    {
+        if (VoiceFor(inst) is not { } v) return;
+        if (position is { } p)
+        {
+            v.Role3D = role;
+            v.Emitter = new World3DEmitter(ToXna(p), Vector3.Zero);
+            v.HasEmitter = true;
+        }
+        else
+        {
+            v.HasEmitter = false;
+            v.HasLastEmitter = false;
+            v.EmitterVel = Vector3.Zero;
+        }
+    }
+
+    /// <summary>P893 — play a positioned world one-shot: native plays every
+    /// world cue through a <c>ThreeDSound(minDistance)</c> template at the
+    /// model's position (trekigc.cpp:4959-4979). While 3D is on the native
+    /// distance model replaces the caller's curve volume (and the voice keeps
+    /// tracking the listener each frame); while off, this is exactly the old
+    /// curve-volume path.</summary>
+    private void PlayPositionalOneShot(SoundEffect sfx, SoundCategory cat,
+        Native3DRole role, Allegiance.Core.Collision.Vector3? position, float curveVolume)
+    {
+        if (!IsLoaded) return;
+        float volume = curveVolume;
+        if (_sound3DEnabled && position is { } p)
+        {
+            float dist = (ToXna(p) - _listener3DPosition).Length();
+            volume = Sound3DModel.DbToLinear(
+                Sound3DModel.DistanceGainDb(Native3DMix.MinDistance(role), dist));
+        }
+        var inst = StartOneShot(sfx, cat, volume);
+        if (inst is not null) SetWorldEmitter(inst, role, position);
+    }
 
     /// <summary>P871 / SIM-0412 — native <c>StartSound(m_soundId)</c> from the
     /// MDL button sink (unpositioned).</summary>
@@ -1851,8 +2035,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// <summary>P232 — begin a projectile's in-flight ambient loop (a looped
     /// <c>erbeam.ogg</c> instance keyed by the projectile entity's reference
     /// identity), seeded at the given volume. Starts it only if one is not
-    /// already playing for that projectile. No-op when audio is not loaded.</summary>
-    public void StartProjectileAmbient(ProjectileEntity key, float volume)
+    /// already playing for that projectile. <paramref name="position"/> (P893)
+    /// attaches the native 3D emitter (er_beam's <c>ThreeDSound(200)</c>,
+    /// sounddef.mdl:14). No-op when audio is not loaded.</summary>
+    public void StartProjectileAmbient(ProjectileEntity key, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || key is null || _projectileAmbients.ContainsKey(key)) return;
         var inst = _projectileAmbient.CreateInstance();
@@ -1861,17 +2048,23 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _projectileAmbients[key] = inst;
         Track(inst, SoundCategory.ProjectileAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.ProjectileAmbient);
+        SetWorldEmitter(inst, Native3DRole.ProjectileAmbient, position);
     }
 
     /// <summary>P232 — refresh a live projectile's ambient loop volume for the
-    /// current listener distance (0..1). No-op if no ambient is tracked for
-    /// that projectile or audio is not loaded.</summary>
-    public void UpdateProjectileAmbient(ProjectileEntity key, float volume)
+    /// current listener distance (0..1), plus its P893 3D emitter position.
+    /// No-op if no ambient is tracked for that projectile or audio is not loaded.</summary>
+    public void UpdateProjectileAmbient(ProjectileEntity key, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || key is null) return;
         if (_projectileAmbients.TryGetValue(key, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.ProjectileAmbient, position);
+        }
     }
 
     /// <summary>P232 — stop (and release) a projectile's ambient loop. Called
@@ -1890,9 +2083,12 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
 
     /// <summary>P237 — begin a warp's ambient loop (a looped <c>alephloop.ogg</c>
     /// instance keyed by the warp's real <c>WarpId</c>), seeded at the given
-    /// volume. Starts it only if one is not already playing for that warp. No-op
+    /// volume. Starts it only if one is not already playing for that warp.
+    /// <paramref name="position"/> (P893) attaches the native 3D emitter
+    /// (alephSound's <c>ThreeDSound(200)</c>, sounddef.mdl:385). No-op
     /// when audio is not loaded.</summary>
-    public void StartWarpAmbient(short warpId, float volume)
+    public void StartWarpAmbient(short warpId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _warpAmbients.ContainsKey(warpId)) return;
         var inst = _warpAmbient.CreateInstance();
@@ -1901,17 +2097,24 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _warpAmbients[warpId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.WarpAmbient);
+        SetWorldEmitter(inst, Native3DRole.WarpAmbient, position);
     }
 
     /// <summary>P237 — refresh a live warp's ambient loop volume for the current
-    /// listener distance (0..1) — the "increases as you get close" swell. No-op if
+    /// listener distance (0..1) — the "increases as you get close" swell — plus
+    /// its P893 3D emitter position. No-op if
     /// no ambient is tracked for that warp or audio is not loaded.</summary>
-    public void UpdateWarpAmbient(short warpId, float volume)
+    public void UpdateWarpAmbient(short warpId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_warpAmbients.TryGetValue(warpId, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.WarpAmbient, position);
+        }
     }
 
     /// <summary>P237 — stop (and release) a warp's ambient loop. Called when the
@@ -1931,19 +2134,25 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// <summary>P236 — play the missile-launch one-shot (<c>lrgslideout.ogg</c>),
     /// positioned at the firing ship (native
     /// <c>PlaySoundEffect(pMagazine->GetMissileType()->GetLaunchSound(), pShip)</c>,
-    /// clintlib.cpp:3103). In this POC the local ship is the firer, so it is a
-    /// non-positional cockpit-range one-shot (no 3D emitter yet). No-op when audio
-    /// is not loaded.</summary>
-    public void PlayMissileLaunch()
+    /// clintlib.cpp:3103). <paramref name="position"/> (P893) attaches the
+    /// native 3D emitter (HornetMissileLaunch's <c>ThreeDSound(20)</c>,
+    /// sounddef.mdl:1302) — at the own ship this sits at the listener and plays
+    /// head-relative, exactly native's equal-position optimization
+    /// (ds3dvirtualbuffer.cpp:723-726). No-op when audio is not loaded.</summary>
+    public void PlayMissileLaunch(Allegiance.Core.Collision.Vector3? position = null)
     {
-        if (IsLoaded) PlayOneShot(_missileLaunch, SoundCategory.WeaponFire, 1f);
+        if (IsLoaded) PlayPositionalOneShot(_missileLaunch, SoundCategory.WeaponFire,
+            Native3DRole.MissileLaunch, position, curveVolume: 1f);
     }
 
     /// <summary>P236 — begin a missile's in-flight ambient loop (a looped
     /// <c>mmissile.ogg</c> instance keyed by the missile's real <c>MissileID</c>),
     /// seeded at the given volume. Starts it only if one is not already playing for
-    /// that missile. No-op when audio is not loaded.</summary>
-    public void StartMissileAmbient(short missileId, float volume)
+    /// that missile. <paramref name="position"/> (P893) attaches the native 3D
+    /// emitter (HornetMissileFlight's <c>ThreeDSound(100)</c>, sounddef.mdl:1303).
+    /// No-op when audio is not loaded.</summary>
+    public void StartMissileAmbient(short missileId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _missileAmbients.ContainsKey(missileId)) return;
         var inst = _missileAmbient.CreateInstance();
@@ -1952,17 +2161,23 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _missileAmbients[missileId] = inst;
         Track(inst, SoundCategory.MissileAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.MissileFlight);
+        SetWorldEmitter(inst, Native3DRole.MissileFlight, position);
     }
 
     /// <summary>P236 — refresh a live missile's ambient loop volume for the current
-    /// listener distance (0..1). No-op if no ambient is tracked for that missile or
-    /// audio is not loaded.</summary>
-    public void UpdateMissileAmbient(short missileId, float volume)
+    /// listener distance (0..1), plus its P893 3D emitter position. No-op if no
+    /// ambient is tracked for that missile or audio is not loaded.</summary>
+    public void UpdateMissileAmbient(short missileId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_missileAmbients.TryGetValue(missileId, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.MissileFlight, position);
+        }
     }
 
     /// <summary>P236 — stop (and release) a missile's ambient loop. Called when the
@@ -2011,13 +2226,27 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// scale tier (native trekigc.cpp:97-101). Uses MonoGame's self-managed
     /// one-shot overload (<see cref="SoundEffect.Play(float, float, float)"/>), which
     /// creates + auto-releases the instance on completion — no manual tracking for a
-    /// fire-and-forget boom. No-op when audio is not loaded or the tier has no asset.</summary>
-    public void PlayMissileExplosion(ExplosionSoundTier tier, float volume)
+    /// fire-and-forget boom. <paramref name="position"/> (P893) plays it through the
+    /// native 3D model at the detonation site (the tier's
+    /// <c>ThreeDSound(minDistance)</c>: 1000/400/200, sounddef.mdl:268-270).
+    /// No-op when audio is not loaded or the tier has no asset.</summary>
+    public void PlayMissileExplosion(ExplosionSoundTier tier, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_explosions.TryGetValue(tier, out var sfx))
-            PlayOneShot(sfx, ExplosionTierCategory(tier), volume);
+            PlayPositionalOneShot(sfx, ExplosionTierCategory(tier), ExplosionTierRole(tier),
+                position, curveVolume: volume);
     }
+
+    /// <summary>Map an explosion tier to its P893 native role (the tier's
+    /// ThreeDSound minimum distance, sounddef.mdl:268-270).</summary>
+    private static Native3DRole ExplosionTierRole(ExplosionSoundTier tier) => tier switch
+    {
+        ExplosionSoundTier.Large => Native3DRole.ExplosionLarge,
+        ExplosionSoundTier.Medium => Native3DRole.ExplosionMedium,
+        _ => Native3DRole.ExplosionSmall,
+    };
 
     /// <summary>Map an explosion tier to its budget category — native tiers
     /// large/medium/small (largeExplosionSound sounddef.mdl:268,
@@ -2040,7 +2269,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// distinct entry point so the caller's intent (a world blast, not a missile
     /// detonation) is explicit and auditable. No-op when audio is not loaded or
     /// the tier has no asset.</summary>
-    public void PlayWorldExplosion(ExplosionSoundTier tier, float volume) => PlayMissileExplosion(tier, volume);
+    public void PlayWorldExplosion(ExplosionSoundTier tier, float volume,
+        Allegiance.Core.Collision.Vector3? position = null) => PlayMissileExplosion(tier, volume, position);
 
     /// <summary>P463 — play one of the four projectile hit one-shots (native
     /// <c>ThingSite::RegisterHit</c> choosing myShield/myHull/otherShield/otherHull,
@@ -2052,60 +2282,76 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// pool, exactly native's <c>RandomSound([...])</c>. The caller has already
     /// applied native's once-per-target-per-frame guard
     /// (<c>m_bPlayedHitSoundThisFrame</c>) in <see cref="HitSoundSelector.Select"/>.
-    /// Self-managed one-shot (auto-release on completion); no-op when audio is not
+    /// <paramref name="position"/> (P893) plays it through the native 3D model at
+    /// the impacted target (the template's <c>ThreeDSound(200)</c>,
+    /// sounddef.mdl:250-264; hitrock's 100 at :266). Self-managed one-shot
+    /// (auto-release on completion); no-op when audio is not
     /// loaded or the kind has no asset.</summary>
-    public void PlayHitSound(HitSoundKind kind, float volume)
+    public void PlayHitSound(HitSoundKind kind, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         SoundEffect? sfx;
+        Native3DRole role = Native3DRole.ShipHit;
         switch (kind)
         {
             case HitSoundKind.MyShield:
             case HitSoundKind.OtherShield:
                 if (_shieldHit.Length == 0) return;
                 sfx = _shieldHit[_rng.Next(_shieldHit.Length)];
+                role = Native3DRole.ShipHit;
                 break;
             case HitSoundKind.MyHull:
                 if (_hullHit.Length == 0) return;
                 sfx = _hullHit[_rng.Next(_hullHit.Length)];
+                role = Native3DRole.ShipHit;
                 break;
             case HitSoundKind.OtherHull:
                 sfx = _otherHullHit;
+                role = Native3DRole.ExplosionSmall;   // ef120, ThreeDSound(200)
                 break;
             case HitSoundKind.Rock:
                 // P463c — a chipped asteroid plays rockHitSound (hitrock,
                 // sounddef.mdl:266) instead of a hull/shield cue.
                 sfx = _rockHit;
+                role = Native3DRole.RockHit;
                 break;
             default:
                 return;
         }
         if (sfx is null) return;
-        PlayOneShot(sfx, kind is HitSoundKind.MyShield or HitSoundKind.MyHull
-            ? SoundCategory.HitMine : SoundCategory.HitOther, volume);
+        PlayPositionalOneShot(sfx, kind is HitSoundKind.MyShield or HitSoundKind.MyHull
+            ? SoundCategory.HitMine : SoundCategory.HitOther, role, position, curveVolume: volume);
     }
 
     /// <summary>P463c — play the ship-collision one-shot (<c>collisionSound</c> =
-    /// <c>colisionlarge</c>, sounddef.mdl:308) at <paramref name="volume"/>
-    /// (distance-scaled by the caller). Self-managed one-shot (auto-release on
+    /// <c>colisionlarge</c>, sounddef.mdl:308, <c>ThreeDSound(100)</c>) at
+    /// <paramref name="volume"/> (distance-scaled by the caller).
+    /// <paramref name="position"/> (P893) plays it through the native 3D model at
+    /// the collision site. Self-managed one-shot (auto-release on
     /// completion); no-op when audio is not loaded.</summary>
-    public void PlayCollisionSound(float volume)
+    public void PlayCollisionSound(float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _collision is null) return;
-        PlayOneShot(_collision, SoundCategory.HitOther, volume);
+        PlayPositionalOneShot(_collision, SoundCategory.HitOther,
+            Native3DRole.Collision, position, curveVolume: volume);
     }
 
     /// <summary>P463c — play the rock-hit one-shot (<c>rockHitSound</c> =
-    /// <c>hitrock</c>, sounddef.mdl:266) at <paramref name="volume"/>
-    /// (distance-scaled by the caller). Native plays it inside the asteroid's
-    /// <c>ReceiveDamage</c> when a round actually chips the rock
+    /// <c>hitrock</c>, sounddef.mdl:266, <c>ThreeDSound(100)</c>) at
+    /// <paramref name="volume"/> (distance-scaled by the caller). Native plays it inside
+    /// the asteroid's <c>ReceiveDamage</c> when a round actually chips the rock
     /// (asteroidigc.h:154-155); the caller triggers it from the existing P364
-    /// asteroid-hit signal (target id NA). Self-managed one-shot; no-op when
+    /// asteroid-hit signal (target id NA). <paramref name="position"/> (P893) plays it
+    /// through the native 3D model at the rock. Self-managed one-shot; no-op when
     /// audio is not loaded.</summary>
-    public void PlayRockHitSound(float volume)
+    public void PlayRockHitSound(float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _rockHit is null) return;
-        PlayOneShot(_rockHit, SoundCategory.HitOther, volume);
+        PlayPositionalOneShot(_rockHit, SoundCategory.HitOther,
+            Native3DRole.RockHit, position, curveVolume: volume);
     }
 
     /// <summary>P260 — play the probe deploy one-shot (the generic expendable
@@ -2141,8 +2387,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
     /// instance keyed by the probe's real <c>ProbeId</c>), seeded at the given
     /// volume. Starts it only if one is not already playing for that probe.
-    /// No-op when audio is not loaded.</summary>
-    public void StartProbeAmbient(short probeId, float volume)
+    /// <paramref name="position"/> (P893) attaches the native 3D emitter (the
+    /// er_beam default's <c>ThreeDSound(200)</c>, sounddef.mdl:14). No-op when
+    /// audio is not loaded.</summary>
+    public void StartProbeAmbient(short probeId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _probeAmbients.ContainsKey(probeId)) return;
         var inst = _probeAmbient.CreateInstance();
@@ -2151,17 +2400,23 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _probeAmbients[probeId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.ProbeAmbient);
+        SetWorldEmitter(inst, Native3DRole.ProbeAmbient, position);
     }
 
     /// <summary>P260 — refresh a live probe's ambient loop volume for the current
-    /// listener distance (0..1). No-op if no ambient is tracked for that probe or
-    /// audio is not loaded.</summary>
-    public void UpdateProbeAmbient(short probeId, float volume)
+    /// listener distance (0..1), plus its P893 3D emitter position. No-op if no
+    /// ambient is tracked for that probe or audio is not loaded.</summary>
+    public void UpdateProbeAmbient(short probeId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_probeAmbients.TryGetValue(probeId, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.ProbeAmbient, position);
+        }
     }
 
     /// <summary>P260 — stop (and release) a probe's scanning ambient loop. Called
@@ -2254,8 +2509,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// <summary>P267 — begin a station's exterior ambient loop (a looped
     /// <c>shipout</c> instance keyed by the station's real <c>StationId</c>),
     /// seeded at the given volume. Starts it only if one is not already playing
-    /// for that station. No-op when audio is not loaded.</summary>
-    public void StartStationAmbient(short stationId, float volume)
+    /// for that station. <paramref name="position"/> (P893) attaches the native
+    /// 3D emitter (ILStationExternalSound's <c>ThreeDSound(200)</c>,
+    /// sounddef.mdl:1156). No-op when audio is not loaded.</summary>
+    public void StartStationAmbient(short stationId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _stationAmbients.ContainsKey(stationId)) return;
         var inst = _stationAmbient.CreateInstance();
@@ -2264,17 +2522,24 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _stationAmbients[stationId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.StationAmbient);
+        SetWorldEmitter(inst, Native3DRole.StationAmbient, position);
     }
 
     /// <summary>P267 — refresh a live station's exterior ambient loop volume for
-    /// the current listener distance (0..1). No-op if no ambient is tracked for
+    /// the current listener distance (0..1), plus its P893 3D emitter position.
+    /// No-op if no ambient is tracked for
     /// that station or audio is not loaded.</summary>
-    public void UpdateStationAmbient(short stationId, float volume)
+    public void UpdateStationAmbient(short stationId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_stationAmbients.TryGetValue(stationId, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.StationAmbient, position);
+        }
     }
 
     /// <summary>P267 — stop (and release) a station's exterior ambient loop.
@@ -2296,9 +2561,12 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// instance of the shared asteroid ambient wave (shipout, the
     /// <c>asteroidSound</c> template's only wave) at pitch −0.35, keyed by the
     /// asteroid's real AsteroidId. Native attaches an AmbientSoundSite to every
-    /// asteroid (trekigc.cpp:1432-1434); this is its per-frame Start leg. No-op
+    /// asteroid (trekigc.cpp:1432-1434); this is its per-frame Start leg.
+    /// <paramref name="position"/> (P893) attaches the native 3D emitter
+    /// (asteroidSound's <c>ThreeDSound(200)</c>, sounddef.mdl:382). No-op
     /// when audio is not loaded.</summary>
-    public void StartAsteroidAmbient(short asteroidId, float volume)
+    public void StartAsteroidAmbient(short asteroidId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _asteroidAmbients.ContainsKey(asteroidId)) return;
         var inst = _stationAmbient.CreateInstance();   // same shipout wave
@@ -2308,16 +2576,23 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Safe(inst.Play);
         _asteroidAmbients[asteroidId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
-            loudness: volume, audible: volume > 0f, started: true);
+            loudness: volume, audible: volume > 0f, started: true,
+            role3D: Native3DRole.AsteroidAmbient, basePitch: -0.35f);
+        SetWorldEmitter(inst, Native3DRole.AsteroidAmbient, position);
     }
 
     /// <summary>P787b — refresh a live asteroid's ambient loop volume for the
-    /// current listener distance. No-op if the rock has no tracked ambient.</summary>
-    public void UpdateAsteroidAmbient(short asteroidId, float volume)
+    /// current listener distance, plus its P893 3D emitter position. No-op if the
+    /// rock has no tracked ambient.</summary>
+    public void UpdateAsteroidAmbient(short asteroidId, float volume,
+        Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded) return;
         if (_asteroidAmbients.TryGetValue(asteroidId, out var inst))
+        {
             SetTrackedLoudness(inst, volume);
+            SetWorldEmitter(inst, Native3DRole.AsteroidAmbient, position);
+        }
     }
 
     /// <summary>P787b — stop (and release) an asteroid's ambient loop: the rock
