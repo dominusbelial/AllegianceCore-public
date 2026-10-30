@@ -475,6 +475,14 @@ list in **reverse**.
   `docs/reports/P862B_REPORT.md`.
 - **Flight prediction / dead reckoning** — `src/Allegiance.ClientCore/Flight/`
   (`KinematicsDeadReckoner` etc.), reports `P447*/P448*`.
+- **Own-ship pose authority (P890)** — `src/Allegiance.ClientCore/Flight/OwnShipSimulator.cs`
+  supplies the camera and timed client poses; `src/Allegiance.Server/Server.Dispatch.cs`
+  validates those poses and retains their replayed turn rates. Time-zero commands
+  explicitly select server-flown scripted pilots; local training alone permits its
+  native authored origin. Native: `Igc/shipIGC.cpp:3074-3082,3139-3187`,
+  `training/trainingmission.cpp:134-139`. Loopback firing/turning evidence:
+  `tests/Allegiance.ClientCore.Tests/P890OwnAimLoopbackTests.cs`; report:
+  `docs/reports/P890_REPORT.md`.
 - **Volumetric explosions (raymarch tier)** — Technique A (P573/P579) plus the
   P834 near-cost policy: coverage is measured as a fraction of the viewport
   height, volumes render at full/half/quarter resolution by coverage, the

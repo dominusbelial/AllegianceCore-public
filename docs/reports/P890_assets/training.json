@@ -1,0 +1,62 @@
+[
+  {
+    "run": 1,
+    "project": "Allegiance.ClientCore.Tests",
+    "count": 76,
+    "outcomes": {
+      "Passed": 76,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  },
+  {
+    "run": 1,
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "count": 60,
+    "outcomes": {
+      "Passed": 60,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  },
+  {
+    "run": 2,
+    "project": "Allegiance.ClientCore.Tests",
+    "count": 76,
+    "outcomes": {
+      "Passed": 76,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  },
+  {
+    "run": 2,
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "count": 60,
+    "outcomes": {
+      "Passed": 60,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  },
+  {
+    "run": 3,
+    "project": "Allegiance.ClientCore.Tests",
+    "count": 76,
+    "outcomes": {
+      "Passed": 76,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  },
+  {
+    "run": 3,
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "count": 60,
+    "outcomes": {
+      "Passed": 60,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  }
+]

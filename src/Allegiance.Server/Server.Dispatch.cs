@@ -317,12 +317,9 @@ public sealed partial class Server
             }
             else if (fmid == ShipUpdate.Fmid)
             {
-                // Step 3: inbound control input. Decode and, for the peer's own
-                // ship, ONLY set the ship's Controls/StateM. Nothing moves here —
-                // the ship's Motion lives in Mission.Update (the authoritative
-                // tick). Running on the sim thread (Drain), so setting controls
-                // is race-free w.r.t. the tick loop, and the payload's
-                // position/velocity/orientation echoes are ignored as authority.
+                // Apply controls-only commands from scripted pilots, or validate
+                // the human client's native pose. Drain runs on the sim thread,
+                // serially with Mission.Update.
                 try
                 {
                     var u = command.Read<ShipUpdate>();
@@ -365,15 +362,18 @@ public sealed partial class Server
                             // (fsship.cpp:1173-1200) → ProcessShipUpdate
                             // (shipIGC.cpp:3139-3210). Two audiences:
                             //
-                            //  * LEGACY (pre-P508) clients send Time=0 and a zero
-                            //    pose (ConnectionSession.CommandControls and the
-                            //    test bots). Detect that and keep working
-                            //    controls-only exactly as before P507.
+                            //  * LEGACY clients explicitly send Time=0
+                            //    (ConnectionSession.CommandControls and test bots).
+                            //    Keep these server-flown controls-only.
                             //  * NATIVE clients (P508) send a real time + pose +
                             //    the cookie from SET_CLUSTER; those run the full
                             //    accept/reject pipeline.
                             var payload = u.Payload;
-                            bool legacy = u.Time == 0 || payload.Position.LengthSquared() == 0f;
+                            // P890: the native training ship starts at the origin
+                            // (training/trainingmission.cpp:138). A real timed
+                            // pose there is still client-flown, not a controls-only
+                            // bot. CommandControls explicitly uses time zero.
+                            bool legacy = u.Time == 0;
                             if (legacy)
                             {
                                 if (!scriptedControlsInPacket)
@@ -385,7 +385,7 @@ public sealed partial class Server
                                 live.Ship.Controls = payload.Controls;
                                 live.Ship.StateM = payload.StateM;
                                 var c = payload.Controls;
-                                ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id} LEGACY controls-only (time 0 / zero pose) controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
+                                ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id} LEGACY controls-only (time 0) controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
                                                   $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{payload.StateM:X}");
                             }
                             else if (EnsurePeerUpdate(from).Cookie != u.Cookie)
@@ -2508,7 +2508,7 @@ public sealed partial class Server
         ship.Controls = payload.Controls;
         ship.StateM = payload.StateM;
 
-        // deltaT = server "now" (native GetMyLastUpdate, shipIGC.cpp:3141) minus
+        // deltaT = server "now" (native GetMyLastUpdate, shipIGC.cpp:3145) minus
         // the client's reported SERVER time (the client converted its own clock
         // via ServerTimeFromClientTime, shipIGC.h:1178). u.Time is uint
         // milliseconds; SimNow is seconds.
@@ -2516,13 +2516,18 @@ public sealed partial class Server
 
         if (deltaT < -1.5f || deltaT > 1.5f)
         {
-            // c_susOutOfDate (shipIGC.cpp:3142,3199-3200): the ±1.5s window.
+            // c_susOutOfDate (shipIGC.cpp:3146,3199-3200): the ±1.5s window.
             pu.OutOfDate++;
             ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: OUT_OF_DATE deltaT={deltaT:0.###}s (window ±1.5s) — controls applied, pose ignored");
             return;
         }
 
-        if (!IsLegalPosition(payload.Position))
+        // Native training runs the client's own IGC ship at (0,0,0), without
+        // FedSrv validation (trainingmission.cpp:134-139). Our embedded host
+        // uses the wire, so allow that authored origin ONLY for local training.
+        bool trainingOrigin = LocalTraining && ship.Mission?.IsTraining == true
+            && payload.Position == Vector3.Zero;
+        if (!IsLegalPosition(payload.Position) && !trainingOrigin)
         {
             // c_susInvalid (shipIGC.cpp:3195-3197): position outside
             // 0 < |pos|² < (90000)² (LegalPosition, shipIGC.cpp:3090-3094).
@@ -2544,6 +2549,12 @@ public sealed partial class Server
         // Compare at the same instant. A delayed snapshot of authorized boost
         // or launch momentum may be faster than the server's now-decayed speed.
         ship.CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates, preserveAfterburner: serverFlown);
+        // GetOVTP imports into m_turnRates, and CalculateShip advances those
+        // SAME live rates (Igc/shipIGC.cpp:3078,3177,3273-3285). Retaining
+        // the old server rates after accepting the attitude makes the very next
+        // tick turn away from the client's aim. Scripted echoes remain server-flown.
+        if (!serverFlown)
+            for (int axis = 0; axis < 3; axis++) ship.SetTurnRate(axis, turnRates[axis]);
         float replayedSpeed = velocity.Length();
         // Each compact direction component rounds by at most 1/480; the
         // scalar speed is stored in eighths (Wire/Compact/Quant.cs).

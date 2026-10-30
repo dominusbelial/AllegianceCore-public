@@ -1,0 +1,90 @@
+{
+  "tier": "fast",
+  "seconds": 538.214626328001,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 94,
+      "outcomes": {
+        "Passed": 94
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 3778,
+      "outcomes": {
+        "Passed": 3774,
+        "Failed": 1,
+        "NotExecuted": 3
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 1990,
+      "outcomes": {
+        "Passed": 1990
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5851,
+      "outcomes": {
+        "Passed": 5849,
+        "Failed": 2
+      }
+    }
+  },
+  "calibration": {
+    "factor": 1.0201591511936339,
+    "referenceMs": 3.846,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10.20159151193634
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "outcome": "Passed",
+      "seconds": 11.0572419
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 13.4129549
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 13.2645472
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "outcome": "Passed",
+      "seconds": 11.0359768
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 11.7089082
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "5 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.051303911983268335,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

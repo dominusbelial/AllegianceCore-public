@@ -1,0 +1,189 @@
+{
+  "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed": [
+    {
+      "run": 1,
+      "outcome": "Failed",
+      "duration": "00:00:00.0545832"
+    },
+    {
+      "run": 2,
+      "outcome": "Failed",
+      "duration": "00:00:00.0711380"
+    },
+    {
+      "run": 3,
+      "outcome": "Failed",
+      "duration": "00:00:00.0630035"
+    }
+  ],
+  "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge": [
+    {
+      "run": 1,
+      "outcome": "Failed",
+      "duration": "00:00:01.0464965"
+    },
+    {
+      "run": 2,
+      "outcome": "Failed",
+      "duration": "00:00:01.0115224"
+    },
+    {
+      "run": 3,
+      "outcome": "Failed",
+      "duration": "00:00:01.0245562"
+    }
+  ],
+  "Allegiance.Core.Tests.P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:00.3553462"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:00.3339538"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:00.3493523"
+    }
+  ],
+  "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:04.2393777"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:04.1823378"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:04.2518665"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:04.9650532"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:04.5115776"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:04.5339430"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:05.7710535"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:05.3796145"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:05.4056546"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:04.7772976"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:04.3393252"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:04.3449287"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:04.1215228"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:03.7566775"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:03.6661068"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:03.7479571"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:03.5306105"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:03.3971707"
+    }
+  ],
+  "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:04.1529090"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:03.8924737"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:03.7711976"
+    }
+  ],
+  "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:00:10.3093524"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:00:09.8647292"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:00:10.3007948"
+    }
+  ]
+}

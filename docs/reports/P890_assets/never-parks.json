@@ -1,0 +1,32 @@
+[
+  {
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:04:50.8524264",
+    "measurement": "287.2s, samples=2866, reached=24/30, longest speed<1 with target=1.517s, shots=1182, hits=382, kills=5"
+  },
+  {
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:03:51.8481976",
+    "measurement": "228.2s, samples=2278, reached=24/30, longest speed<1 with target=0.000s, shots=239, hits=1, kills=0"
+  },
+  {
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:03:43.5173160",
+    "measurement": "219.8s, samples=2195, reached=24/30, longest speed<1 with target=2.006s, shots=1187, hits=439, kills=3"
+  },
+  {
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:03:55.7148891",
+    "measurement": "232.1s, samples=2318, reached=24/30, longest speed<1 with target=1.103s, shots=1325, hits=548, kills=4"
+  },
+  {
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:03:53.7886463",
+    "measurement": "229.9s, samples=2295, reached=24/30, longest speed<1 with target=1.612s, shots=481, hits=1, kills=0"
+  }
+]
