@@ -789,14 +789,17 @@ public sealed class BroadcastConfig
     public double MinUpdateHz { get; set; } = 2;
 
     /// <summary>
-    /// Parallel-build switch. <c>true</c> (the default since P887 — the rig
-    /// baseline, P603/P887) uses the parallel per-peer build path (gated per
-    /// build; payloads byte-identical to serial). <c>false</c> selects the
-    /// serial builders. Serial and parallel modes apply the same independent
-    /// pose floor. Overridable at boot by <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c>
-    /// (env wins).
+    /// Parallel-build switch. <c>true</c> uses the parallel per-peer build
+    /// path (gated per build; payloads byte-identical to serial); <c>false</c>
+    /// selects the serial builders. Serial and parallel modes apply the same
+    /// independent pose floor. <c>null</c> (the default) lets the P889 sizing
+    /// resolver decide from cores × expected players × host profile — which is
+    /// parallel <c>cores-1</c> at the rig's 394 connections (the P887
+    /// behaviour) and stays serial for a small game. An explicit
+    /// <c>true</c>/<c>false</c> always wins; overridable at boot by
+    /// <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> (env wins over the config).
     /// </summary>
-    public bool ParallelBuild { get; set; } = true;
+    public bool? ParallelBuild { get; set; }
 
     /// <summary>
     /// P603 — cap on the parallel build phase's degree of parallelism
@@ -1026,6 +1029,29 @@ public sealed class ServerConfig
 
     /// <summary>Optional local benchmark policy; normal games retain an unseeded RNG.</summary>
     public int? BenchmarkSeed { get; set; }
+
+    /// <summary>
+    /// P889 — who else uses this machine: <c>"dedicated"</c> (the default; the
+    /// server owns the box, as on the 200v200 rig) or <c>"shared"</c> (the
+    /// server shares it with a game client and/or the local bot driver, as in
+    /// single-player skirmish and training). Feeds the sizing resolver: a
+    /// shared profile reserves cores for the renderer and the bots before it
+    /// sizes the build and transport pools. Single-player hosts set it
+    /// themselves; a dedicated server leaves it absent. Overridable at boot by
+    /// <c>ALLEGIANCE_HOST_PROFILE</c> (env wins). An unrecognized value fails
+    /// loudly at boot rather than silently guessing a profile.
+    /// </summary>
+    public string? HostProfile { get; set; }
+
+    /// <summary>
+    /// P889 — the player count this server is being sized for. Absent uses the
+    /// configured capacity (<c>Σ teams × maxPlayersPerTeam</c>), which is what
+    /// the rig's 200v200 config declares. A small dedicated server should set
+    /// the number of players it actually expects (e.g. 20) so it does not start
+    /// a 200v200-sized worker pool. Overridable at boot by
+    /// <c>ALLEGIANCE_EXPECTED_PLAYERS</c> (env wins).
+    /// </summary>
+    public int? ExpectedPlayers { get; set; }
     public ShowcaseConfig Showcase { get; set; } = new();
 
     /// <summary>Resolve mode dependencies before binding sockets or changing global runtime state.
@@ -1505,6 +1531,17 @@ public static class ServerConfigLoader
                     else
                         config.Reconnect.Enabled = true;   // bare --reconnect
                     recognized++; break;
+                case "hostprofile":
+                case "host-profile":
+                    // P889 — dedicated (default) vs shared-machine sizing.
+                    _ = PoolSizingResolver.ParseProfile(value);   // validate loudly
+                    config.HostProfile = value; recognized++; break;
+                case "expectedplayers":
+                case "expected-players":
+                    // P889 — the player count the sizing resolver targets.
+                    if (!int.TryParse(value, out var expectedPlayers) || expectedPlayers < 1)
+                        throw new InvalidDataException($"--expectedPlayers must be a positive integer, got '{value}'");
+                    config.ExpectedPlayers = expectedPlayers; recognized++; break;
                 case "reconnectgrace":
                 case "reconnectgraceseconds":
                     // P813c — the hold window in simulation seconds; implies enabled.

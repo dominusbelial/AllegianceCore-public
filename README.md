@@ -221,15 +221,23 @@ future change is A/B'd on the 200v200 rig **on top of this baseline**.
 | Setting (default) | What it does | Rig evidence (batch → result) |
 |---|---|---|
 | `broadcast.immutableSnapshot` + `broadcast.encodeOnce` (on) | Capture owned wire data on the sim thread, encode each ship once per snapshot, publish off-thread. Payloads byte-identical. | b42 vs b39: clash-peak tick 44 ms vs 71–80 ms; tick overruns ~1k vs 22–40k |
-| `broadcast.parallelBuild` (on) | Builds each player's updates in parallel (byte-identical output; ≤ cores−1 workers). | P603: byte-identical payloads; clamps to cores−1 |
+| `broadcast.parallelBuild` (on for large games) | Builds each player's updates in parallel (byte-identical output). The P889 sizing resolver keeps a **small** game serial and uses up to cores−1 builders at the rig's player counts. | P603: byte-identical payloads; clamps to cores−1 |
 | `broadcast.shipUpdateModel: "native"` (native) | Uses the original game's prioritised ship-update budget (native parity). | P604: native parity, ~1/5 the bandwidth of `port` at 400 players |
 | `sim.nativeGotoPlan` (on) | Native NPC GotoPlan steering (native parity). | b52/b55: perf neutral (16.2 ms median tick), more station kills |
-| `transport.mode: "pool"` (pool) | Serves all connections from a small send-worker pool (≈ core count) instead of one writer thread per peer. | P605: workers default ≈ core count |
+| `transport.mode: "pool"` (pool for large games) | Serves all connections from a send-worker pool (≈ core count at the rig's scale; the P889 resolver keeps small games on thread-per-peer) instead of one writer thread per peer. | P605: workers default ≈ core count |
 | Server GC (`ServerGarbageCollection`) | Server-grade garbage collector for the dedicated server. | baseline b55: worst GC pause 36 ms at 394 connections |
 
 P863 (b50 vs b49) — median tick 35.8 → 16.3 ms, TiDi windows 5.6 % → 0.6 %. Current
 baseline (b55, 200v200): median tick 16.2 ms, window p95 ≈ 20 ms, 0 overrun
 windows, worst GC pause 36 ms at 394 connections.
+
+**Not running the rig?** Since P889 the server sizes its pools from cores ×
+expected players × a `hostProfile` (`dedicated` or `shared`), so a 20-player
+server no longer starts a 200v200 pool, and single-player skirmish/training
+declare themselves `shared` (cores reserved for the renderer and the bot
+driver). The client can measure your own machine (`--calibrate` / the Showcase
+menu's "Calibrate this machine") and save the winning sizes. See
+[Running on your own hardware](docs/PERFORMANCE.md#running-on-your-own-hardware-p889).
 
 **Options that stay off, and why:**
 

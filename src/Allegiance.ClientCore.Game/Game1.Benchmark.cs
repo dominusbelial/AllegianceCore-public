@@ -23,9 +23,10 @@ public sealed partial class Game1
     private static readonly string[] BenchmarkMenuLabels =
     [
         "Watch a battle: Small (5v5)", "Medium (15v15)", "Large (30v30)", "Epic (60v60)", "Grand (200v200)",
-        "Settings tune (fixed, ranked)", "Replay recorded battle", "Skip / Back"
+        "Settings tune (fixed, ranked)", "Replay recorded battle",
+        "Calibrate this machine (bounded)", "Skip / Back"
     ];
-    private const int ShowcaseTuneRow = 5, ShowcaseReplayRow = 6;
+    private const int ShowcaseTuneRow = 5, ShowcaseReplayRow = 6, CalibrateRow = 7;
     private void UpdateBenchmarkMenu(bool up, bool down, bool enter, bool esc)
     {
         int count = BenchmarkMenuLabels.Length;
@@ -67,6 +68,13 @@ public sealed partial class Game1
             else if (_benchMenuIndex == ShowcaseTuneRow)
                 BeginBenchmark(new("skirmish", SkirmishSize.Small, null, 150,
                     Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
+            else if (_benchMenuIndex == CalibrateRow)
+            {
+                // P889 — bounded per-machine sizing calibration at the size the
+                // player has selected on the skirmish setup screen.
+                _calibrationCommand = SizingCalibrationCommand.DefaultFor(_skirmishScreen.Options.Size);
+                StartSizingCalibration(_calibrationCommand);
+            }
             else
                 BeginBenchmark(new("replay", SkirmishSize.Small, BattleReplay.DefaultPath, 150,
                     Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
@@ -77,7 +85,7 @@ public sealed partial class Game1
         DrawIntroTitle(w, "Showcase", _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles — and the one settings tune", title, dim);
         for (int i = 0; i < BenchmarkMenuLabels.Length; i++)
             _spriteBatch.DrawString(_hudSmall, (i == _benchMenuIndex ? "> " : "  ") + BenchmarkMenuLabels[i], new Vector2(w * .2f, 210 + i * 38), i == _benchMenuIndex ? Color.Yellow : Color.White);
-        _spriteBatch.DrawString(_hudSmall, "A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s ×3) is the only RANKED score. Arrows / Enter; Escape skips.", new Vector2(w * .12f, h - 78), dim);
+        _spriteBatch.DrawString(_hudSmall, "A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s ×3) is the only RANKED score. Calibration tries a few worker sizings\nat the selected skirmish size and saves the fastest for this machine. Arrows / Enter; Escape skips.", new Vector2(w * .12f, h - 96), dim);
     }
     private BenchmarkCommand? _benchmark;
     private BenchmarkResult? _benchResult;

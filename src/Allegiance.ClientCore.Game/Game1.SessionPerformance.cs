@@ -44,6 +44,12 @@ public sealed partial class Game1
     private long _perfLastFrameTimestamp;
     private long _perfNextWorldSample;
     private bool _perfToggleWasDown, _perfApplyWasDown;
+    // P889 — AIX2's client frame-time input: one [frameprof] line per 5 s of
+    // real frames (see FrameProfileWindow). Independent of the per-match
+    // recorder so a log exists even when the recorder is switched off.
+    private readonly FrameProfileWindow? _frameProfile =
+        FrameProfileWindow.EnabledFromEnvironment() ? new FrameProfileWindow() : null;
+    private long _frameProfileLast;
 
     /// <summary>Begin recording for a match. The user's panel preference (if
     /// they ever toggled it) wins; otherwise the panel is shown only for
@@ -73,8 +79,23 @@ public sealed partial class Game1
     /// next-match recorder restart once the previous match's game-over panel
     /// is gone (GameOverResult cleared at the next mission's STAGE_STARTING,
     /// ClientWorld.cs:4745-4749).</summary>
+    /// <summary>
+    /// P889 — feed the AIX2 <c>[frameprof]</c> window one real frame. O(1), no
+    /// allocations, no I/O until a window closes (once per 5 s).
+    /// </summary>
+    private void UpdateFrameProfile()
+    {
+        if (_frameProfile is null) return;
+        long now = Stopwatch.GetTimestamp();
+        if (_frameProfileLast == 0) { _frameProfileLast = now; return; }
+        double frameMs = Stopwatch.GetElapsedTime(_frameProfileLast, now).TotalMilliseconds;
+        _frameProfileLast = now;
+        if (_frameProfile.Record(frameMs) is { } line) Console.WriteLine(line);
+    }
+
     private void UpdateSessionPerformance()
     {
+        UpdateFrameProfile();
         if (!_sessionRecording) return;
         if (_perfRestartPending && _session.World.GameOverResult is null)
         {

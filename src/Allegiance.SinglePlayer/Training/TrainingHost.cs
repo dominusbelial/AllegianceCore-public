@@ -335,13 +335,20 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         _ticker.Start();
     }
 
-    private static Cfg TrainingConfig(TrainingVariant variant, string artPath) => new()
+    /// <summary>P889 — internal for the sizing test: training declares a shared
+    /// machine and the few seats it actually uses.</summary>
+    internal static Cfg TrainingConfig(TrainingVariant variant, string artPath) => new()
     {
         ArtPath = artPath,
         StaticCore = "PCore014.igc",
         Port = 0,
         BindAddress = "127.0.0.1",
         Discovery = new() { Enabled = false },
+        // P889 — training boots the real server in the game client's process on
+        // one PC: shared profile, sized for its few seats (the trainee and the
+        // commander; drones are not independent connections).
+        HostProfile = "shared",
+        ExpectedPlayers = 2,
         Transport = new() { MaxConnections = 32, MaxConnectionsPerIp = 32 },
         Games =
         [

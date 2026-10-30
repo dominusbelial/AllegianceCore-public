@@ -267,6 +267,15 @@ public sealed partial class Server : IDisposable
     internal bool _broadcastParallelBuild = true;
 
     /// <summary>
+    /// P889 — the boot's one sizing decision (cores × expected players × host
+    /// profile), resolved once before the broadcast/transport switchers. It is
+    /// only the DEFAULT: explicit <c>broadcast.*</c>/<c>transport.*</c> config
+    /// and the env overrides still beat it, exactly as they did before P889.
+    /// </summary>
+    internal PoolSizing _poolSizing = new(1, 1, HostProfile.Dedicated, 0,
+        false, 1, TransportMode.ThreadPerPeer, 0, "not resolved", "placeholder");
+
+    /// <summary>
     /// P604 — which per-peer ship-state update model is active
     /// (<c>broadcast.shipUpdateModel</c> config, overridable by the
     /// <c>ALLEGIANCE_SHIP_UPDATE_MODEL</c> env var; env wins). Resolved once at

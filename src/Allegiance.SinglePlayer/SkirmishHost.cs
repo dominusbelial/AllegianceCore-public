@@ -51,7 +51,9 @@ public sealed partial class SkirmishHost : IDisposable
     {
         Options = options;
         PlayerSide = options.StartAsSpectator ? null : (short)0;
-        Budget = SkirmishBudget.ForCores(Environment.ProcessorCount, options.TeamSize * 2);
+        // P889 — size the bot driver from the same shared-machine budget the
+        // server resolver uses (client + bot reserve), not a flat "cores - 2".
+        Budget = SkirmishBudget.ForOptions(options, Environment.ProcessorCount);
         DirectoryPath = Path.Combine(Path.GetTempPath(), "allegiance-skirmish-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(DirectoryPath);
     }

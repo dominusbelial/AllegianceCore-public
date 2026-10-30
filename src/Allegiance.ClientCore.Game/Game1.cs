@@ -1547,8 +1547,12 @@ public sealed partial class Game1 : Game
 
     private readonly bool _launchBorderless;
 
+    // P889 — bounded per-machine sizing calibration (--calibrate); null for an
+    // ordinary launch. Held on the instance so Initialize can start it.
+    private Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand? _calibrationCommand;
     public Game1(LaunchOptions opts)
     {
+        _calibrationCommand = opts.Calibration;
         _launchBorderless = opts.Borderless;
         _graphics = new GraphicsDeviceManager(this)
         {
@@ -1897,6 +1901,7 @@ public sealed partial class Game1 : Game
         else if (_state == ClientState.Inspecting)
             InitializeInspector();
         InitializeBenchmark();
+        StartSizingCalibration(_calibrationCommand);
         // else Lobby: _lastLobbyFetch stays NegativeInfinity so Update's very
         // first lobby tick fires an immediate fetch.
     }

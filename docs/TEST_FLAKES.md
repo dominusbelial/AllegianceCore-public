@@ -4081,3 +4081,38 @@ Fast tier `tiers-20261029T202701` on master 76c6355e (P887 defaults): 3 Core fai
 - `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` — failed in the
   sweep and 1/3 alone, then 0/8 on master and 0/8 pre-P887: rare flake.
 - `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.97 s, just over the fast-tier 10 s limit (load).
+
+## P889 gate (2026-10-30, worktree of 8181619e)
+
+Fast tier `tiers-20261030T030304.330748Z`: 11,765 tests, 5 failures, none caused by P889 (sizing resolver,
+`[frameprof]`, calibration). Each non-task failure passed **3/3 alone** afterwards:
+
+- `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False,
+  dilation: "off")` — 3/3 pass alone (4 cases, 12 s). Load flake; P888's test is unchanged.
+- `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` — 3/3 pass alone (0.45 s).
+- `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` — 2/3 fail, then
+  3/3 pass on the class and 3/3 on the method immediately after (host had just finished the 25 min training
+  sweep). Load flake.
+- `BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)`
+  — SLOW FAST 17.694 s (calibrated 10 s limit); 3/3 pass alone in 5 s. Same load-flake class as
+  `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.444 s in the same sweep, passed).
+- `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` — the
+  ledgered pre-existing P872/P883/P887 failure; **3/3 FAIL alone** here too, unchanged, not P889's path.
+
+Showcase never-parks 5× (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`):
+**5/5 PASS** (3 m 29 s, 4 m 00 s, 3 m 59 s, 3 m 53 s, 3 m 46 s). Training gate
+(`run-training-tests.sh --no-build`): PASS — ClientCore 77/77, MonoGame 60/60 (Fast + Live).
+
+### P889 final-tree fast sweep (2026-10-30, `tiers-20261030T032102.922312Z`)
+
+Re-ran the fast tier after the final code change (explicit `maxDegreeOfParallelism`
+selects the parallel build): 11,766 tests, 3 Core failures, all pre-existing/load:
+
+- `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission`
+  — the already-ledgered float-boundary flake; **2/3 pass alone** (1/3 hit the
+  `5.0000000000000009` boundary, same as the P887 row above).
+- `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge`
+  — the ledgered pre-existing failure (**3/3 fail alone**).
+- `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage`
+  — SLOW FAST 39.056 s (calibrated 10 s limit); **3/3 pass alone in ~0.9 s**.
+  Load flake (the sweep overlapped other agents' builds).

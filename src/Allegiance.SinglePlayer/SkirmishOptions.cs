@@ -57,6 +57,28 @@ public sealed record SkirmishOptions
     public bool BotGunners { get; init; } = true;
     private bool? _startAsSpectator;
     public bool StartAsSpectator { get => _startAsSpectator ?? Size is SkirmishSize.Large or SkirmishSize.Epic or SkirmishSize.Grand; init => _startAsSpectator = value; }
+    /// <summary>
+    /// P889 — the skirmish sizing candidate a calibration run is testing
+    /// (null fields keep the resolver's choice). Explicit values reach the
+    /// server config exactly like hand-written config, so the boot resolvers'
+    /// precedence is unchanged.
+    /// </summary>
+    public SkirmishSizing? Sizing { get; init; }
+
+    /// <summary>P889 — measurement-only override of the pre-launch countdown
+    /// (native default 60 s / <c>fStartCountdown</c> 15 s). The bounded
+    /// calibration uses a short countdown so each candidate measures fight time
+    /// rather than lobby time; a normal skirmish leaves it null.</summary>
+    public double? StartCountdownSeconds { get; init; }
+
+    /// <summary>
+    /// P889 — the seats a skirmish actually asks the server to size for: both
+    /// teams plus the commanders/probes they seat (one research commander and
+    /// one probe pilot per side). The server uses this with
+    /// <c>hostProfile = "shared"</c> instead of the 200v200 capacity default.
+    /// </summary>
+    public int SeatCount => TeamSize * 2 + 4;
+
     public int TeamSize => Size switch
     {
         SkirmishSize.Small => 5, SkirmishSize.Medium => 15, SkirmishSize.Large => 30,
@@ -113,15 +135,28 @@ public sealed record SkirmishOptions
         if (TechMode is not ("research" or "unlocked")) throw new ArgumentException("Invalid tech mode");
         if (!Enum.IsDefined(Commander)) throw new ArgumentException("Invalid commander");
         _ = Knobs;
+        var sizing = Sizing ?? new SkirmishSizing();
         return new()
         {
             BenchmarkSeed = Seed,
+            // P889 — single-player: the server shares this PC with the game
+            // client and the bot driver, and it is sized for the seats the
+            // skirmish actually asks for (not the configured 200v200 capacity).
+            HostProfile = "shared",
+            ExpectedPlayers = SeatCount,
             // All owned pilots, commanders and probes originate from loopback.
             Transport = new()
             {
                 MaxConnections = Math.Max(1024, TeamSize * 2 + 32),
-                MaxConnectionsPerIp = Math.Max(64, TeamSize * 2 + 32)
+                MaxConnectionsPerIp = Math.Max(64, TeamSize * 2 + 32),
+                Mode = sizing.TransportMode,
+                PoolWorkers = sizing.PoolWorkers,
             },
+            // A calibration candidate may pin the build; otherwise the resolver
+            // sizes it from the shared profile (an absent section = resolver).
+            Broadcast = sizing is { ParallelBuild: null, BuildWorkers: null }
+                ? null
+                : new() { ParallelBuild = sizing.ParallelBuild, MaxDegreeOfParallelism = sizing.BuildWorkers },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
             SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
@@ -158,6 +193,7 @@ public sealed record SkirmishOptions
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
                 Lives = Lives, Goals = Goals with { }, CivSeed = GoalRotation is null ? null : Seed,
+                StartCountdownSeconds = StartCountdownSeconds,
                 AllowFriendlyFire = AllowFriendlyFire, AllowAlliedViz = AllowAlliedViz,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
@@ -168,7 +204,12 @@ public sealed record SkirmishOptions
     }
 }
 
-/// <summary>Reserve two logical CPUs for rendering and sim; bound compute workers even on large machines.</summary>
+/// <summary>One measured/declared bot-driver sizing for a skirmish.</summary>
+public sealed record SkirmishSizing(
+    bool? ParallelBuild = null, int? BuildWorkers = null, string? TransportMode = null,
+    int? PoolWorkers = null, int? BotWorkers = null, int? BotCoresPerWorker = null);
+
+/// <summary>Reserve the client's cores for rendering and sim; bound compute workers even on large machines.</summary>
 public sealed record SkirmishBudget(int Workers, int CoresPerWorker)
 {
     public static SkirmishBudget ForCores(int cores, int bots = 120)
@@ -176,6 +217,25 @@ public sealed record SkirmishBudget(int Workers, int CoresPerWorker)
         int available = Math.Max(1, cores - 2);
         int workers = Math.Min(Math.Clamp(available / 2, 1, 4), Math.Max(1, (bots + 63) / 64));
         return new(workers, Math.Max(1, available / workers));
+    }
+
+    /// <summary>
+    /// P889 — size the bot driver from the SAME shared-machine budget the
+    /// server resolver uses: the resolver's client/bot reserve is what the bots
+    /// and the renderer keep, and any calibration override replaces only its
+    /// own value. This replaces <see cref="ForCores"/>'s flat "cores - 2" for a
+    /// real skirmish host.
+    /// </summary>
+    public static SkirmishBudget ForOptions(SkirmishOptions options, int cores)
+    {
+        int bots = Math.Max(1, options.SeatCount);
+        var sizing = PoolSizingResolver.Resolve(Math.Max(1, cores), bots, HostProfile.Shared);
+        int available = Math.Max(1, cores - sizing.ClientReservedCores);
+        int workers = options.Sizing?.BotWorkers
+            ?? Math.Min(Math.Clamp(available / 2, 1, 4), Math.Max(1, (bots + 63) / 64));
+        workers = Math.Clamp(workers, 1, Math.Max(1, available));
+        int perWorker = options.Sizing?.BotCoresPerWorker ?? Math.Max(1, available / workers);
+        return new(workers, perWorker);
     }
 }
 

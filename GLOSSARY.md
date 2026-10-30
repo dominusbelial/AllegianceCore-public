@@ -317,6 +317,23 @@ list in **reverse**.
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **Worker-pool sizing / host profile (P889)** — one resolver turns logical
+  cores × expected players × `hostProfile` (`dedicated` | `shared`) into the
+  parallel-build and transport-pool sizes, replacing the independent
+  "cores−1 / cores" rules; explicit `broadcast.*`/`transport.*` config and env
+  still win. `src/Allegiance.Server/PoolSizing.cs` (resolver, per-machine
+  calibration profile), `Server.Lifecycle.cs` (`ResolvePoolSizing`), a
+  `hostProfile`/`expectedPlayers` pair in `src/Allegiance.Server/ServerConfig.cs`.
+  Skirmish/training declare `shared` in
+  `src/Allegiance.SinglePlayer/SkirmishOptions.cs` and
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.cs`; the bot driver is
+  sized by `SkirmishBudget.ForOptions`. The bounded calibration is
+  `src/Allegiance.SinglePlayer/Benchmark/SizingCalibrationCommand.cs` +
+  `src/Allegiance.ClientCore.Game/Game1.SizingCalibration.cs`, and the AIX2
+  client frame log (`[frameprof]`) is emitted from
+  `src/Allegiance.ClientCore.Game/Diagnostics/FrameProfileWindow.cs`. Docs:
+  `docs/PERFORMANCE.md` ("Running on your own hardware"), report:
+  `docs/reports/P889_REPORT.md`.
 - **Game-flow ordering proof (P888)** — stage/result/roster/rotation frames use
   the ordered send lane; the accelerated P660 test observes its short intermission
   at production tick speed. Both writer modes and the optional reliable park lane

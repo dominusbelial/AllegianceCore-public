@@ -40,6 +40,10 @@ public sealed partial class Game1
     public sealed class LaunchOptions
     {
         public Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? Benchmark;
+
+        /// <summary>P889 — the bounded per-machine sizing calibration
+        /// (<c>--calibrate [size]</c>); null for an ordinary launch.</summary>
+        public Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand? Calibration;
         public string PlayerName = "monogame";
         public string? BenchmarkCollectorUrl;
 

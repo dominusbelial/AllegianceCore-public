@@ -3,6 +3,9 @@
   "staticCore": "PCore001.igc",
   "port": 6073,
   "updatesPerSecond": 20,
+  "comment": "P889 — worker-pool sizing: hostProfile is 'dedicated' (default; the server owns the box) or 'shared' (a game client/bot driver shares it, as in single-player skirmish). expectedPlayers defaults to the configured capacity (teams x maxPlayersPerTeam); set it to the real count on a small server, e.g. 20. ALLEGIANCE_HOST_PROFILE / ALLEGIANCE_EXPECTED_PLAYERS override these. See docs/PERFORMANCE.md, 'Running on your own hardware'.",
+  "hostProfile": "dedicated",
+  "expectedPlayers": 200,
   "games": [
     {
       "name": "Test Mission",

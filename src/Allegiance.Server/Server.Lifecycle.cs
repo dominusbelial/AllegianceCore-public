@@ -154,12 +154,19 @@ public sealed partial class Server
                               + (TickProfiler.SlowTickCaptureActive ? "; slow-tick capture ON" : "")
                               + "; overhead negligible when off ***");
 
+        // P889 — resolve the one sizing decision (cores × expected players ×
+        // dedicated/shared host profile) BEFORE the two switchable pool
+        // resolvers. It replaces the old independent "cores-1 build, cores
+        // send workers" defaults and prints the resolved sizes + why at boot.
+        ResolvePoolSizing();
+
         // P603 — resolve the parallel per-peer broadcast build from config +
         // the ALLEGIANCE_BROADCAST_PARALLEL_BUILD env var (env wins), clamp the
         // degree of parallelism, and PRINT the active value so every server run
         // is labelled (and a measurement run is never mistaken for an
-        // uninstrumented one). Default ON since P887 (the rig baseline); an
-        // explicit false/0 selects the original serial byte-for-byte path.
+        // uninstrumented one). A default boot takes the P889 sizing resolver
+        // (parallel at the rig's player counts, serial for a small game); an
+        // explicit false/0 still selects the original serial byte-for-byte path.
         ResolveBroadcastParallelBuild();
 
         // P605 — resolve the transport's send-draining mode (pool default since
@@ -1588,33 +1595,68 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P889 — compute and print the one worker-pool sizing decision. Explicit
+    /// config/env is applied by the two resolvers that follow; this method only
+    /// states what the machine/profile/player count implies and why.
+    /// </summary>
+    private void ResolvePoolSizing()
+    {
+        _poolSizing = PoolSizingResolver.ResolveConfig(_config);
+        Console.WriteLine(_poolSizing.BootLine());
+    }
+
+    /// <summary>
     /// P603 — resolve the parallel per-peer broadcast build from config +
     /// the <c>ALLEGIANCE_BROADCAST_PARALLEL_BUILD</c> env var (env wins), clamp
     /// the degree of parallelism to <c>[1, ProcessorCount-1]</c>, print the
     /// active value at boot, and stamp it into the profiler's report header so
-    /// every measurement is labelled. Default ON since P887 (the rig
-    /// baseline): parallel building with byte-identical payloads; an explicit
-    /// false/0 selects the original serial broadcast path, byte-for-byte.
+    /// every measurement is labelled. Since P889 the default comes from the
+    /// sizing resolver (parallel, with a player-count-scaled worker cap, at the
+    /// rig's player counts; serial for a small game); an explicit true/false or
+    /// env value still wins, and false/0 selects the original serial broadcast
+    /// path byte-for-byte.
     /// </summary>
     private void ResolveBroadcastParallelBuild()
     {
         var bc = _config.Broadcast;
-        bool enabled = bc?.ParallelBuild ?? true;
+        // P889 — the resolver is the default (P887's parallel at large player
+        // counts); an explicit config value still wins.
+        // An explicit maxDegreeOfParallelism presupposes the parallel build (it
+        // had no meaning while the default was parallel); honour it as an
+        // explicit selection, exactly as pre-P889 config did.
+        bool enabled = bc?.ParallelBuild
+            ?? (bc?.MaxDegreeOfParallelism is { } explicitDegree && explicitDegree > 0
+                ? true : _poolSizing.ParallelBuild);
+        string source = bc?.ParallelBuild is not null || bc?.MaxDegreeOfParallelism is > 0
+            ? "config" : _poolSizing.Source;
 
         string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_PARALLEL_BUILD");
         if (!string.IsNullOrEmpty(env))
+        {
             enabled = env is not ("0" or "false" or "off" or "");
+            source = "env";
+        }
 
         _broadcastParallelBuild = enabled;
 
         int ncpu = Math.Max(2, Environment.ProcessorCount);
-        int maxPar = bc?.MaxDegreeOfParallelism is { } m && m > 0 ? m : ncpu - 1;
+        int resolvedWorkers = enabled && _poolSizing.BuildWorkers > 1 ? _poolSizing.BuildWorkers : ncpu - 1;
+        int maxPar = bc?.MaxDegreeOfParallelism is { } m && m > 0 ? m : resolvedWorkers;
+        // P889 — env override for the build degree (the scalar sibling of the
+        // existing ALLEGIANCE_BROADCAST_PARALLEL_BUILD switch), so a measurement
+        // can pin the P887 "cores-1" build without editing a config file.
+        string? envWorkers = Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_MAX_PARALLELISM");
+        if (!string.IsNullOrEmpty(envWorkers) && int.TryParse(envWorkers, out var envMax) && envMax > 0)
+        {
+            maxPar = envMax;
+            source = "env";
+        }
         _broadcastMaxParallelism = Math.Clamp(maxPar, 1, Math.Max(1, ncpu - 1));
 
         Console.WriteLine(enabled
-            ? $"[boot] broadcast.parallelBuild = true — per-peer broadcast building runs in parallel (max {_broadcastMaxParallelism} workers); "
+            ? $"[boot] broadcast.parallelBuild = true — per-peer broadcast building runs in parallel (max {_broadcastMaxParallelism} workers, {source}); "
               + "payloads are byte-identical to serial mode; see P603."
-            : "[boot] broadcast.parallelBuild = false — serial broadcast building (selected explicitly; payloads identical to parallel)");
+            : $"[boot] broadcast.parallelBuild = false — serial broadcast building ({source}; payloads identical to parallel)");
 
         // Stamp the active value into the profiler report header so a parallel
         // measurement run can never be mistaken for a serial one.
@@ -1638,17 +1680,30 @@ public sealed partial class Server
     {
         var tc = _config.Transport;
 
-        string modeStr = tc?.Mode is { Length: > 0 } m ? m : "pool";
-        string? env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MODE");
-        if (!string.IsNullOrEmpty(env)) modeStr = env;
+        // P889 — a default boot takes the sizing resolver's mode; an explicit
+        // transport.mode still wins, and the env override still beats both.
+        string? envMode = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_MODE");
+        string source = tc?.Mode is { Length: > 0 } ? "config" : _poolSizing.Source;
+        string modeStr = tc?.Mode is { Length: > 0 } m
+            ? m
+            : _poolSizing.TransportMode == TransportMode.Pool ? "pool" : "thread-per-peer";
+        if (!string.IsNullOrEmpty(envMode)) { modeStr = envMode; source = "env"; }
 
         _transportMode = ParseTransportMode(modeStr);
 
         int ncpu = Math.Max(1, Environment.ProcessorCount);
-        int workers = tc?.PoolWorkers is { } w && w > 0 ? w : ncpu;
+        int workers = tc?.PoolWorkers is { } w && w > 0
+            ? w
+            : _transportMode == TransportMode.Pool && _poolSizing.TransportWorkers > 0
+                ? _poolSizing.TransportWorkers
+                : ncpu;
+        string? env;
         string? envW = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_POOL_WORKERS");
         if (!string.IsNullOrEmpty(envW) && int.TryParse(envW, out var ew) && ew > 0)
+        {
             workers = ew;
+            source = "env";
+        }
         _transportPoolWorkers = workers;
 
         // P619c — bind the human liveness grace (transport layer) from config +
@@ -1727,8 +1782,8 @@ public sealed partial class Server
         _chatBudgetRefillPerTick = cbRefill;
 
         Console.WriteLine(_transportMode == TransportMode.Pool
-            ? $"[boot] transport mode = pool ({_transportPoolWorkers} workers)"
-            : "[boot] transport mode = thread-per-peer");
+            ? $"[boot] transport mode = pool ({_transportPoolWorkers} workers) [{source}]"
+            : $"[boot] transport mode = thread-per-peer [{source}]");
 
         // Compose a single report-header label covering both switchable modes
         // (P603 broadcast + P605 transport), so no measurement is ambiguous.
