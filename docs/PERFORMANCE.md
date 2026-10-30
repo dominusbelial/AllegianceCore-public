@@ -186,7 +186,8 @@ one 5-second window) `[frameprof]` window with **p95 ≤ `GOOD_CLIENT_P95_MS`
 = 33.3 ms** — two 60 Hz frames, one dropped vsync, the 30 fps floor. Missing,
 unmatched or timestampless client evidence fails closed (the window counts as
 not good) and is noted. The client frame-time input is a log line the client
-or skirmish harness writes per 5-second window (P889 must emit it):
+or skirmish harness writes per 5-second window (the client emits it since
+P889 — `ALLEGIANCE_FRAMEPROF=0` turns it off; see below):
 
 ```
 2026-10-29T16:28:21.017Z [frameprof] window 5s frames=298 frame-wall mean=9.8ms p95=16.4ms
@@ -215,6 +216,159 @@ samples-matched players. b48 is explicitly unavailable because no server log
 was supplied. Battle is only partly observed; these numbers summarize the
 captured workload, not client smoothness, WAN latency, equal battle
 intensity or guaranteed maximum player capacity.
+
+## Running on your own hardware (P889)
+
+The baseline above is sized for the 200v200 rig. A player's machine is not the
+rig, so since P889 the server **sizes its worker pools from logical cores,
+expected players and a host profile** instead of from the core count alone:
+
+| Profile | Meaning | Effect |
+|---|---|---|
+| `dedicated` (default) | the server owns the box (a dedicated server, the rig) | full-core pools at large player counts, exactly the P887 behaviour |
+| `shared` | the server shares one PC with the game client and/or the local bot driver (single-player **skirmish** and **training**) | reserves cores for the renderer and the bots before sizing the server's pools |
+
+```jsonc
+// server.json (top level)
+"hostProfile": "dedicated",     // or "shared"; env ALLEGIANCE_HOST_PROFILE wins
+"expectedPlayers": 20           // env ALLEGIANCE_EXPECTED_PLAYERS wins;
+                                // absent = configured capacity (Σ teams × maxPlayersPerTeam)
+```
+
+The resolver (`src/Allegiance.Server/PoolSizing.cs`) is only the **default**:
+an explicit `broadcast.parallelBuild`, `broadcast.maxDegreeOfParallelism`,
+`transport.mode` or `transport.poolWorkers` still wins, and the environment
+overrides still beat the config. At boot the server prints the decision and why:
+
+```
+[boot] sizing: profile=shared cores=24 players=14 → build=serial (1 worker), transport=thread-per-peer (reserved 6 cores for the client/bot driver) — shared machine: … [resolver]
+```
+
+The rules (thresholds chosen from the measurements below, not guessed):
+
+- **Shared reserve:** `cores ≤ 2 → 1`, `≤ 4 → 2`, `≤ 8 → 3`, `≤ 16 → 4`, else 6
+  cores are reserved for the renderer + bot driver. Dedicated reserves none.
+- **Parallel build:** on from 20 expected players (dedicated) or 48 (shared),
+  with one builder per 16 players, capped at `serverBudget − 1`; otherwise the
+  serial builder (byte-identical payloads either way).
+- **Transport:** a send pool from 12 players (dedicated) or 48 (shared), one
+  worker per 4 players capped at the server budget; otherwise one writer thread
+  per peer.
+- **Skirmish** declares `profile=shared` and `expectedPlayers = team × 2 + 4`
+  (both teams plus a commander and a probe seat per side); **training** declares
+  `shared` with 2 seats. Small/Medium skirmishes therefore run serial +
+  thread-per-peer instead of the rig's 23 builders and 24 send workers.
+- **Bot driver:** it is sized from the same shared budget (`SkirmishBudget`):
+  at most 4 worker processes, at least 1 per 64 bots, each capped by
+  `DOTNET_PROCESSOR_COUNT = available / workers`; the skirmish driver runs
+  workstation GC (`DOTNET_gcServer=0`) so it does not build one heap per core
+  next to the renderer. The standalone 390-bot driver keeps server GC.
+
+### Measured on a 24-logical-core workstation
+
+Real offscreen spectator skirmishes (offscreen SDL, `--calibrate`, 15 s measured
+window after a 5 s warmup, three runs; median of the three). "frame" is the
+AIX2 per-Update wall frame time (`[frameprof]`); "tick" is the embedded
+server's wall tick. Bot decisions are the driver's effective pass rate.
+
+| Size (bots) | Setting | Frame mean / p95 (ms) | Tick mean / p95 (ms) | Bot decisions (Hz) |
+|---|---|---|---|---|
+| Small 5v5 (10) | pre-P887 (serial, thread-per-peer) | 24.76 / 147.83 | 1.27 / 1.64 | 20.2 |
+| Small 5v5 (10) | P887 (23 build, 24 send) | 24.92 / 148.57 | 1.50 / 2.04 | 20.1 |
+| Small 5v5 (10) | **resolver** (serial, thread-per-peer) | **24.79 / 147.79** | **1.30 / 1.59** | 20.1 |
+| Small 5v5 (10) | calibrated (serial + 3-worker pool) | 24.76 / 147.97 | 1.23 / 1.59 | 20.1 |
+| Medium 15v15 (30) | pre-P887 | 24.91 / 148.13 | 1.69 / 2.09 | 20.1 |
+| Medium 15v15 (30) | P887 | 25.28 / 148.42 | 1.82 / 2.63 | 20.1 |
+| Medium 15v15 (30) | **resolver** (serial, thread-per-peer) | 25.30 / 148.50 | 1.80 / 2.45 | 20.0 |
+| Medium 15v15 (30) | calibrated (serial, thread-per-peer) | **24.90 / 147.97** | **1.66 / 2.11** | 20.1 |
+| Large 30v30 (60) | pre-P887 | 25.21 / 146.48 | 2.96 / 3.72 | 20.0 |
+| Large 30v30 (60) | P887 | **25.19 / 147.67** | **2.76 / 3.94** | 20.0 |
+| Large 30v30 (60) | **resolver** (4 build, 16 send) | 25.20 / 147.84 | 2.88 / 4.03 | 20.2 |
+| Dedicated 34 players | resolver (3 build, 9 send) | 25.29 / 148.45 | 1.85 / 2.53 | 20.0 |
+| Dedicated 34 players | P887 (23 build, 24 send) | 25.28 / 148.65 | 1.81 / 2.48 | 20.1 |
+
+What the numbers say:
+
+- The **p95 frame time is the same across settings** on this host (~147 ms):
+  it is dominated by periodic ~150 ms client-thread stalls (sector/asset work),
+  not by the server pools. The steady-state mean frame time is ~25 ms in every
+  cell. Client frame time therefore does **not** justify giving the server more
+  cores, which is why the shared profile keeps its reserve.
+- At 10 players P887's 24 send workers cost ~0.2 ms of tick and doubled tick
+  p95 (2.04 vs 1.59 ms) for nothing; serial + thread-per-peer (the resolver)
+  matches pre-P887.
+- At 34 players the resolver's 3-worker/9-send pools are level with the
+  23/24 P887 pools on a **dedicated** server (1.85 vs 1.81 ms) and cost a little
+  on a **shared** machine (1.80 vs 1.69 ms), so the shared crossover moved to
+  48 seats.
+- At 64 players the resolver (4 build / 16 send) is within noise of both
+  P887 (2.88 vs 2.76 ms mean) and thread-per-peer; the pool participates
+  again without hurting. Bot decisions held at ~20 Hz in every cell.
+- Capacity, measured on the server side: a tick of 2.9 ms at 64 players is
+  ~2 % of the 50 ms budget, and the rig's 394-player baseline is ~16 ms, so
+  **on this 24-core class of machine expect roughly 60–120 local skirmish
+  players at full quality** (the limit there is the bot driver and the single
+  renderer, not the tick). A dedicated server of the same class is sized for
+  its configured capacity; the rig's 16-thread box holds 394.
+
+### What to set on a small dedicated server
+
+```jsonc
+// 20 players on a 16-thread box: declare the real size and keep the default profile.
+"expectedPlayers": 20,
+"hostProfile": "dedicated"
+```
+
+The server then starts a 2-builder build and a 5-worker send pool instead of
+15 + 16 workers, and prints `[boot] sizing: profile=dedicated cores=16
+players=20 → …`. There is nothing else to tune: an explicit
+`broadcast.parallelBuild` / `transport.mode` / `transport.poolWorkers` still
+overrides the resolver, and `ALLEGIANCE_HOST_PROFILE` /
+`ALLEGIANCE_EXPECTED_PLAYERS` override the config.
+
+### Calibrating this machine (`--calibrate`)
+
+The bounded calibration measures the machine instead of trusting the table:
+
+```bash
+# in the client: Showcase menu → "Calibrate this machine", or
+Allegiance.ClientCore.MonoGame --calibrate medium --calibrate-exit
+# client options: --calibrate-seconds 15..90, --calibrate-candidates resolver,serial,p887,pool,
+#                 --calibrate-no-save, --calibrate-output FILE
+```
+
+It runs one real skirmish per candidate (`resolver`, pre-P887 `serial`, `p887`,
+`build+2`, `pool`, `bots-1`) at the chosen size, watches the hottest fight, and
+scores `frame p95 × tick p95 × (20 Hz / decisions)` normalised to the 60 Hz
+frame / 20 Hz tick budgets. It writes `sizing-profile.json` (per machine and
+per game build: the core count and the build's informational version must
+match, otherwise the profile is ignored) and prints the candidates, the winner
+and the calibrated-vs-resolver change. Explicit config/env still wins over the
+profile. On this workstation the calibration chose a 3-worker send pool for
+Small (score 0.273 vs the resolver's 0.353) and thread-per-peer for Medium
+(0.370 vs 0.450); three post-calibration runs measured Small at 1.23 ms tick /
+20.1 Hz (resolver 1.30 ms) and Medium at 1.66 ms / 2.11 ms p95 (resolver
+1.80 ms / 2.45 ms) — equal or better at both sizes.
+
+### AIX-S on one machine
+
+The client writes the AIX2 `[frameprof]` frame log by default (one line per 5 s,
+`ALLEGIANCE_FRAMEPROF=0` off) so a single-PC skirmish can be scored:
+
+```bash
+python3 scripts/allegiance-index.py --server <client log> --frames <client log> \
+  --rig docs/benchmarks/p889-shared.json --players 14 --label p889-small
+```
+
+AIX-S only scores **busy** 5 s windows (server tick mean ≥ 5 ms). The local
+skirmish cells above tick at 1.3–2.9 ms, so the tool reports *"No busy 5s
+tickprof windows"* and emits no AIX-S for them — by design, not a missing
+input. A larger match (or the rig, whose baseline is 16.2 ms) produces busy
+windows and a real AIX-S. The committed shared-machine card is
+`docs/benchmarks/p889-shared.json`. These local cells watched the spectator
+observer, whose frame p95 is ~147 ms (sector rebuilds/cuts) — above AIX-S's
+33.3 ms client bar — so use the real flying client for an AIX-S verdict; the
+frame column above is a controlled A/B within the harness.
 
 ## Reports
 

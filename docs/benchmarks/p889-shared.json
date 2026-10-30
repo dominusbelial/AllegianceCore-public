@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "name": "p889-workstation",
+  "shared": true,
+  "machines": [
+    {
+      "name": "p889-workstation",
+      "roles": ["server", "client"],
+      "performanceCores": 24,
+      "efficiencyCores": 0
+    }
+  ],
+  "scenario": "Single-PC skirmish: game client + in-process server + local bot driver (P889). Use with --frames for AIX-S."
+}

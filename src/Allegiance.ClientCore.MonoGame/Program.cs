@@ -8,6 +8,13 @@ using Allegiance.ClientCore.MonoGame.LiveProof;
 // report even when launched from Finder / a .desktop shortcut with no console.
 CrashLog.Install();
 
+// P889 — bounded per-machine sizing calibration. Parsed (and stripped) before
+// the benchmark parser so `--calibrate small` never looks like a benchmark.
+Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand? calibration;
+try { calibration = Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand.Parse(args); }
+catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 2; }
+if (calibration is not null) args = Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand.Strip(args);
+
 Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? benchmark;
 try { benchmark = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.Parse(args); }
 catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 2; }
@@ -588,6 +595,7 @@ RecordingAssetSource? recorder = assetManifestPath is not null
 var opts = new Game1.LaunchOptions
 {
     Benchmark = benchmark,
+    Calibration = calibration,
     BenchmarkCollectorUrl = savedPlayer?.Benchmark?.CollectorUrl ?? PlayerConfig.ReadBenchmarkCollectorUrl(),
     PlayerName = playerName,
     LobbyUrl = lobbyUrl,

@@ -95,13 +95,13 @@ public sealed partial class Game1
                 // P789 — every skirmish records its performance; a Showcase-speed
                 // battle is a Showcase match, everything else a normal one. The
                 // benchmark flow starts its own recorder per measured run.
-                if (_benchmark is null)
+                if (_benchmark is null && _calibration is null)
                     StartSessionRecording(_skirmish.Options.Speed == SkirmishSpeed.Showcase
                         ? SessionMatchKind.Showcase : SessionMatchKind.Normal);
                 if (_benchmark is not null) _playerName = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.PilotName;
                 else if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
                 var preferences = IntroPreferences.Load();
-                if (_benchmark is null) { preferences.Pilot = _playerName; preferences.Skirmish = SkirmishPrefs.From(_skirmish.Options); preferences.Save(); }
+                if (_benchmark is null && _calibration is null) { preferences.Pilot = _playerName; preferences.Skirmish = SkirmishPrefs.From(_skirmish.Options); preferences.Save(); }
                 if (_benchmark is null && _skirmish.Options.StartAsSpectator) { ObserveBenchmarkSharingSession(); StopIntroScan(); EnterLocalSpectator(); return; }
                 // Local ports are ephemeral; do not save them as a remembered multiplayer server.
                 _returnToIntroOnFailure = true;

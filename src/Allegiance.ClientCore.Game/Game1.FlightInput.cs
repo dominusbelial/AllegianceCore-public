@@ -251,6 +251,7 @@ public sealed partial class Game1
     {
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         UpdateSkirmish(Keyboard.GetState());
+        UpdateSizingCalibration();
         if (UpdateBenchmark(ref gameTime)) { base.Update(gameTime); return; }
         // P789 — the always-on session recorder: one O(1), zero-allocation
         // record per frame in every match (pilot and spectator). No locks, no
