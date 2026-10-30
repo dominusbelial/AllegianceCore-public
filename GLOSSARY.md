@@ -788,6 +788,24 @@ list in **reverse**.
   (`RearmRotatedFinales`, `LogRearmGrace`), `tools/allegiance-mcp/BotManager.Lifecycle.cs`
   (`RefreshLife`, `LogObjectiveFallback`), `tools/allegiance-mcp/BotManager.Exploration.cs`
   (`AssignClashTargets`); report: `docs/reports/P831_FALLBACK_BOMBER_REARM.md`.
+- **Finale target honesty + death evidence (P896)** — a side is only ever given a
+  station from its OWN bot worlds (`ObservedFinaleStations`, `PickFinaleTarget`);
+  a side that has observed nothing holds a legal `NoTarget` state and re-picks the
+  moment one of its worlds reports an enemy station (`ResolveFinaleTargets`,
+  `ArmFinaleSide`). A station counts as dead only on real evidence — the
+  WHOLE-MISSION `STATION_DESTROYED(59)` recorded by `ClientWorld.StationWasDestroyed`
+  or a station the side observed and then lost — never on absence, which under
+  native fog only means "not observed" (`Fsmission.cpp:4169-4250`).
+  `src/Allegiance.ClientCore/State/ClientWorld.cs`, `tools/allegiance-mcp/BotManager.Finale.cs`;
+  report: `docs/reports/P896_REPORT.md`.
+- **Strike wave sizing (P801, P896)** — `tools/allegiance-mcp/StrikeVolley.cs`
+  computes the massed wave from the real station type and granted loadouts against
+  the native damage/regen law; `tools/allegiance-mcp/BotManager.StrikeMass.cs`
+  holds the wing at a standoff, sizes it from observed losses/defenders behind
+  `finale_survival_margin` (default 0 = bare kill + one spare), and refuses to
+  commit a wave whose loadout cannot damage the target. Reports:
+  `docs/reports/P801_BOMBER_MASSING.md`, `docs/reports/P896_REPORT.md`.
+  Local measurement harness: `tools/p896-strike-proof/`.
 - **Prosperity commander (P832b)** — when MISSIONDEF enables team money,
   `tools/allegiance-mcp/ResearchCommander.Prosperity.cs` grows/replaces miners,
   banks half observed income and funds the economic-victory bucket above a

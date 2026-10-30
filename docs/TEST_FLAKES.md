@@ -36,6 +36,19 @@ Passing Fast timing offenders were also selected three times:
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.045 | 3.433 / 3.399 / 3.613 | Below limit alone; existing full-sweep timing sensitivity (P890). |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 10.214 | 3.163 / 3.158 / 3.168 | Below limit alone; civ 3 also passed each selected-method run. Existing P890 timing observation. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 10.782 | 10.195 / 10.267 / 10.232 | Functionally passes, still exceeds this sweep's 10 s limit alone. Its measured simulation loop is unchanged. Timing gate remains open; not claimed fixed. |
+## P896 verification observations (2026-10-30)
+
+Single Fast-tier run `TestResults/tiers-20261030T193512.577020Z/` (11,901 tests, 532.6 s, FAIL) plus the
+5x showcase never-parks required for a bot-side change. **Zero P896-introduced failures** — the work touches
+`src/Allegiance.ClientCore/State/ClientWorld.cs` (a new `STATION_DESTROYED` record + accessor) and
+`tools/allegiance-mcp/**`, no sim, dock, wingman or transport code.
+
+| Test | Three isolated outcomes | Classification |
+|---|---|---|
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` (Core) | fail / fail / fail (1 s each) | Long-recorded PRE-EXISTING baseline (P872/P884/P887/P888/P890/P894/P895); null `DefendTarget` assertion, untouched by P896. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` (Core) | pass / fail / pass (0.6 s each) | Already-ledgered status-roster fixture intermittency (P872/P890; same `Expected: -1 Actual: 1051` signature). Dock path untouched. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (Core, `SLOW FAST 10.663s`) | pass / pass / pass | Sweep-load only: the pair runs in 11 s total alone (limit 10 s each). |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (Core, `SLOW FAST 11.146s`) | pass / pass / pass | Sweep-load only, same pair timing as above. |
 
 ## P892c verification observations (2026-10-30)
 

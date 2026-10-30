@@ -76,7 +76,14 @@ internal sealed partial class BotManager
         run.Bots.Count(b => b.Side == side && b.FinaleLoneWolf && b.FinaleBomberReserved && !b.IsPod);
 
     /// <summary>P801 — the volley requirement for this finale target, from the
-    /// real granted loadouts and the real station type.</summary>
+    /// real granted loadouts and the real station type.
+    ///
+    /// <para>P896 — the wave is sized with <see cref="ShowcaseFinale.Settings.SurvivalMargin"/>
+    /// (default 0 = the P801 bare kill + one spare), using this side's observed
+    /// losses on the previous wave and the defenders it can see in the target
+    /// sector. The budget is the side's reserved bomber wing, already capped by
+    /// <c>Settings.Bombers</c>, and <see cref="StrikeVolley.MaxPlannedBombers"/>
+    /// keeps the mass assembleable inside the staging cap.</para></summary>
     private static StrikeVolley.Requirement FinaleVolleyRequirement(FinaleRun run, FinalePlan plan,
         short side, IReadOnlyList<ActiveBot> armed)
     {
@@ -88,7 +95,30 @@ internal sealed partial class BotManager
         var loadouts = armed.Select(b => StrikeVolley.FromParts(core, ActualHullId(b), b.Parts)).ToArray();
         int roster = Math.Max(armed.Count, run.Bots.Count(b => b.Side == side
             && b.FinaleBomberReserved && !b.IsPod));
-        return StrikeVolley.Compute(profile, loadouts, roster);
+        int budget = Math.Clamp(Math.Min(run.Settings.Bombers, roster), 1, StrikeVolley.MaxPlannedBombers);
+        return StrikeVolley.Compute(profile, loadouts, budget, StrikeVolley.VolleyWindowSeconds,
+            run.Settings.SurvivalMargin, plan.WaveLosses, plan.DefenderCount);
+    }
+
+    /// <summary>P896 — how many live enemy ships this side can see in the target
+    /// sector (the biggest count any of its own worlds reports). Fog honesty: an
+    /// unseen defender is not counted, so the wave is never sized from knowledge
+    /// the side does not have.</summary>
+    private static int FinaleDefendersInSector(FinaleRun run, short side, FinalePlan plan)
+    {
+        int best = 0;
+        foreach (var bot in run.Bots)
+        {
+            if (bot.Side != side || bot.IsPod || bot.Cs is not { } cs) continue;
+            int seen = 0;
+            lock (cs.Gate)
+                foreach (var ship in cs.World.Ships.Values)
+                    if (ship.SideId >= 0 && ship.SideId != side && !ship.IsDead && !ship.IsGone
+                        && !ship.IsNotVisible && ship.SectorId == plan.Sector
+                        && !Catalog.IsLifepodHull(ship.HullId)) seen++;
+            best = Math.Max(best, seen);
+        }
+        return best;
     }
 
     /// <summary>P801 — per-run coordinator, called once a second from
@@ -100,6 +130,9 @@ internal sealed partial class BotManager
         foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
         {
             if (!run.Sides.Contains(side) || run.Rotated || run.GameOverAt is not null) continue;
+            // P896 — a plan armed with no target (blind side after the P831 grace) has
+            // nothing to strike; ResolveFinaleTargets fills it in once the side sees one.
+            if (plan.TargetId == FinalePlan.NoTarget) continue;
             // A bomber that already released this life is SPENT (its magazine is
             // empty): it must not be re-counted into another mass until it
             // relaunches (ResetNewLife clears FinaleStrikeSpent).
@@ -114,17 +147,40 @@ internal sealed partial class BotManager
                         + $"outcome=station-killed hitsInWindow={plan.HitsInWindow} "
                         + $"shield={Fraction(plan.ShieldAtGo)}->{Fraction(plan.ShieldNow)} "
                         + $"hull={Fraction(plan.HullAtGo)}->{Fraction(plan.HullNow)} "
-                        + $"required={plan.RequiredBombers} loneWolves={plan.AssignedLoneWolves}");
+                        + $"required={plan.RequiredBombers} loneWolves={plan.AssignedLoneWolves} "
+                        + $"evidence={plan.KilledEvidence ?? "none"}");
                 }
                 continue;
             }
             if (armed.Length == 0) continue;
             plan.AssignedLoneWolves = LiveLoneWolves(run, side);
+            plan.DefenderCount = run.Settings.SurvivalMargin > 0 ? FinaleDefendersInSector(run, side, plan) : 0;
             var requirement = FinaleVolleyRequirement(run, plan, side, armed);
             int roster = Math.Max(armed.Length, run.Bots.Count(b => b.Side == side
                 && b.FinaleBomberReserved && !b.IsPod));
             int required = Math.Clamp(requirement.BombersRequired, 1, Math.Max(1, roster));
             plan.RequiredBombers = required;
+            plan.SurvivalBombers = requirement.SurvivalBombers;
+
+            // P896 — never commit a wave that provably cannot damage the target. The
+            // P801 planner already drops loadouts whose real damage matrix does not
+            // break BOTH pools (StrikeVolley.Compute -> Damages, LoadoutCount 0); when
+            // every armed bomber is in that state (rig b59: a side whose bomber/
+            // anti-base tech gate was not met yet flew its old hull — the NT-1/SC-5
+            // finding), committing would only feed defenders free kills and leave the
+            // station at hull=1.000/shield=1.000 for the next wave. The deadline is
+            // untouched: this side holds its wing and strikes as soon as a real
+            // anti-base loadout is granted.
+            if (requirement.LoadoutCount == 0)
+            {
+                if (now - plan.LastNoStrikeLogAt >= FinaleStagingLogSeconds)
+                {
+                    plan.LastNoStrikeLogAt = now;
+                    Console.WriteLine($"[strike] side={side} finale holding: none of {armed.Length} armed bomber(s) "
+                        + $"carries a station-damaging loadout for station#{plan.TargetId} (P896) — not committing");
+                }
+                continue;
+            }
 
             // `assembled` = armed and in the target sector (they are holding at the
             // standoff point). Reading each own world keeps per-side knowledge.
@@ -262,6 +318,8 @@ internal sealed partial class BotManager
             plan.HullAtGo = plan.HullNow = hull;
             plan.ShieldAtGo = plan.ShieldNow = shield;
         }
+        int lastWaveLosses = plan.WaveLosses;
+        plan.WaveLosses = 0;   // P896 — the next wave measures the losses of THIS one
         if (!plan.MassLogged)
         {
             plan.MassLogged = true;
@@ -270,7 +328,13 @@ internal sealed partial class BotManager
                 + $"assembled={members.Count} visible={members.Count - wolves} "
                 + $"loneWolves={wolves} target=station#{plan.TargetId} sector={plan.Sector} "
                 + $"goIn={ResearchTactics.StrikeGoLeadSeconds:F0}s wait={now - (plan.StagingSince ?? now):F1}s "
-                + $"stationHull={Fraction(hull)} stationShield={Fraction(shield)} reason={reason}");
+                + $"stationHull={Fraction(hull)} stationShield={Fraction(shield)} reason={reason}"
+                // P896 — only when the survival margin is on, so a default (0) run's
+                // lines stay byte-identical to the AIX baseline.
+                + (run.Settings.SurvivalMargin > 0
+                    ? $" survival={plan.SurvivalBombers}"
+                        + $"(margin={run.Settings.SurvivalMargin:F2},losses={lastWaveLosses},defenders={plan.DefenderCount})"
+                    : ""));
         }
     }
 
@@ -306,7 +370,8 @@ internal sealed partial class BotManager
     {
         if (!bot.FinaleBomberActive || bot.IsPod || bot.Finale is not { Rotated: false } run) return false;
         if (run.TriggeredAt is null || run.GameOverAt is not null || !run.Sides.Contains(bot.Side)) return false;
-        if (!run.Plans.TryGetValue(bot.Side, out var plan) || plan.KilledAt is not null) return false;
+        if (!run.Plans.TryGetValue(bot.Side, out var plan) || plan.KilledAt is not null
+            || plan.TargetId == FinalePlan.NoTarget) return false;
         if (bot.Cs is not { } cs || CsSector(cs) != plan.Sector) return false;
 
         double? go;

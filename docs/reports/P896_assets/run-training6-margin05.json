@@ -1,0 +1,413 @@
+{
+  "Label": "t6-m05-c",
+  "Civs": [],
+  "Margin": 0.5,
+  "Swapped": false,
+  "Stage": "Over",
+  "SimSeconds": 1991.3,
+  "Garrisons": [],
+  "HitsByStation": [
+    {
+      "StationId": 2080,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 3,
+      "MaxHitsIn20s": 3,
+      "Killed": true,
+      "ShieldFirst": 1,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0,
+      "Weapons": [
+        "missile=39:SRM"
+      ]
+    },
+    {
+      "StationId": 9195,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 4,
+      "MaxHitsIn20s": 2,
+      "Killed": true,
+      "ShieldFirst": 0.3797,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0,
+      "Weapons": [
+        "missile=39:SRM"
+      ]
+    },
+    {
+      "StationId": 9196,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 8,
+      "MaxHitsIn20s": 3,
+      "Killed": true,
+      "ShieldFirst": 1,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0,
+      "Weapons": [
+        "missile=39:SRM"
+      ]
+    },
+    {
+      "StationId": 9188,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 10,
+      "MaxHitsIn20s": 3,
+      "Killed": true,
+      "ShieldFirst": 1,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0,
+      "Weapons": [
+        "missile=39:SRM",
+        "missile=40:SRM"
+      ]
+    },
+    {
+      "StationId": 2081,
+      "StationSide": 1,
+      "AttackerSide": 0,
+      "Hits": 2,
+      "MaxHitsIn20s": 2,
+      "Killed": false,
+      "ShieldFirst": 1,
+      "ShieldLast": 0.0791,
+      "HullFirst": 1,
+      "HullLast": 1,
+      "Weapons": [
+        "missile=40:SRM"
+      ]
+    },
+    {
+      "StationId": 2081,
+      "StationSide": 1,
+      "AttackerSide": 1,
+      "Hits": 5,
+      "MaxHitsIn20s": 4,
+      "Killed": false,
+      "ShieldFirst": 0,
+      "ShieldLast": 0,
+      "HullFirst": 0.9308,
+      "HullLast": 0.9995,
+      "Weapons": [
+        "projectile=59"
+      ]
+    },
+    {
+      "StationId": 9201,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 3,
+      "MaxHitsIn20s": 3,
+      "Killed": true,
+      "ShieldFirst": 0.1989,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0,
+      "Weapons": [
+        "missile=40:SRM"
+      ]
+    },
+    {
+      "StationId": 9192,
+      "StationSide": 0,
+      "AttackerSide": 1,
+      "Hits": 2,
+      "MaxHitsIn20s": 2,
+      "Killed": false,
+      "ShieldFirst": 1,
+      "ShieldLast": 0,
+      "HullFirst": 1,
+      "HullLast": 0.4868,
+      "Weapons": [
+        "missile=40:SRM"
+      ]
+    }
+  ],
+  "Waves": [
+    {
+      "Side": 1,
+      "Required": 8,
+      "Assembled": 8,
+      "Visible": 6,
+      "LoneWolves": 2,
+      "Sector": 2080,
+      "StationHull": "1.000",
+      "StationShield": "1.000",
+      "Reason": "massed",
+      "Survival": "3(margin=0.50,losses=0,defenders=10)",
+      "Wait": "38.0s",
+      "Target": "station#2080"
+    },
+    {
+      "Side": 0,
+      "Required": 3,
+      "Assembled": 3,
+      "Visible": 2,
+      "LoneWolves": 1,
+      "Sector": 2082,
+      "StationHull": "1.000",
+      "StationShield": "1.000",
+      "Reason": "massed",
+      "Survival": "0(margin=0.50,losses=0,defenders=13)",
+      "Wait": "166.7s",
+      "Target": "station#2081"
+    }
+  ],
+  "ReleasesBySide": {
+    "1": {
+      "Total": 8,
+      "LoneWolf": 2
+    },
+    "0": {
+      "Total": 3,
+      "LoneWolf": 1
+    }
+  },
+  "ReleaseOutcomes": [
+    {
+      "Side": 1,
+      "Role": "lone-wolf",
+      "Ship": "8103",
+      "Outcome": "killed"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8105",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8107",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8109",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8111",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8113",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "visible",
+      "Ship": "8127",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 1,
+      "Role": "lone-wolf",
+      "Ship": "8129",
+      "Outcome": "censored"
+    },
+    {
+      "Side": 0,
+      "Role": "visible",
+      "Ship": "8108",
+      "Outcome": "killed"
+    },
+    {
+      "Side": 0,
+      "Role": "lone-wolf",
+      "Ship": "8110",
+      "Outcome": "killed"
+    },
+    {
+      "Side": 0,
+      "Role": "visible",
+      "Ship": "8130",
+      "Outcome": "killed"
+    }
+  ],
+  "ReleasesKilledBySide": {
+    "1": {
+      "Released": 8,
+      "Killed": 1
+    },
+    "0": {
+      "Released": 3,
+      "Killed": 3
+    }
+  },
+  "Staging": [
+    {
+      "Side": 0,
+      "Assembled": 1,
+      "Required": 6,
+      "InSector": 1,
+      "Docked": 0,
+      "Pods": 2,
+      "Unarmed": 5,
+      "Elsewhere": "-"
+    },
+    {
+      "Side": 1,
+      "Assembled": 0,
+      "Required": 3,
+      "InSector": 0,
+      "Docked": 0,
+      "Pods": 1,
+      "Unarmed": 6,
+      "Elsewhere": "2082:1"
+    },
+    {
+      "Side": 0,
+      "Assembled": 0,
+      "Required": 6,
+      "InSector": 0,
+      "Docked": 0,
+      "Pods": 2,
+      "Unarmed": 3,
+      "Elsewhere": "2080:2,2081:1"
+    },
+    {
+      "Side": 1,
+      "Assembled": 0,
+      "Required": 8,
+      "InSector": 0,
+      "Docked": 0,
+      "Pods": 0,
+      "Unarmed": 0,
+      "Elsewhere": "2081:7,2082:1"
+    },
+    {
+      "Side": 0,
+      "Assembled": 2,
+      "Required": 7,
+      "InSector": 2,
+      "Docked": 0,
+      "Pods": 1,
+      "Unarmed": 0,
+      "Elsewhere": "2080:1,2081:4"
+    },
+    {
+      "Side": 0,
+      "Assembled": 4,
+      "Required": 7,
+      "InSector": 4,
+      "Docked": 0,
+      "Pods": 1,
+      "Unarmed": 0,
+      "Elsewhere": "2080:2,2081:1"
+    },
+    {
+      "Side": 0,
+      "Assembled": 0,
+      "Required": 3,
+      "InSector": 0,
+      "Docked": 0,
+      "Pods": 5,
+      "Unarmed": 0,
+      "Elsewhere": "2081:3"
+    },
+    {
+      "Side": 0,
+      "Assembled": 2,
+      "Required": 7,
+      "InSector": 2,
+      "Docked": 0,
+      "Pods": 1,
+      "Unarmed": 0,
+      "Elsewhere": "2080:4,2081:1"
+    },
+    {
+      "Side": 0,
+      "Assembled": 2,
+      "Required": 4,
+      "InSector": 2,
+      "Docked": 0,
+      "Pods": 4,
+      "Unarmed": 0,
+      "Elsewhere": "2080:2"
+    },
+    {
+      "Side": 0,
+      "Assembled": 0,
+      "Required": 3,
+      "InSector": 0,
+      "Docked": 0,
+      "Pods": 5,
+      "Unarmed": 2,
+      "Elsewhere": "2080:1"
+    },
+    {
+      "Side": 0,
+      "Assembled": 1,
+      "Required": 5,
+      "InSector": 1,
+      "Docked": 0,
+      "Pods": 3,
+      "Unarmed": 0,
+      "Elsewhere": "2081:4"
+    }
+  ],
+  "StationKills": [
+    "[station] station 2080 destroyed (launcher 8109) =\u003E STATION_DESTROYED(59) -\u003E 33 peer(s) [WHOLE MISSION]",
+    "[station] station 9195 destroyed (launcher 8129) =\u003E STATION_DESTROYED(59) -\u003E 33 peer(s) [WHOLE MISSION]",
+    "[station] station 9196 destroyed (launcher 8105) =\u003E STATION_DESTROYED(59) -\u003E 33 peer(s) [WHOLE MISSION]",
+    "[station] station 9188 destroyed (launcher 8109) =\u003E STATION_DESTROYED(59) -\u003E 33 peer(s) [WHOLE MISSION]",
+    "[station] station 9201 destroyed (launcher 8129) =\u003E STATION_DESTROYED(59) -\u003E 33 peer(s) [WHOLE MISSION]"
+  ],
+  "BomberDeathsBySide": {
+    "0": 60,
+    "1": 45
+  },
+  "FinaleArmed": [
+    "[finale] armed for 30 bots; waiting until every side has observed an enemy station (map discovery)",
+    "[finale] registered: every side has observed an enemy station"
+  ],
+  "FinaleTrigger": [
+    "[finale] trigger sides=[0,1] at t=61s: side 0 combat=15 relaunched=14 share=0.93 kills=4; side 1 combat=15 relaunched=15 share=1.00 kills=2 recentKills=6"
+  ],
+  "FinaleEnd": [
+    "[strike] side=1 finale end target=station#2080 sector=2080 outcome=station-killed hitsInWindow=0 shield=1.000-\u003E1.000 hull=1.000-\u003E1.000 required=8 loneWolves=2 evidence=destroyed",
+    "[finale] deadline winner side=1 by=kills values=0:kills=40/deaths=24,1:kills=57/deaths=24 epoch=dc890b97a6aa4946b83f6ba34bfa30a5 armedBy=1",
+    "[finale] re-arm blocked: 30 participating bots; reset-not-observed=25 [mcp-b005-5079/side1/bomber/target2080,mcp-b006-5270/side0/bomber/target2082,mcp-b007-3546/side1/bomber/target2080,mcp-b008-7716/side0/bomber/pod/target2082,mcp-b010-2987/side0/bomber/pod/target2082]; same-generation=25 [mcp-b005-5079/side1/bomber/target2080,mcp-b006-5270/side0/bomber/target2082,mcp-b007-3546/side1/bomber/target2080,mcp-b008-7716/side0/bomber/pod/target2082,mcp-b010-2987/side0/bomber/pod/target2082]"
+  ],
+  "Routes": [
+    "[strike-route] side=1 ship=8127 supersede=5:Warp#2081 target=station#2080 sector=2080",
+    "[strike-route] side=0 ship=8130 supersede=1:Station#9189 target=station#2081 sector=2082",
+    "[strike-route] side=1 ship=8129 supersede=1:Ship#8108 target=station#2080 sector=2080",
+    "[strike-route] side=1 ship=8103 supersede=1:Ship#8130 target=station#2080 sector=2080",
+    "[strike-route] side=1 ship=8109 supersede=1:Ship#8130 target=station#2080 sector=2080",
+    "[strike-route] side=1 ship=8107 supersede=1:Ship#8130 target=station#2080 sector=2080",
+    "[strike-route] side=1 ship=8111 supersede=1:Ship#8130 target=station#2080 sector=2080",
+    "[strike-route] side=1 ship=8113 supersede=1:Ship#8130 target=station#2080 sector=2080",
+    "[strike-route] side=0 ship=8104 supersede=1:Ship#8115 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8110 supersede=3:Ship#8130 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8112 supersede=1:Ship#8121 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8114 supersede=1:Ship#8121 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8106 supersede=3:Ship#8130 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8108 supersede=3:Ship#8130 target=station#2081 sector=2082",
+    "[strike-route] side=0 ship=8128 supersede=1:Station#9189 target=station#2081 sector=2082"
+  ],
+  "Push": {
+    "Seek": 0,
+    "Contact": 0,
+    "Hold": {}
+  },
+  "GameOver": [
+    "[gameover] mission #0 -\u003E Stage Over, iSideWinner=1, 33 peer(s), result packet 2414 bytes; match=1 seed=928188746 side0=25:Iron Coalition(plan_a) side1=3:Ga\u0027Taraan(plan_a)"
+  ],
+  "FinaleState": [
+    "next mission"
+  ]
+}

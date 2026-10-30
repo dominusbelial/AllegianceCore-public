@@ -388,6 +388,15 @@ public sealed partial class ClientWorld
 
     private Dictionary<short, DataClusterIGC> _clusters = new();
     private Dictionary<short, DataStationIGC> _stations = new();
+
+    /// <summary>P896 — stations this world received a real
+    /// <c>FM_S_STATION_DESTROYED(59)</c> for. The server sends that message to the
+    /// WHOLE mission (<c>src/Allegiance.Server/Server.Combat.cs:956</c>, native
+    /// <c>Messages.h:436-439</c>), so it is positive evidence of death for a side
+    /// that never saw the station. Absence from <see cref="Stations"/> is NOT: under
+    /// native map discovery (P797) a station a side has never observed is simply
+    /// not exported (<c>Fsmission.cpp:4169-4250</c>).</summary>
+    private readonly HashSet<short> _destroyedStations = new();
     private Dictionary<short, DataWarpIGC> _warps = new();
     private Dictionary<short, DataAsteroidIGC> _asteroids = new();
 
@@ -1341,6 +1350,12 @@ public sealed partial class ClientWorld
     /// <summary>Stations keyed by StationId, from EXPORT(26)/OT_station (1).</summary>
     public IReadOnlyDictionary<short, DataStationIGC> Stations => _stations;
 
+    /// <summary>P896 — did this world receive a real <c>STATION_DESTROYED(59)</c>
+    /// for <paramref name="stationId"/> in the current mission? Consumers that need
+    /// "destroyed" must ask this instead of inferring death from a station's
+    /// absence, which under native fog only means "not observed".</summary>
+    public bool StationWasDestroyed(short stationId) => _destroyedStations.Contains(stationId);
+
     /// <summary>Warps keyed by WarpId, from EXPORT(26)/OT_warp (7).</summary>
     public IReadOnlyDictionary<short, DataWarpIGC> Warps => _warps;
 
@@ -2094,6 +2109,7 @@ public sealed partial class ClientWorld
         _scoreRosterDirty = false;
         _clusters.Clear();
         _stations.Clear();
+        _destroyedStations.Clear();      // P896 — no destroyed ids survive a reset
         _warps.Clear();
         _warpBombs.Clear();   // P758 — no live warp bombs survive a reset
         _asteroids.Clear();
@@ -3706,6 +3722,10 @@ public sealed partial class ClientWorld
     private void Apply(StationDestroyed destroyed)
     {
         RemoveLastBase(destroyed.StationId);
+        // P896 — record the evidence BEFORE the table lookup: the message is a
+        // WHOLE-MISSION broadcast, so it also arrives for a station this world
+        // never had exported (an unobserved enemy station under P797 fog).
+        _destroyedStations.Add(destroyed.StationId);
         MarkSnapshotDirty();
         if (!_stations.TryGetValue(destroyed.StationId, out var st)) return;
         bool friendly = IsFriendlyStationSide(st.SideId);
@@ -5134,6 +5154,7 @@ public sealed partial class ClientWorld
         _scoreRosterDirty = false;
         _clusters.Clear();
         _stations.Clear();
+        _destroyedStations.Clear();      // P896 — a new mission has no destroyed ids
         _warps.Clear();
         _warpBombs.Clear();   // P758 — no live warp bombs survive a reset
         _asteroids.Clear();

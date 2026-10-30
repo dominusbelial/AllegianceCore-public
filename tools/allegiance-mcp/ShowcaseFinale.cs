@@ -10,7 +10,8 @@ internal static class ShowcaseFinale
 {
     internal sealed record Settings(double AfterMinutes = 30, string Side = "leader",
         double MinRelaunchShare = .5, int MinKillsLastFiveMinutes = 5, int Bombers = 12,
-        double EscortShare = .1, int EscortCap = 12, float EscortRadius = 1500, float Leash = 2500)
+        double EscortShare = .1, int EscortCap = 12, float EscortRadius = 1500, float Leash = 2500,
+        double SurvivalMargin = 0)
     {
         public bool Enabled => AfterMinutes > 0;
         internal void Validate()
@@ -21,8 +22,11 @@ internal static class ShowcaseFinale
                 || MinKillsLastFiveMinutes < 1 || Bombers < 1 || Bombers > 200
                 || !double.IsFinite(EscortShare) || EscortShare < 0 || EscortShare > 1
                 || EscortCap < 0 || EscortCap > 200 || !float.IsFinite(EscortRadius) || EscortRadius <= 0
-                || !float.IsFinite(Leash) || Leash < EscortRadius)
-                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0/1/both, shares 0..1, positive kill floor/bombers/radius, leash >= radius)");
+                || !float.IsFinite(Leash) || Leash < EscortRadius
+                // P896 — 0 keeps the P801/AIX-comparable wave (bare kill + one
+                // spare); above 0 also carries expected run-in losses / defenders.
+                || !double.IsFinite(SurvivalMargin) || SurvivalMargin < 0 || SurvivalMargin > 2)
+                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0/1/both, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2)");
         }
         internal int EscortBudget(int fighters) => Math.Min(EscortCap, (int)Math.Floor(fighters * EscortShare));
     }
