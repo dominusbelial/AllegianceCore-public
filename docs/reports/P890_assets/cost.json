@@ -1,0 +1,66 @@
+{
+  "before": [
+    {
+      "run": 1,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.6608,
+      "mean": 0.75343,
+      "p95": 1.2901,
+      "max": 4.0791,
+      "allocMean": 299168.7
+    },
+    {
+      "run": 2,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.595,
+      "mean": 0.68429,
+      "p95": 1.1944,
+      "max": 3.5604,
+      "allocMean": 299534.9
+    },
+    {
+      "run": 3,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.6538,
+      "mean": 0.74607,
+      "p95": 1.312,
+      "max": 3.7691,
+      "allocMean": 298938.5
+    }
+  ],
+  "after": [
+    {
+      "run": 1,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.6472,
+      "mean": 0.74499,
+      "p95": 1.2721,
+      "max": 3.6599,
+      "allocMean": 298707.6
+    },
+    {
+      "run": 2,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.6347,
+      "mean": 0.72748,
+      "p95": 1.2667,
+      "max": 26.8132,
+      "allocMean": 291879.7
+    },
+    {
+      "run": 3,
+      "gcServer": true,
+      "ticks": 2000,
+      "median": 0.6108,
+      "mean": 0.71827,
+      "p95": 1.2585,
+      "max": 3.3438,
+      "allocMean": 299635.1
+    }
+  ]
+}

@@ -53,7 +53,11 @@ public sealed class TrainingHostMission2Tests
         host.PlayerShip.StateM &= ~Afterburner;
         site.SetAppliedControls(new ControlData(0f, 0f, 0f, throttle));
         if (afterburner) host.PlayerShip.StateM |= Afterburner;
-        host.Step();
+        // No network client exists in this headless fixture. Advance the same
+        // mission physics + host autopilot at 20 Hz without the server's real
+        // 50 ms cadence sleep (30,000 frames otherwise take 25 minutes).
+        // The TCP/real-window M2 coverage remains in P881a and P886 proofs.
+        host.StepLight(0.05f);
         mission.Frame();
         return until();
     }

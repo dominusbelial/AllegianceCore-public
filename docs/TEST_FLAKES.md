@@ -4,6 +4,43 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P890 verification observations (2026-10-29)
+
+The single Fast-tier run retained **FAIL**, 11,741 executions in 538.2 s:
+**11,735 passed / 3 failed / 3 optional skips**; all nine infrastructure checks
+passed. The four new TCP aim cases and the new origin-cookie case passed. Raw
+receipts: `.scratch/p890/`, Fast receipts:
+`TestResults/tiers-20261030T011055.114989Z/`; compact ordered receipts:
+[isolation.json](reports/P890_assets/isolation.json).
+
+| Failure | Three isolated outcomes | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail | Sandbox cannot write the default user profile. With `XDG_CONFIG_HOME` pointing to writable task scratch the same method passes; no profile/client source changed. |
+| `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | pass / pass / pass | Receipt/timing intermittency; test and lobby path unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Persistent unchanged baseline failure already ledgered under P872/P887/P888; no NPC policy or server-flown angular handling changed. |
+
+Five passing executions exceeded the calibrated **10.202 s** Fast limit during
+that sweep. All were selected in three standalone repetitions:
+
+| Method/case | Sweep seconds | Isolated seconds (all functionally pass) |
+|---|---:|---|
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | 11.057 | 4.239 / 4.182 / 4.252 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 13.413 | 4.122 / 3.757 / 3.666 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 13.265 | 3.748 / 3.531 / 3.397 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 11.036 | 4.153 / 3.892 / 3.771 |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 11.709 | 10.309 / 9.865 / 10.301 |
+
+The first four pass below the limit 3/3 alone, consistent with concurrent-load
+timing. P777 remains close to, and
+sometimes over, this calibrated threshold even in isolation; its timing gate is
+**not** claimed repaired. Observed shared-host load averages during verification
+ranged from roughly 2 to 20. No synthetic load was generated.
+
+The P887 docked-gunner observation was also intentionally reproduced by overriding
+P803 to native ship updates: `parent.Latest` is null while docked. That diagnostic
+is not a new regression or an accepted gameplay fix; normal port-mode P803 and
+native in-flight turret coverage are recorded in [P890](reports/P890_REPORT.md).
+
 ## P888 verification observations (2026-10-29)
 
 One Fast-tier run was retained as **FAIL**: **11,736 executions, 531.5 s,

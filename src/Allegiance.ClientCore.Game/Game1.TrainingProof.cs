@@ -318,15 +318,9 @@ public sealed partial class Game1
         // current target by hand — the proof must steer with the real yaw/pitch keys exactly like a
         // player.
         //
-        // P886c — the kill goals (6, 8, 9) also need CONTINUOUS, GENTLE steering toward the derelict
-        // being shot, PLUS disciplined burst fire. Measured in the real window: without re-aiming,
-        // sustained machine-gun fire leaves the nose parked ~8° off the target and every round
-        // misses; holding the turn keys continuously at the offscreen frame rate instead overshoots
-        // into a spin (own-sim orientation diverges from the server pose that fires the guns). So
-        // steer back onto the derelict whenever the nose drifts beyond ~2° (a bounded deadband, not
-        // a full-hold), and fire in short bursts with pauses so recoil never accumulates a
-        // sustained offset — the same trigger discipline the native lesson expects. Pointing goals
-        // keep steering at the mission's current target (the F/B selection the point-at gate reads).
+        // Track kill derelicts with the same local pose the player sees. P890
+        // restores that pose's authority at the host, including training's origin.
+        // Keep a small deadband and burst discipline for the low-frame-rate proof.
         bool pointing7_8 = goal is "7.9" or "8.7";
         int kmajor = int.TryParse(goal.Split('.')[0], out var km) ? km : 0;
         bool killPhase = _proofM3Killing && (kmajor is 6 or 8 or 9);
@@ -334,14 +328,8 @@ public sealed partial class Game1
             SteerTowards(aimPt, keys);
         else if (killPhase && TryGetKillDerelictPosition(out var kpos))
         {
-            // P886c — align the SERVER ship (whose orientation the guns actually fire along) onto
-            // the kill derelict. The own-sim pose the pointing gates read and the replicated/server
-            // pose that spawns projectiles diverge in the real window (measured ownSimVsRepl up to
-            // 171°, ~6° steady), so aiming the own-sim leaves the straight-firing gun missing the
-            // derelict entirely. Steer by the replicated pose, with a bounded deadband so the nose
-            // does not overshoot into a spin at the low offscreen frame rate.
-            if (ReplicatedAimDegreesTo(kpos) > _proofKillDeadband)
-                SteerTowardsReplicated(kpos, keys);
+            if (OwnAimDegreesTo(kpos) > _proofKillDeadband)
+                SteerTowards(kpos, keys, deadband: .025f);
         }
 
         // Shooting phase: fire only during the actual fire-gate/kill goals (conserves the weapon
@@ -349,11 +337,10 @@ public sealed partial class Game1
         // the next live derelict after a kill via real ORDER_CHANGE (native radar re-targets the
         // next same-type object; this is that pick).
         int major = int.TryParse(goal.Split('.')[0], out var m) ? m : 0;
-        // P886c — burst fire: brief pauses (600ms fire / 300ms rest) let machine-gun recoil and the
-        // ship's residual rotation settle between bursts, so the nose stays on the target and the
-        // straight-firing gun actually lands rounds. Measured: sustained fire parked the nose ~8°
-        // off and every round missed (goal 8.9 stall). The goal-5.9 fire demo (GetStateBits) needs
-        // only a WeaponsMask once, so it always fires.
+        // Proof policy: preserve the 600 ms fire / 300 ms rest duty cycle to
+        // conserve resources while steering through the real keyboard path.
+        // P890 corrects pose authority; the gun does not apply a recoil impulse.
+        // Goal 5.9 only needs a WeaponsMask once, so that demonstration always fires.
         bool inKillGoal = _proofM3Killing && (major is 6 or 8 or 9);
         bool isFireDemo = _proofM3Killing && goal == "5.9";
         long burstPhase = nowMs % 900;
@@ -384,12 +371,47 @@ public sealed partial class Game1
     }
 
     /// <summary>M3 goal 13 — fly the ship home with real steering/throttle keys. Steers the nose onto
-    /// the outpost bearing (yaw/pitch from the replicated pose, exactly the player's manual flight),
+    /// the outpost bearing (yaw/pitch from the local pose, exactly the player's manual flight),
     /// holds cruise throttle to approach, and eases off as it closes so it drifts into the dock bay.
     /// The server's real dock latch (radius or InGarage geometry) completes the mission.</summary>
     private void DriveManualLanding(List<Keys> keys)
     {
         if (!TryGetTrainingOutpost(out var target)) return;
+        // Aim for an actual green bay, rather than the station centre. Resolve
+        // its existing art geometry just as the ordinary dock planner does
+        // (Igc/common.cpp:1532-1536); this proof still supplies only player keys.
+        if (_proofDockApproach is null && TryOwnTrainingPose(out var own, out _, out _, out _))
+        {
+            lock (_session.Gate)
+            {
+                if (_session.World.Stations.TryGetValue(1010, out var station)
+                    && _shopCatalog?.StationTypes is { } types
+                    && types.TryGetValue(station.StationTypeId, out var type)
+                    && StationDockGeometry(type) is { LandSlots.Count: > 0 } geom)
+                {
+                    var orientation = new Orientation();
+                    if (station.Forward is { Length: 3 } f && station.Up is { Length: 3 } u)
+                        orientation.Set(Vec(f), Vec(u));
+                    var bay = geom.LandSlots.Select(slot => slot.Planes[0])
+                        .Select(plane => (Center: target + ToSys(plane.Position * orientation),
+                            Direction: ToSys(plane.Direction.Normalize() * orientation)))
+                        .OrderBy(b => (b.Center + b.Direction * (type.Radius + 200) - own).LengthSquared()).First();
+                    _proofDockApproach = bay.Center + bay.Direction * (type.Radius + 200);
+                    _proofDockEntry = bay.Center - bay.Direction * 100;
+                    Console.WriteLine($"[tproof] M3 landing: green-bay approach {_proofDockApproach} entry {_proofDockEntry}");
+                }
+            }
+        }
+        if (_proofDockApproach is { } approach && TryOwnTrainingPose(out var current, out _, out _, out _))
+        {
+            if (!_proofDockLinedUp && (approach - current).Length() < 35)
+            {
+                _proofDockLinedUp = true;
+                ProofTap(Keys.Back);
+                Console.WriteLine("[tproof] M3 landing: lined up outside green bay; entering with held thrust");
+            }
+            target = _proofDockLinedUp ? _proofDockEntry : approach;
+        }
         SteerTowards(target, keys);
 
         if (!TryOwnTrainingPose(out var pos, out _, out _, out _)) return;
@@ -416,68 +438,30 @@ public sealed partial class Game1
             ProofTap(Keys.Back);       // ThrottleZero (brake)
             Console.WriteLine($"[tproof] M3 landing: braking at {dist:F0}m");
         }
+        // ThrottleZero actually stops; it does not select a crawl. Continue
+        // with the player's held-thrust key after braking, so the proof cannot
+        // park just outside the real hangar/docking gate indefinitely.
+        if (_proofBrakeDone && _ownSim.Velocity.Length() < 12f && OwnAimDegreesTo(target) < 10f)
+            keys.Add(Keys.W);
     }
     private bool _proofBrakeDone;
+    private Vector3? _proofDockApproach;
+    private Vector3 _proofDockEntry;
+    private bool _proofDockLinedUp;
 
-    /// <summary>The own ship's REPLICATED pose (system coords) — the pose the server broadcasts
-    /// for the player's ship and the one the guns fire along. Distinct from the client's own-sim
-    /// prediction (<see cref="TryOwnTrainingPose"/>), which the two poses can diverge from in the
-    /// real window.</summary>
-    private bool TryReplicatedOwnPose(out Vector3 pos, out Vector3 fwd, out Vector3 up, out Vector3 right)
+    /// <summary>Aim error from the same local pose used by the camera and training gates.</summary>
+    private float OwnAimDegreesTo(System.Numerics.Vector3 target)
     {
-        pos = fwd = up = right = default;
-        if (_session.World.MyShipId is not { } me) return false;
-        if (!_session.World.Ships.TryGetValue(me, out var ship) || ship.Latest is not { } upd) return false;
-        pos = ToSys(upd.Position);
-        fwd = upd.Orientation.GetForward() is { } f ? ToSys(f) : Vector3.UnitZ;
-        up = upd.Orientation.GetUp() is { } u ? ToSys(u) : Vector3.UnitZ;
-        right = upd.Orientation.GetRight() is { } r ? ToSys(r) : Vector3.UnitZ;
-        return true;
-    }
-
-    /// <summary>Degrees between the REPLICATED own-ship nose and the direction to
-    /// <paramref name="target"/> — the aim error that actually decides whether the straight-firing
-    /// guns hit.</summary>
-    private float ReplicatedAimDegreesTo(System.Numerics.Vector3 target)
-    {
-        if (!TryReplicatedOwnPose(out var pos, out var fwd, out _, out _)) return 999f;
+        if (!TryOwnTrainingPose(out var pos, out var fwd, out _, out _)) return 999f;
         var delta = target - pos;
         float dist = delta.Length();
         if (dist < 1e-3f) return 0f;
         return MathF.Acos(Math.Clamp(System.Numerics.Vector3.Dot(fwd, delta / dist), -1f, 1f)) * 57.29578f;
     }
 
-    /// <summary>Steer the replicated/server ship's nose onto a bearing with the real yaw/pitch keys —
-    /// aligns the pose the guns actually fire along, so straight-firing rounds land on the target.</summary>
-    private void SteerTowardsReplicated(System.Numerics.Vector3 target, List<Keys> keys)
-    {
-        if (!TryReplicatedOwnPose(out var pos, out var fwd, out var up, out var right)) return;
-        var delta = target - pos;
-        float dist = delta.Length();
-        if (dist < 1e-3f) return;
-        var dn = delta / dist;
-        float cosTurn = Math.Clamp(System.Numerics.Vector3.Dot(fwd, dn), -1f, 1f);
-        const float deadband = 0.025f;   // ~1.4° — tighter than the own-sim steer; gun cone is small
-        if (cosTurn > -0.995f)
-        {
-            var backward = -fwd;
-            var twist = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(backward, delta));
-            float yawSign = -System.Numerics.Vector3.Dot(twist, up);
-            float pitchSign = System.Numerics.Vector3.Dot(twist, right);
-            if (yawSign > deadband) keys.Add(Keys.Left);
-            else if (yawSign < -deadband) keys.Add(Keys.Right);
-            if (pitchSign > deadband) keys.Add(Keys.Up);
-            else if (pitchSign < -deadband) keys.Add(Keys.Down);
-        }
-        else
-        {
-            keys.Add(Keys.Left);   // target behind — turn to bring it in front
-        }
-    }
-
     /// <summary>Steer the own ship's nose onto a bearing with the real yaw/pitch keys, from the
-    /// replicated pose — the same manual flight a player uses to track a target.</summary>
-    private void SteerTowards(System.Numerics.Vector3 target, List<Keys> keys)
+    /// local pose — the same manual flight a player uses to track a target.</summary>
+    private void SteerTowards(System.Numerics.Vector3 target, List<Keys> keys, float deadband = .040f)
     {
         if (!TryOwnTrainingPose(out var pos, out var fwd, out var up, out var right)) return;
         var delta = target - pos;
@@ -485,7 +469,6 @@ public sealed partial class Game1
         if (dist < 1e-3f) return;
         var dn = delta / dist;
         float cosTurn = Math.Clamp(System.Numerics.Vector3.Dot(fwd, dn), -1f, 1f);
-        const float deadband = 0.040f;   // ~2.3°
         if (cosTurn > -0.999f)
         {
             var backward = -fwd;
@@ -522,7 +505,7 @@ public sealed partial class Game1
         return TryGetTrainingOutpost(out target);
     }
 
-    /// <summary>The own ship's replicated pose, in system coords (the same source the training
+    /// <summary>The own ship's local simulated pose, in system coords (the same source the training
     /// TurnToFace and the HUD use).</summary>
     private bool TryOwnTrainingPose(out Vector3 pos, out Vector3 fwd, out Vector3 up, out Vector3 right)
     {

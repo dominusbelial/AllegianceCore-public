@@ -261,6 +261,25 @@ public sealed class P507OwnShipModelLiveTests
     // ── LEGACY BACKWARD COMPAT ────────────────────────────────────────────────
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    public void Timed_origin_does_not_bypass_the_native_cookie_gate()
+    {
+        Require.Artwork();
+        using var s = SeatOne();
+        var controls = new ControlData(.75f, 0, 0, -1);
+        // Only explicit Time=0 commands are legacy. A timed pose at the
+        // origin must obey cookie validation even outside local training.
+        s.Bot.SendOwnShipPose((uint)(s.Server.SimNow * 1000),
+            (byte)(s.Assignment.Cookie ^ 0x80), Vector3.Zero, Vector3.Zero,
+            Orientation.Identity, controls, 0, new float[3]);
+        Thread.Sleep(30);
+        for (int i = 0; i < 20; i++) { s.Server.TickSim(); Thread.Sleep(1); }
+        Assert.Equal(0, s.Ship.Controls.Yaw);
+        Assert.Equal(Spawn, s.Ship.Position);
+        Assert.Empty(s.Bot.ShipResets);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Legacy_Time0_zero_pose_update_still_applies_controls()
     {
         Require.Artwork();

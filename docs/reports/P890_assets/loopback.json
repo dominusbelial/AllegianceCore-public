@@ -1,0 +1,214 @@
+{
+  "before": {
+    "training/native": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.7778,
+        "p95": 8.5645,
+        "max": 8.6789
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0013,
+        "p95": 0.0198,
+        "max": 0.0334
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.2914,
+        "p95": 0.5827,
+        "max": 11.169
+      },
+      "shot-deg": {
+        "n": 144,
+        "median": 0.7778,
+        "p95": 8.5308,
+        "max": 8.6789
+      }
+    },
+    "skirmish/native": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 2.1801,
+        "max": 3.81
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0007,
+        "p95": 0.0243,
+        "max": 0.0396
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.998,
+        "p95": 1.4251,
+        "max": 8.0439
+      },
+      "shot-deg": {
+        "n": 119,
+        "median": 0.0,
+        "p95": 2.1801,
+        "max": 3.8091
+      }
+    },
+    "skirmish/port": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 2.1801,
+        "max": 3.81
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0007,
+        "p95": 0.0243,
+        "max": 0.0396
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.8392,
+        "p95": 1.2761,
+        "max": 8.6352
+      },
+      "shot-deg": {
+        "n": 119,
+        "median": 0.0,
+        "p95": 2.1801,
+        "max": 3.8091
+      }
+    },
+    "training/port": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.7778,
+        "p95": 8.5645,
+        "max": 8.6789
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0013,
+        "p95": 0.0198,
+        "max": 0.0334
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.2547,
+        "p95": 0.3852,
+        "max": 2.9815
+      },
+      "shot-deg": {
+        "n": 144,
+        "median": 0.7778,
+        "p95": 8.5308,
+        "max": 8.6789
+      }
+    }
+  },
+  "after": {
+    "training/native": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.2382,
+        "max": 2.5282
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.0179,
+        "max": 0.0236
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.2965,
+        "p95": 0.594,
+        "max": 9.0706
+      },
+      "shot-deg": {
+        "n": 144,
+        "median": 0.0,
+        "p95": 0.1988,
+        "max": 2.5282
+      }
+    },
+    "skirmish/native": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.1887,
+        "max": 1.9068
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.0249,
+        "max": 0.031
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.7956,
+        "p95": 1.4026,
+        "max": 8.7116
+      },
+      "shot-deg": {
+        "n": 119,
+        "median": 0.0,
+        "p95": 0.152,
+        "max": 1.6337
+      }
+    },
+    "skirmish/port": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.1887,
+        "max": 1.9068
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.0249,
+        "max": 0.031
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 1.0225,
+        "p95": 1.4597,
+        "max": 7.4767
+      },
+      "shot-deg": {
+        "n": 119,
+        "median": 0.0,
+        "p95": 0.152,
+        "max": 1.6337
+      }
+    },
+    "training/port": {
+      "forward-deg": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.2382,
+        "max": 2.5282
+      },
+      "position-m": {
+        "n": 240,
+        "median": 0.0,
+        "p95": 0.0179,
+        "max": 0.0236
+      },
+      "tick-ms": {
+        "n": 240,
+        "median": 0.2587,
+        "p95": 0.3807,
+        "max": 6.689
+      },
+      "shot-deg": {
+        "n": 144,
+        "median": 0.0,
+        "p95": 0.1988,
+        "max": 2.5282
+      }
+    }
+  }
+}
