@@ -64,6 +64,9 @@ public sealed class P895UdpTransportTests
             new MissionStageMessage { Stage = MissionStageMessage.StageStarting },
             new SetStartTime { TimeStart = 32000 },
         ];
+        // Batching can fit the whole flow into only a few datagrams. Force one
+        // real drop as well as seeded 5% loss so this always exercises recovery.
+        proxy.DropNextServerData = true;
         var expected = flow.Select(m => FedPacket.Pack([m.Encode()])).ToArray();
         for (int i = 0; i < expected.Length; i++)
         {
@@ -131,7 +134,7 @@ public sealed class P895UdpTransportTests
         using var raw = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         raw.ReceiveTimeout = 300;
         raw.Connect(IPAddress.Loopback, host.BoundPort);
-        var hello = new byte[64]; BinaryPrimitives.WriteUInt32LittleEndian(hello, 0x31554441); hello[4] = 1;
+        var hello = new byte[64]; BinaryPrimitives.WriteUInt32LittleEndian(hello, UdpTransport.Magic); hello[4] = 1;
         raw.Send(hello);
         var reply = new byte[1500]; int n = raw.Receive(reply);
         Assert.Equal(64, n); Assert.Equal(2, reply[4]);
@@ -139,7 +142,7 @@ public sealed class P895UdpTransportTests
         var forged = reply[..64]; forged[4] = 3; forged[32] ^= 0x80;
         raw.Send(forged);
         Assert.Throws<SocketException>(() => raw.Receive(reply));
-        var fakeData = new byte[1200]; BinaryPrimitives.WriteUInt32LittleEndian(fakeData, 0x31554441); fakeData[4] = 5;
+        var fakeData = new byte[1200]; BinaryPrimitives.WriteUInt32LittleEndian(fakeData, UdpTransport.Magic); fakeData[4] = 5;
         raw.Send(fakeData);
         Assert.Throws<SocketException>(() => raw.Receive(reply));
         // A cookie is bound to the return endpoint: another socket cannot redeem it.

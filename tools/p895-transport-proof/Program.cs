@@ -65,12 +65,14 @@ void Host()
     bool measuring = false;
     TimeSpan cpuStart = TimeSpan.Zero;
     long measureStart = 0, writtenStart = 0;
+    var udp = server.Host.Transport is DualTransport dual ? dual.Udp : server.Host.Transport as UdpTransport;
+    UdpTransportStatistics? statsStart = null;
     var process = Process.GetCurrentProcess();
     while (!File.Exists(Path.Combine(state, "stop")) && total.Elapsed.TotalSeconds < 150)
     {
         long start = Stopwatch.GetTimestamp();
         if (!measuring && File.Exists(Path.Combine(state, "measure")))
-        { measuring = true; cpuStart = process.TotalProcessorTime; measureStart = start; writtenStart = server.Host.Transport!.TotalWrittenBytes; }
+        { measuring = true; cpuStart = process.TotalProcessorTime; measureStart = start; writtenStart = server.Host.Transport!.TotalWrittenBytes; statsStart = udp?.SampleStatistics(); }
         times.WriteLine(FormattableString.Invariant($"{server.LoopIterations + 1},{start}"));
         if (measuring && server.LoopIterations % 10 == 0)
         {
@@ -87,6 +89,7 @@ void Host()
     var metrics = new HostMetrics(ticks.Count, Quantile(ticks, .5), Quantile(ticks, .95), ticks.Count == 0 ? 0 : ticks.Max(),
         measuredSeconds == 0 ? 0 : (process.TotalProcessorTime - cpuStart).TotalSeconds / measuredSeconds,
         server.LivePlayerCount, server.Host.Transport!.TotalWrittenBytes - writtenStart);
+    if (statsStart is not null) File.WriteAllText(Path.Combine(state, "host-udp.json"), JsonSerializer.Serialize(udp!.SampleStatistics().Since(statsStart), ProofJson.Default.UdpTransportStatistics));
     File.WriteAllText(Path.Combine(state, "host-metrics.json"), JsonSerializer.Serialize(metrics, ProofJson.Default.HostMetrics));
 }
 
@@ -147,6 +150,7 @@ void Run()
         foreach (var client in clients) client.Measuring = true;
         File.WriteAllText(Path.Combine(state, "measure"), "start");
         long bytesStart = ProxyBytes(proxies);
+        var udpStarts = clients.Select(c => (c.Transport as UdpTransport)?.SampleStatistics()).ToArray();
         var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
         var timer = Stopwatch.StartNew();
         while (timer.Elapsed.TotalSeconds < seconds)
@@ -158,6 +162,7 @@ void Run()
         double sampleSeconds = timer.Elapsed.TotalSeconds;
         double clientCpuSeconds = (Process.GetCurrentProcess().TotalProcessorTime - cpuStart).TotalSeconds;
         long bytes = ProxyBytes(proxies) - bytesStart;
+        if (protocol == "udp") File.WriteAllText(Path.Combine(state, "client-udp.json"), JsonSerializer.Serialize(clients.Select((c, i) => ((UdpTransport)c.Transport).SampleStatistics().Since(udpStarts[i]!)).ToArray(), ProofJson.Default.UdpTransportStatisticsArray));
         int connectedAtEnd = clients.Count(c => c.Session.Connected);
         File.WriteAllText(Path.Combine(state, "stop"), "stop");
         // Freeze the sample before materializing/sorting millions of pose records.
@@ -258,4 +263,6 @@ internal sealed record Measurement(string Protocol, string Impairment, int Bots,
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Measurement))]
 [JsonSerializable(typeof(HostMetrics))]
+[JsonSerializable(typeof(UdpTransportStatistics))]
+[JsonSerializable(typeof(UdpTransportStatistics[]))]
 internal partial class ProofJson : JsonSerializerContext;

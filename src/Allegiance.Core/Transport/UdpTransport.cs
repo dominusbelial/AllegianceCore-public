@@ -11,14 +11,15 @@ namespace Allegiance.Core.Transport;
 /// P895: experimental, bounded UDP delivery. Native intent:
 /// _Utility/Messages.cpp:558-563 (guaranteed vs nonsequential, 500 ms expiry).
 /// Wire protocol and congestion/security policy are modern port infrastructure.
-/// One worker owns socket I/O; callbacks execute outside the state lock.
+/// Socket sends and protocol state are serialized; callbacks execute outside the state lock.
 /// </summary>
-public sealed class UdpTransport : IServerTransport, IDisposable
+public sealed partial class UdpTransport : IServerTransport, IDisposable
 {
     internal const int Mtu = 1200;
-    internal const int Header = 52;
-    private const int Payload = Mtu - Header;
-    private const uint Magic = 0x31554441; // ADU1, protocol version 1
+    internal const int Header = 32;
+    internal const int RecordHeader = 24; // Maximum encoded record header; common frames use 4–8 bytes.
+    private const int Payload = Mtu - Header - RecordHeader;
+    internal const uint Magic = 0x32554441; // ADU2, batched data and selective ACK lists
     private const int HandshakeSize = 64;
     private const int MaxFrame = 16 * 1024 * 1024;
     private const int MaxKeys = 256;
@@ -125,16 +126,23 @@ public sealed class UdpTransport : IServerTransport, IDisposable
     }
     private void Start(IPAddress bind, ushort port)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(MaxBytesPerSecond);
         _socket = new Socket(bind.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
         if (bind.AddressFamily == AddressFamily.InterNetworkV6) _socket.DualMode = true;
         _socket.ReceiveBufferSize = 4 * 1024 * 1024;
         _socket.SendBufferSize = 1024 * 1024;
-        _socket.Blocking = false;
+        _socket.Blocking = !_host;
         try { _socket.Bind(new IPEndPoint(bind, port)); }
         catch { _socket.Dispose(); _socket = null; throw; }
         _boundPort = (ushort)((IPEndPoint)_socket.LocalEndPoint!).Port;
+        if (_host)
+        {
+            _receiveArgs.SetBuffer(_receive, 0, _receive.Length);
+            _receiveArgs.Completed += ReceiveCompleted;
+        }
+        else _clientTimer = new Timer(ClientTimer);
         _running = true;
-        _worker = new Thread(Run) { IsBackground = true, Name = "udp-transport" };
+        _worker = new Thread(_host ? Run : RunClient) { IsBackground = true, Name = "udp-transport" };
         _worker.Start();
     }
 
@@ -148,7 +156,17 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         {
             if (!_running) return;
             if (!_host) target = ConnectionId.Server;
-            if (_peers.TryGetValue(target, out var p) && !p.Closing) Enqueue(p, data, guaranteed, key);
+            if (_peers.TryGetValue(target, out var p) && !p.Closing)
+            {
+                Enqueue(p, data, guaranteed, key);
+                _enqueueSignals++;
+                if (_host) { _readyPeers.Add(p); _wake.Set(); }
+                else
+                {
+                    ServiceClient(Environment.TickCount64);
+                    if (_callbacks.Count != 0) _clientTimer!.Change(0, Timeout.Infinite);
+                }
+            }
         }
     }
     private void Enqueue(Peer p, ReadOnlySpan<byte> data, bool guaranteed, int key, bool greet = false)
@@ -184,25 +202,17 @@ public sealed class UdpTransport : IServerTransport, IDisposable
             {
                 lock (_gate)
                 {
+                    _workerTurns++;
                     long now = Environment.TickCount64;
-                    // Bounded receive turns keep a flood from starving sends/timeouts.
-                    for (int i = 0; i < 256 && _running; i++)
+                    ReceiveAvailable(now);
+                    CollectDuePeers(now);
+                    _tickPeers.Clear(); _tickPeers.AddRange(_readyPeers); _readyPeers.Clear();
+                    foreach (var p in _tickPeers)
                     {
-                        EndPoint ep = _socket!.AddressFamily == AddressFamily.InterNetworkV6
-                            ? new IPEndPoint(IPAddress.IPv6Any, 0) : new IPEndPoint(IPAddress.Any, 0);
-                        int count;
-                        try { count = _socket.ReceiveFrom(_receive, ref ep); }
-                        catch (SocketException ex) when (ex.SocketErrorCode is SocketError.WouldBlock or SocketError.ConnectionReset or SocketError.MessageSize) { break; }
-                        Interlocked.Add(ref _received, count);
-                        if (count <= Mtu) Receive(_receive.AsSpan(0, count), Normalize((IPEndPoint)ep), now);
+                        if (!_peers.ContainsKey(p.Id)) continue;
+                        Tick(p, now);
+                        if (_peers.ContainsKey(p.Id)) SchedulePeer(p, now);
                     }
-                    if (!_host && !IsConnected && _hello is not null && now - _lastHandshake >= 200)
-                    {
-                        RawSend(_hello, _remote!);
-                        _lastHandshake = now;
-                    }
-                    _tickPeers.Clear(); _tickPeers.AddRange(_peers.Values);
-                    foreach (var p in _tickPeers) Tick(p, now);
                     if (now - _lastRetiredSweep >= 1000)
                     {
                         _lastRetiredSweep = now; _expiredTokens.Clear();
@@ -211,8 +221,9 @@ public sealed class UdpTransport : IServerTransport, IDisposable
                     }
                 }
                 DrainCallbacks();
-                // A real blocking wait, including under continuous traffic: no WouldBlock spin.
-                Thread.Sleep(2);
+                int wait;
+                lock (_gate) wait = NextWait(Environment.TickCount64);
+                if (_running && !_wake.WaitOne(wait)) Interlocked.Increment(ref _timerWakes);
             }
         }
         catch (Exception ex) when (ex is SocketException or ObjectDisposedException or IOException)
@@ -225,7 +236,12 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         }
         finally { DrainCallbacks(); }
     }
+    private readonly object _callbackGate = new();
     private void DrainCallbacks()
+    {
+        lock (_callbackGate) DrainCallbacksSerial();
+    }
+    private void DrainCallbacksSerial()
     {
         while (true)
         {
@@ -243,14 +259,36 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         var kind = (Kind)d[4];
         if (kind <= Kind.Accept) { Handshake(d, ep, kind, now); return; }
         if (d.Length < Header || !_endpoints.TryGetValue(ep, out var p) || new Guid(d.Slice(8, 16)) != p.Token) return;
+        int acks = d[5], offset = Header;
+        if (acks > 64) return;
+        Span<ulong> ackIds = stackalloc ulong[64];
+        for (int i = 0; i < acks; i++)
+            if (!ReadVar(d, ref offset, out ackIds[i])) return;
+        if (kind != Kind.Data && (d[6] != 0 || offset != d.Length)) return;
         p.LastReceive = now;
+        if (_host) _readyPeers.Add(p);
+        for (int i = 0; i < acks; i++) Ack(p, ackIds[i], now);
         switch (kind)
         {
-            case Kind.Ack: Ack(p, BinaryPrimitives.ReadUInt64LittleEndian(d[24..]), now); break;
+            case Kind.Ack: break;
             case Kind.Ping: Control(p, Kind.Pong); break;
             case Kind.Pong: break;
             case Kind.Close: Drop(p, "UDP peer closed"); break;
-            case Kind.Data: ReceiveData(p, d, now); break;
+            case Kind.Data:
+                ulong packet = BinaryPrimitives.ReadUInt64LittleEndian(d[24..]);
+                if (packet == 0 || d[6] == 0) { Drop(p, "UDP invalid packet"); break; }
+                for (int i = 0; i < d[6]; i++)
+                {
+                    if (!ReadRecord(d, ref offset, out var record)) { Drop(p, "UDP invalid record"); return; }
+                    int length = (int)Math.Min(Payload, (long)record.Size - (long)record.Index * Payload);
+                    if (length < 0 || offset + length > d.Length) { Drop(p, "UDP invalid fragment length"); return; }
+                    ReceiveData(p, record, d.Slice(offset, length), now);
+                    if (!_peers.ContainsKey(p.Id)) return;
+                    offset += length;
+                }
+                if (offset != d.Length) { Drop(p, "UDP invalid trailing data"); return; }
+                QueueAck(p, packet, now);
+                break;
         }
     }
     private void Handshake(ReadOnlySpan<byte> d, IPEndPoint ep, Kind kind, long now)
@@ -288,6 +326,7 @@ public sealed class UdpTransport : IServerTransport, IDisposable
                 _peers.Add(peer.Id, peer);
                 _endpoints.Add(ep, peer);
             }
+            _readyPeers.Add(peer);
             if (peer.Token != token) return; // No unauthenticated connection replacement/rebinding.
             d.CopyTo(_send);
             _send[4] = (byte)Kind.Accept;
@@ -328,29 +367,26 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         hash[..16].CopyTo(output);
     }
 
-    private void ReceiveData(Peer p, ReadOnlySpan<byte> d, long now)
+    private void ReceiveData(Peer p, Record record, ReadOnlySpan<byte> d, long now)
     {
-        ulong packet = BinaryPrimitives.ReadUInt64LittleEndian(d[24..]);
-        ulong seq = BinaryPrimitives.ReadUInt64LittleEndian(d[32..]);
-        int key = BinaryPrimitives.ReadInt32LittleEndian(d[40..]);
-        int size = BinaryPrimitives.ReadInt32LittleEndian(d[44..]);
-        int index = BinaryPrimitives.ReadUInt16LittleEndian(d[48..]);
-        int count = BinaryPrimitives.ReadUInt16LittleEndian(d[50..]);
+        ulong seq = record.Sequence;
+        int key = record.Key, size = record.Size, index = record.Index;
+        int count = Math.Max(1, (size + Payload - 1) / Payload);
         int cap = _host ? (int)Math.Min(TcpTransport.ServerInboundMaxFrame, MaxFrame) : MaxFrame;
-        if (size < 0 || size > cap || count != Math.Max(1, (size + Payload - 1) / Payload) || index >= count ||
-            d.Length - Header != Math.Min(Payload, size - index * Payload) || (d[5] & ~3) != 0) { Drop(p, "UDP invalid fragment"); return; }
-        if (packet == 0 || key == 0 && (d[5] & 1) == 0) { Drop(p, "UDP invalid ordered flags"); return; }
-        bool greet = (d[5] & 2) != 0;
+        if (size < 0 || size > cap || index >= count ||
+            d.Length != Math.Min(Payload, size - index * Payload) || (record.Flags & ~3) != 0) { Drop(p, "UDP invalid fragment"); return; }
+        if (key == 0 && (record.Flags & 1) == 0) { Drop(p, "UDP invalid ordered flags"); return; }
+        bool greet = (record.Flags & 2) != 0;
         if (greet && (!_host || key != 0 || seq != 0 || size > 128)) { Drop(p, "UDP invalid greeting"); return; }
         bool stale = key == 0 ? seq < p.ReceiveOrdered : seq <= p.Delivered.GetValueOrDefault(key);
-        if (stale) { Control(p, Kind.Ack, packet); return; }
+        if (stale) return;
         if (key == 0 && seq - p.ReceiveOrdered > MaxReorder) { Drop(p, "UDP ordered window exceeded"); return; }
         if (key != 0 && !p.Delivered.ContainsKey(key))
         {
             if (p.Delivered.Count >= MaxKeys) { Drop(p, "UDP receive key cap"); return; }
             p.Delivered[key] = 0;
         }
-        if (key != 0 && seq < p.Newest.GetValueOrDefault(key)) { Control(p, Kind.Ack, packet); return; }
+        if (key != 0 && seq < p.Newest.GetValueOrDefault(key)) return;
         if (key != 0 && seq > p.Newest.GetValueOrDefault(key))
         {
             p.AssemblyScratch.Clear();
@@ -362,19 +398,17 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         if (!p.Assemblies.TryGetValue(identity, out var assembly))
         {
             if (p.ReceiveBytes + size > MaxBufferedBytes || p.Assemblies.Count >= MaxReorder) { Drop(p, "UDP reassembly cap"); return; }
-            assembly = new Assembly(size, count, greet, (d[5] & 1) != 0, now);
+            assembly = new Assembly(size, count, greet, (record.Flags & 1) != 0, now);
             p.Assemblies.Add(identity, assembly);
             p.ReceiveBytes += size;
         }
-        if (assembly.Data.Length != size || assembly.Seen.Length != count || assembly.Greet != greet || assembly.Reliable != ((d[5] & 1) != 0)) { Drop(p, "UDP inconsistent fragments"); return; }
+        if (assembly.Data.Length != size || assembly.Seen.Length != count || assembly.Greet != greet || assembly.Reliable != ((record.Flags & 1) != 0)) { Drop(p, "UDP inconsistent fragments"); return; }
         if (!assembly.Seen[index])
         {
-            d[Header..].CopyTo(assembly.Data.AsSpan(index * Payload));
+            d.CopyTo(assembly.Data.AsSpan(index * Payload));
             assembly.Seen[index] = true;
             assembly.Remaining--;
         }
-        // ACK only after retaining the fragment; a reliable fragment is never acknowledged then discarded.
-        Control(p, Kind.Ack, packet);
         if (assembly.Remaining != 0) return;
         if (key == 0)
         {
@@ -416,10 +450,11 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         if (p.Closing && (p.Ordered.Count == 0 && !p.Streams.Values.Any(f => f.Reliable) && p.Flight.Count == 0 || now > p.CloseDeadline))
         {
             // Close is repeated on subsequent ticks; silence timeout handles loss of all notifications.
-            if (p.CloseSent++ < 5) { Control(p, Kind.Close); return; }
+            if (now < p.NextClose) return;
+            if (p.CloseSent++ < 5) { Control(p, Kind.Close); p.NextClose = now + 20; return; }
             Drop(p, "UDP graceful close"); return;
         }
-        if (now - p.LastPing >= KeepAliveInterval.TotalMilliseconds) { Control(p, Kind.Ping); p.LastPing = now; }
+        if (now - p.LastSend >= KeepAliveInterval.TotalMilliseconds) { Control(p, Kind.Ping); p.LastSend = now; } // A failed send waits a full interval.
         p.AssemblyScratch.Clear();
         foreach (var entry in p.Assemblies) if (!entry.Value.Reliable && now - entry.Value.Created > 500) p.AssemblyScratch.Add(entry.Key);
         foreach (var key in p.AssemblyScratch) { p.ReceiveBytes -= p.Assemblies[key].Data.Length; p.Assemblies.Remove(key); }
@@ -437,55 +472,92 @@ public sealed class UdpTransport : IServerTransport, IDisposable
             if (now - sent.LastSent < p.Rto) continue;
             if (now >= p.RecoveryUntil)
             { p.Cwnd = Math.Max(2 * Mtu, p.Cwnd / 2); p.Rto = Math.Min(3000, p.Rto * 2); p.RecoveryUntil = now + (long)p.Rto; }
-            if (sent.Frame is null || !sent.Frame.Reliable) { RemoveFlight(p, sent); continue; }
+            if (!sent.Fragments.Any(f => f.Frame is { Reliable: true })) { RemoveFlight(p, sent); continue; }
             if (p.Budget < sent.Length) break;
-            if (Transmit(p, sent.Frame, sent.Index, sent.Id))
-            { sent.LastSent = now; sent.Retries++; p.Budget -= sent.Length; }
+            bool success = Transmit(p, sent, retry: true);
+            sent.LastSent = now; // A transient socket failure also waits for its next RTO.
+            sent.Retries++;
+            if (success) { _retransmits++; p.Budget -= sent.LastWireLength; }
         }
-        // Alternate lanes at fragment granularity. A bulk ordered snapshot cannot monopolize poses.
-        for (int i = 0; i < 32 && p.Budget >= Header && p.InFlight < p.Cwnd; i++)
+        // Fill each datagram from the existing fair ordered/stream scheduler.
+        // Batch only work already queued; never wait to accumulate another frame.
+        for (int i = 0; i < 32 && p.Budget >= Header + 4 && p.InFlight < p.Cwnd; i++)
         {
-            Frame? ordered = p.Ordered.TryPeek(out var head) ? head : null;
-            Frame? stream = null;
-            if (p.Streams.Count > 0)
+            int limit = (int)Math.Min(Mtu, Math.Min(p.Budget, p.Cwnd - p.InFlight));
+            int length = Header;
+            var fragments = new List<Fragment>();
+            while (fragments.Count < 255)
             {
-                int start = (int)(p.StreamCursor++ % (uint)p.Streams.Count);
-                for (int j = 0; j < p.Streams.Count; j++)
-                {
-                    var candidate = p.Streams.Values.ElementAt((start + j) % p.Streams.Count);
-                    if (candidate.NextFragment < candidate.Count) { stream = candidate; break; }
-                }
+                var f = NextFrame(p, limit - length);
+                if (f is null) break;
+                int fragment = f.NextFragment++;
+                fragments.Add(new Fragment(f, fragment));
+                length += RecordSize(f, fragment) + Math.Min(Payload, f.Data.Length - fragment * Payload);
+                if (fragment == 0) RecordSendWait(now - f.Created);
+                if (f.Key == 0 && f.NextFragment == f.Count) p.Ordered.Dequeue();
             }
-            Frame? f = p.StreamTurn && stream is not null ? stream : ordered is { } && ordered.NextFragment < ordered.Count ? ordered : stream;
-            p.StreamTurn = !p.StreamTurn;
-            if (f is null || f.NextFragment >= f.Count) break;
-            int length = Header + Math.Min(Payload, f.Data.Length - f.NextFragment * Payload);
-            if (p.Budget < length || p.InFlight + length > p.Cwnd) break;
-            ulong id = ++p.NextPacket;
-            int fragment = f.NextFragment;
-            if (!Transmit(p, f, fragment, id)) break;
-            f.NextFragment++;
-            if (f.Key == 0 && f.NextFragment == f.Count) p.Ordered.Dequeue();
-            p.Budget -= length;
-            p.Flight.Add(id, new Sent(id, f, fragment, length, now));
-            p.InFlight += length;
+            if (fragments.Count == 0) break;
+            var sent = new Sent(++p.NextPacket, fragments, length, now);
+            // A transient send failure retains reliable work for the RTO, with its
+            // congestion debt. Frames have already left the pending queues.
+            Transmit(p, sent, retry: false);
+            p.Budget -= sent.Length;
+            p.Flight.Add(sent.Id, sent);
+            p.InFlight += sent.Length;
         }
+        if (p.PendingAcks.Count != 0 && now >= p.AckDue) Control(p, Kind.Ack);
     }
-    private bool Transmit(Peer p, Frame f, int index, ulong id)
+
+    private static Frame? NextFrame(Peer p, int space)
     {
-        _send.AsSpan(0, Header).Clear();
-        WriteMagic(_send, Kind.Data);
-        _send[5] = (byte)((f.Reliable ? 1 : 0) | (f.Greet ? 2 : 0));
-        p.Token.TryWriteBytes(_send.AsSpan(8, 16));
-        BinaryPrimitives.WriteUInt64LittleEndian(_send.AsSpan(24), id);
-        BinaryPrimitives.WriteUInt64LittleEndian(_send.AsSpan(32), f.Sequence);
-        BinaryPrimitives.WriteInt32LittleEndian(_send.AsSpan(40), f.Key);
-        BinaryPrimitives.WriteInt32LittleEndian(_send.AsSpan(44), f.Data.Length);
-        BinaryPrimitives.WriteUInt16LittleEndian(_send.AsSpan(48), (ushort)index);
-        BinaryPrimitives.WriteUInt16LittleEndian(_send.AsSpan(50), (ushort)f.Count);
-        int n = Math.Min(Payload, f.Data.Length - index * Payload);
-        f.Data.AsSpan(index * Payload, n).CopyTo(_send.AsSpan(Header));
-        return RawSend(_send.AsSpan(0, Header + n), p.Endpoint);
+        Frame? ordered = p.Ordered.TryPeek(out var head) ? head : null;
+        Frame? stream = null;
+        if (p.Streams.Count > 0)
+        {
+            int start = (int)(p.StreamCursor++ % (uint)p.Streams.Count);
+            for (int j = 0; j < p.Streams.Count; j++)
+            {
+                var candidate = p.Streams.Values.ElementAt((start + j) % p.Streams.Count);
+                if (candidate.NextFragment < candidate.Count && Fits(candidate)) { stream = candidate; break; }
+            }
+        }
+        if (ordered is not null && !Fits(ordered)) ordered = null;
+        Frame? result = p.StreamTurn ? stream ?? ordered : ordered ?? stream;
+        p.StreamTurn = !p.StreamTurn;
+        return result;
+        bool Fits(Frame f) => RecordSize(f, f.NextFragment) + Math.Min(Payload, f.Data.Length - f.NextFragment * Payload) <= space;
+    }
+
+    private bool Transmit(Peer p, Sent sent, bool retry)
+    {
+        int length = Header, records = 0, recordHeaders = 0;
+        foreach (var fragment in sent.Fragments)
+            if (fragment.Frame is { } f && (!retry || f.Reliable))
+            { int h = RecordSize(f, fragment.Index); length += h + Math.Min(Payload, f.Data.Length - fragment.Index * Payload); recordHeaders += h; records++; }
+        int allowance = (int)Math.Min(Mtu, Math.Min(p.Budget, retry ? Mtu : p.Cwnd - p.InFlight));
+        int acks = 0, ackRoom = allowance - length;
+        foreach (ulong id in p.PendingAcks)
+        {
+            int size = VarSize(id);
+            if (acks == 64 || ackRoom < size) break;
+            acks++; ackRoom -= size;
+        }
+        int offset = BeginPacket(p, Kind.Data, acks);
+        _send[6] = (byte)records;
+        BinaryPrimitives.WriteUInt64LittleEndian(_send.AsSpan(24), sent.Id);
+        foreach (var fragment in sent.Fragments)
+        {
+            if (fragment.Frame is not { } f || retry && !f.Reliable) continue;
+            WriteRecord(_send, ref offset, f, fragment.Index);
+            int n = Math.Min(Payload, f.Data.Length - fragment.Index * Payload);
+            f.Data.AsSpan(fragment.Index * Payload, n).CopyTo(_send.AsSpan(offset));
+            offset += n;
+        }
+        if (!retry) sent.Length = offset;
+        sent.LastWireLength = offset;
+        bool success = RawSend(_send.AsSpan(0, offset), p.Endpoint);
+        if (success) { ConsumeAcks(p, acks); _dataRecords += records; _dataHeaders += Header + recordHeaders; if (retry) _retransmitBytes += offset; }
+        return success;
     }
     private void Ack(Peer p, ulong id, long now)
     {
@@ -499,18 +571,21 @@ public sealed class UdpTransport : IServerTransport, IDisposable
             p.Rto = Math.Clamp(p.Srtt + 4 * p.Variance, 100, 3000);
         }
         p.Cwnd = Math.Min(256 * Mtu, p.Cwnd + Mtu * sent.Length / p.Cwnd);
-        var f = sent.Frame;
-        if (f is null) return; // Superseded payload is released; its flight still governs congestion.
-        f.Acked++;
-        if (f.Acked != f.Count) return;
-        Account(p, f, EgressEvent.Sent);
-        if (f.Key != 0 && p.Streams.GetValueOrDefault(f.Key) == f) p.Streams.Remove(f.Key);
-        p.Buffered -= f.Data.Length;
+        foreach (var fragment in sent.Fragments)
+        {
+            var f = fragment.Frame;
+            if (f is null) continue; // Superseded payload was released; flight still governed congestion.
+            if (++f.Acked != f.Count) continue;
+            Account(p, f, EgressEvent.Sent);
+            if (f.Key != 0 && p.Streams.GetValueOrDefault(f.Key) == f) p.Streams.Remove(f.Key);
+            p.Buffered -= f.Data.Length;
+        }
     }
     private static void RemoveFlight(Peer p, Sent sent) { p.Flight.Remove(sent.Id); p.InFlight -= sent.Length; }
     private void RetireFrame(Peer p, Frame f)
     {
-        foreach (var sent in p.Flight.Values) if (ReferenceEquals(sent.Frame, f)) sent.Frame = null;
+        foreach (var sent in p.Flight.Values)
+            foreach (var fragment in sent.Fragments) if (ReferenceEquals(fragment.Frame, f)) fragment.Frame = null;
         p.Buffered -= f.Data.Length;
         Account(p, f, EgressEvent.Coalesced);
     }
@@ -525,17 +600,57 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         Egress?.Record(framed, !p.Human, f.Key != 0, ev);
         if (ev == EgressEvent.Offered) ServerCounters?.RecordFrame(framed, f.Guaranteed);
     }
-    private void Control(Peer p, Kind kind, ulong packet = 0)
+    private void QueueAck(Peer p, ulong id, long now)
+    {
+        // ACK only after retaining all fragments in the datagram. Selective IDs
+        // cover arbitrarily old retransmits; no finite bitmap can age them out.
+        if (p.PendingAcks.Count == 0) p.AckDue = now + 20;
+        if (p.PendingAcks.Count < 128) p.PendingAcks.Add(id);
+        if (p.PendingAcks.Count >= 64) Control(p, Kind.Ack);
+    }
+    private int BeginPacket(Peer p, Kind kind, int acks)
     {
         _send.AsSpan(0, Header).Clear();
         WriteMagic(_send, kind);
+        _send[5] = (byte)acks;
         p.Token.TryWriteBytes(_send.AsSpan(8, 16));
-        BinaryPrimitives.WriteUInt64LittleEndian(_send.AsSpan(24), packet);
-        RawSend(_send.AsSpan(0, Header), p.Endpoint);
+        int offset = Header;
+        foreach (ulong id in p.PendingAcks.Take(acks))
+            WriteVar(_send, ref offset, id);
+        return offset;
+    }
+    private void ConsumeAcks(Peer p, int count)
+    {
+        int offset = Header;
+        for (int i = 0; i < count; i++)
+        { ReadVar(_send, ref offset, out ulong id); p.PendingAcks.Remove(id); }
+        if (p.PendingAcks.Count != 0) p.AckDue = Environment.TickCount64 + 20;
+    }
+    private void Control(Peer p, Kind kind)
+    {
+        int acks = Math.Min(64, p.PendingAcks.Count);
+        int length = BeginPacket(p, kind, acks);
+        if (RawSend(_send.AsSpan(0, length), p.Endpoint)) ConsumeAcks(p, acks);
+        else p.AckDue = Environment.TickCount64 + 20;
     }
     private bool RawSend(ReadOnlySpan<byte> data, IPEndPoint endpoint)
     {
-        try { int n = _socket!.SendTo(data, _socket.AddressFamily == AddressFamily.InterNetwork ? new IPEndPoint(endpoint.Address.MapToIPv4(), endpoint.Port) : endpoint); Interlocked.Add(ref _written, n); return n == data.Length; }
+        try
+        {
+            int n = _socket!.SendTo(data, _socket.AddressFamily == AddressFamily.InterNetwork
+                ? new IPEndPoint(endpoint.Address.MapToIPv4(), endpoint.Port) : endpoint);
+            Interlocked.Add(ref _written, n);
+            _packetCounts[data[4]]++;
+            _packetBytes[data[4]] += n;
+            if (data[4] > (byte)Kind.Accept)
+            {
+                int offset = Header;
+                for (int i = 0; i < data[5]; i++) ReadVar(data, ref offset, out _);
+                _ackBytes += offset - Header;
+            }
+            if (_endpoints.TryGetValue(endpoint, out var peer)) peer.LastSend = Environment.TickCount64;
+            return n == data.Length;
+        }
         catch (SocketException ex) when (ex.SocketErrorCode is SocketError.WouldBlock or SocketError.NoBufferSpaceAvailable or SocketError.ConnectionReset) { return false; }
     }
     private static void WriteMagic(Span<byte> data, Kind kind) { BinaryPrimitives.WriteUInt32LittleEndian(data, Magic); data[4] = (byte)kind; }
@@ -547,7 +662,7 @@ public sealed class UdpTransport : IServerTransport, IDisposable
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown)
     { lock (_gate) if (_peers.TryGetValue(id, out var p)) Drop(p, reason.ToString()); }
     public void ClosePeerAfterFlush(ConnectionId id)
-    { lock (_gate) if (_peers.TryGetValue(id, out var p)) { p.Closing = true; p.CloseDeadline = Environment.TickCount64 + 5000; } }
+    { lock (_gate) if (_peers.TryGetValue(id, out var p)) { p.Closing = true; p.CloseDeadline = Environment.TickCount64 + 5000; _readyPeers.Add(p); _wake.Set(); } }
     private void Drop(Peer p, string reason)
     {
         if (!_peers.Remove(p.Id)) return;
@@ -559,6 +674,11 @@ public sealed class UdpTransport : IServerTransport, IDisposable
             catch (Exception ex) when (ex is SocketException or ObjectDisposedException) { }
         }
         _endpoints.Remove(p.Endpoint);
+        // Lazy deadline entries can temporarily retain a retired peer. Release
+        // payload/reassembly storage immediately rather than retaining it in the heap.
+        p.Ordered.Clear(); p.Streams.Clear(); p.Flight.Clear(); p.Assemblies.Clear();
+        p.FlightScratch.Clear(); p.StreamScratch.Clear(); p.PendingAcks.Clear();
+        p.Buffered = p.ReceiveBytes = p.InFlight = 0;
         var reasonCode = reason.Contains("timeout", StringComparison.Ordinal) ? DisconnectReason.NoWriteProgress :
             reason.Contains("cap", StringComparison.Ordinal) ? DisconnectReason.QueueHardCap :
             reason.Contains("invalid", StringComparison.Ordinal) ? DisconnectReason.ProtocolError : DisconnectReason.ReadErrorOrEof;
@@ -584,7 +704,7 @@ public sealed class UdpTransport : IServerTransport, IDisposable
             {
                 ordered = Math.Max(ordered, p.Ordered.Count); streams = Math.Max(streams, p.Streams.Count);
                 max = Math.Max(max, p.Buffered); total += p.Buffered;
-                foreach (var f in p.Ordered.Concat(p.Streams.Values).Concat(p.Flight.Values.Select(s => s.Frame).OfType<Frame>()))
+                foreach (var f in p.Ordered.Concat(p.Streams.Values).Concat(p.Flight.Values.SelectMany(s => s.Fragments).Select(f => f.Frame).OfType<Frame>()))
                     if (f.Reliable) age = Math.Max(age, Environment.TickCount64 - f.Created);
             }
             return (_peers.Count, ordered, streams, max, total, age);
@@ -596,16 +716,21 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         lock (_gate)
         {
             IntentionalShutdown = true;
+            if (!_running && _socket is null) return;
             foreach (var p in _peers.Values.ToArray()) Drop(p, "shutdown");
             _running = false;
+            _wake.Set();
+            _clientTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _socket?.Dispose(); // Interrupt a client's blocking receive before joining.
             IsConnected = false;
             worker = _worker;
         }
-        if (worker is not null && worker != Thread.CurrentThread) worker.Join();
+        if (worker is not null && worker != Thread.CurrentThread && !Monitor.IsEntered(_callbackGate)) worker.Join();
         lock (_gate) { _socket?.Dispose(); _socket = null; }
         DrainCallbacks();
     }
-    public void Dispose() { Shutdown(); _joined.Dispose(); }
+    private int _disposeStarted;
+    public void Dispose() { if (Interlocked.Exchange(ref _disposeStarted, 1) != 0) return; Shutdown(); _clientTimer?.Dispose(); _receiveArgs.Dispose(); _wake.Dispose(); _joined.Dispose(); }
 
     private sealed class Peer(ConnectionId id, IPEndPoint endpoint, Guid token)
     {
@@ -617,12 +742,14 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         public readonly Dictionary<int, ulong> SendSequence = new(), Delivered = new(), Newest = new();
         public readonly Dictionary<(int Key, ulong Seq), Assembly> Assemblies = new();
         public readonly Dictionary<ulong, Sent> Flight = new();
+        public readonly HashSet<ulong> PendingAcks = new();
+        public long AckDue, Due, DeadlineVersion;
         public readonly List<Sent> FlightScratch = new();
         public readonly List<Frame> StreamScratch = new();
         public readonly List<(int Key, ulong Seq)> AssemblyScratch = new();
         public ulong NextOrdered, ReceiveOrdered, NextPacket;
         public long Buffered, ReceiveBytes, InFlight;
-        public long Created = Environment.TickCount64, LastReceive = Environment.TickCount64, LastPing, LastPace = Environment.TickCount64, RecoveryUntil, CloseDeadline;
+        public long Created = Environment.TickCount64, LastReceive = Environment.TickCount64, LastSend = Environment.TickCount64, LastPace = Environment.TickCount64, RecoveryUntil, CloseDeadline, NextClose;
         public double Cwnd = 10 * Mtu, Srtt = 100, Variance = 50, Rto = 300, Budget = 2 * Mtu;
         public bool Published, Human, Closing, StreamTurn;
         public int CloseSent;
@@ -645,11 +772,16 @@ public sealed class UdpTransport : IServerTransport, IDisposable
         public readonly long Created = now;
         public int Remaining = count;
     }
-    private sealed class Sent(ulong id, Frame frame, int index, int length, long now)
+    private sealed class Fragment(Frame frame, int index)
+    {
+        public Frame? Frame = frame;
+        public readonly int Index = index;
+    }
+    private sealed class Sent(ulong id, List<Fragment> fragments, int length, long now)
     {
         public readonly ulong Id = id;
-        public Frame? Frame = frame;
-        public readonly int Index = index, Length = length;
+        public readonly List<Fragment> Fragments = fragments;
+        public int Length = length, LastWireLength;
         public long LastSent = now;
         public int Retries;
     }
