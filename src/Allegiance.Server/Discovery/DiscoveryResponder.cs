@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Allegiance.Core.Discovery;
+using Allegiance.Core.Transport;
 
 namespace Allegiance.Server;
 
@@ -8,7 +9,7 @@ namespace Allegiance.Server;
 /// at reply time (not cached) so players/max stay live, but each field is read
 /// once per reply and the whole struct is immutable.</summary>
 public readonly record struct DiscoverySnapshot(
-    string Name, string Map, int Players, int MaxPlayers, string Version, int GamePort);
+    string Name, string Map, int Players, int MaxPlayers, string Version, int GamePort, int? UdpPort = null, NetworkLink HostLink = NetworkLink.Unknown);
 
 /// <summary>
 /// P731 — the server's UDP discovery responder. Answers the client's "Find
@@ -134,7 +135,7 @@ public sealed class DiscoveryResponder : IDisposable
                     continue;
                 }
 
-                byte[]? reply = ProcessRequest(res.Buffer, res.Buffer.Length);
+                byte[]? reply = ProcessRequest(res.Buffer, res.Buffer.Length, res.RemoteEndPoint);
                 if (reply is null) continue;
                 try
                 {
@@ -161,7 +162,7 @@ public sealed class DiscoveryResponder : IDisposable
     /// null when the request is malformed, unmatched, or dropped by the rate
     /// limiter. Public so tests can drive it without a real socket/thread.
     /// </summary>
-    public byte[]? ProcessRequest(byte[] data, int length)
+    public byte[]? ProcessRequest(byte[] data, int length, IPEndPoint? remote = null)
     {
         var req = DiscoveryProtocol.TryParseRequest(data, length);
         if (req is null) return null;
@@ -179,6 +180,9 @@ public sealed class DiscoveryResponder : IDisposable
             GamePort = snap.GamePort,
             ResponderPort = BoundPort,
             Version = snap.Version ?? "",
+            UdpPort = snap.UdpPort is > 0 and <= ushort.MaxValue ? snap.UdpPort : null,
+            HostLink = (remote is null ? snap.HostLink : NetworkLinkDetector.Detect(remote.Address, remote.Port))
+                .ToString().ToLowerInvariant(),
         };
         Interlocked.Increment(ref _requestsAnswered);
         return DiscoveryProtocol.EncodeReply(reply);

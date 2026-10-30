@@ -1,3 +1,5 @@
+using Allegiance.Core.Transport;
+
 namespace Allegiance.ClientCore.MonoGame.Discovery;
 
 /// <summary>Where a discovered server came from. The intro screen's "Find
@@ -51,7 +53,9 @@ public sealed record DiscoveredServer(
     string DisplayName,
     bool Verified = false,
     string? IdentityServerId = null,
-    uint MissionCookie = uint.MaxValue)
+    uint MissionCookie = uint.MaxValue,
+    int? UdpPort = null,
+    NetworkLink HostLink = NetworkLink.Unknown)
 {
     public string SourceLabel => Source switch
     {

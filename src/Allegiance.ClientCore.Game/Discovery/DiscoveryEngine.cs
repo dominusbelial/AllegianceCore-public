@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Allegiance.Core.Discovery;
+using Allegiance.Core.Transport;
 
 namespace Allegiance.ClientCore.MonoGame.Discovery;
 
@@ -91,7 +92,8 @@ public sealed class DiscoveryEngine : IDisposable
                 Players: got.Value.Reply.Players,
                 MaxPlayers: got.Value.Reply.MaxPlayers,
                 Version: got.Value.Reply.Version ?? "",
-                DisplayName: target.DisplayName ?? "");
+                DisplayName: target.DisplayName ?? "",
+                UdpPort: got.Value.Reply.UdpPort, HostLink: NetworkLinkDetector.Parse(got.Value.Reply.HostLink));
         }
         return null;
     }
@@ -138,7 +140,8 @@ public sealed class DiscoveryEngine : IDisposable
                 Players: got.Value.Reply.Players,
                 MaxPlayers: got.Value.Reply.MaxPlayers,
                 Version: got.Value.Reply.Version ?? "",
-                DisplayName: ""));
+                DisplayName: "",
+                UdpPort: got.Value.Reply.UdpPort, HostLink: NetworkLinkDetector.Parse(got.Value.Reply.HostLink)));
         }
         return results;
     }

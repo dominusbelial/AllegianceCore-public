@@ -1133,7 +1133,34 @@ public sealed partial class Game1
     /// (the unchanged direct-connect path).</summary>
     private uint _connectMissionCookie = uint.MaxValue;
 
-    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue)
+    private Discovery.DiscoveredServer? _connectDiscovery;
+    private string _transportReason = "not connected";
+
+    private void ConfigureClientTransport(string host, ushort port, uint cookie, Discovery.DiscoveredServer? found)
+    {
+        // Embedded modes keep their existing loopback TCP path, regardless of Settings/env.
+        if (_skirmish is not null || _trainingSession is not null || _embeddedHost is not null)
+        {
+            _session.TransportProtocol = "tcp";
+            _session.UdpPort = null;
+            _transportReason = "local Skirmish/Training";
+            return;
+        }
+        ServerListing? listing;
+        lock (_introLobbyLock)
+            listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.MissionCookie == cookie);
+        var source = found?.Source ?? (listing is null ? Discovery.DiscoverySource.Manual : Discovery.DiscoverySource.Lobby);
+        int? udp = found?.UdpPort ?? listing?.UdpPort;
+        var choice = Discovery.ClientTransportPolicy.Resolve(_hudSettings.Transport, source, udp,
+            Allegiance.Core.Transport.NetworkLinkDetector.Detect(host, port),
+            found?.HostLink ?? Allegiance.Core.Transport.NetworkLink.Unknown,
+            Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL"));
+        _session.UdpPort = udp is > 0 and <= ushort.MaxValue ? (ushort)udp : null;
+        _session.TransportProtocol = choice.Protocol;
+        _transportReason = choice.Reason;
+    }
+
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null)
     {
         _moderation.Reset();
         // P894 — the reconnect/resume logon reports the same client build as the
@@ -1145,6 +1172,7 @@ public sealed partial class Game1
         // the P499 resume-reconnect (NotifyResumed) and the connect screen's
         // last-used memory both work regardless of entry path.
         _connectMissionCookie = missionCookie;
+        _connectDiscovery = discovered;
         _connectHost = host;
         _connectPort = port;
         // P789 — remote matches record their performance too (no wire change:
@@ -1169,9 +1197,9 @@ public sealed partial class Game1
                 Console.WriteLine($"[monogame] P813c reconnect grace armed: window {reconnectWindow:0.##}s "
                     + "(auto-reconnect + resume token; server needs reconnect.enabled=true)");
             }
-            _session.UdpPort = _servers.FirstOrDefault(s => s.Address == host && s.Port == port)?.UdpPort is int udpPort && udpPort is > 0 and <= 65535
-                ? (ushort)udpPort : null;
+            ConfigureClientTransport(host, port, missionCookie, discovered);
             _session.Connect(port, _playerName, host);
+            Console.WriteLine($"[monogame] transport={_session.ActiveTransportProtocol} selected={_session.TransportProtocol}: {_transportReason}");
             var logon = Request(_playerName);
             logon.DwCookie = missionCookie;
             if (_skirmish is null && _identityClient?.Account is not null)
@@ -1260,7 +1288,7 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
             _connectFailureReason = null;
-            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie);
+            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery);
             return;
         }
         _connectRetryWasDown = retry;
@@ -1308,7 +1336,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
             bool prior = _returnToLobbyOnFailure;
             _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
-            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie); }
+            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery); }
             finally { _returnToLobbyOnFailure = prior; }
         }
     }

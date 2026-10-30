@@ -345,6 +345,15 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Diagnostics/FrameProfileWindow.cs`. Docs:
   `docs/PERFORMANCE.md` ("Running on your own hardware"), report:
   `docs/reports/P889_REPORT.md`.
+- **Automatic game-client transport (P897)** — pure Auto/TCP/UDP policy in
+  `src/Allegiance.ClientCore.Game/Discovery/ClientTransportPolicy.cs`, route-selected
+  adapter classification in `src/Allegiance.Core/Transport/NetworkLink.cs`, optional
+  UDP port/host link on `src/Allegiance.Core/Discovery/DiscoveryProtocol.cs` replies.
+  Shared Settings persist the preference in `src/Allegiance.ClientCore.Game/Rendering/HudSettings.cs`; join
+  selects once and `ConnectionSession` freezes the choice for reconnect. Bots/MCP
+  retain their TCP default. Proof: `tools/p897-transport-proof/`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P897ClientTransportTests.cs`;
+  report `docs/reports/P897_REPORT.md`, operator guide `docs/UDP_TRANSPORT.md`.
 - **Optional UDP transport (P895, default off)** — `transport.protocol=udp`
   adds UDP alongside TCP pool: `src/Allegiance.Core/Transport/UdpTransport.cs`
   (cookie handshake, ordered/independent latest-wins channels, fragmentation,

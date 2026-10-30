@@ -105,8 +105,11 @@ public sealed class HudSettings
     }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
+    /// <summary>P897 remote multiplayer preference; local lessons/skirmish use TCP.</summary>
+    public Discovery.ClientTransportSetting Transport { get; set; } = Discovery.ClientTransportSetting.Auto;
     public void Normalize()
     {
+        if (!Enum.IsDefined(Transport)) Transport = Discovery.ClientTransportSetting.Auto;
         if (!Enum.IsDefined(Style)) Style = HudStyle.Classic;
         // P833 — widen the user Size multiplier (0.5–2.0) so the pilot can
         // compensate for very high/low density displays; the base HUD scale is

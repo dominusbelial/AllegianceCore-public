@@ -973,7 +973,8 @@ public sealed partial class Server
                         Players: LivePlayerCount,
                         MaxPlayers: 0,
                         Version: _core?.Version.ToString() ?? "",
-                        GamePort: _config.Port);
+                        GamePort: BoundPort,
+                        UdpPort: (_host?.Transport as DualTransport)?.UdpPort);
                 },
                 port, rate, mgroup);
             _discoveryResponder.Start();
