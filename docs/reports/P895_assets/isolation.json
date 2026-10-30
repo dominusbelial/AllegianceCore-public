@@ -1,0 +1,587 @@
+{
+  "baseCommit": "b567ee1f",
+  "currentInitial": [
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 1,
+      "exit": 1,
+      "wallSeconds": 2.522,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.1805810",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        0.45,
+        1.22,
+        2.28
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 2,
+      "exit": 1,
+      "wallSeconds": 2.521,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.1492946",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        0.45,
+        1.22,
+        2.28
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 3,
+      "exit": 1,
+      "wallSeconds": 2.52,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.1768483",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        0.57,
+        1.23,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 1,
+      "exit": 0,
+      "wallSeconds": 2.371,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.0186162",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        0.57,
+        1.23,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 2,
+      "exit": 1,
+      "wallSeconds": 2.372,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.0429257",
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.150000000000297"
+        }
+      ],
+      "loadAverages": [
+        0.69,
+        1.25,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 3,
+      "exit": 1,
+      "wallSeconds": 2.321,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.0201283",
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.900000000000311"
+        }
+      ],
+      "loadAverages": [
+        0.69,
+        1.25,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 1,
+      "exit": 0,
+      "wallSeconds": 2.972,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6225871",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        0.79,
+        1.26,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 2,
+      "exit": 0,
+      "wallSeconds": 2.921,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.5690303",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        0.79,
+        1.26,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 3,
+      "exit": 1,
+      "wallSeconds": 2.971,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.5948592",
+          "message": "same-side watcher never received the driver pod's relayed update"
+        }
+      ],
+      "loadAverages": [
+        0.97,
+        1.29,
+        2.28
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 1,
+      "exit": 0,
+      "wallSeconds": 10.938,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:09.5901803",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        0.97,
+        1.28,
+        2.27
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 2,
+      "exit": 0,
+      "wallSeconds": 11.04,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:09.7009706",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        0.98,
+        1.27,
+        2.25
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 3,
+      "exit": 0,
+      "wallSeconds": 10.939,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:09.5901230",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        1.58,
+        1.4,
+        2.28
+      ]
+    }
+  ],
+  "unchangedHeadInitial": [
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 1,
+      "exit": 1,
+      "wallSeconds": 2.571,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.1650480",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        6.77,
+        2.62,
+        2.6
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 2,
+      "exit": 1,
+      "wallSeconds": 2.622,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.2092152",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        6.77,
+        2.62,
+        2.6
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 3,
+      "exit": 1,
+      "wallSeconds": 2.621,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.2215830",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "loadAverages": [
+        6.47,
+        2.62,
+        2.61
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 1,
+      "exit": 1,
+      "wallSeconds": 2.471,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.0357132",
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.700000000000319"
+        }
+      ],
+      "loadAverages": [
+        6.11,
+        2.61,
+        2.6
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 2,
+      "exit": 1,
+      "wallSeconds": 2.47,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.0307766",
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.500000000000316"
+        }
+      ],
+      "loadAverages": [
+        6.11,
+        2.61,
+        2.6
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "repeat": 3,
+      "exit": 0,
+      "wallSeconds": 2.42,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.0256571",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        6.1,
+        2.67,
+        2.62
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 1,
+      "exit": 0,
+      "wallSeconds": 3.021,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6250903",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        6.1,
+        2.67,
+        2.62
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 2,
+      "exit": 0,
+      "wallSeconds": 3.021,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6539473",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        6.01,
+        2.71,
+        2.63
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 3,
+      "exit": 0,
+      "wallSeconds": 3.022,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6561812",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        6.01,
+        2.71,
+        2.63
+      ]
+    }
+  ],
+  "additionalLifepodBlocks": [
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 4,
+      "exit": 0,
+      "wallSeconds": 3.021,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6249686",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        1.69,
+        2.82,
+        2.75
+      ]
+    },
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 5,
+      "exit": 0,
+      "wallSeconds": 2.972,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6143234",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        1.69,
+        2.82,
+        2.75
+      ]
+    },
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 6,
+      "exit": 0,
+      "wallSeconds": 2.972,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6205314",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        1.63,
+        2.79,
+        2.74
+      ]
+    },
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 7,
+      "exit": 0,
+      "wallSeconds": 2.971,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6019589",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        2.14,
+        2.88,
+        2.77
+      ]
+    },
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 8,
+      "exit": 0,
+      "wallSeconds": 3.022,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6397513",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        2.14,
+        2.88,
+        2.77
+      ]
+    },
+    {
+      "arm": "base",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 9,
+      "exit": 0,
+      "wallSeconds": 2.97,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6404965",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        2.21,
+        2.88,
+        2.77
+      ]
+    },
+    {
+      "arm": "current",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 4,
+      "exit": 1,
+      "wallSeconds": 2.971,
+      "results": [
+        {
+          "outcome": "Failed",
+          "duration": "00:00:01.6017659",
+          "message": "same-side watcher never received the driver pod's relayed update"
+        }
+      ],
+      "loadAverages": [
+        2.21,
+        2.88,
+        2.77
+      ]
+    },
+    {
+      "arm": "current",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 5,
+      "exit": 0,
+      "wallSeconds": 3.071,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.6838735",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        2.2,
+        2.87,
+        2.77
+      ]
+    },
+    {
+      "arm": "current",
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "repeat": 6,
+      "exit": 0,
+      "wallSeconds": 2.921,
+      "results": [
+        {
+          "outcome": "Passed",
+          "duration": "00:00:01.5855157",
+          "message": ""
+        }
+      ],
+      "loadAverages": [
+        2.34,
+        2.89,
+        2.77
+      ]
+    }
+  ],
+  "headProductionWithFixtureIntakeOrder": [
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "arm": "unchanged HEAD production; test intake order B/driver/C",
+      "repeat": 1,
+      "exit": 1,
+      "outcome": "Failed",
+      "duration": "00:00:01.6097240",
+      "message": "same-side watcher never received the driver pod's relayed update"
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "arm": "unchanged HEAD production; test intake order B/driver/C",
+      "repeat": 2,
+      "exit": 1,
+      "outcome": "Failed",
+      "duration": "00:00:01.6686988",
+      "message": "same-side watcher never received the driver pod's relayed update"
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "arm": "unchanged HEAD production; test intake order B/driver/C",
+      "repeat": 3,
+      "exit": 1,
+      "outcome": "Failed",
+      "duration": "00:00:01.5711294",
+      "message": "same-side watcher never received the driver pod's relayed update"
+    }
+  ]
+}

@@ -6,6 +6,14 @@ For an encrypted native static core, set `"staticCoreEncrypted": true` next to
 XOR body transform (`FedSrv/FedSrv.CPP:9763`); it is a compatibility format,
 not encryption for secrets. Mount the chosen core with the ordinary artwork.
 
+## Optional UDP game traffic
+
+TCP pool remains the default. `ALLEGIANCE_TRANSPORT_PROTOCOL=udp docker compose up --build`
+adds the UDP listener alongside TCP. Compose maps 6073/tcp and 6073/udp by default;
+`ALLEGIANCE_TRANSPORT_UDP_PORT` changes the UDP listener and mapping together.
+Clients opt in with the same protocol variable and fall back to TCP if the UDP
+handshake fails. See [the configuration and delivery contract](../docs/UDP_TRANSPORT.md).
+
 ## Files here
 
 - **`compose.server.json`** — the checked-in **safe default** server config,

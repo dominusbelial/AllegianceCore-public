@@ -61,7 +61,8 @@ public sealed record ServerListing(
     /// <summary>P894 / LOB-0017 — the mission start time resolved against the
     /// lobby's clock (native <c>plmi-&gt;dwStartTime += Time::Now()</c>,
     /// <c>lobby/mission.cpp:61</c>). Null = no start time armed.</summary>
-    DateTimeOffset? StartTimeUtc = null)
+    DateTimeOffset? StartTimeUtc = null,
+    int? UdpPort = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by

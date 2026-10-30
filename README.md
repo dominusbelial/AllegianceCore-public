@@ -213,6 +213,11 @@ dotnet run -c Release --project src/Allegiance.Server -- --config src/Allegiance
   tests it kept every tick under 150 ms with no disconnects, at about 0.92× speed on
   average (0.73× at the heaviest moment). Set `"off"` to disable.
 
+### Optional UDP transport
+
+TCP pool remains the default. For the experimental UDP listener, mixed clients,
+and client fallback, see [UDP transport configuration](docs/UDP_TRANSPORT.md).
+
 ### Performance settings (the P887 baseline)
 
 These are the server defaults that make up the measured performance baseline. Every

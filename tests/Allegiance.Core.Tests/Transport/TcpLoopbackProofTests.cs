@@ -122,13 +122,15 @@ public class TcpLoopbackProofTests
 
     // ---------------------------------------------------------------------
 
-    [Fact]
-    public void Logon_Handshake_RoundTrips_BothDirections_OverRealSocket()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(bool udp)
     {
         var siteHost = new RecordingSite();
         var siteClient = new RecordingSite();
-        var host = new TcpTransport(siteHost);
-        var client = new TcpTransport(siteClient);
+        ITransport host = udp ? new UdpTransport(siteHost) : new TcpTransport(siteHost);
+        ITransport client = udp ? new UdpTransport(siteClient) : new TcpTransport(siteClient);
 
         try
         {
@@ -246,13 +248,15 @@ public class TcpLoopbackProofTests
     /// <see cref="TcpTransport.IsConnected"/> instead of staying silently
     /// "connected" forever — the pre-fix behaviour that left the client rendering
     /// a frozen world with no indication (review H-4).</summary>
-    [Fact]
-    public void ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(bool udp)
     {
         var siteHost = new RecordingSite();
         var siteClient = new RecordingSite();
-        var host = new TcpTransport(siteHost);
-        var client = new TcpTransport(siteClient);
+        ITransport host = udp ? new UdpTransport(siteHost) : new TcpTransport(siteHost);
+        ITransport client = udp ? new UdpTransport(siteClient) : new TcpTransport(siteClient);
 
         try
         {
@@ -281,13 +285,15 @@ public class TcpLoopbackProofTests
     /// <summary>P320 — a deliberate client <see cref="TcpTransport.Shutdown"/>
     /// (e.g. the user quits) must NOT be reported as a session loss: the close is
     /// intentional, not an unexpected server drop.</summary>
-    [Fact]
-    public void IntentionalClientShutdown_DoesNotRaiseOnSessionLost()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IntentionalClientShutdown_DoesNotRaiseOnSessionLost(bool udp)
     {
         var siteHost = new RecordingSite();
         var siteClient = new RecordingSite();
-        var host = new TcpTransport(siteHost);
-        var client = new TcpTransport(siteClient);
+        ITransport host = udp ? new UdpTransport(siteHost) : new TcpTransport(siteHost);
+        ITransport client = udp ? new UdpTransport(siteClient) : new TcpTransport(siteClient);
 
         try
         {

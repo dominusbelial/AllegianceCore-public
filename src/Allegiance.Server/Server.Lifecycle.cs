@@ -290,6 +290,7 @@ public sealed partial class Server
             _heartbeat = factory(_config.Lobby);
             _heartbeat.LiveMissions = () => LiveMissions;
             _heartbeat.MaxGames = _config.MaxGames;
+            _heartbeat.UdpPort = (_host?.Transport as DualTransport)?.UdpPort;
             if (_config.Identity is not null)
                 _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
             Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
@@ -324,6 +325,7 @@ public sealed partial class Server
             _config.ResolveMinimumClientVersion());
         _heartbeat.LiveMissions = () => LiveMissions;
         _heartbeat.MaxGames = _config.MaxGames;
+        _heartbeat.UdpPort = (_host?.Transport as DualTransport)?.UdpPort;
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -912,8 +914,17 @@ public sealed partial class Server
             Console.WriteLine("[boot] transport reliableOneShot=OFF (one-shots ride the ordered lane)");
         LastEgressWindow = null;
         TickProfiler.WindowReported += EmitEgressWindow;
-        _host.Transport = transport;
-        transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);         // reproduce: bind the logon transport
+        var protocolOverride = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL");
+        var protocol = (string.IsNullOrWhiteSpace(protocolOverride) ? _config.Transport?.Protocol ?? "tcp" : protocolOverride).Trim().ToLowerInvariant();
+        if (protocol is not ("tcp" or "udp")) throw new ArgumentException("transport.protocol must be tcp or udp");
+        ushort udpPort = _config.Transport?.UdpPort ?? 0;
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
+            udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
+        _host.Transport = protocol == "udp"
+            ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot)
+            : transport;
+        _host.Transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);
+        if (_host.Transport is DualTransport dual) Console.WriteLine($"[boot] UDP transport listening on {dual.UdpPort} (TCP remains available)");
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
 
         StartDiscoveryResponder();

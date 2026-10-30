@@ -29,6 +29,42 @@ Limit offenders (>10 s, all *passed*; standalone timings): `LiveCombatWireTests.
 31.8 s sweep / 0.4 s alone; `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 11.0 s sweep /
 9.9-10.3 s alone (already ledgered); `MissileLockLiveTests.MissileLock_BuildsPartialThenFull...`
 38.4 s sweep (a functional failure too, above).
+## P895 verification observations (2026-10-30)
+
+The single Fast run retained **FAIL**: **11,757 passed / 3 failed / 3 optional
+skips**, 11,763 executions in 536.3 s; all nine infrastructure checks passed.
+The P777 measurement passed but exceeded the calibrated 10.000 s limit at
+10.656 s. No whole-tier rerun, quarantines, assertion changes or unrelated
+production fixes were used. Receipts:
+[Fast summary](reports/P895_assets/fast.json),
+[all isolation blocks](reports/P895_assets/isolation.json).
+
+| Failure / timing offender | Three isolated outcomes | Baseline evidence / disposition |
+|---|---|---|
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same null `DefendTarget` assertion fails 3/3 on unmodified HEAD `b567ee1f`; persistent baseline failure already ledgered by P872/P887/P888/P890. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / fail | Bounds are 28–31 simulated seconds; failures were 32.15 and 31.90. Unmodified HEAD gives fail / fail / pass too. TCP receipt/tick timing; unchanged production seating logic. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | pass / pass / fail | Extra current block: fail / pass / pass. Unmodified HEAD initially passes 9/9 with driver-first intake. HEAD production with only the fixture's connection/logon initiation reordered B/driver/C fails 3/3 with the identical missing same-side relay assertion. This exposes a roster/intake-order fixture dependency; its watcher reads only SINGLE_SHIP_UPDATE while the native baseline uses the heavy/light stream. No product/HUD behavior changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | 9.590 / 9.701 / 9.590 s alone, all below the 10 s limit; full-sweep timing offender, not a UDP path. |
+
+The required five TCP `P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+executions all held the parking bound, but their combined test outcomes were
+**4 pass / 1 fail**. The failure reached 29/30 ships and fired 1,038 shots with
+zero hits at the 480 s coverage deadline; longest parked-with-target was 0.000 s.
+Three additional filtered qualifications were **pass / pass / fail**, again
+without a parking violation (the last run failed its combat-coverage check).
+These real-work qualifications ran in separate processes concurrently; no
+synthetic CPU load was added. This is a stochastic scenario/coverage result,
+not a clean five-pass composite-test claim. No bot/combat policy changed; the
+new UDP treatment passed its one full showcase test. All summaries are retained
+in [verification.json](reports/P895_assets/verification.json). The known P700
+scenario sensitivity remains open; it was not hidden by assertion changes.
+
+The lifepod schedule control changes **only the scratch baseline test**, not
+repository production or test assertions; its exact
+[fixture-order diff](reports/P895_assets/baseline-fixture-order.diff) is retained.
+The baseline production fileset came from `git archive HEAD` inside task
+scratch; no other checkout or remote machine was touched. Mixed isolation results
+remain visible and are not described as a clean qualification or a fix.
 
 ## P890 verification observations (2026-10-29)
 

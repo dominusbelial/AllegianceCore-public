@@ -7,7 +7,7 @@ namespace Allegiance.Tools.McpSpawner;
 
 /// <summary>
 /// Bot-host-only transport decoration. Both upstream clients are sealed and have
-/// no transport injection API. These narrow accessors install a normal TcpTransport
+/// no transport injection API. These narrow accessors install the configured transport
 /// on a NEW client before Join starts any threads; client-core and wire behavior stay shared.
 /// </summary>
 internal sealed class ObservedSession : ITransportSite
@@ -18,7 +18,7 @@ internal sealed class ObservedSession : ITransportSite
     private long _lastReadMs;
     private int _ended;
     internal string Name { get; }
-    internal TcpTransport Transport { get; }
+    internal ITransport Transport { get; }
     /// <summary>P813c — the wrapped client (a ConnectionSession for combat bots),
     /// so the host can arm its auto-reconnect with the endpoint it knows.</summary>
     internal ITransportSite Client => _client;
@@ -33,7 +33,7 @@ internal sealed class ObservedSession : ITransportSite
         _clock = clock;
         _loss = loss;
         _lastReadMs = (long)clock(); // No read yet: age since connection attempt.
-        Transport = new TcpTransport(this);
+        Transport = TransportFactory.CreateClient(this);
     }
 
     internal void Attach()
@@ -61,7 +61,7 @@ internal sealed class ObservedSession : ITransportSite
 
     public void OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
-        // TcpTransport invokes this immediately after the full frame read, BEFORE
+        // The transport invokes this immediately after receiving a full frame, BEFORE
         // decode acquires the session gate. It measures socket progress, not pose age.
         Interlocked.Exchange(ref _lastReadMs, (long)_clock());
         try { _client.OnReceive(from, data); }
@@ -84,11 +84,27 @@ internal sealed class ObservedSession : ITransportSite
     public void OnPeerLeft(ConnectionId id) => _client.OnPeerLeft(id);
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_transport")]
-    internal static extern ref TcpTransport? CombatTransport(ConnectionSession client);
+    internal static extern ref ITransport? CombatTransport(ConnectionSession client);
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_transport")]
-    internal static extern ref TcpTransport? PlainTransport(BotClass client);
+    internal static extern ref ITransport? PlainTransport(BotClass client);
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_clientReadFailure")]
-    internal static extern ref string? ReadFailure(TcpTransport transport);
+    private static extern ref string? TcpReadFailure(TcpTransport transport);
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_intentionalShutdown")]
-    internal static extern ref bool IntentionalShutdown(TcpTransport transport);
+    private static extern ref bool TcpIntentionalShutdown(TcpTransport transport);
+    // Keep the ref-return TCP diagnostic seam used by the watchdog tests.
+    internal static ref string? ReadFailure(ITransport transport)
+    {
+        transport = TransportFactory.ActiveTransport(transport);
+        if (transport is TcpTransport tcp) return ref TcpReadFailure(tcp);
+        if (transport is UdpTransport udp) return ref udp.ClientReadFailure;
+        throw new InvalidOperationException("transport has not joined");
+    }
+    internal static ref bool IntentionalShutdown(ITransport transport)
+    {
+        transport = TransportFactory.ActiveTransport(transport);
+        if (transport is TcpTransport tcp) return ref TcpIntentionalShutdown(tcp);
+        if (transport is UdpTransport udp) return ref udp.IntentionalShutdown;
+        throw new InvalidOperationException("transport has not joined");
+    }
+
 }

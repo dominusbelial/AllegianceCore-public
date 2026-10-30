@@ -24,7 +24,7 @@ list in **reverse**.
   tested `tools/`).
 - **`src/Allegiance.Core`** — the engine: simulation, wire protocol, data
   formats, static core, map generation. Referenced by everything.
-- **`src/Allegiance.Server`** — the dedicated TCP server (world sim, players,
+- **`src/Allegiance.Server`** — the dedicated game server (world sim, players,
   bots, broadcast).
 - **`src/Allegiance.Lobby`** — the server-directory web app.
 - **`src/Allegiance.ClientCore`** — headless client world-state (session,
@@ -345,6 +345,17 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Diagnostics/FrameProfileWindow.cs`. Docs:
   `docs/PERFORMANCE.md` ("Running on your own hardware"), report:
   `docs/reports/P889_REPORT.md`.
+- **Optional UDP transport (P895, default off)** — `transport.protocol=udp`
+  adds UDP alongside TCP pool: `src/Allegiance.Core/Transport/UdpTransport.cs`
+  (cookie handshake, ordered/independent latest-wins channels, fragmentation,
+  paced congestion control), `src/Allegiance.Core/Transport/DualTransport.cs`
+  (distinct mixed-peer ids), `src/Allegiance.Core/Transport/IServerTransport.cs`
+  (host lifecycle/accounting), `src/Allegiance.Core/Transport/TransportFactory.cs`
+  (client preference + TCP fallback). Lobby `udpPort` reaches the shared client
+  session. Native delivery intent: `_Utility/Messages.cpp:558-563`;
+  configuration: `docs/UDP_TRANSPORT.md`; proofs:
+  `tests/Allegiance.Core.Tests/Transport/P895UdpTransportTests.cs`,
+  `tools/p895-transport-proof/`; report: `docs/reports/P895_REPORT.md`.
 - **Game-flow ordering proof (P888)** — stage/result/roster/rotation frames use
   the ordered send lane; the accelerated P660 test observes its short intermission
   at production tick speed. Both writer modes and the optional reliable park lane

@@ -1169,6 +1169,8 @@ public sealed partial class Game1
                 Console.WriteLine($"[monogame] P813c reconnect grace armed: window {reconnectWindow:0.##}s "
                     + "(auto-reconnect + resume token; server needs reconnect.enabled=true)");
             }
+            _session.UdpPort = _servers.FirstOrDefault(s => s.Address == host && s.Port == port)?.UdpPort is int udpPort && udpPort is > 0 and <= 65535
+                ? (ushort)udpPort : null;
             _session.Connect(port, _playerName, host);
             var logon = Request(_playerName);
             logon.DwCookie = missionCookie;

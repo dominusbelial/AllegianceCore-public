@@ -1,3 +1,4 @@
+using Allegiance.Core.Transport;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
@@ -58,7 +59,7 @@ public class TcpTransportThreadLeakTests
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
 
-        var transport = server.Host.Transport!;
+        var transport = Assert.IsType<TcpTransport>(server.Host.Transport); // TCP-specific thread ownership proof.
         int baseline = transport.TrackedThreadCount();
         Assert.True(baseline >= 1, "host transport should track at least its accept loop thread");
 

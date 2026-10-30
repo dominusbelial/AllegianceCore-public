@@ -7,7 +7,7 @@ using Allegiance.ClientCore.State;
 namespace Allegiance.ClientCore.Session;
 
 /// <summary>
-/// A <see cref="TcpTransport"/> client session that drives a <see cref="ClientWorld"/>.
+/// An <see cref="ITransport"/> client session that drives a <see cref="ClientWorld"/>.
 /// Closely modeled on AllegianceCore's own <c>Bot.cs</c>: it connects, sends a
 /// LOGONREQ, waits for the ACK, commands controls as a real <c>FM_C_SHIP_UPDATE(24)</c>,
 /// and on the receive path decodes inbound messages — feeding every type
@@ -24,7 +24,12 @@ namespace Allegiance.ClientCore.Session;
 /// </summary>
 public sealed class ConnectionSession : ITransportSite, IDisposable
 {
-    private TcpTransport? _transport;
+    private ITransport? _transport;
+    /// <summary>P895: null uses ALLEGIANCE_TRANSPORT_PROTOCOL (default tcp).</summary>
+    public string? TransportProtocol { get; set; }
+    /// <summary>Advertised UDP port; null uses the game TCP port/environment override.</summary>
+    public ushort? UdpPort { get; set; }
+
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
     public Allegiance.ClientCore.Replay.WireRecording? Recording { get; set; }
     public long? ReplayMilliseconds { get; private set; }
@@ -341,7 +346,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             _connectionGeneration++;
         }
 
-        _transport = new TcpTransport(this);
+        _transport = TransportFactory.CreateClient(this, TransportProtocol, UdpPort);
         _transport.Join(host, port, playerName);
         StartKeepAlive();
     }
@@ -1240,7 +1245,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     _connectionGeneration++;
                 }
 
-                var fresh = new TcpTransport(this);
+                var fresh = TransportFactory.CreateClient(this, TransportProtocol, UdpPort);
                 _transport = fresh;
                 fresh.Join(_resumeHost!, _resumePort, _resumeName!);
 

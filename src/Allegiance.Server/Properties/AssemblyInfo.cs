@@ -18,3 +18,6 @@ using System.Runtime.CompilerServices;
 // P853b — the host-editing proof reads the authoritative mission state (the
 // second vantage point for the rename + params echo).
 [assembly: InternalsVisibleTo("p853b-hostedit-proof")]
+
+// P895 bounded local transport A/B uses the existing deterministic spawn seam.
+[assembly: InternalsVisibleTo("p895-transport-proof")]

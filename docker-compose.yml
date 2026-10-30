@@ -65,6 +65,7 @@ services:
     command: ["--identity-issuer", "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"]
     ports:
       - "6073:6073"
+      - "${ALLEGIANCE_TRANSPORT_UDP_PORT:-6073}:${ALLEGIANCE_TRANSPORT_UDP_PORT:-6073}/udp"
     volumes:
       - trial-artwork:/artwork:ro
       - ./docker/compose.server.json:/app/server.json:ro
@@ -76,6 +77,9 @@ services:
       lobby:
         condition: service_healthy
     environment:
+      # P895: optional UDP listener; TCP pool remains available and is the default.
+      ALLEGIANCE_TRANSPORT_PROTOCOL: "${ALLEGIANCE_TRANSPORT_PROTOCOL:-}"
+      ALLEGIANCE_TRANSPORT_UDP_PORT: "${ALLEGIANCE_TRANSPORT_UDP_PORT:-}"
       # P832a: JSON goal override for every configured game (empty preserves games[].goals).
       ALLEGIANCE_GAME_GOALS: "${ALLEGIANCE_GAME_GOALS:-}"
       # P856: native create-game options for every configured game

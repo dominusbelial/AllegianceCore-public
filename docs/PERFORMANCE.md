@@ -88,6 +88,7 @@ Since P887 every row is a code default: a fresh server runs the baseline without
 |---|---|
 | `broadcast.interestTiers` | Halves update age (0.22 s) but costs +40 % bandwidth and +6–18 ms peak tick |
 | `sim.nativeBroadcastOrder` (native parity) | +7 ms median tick on b51; to be re-tested after P863b, adopted if it costs < ~2 ms |
+| `transport.protocol: "udp"` | Experimental lossy-link delivery; TCP pool remains default pending rig/WAN A/B. See [UDP transport](UDP_TRANSPORT.md) and [P895 evidence](reports/P895_REPORT.md). |
 | `receive.decouple` | Only a local A/B so far (P673), never tested on the rig |
 | Spotter cache, parallel sector cells | No gain on the rig; removed (P858) |
 

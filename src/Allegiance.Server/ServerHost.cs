@@ -186,7 +186,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     internal long PingsThrottled => Interlocked.Read(ref _pingsThrottled);
 
     /// <summary>The transport this host is bound to; assigned once the pair exists.</summary>
-    public TcpTransport? Transport { get; set; }
+    public IServerTransport? Transport { get; set; }
 
     /// <summary>The configured bound port, once the transport has been Hosted.</summary>
     public ushort BoundPort => Transport?.BoundPort ?? 0;

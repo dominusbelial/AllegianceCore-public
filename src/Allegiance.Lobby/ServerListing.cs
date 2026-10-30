@@ -60,7 +60,8 @@ internal sealed record ServerListing(
     /// <summary>P894 / LOB-0004 — the lobby protocol version the host announced
     /// (native <c>verLobby</c>, <c>lobby/messagesls.h:43</c>). Null = the host did
     /// not state one (pre-P894 build, accepted).</summary>
-    int? LobbyProtocolVersion = null);
+    int? LobbyProtocolVersion = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -118,7 +119,8 @@ public sealed record ServerListingDto(
     /// (<c>lobby/mission.cpp:61</c>). The server sends an offset
     /// (<see cref="GameParamsDto.StartTimeOffsetMs"/>); the directory publishes the
     /// absolute time. Null = no start time armed.</summary>
-    DateTimeOffset? StartTimeUtc = null);
+    DateTimeOffset? StartTimeUtc = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -220,6 +222,7 @@ public sealed class RegisterRequest
     public string? Name { get; set; }
     public string? Address { get; set; }
     public int Port { get; set; }
+    public int? UdpPort { get; set; }
     public int? PlayerCount { get; set; }
     public int? MaxPlayers { get; set; }
     public string? MissionName { get; set; }

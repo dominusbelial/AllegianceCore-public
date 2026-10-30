@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -27,6 +27,7 @@
 
   <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
   <ItemGroup>
+    <Compile Include="../../tools/p895-transport-proof/ImpairedUdpProxy.cs" Link="Transport/ImpairedUdpProxy.cs" />
     <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
     <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
