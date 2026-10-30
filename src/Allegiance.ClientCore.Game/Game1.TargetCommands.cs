@@ -155,7 +155,7 @@ public sealed partial class Game1
             if (_autoTarget is { } sel) CommitTargetForPlayer(sel);
             _targetNoMatchNoun = _autoTarget is null ? family : null;
             _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
-            Console.WriteLine($"[p642] {family}/{direction} -> {_autoTarget?.Name ?? "none"}");
+            Console.WriteLine($"[p642] {family}/{direction} -> {_autoTarget?.Name ?? "none"} ({_autoTarget?.Kind} #{_autoTarget?.Id})");
         }
         RefreshWindowTitle();
     }
@@ -209,8 +209,20 @@ public sealed partial class Game1
         {
             "Scoreboard" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetFriendlyBase"),
             "ToggleCloak" => TrainingInputGate.NativeDefaultKeyDown(keys, "TargetEnemy"),
+            "PrevWeapon" or "ThrustUp" => TrainingInputGate.NativeDefaultKeyDown(keys, "AcceptCommand"),
             _ => false,
         };
+
+    /// <summary>Training follows native P for autopilot and reserves G for cloak
+    /// (defaultinputmap.mdl; WinTrek.cpp:9468-9471). Respect the lesson filter.</summary>
+    internal static bool AutopilotKeyDown(Rendering.ActionMap map, KeyboardState keys, bool training)
+    {
+        if (!training) return map.IsDownMostSpecific(keys, "ToggleAutopilot");
+        if (map.ActionFilter?.Invoke("ToggleAutopilot") == false) return false;
+        return !TrainingInputGate.NativeDefaultKeyDown(keys, "ToggleCloak")
+            && (map.IsDownMostSpecific(keys, "ToggleAutopilot")
+                || TrainingInputGate.NativeDefaultKeyDown(keys, "ToggleAutopilot"));
+    }
 
     /// <summary>P892c — M4 cloak (<c>TK_ToggleCloak</c>, native default key G). Pure, testable
     /// predicate for the cloak edge: true when the cloak should actually engage. Native's cloak is

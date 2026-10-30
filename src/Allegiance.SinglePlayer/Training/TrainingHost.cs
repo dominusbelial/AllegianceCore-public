@@ -37,7 +37,7 @@ public interface ITrainingHost
         int behaviour = 0, int stationType = -1, int techLevel = 1);
     void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         int? commandTargetShipId, int commandId);
-    void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId);
+    void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null);
     void SetAutopilot(int shipId, bool on);
     /// <summary>Whether a ship is currently on autopilot (<c>IshipIGC::GetAutopilot</c>;
     /// the host flies any Goto'd ship and flags it here).</summary>
@@ -502,6 +502,9 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
     private void AdvanceAutopilot()
     {
+        // M4's routed NPC orders run in the real simulation. A position nudge in the source
+        // sector cannot implement intersector travel or retain collision response.
+        if (_clientBound && StartSectorId == EnemyEngagement.StartSector) return;
         // Zero the sim ships' own throttle so the server does not integrate their Controls field
         // into unintended motion; movement is driven exclusively by the host autopilot pass below
         // (and, for the player, by the mission's scripted goals, which read the decoupled applied
@@ -613,9 +616,14 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
             _droneTechLevels[id] = techLevel;      // negative tech-level loadout
             // Apply the wingman behaviour to the real sim ship so it actually behaves as
-            // configured (SetWingmanBehaviour, createdroneaction.cpp:201-203). The tech-level /
-            // constructor-base-data loadout application to the sim hull remains the TRN-0010 gap.
+            // configured (SetWingmanBehaviour, createdroneaction.cpp:201-203). Full tech-level
+            // loadout application remains the TRN-0010 gap; constructor base data is applied below.
             ship.WingmanBehaviour = behaviour;
+            if (stationType >= 0 && Mission.Core.StationTypes.TryGetValue((short)stationType, out var baseType))
+            {
+                ship.BuilderStationType = baseType; // CreateDroneAction.cpp:86-87, mission4.cpp:866
+                ship.WaitsForBuildOrder = true; // mission4.cpp:930-931 pauses it until the next explicit Build
+            }
             return id;
         }
     }
@@ -648,7 +656,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
     }
 
-    public void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId)
+    public void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null)
     {
         lock (_simGate)
         {
@@ -671,8 +679,35 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             if (targetShipId is { } tsid) model = ResolveShip(tsid);
             else if (targetStationId is { } stid)
                 model = EquipmentTarget.Resolve(ship.Sector, IgcObjectType.Station, (short)stid);
-            if (model is not null && command is TrainingMissionIds.CommandCurrent or TrainingMissionIds.CommandAccepted)
+            if (targetAsteroidId is { } aid)
+                model = Mission.Sectors.Select(sec => EquipmentTarget.Resolve(sec, IgcObjectType.Asteroid, (short)aid)).FirstOrDefault(m => m is not null);
+            if (targetWarpId is { } wid)
+                model = Mission.Sectors.Select(sec => EquipmentTarget.Resolve(sec, IgcObjectType.Warp, (short)wid)).FirstOrDefault(m => m is not null);
+            if (targetBuoyId is { } buoyId && _waypoints.TryGetValue(buoyId, out var waypoint))
+                model = new Buoy(new DataBuoyIGC { BuoyId = (short)buoyId, ClusterId = (short)waypoint.SectorId,
+                    Position = [waypoint.Position.X, waypoint.Position.Y, waypoint.Position.Z] });
+            if (command == TrainingMissionIds.CommandQueued && _clientBound && ReferenceEquals(ship, PlayerShip))
+            {
+                var ot = targetBuoyId.HasValue ? IgcObjectType.Buoy : EquipmentTarget.TypeOf(model);
+                _server.QueueCommandForPlayer(ship, (short)commandId, model is Buoy ? null : model, ot,
+                    model?.Id ?? -1, CommanderShip.Id);
+                return;
+            }
+            if (command is TrainingMissionIds.CommandCurrent or TrainingMissionIds.CommandAccepted)
+            {
                 ship.SetCommand((short)command, model, (short)commandId);
+                // M4's networked host delegates navigation/combat/construction to the sim.
+                // Other variants still use AdvanceAutopilot's scripted movement owner.
+                if (ship.IsNpc && _clientBound && StartSectorId == EnemyEngagement.StartSector)
+                {
+                    ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;
+                    ship.BuilderAsteroidTarget = commandId == TrainingMissionIds.CmdBuild && targetAsteroidId is { } rock ? ResolveAsteroid(rock) : null;
+                    ship.PlanTarget = model is EquipmentTarget { Body: Station st } ? st.Data : null;
+                    if (commandId == TrainingMissionIds.CmdBuild && ship.BuilderAsteroidTarget is { } buildRock)
+                        ship.SetBuilderBuild(buildRock);
+                    ship.PlanCommandId = (short)commandId;
+                }
+            }
 
             if (commandId == TrainingMissionIds.CmdGoto)
             {
@@ -842,7 +877,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         // GetTargetCondition, gettargetcondition.cpp:52) — the real model the server wrote from
         // an ordinary client ORDER_CHANGE. A buoy has no runtime Model, so it only exists in
         // the scripted slot.
-        if (_commandTargets.TryGetValue(shipId, out var scripted)) return scripted;
+        if ((!_clientBound || shipId != PlayerShipId) && _commandTargets.TryGetValue(shipId, out var scripted)) return scripted;
         if (ResolveShip(shipId) is { } ship && ship.CommandTarget is { } model)
         {
             var type = EquipmentTarget.TypeOf(model);
@@ -852,6 +887,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 IgcObjectType.Station => ObjectType.Station,
                 IgcObjectType.Asteroid => ObjectType.Asteroid,
                 IgcObjectType.Probe => ObjectType.Probe,
+                IgcObjectType.Buoy => ObjectType.Buoy,
+                IgcObjectType.Warp => ObjectType.Warp,
                 _ => null,
             };
             if (trainingType is { } t && model.Id >= 0) return new TargetRef(t, model.Id);
@@ -860,7 +897,9 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     }
 
     public int GetCommandId(int shipId)
-        => _commands.TryGetValue(shipId, out var c) ? c
+        => _clientBound && shipId == PlayerShipId ? (PlayerShip.AcceptedShipCommandId != TrainingMissionIds.CmdNone
+            ? PlayerShip.AcceptedShipCommandId : PlayerShip.CurrentCommandId)
+            : _commands.TryGetValue(shipId, out var c) ? c
             : ResolveShip(shipId) is { } ship ? ship.CurrentCommandId : TrainingMissionIds.CmdNone;
 
     // ── M5/M6 command-view + kill-credit state ──────────────────────────────────

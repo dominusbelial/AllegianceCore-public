@@ -24,10 +24,10 @@ public sealed class TrainingInputGate(Func<int, bool> recordKey)
 
     /// <summary>The action's native-default physical key (the catalogue's 5th arg), where present —
     /// the key the training prompts describe even when normal flight rebinds the action.</summary>
-    private static readonly Dictionary<string, Keys> NativeDefaultKeys = InputActionCatalog.Definitions
+    private static readonly Dictionary<string, KeyBinding> NativeDefaultKeys = InputActionCatalog.Definitions
         .Select(d => (d.Name, Nd: d.NativeDefault))
         .Where(x => x.Nd is { } nd && nd.Key != Keys.None)
-        .ToDictionary(x => x.Name, x => x.Nd!.Value.Key);
+        .ToDictionary(x => x.Name, x => x.Nd!.Value);
 
     public bool Approves(string action) => !_rejected.Contains(action);
 
@@ -40,14 +40,23 @@ public sealed class TrainingInputGate(Func<int, bool> recordKey)
     /// the client's <c>SelectRemainderTarget → CommitTargetForPlayer</c>, leaving M3 goal 12's
     /// <c>GetTargetCondition(OT_station,1010)</c> unsatisfied (WinTrek.cpp:8753-8769, 10149, 9024).</summary>
     public static bool NativeDefaultKeyDown(KeyboardState keys, string action)
-        => NativeDefaultKeys.TryGetValue(action, out var k) && keys.IsKeyDown(k);
+    {
+        // defaultinputmap.mdl:12-13 binds both '[' and INSERT to TK_AcceptCommand.
+        if (action == "AcceptCommand" && keys.IsKeyDown(Keys.Insert)) return true;
+        if (!NativeDefaultKeys.TryGetValue(action, out var chord) || !chord.Matches(keys)) return false;
+        return !NativeDefaultKeys.Values.Any(other => other.Key == chord.Key
+            && other.Modifiers != chord.Modifiers && (other.Modifiers & chord.Modifiers) == chord.Modifiers
+            && other.Matches(keys));
+    }
 
     /// <summary>Whether the action's key is down, honouring the current binding OR the action's
     /// native-default key (training follows native prompts).</summary>
     private static bool IsPressed(ActionMap map, KeyboardState keys, string action)
     {
+        if (Game1.YieldsToTrainingTarget(keys, action, training: true)) return false;
+        if (action == "ToggleAutopilot" && NativeDefaultKeyDown(keys, "ToggleCloak")) return false;
         if (map.IsDownMostSpecific(keys, action)) return true;
-        return NativeDefaultKeys.TryGetValue(action, out var ndk) && keys.IsKeyDown(ndk);
+        return NativeDefaultKeyDown(keys, action);
     }
 
     public void Update(KeyboardState keys, ActionMap map)

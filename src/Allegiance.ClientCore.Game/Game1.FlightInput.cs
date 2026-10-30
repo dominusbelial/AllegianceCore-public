@@ -1779,7 +1779,8 @@ public sealed partial class Game1
         }
         _gfireKeyWasDown = gFire;
 
-        bool prevW = ActionDown(ks, "PrevWeapon");
+        bool prevW = ActionDown(ks, "PrevWeapon") && !YieldsToTrainingTarget(ks, "PrevWeapon",
+            Allegiance.ClientCore.Training.TrainingController.IsTraining);
         if (!composing && prevW && !_prevWKeyWasDown)
         {
             _selectedMount = FlightInput.PrevMount(_selectedMount, FixedMountCount());
@@ -1977,7 +1978,8 @@ public sealed partial class Game1
             // P624 — vertical strafe (TK_ThrustUp/Down → UpButton/DownButton).
             // _fkExerciseStrafe is the proof-only override (ALLEGIANCE_FLIGHTKEYS_PROOF)
             // that drives strafe-up through the real send path without a physical key.
-            StrafeUp:        _fkExerciseStrafe || ActionDown(ks, "ThrustUp"),
+            StrafeUp:        _fkExerciseStrafe || (ActionDown(ks, "ThrustUp") && !YieldsToTrainingTarget(ks, "ThrustUp",
+                Allegiance.ClientCore.Training.TrainingController.IsTraining)),
             StrafeDown:      ActionDown(ks, "ThrustDown"),
             PitchUp:         _cameraMode != CameraMode.External && ActionDown(ks, "PitchUp"),
             PitchDown:       _cameraMode != CameraMode.External && ActionDown(ks, "PitchDown"),
@@ -2164,7 +2166,8 @@ public sealed partial class Game1
         //   G  → toggle autopilot on/off toward the selected target.
         if (!composing)
         {
-            bool gPress = ActionDown(ks, "ToggleAutopilot");
+            bool gPress = AutopilotKeyDown(Rendering.KeyBindingStore.Instance.Map, ks,
+                Allegiance.ClientCore.Training.TrainingController.IsTraining);
             if (gPress && !_gKeyWasDown)
             {
                 // P403 — with the starmap EXPANDED (Tab) and a sector selected (,/.),
@@ -2386,6 +2389,7 @@ public sealed partial class Game1
         // steps with the same (controls, stateM) that went through CommandControls
         // (manual or autopilot) — see the Step call after the block.
         ControlData sentControls;
+        bool autopilotControlsApplied = false;
         int sentStateM;
         int sentFireM;
         bool turretGunner = IsTurretGunner();
@@ -2405,6 +2409,7 @@ public sealed partial class Game1
             _autopilotDeltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
+                autopilotControlsApplied = true;
                 sentControls = apControls;
                 sentStateM = _autopilotMovementButtons;
                 sentFireM = 0;   // autopilot drives with neutral fire
@@ -2456,17 +2461,20 @@ public sealed partial class Game1
         // TR-2 — while a training mission is running, the mission's control masks gate the
         // outgoing controls exactly as native's flight input does (ApproveControls/
         // ApproveActions, Training.cpp:253-300, called behind IsTraining). Applied here, on
-        // the final command (after autopilot/spectator overrides), so the SAME masked value
-        // feeds the local sim and the wire — and the simulated pose reflects the training
-        // constraints. Inert when no mission is running (TrainingController.IsTraining false).
+        // manual input before the scripted autopilot, matching WinTrek.cpp:8381-8382
+        // followed by Igc/shipIGC.cpp:2061-2068. The same composed command feeds the
+        // local sim and wire; locking the keyboard must not lock the scripted autopilot. Inert when no mission is running (TrainingController.IsTraining false).
         if (Allegiance.ClientCore.Training.TrainingController.IsTraining)
         {
             // P886b — the proof now fires weapons/missiles by holding the real keys (Space /
             // Left Ctrl), so the WeaponsMask/MissileFire/AfterburnerButton bits come from the
             // flight input's own key reading (FlightInput.Translate); there is no injected
             // proof stateM anymore.
-            sentControls = Allegiance.ClientCore.Training.TrainingController.ApproveControls(sentControls);
-            sentStateM = Allegiance.ClientCore.Training.TrainingController.ApproveActions(sentStateM);
+            var approved = ComposeTrainingFlight(
+                autopilotControlsApplied ? cmd : new FlightCommand(sentControls, sentStateM),
+                autopilotControlsApplied ? new FlightCommand(sentControls, sentStateM) : null);
+            sentControls = approved.Controls;
+            sentStateM = approved.StateM;
             sentFireM = sentStateM;
             // P881a — the training conditions read the OWN ship's applied controls/state
             // (native GetShip()->GetControls()/GetStateM()), not the quantised replicated
@@ -3604,6 +3612,10 @@ public sealed partial class Game1
         {
             switch (tgt.Kind)
             {
+                case TargetKind.Buoy:
+                    if (world.CommandBuoys.TryGetValue(tgt.Id, out var buoy))
+                    { pos = Vec(buoy.Position); return true; }
+                    break;
                 case TargetKind.Ship:
                     // P523 — anchor to the pose the renderer drew THIS frame
                     // (_poses: own local sim for self, P448b dead-reckoned for
@@ -3775,6 +3787,7 @@ public sealed partial class Game1
         {
             return tgt.Kind switch
             {
+                TargetKind.Buoy => world.CommandBuoys.TryGetValue(tgt.Id, out var buoy) ? buoy.ClusterId : null,
                 TargetKind.Ship => world.Ships.TryGetValue(tgt.Id, out var sh) ? sh.SectorId : (short?)null,
                 TargetKind.Station => world.Stations.TryGetValue(tgt.Id, out var st) ? st.ClusterId : null,
                 TargetKind.Asteroid => world.Asteroids.TryGetValue(tgt.Id, out var ast) ? ast.ClusterId : null,
@@ -3818,6 +3831,7 @@ public sealed partial class Game1
         {
             return tgt.Kind switch
             {
+                TargetKind.Buoy => world.CommandBuoys.ContainsKey(tgt.Id),
                 TargetKind.Ship => world.Ships.TryGetValue(tgt.Id, out var ship) && !ship.IsDead,
                 TargetKind.Station => world.Stations.ContainsKey(tgt.Id),
                 TargetKind.Asteroid => world.Asteroids.ContainsKey(tgt.Id),

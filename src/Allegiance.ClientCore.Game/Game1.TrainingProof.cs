@@ -11,33 +11,10 @@ using static Allegiance.ClientCore.Training.TrainingMissionIds;
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
-/// P886/P886b — the training autoproof. A real-window driver (activated only by
-/// <c>ALLEGIANCE_TRAIN_PROOF=1</c> alongside <c>ALLEGIANCE_TRAIN_MISSION</c>) that plays Mission 2
-/// (Basic Flight) and Mission 3 (Basic Weaponry) to completion by feeding input through the CLIENT'S
-/// OWN input path — the same keyboard/mouse state <see cref="Game1.FlightInput"/> reads — instead of
-/// calling any training-host/site method to fake an outcome and without skipping a goal.
-///
-/// P886b — REAL INPUT ONLY. The earlier draft OR'd ship-state bits (weapons/missile/afterburner)
-/// straight into the masked control send; that injection is removed. Weapons and missiles are now
-/// fired by HOLDING the keys a player holds (Space = FireWeapon, Left Ctrl = FireMissile) so those
-/// state bits come from the flight input's own key reading (FlightInput.Translate folds them into
-/// the masked stateM). If a gate then fails, that is a real finding — see P886_REPORT.md.
-///
-/// One narrow, proof-only input seam remains (the task-sanctioned "hook to set input state"):
-/// <see cref="_proofKeys"/> — synthetic pressed keys composed into the KeyboardState
-/// <c>FlightInput</c> reads each frame (seam <c>ReadProofKeyboard</c>). From there every
-/// production interpretation runs unchanged: <c>ActionDown</c> (throttle keys, fire, afterburner,
-/// target, autopilot keys) and the <c>TrainingInputGate</c> (routing SPACEBAR/F/B/G to the native
-/// TrekKeys the lessons wait on). So pressing SPACEBAR here is indistinguishable, downstream, from a
-/// human pressing it.
-///
-/// Targeting: M3 goal 3 (right mouse) uses the real ORDER_CHANGE pick — the same wire message a
-/// pointer right-click issues (Game1.Targeting.CommitTargetForPlayer →
-/// Game1.Orders.SendCurrentCommandToServer, WinTrek.cpp:8823-8852); M3 goal 12 (the B key) taps B
-/// through the real targeting-key path, which now commits to the server like native
-/// (TK_TargetFriendlyBase → SetTarget(m,c_cidDefault), WinTrek.cpp:10149/9024). The final docking
-/// leg (M3 goal 13) is FLOWN IN MANUALLY with the steering/throttle keys — native disables the
-/// autopilot key during M3 (command view off), so the player (and the proof) fly home by hand.
+/// Opt-in real-window training driver. Keyboard state and text events enter the production
+/// input path; the driver observes goals and replicated geometry and never sets lesson outcomes.
+/// Target-center/F/B pick targets through the normal client handlers. Flight, gunfire, cloak,
+/// order acceptance and manual bay entry use player keys. See P892_REPORT.md for receipts.
 /// </summary>
 public sealed partial class Game1
 {
@@ -119,9 +96,14 @@ public sealed partial class Game1
 
         // Slide show (pre-mission): a player advances it with any key — hold ENTER until it is
         // dismissed. Post slideshows are intentionally NOT advanced so the run rests on the
-        // post-mission screen P881a uses (the --exit-after bound then exits).
+        // post-mission screen P881a uses, then exit the proof after a short capture interval.
         if (_trainingSlideshow is { } slide)
         {
+            if (_trainingSlideshowIsPost)
+            {
+                if (_proofPostAt == 0) _proofPostAt = now;
+                if (now - _proofPostAt > 2000) { Console.WriteLine("[tproof] post slideshow reached; exiting proof"); Exit(); }
+            }
             if (!slide.Dismissed && !_trainingSlideshowIsPost && _proofTapKey is null)
             {
                 ProofTap(Keys.Enter);
@@ -162,6 +144,9 @@ public sealed partial class Game1
             case Mission3:
                 DriveMission3(site, keys);
                 break;
+            case Mission4:
+                DriveMission4(site, keys);
+                break;
         }
 
         _proofKeys = keys.ToArray();
@@ -177,28 +162,6 @@ public sealed partial class Game1
         _proofTapStartMs = Environment.TickCount64;
     }
 
-    /// <summary>Send a real ORDER_CHANGE target pick (the native SetTarget path) to the server ship —
-    /// the same wire message a pointer right-click on the object issues (Game1.Targeting.cs:864-871
-    /// CommitTargetForPlayer → Game1.Orders.cs:185 SendCurrentCommandToServer → SendCurrentCommand,
-    /// WinTrek.cpp:8823-8852). P886b keeps this ONLY for M3 goal 3 (the right-mouse pick, review fix
-    /// #5); goal 12 now taps the B key through the real targeting-key path instead.</summary>
-    private void ProofOrderTarget(TargetRef t)
-    {
-        if (_session.World.MyShipId is not { } myId) return;
-        var ot = t.Type switch
-        {
-            ObjectType.Ship => IgcObjectType.Ship,
-            ObjectType.Station => IgcObjectType.Station,
-            ObjectType.Asteroid => IgcObjectType.Asteroid,
-            ObjectType.Probe => IgcObjectType.Probe,
-            ObjectType.Buoy => IgcObjectType.Buoy,
-            _ => (IgcObjectType)(-1),
-        };
-        if ((int)ot < 0) return;
-        _session.SendOrderChange(myId, OrderChange.CidNone, OrderChange.CmdCurrent, ot, (short)t.Id);
-        Console.WriteLine($"[tproof] ORDER_CHANGE target {t.Type} #{t.Id}");
-    }
-
     private void ProofMaybeShot(string marker)
     {
         // Capture a handful of lesson milestones for the report's screenshot evidence.
@@ -207,6 +170,101 @@ public sealed partial class Game1
             _pShotMarkers++;
             ScheduleAutoshot(-1);
             Console.WriteLine($"[tproof] autoshot at milestone: {marker}");
+        }
+    }
+
+    private long _proofPostAt;
+    private int _proofAcceptSeen, _proofCloakSeen, _proofM4SpaceSeen;
+    private long _proofChatAt;
+    private string _proofM4LastActionGoal = "";
+    private long _proofStateAt;
+
+    // Mission 4 uses the player's keyboard and text-input events. Scripted orders/autopilot
+    // remain mission actions (mission4.cpp:333-372); the proof never calls those actions.
+    private void DriveMission4(ClientTrainingSite site, List<Keys> keys)
+    {
+        string goal = _trainingSession!.Mission.ActiveGoalPath;
+        long now = Environment.TickCount64;
+        if (now >= _proofStateAt)
+        {
+            _proofStateAt = now + 5000;
+            Console.WriteLine($"[tproof] M4 state goal={goal} sector={OwnSectorIdOr(-1)} pos={_ownSim.Position} target={_autoTarget} queued={_session.World.MyQueuedCommand} autopilot={_autoPilotEngaged} cloak={_cloakToggled} hostCloaking={_embeddedHost?.PlayerShip.Cloaking:F3}");
+        }
+        if (goal == "2.3" && now >= _proofChatAt)
+        {
+            _proofChatAt = now + 350;
+            if (IsBriefingVisible(out _) || !_chatActive) keys.Add(Keys.Enter);
+            else if (_chatTarget != ChatTarget.Everyone) keys.Add(Keys.Tab);
+            else if (_chatBuffer.Length == 0)
+                OnTextInput(this, new Microsoft.Xna.Framework.TextInputEventArgs('x', Keys.X));
+            else keys.Add(Keys.Enter);
+        }
+        int space = ProofCount(site, "Press the SPACEBAR");
+        if (space > _proofM4SpaceSeen) { _proofM4SpaceSeen = space; ProofTap(Keys.Space); }
+        int accept = ProofCount(site, "key to accept the command.");
+        if (accept > _proofAcceptSeen)
+        { _proofAcceptSeen = accept; ProofTap(Keys.OemOpenBrackets); ProofMaybeShot("M4 accept command"); }
+        int cloak = ProofCount(site, "G key to activate your cloak");
+        if (cloak > _proofCloakSeen)
+        { _proofCloakSeen = cloak; ProofTap(Keys.G); ProofMaybeShot("M4 cloak G"); }
+        if (goal == "5.5" && site.Resolve(new TargetRef(ObjectType.Warp, 1030)) is { } warp)
+        {
+            SteerTowards(warp.Position, keys);
+            if (_proofM4LastActionGoal != goal)
+            { _proofM4LastActionGoal = goal; ProofTap(Keys.OemBackslash); }
+        }
+        if (goal.StartsWith("7.", StringComparison.Ordinal) && ProofCount(site, "Target an enemy miner") > 0
+            && _proofM4LastActionGoal != "miner")
+        { _proofM4LastActionGoal = "miner"; ProofTap(Keys.F); }
+        if (goal is "7.7" or "8.7")
+        {
+            keys.Add(Keys.Back); // kill the previous cruise setting while using held approach thrust
+            if (_cloakToggled) keys.Add(Keys.G);
+            if (_autoTarget is { } target && ResolveTargetPosition(target, out var aim))
+            {
+                var aimPoint = ToSys(aim);
+                if (target.Kind == TargetKind.Ship && TryGatherLeadScene(Allegiance.Core.IgcObjectType.Ship, target.Id, out var scene))
+                {
+                    var lead = Allegiance.ClientCore.MonoGame.Rendering.ClientLead.Solve(scene.Input);
+                    if (lead.GatePassed) aimPoint = ToSys(_ownSim.Position + lead.Direction * 1000f);
+                }
+                SteerTowards(aimPoint, keys, .01f);
+                if (OwnAimDegreesTo(aimPoint) < 2f) keys.Add(Keys.Space);
+                if ((_ownSim.Position - aim).LengthSquared() > 700f * 700f) keys.Add(Keys.W);
+            }
+        }
+        if (goal.StartsWith("8.", StringComparison.Ordinal)
+            && _session.World.MyAcceptedCommand is { TargetType: IgcObjectType.Ship, TargetId: 1105 })
+        {
+            // A miner may carry us through its aleph just before the constructor order arrives.
+            // Return to the lesson's Mars sector even while the remote constructor has no pose.
+            keys.Add(Keys.Back);
+            Vector3? escortTarget = null;
+            bool routing = OwnSectorIdOr(-1) != 1031;
+            if (routing && ResolveTargetPosition(new AutopilotTarget(TargetKind.Cluster, 1031, "Mars"), out var route))
+                escortTarget = ToSys(route);
+            else if (!routing && _session.World.Ships.TryGetValue(1105, out var builder) && builder.Latest is { } bp)
+                escortTarget = ToSys(bp.Position);
+            if (escortTarget is { } destination)
+            {
+                SteerTowards(destination, keys);
+                if (OwnAimDegreesTo(destination) < 15f && TryOwnTrainingPose(out var escortPosition, out _, out _, out _)
+                    && (routing || (destination - escortPosition).LengthSquared() > 600f * 600f)) keys.Add(Keys.W);
+            }
+        }
+        if (goal.StartsWith("10.", StringComparison.Ordinal))
+        {
+            if (_proofM4LastActionGoal != "land")
+            {
+                _proofM4LastActionGoal = "land";
+                _proofLandingStationId = _session.World.Stations.Values
+                    .Where(st => st.ClusterId == OwnSectorIdOr(-1) && st.SideId == 0)
+                    .Select(st => (int)st.StationId).FirstOrDefault();
+                _proofThrottleSetFull = false; _proofSlowDone = false; _proofBrakeDone = false;
+                ProofTap(Keys.B);
+            }
+            // Native permits manual landing; use the same key-only bay approach as M3.
+            DriveManualLanding(keys);
         }
     }
 
@@ -257,15 +315,15 @@ public sealed partial class Game1
         string goal = _trainingSession!.Mission.ActiveGoalPath;
         long nowMs = Environment.TickCount64;
 
-        // Goal 3: "Press the right mouse button to target ... center" → real ORDER_CHANGE to
-        // derelict 1000 (the same wire message a pointer right-click sends — review fix #5).
+        // Goal 3: use the ordinary target-center key for the hull under the reticle.
+        // It reaches the same SetTarget path as the prompted right mouse pick.
         int cen = ProofCount(site, "right mouse button to target");
         if (cen > _pCenterSeen)
         {
             _pCenterSeen = cen;
             _proofM3Killing = true;
             _proofM3NextDerelict = 1000;
-            ProofOrderTarget(new TargetRef(ObjectType.Ship, 1000));
+            ProofTap(Keys.OemQuotes); // real target-center key
             ProofMaybeShot("M3 target first derelict");
         }
         // Goal 3 & 4: "Press the SPACEBAR" → tap SPACE.
@@ -287,7 +345,7 @@ public sealed partial class Game1
         // SelectRemainderTarget → CommitTargetForPlayer (zero [p642] edges, P886c). HandleRemainder
         // TargetKeys now ALSO honours the action's native-default key while a training mission runs
         // (RemainderTargetKeyDown, Game1.TargetCommands.cs) — so B selects and commits station 1010 by
-        // itself and the direct ProofOrderTarget below is no longer needed. Removed the workaround.
+        // itself; there is no direct target/order workaround.
         int bp = ProofCount(site, "target the outpost.");
         if (bp > _pBaseSeen)
         {
@@ -301,11 +359,12 @@ public sealed partial class Game1
         // in by hand. The server's real dock latch ends the lesson.
         if (goal.StartsWith("13", StringComparison.Ordinal) && !_proofM3Docking)
         {
+            Console.WriteLine($"[tproof] M3 B result: host current target={_embeddedHost?.GetCommandTarget(_embeddedHost.PlayerShipId)}");
             _proofM3Docking = true;
             _proofM3Killing = false;
             _proofThrottleSetFull = false;
             _proofSlowDone = false;
-            Console.WriteLine("[tproof] M3 goal 13: flying home manually (keys)");
+            Console.WriteLine($"[tproof] M3 goal 13: flying home manually (keys); survivors={_embeddedHost?.Drones.Values.Count(d => !d.Dead && d.Fraction > 0 && d.Sector is not null)}");
             ProofMaybeShot("M3 manual fly-home");
         }
         if (_proofM3Docking)
@@ -332,8 +391,7 @@ public sealed partial class Game1
 
         // Shooting phase: fire only during the actual fire-gate/kill goals (conserves the weapon
         // energy/ammo between the two demonstrations, exactly like the headless driver). Re-target
-        // the next live derelict after a kill via real ORDER_CHANGE (native radar re-targets the
-        // next same-type object; this is that pick).
+        // the next live derelict after a kill with the native F targeting key.
         int major = int.TryParse(goal.Split('.')[0], out var m) ? m : 0;
         // Proof policy: preserve the 600 ms fire / 300 ms rest duty cycle to
         // conserve resources while steering through the real keyboard path.
@@ -345,6 +403,8 @@ public sealed partial class Game1
         bool burstOn = burstPhase < 600;
         bool firing = isFireDemo || (inKillGoal && burstOn);
 
+        if (_autoTarget is { Kind: TargetKind.Ship, Id: >= 1000 and <= 1009 } selected)
+            _proofM3NextDerelict = selected.Id;
         if (_proofM3Killing && _embeddedHost is { } host && _proofM3NextDerelict >= 1000 && _proofM3NextDerelict <= 1009
             && host.IsDestroyed(_proofM3NextDerelict))
         {
@@ -353,7 +413,7 @@ public sealed partial class Game1
             if (next <= 1009)
             {
                 _proofM3NextDerelict = next;
-                ProofOrderTarget(new TargetRef(ObjectType.Ship, next));
+                ProofTap(Keys.F); // native target-enemy selection
                 ProofMaybeShot($"M3 kill → target {next}");
             }
         }
@@ -382,7 +442,7 @@ public sealed partial class Game1
         {
             lock (_session.Gate)
             {
-                if (_session.World.Stations.TryGetValue(1010, out var station)
+                if (_session.World.Stations.TryGetValue((short)_proofLandingStationId, out var station)
                     && _shopCatalog?.StationTypes is { } types
                     && types.TryGetValue(station.StationTypeId, out var type)
                     && StationDockGeometry(type) is { LandSlots.Count: > 0 } geom)
@@ -442,6 +502,7 @@ public sealed partial class Game1
         if (_proofBrakeDone && _ownSim.Velocity.Length() < 12f && OwnAimDegreesTo(target) < 10f)
             keys.Add(Keys.W);
     }
+    private int _proofLandingStationId = 1010;
     private bool _proofBrakeDone;
     private Vector3? _proofDockApproach;
     private Vector3 _proofDockEntry;
@@ -522,12 +583,8 @@ public sealed partial class Game1
     private bool TryGetKillDerelictPosition(out Vector3 target)
     {
         target = default;
-        if (_proofM3NextDerelict is >= 1000 and <= 1009
-            && _session.World.Ships.TryGetValue((short)_proofM3NextDerelict, out var ship) && ship.Latest is { } up)
-        {
-            target = ToSys(up.Position);
-            return true;
-        }
+        if (_autoTarget is { Kind: TargetKind.Ship } at && ResolveTargetPosition(at, out var picked))
+        { target = ToSys(picked); return true; }
         return false;
     }
 
@@ -535,7 +592,7 @@ public sealed partial class Game1
     private bool TryGetTrainingOutpost(out Vector3 target)
     {
         target = default;
-        if (_session.World.Stations.TryGetValue(1010, out var st) && st.Position is { Length: 3 } p)
+        if (_session.World.Stations.TryGetValue((short)_proofLandingStationId, out var st) && st.Position is { Length: 3 } p)
         {
             target = new Vector3(p[0], p[1], p[2]);
             return true;

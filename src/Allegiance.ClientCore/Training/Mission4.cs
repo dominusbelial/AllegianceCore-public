@@ -21,8 +21,7 @@ public sealed class Mission4 : TrainingMission
     private const int MarsSector = 1031;
 
     /// <summary>The aleph the player dives through (<c>mission4.cpp:333,497</c>). <see cref="ObjectType"/>
-    /// has no <c>Warp</c> member, so the geometric targets that reference the aleph use a Ship-type
-    /// stand-in with the aleph's object id — see <see cref="AlephAsShip(int)"/>.</summary>
+    /// resolves the native Warp target in both the host and client sites.</summary>
     private const int AlephNeptuneId = 1030;
 
     /// <summary>The asteroid the friendly constructor builds on (<c>mission4.cpp:870-871</c>).</summary>
@@ -281,10 +280,8 @@ public sealed class Mission4 : TrainingMission
 
         {
             var goal = CreatePlaySoundGoal(Tm4_08);
-            // native computes a position from the aleph 1030 and the ship's facing
-            // (mission4.cpp:333-335); the host owns universe geometry, so a fixed offset from the
-            // start position stands in for the headless proof.
-            goal.AddStartAction(new CreateWaypointAction(Site, buoyId, new Vector3(800f, 0f, 0f), StartSector));
+            // Native mission4.cpp:333-335 uses the real aleph's position and up axis.
+            goal.AddStartAction(new CreateWaypointAction(Site, buoyId, InitialWaypoint(), StartSector));
             goal.AddStartAction(new SetCommandAction(Site, Site.PlayerShip.Ref, CommandQueued, new TargetRef(ObjectType.Buoy, buoyId), CmdGoto));
             list.AddGoal(goal);
         }
@@ -349,9 +346,9 @@ public sealed class Mission4 : TrainingMission
 
         {
             var goal = new Goal(new GetCommandCondition(Site, Site.PlayerShip.Ref, CmdGoto));
-            // native also queues a goto to OT_warp 1030 here (mission4.cpp:449); ObjectType has no
-            // Warp member, and this goal only gates on GetCommandCondition(Goto), so the warp
-            // SetCommandAction is omitted (equivalent to a goto whose command-set the player accepts).
+            // Native mission4.cpp:449 queues the actual aleph order.
+            goal.AddStartAction(new SetCommandAction(Site, Site.PlayerShip.Ref, CommandQueued,
+                new TargetRef(ObjectType.Warp, AlephNeptuneId), CmdGoto));
             goal.AddStartAction(new MessageAction(Site, "Press the INSERT or '[' key to accept the command."));
             goal.AddStartAction(new PlaySoundAction(Site, Tm4_15));
             goal.AddConstraintCondition(CreateTooLongCondition(30.0f, Tm4_15));
@@ -386,7 +383,7 @@ public sealed class Mission4 : TrainingMission
         list.AddGoal(new Goal(ElapsedTimeCondition.Create(0.5f, Site)));
 
         {
-            var goal = new Goal(new ObjectWithinRadiusCondition(Site, Site.PlayerShip.Ref, AlephAsShip(AlephNeptuneId), 750.0f));
+            var goal = new Goal(new ObjectWithinRadiusCondition(Site, Site.PlayerShip.Ref, new TargetRef(ObjectType.Warp, AlephNeptuneId), 750.0f));
             goal.AddStartAction(new MessageAction(Site, "Fly to the aleph named 'Mars'."));
             goal.AddStartAction(new PlaySoundAction(Site, Tm4_17r));
             goal.AddConstraintCondition(CreateTooLongCondition(60.0f, Tm4_17r));
@@ -403,7 +400,7 @@ public sealed class Mission4 : TrainingMission
             constraints.ScaleInputControl(ControlAxis.Roll, 0.0f);
             constraints.ScaleInputControl(ControlAxis.Throttle, 0.0f);
             goal.AddStartAction(constraints);
-            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, AlephAsShip(AlephNeptuneId));
+            var turnTo = new TurnToAction(Site, Site.PlayerShip.Ref, new TargetRef(ObjectType.Warp, AlephNeptuneId));
             goal.AddConstraintCondition(new ConditionalAction(new TrueCondition(), turnTo));
             list.AddGoal(goal);
         }
@@ -417,23 +414,20 @@ public sealed class Mission4 : TrainingMission
             throttle.SetInputControl(ControlAxis.Throttle, 0.5f);
             goal.AddConstraintCondition(new ConditionalAction(new TrueCondition(), throttle));
 
-            // create the enemy miners at the aleph-1032 position plus deterministic offsets
-            // (native scatters them randomly, mission4.cpp:534-561; host owns geometry, so fixed offsets).
-            Vector3 alephPos = new(0f, 0f, 0f);
-            Vector3[] offsets =
-            {
-                new(300f, 0f, 0f),
-                new(-300f, 0f, 0f),
-                new(0f, 300f, 0f),
-                new(0f, -300f, 0f),
-            };
+            // Create miners around aleph 1032 (mission4.cpp:534-561).
+            Vector3 alephPos = Site.Resolve(new TargetRef(ObjectType.Warp, 1032))?.Position ?? Vector3.Zero;
+            // Native mission4.cpp:537-560 samples each coordinate in [-300, 300]. Pin
+            // the seed for reproducible training, as M3 does for its derelict sphere.
+            var scatter = new Random(8924);
+            Vector3 Offset() => new((scatter.NextSingle() * 600f) - 300f,
+                (scatter.NextSingle() * 600f) - 300f, (scatter.NextSingle() * 600f) - 300f);
             string[] minerNames = { "Enemy Miner 01", "Enemy Miner 02", "Enemy Miner 03", "Enemy Miner 04" };
             int[] minerIds = { EnemyMiner1Id, EnemyMiner2Id, EnemyMiner3Id, EnemyMiner4Id };
 
             for (int i = 0; i < 4; i++)
             {
                 var create = new CreateDroneAction(Site, minerNames[i], minerIds[i], EnemyMinerHull, 1, PilotMiner);
-                create.SetCreatedLocation(MarsSector, alephPos + offsets[i]);
+                create.SetCreatedLocation(MarsSector, alephPos + Offset());
                 goal.AddStartAction(create);
             }
 
@@ -647,7 +641,9 @@ public sealed class Mission4 : TrainingMission
 
             // create the friendly builder (mission4.cpp:862-867)
             var createBuilder = new CreateDroneAction(Site, "Constructor", BuilderId, BuilderHull, 0, PilotBuilder);
-            createBuilder.SetCreatedLocation(StartSector, new Vector3(500f, 0f, 0f));
+            var aleph = Site.Resolve(new TargetRef(ObjectType.Warp, AlephNeptuneId));
+            createBuilder.SetCreatedLocation(StartSector,
+                (aleph?.Position ?? Vector3.Zero) + (aleph?.Forward ?? Vector3.UnitX) * 100f);
             createBuilder.SetStationType(112); // mission4.cpp:866 — the station the constructor will build
             goal.AddStartAction(createBuilder);
 
@@ -690,7 +686,10 @@ public sealed class Mission4 : TrainingMission
             // LANS — prevent the scout from running away: c_wbbmInRangeAggressive | c_wbbmUseMissiles
             // (= 0x50, mission4.cpp:915)
             createScout.SetCreatedBehaviour(WingmanInRangeAggressive | WingmanUseMissiles);
-            createScout.SetCreatedLocation(MarsSector, new Vector3(0f, 0f, 0f));
+            var scoutScatter = new Random(8925); // mission4.cpp:913, reproducible native cube sample
+            createScout.SetCreatedLocation(MarsSector, new Vector3(
+                scoutScatter.NextSingle() * 600f - 300f, scoutScatter.NextSingle() * 600f - 300f,
+                scoutScatter.NextSingle() * 600f - 300f));
             goal.AddStartAction(createScout);
             // LANS — make the scout attack the constructor, not the player (mission4.cpp:918-921)
             goal.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, EnemyScoutId), CommandCurrent, new TargetRef(ObjectType.Ship, BuilderId), CmdAttack));
@@ -809,11 +808,19 @@ public sealed class Mission4 : TrainingMission
         yield return EnemyMiner4Id;
     }
 
-    /// <summary>Native refers to the alephs via <c>OT_warp</c>; <see cref="ObjectType"/> has no Warp
-    /// member, so the geometric targets that point at an aleph use a Ship-type stand-in carrying the
-    /// aleph's object id. Effectively identical for radius/pointing checks against a host that resolves
-    /// by id.</summary>
-    private static TargetRef AlephAsShip(int id) => new(ObjectType.Ship, id);
+    // Native mission4.cpp:333-335: quarter of the way to the aleph, offset along its up axis.
+    private Vector3 InitialWaypoint()
+    {
+        var start = Site.PlayerShip.Position;
+        var aleph = Site.Resolve(new TargetRef(ObjectType.Warp, AlephNeptuneId));
+        var delta = (aleph?.Position ?? new Vector3(3200, 0, 0)) - start;
+        var orientation = new Allegiance.Core.Sim.Orientation();
+        var f = aleph?.Forward ?? Vector3.UnitX;
+        orientation.Set(new Allegiance.Core.Collision.Vector3(f.X, f.Y, f.Z));
+        var axis = orientation.GetUp();
+        var up = new Vector3(axis.X, axis.Y, axis.Z);
+        return start + delta * .25f + up * (delta.Length() * .1f);
+    }
 
     private int NewBuoyId() => _nextBuoy++;
 }

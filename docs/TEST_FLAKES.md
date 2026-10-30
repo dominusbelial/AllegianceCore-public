@@ -4,6 +4,39 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P892d verification observations (2026-10-30)
+
+The one Fast sweep remains **FAIL**: **11,877 passed / 11 failed / 3 optional skips**, 11,891
+executions in 523.2 s, nine infrastructure checks passed, calibrated limit 10.000 s.
+Receipts: `TestResults/tiers-20261030T161617.474357Z/`; standalone TRX/logs and ordered durations:
+`.scratch/p892d/fast-isolation/` and `.scratch/p892d/isolation-summary.json`.
+Host load at launch was 3.48 on 24 CPUs. One offscreen training window and one filtered training
+process ran beside the sweep; no showcase, other full tier, or synthetic load ran beside it.
+The sweep parallelises its projects and Fast collections. No whole-tier rerun was made.
+
+Five failures belonged to this task and were fixed: two P882a rebound-key cases exposed an overly
+strict native-P-only predicate (ordinary user rebinds must still reach the lesson filter); three
+P885 fixture cases still represented aleph 1030 as a Ship and hard-coded the retired waypoint.
+Both filtered groups pass three times after correction (`rebound-final-*`, `p885-final-*`).
+They are not classified as flakes or erased from the sweep result.
+
+| Unrelated failure | Three standalone results | Checked cause / limits |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass (1.411 / 1.419 / 1.449 s) | Same missing remote death-latch receipt as P892c. The fixture kills immediately after seating and allows only a 2,500-tick observation window (`DeadLatchRespawnLiveTests.cs:432-440`); death/respawn code is unchanged. Receipt/scheduling intermittency; not claimed repaired. |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | pass / pass / pass (0.074 / 0.070 / 0.063 s) | Sweep emitted the GC report but no positive per-step allocation entry. The measurement uses the approximate process-wide `GC.GetTotalAllocatedBytes(false)` delta (`Profiling/TickProfiler.cs:577,586`) and discards nonpositive deltas (`:378`), while the report uses the precise counter (`:447`). Both methods and the full four-test P838 class pass three times serially. The exact sweep counter/interleaving trigger is not established; no profiler or allocation policy changed. |
+| `P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets` | pass / pass / pass (0.005 / 0.005 / 0.005 s) | Same absent per-step allocation table, same checked counter mechanism and limitation above. Fast runs collections in parallel; the profiler is also process-global and server lifecycle can reconfigure it (`Server.Lifecycle.cs:1611,1878`). No claim that CPU load alone is the cause. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Identical null `DefendTarget` at `NpcWingmanDefendLiveTests.cs:179`; existing baseline documented with unmodified-HEAD 3/3 failures under P892c/P895 and earlier lanes. This lane changes no Core/Server wingman logic. |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | pass / pass / pass (1.844 / 1.851 / 1.943 s) | Fresh peer's MISSION_STAGE NotStarted list was empty at `MissionRotationLiveTests.cs:181`: Seat waits for ship assignment (`:103-105`), then immediately asserts a separately decoded stage receipt (`:180-181`). Unchanged rotation/lifecycle/transport code; receipt-order sensitivity, not a training failure. |
+| `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (quarantine) | pass / pass / pass (0.380 / 0.358 / 0.358 s) | Same treasure/pickup receipt flake already recorded by P892c. Sweep's automatic quarantine retry passed too; no treasure, pickup or server callback changed. |
+
+Passing Fast timing offenders were also selected three times:
+
+| Case | Sweep seconds | Standalone seconds | Disposition |
+|---|---:|---|---|
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.045 | 3.433 / 3.399 / 3.613 | Below limit alone; existing full-sweep timing sensitivity (P890). |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 10.214 | 3.163 / 3.158 / 3.168 | Below limit alone; civ 3 also passed each selected-method run. Existing P890 timing observation. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 10.782 | 10.195 / 10.267 / 10.232 | Functionally passes, still exceeds this sweep's 10 s limit alone. Its measured simulation loop is unchanged. Timing gate remains open; not claimed fixed. |
+
 ## P892c verification observations (2026-10-30)
 
 The single Fast-tier run retained **FAIL** (`TestResults/tiers-20261030T144833.353354Z/`): 11,874 tests,

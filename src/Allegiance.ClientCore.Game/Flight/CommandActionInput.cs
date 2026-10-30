@@ -21,7 +21,7 @@ internal sealed class CommandActionInput
     {
         bool accept = Edge("AcceptCommand"), execute = Edge("ExecuteCommand"), reject = Edge("RejectCommand"),
             clear = Edge("ClearCommand"), target = Edge("TargetCommand");
-        bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), suppressed);
+        bool Edge(string action) => _edges.Observe(action, Game1.RemainderTargetKeyDown(map, keys, action, Allegiance.ClientCore.Training.TrainingController.IsTraining), suppressed);
         if (world.MyShipId is not { } me) return default;
         if (world.PendingMoneyRequest is not null)
         {

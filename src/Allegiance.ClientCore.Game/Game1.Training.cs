@@ -16,6 +16,17 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed partial class Game1
 {
+    /// <summary>Native approves manual joystick input (WinTrek.cpp:8381-8382), then
+    /// PlotShipMove supplies autopilot controls independently (Igc/shipIGC.cpp:2061-2068).
+    /// M4's locked-input waypoint demonstration must still fly.</summary>
+    internal static Flight.FlightCommand ComposeTrainingFlight(Flight.FlightCommand manual,
+        Flight.FlightCommand? autopilot)
+    {
+        var approved = new Flight.FlightCommand(TrainingController.ApproveControls(manual.Controls),
+            TrainingController.ApproveActions(manual.StateM));
+        return autopilot ?? approved;
+    }
+
     private TrainingSession? _trainingSession;
     private TrainingHost? _embeddedHost;
     private string _trainingError = "";
@@ -249,6 +260,8 @@ public sealed partial class Game1
     private void SendTrainingOwnOrder(int command, TargetRef? target, int commandId)
     {
         if (_session.World.MyShipId is not { } myId) return;
+        // Queued orders originate at the commander/host and await the player's real accept key.
+        if (command == TrainingMissionIds.CommandQueued) return;
         short slot = command == TrainingMissionIds.CommandAccepted
             ? OrderChange.CmdAccepted : OrderChange.CmdCurrent;
         if (target is { } t && TrainingTargetObjectType(t.Type) is { } ot)
@@ -265,6 +278,7 @@ public sealed partial class Game1
         ObjectType.Asteroid => IgcObjectType.Asteroid,
         ObjectType.Probe => IgcObjectType.Probe,
         ObjectType.Buoy => IgcObjectType.Buoy,
+        ObjectType.Warp => IgcObjectType.Warp,
         _ => null,
     };
 
@@ -287,9 +301,14 @@ public sealed partial class Game1
             ObjectType.Ship => TargetKind.Ship,
             ObjectType.Station => TargetKind.Station,
             ObjectType.Probe => TargetKind.Probe,
+            ObjectType.Warp => TargetKind.Warp,
+            ObjectType.Buoy => TargetKind.Buoy,
             _ => null,
         };
         if (kind is not { } k) return;
+        // The goal constraint repeats SetAutopilot(true), a native idempotent setter
+        // (shipIGC.cpp:3974-3978). Preserve the existing planner instead of restarting it.
+        if (_autoPilotEngaged && _autoTarget is { } active && active.Kind == k && active.Id == t.Id) return;
         string name = k switch
         {
             TargetKind.Station => _session.World.Stations.TryGetValue((short)t.Id, out var st) ? st.Name : $"station {t.Id}",
@@ -377,7 +396,7 @@ public sealed partial class Game1
         if (_embeddedHost is { } host) host.Paused = TrainingClock.IsPaused;
         if (session.Advance())
         {
-            Console.WriteLine("[training] mission complete");
+            Console.WriteLine($"[training] mission complete; final goal={session.Mission.ActiveGoalPath}; survivors={_embeddedHost?.Drones.Values.Count(d => !d.Dead && d.Fraction > 0 && d.Sector is not null)}");
             ClearTrainingSounds();
             TrainingOwnState.Reset();
             TrainingController.EndMission();

@@ -162,7 +162,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         switch (r.Type)
         {
             case ObjectType.Ship:
-                if (!w.Ships.TryGetValue((short)id, out var ship) || ship.Latest is not { } up)
+                if (!w.Ships.TryGetValue((short)id, out var ship) || ship.IsDead || ship.Latest is not { } up)
                     return null;
                 // P886b — resolve the PLAYER's own ship from the authoritative local sim pose
                 // (OwnPosition/OwnOrientation) rather than the lagged replicated broadcast, so the
@@ -175,6 +175,12 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
                 System.Numerics.Vector3? fwdOv = null;
                 if (own && _f.OwnOrientation?.Invoke() is { } o) fwdOv = o.F;
                 return new TrainingShipObject((short)id, ship, up, posOv, fwdOv);
+            case ObjectType.Warp:
+                if (w.Warps.TryGetValue((short)id, out var warp))
+                    return new TrainingStaticObject(r, ToVec(warp.Position), warp.ClusterId, warp.Radius, ToVec(warp.Forward));
+                // Native training loads the whole authored universe before building its goals
+                // (mission4.cpp:110,534); undiscovered sectors still have real aleph geometry.
+                return _f.Host is TrainingHost trainingHost ? new TrainingHostSite(trainingHost).Resolve(r) : null;
             case ObjectType.Station:
                 // Native GetSectorCondition also resolves stations/asteroids/probes via the
                 // mission's GetModel(OT_*, id) (getsectorcondition.cpp:27-51); the replicated
@@ -390,6 +396,8 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     // ── world creation (training-host universe — TR-2b host scope) ───────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
     {
+        World.RegisterCommandBuoy(new DataBuoyIGC([position.X, position.Y, position.Z],
+            (short)sectorId, (byte)buoyType, (short)buoyId, visible));
         if (_f.Host is { } h) h.CreateWaypoint(buoyId, position, sectorId, buoyType, visible);
         else TrainingHostLog.Log($"CreateWaypoint({buoyId}) — no embedded training host");
     }
@@ -426,7 +434,8 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
                 target is { Type: ObjectType.Ship } ? target.Value.Id : null,
                 target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
                 target is { Type: ObjectType.Station } ? target.Value.Id : null,
-                commandId);
+                commandId, target is { Type: ObjectType.Asteroid } ? target.Value.Id : null,
+                target is { Type: ObjectType.Warp } ? target.Value.Id : null);
         else if (!IsOwnShip(ship))
             TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — no embedded training host");
     }
@@ -516,12 +525,12 @@ internal sealed class TrainingShipObject : ITrainingObject
 internal sealed class TrainingStaticObject : ITrainingObject
 {
     private readonly Vector3 _position;
-    public TrainingStaticObject(TargetRef r, Vector3 position, int sectorId, float radius)
-    { Ref = r; _position = position; SectorId = sectorId; Radius = radius; }
+    public TrainingStaticObject(TargetRef r, Vector3 position, int sectorId, float radius, Vector3? forward = null)
+    { Ref = r; _position = position; SectorId = sectorId; Radius = radius; Forward = forward ?? Vector3.UnitX; }
     public TargetRef Ref { get; }
     public float Radius { get; }
     public Vector3 Position => _position;
     public Vector3 Velocity => Vector3.Zero;
-    public Vector3 Forward => Vector3.UnitX;
+    public Vector3 Forward { get; }
     public int SectorId { get; }
 }

@@ -276,6 +276,8 @@ public sealed partial class ClientWorld
     public void ReceiveChat(ChatBuoy message)
     {
         if (IsPilotMuted(message.Cd.SidSender)) return;
+        RegisterCommandBuoy(message.Db); // trekigc.cpp:4494-4496: import the buoy before its order
+
         // P787b — SIM-0172: the same default-on unknown-VC filter as the chat
         // path (native's buoys go through the same ReceiveChat,
         // trekigc.cpp:4494-4496).

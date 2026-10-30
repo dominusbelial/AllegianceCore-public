@@ -2110,6 +2110,7 @@ public sealed partial class ClientWorld
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _commandBuoys.Clear();
         _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
@@ -2613,6 +2614,7 @@ public sealed partial class ClientWorld
         ClearSectorEffects();
         ShipWarnings.Reset();
         _treasures.Clear();
+        _commandBuoys.Clear();
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -5148,6 +5150,7 @@ public sealed partial class ClientWorld
         _mines.Clear();
         _buildingEffects.Clear();
         _treasures.Clear();
+        _commandBuoys.Clear();
         _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();

@@ -71,6 +71,12 @@ public sealed partial class ClientWorld
         return command;
     }
 
+    // Native local buoy creation precedes SetQueuedCommand (mission4.cpp:333-337).
+    // CHATBUOY imports the same geometry for ordinary remote waypoint orders.
+    private readonly Dictionary<short, DataBuoyIGC> _commandBuoys = new();
+    public IReadOnlyDictionary<short, DataBuoyIGC> CommandBuoys => _commandBuoys;
+    public void RegisterCommandBuoy(DataBuoyIGC buoy) => _commandBuoys[buoy.BuoyId] = buoy;
+
     public bool TryCommandTarget(QueuedCommandState command, out short sector, out string name)
     {
         sector = -1; name = "";
@@ -84,6 +90,8 @@ public sealed partial class ClientWorld
                 sector = asteroid.ClusterId; name = asteroid.Name; return true;
             case IgcObjectType.Warp when _warps.TryGetValue(command.TargetId, out var warp):
                 sector = warp.ClusterId; name = warp.Name; return true;
+            case IgcObjectType.Buoy when _commandBuoys.TryGetValue(command.TargetId, out var buoy):
+                sector = buoy.ClusterId; name = "waypoint"; return true;
             case IgcObjectType.Probe when _probes.TryGetValue(command.TargetId, out var probe):
                 sector = probe.ClusterId; name = $"probe {probe.ProbeId}"; return true;
             case IgcObjectType.Treasure when _treasures.TryGetValue(command.TargetId, out var treasure):
