@@ -4273,3 +4273,10 @@ Confirming sweep `tiers-20261030T041824` (after the P806 test fix): 11,763
   near-threshold load flakes.
 - The P806 options test now passes in-sweep (3796 MonoGame passes with the
   only failure being the ShopLauncher contention case above).
+
+## 2026-10-30 — fast tier on the P889/P891/P893/P894/P895 merged tree
+
+- `LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience`
+  (load flake) — **3/3 pass alone**.
+- `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station`
+  (load flake) — **3/3 pass alone**.
