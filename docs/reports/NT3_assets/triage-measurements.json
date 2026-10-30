@@ -1,0 +1,105 @@
+{
+ "base": "48cdb2de",
+ "nightly": "b567ee1f",
+ "dispatchHead": "69c37dbb",
+ "bisect_allocation_tests": {
+  "first_bad": "76c6355e",
+  "trace": "bisect-trace.txt"
+ },
+ "bisect_crowded_tcp": {
+  "first_bad": "76c6355e",
+  "trace": "bisect2-trace.txt"
+ },
+ "bisect_p728": {
+  "first_bad": "76c6355e",
+  "trace": "b728-trace.txt"
+ },
+ "multihop_points": {
+  "bad": "28052050",
+  "good": "dff29be1"
+ },
+ "sc4_points": {
+  "bad": "72f04522",
+  "good": "ea132a30",
+  "good_wall_s": 323
+ },
+ "p798": {
+  "verdict": "fails at base 48cdb2de too",
+  "assertion": "Assert.Single(sectors) -> [1054, 1058]"
+ },
+ "allocation": {
+  "pipeline_serial": {
+   "producer": 77748,
+   "publisher": 2536,
+   "stages": {
+    "SweepCrossSideExports": 15212,
+    "SweepCrossSideMineExports": 5168,
+    "SweepCrossSideShipStatuses": 488,
+    "shipDetection": 0,
+    "step:broadcastShipStates": 53736,
+    "step:broadcastStationsUpdate": 55,
+    "step:broadcastAsteroidsUpdate": 310,
+    "step:broadcastProbesUpdate": 90,
+    "step:broadcastShipsUpdate": 704,
+    "step:broadcastSectorThreats": 1416,
+    "step:broadcastShipWarnings": 0,
+    "step:broadcastMissileLock": 0,
+    "step:broadcastMissilesUpdate": 568,
+    "step:broadcastOwnShipMining": 0,
+    "step:broadcastMissileTrackWarning": 0
+   }
+  },
+  "pipeline_parallel": {
+   "producer": 227086,
+   "publisher": 182328,
+   "stages": {
+    "SweepCrossSideExports": 15212,
+    "SweepCrossSideMineExports": 5168,
+    "SweepCrossSideShipStatuses": 488,
+    "shipDetection": 0,
+    "step:broadcastShipStates": 169034,
+    "step:broadcastStationsUpdate": 55,
+    "step:broadcastAsteroidsUpdate": 310,
+    "step:broadcastProbesUpdate": 90,
+    "step:broadcastShipsUpdate": 34744,
+    "step:broadcastSectorThreats": 1416,
+    "step:broadcastShipWarnings": 0,
+    "step:broadcastMissileLock": 0,
+    "step:broadcastMissilesUpdate": 568,
+    "step:broadcastOwnShipMining": 0,
+    "step:broadcastMissileTrackWarning": 0
+   }
+  },
+  "hud17": {
+   "serial_edge_base_bpt": [
+    488,
+    488
+   ],
+   "parallel_edge_base_bpt": [
+    [
+     150506,
+     82307
+    ],
+    [
+     128740,
+     84941
+    ],
+    [
+     213042,
+     82826
+    ]
+   ],
+   "ship_status_edge_base_per_tick": [
+    17036.8,
+    1208.0
+   ]
+  }
+ },
+ "fast_tier_run2": {
+  "lobby": "94/119 (25 inotify-limit env failures)",
+  "clientcore": "2033/2034 (DeadLatchRespawn load flake)",
+  "core": "5875/5878 (NpcWingmanDefend persistent, DockDocking ledgered, ShipStatusServerTests join-burst load flake 3/3 alone)",
+  "slow_offender_s": 10.637,
+  "receipt": "TestResults/tiers-20261030T154401.253508Z"
+ }
+}

@@ -167,7 +167,20 @@ public sealed class PipelineCostTests
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(InterestTierTests.Config());
+        // P887 (triaged by NT-3) — this budget is the SERIAL builder's per-tick
+        // allocation (P679: pooled packets, permanent stage fields cleared in
+        // place). P887 made `broadcast.parallelBuild` default ON; the parallel
+        // builder hands an arbitrary share of each tick's per-peer work to worker
+        // threads, so GC.GetAllocatedBytesForCurrentThread() no longer measures
+        // one builder's cost per tick — the same unchanged code reported 77 KB
+        // and 240 KB producer bytes/tick in two identical runs. Pin the builder
+        // this budget was calibrated on, per P887's own "the test that needs the
+        // old path pins it" rule. P603 §3 leaves the parallel build's per-peer
+        // work-item pooling as documented future polish; its measured total
+        // allocation is in docs/reports/NT3_NIGHTLY_TRIAGE.md.
+        var config = InterestTierTests.Config();
+        config.Broadcast!.ParallelBuild = false;
+        server.Boot(config);
         server.TestMission!.Stage = MissionStage.Started;
         var peers = UpdateCadenceTests.Seed(server, 512, 512);
         for (int i = 0; i < peers.Count; i++)

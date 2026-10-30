@@ -58,7 +58,7 @@ public sealed class MultiHopDroneLiveTests
         LiveSettings = new Ls { DebugMode = true },
         Games =
         [
-            new Gm { Name = "P484 Multi-Hop Drone", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P484 Multi-Hop Drone", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"], ShowMap = true },
         ],
     };
 
@@ -116,8 +116,16 @@ public sealed class MultiHopDroneLiveTests
     /// in the target's sector, closing on the station. Green only if the
     /// cross-cluster autopilot re-paths after the first transit and the second
     /// transit fires — i.e. server-side drones handle multi-hop routes.
-    /// Live tier (P753b): the passing path completes in a few seconds, but the
-    /// failure path runs both 60k-tick timeouts (~85 s on this workstation).</summary>
+    /// Live tier (P753b): the failure path runs both 60k-tick timeouts (~85 s).
+    /// NT-3: P875 made <c>sim.nativeGotoPlan</c> the default, and native travel
+    /// only flies routes/targets the side has SEEN (<c>common.cpp:899-927</c>,
+    /// <c>igc.h:4909-4913</c>: <c>GetCluster(pship, model)</c> is null when
+    /// <c>!pship->CanSee(model)</c>) — so the fixture stages what a scouted map
+    /// gives: <see cref="Gm.ShowMap"/> (native <c>bShowMap</c>, <c>igc.h:1123</c>
+    /// → <c>CmapMakerIGC::RevealMap</c>, <c>mapmakerigc.cpp:1002-1017</c>) plus
+    /// the explicit <see cref="Mission.SeedStartingVisibility"/> the direct
+    /// Started write bypasses. That is the same P875/P528b seeding the other
+    /// native-travel fixtures carry; all assertions are unchanged.</summary>
     [Trait("Requires", "Artwork")]
     [Trait("Tier", "Live")]
     [SkippableFact]
@@ -150,6 +158,11 @@ public sealed class MultiHopDroneLiveTests
         var stationPos = bExit + fwd * WarpClearance(omegaEntry);
         var station = Target(omega, 1, id: 9633, stationPos);
         mission.PlaceStation(new Station(station, LandType()), omega);
+        // NT-3 — native travel needs the route AND the target seen by the drone's
+        // side (P875): bShowMap reveals the map, then the start-of-game visibility
+        // pass runs (the debug auto-start writes Stage directly, which skips the
+        // lobby's Started-transition seed, Server.Lobby.cs:2162).
+        mission.SeedStartingVisibility();
 
         // Sanity: Plato → Omega really is two hops (FindPathToward from Plato
         // returns Plato's warp to Alderan, not straight to Omega).

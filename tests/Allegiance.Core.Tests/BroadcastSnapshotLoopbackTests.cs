@@ -290,7 +290,18 @@ public sealed class BroadcastSnapshotLoopbackTests
         {
             ArtPath = basis.ArtPath, StaticCore = basis.StaticCore, Port = 0,
             UpdatesPerSecond = 20, Games = basis.Games,
-            Broadcast = new() { ImmutableSnapshot = true, MinUpdateHz = 2, MaxDegreeOfParallelism = 4 },
+            Broadcast = new()
+            {
+                ImmutableSnapshot = true, MinUpdateHz = 2, MaxDegreeOfParallelism = 4,
+                // P887 (triaged by NT-3) — carry the model `basis` pinned. The
+                // interest-tier stream replaces the PORT per-tick teammate
+                // posBatch SingleShipUpdate stream (P677), and the crowded-egress
+                // comparison below is against that stream; a fresh BroadcastConfig
+                // would otherwise take P887's new "native" default, where tiers
+                // ADD traffic on top of the native deviation-ranked HEAVY/LIGHT
+                // budget (measured 2.3x: 49.7 MB -> 115.7 MB per phase).
+                ShipUpdateModel = basis.Broadcast!.ShipUpdateModel,
+            },
             Transport = new() { Mode = "pool", PoolWorkers = 4, MaxConnections = count + 16, MaxConnectionsPerIp = count + 16 },
         };
         server.Boot(config);
