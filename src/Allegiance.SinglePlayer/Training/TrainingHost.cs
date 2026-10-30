@@ -249,6 +249,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
         mission.Sides[0].DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)255, TechTreeBitMask.ByteCount).ToArray());
         mission.Stage = MissionStage.Started;   // bypass the ready-up lobby (established P180 pattern)
+        ApplyMissionSideMaxEnergy(variant, mission);   // mission3.cpp:187-190 / mission4.cpp:113-116
 
         var core = mission.Core;
         var sector = mission.Sectors.First(s => s.Id == variant.StartSector);
@@ -262,6 +263,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         var player = new Ship((short)0, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri) { SideId = 0, Name = "Cadet" };
         mission.PlaceShip(player, sector);
         EquipDefaultTrainingLoadout(player);
+        ApplyMissionShipSetup(variant, player);   // mission3.cpp:168-186 / mission4.cpp:110-137
         if (variant == CommandView) player.StationId = 1050; // training/mission5.cpp:95-96
 
         // Commander wingman (hull 412, side 0, native LoadUniverse CreateDrone("Commander",…412,0,c_ptWingman),
@@ -308,6 +310,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             };
             m.PlaceShip(trainee, sector);
             EquipDefaultTrainingLoadout(trainee);
+            ApplyMissionShipSetup(variant, trainee);   // mission3.cpp:168-186 / mission4.cpp:110-137
             host.PlayerShip = trainee;
             host._clientBound = true;
             Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, station {trainee.StationId?.ToString() ?? "none"}");
@@ -322,6 +325,63 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         server.TrainingShipDeath = host.HandleTraineeDeath;
         server.TrainingStationDeath = host.HandleStationDeath;
         return host;
+    }
+
+    /// <summary>
+    /// Side-wide global-attribute setup the native missions apply in their <c>CreateUniverse</c>:
+    /// Mission 3 cuts the side's max energy to a quarter (mission3.cpp:187-190), Mission 4 multiplies
+    /// it tenfold (mission4.cpp:113-116). Applied on the server (side 0 = the player's side) before the
+    /// player/trainee ships are created, so their <c>EffectiveMaxEnergy</c> reads the reduced/increased
+    /// ceiling from birth — the same as native's <c>SetAttribute(c_gaMaxEnergy, …)</c> before play begins.
+    /// </summary>
+    private static void ApplyMissionSideMaxEnergy(TrainingVariant variant, Mission mission)
+    {
+        float value = variant switch
+        {
+            _ when variant == BasicWeaponry => 0.25f,   // mission3.cpp:187-190 (one quarter)
+            _ when variant == EnemyEngagement => 10.0f, // mission4.cpp:113-116 (ten times)
+            _ => 0f,
+        };
+        if (value == 0f) return;
+        var side = mission.Sides.First(s => s.Id == 0);
+        var arr = side.GlobalAttributes.ToArray();
+        arr[GlobalAttributeSet.MaxEnergy] = value;   // c_gaMaxEnergy = 13 (igc.h:600)
+        side.GlobalAttributes = new GlobalAttributeSet(arr);
+    }
+
+    /// <summary>
+    /// Per-player loadout mutations the native missions apply in their <c>CreateUniverse</c> (mirrored on
+    /// the server so client and server agree — the brief's "applied on the server"):
+    /// <list type="bullet">
+    /// <item>Mission 3 (mission3.cpp:168-186): remove weapon 0, add anti-shield part 92 at mount 0,
+    /// remove the missile magazine, select only the starting weapon (mount 0) and disable group fire.</item>
+    /// <item>Mission 4 (mission4.cpp:110-137): enable group fire (all starting weapons) and remove the
+    /// missile magazine.</item>
+    /// </list>
+    /// </summary>
+    private static void ApplyMissionShipSetup(TrainingVariant variant, Ship ship)
+    {
+        if (variant == BasicWeaponry)
+        {
+            // mission3.cpp:172-175 — pPart = GetMountedPart(ET_Weapon,0); pPart->Terminate().
+            ship.TryRemovePart(EquipmentType.Weapon, 0, out _);
+            // mission3.cpp:176 — AddPartToShip(92, 0, 0): mount anti-shield gun part 92 at mount 0, full.
+            if (ship.Mission is { } m && m.Core.PartTypes.TryGetValue(92, out var antiShield))
+                ship.MountPart(antiShield, short.MaxValue, 0, ExpandedPartData.FullyMounted);
+            // mission3.cpp:177-180 — remove the missile magazine.
+            ship.TryRemovePart(EquipmentType.Magazine, 0, out _);
+            // mission3.cpp:181 — SetSelectedWeapon(0).
+            ship.StateM = (ship.StateM & ~ShipControlState.SelectedWeaponMask) | (0 & ShipControlState.SelectedWeaponMask);
+            // mission3.cpp:182 — fGroupFire = false.
+            ship.StateM &= ~ShipControlState.AllWeapons;
+        }
+        else if (variant == EnemyEngagement)
+        {
+            // mission4.cpp:126 — fGroupFire = true (activate all starting weapons).
+            ship.StateM |= ShipControlState.AllWeapons;
+            // mission4.cpp:131-136 — remove the missile magazine.
+            ship.TryRemovePart(EquipmentType.Magazine, 0, out _);
+        }
     }
 
     /// <summary>

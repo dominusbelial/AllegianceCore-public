@@ -33,14 +33,11 @@ public class Mission3 : TrainingMission
     /// and consumed by <see cref="CreateGotTargetCondition"/>.</summary>
     private readonly int[] _derelictHulls = new int[NumberOfDerelicts];
 
-    /// <summary>Stable unit directions around the player along which the derelicts are placed — a
-    /// deterministic stand-in for the native rotating <c>Vector::RandomDirection()</c> (mission3.cpp:228).</summary>
-    private static readonly Vector3[] DerelictDirections =
-    {
-        new(1f, 0f, 0f), new(0f, 1f, 0f), new(0f, 0f, 1f),
-        new(-1f, 0f, 0f), new(0f, -1f, 0f), new(0f, 0f, -1f),
-        new(1f, 1f, 0f), new(1f, -1f, 0f), new(0f, 1f, 1f), new(1f, 0f, 1f),
-    };
+    /// <summary>Fixed PRNG seed for the derelict sphere (<c>Vector::RandomDirection</c>, mission3.cpp:228).
+    /// Native uses the platform's unspecified <c>randomInt</c> seed; the port pins a fixed seed so test runs
+    /// stay deterministic across machines and reruns (the brief's "say how the seed is chosen": a constant —
+    /// chosen arbitrarily but fixed, so CI is reproducible).</summary>
+    private const int DerelictSeed = 8917;
 
     /// <summary>Native branches on joystick presence for several prompts (<c>mission3.cpp:629,842,929</c>);
     /// the keyboard branch is the test path (no joystick).</summary>
@@ -144,22 +141,42 @@ public class Mission3 : TrainingMission
     /// </summary>
     protected override void CreateUniverse()
     {
+        // mission3.cpp:201-229 — native rotates a running unit direction via Vector::RandomDirection()
+        // (uniform random direction) and picks hull 800 (1/3) or 801 (2/3) via randomInt(0,2). The port
+        // pins the PRNG to a fixed seed (DerelictSeed) so test runs stay deterministic; direction 0 starts
+        // at +X like native's (1,0,0), and each derelict faces away from the player along -direction.
+        var rng = new Random(DerelictSeed);
+        Vector3 direction = Vector3.UnitX;                                  // mission3.cpp:204
         for (int i = 0; i < NumberOfDerelicts; i++)
         {
-            float radius = 400.0f + i * 20.0f;                       // mission3.cpp:206
-            int hullId = (i % 2 == 0) ? 800 : 801;                   // stand-in for native randomInt(0,2) (209-218)
-            string name = $"Derelict {i + 1:D2}";                    // mission3.cpp:220
-            int id = FirstDerelictId + i;                            // stable instead of GenerateNewShipID (221)
+            float radius = 400.0f + i * 20.0f;                              // mission3.cpp:206
+            int hullId = rng.Next(0, 3) == 0 ? 800 : 801;                   // randomInt(0,2) (209-218)
+            string name = $"Derelict {i + 1:D2}";                           // mission3.cpp:220
+            int id = FirstDerelictId + i;                                   // stable instead of GenerateNewShipID (221)
             _derelictHulls[i] = id;
 
-            Vector3 direction = Vector3.Normalize(DerelictDirections[i]); // mission3.cpp:228 RandomDirection
-            Vector3 position = direction * radius;                  // mission3.cpp:207
-            Vector3 forward = -direction;                           // face away from the player (mission3.cpp:226)
+            Vector3 position = direction * radius;                          // mission3.cpp:207
+            Vector3 forward = -direction;                                   // face away from the player (226)
             Vector3 up = Vector3.UnitZ;
 
-            Site.CreateDrone(name, id, hullId, 1, PilotPlayer);      // mission3.cpp:222
-            Site.PlaceDrone(id, StartSector, position, forward, up, null, CmdDoNothing); // mission3.cpp:224-227
+            Site.CreateDrone(name, id, hullId, 1, PilotPlayer);             // mission3.cpp:222
+            Site.PlaceDrone(id, StartSector, position, forward, up, null, CmdDoNothing); // 224-227
+            direction = RandomUnitSphere(rng);                              // mission3.cpp:228
         }
+    }
+
+    /// <summary>A uniformly-random unit direction on the sphere — the C# equivalent of the native
+    /// <c>Vector::RandomDirection()</c> used at mission3.cpp:228 (nav/common, random spherical point).</summary>
+    private static Vector3 RandomUnitSphere(Random rng)
+    {
+        double theta = 2.0 * Math.PI * rng.NextDouble();                    // longitude
+        double v = rng.NextDouble();                                        // cosine latitude in [-1,1]
+        double phi = Math.Acos(2.0 * v - 1.0);
+        double sp = Math.Sin(phi);
+        return Vector3.Normalize(new Vector3(
+            (float)(sp * Math.Cos(theta)),
+            (float)(sp * Math.Sin(theta)),
+            (float)Math.Cos(phi)));
     }
 
     /// <summary>
