@@ -26,6 +26,21 @@ services:
       # P820b — the configurable Zone web link shown on the client's online hub
       # (served read-only via GET /api/config/zone-web). Empty = link omitted.
       Lobby__ZoneWebUrl: "${ALLEGIANCE_LOBBY_ZONE_WEB_URL:-}"
+      # P894 — the lobby ⇄ server protocol version (native LOBBYVER_LS). A server
+      # that states a different version is refused at registration; unset hosts
+      # are still accepted. Usually left at the default (1).
+      Lobby__LobbyProtocolVersion: "${ALLEGIANCE_LOBBY_PROTOCOL_VERSION:-1}"
+      # P894 — native's approved-server IP list (`IsServerAllowed`,
+      # lobby/server.cpp:24-84). Comma-separated addresses; empty (the default)
+      # accepts every server, so community hosts keep listing. Loopback is always
+      # allowed. Mode `allow` (default) or `block`. The list is deliberately NOT
+      # set here (an empty env value would become a blank entry): add
+      # `Lobby__AllowedServers__0: "<address>"` in a private compose override.
+      Lobby__ServerFilterMode: "${ALLEGIANCE_LOBBY_SERVER_FILTER_MODE:-allow}"
+      # P894 — the native percent-load metric's inputs (c_GameFactor=5,
+      # m_maxLoad=300; lobby/server.h:17,70-73). Advertised, not enforced.
+      Lobby__GameFactor: "${ALLEGIANCE_LOBBY_GAME_FACTOR:-5}"
+      Lobby__MaxLoad: "${ALLEGIANCE_LOBBY_MAX_LOAD:-300}"
       # Providers are deliberately off. Enable explicitly with credentials from
       # your environment or a private, ignored compose override; see docker/README.md.
       Lobby__Identity__GitHub__Enabled: "false"
@@ -69,6 +84,10 @@ services:
       ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ: "${ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ:-}"
       # P864c: opt out of replacing an old seat for the same verified account.
       ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS: "${ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS:-}"
+      # P894: the minimum client release this server admits at logon (the
+      # advertised `minClientVersion`, now also ENFORCED at LOGONREQ with a clear
+      # update reason). Empty = no minimum, like a native lobby without AutoUpdate.
+      ALLEGIANCE_MINIMUM_CLIENT_VERSION: "${ALLEGIANCE_MINIMUM_CLIENT_VERSION:-}"
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
       # P817 — native NPC travel (docs/reports/P817_NATIVE_GOTOPLAN.md).
       ALLEGIANCE_SIM_NATIVE_GOTOPLAN: "${ALLEGIANCE_SIM_NATIVE_GOTOPLAN:-0}"

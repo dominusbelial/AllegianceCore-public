@@ -118,6 +118,17 @@ For a remote server, transfer/pin the public PEM through a trusted operator path
 never mount the lobby's private volume. A public-key response is available at
 `GET /api/identity/public-key` for inspection, not automatic trust-on-first-use.
 
+Lobby directory settings (P894): `Lobby:LobbyProtocolVersion` (default 1; a server
+stating a different version is refused, native `LOBBYVER_LS`), `Lobby:AllowedServers`
+(native's approved-server list; empty = accept all, loopback always allowed; add
+`Lobby__AllowedServers__0` in a private override), `Lobby:ServerFilterMode`
+(`allow`/`block`), `Lobby:GameFactor` / `Lobby:MaxLoad` (the native percent-load
+inputs, 5 / 300), and `Lobby:CurrentClientVersion` / `MinimumClientVersion` /
+`UpdateFeedUrl` (the `/api/update/info` advertisement the client updater reads). The
+game server enforces `minimumClientVersion` at logon (`ALLEGIANCE_MINIMUM_CLIENT_VERSION`),
+advertises its `lobby.location` string, and its `lobby.minimumClientVersion` is now the
+same enforced value.
+
 The lobby's `Lobby:Identity` configuration also supports `PublicUrl`, `Store`
 (`Sqlite` or `Postgres`), `ConnectionString`, `SigningKeyFile`, `PublicKeyFile`,
 `OperatorAccountIds`, and provider blocks `GitHub`, `Google`, `Steam`. Provider

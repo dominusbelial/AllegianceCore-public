@@ -196,6 +196,15 @@ public sealed partial class Server
                 if (!fileListAccepted)
                     Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': file-set CRC 0x{req.CrcFileList:X8} refused — {fileListFailure}");
 
+                // P894 / LOB-0020, LOB-0026 — the advertised minimum client version,
+                // enforced at the logon the port's client actually performs (native
+                // checked it at the lobby: crcFileList → AUTO_UPDATE_INFO,
+                // lobby/client.cpp:272-288, and the verLobby NACK at :290-309).
+                bool clientVersionAccepted = CheckClientVersion(req, out var clientVersionFailure);
+                if (!clientVersionAccepted)
+                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': client version "
+                        + $"'{ConsoleLog.Sanitize(req.ClientVersion)}' refused — {clientVersionFailure}");
+
                 // P808c — RESERVED CALLSIGN protection (P808a follow-up): on a
                 // server with identity configured, an ANONYMOUS logon (no lobby
                 // account bound, i.e. AllowAnonymous) must not take the name of a
@@ -237,8 +246,9 @@ public sealed partial class Server
                         || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, joinMission)
                             && _peerNames.TryGetValue(p.Key, out var name)
                             && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
-                var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict && fileListAccepted;
-                var failureReason = !identityAccepted ? identityFailure
+                var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict && fileListAccepted && clientVersionAccepted;
+                var failureReason = !clientVersionAccepted ? clientVersionFailure
+                    : !identityAccepted ? identityFailure
                     : !fileListAccepted ? fileListFailure
                     : duplicateName ? "character name already in use in this mission"
                     : reservedConflict ? reservedFailure
@@ -2670,5 +2680,39 @@ public sealed partial class Server
             ? "your client did not report its game file set — update the client and reconnect"
             : "your game files do not match this server's release — update the client and reconnect";
         return false;
+    }
+
+    /// <summary>
+    /// P894 / LOB-0020, LOB-0026 — enforce the advertised minimum client version at
+    /// logon. Native's gate lived at the lobby: a client whose LOGON
+    /// <c>crcFileList</c> did not match the official one was sent
+    /// <c>AUTO_UPDATE_INFO</c> and never admitted (<c>lobby/client.cpp:272-288</c>),
+    /// and a mismatched <c>verLobby</c> got a <c>LOGON_NACK</c> reason
+    /// (<c>:290-309</c>). The port's client logs on directly to a game server, so
+    /// that is where the same decision is made. The reason string is what the client
+    /// shows on its connect-failure screen; it names the required build and the
+    /// updater, so the player knows to update instead of retrying forever.
+    ///
+    /// <para>A client that reports no version at all is a pre-P894 build and is
+    /// refused when this server requires one — fail-closed, exactly like an unknown
+    /// native CRC with AutoUpdate configured. A server with no requirement admits
+    /// everyone.</para>
+    /// </summary>
+    private bool CheckClientVersion(LogonRequest request, out string reason)
+    {
+        reason = "";
+        string? minimum = _config.ResolveMinimumClientVersion();
+        if (minimum is null) return true;
+        if (string.IsNullOrWhiteSpace(request.ClientVersion))
+        {
+            reason = $"this server requires client {minimum} or newer and your client did not report a version — update the client and reconnect; the lobby's update feed installs it";
+            return false;
+        }
+        if (Allegiance.Update.UpdateVersionGate.IsTooOld(request.ClientVersion, minimum))
+        {
+            reason = $"your client ({request.ClientVersion}) is older than this server's minimum ({minimum}) — update the client and reconnect; the lobby's update feed installs it";
+            return false;
+        }
+        return true;
     }
 }

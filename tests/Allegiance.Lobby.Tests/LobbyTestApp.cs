@@ -27,11 +27,16 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
     internal Allegiance.Lobby.Identity.IdentitySettings? IdentityConfiguration { get; set; }
     private readonly TimeProvider _time;
     private readonly Action<LobbySettings>? _configure;
+    private readonly System.Net.IPAddress _source;
 
-    public LobbyTestApp(TimeProvider? time = null, Action<LobbySettings>? configure = null)
+    /// <param name="sourceIp">P894 — the socket source every request appears to
+    /// come from (loopback by default, native's always-allowed address). An
+    /// allow/block-list test supplies a public address.</param>
+    public LobbyTestApp(TimeProvider? time = null, Action<LobbySettings>? configure = null, string? sourceIp = null)
     {
         _time = time ?? TimeProvider.System;
         _configure = configure;
+        _source = System.Net.IPAddress.Parse(sourceIp ?? "127.0.0.1");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -49,7 +54,7 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
             };
             services.RemoveAll<Allegiance.Lobby.Identity.IdentitySettings>();
             services.AddSingleton(identity);
-            services.AddSingleton<IStartupFilter, LoopbackSource>();
+            services.AddSingleton<IStartupFilter>(new LoopbackSource(_source));
             // Inject the fake (or system) clock.
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(_time);
@@ -57,7 +62,8 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
             // Re-point the registry at the configured window/cap, backed by that clock.
             services.RemoveAll<ServerRegistry>();
             services.AddSingleton<ServerRegistry>(
-                new ServerRegistry(_time, settings.MaxEntries, TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
+                new ServerRegistry(_time, settings.MaxEntries, TimeSpan.FromSeconds(settings.MaxAgeSeconds),
+                    settings.MaxEntriesPerAddress, settings.GameFactor, settings.MaxLoad));
 
             // P810 — the version advertisement (/api/update/info) reads the
             // settings from DI so a test can advertise versions/feeds.
@@ -73,14 +79,14 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
                 TimeSpan.FromSeconds(settings.MaxAgeSeconds)));
         });
     }
-    private sealed class LoopbackSource : IStartupFilter
+    private sealed class LoopbackSource(System.Net.IPAddress source) : IStartupFilter
     {
         public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
             => app =>
             {
                 Microsoft.AspNetCore.Builder.UseExtensions.Use(app, async (context, continuation) =>
                 {
-                    context.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+                    context.Connection.RemoteIpAddress = source;
                     await continuation();
                 });
                 next(app);

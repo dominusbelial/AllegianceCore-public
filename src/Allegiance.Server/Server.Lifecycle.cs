@@ -62,6 +62,7 @@ public sealed partial class Server
         _shutdown = false;
         _config = config;
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
+        _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
         _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
         _config.ResolveShowcaseMode();
@@ -308,7 +309,12 @@ public sealed partial class Server
             () => LiveGameParams,
             () => LobbyDirtyVersion,
             // Only claim while below native MaxGames (CreateGameDialog.h:20).
-            CanHostPlayerGame);
+            CanHostPlayerGame,
+            // P894 — the enforced minimum client version (top-level config, else
+            // the legacy lobby-block field) is the same value the listing
+            // advertises, so what a server demands and what it publishes cannot
+            // drift apart.
+            _config.ResolveMinimumClientVersion());
         _heartbeat.LiveMissions = () => LiveMissions;
         _heartbeat.MaxGames = _config.MaxGames;
         // Only an identity server refuses reserved names; others never poll the lobby for them.

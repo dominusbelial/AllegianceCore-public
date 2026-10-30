@@ -202,6 +202,43 @@ public sealed class LobbyHeartbeatTests
         Assert.Contains("\"minClientVersion\":null", viaContext); // P810 — absent requirement still emitted
         Assert.Contains("\"playerCount\":7", viaContext);   // camelCase, as before
         Assert.Contains("\"maxGames\":99", viaContext);     // P883b — native default MaxGames advertised
+        // P894 — the two new optional members are OMITTED when absent, so the
+        // pre-P894 wire bytes are unchanged.
+        Assert.DoesNotContain("location", viaContext);
+        Assert.DoesNotContain("lobbyProtocolVersion", viaContext);
+
+        // …and appear camelCased when the server states them.
+        var stated = req with { Location = "EU North", LobbyProtocolVersion = global::Allegiance.Core.LobbyProtocol.Version };
+        string statedJson = JsonSerializer.Serialize(stated,
+            global::Allegiance.Server.ServerJsonContext.Default.LobbyRegisterRequest);
+        int protocolVersion = global::Allegiance.Core.LobbyProtocol.Version;
+        Assert.Contains("\"location\":\"EU North\"", statedJson);
+        Assert.Contains("\"lobbyProtocolVersion\":" + protocolVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), statedJson);
+    }
+
+    /// <summary>P894 / LOB-0018 — the heartbeat advertises the server's location
+    /// (native <c>szLocation</c>, <c>lobby/messagesls.h:38</c>) and states the
+    /// lobby protocol version the directory checks (native <c>verLobby</c>,
+    /// <c>lobby/server.cpp:141-151</c>), and the directory stores and republishes
+    /// the location.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public async Task Heartbeat_advertises_location_and_the_stated_protocol_version()
+    {
+        Require.Artwork();
+        using var app = new LobbyHarness();
+        using var client = app.CreateClient();
+        var cfg = Cfg(app.ClientOptions.BaseAddress);
+        cfg.Location = "EU North";
+        var (hb, http) = MakeHeartbeat(app, cfg, () => 2);
+        try
+        {
+            await hb.PumpAsync();
+
+            var mine = Assert.Single((await client.GetFromJsonAsync<List<ServerListingDto>>("/api/servers"))!);
+            Assert.Equal("EU North", mine.Location);
+        }
+        finally { hb.Dispose(); http.Dispose(); }
     }
 
     /// <summary>P185 — <c>LobbyRegisterResponse</c> round-trips through the

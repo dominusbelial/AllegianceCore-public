@@ -187,6 +187,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// <see cref="SessionLost"/>).</summary>
     public bool AutoReconnect => _autoReconnect;
 
+    /// <summary>P894 — the client build identity sent in the LOGONREQ's optional
+    /// client-version extension (the server compares it with its advertised minimum
+    /// client version at logon). Set by the host from the installed release; null
+    /// (the default) sends no extension at all, byte-identical to a pre-P894 logon.</summary>
+    public string? ClientVersion { get; set; }
+
     /// <summary>P813c — true while the session is between sockets, re-dialing and
     /// waiting for the server's LOGONACK. Command/control sends are no-ops in
     /// this window; a harness must not treat the bot as gone.</summary>
@@ -1245,6 +1251,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     // P871 — a resume reports the same file-set identity as the
                     // first logon (the running install's manifest CRC).
                     CrcFileList = ClientFileList.Compute(),
+                    // P894 — and the same client-version extension, so a server's
+                    // minimum-client-version gate answers the resume identically
+                    // (the host sets ClientVersion at startup; null = an older host
+                    // that sends no extension, the pre-P894 message).
+                    ClientVersion = ClientVersion,
                 };
                 req.ResumeToken = _resumeToken;
                 Send(FedPacket.Pack(new[] { req.Encode() }));

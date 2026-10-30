@@ -1354,6 +1354,11 @@ public sealed partial class Game1 : Game
     // Server-browser (lobby) state.
     private readonly HttpClient _http;
     private readonly List<ServerListing> _servers = new();
+    /// <summary>P894 / LOB-0009 — the directory's master core list (native's
+    /// SERVERS_LIST core array) staged from the same poll as the server list; the
+    /// browser shows the set above the rows.</summary>
+    private List<LobbyCoreEntry> _lobbyCores = new();
+    private List<LobbyCoreEntry>? _lobbyCoresStaged;
 
     // P274 — lobby text filter / find (native FilterDialogPopup's game-name
     // substring edit box, gamescreen.cpp:371/510, + FindDialogPopup's jump-to-

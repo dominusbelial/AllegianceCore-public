@@ -830,6 +830,26 @@ list in **reverse**.
   `src/Allegiance.Lobby/LobbyEndpoints.cs`, `LobbySettings.cs`
   (`CurrentClientVersion`/`MinimumClientVersion`/`UpdateFeedUrl`).
   Report `docs/reports/P810_AUTO_UPDATE.md`.
+- **Logon version gate (P894)** — the advertised minimum client version is now
+  **enforced** at the logon the port's client performs: the LOGONREQ's optional
+  tagged `P894` client-version extension (`src/Allegiance.Core/Wire/LogonRequest.cs`,
+  `ClientVersion`) is compared with the server's resolved minimum
+  (`ServerConfig.ResolveMinimumClientVersion`, `ALLEGIANCE_MINIMUM_CLIENT_VERSION`) in
+  `src/Allegiance.Server/Server.Dispatch.cs` (`CheckClientVersion`); a refused client
+  shows the reason + updater pointer on its connect-failure screen
+  (`src/Allegiance.ClientCore.Game/Game1.Session.cs`). Native:
+  `lobby/client.cpp:272-309` (`crcFileList` → `AUTO_UPDATE_INFO`, `verLobby` NACK).
+- **Lobby protocol gate + approved-server list (P894)** — `LobbyProtocol`
+  (`src/Allegiance.Core/LobbyProtocol.cs`) is native's `LOBBYVER_LS` match at
+  registration; `src/Allegiance.Lobby/ServerAllowList.cs` +
+  `LobbySettings.AllowedServers`/`ServerFilterMode` port native's `IsServerAllowed`
+  (`lobby/server.cpp:24-84,131,138`). Key: `src/Allegiance.Lobby/LobbyEndpoints.cs`.
+- **Hidden games and the richer listing (P894)** — paused hosts are never advertised
+  and a zero-player *client-created* mission is hidden unless it is a server-owned
+  arena (`ServerRegistry.IsMissionAdvertised`, native `lobby/mission.cpp:77-86`);
+  listings also carry `location`, current/max games, the native percent load and the
+  lobby-normalized start time, with `GET /api/servers/cores` (native master core list)
+  and `GET /api/servers/stats` (native counters). Report `docs/reports/P894_REPORT.md`.
 
 ## 6b. Auto-update (`src/Allegiance.Update`)
 

@@ -164,3 +164,51 @@ for example `{"Lobby":{"KnownProxies":["127.0.0.1"]}}`. Only those proxies may
 supply one `X-Forwarded-For` hop. With no configured proxies, forwarded headers
 are ignored. Do not add arbitrary networks to this list. Names remain public,
 unverified labels; control and Unicode format characters are stripped.
+
+### P894 — directory gates, hidden games and the richer listing
+
+The 2026 parity pass on `docs/parity/lobby-matrix.csv` (LOB-0004/0005/0007/0008/
+0009/0010/0017/0018/0020/0026/0027/0029/0035) ported the lobby behaviours that only
+existed as advertisement before. Every rule cites the native source it ports.
+
+- **Lobby protocol gate (LOB-0004).** A server states `lobbyProtocolVersion` in its
+  register/heartbeat payload (`Allegiance.Core.LobbyProtocol.Version`). A stated
+  version that differs from `Lobby:LobbyProtocolVersion` (default 1) is refused with
+  native's `LOGON_SERVER_NACK` text (`lobby/server.cpp:93,141-151`). A pre-P894 host
+  that omits the field is accepted, so existing community servers keep listing.
+- **Approved-server list (LOB-0005).** `Lobby:AllowedServers` (empty by default) is
+  native's `Allegiance.cfg [Lobby] NumberOfServers/Server1..N` list read by
+  `IsServerAllowed` (`lobby/server.cpp:24-84`): loopback is always allowed (`:131`),
+  entries match with native's `strncmp(ip, entry, strlen(ip))` rule (the entry starts
+  with the caller's address — an exact address in practice), and
+  `Lobby:ServerFilterMode` is `allow` (default) or `block`. A refused source gets
+  native's reason with HTTP 403. Commas are not a separator: use
+  `Lobby__AllowedServers__0`, `__1`, … in Compose.
+- **Enforced minimum client version (LOB-0020/LOB-0026).** The listing still
+  advertises `minClientVersion`, and the game server now *enforces* it at the logon
+  the port's client actually performs: the client sends its installed release in the
+  LOGONREQ's optional `P894` extension and an older (or silent) client is refused with
+  a reason naming the required build and the updater, shown on the client's
+  connect-failure screen. Set it with `minimumClientVersion` (top level) or
+  `ALLEGIANCE_MINIMUM_CLIENT_VERSION`; the legacy `lobby.minimumClientVersion` still
+  works and is the same value the heartbeat advertises. Empty = no minimum.
+- **Paused servers are hidden (LOB-0007).** A heartbeat may set `paused: true`; a
+  paused host is never advertised (native `FM_S_PAUSE` + "never advertize paused
+  games", `lobby/server.cpp:266-272`, `lobby/mission.cpp:77-78`). `GET /api/servers/{id}`
+  still answers for that id.
+- **Zero-player games (LOB-0008).** Native advertises a mission only when
+  `!paused && (nNumPlayers > 0 || fMSArena)` (`lobby/mission.cpp:77-86`), where
+  `fMSArena` is a server-owned mission that exists without a player. The port's
+  servers are exactly that (persistent, `objectModelCreated: true`), so they stay
+  listed empty; a *client-created* game (`objectModelCreated: false`, P871's
+  create-game relay) is hidden until its first player arrives. Hiding every empty
+  server would empty the directory, which is the opposite of native's intent.
+- **Richer listing (LOB-0009/0010/0017/0018/0027/0029/0035).** `location` (native
+  `szLocation`), current/max game counts, the native percent load
+  `(games*5 + players)/maxLoad` (`lobby/server.h:17,70-73`) and the lobby-normalized
+  mission start time (`lobby/mission.cpp:61`) ride the listing; `GET /api/servers/cores`
+  relays the master core list (native `BuildStaticCoreInfo`, `lobby/server.cpp:100-120`)
+  and `GET /api/servers/stats` answers the native counters
+  (`lobby/counters.h:4-26`, `lobby/lobbyapp.cpp:396-423`), including how many paused /
+  empty missions the advertise rules hid. Server connect/disconnect/expiry are logged
+  (`LE_ServerConnected`/`LE_ServerDisconnected`, `lobby/server.cpp:401-425`).

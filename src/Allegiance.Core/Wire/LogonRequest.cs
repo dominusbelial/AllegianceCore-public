@@ -26,6 +26,12 @@ namespace Allegiance.Core.Wire;
 /// aliases steamAuthTicket[0..3]; this port implements the declared spec (four
 /// var items + STEAM fixed fields), which is what the server validation at
 /// <c>FedSrv.CPP:5824</c> consumes.
+///
+/// PORT EXTENSIONS (tagged trailing blobs, after the native variable items):
+/// <c>"P883"</c> + u32 resume token (the P813c reconnect seat) and <c>"P894"</c> +
+/// u32 length + bytes client version (the advertised <c>minClientVersion</c> gate,
+/// enforced at logon). Neither changes a native offset; a message with neither is
+/// byte-identical to the native shape.
 /// </summary>
 public sealed class LogonRequest : IFedMessage
 {
@@ -50,6 +56,18 @@ public sealed class LogonRequest : IFedMessage
     public uint ResumeToken;
     public int CrcFileList;
 
+    /// <summary>Port-only P894 client build identity — the installed release string
+    /// (e.g. <c>2.0.0</c>). Native's version identity at logon was the file-list
+    /// CRC (<c>crcFileList</c>, <c>Inc/Messages.h:44</c>) checked by the lobby
+    /// against its official list (<c>lobby/client.cpp:272-281</c>). The port keeps
+    /// the same CRC gate (<see cref="CrcFileList"/>, P871) and adds this tagged
+    /// trailing blob so a server can enforce the advertised
+    /// <c>minClientVersion</c> at its own logon — the logon point the port's client
+    /// actually uses (it connects straight to a game server). Null = an older
+    /// client that does not send it; the encoded bytes are then identical to the
+    /// pre-P894 message.</summary>
+    public string? ClientVersion;
+
     // STEAM fixed fields (populated by modern clients)
     public byte[]? SteamAuthTicket;     // up to 1024 bytes
     public uint SteamAuthTicketLength;
@@ -62,7 +80,12 @@ public sealed class LogonRequest : IFedMessage
     {
         int blobChars = ZtsBlobSize(CharacterName) + ZoneTicketBlobSize(ZoneTicket)
                       + ZtsBlobSize(CDKey) + ZtsBlobSize(MissionPassword);
-        var buf = new byte[FixedSize + blobChars + (ResumeToken == 0 ? 0 : 8)];
+        // An empty/blank version is "not stated": encode nothing rather than an
+        // empty blob, so the bytes match a client that never sets it.
+        bool sendVersion = !string.IsNullOrWhiteSpace(ClientVersion);
+        byte[] versionBytes = sendVersion ? Latin1.GetBytes(ClientVersion!) : Array.Empty<byte>();
+        int versionBlob = sendVersion ? 8 + versionBytes.Length : 0;
+        var buf = new byte[FixedSize + blobChars + (ResumeToken == 0 ? 0 : 8) + versionBlob];
         WireWriter w = new(buf);
 
         w.WriteU16(0); // cbmsg placeholder
@@ -116,6 +139,12 @@ public sealed class LogonRequest : IFedMessage
             w.WriteU32(0x33383850); // "P883" port-extension tag, not a native field
             w.WriteU32(ResumeToken);
         }
+        if (sendVersion)
+        {
+            w.WriteU32(ClientVersionTag); // "P894" port-extension tag
+            w.WriteU32((uint)versionBytes.Length);
+            w.WriteBytes(versionBytes);
+        }
 
         // cbmsg = total length
         w.WriteU16At(0, (ushort)w.Position);
@@ -149,6 +178,7 @@ public sealed class LogonRequest : IFedMessage
             Time      = BitConverter.ToUInt32(buf.Slice(24)),
             DwCookie  = BitConverter.ToUInt32(buf.Slice(28)),
             ResumeToken = ReadResumeToken(buf, ch, zt, cd, ps),
+            ClientVersion = ReadClientVersion(buf, ch, zt, cd, ps),
             CrcFileList = BitConverter.ToInt32(buf.Slice(32)),
 
             SteamAuthTicket      = ChompZeros(buf.Slice(36, 1024)).ToArray(),
@@ -162,8 +192,57 @@ public sealed class LogonRequest : IFedMessage
     {
         int end = FixedSize;
         foreach (var item in items) if (item.IsPresent) end = Math.Max(end, item.Ib + item.Cb);
-        return buf.Length == end + 8 && BitConverter.ToUInt32(buf.Slice(end)) == 0x33383850
-            ? BitConverter.ToUInt32(buf.Slice(end + 4)) : 0;
+        int offset = ReadPortExtension(buf, end, ResumeTokenTag, out _);
+        return offset < 0 ? 0 : BitConverter.ToUInt32(buf.Slice(offset));
+    }
+
+    /// <summary>The P883 tag: "P883" as a little-endian u32.</summary>
+    private const uint ResumeTokenTag = 0x33383850;
+
+    /// <summary>The P894 tag: "P894" as a little-endian u32.</summary>
+    private const uint ClientVersionTag = 0x34393850;
+
+    private static string? ReadClientVersion(ReadOnlySpan<byte> buf, params VarItem[] items)
+    {
+        int end = FixedSize;
+        foreach (var item in items) if (item.IsPresent) end = Math.Max(end, item.Ib + item.Cb);
+        int lengthOffset = ReadPortExtension(buf, end, ClientVersionTag, out int payloadOffset);
+        if (lengthOffset < 0) return null;
+        uint length = BitConverter.ToUInt32(buf.Slice(lengthOffset));
+        if (length == 0 || payloadOffset < 0 || payloadOffset + (long)length > buf.Length) return null;
+        return Latin1.GetString(buf.Slice(payloadOffset, (int)length));
+    }
+
+    /// <summary>
+    /// Scan the port's tagged trailing extensions (after the native blobs) for
+    /// <paramref name="tag"/>. Two layouts exist: the P883 resume token
+    /// (<c>u32 tag</c> + <c>u32 value</c>, fixed 8 bytes) and the P894 client
+    /// version (<c>u32 tag</c> + <c>u32 byte length</c> + bytes). Returns the offset
+    /// of the extension's first payload word, or -1 when the tag is absent.
+    /// </summary>
+    private static int ReadPortExtension(ReadOnlySpan<byte> buf, int start, uint tag, out int payloadOffset)
+    {
+        payloadOffset = -1;
+        int at = start;
+        while (at + 8 <= buf.Length)
+        {
+            uint found = BitConverter.ToUInt32(buf.Slice(at));
+            uint word = BitConverter.ToUInt32(buf.Slice(at + 4));
+            if (found == tag)
+            {
+                payloadOffset = at + 8;
+                return at + 4;
+            }
+            if (found == ResumeTokenTag)
+            {
+                at += 8;                 // fixed-size payload: the token word itself
+                continue;
+            }
+            long next = (long)at + 8 + word;   // length-prefixed payload
+            if (next > buf.Length) return -1;
+            at = (int)next;
+        }
+        return -1;
     }
 
     public bool VersionMatches => FedsrvVer == MsgVer;

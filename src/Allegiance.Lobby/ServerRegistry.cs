@@ -24,6 +24,9 @@ public sealed class ServerRegistry
     private const int CoreFileMax = 260;
     /// <summary>A version tag.</summary>
     private const int VersionMax = 64;
+    /// <summary>P894 — native's server location string (<c>c_cbFileName</c>,
+    /// <c>lobby/server.h:168</c>); the directory keeps it short too.</summary>
+    private const int LocationMax = 128;
 
     private readonly ConcurrentDictionary<string, ServerListing> _entries = new(StringComparer.Ordinal);
     private readonly TimeProvider _time;
@@ -31,16 +34,25 @@ public sealed class ServerRegistry
     private readonly TimeSpan _maxAge;
     private readonly object _registrationGate = new();
     private readonly int _maxEntriesPerAddress;
+    private readonly int _gameFactor;
+    private readonly int _maxLoad;
 
     /// <param name="time">Clock used for <c>RegisteredUtc</c>/<c>LastSeenUtc</c> and expiry checks.</param>
     /// <param name="maxEntries">Hard cap on distinct listings; new registrations are refused once full (heartbeats to existing ids never are).</param>
     /// <param name="maxAge">An entry whose <c>LastSeenUtc</c> is older than this is considered expired.</param>
-    public ServerRegistry(TimeProvider time, int maxEntries = 512, TimeSpan? maxAge = null, int maxEntriesPerAddress = 4)
+    /// <param name="maxEntriesPerAddress">Native has no such cap; it bounds one host's share of the directory.</param>
+    /// <param name="gameFactor">P894 — native <c>c_GameFactor</c> (5) for the percent-load metric
+    /// (<c>lobby/server.h:17,70-73</c>).</param>
+    /// <param name="maxLoad">P894 — native's load denominator (300, <c>lobby/server.cpp:457</c>).</param>
+    public ServerRegistry(TimeProvider time, int maxEntries = 512, TimeSpan? maxAge = null, int maxEntriesPerAddress = 4,
+        int gameFactor = 5, int maxLoad = 300)
     {
         _time = time;
         _maxEntriesPerAddress = Math.Max(1, maxEntriesPerAddress);
         _maxEntries = maxEntries;
         _maxAge = maxAge ?? TimeSpan.FromSeconds(90);
+        _gameFactor = Math.Max(1, gameFactor);
+        _maxLoad = Math.Max(1, maxLoad);
     }
 
     /// <summary>The configured expiry threshold (what <see cref="Get"/> treats as "expired").</summary>
@@ -107,11 +119,19 @@ public sealed class ServerRegistry
                 // P810 — the optional minimum-client-version requirement
                 // (absent stays null, not "").
                 NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)), ToMissions(req.Missions), Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
-                Math.Max(1, req.MaxGames ?? 20));
+                Math.Max(1, req.MaxGames ?? 20),
+                // P894 — native's server metadata (location), the paused flag the
+                // listing hides on, and the host's stated lobby protocol version.
+                Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion);
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
 
+            // P894 / LOB-0035 — native logs server connect/disconnect lifecycle
+            // events with name and address (LE_ServerConnected /
+            // LE_ServerDisconnected, lobby/server.cpp:401-425). The directory keeps
+            // the same record on its stdout log.
+            Console.WriteLine($"[lobby] server connected: {listing.Name} @ {listing.Address}:{listing.Port} ({id})");
             return new RegisterResponse(id, token);
         }
 
@@ -144,6 +164,12 @@ public sealed class ServerRegistry
             // P810 — a heartbeat refreshes the requirement too (a server may
             // raise its minimum after a client-breaking update).
             MinClientVersion = NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)),
+            // P894 — location, the paused flag (native FM_S_PAUSE,
+            // lobby/server.cpp:266-272) and the stated protocol version refresh
+            // in place, exactly like every other advertised fact.
+            Location = Sanitize(req.Location, LocationMax),
+            Paused = req.Paused,
+            LobbyProtocolVersion = req.LobbyProtocolVersion ?? target.LobbyProtocolVersion,
         };
 
         _entries[target.Id] = refreshed;
@@ -163,7 +189,13 @@ public sealed class ServerRegistry
             return false;
         if (current.Token != token)
             return false;
-        return _entries.TryRemove(new KeyValuePair<string, ServerListing>(id, current));
+        if (_entries.TryRemove(new KeyValuePair<string, ServerListing>(id, current)))
+        {
+            // P894 / LOB-0035 — native's LE_ServerDisconnected (lobby/server.cpp:420).
+            Console.WriteLine($"[lobby] server disconnected: {current.Name} @ {current.Address}:{current.Port} ({id})");
+            return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -182,12 +214,53 @@ public sealed class ServerRegistry
     ///
     /// <para>Expired entries are hidden immediately. Physical removal happens
     /// during registration or the background sweep; reads remain lock-free.</para>
+    ///
+    /// <para><b>P894 / LOB-0007 (paused) and LOB-0008 (zero-player games).</b>
+    /// Native's advertise predicate is
+    /// <c>!pServer-&gt;GetPaused() &amp;&amp; (nNumPlayers &gt; 0 || fMSArena)</c>
+    /// (<c>lobby/mission.cpp:77-86</c>) — "never advertize paused games", and a
+    /// mission nobody is in is advertised only when it is an <i>arena</i>, i.e. a
+    /// server-owned mission that exists independently of any player
+    /// (<c>fMSArena</c> is the mission's <c>bObjectModelCreated</c>,
+    /// <c>FedSrv/fsmission.cpp:4087</c>). The native client applies the same rule
+    /// when it builds the server list: no paused server and no server with an
+    /// empty core mask (<c>lobby/client.cpp:356</c>).</para>
+    ///
+    /// <para>The port's servers ARE persistent, server-owned (arena) missions —
+    /// they start empty and stay listed while they heartbeat — so native's own
+    /// predicate keeps them visible with zero players, exactly like a native
+    /// MSArena server. A <i>client-created</i> game (the P871 create-game relay,
+    /// native's non-arena CREATE_MISSION_REQ path) with nobody in it is hidden
+    /// until its first player arrives, and a paused host is hidden outright. This
+    /// is the native intent without the "hide every empty server" degenerate
+    /// reading that would empty the port's list.</para>
     /// </summary>
     public IReadOnlyList<ServerListingDto> List()
     {
         var cutoff = _time.GetUtcNow() - _maxAge;
-        return _entries.Values.Where(e => e.LastSeenUtc >= cutoff).Select(ToDto).ToList();
+        return _entries.Values
+            .Where(e => e.LastSeenUtc >= cutoff)
+            .Where(IsServerAdvertised)
+            .Select(ToDto).ToList();
     }
+
+    /// <summary>P894 — native's server-row predicate (<c>lobby/client.cpp:356</c>):
+    /// <b>not paused</b>. Native also dropped a server whose static-core mask was 0
+    /// (<c>GetStaticCoreMask() != 0</c>), because that lobby routed game CREATION
+    /// through the server and a core-less server could not host a new game. This
+    /// port's client connects to a listed server directly (LOB-0022/0023 notes),
+    /// so an empty core advertisement is "unknown", not "unusable": hiding such a
+    /// host would silently drop pre-P810/community servers for no benefit.</summary>
+    private static bool IsServerAdvertised(ServerListing l) => !l.Paused;
+
+    /// <summary>P894 — native's mission advertise predicate (<c>lobby/mission.cpp:77-86</c>):
+    /// a mission needs a player, unless it is an arena (server-owned) mission, in
+    /// which case it is advertised from birth. A host that publishes no
+    /// <c>Game</c> params at all is a persistent server whose arena bit is
+    /// unknown, so it is treated as an arena (shown) — the safe direction that
+    /// keeps pre-P806 hosts listing.</summary>
+    public static bool IsMissionAdvertised(int playerCount, GameParamsDto? game)
+        => playerCount > 0 || game is not { ObjectModelCreated: false };
 
     /// <summary>
     /// Returns a single listing as a public DTO, or <c>null</c> if it does not exist
@@ -237,9 +310,61 @@ public sealed class ServerRegistry
         var cutoff = _time.GetUtcNow() - maxAge;
         foreach (var kv in _entries)
         {
-            if (kv.Value.LastSeenUtc < cutoff)
-                _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value));
+            if (kv.Value.LastSeenUtc < cutoff && _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value)))
+            {
+                // P894 / LOB-0035 — a missed roll call is also a lifecycle event
+                // (native's RollCall drop, lobby/lobbyapp.cpp:426-460).
+                Console.WriteLine($"[lobby] server expired (missed roll call): {kv.Value.Name} @ {kv.Value.Address}:{kv.Value.Port} ({kv.Key})");
+            }
         }
+    }
+
+    /// <summary>P894 / LOB-0009 — the master core list, native's aggregated
+    /// <c>BuildStaticCoreInfo</c> set (<c>lobby/server.cpp:100-120</c>) that the
+    /// client offers before joining (<c>lobby/client.cpp:377-385</c>). Every live
+    /// listing's advertised core is included with its server count; the curated
+    /// lobby catalog (<c>LobbySettings.GameCores</c>, P871) is included even when
+    /// no server currently advertises it (count 0), so a client can see the cores
+    /// the lobby supports.</summary>
+    public LobbyCoreListDto CoreList(IReadOnlyList<string>? curated = null)
+    {
+        var cutoff = _time.GetUtcNow() - _maxAge;
+        var live = _entries.Values.Where(e => e.LastSeenUtc >= cutoff && IsServerAdvertised(e)).ToList();
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var listing in live)
+            if (!string.IsNullOrEmpty(listing.CoreFile))
+                counts[listing.CoreFile] = counts.GetValueOrDefault(listing.CoreFile) + 1;
+        foreach (var core in curated ?? Array.Empty<string>())
+            if (!string.IsNullOrWhiteSpace(core) && !counts.ContainsKey(core.Trim()))
+                counts[core.Trim()] = 0;
+        return new LobbyCoreListDto(
+            counts.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(kv => new LobbyCoreDto(kv.Key, kv.Value)).ToList(),
+            live.Count);
+    }
+
+    /// <summary>P894 / LOB-0027 — the counters native exported through shared
+    /// memory perfmon (<c>LOBBY_COUNTERS</c>/<c>PER_SERVER_COUNTERS</c>,
+    /// <c>lobby/counters.h:4-26</c>; <c>UpdatePerfCounters</c>,
+    /// <c>lobby/lobbyapp.cpp:396-423</c>): servers, missions, players in missions
+    /// and per-server percent load. The hidden counters make the paused/zero-player
+    /// suppression (LOB-0007/0008) observable instead of silent.</summary>
+    public LobbyStatsDto Stats()
+    {
+        var cutoff = _time.GetUtcNow() - _maxAge;
+        var alive = _entries.Values.Where(e => e.LastSeenUtc >= cutoff).ToList();
+        var live = alive.Where(IsServerAdvertised).ToList();
+        return new LobbyStatsDto(
+            Servers: live.Count,
+            Missions: live.Sum(l => l.Missions is { Count: > 0 } missions
+                ? missions.Count(m => IsMissionAdvertised(m.PlayerCount, m.Game))
+                : Math.Max(0, l.CurrentGames)),
+            Players: live.Sum(l => l.PlayerCount),
+            PercentLoad: live.Sum(PercentLoad),
+            HiddenPausedServers: alive.Count(l => l.Paused),
+            HiddenPausedMissions: alive.Where(l => l.Paused).Sum(l => l.Missions?.Count ?? 0),
+            HiddenEmptyMissions: alive.Where(l => !l.Paused)
+                .Sum(l => l.Missions?.Count(m => !IsMissionAdvertised(m.PlayerCount, m.Game)) ?? 0));
     }
 
     /// <summary>
@@ -296,10 +421,35 @@ public sealed class ServerRegistry
 
     /// <summary>P761b — the public projection: the listing WITHOUT its pilot names
     /// (privacy fix; the names survive only for <see cref="FindPlayer"/>).</summary>
-    private static ServerListingDto ToDto(ServerListing l) => new(
+    private ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
-        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, l.Missions, l.CurrentGames, l.MaxGames);
+        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, VisibleMissions(l), l.CurrentGames, l.MaxGames,
+        l.Location, PercentLoad(l), StartTimeUtc(l));
+
+    /// <summary>P894 / LOB-0008 — the mission rows a client may see: native drops a
+    /// zero-player non-arena mission from the advertisement
+    /// (<c>lobby/mission.cpp:77-86</c>). The server row itself stays (native's
+    /// SERVERS_LIST is per server, <c>lobby/client.cpp:343-385</c>).</summary>
+    private static IReadOnlyList<MissionListingDto>? VisibleMissions(ServerListing l)
+        => l.Missions?.Where(m => IsMissionAdvertised(m.PlayerCount, m.Game)).ToArray();
+
+    /// <summary>P894 / LOB-0029 — native <c>CFLServer::GetPercentLoad</c>
+    /// (<c>lobby/server.h:70-73</c>): <c>(games*c_GameFactor + players)/m_maxLoad</c>.
+    /// A server that advertises no game capacity has no load to report (0).</summary>
+    private int PercentLoad(ServerListing l)
+        => l.MaxGames <= 0 ? 0 : (l.CurrentGames * _gameFactor + l.PlayerCount) / _maxLoad;
+
+    /// <summary>P894 / LOB-0017 — native normalizes the mission's relative start
+    /// time against the moment the lobby info arrived
+    /// (<c>plmi-&gt;dwStartTime += Time::Now().clock()</c>,
+    /// <c>lobby/mission.cpp:61</c>). The heartbeat's <c>LastSeenUtc</c> is that
+    /// moment for the published payload; a zero offset means no start time is
+    /// armed (native <c>dwStartTime</c> 0).</summary>
+    private static DateTimeOffset? StartTimeUtc(ServerListing l)
+        => l.Game is { StartTimeOffsetMs: > 0 } g
+            ? l.LastSeenUtc + TimeSpan.FromMilliseconds(g.StartTimeOffsetMs)
+            : null;
 
     /// <summary>
     /// P806 — normalize the caller-supplied game settings. Every omitted field

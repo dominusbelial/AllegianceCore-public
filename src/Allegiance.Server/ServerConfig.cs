@@ -398,8 +398,17 @@ public sealed class LobbyConfig
     /// <summary>P810 — the minimum client version this server requires. Empty
     /// (the default) = no requirement; otherwise the value rides the heartbeat
     /// as <c>minClientVersion</c> and the client's server list hides this
-    /// server for players on older builds (see the design doc §3).</summary>
+    /// server for players on older builds (see the design doc §3). P894 also
+    /// ENFORCES it at logon (see <see cref="ServerConfig.MinimumClientVersion"/>);
+    /// the top-level field wins when both are set.</summary>
     public string? MinimumClientVersion { get; set; }
+
+    /// <summary>P894 / LOB-0018 — the server location string advertised to the
+    /// lobby (native <c>szLocation</c> on the server logon,
+    /// <c>lobby/messagesls.h:38</c>; <c>lobby/server.cpp:105-106</c>) and shown in
+    /// the client's server-list LOCATION column
+    /// (<c>WinTrek/CreateGameDialog.h:79-82</c>). Empty = not advertised.</summary>
+    public string Location { get; set; } = "";
 }
 
 /// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's
@@ -993,6 +1002,35 @@ public sealed class ServerConfig
     /// (FedSrv.CPP:629). Default false: only the same verified account may
     /// replace a seated player; unverified/different accounts are always refused.</summary>
     public bool AlwaysRefuseDuplicateLogons { get; set; }
+
+    /// <summary>P894 / LOB-0004/0020/0026 — the minimum client release this server
+    /// admits at logon, the enforced form of the <c>minClientVersion</c> the
+    /// lobby listing advertises (P810). Native's version gate ran at the lobby:
+    /// the file-list CRC it compared (<c>Inc/Messages.h:44</c>,
+    /// <c>lobby/client.cpp:272-281</c>) and its <c>verLobby</c> NACK
+    /// (<c>lobby/client.cpp:290-309</c>). The port's client logs on to a GAME
+    /// SERVER, so the gate is enforced there: a LOGONREQ whose optional
+    /// <c>clientVersion</c> extension is below this value is refused with a clear
+    /// reason and a pointer to the updater, and the client shows it on its
+    /// connect-failure screen. Null/empty (the default) = no minimum, exactly like
+    /// a native lobby with AutoUpdate unconfigured.</summary>
+    public string? MinimumClientVersion { get; set; }
+
+    /// <summary>The effective minimum client version: the explicit
+    /// <see cref="MinimumClientVersion"/>, else the legacy
+    /// <see cref="LobbyConfig.MinimumClientVersion"/> an operator may already have
+    /// set (P810's advertised-only field). Empty = no minimum.</summary>
+    public string? ResolveMinimumClientVersion()
+        => !string.IsNullOrWhiteSpace(MinimumClientVersion) ? MinimumClientVersion!.Trim()
+         : !string.IsNullOrWhiteSpace(Lobby?.MinimumClientVersion) ? Lobby!.MinimumClientVersion!.Trim()
+         : null;
+
+    /// <summary>P894 — env override for the logon version gate
+    /// (<c>ALLEGIANCE_MINIMUM_CLIENT_VERSION</c>). Unset keeps the config value.</summary>
+    public void ApplyMinimumClientVersionEnvironment(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) MinimumClientVersion = value.Trim();
+    }
 
     public void ApplyDuplicateLogonEnvironment(string? value)
     {
