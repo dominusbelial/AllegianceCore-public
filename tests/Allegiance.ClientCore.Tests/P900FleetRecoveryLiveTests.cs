@@ -272,7 +272,7 @@ public sealed class P900FleetRecoveryLiveTests(ITestOutputHelper output)
             while (!File.Exists(Path.Combine(root.FullName, "AllegianceCore.slnx"))) root = root.Parent!;
             _work = Path.Combine(root.FullName, ".scratch", "p900", "live-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_work);
-            _dotnet = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dotnet", "dotnet");
+            _dotnet = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet";
             _art = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
             var reservation = new TcpListener(IPAddress.Loopback, 0);
             reservation.Start(); _serverPort = ((IPEndPoint)reservation.LocalEndpoint).Port; reservation.Stop();

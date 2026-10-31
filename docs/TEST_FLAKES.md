@@ -4759,3 +4759,19 @@ The sweep also exposed P905's tool-count contract assertion (13 expected, 14
 actual). That task regression was corrected for the added `bot_behavior` tool;
 the updated count test and the new named-worker routing test each passed three
 times alone. It is not classified as a flake. The Fast sweep was not repeated.
+
+
+## Mini sweep `batch-p900-p901` — 2026-10-31
+
+Snapshot of `4c25346f` without media. Fast 12,702 tests, Live 232, Perf 73 (pass).
+
+| Test | Result | Classification |
+|---|---|---|
+| `P900FleetRecoveryLiveTests` (11 tests) | Failed in 1-15 ms starting `~/.dotnet/dotnet` in the runner container | Test harness path. Now uses `DOTNET_HOST_PATH`; 2 sampled tests pass 3/3 on the workstation, the runner has not re-run them. |
+| `P799LivesLimitLiveTests.Ghost_only_side_is_eliminated_and_last_side_wins` | `Sides.First` threw after game over | Test race with post-game rotation. The side state is now sampled while pumping; 3/3 alone. |
+| `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` | `Assert.Single` saw clusters 1054 and 1055 | Known open, see the persistent entry above. |
+| `SC3CloakLiveTests`, `SC4ShowcaseLiveTests`, `P745FinaleSiegeLiveTests` | Long showcase assertions failed | Known open, see earlier entries. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Null defend target | Known open, fails 3/3 on baseline. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | Status parent 1051, expected -1 | Known intermittent. |
+
+Fast budget offenders on the mini: `P796VariedLoadoutTests` (civ 35) 15.8 s, `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` 20.9 s, `SC2NaniteSupportTests` (civ 25) 19.8 s.

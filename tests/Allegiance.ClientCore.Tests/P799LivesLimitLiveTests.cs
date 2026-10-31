@@ -370,8 +370,13 @@ public sealed class P799LivesLimitLiveTests
 
         // Alpha's only player dies once → ghost → Alpha is all-ghosts → eliminated.
         Assert.True(KillShipForReal(server, shipA));
+        // Sampled while pumping: the rotation after game over rebuilds Sides.
+        bool alphaDeactivated = false;
         int over = PumpUntil(server, () =>
-            alpha.World.GameOverResult is { } goA && goA.SideWinner == 1, 6000);
+        {
+            alphaDeactivated |= mission!.Sides.FirstOrDefault(s => s.Id == 0) is { Active: false };
+            return alpha.World.GameOverResult is { } goA && goA.SideWinner == 1;
+        }, 6000);
         Assert.True(over < 6000,
             $"Alpha must be eliminated and Bravo declared the winner (GameOverResult={(alpha.World.GameOverResult is null ? "none" : alpha.World.GameOverResult.SideWinner.ToString())})");
         // Server truth: the all-ghost side is deactivated (DeactivateSide,
@@ -381,7 +386,7 @@ public sealed class P799LivesLimitLiveTests
         // ClientWorldSideInactiveTests. The rotation's fresh-world re-burst may
         // legitimately re-seed client side state, so the durable assertion is
         // the server's Side.Active and the received game-over winner.
-        Assert.False(mission!.Sides.First(s => s.Id == 0).Active,
+        Assert.True(alphaDeactivated,
             "server: the all-ghost side must be deactivated (FedSrv.CPP:12070 → DeactivateSide)");
         int bravoOver = PumpUntil(server, () =>
             bravo.World.GameOverResult is { } goB && goB.SideWinner == 1, 4000);
