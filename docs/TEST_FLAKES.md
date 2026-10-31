@@ -10,7 +10,7 @@ CI's Fast tier was red on 21 tests. 19 needed the mission core and did not skip:
 loads the core, so the seat never formed), `P787BShopHoverAndPickTests.A_resting_pointer...`. `P889PoolSizingTests.Calibration_entry...`
 read the runner's core count and the small budget clamped the calibrated 6; now fixed at 16 cores. `P629ConfigTests.Invalid_mode_fails_boot...`
 found a real order bug: a mistyped `sim.crowdingPenalty` failed only after the artwork check, now rejected first. CI's filter run locally with
-artwork hidden: 7,762 tests, 0 failed. `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.8 s over the 10 s limit with Codex on the host.
+artwork hidden: 7,762 tests, 0 failed. `TcpLoopbackProofTests.Logon_Handshake...(udp: True)` then timed out on CI twice, at different steps; both overlapped `CleanCloneSkipGuardTests`, whose `Parallel.ForEach` fills the pool that UDP receive completions run on, while passing runs took 0.05 s with no overlap. Not reproduced locally (90 isolated runs, 4 Core project runs on 4 cores). Wait bounds raised to 30 s. `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.8 s over the 10 s limit with Codex on the host.
 
 ## 2026-10-31 Claude triage: final tree sweep `c6c0d51e` (P897, P898, P899)
 

@@ -56,7 +56,10 @@ public class TcpLoopbackProofTests
     };
 
     /// <summary>Waits up to <paramref name="ms"/> for <paramref name="cond"/>.</summary>
-    private static void Eventually(Func<bool> cond, int ms = 5000, string what = "")
+    // UDP receive completions run on the thread pool; a parallel test that fills
+    // the pool on a small runner can delay them for seconds, so these bounds are
+    // long and only a real failure waits them out.
+    private static void Eventually(Func<bool> cond, int ms = 30000, string what = "")
     {
         var sw = Stopwatch.StartNew();
         while (!cond())
@@ -85,11 +88,11 @@ public class TcpLoopbackProofTests
         public void OnReceive(ConnectionId from, ReadOnlySpan<byte> data) => Push(new(NextSeq(), "RECV", from, data.ToArray()));
 
         public Evt WaitJoined(int ms = 5000) => Poll(e => e.Kind == "JOINED", ms, "OnPeerJoined");
-        public Evt WaitReceived(int ms = 5000) => Poll(e => e.Kind == "RECV", ms, "OnReceive");
+        public Evt WaitReceived(int ms = 30000) => Poll(e => e.Kind == "RECV", ms, "OnReceive");
         public Evt Joined() => Poll(e => e.Kind == "JOINED", 0, "no-JOINED");
         public int ReceiveCount { get { lock (Events) return Events.Count(e => e.Kind == "RECV"); } }
 
-        public Evt WaitOccurrence(int n, int ms = 5000)
+        public Evt WaitOccurrence(int n, int ms = 30000)
         {
             var sw = Stopwatch.StartNew();
             while (true)
