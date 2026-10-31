@@ -1,5 +1,10 @@
 # BOT — the "and bots" slice: connect, get a ship, fly it
 
+Current multiplayer MCP fleet supervision and server-restart recovery are
+documented in [MCP fleet recovery](MCP_FLEET_RECOVERY.md). Showcase scenarios
+recover by default; game-owned skirmish does not. The historical implementation
+notes below describe the original minimal bot.
+
 Work log and protocol decisions for the second half of the scope decision.
 Reference C++ lives in the sibling checkout `/home/domingo/Development/Allegiance/`
 (read-only here). Line numbers below are against that tree as of 2026-08-29.

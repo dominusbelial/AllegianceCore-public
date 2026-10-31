@@ -17,7 +17,7 @@ internal sealed record WorkerReply(bool IsError, JsonElement Data)
         return new(result.IsError == true, data);
     }
 }
-internal sealed record WorkerState(CoordinationState Coordination, JsonElement Bots, long SampleAgeMs = 0, long Epoch = 0, long RequiredEpoch = 0);
+internal sealed record WorkerState(CoordinationState Coordination, JsonElement Bots, long SampleAgeMs = 0, long Epoch = 0, long RequiredEpoch = 0, bool ProbeLost = false, FleetSlot[]? Fleet = null);
 internal interface IWorker : IDisposable
 {
     int Index { get; }
@@ -40,7 +40,7 @@ internal sealed class ProcessWorker : IWorker
     private readonly EventHandler _exit;
     public int Index { get; }
     public int Pid { get; }
-    public bool Alive => Volatile.Read(ref _failure) is null && !_process.HasExited;
+    public bool Alive => Volatile.Read(ref _disposed) == 0 && Volatile.Read(ref _failure) is null && !_process.HasExited;
     public string? Failure => Volatile.Read(ref _failure);
 
     internal static ProcessWorker Start(string host, ushort port, int index, int count)
@@ -162,21 +162,22 @@ internal sealed class ProcessWorker : IWorker
                             case "__decisions": manager.SetCoordination(args.Deserialize<CoordinationDecisions>()!); result = new(false, JsonSerializer.SerializeToElement(true)); break;
                             case "__state":
                                 result = new(false, JsonSerializer.SerializeToElement(manager.WorkerSnapshot(WorkerReply.FromTool(McpTools.Handle("list_active_bots", null, manager)).Data))); break;
+                            case "list_active_bots":
+                                result = WorkerReply.FromTool(McpTools.Handle(method, args.Deserialize<Dictionary<string, JsonElement>>(), manager)); break;
+                            case "__perf":
+                                var report = WorkerReply.FromTool(McpTools.Handle("get_perf_stats", args.Deserialize<Dictionary<string, JsonElement>>(), manager));
+                                string? filter = args.TryGetProperty("bot", out var bot) && bot.ValueKind == JsonValueKind.String ? bot.GetString() : null;
+                                var fleet = manager.ScenarioSlots();
+                                int active = fleet.Count(s => s.Status == "active");
+                                result = new(report.IsError, JsonSerializer.SerializeToElement(new { Report = report.Data, Cadence = manager.CadenceSamples(filter),
+                                    Fleet = new { requested = fleet.Length, active, recovering = 0, failed = fleet.Length - active } }));
+                                break;
                             default:
                                 await tools.WaitAsync(ct);
                                 try
                                 {
-                                    if (method == "__perf")
-                                    {
-                                        var report = WorkerReply.FromTool(McpTools.Handle("get_perf_stats", args.Deserialize<Dictionary<string, JsonElement>>(), manager));
-                                        string? filter = args.TryGetProperty("bot", out var bot) && bot.ValueKind == JsonValueKind.String ? bot.GetString() : null;
-                                        result = new(report.IsError, JsonSerializer.SerializeToElement(new { Report = report.Data, Cadence = manager.CadenceSamples(filter) }));
-                                    }
-                                    else
-                                    {
-                                        manager.PlanOnly = method == "__plan";
-                                        result = WorkerReply.FromTool(McpTools.Handle(manager.PlanOnly ? "spawn_scenario" : method, args.Deserialize<Dictionary<string, JsonElement>>(), manager));
-                                    }
+                                    manager.PlanOnly = method == "__plan";
+                                    result = WorkerReply.FromTool(McpTools.Handle(manager.PlanOnly ? "spawn_scenario" : method, args.Deserialize<Dictionary<string, JsonElement>>(), manager));
                                 }
                                 finally { manager.PlanOnly = false; tools.Release(); }
                                 break;

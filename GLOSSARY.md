@@ -806,6 +806,15 @@ list in **reverse**.
   report: `docs/reports/P821_ROLE_RESOLUTION.md`.
 - **Scenario spawning** — `tools/allegiance-mcp/BotManager.Scenarios.cs`,
   `SkirmishDriver.cs`, `Showcase.cs`, `ScenarioPlanner.cs`.
+- **Desired fleet / recovery epoch (P900)** — multiplayer showcase retains
+  scenario arguments and per-side slots at the supervisor, detects corroborated
+  probe loss, replaces worker processes with bounded backoff, and replays only
+  uncanceled slots. `tools/allegiance-mcp/WorkerSupervisor.Recovery.cs`,
+  `tools/allegiance-mcp/BotManager.Fleet.cs`; process health and requested/active/
+  recovering/failed fleet counts are separate. Game-owned skirmish disables
+  recovery. Usage: `docs/MCP_FLEET_RECOVERY.md`; real process restart proofs:
+  `tests/Allegiance.ClientCore.Tests/P900FleetRecoveryLiveTests.cs`;
+  report: `docs/reports/P900_REPORT.md`.
 - **Finale re-arm / new-mission objectives (P656, P831)** — after a rotation the
   next match's finale is re-armed only from fresh per-bot state; a fresh life
   always resolves its objectives (an objective the fogged world cannot derive yet

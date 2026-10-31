@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null)
+internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900)
 {
     internal static DriverOptions Parse(string[] args)
     {
@@ -18,12 +18,18 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
         WorkerPartition? worker = null;
         int? parent = null;
         string? skirmish = null;
+        double recoveryDeadline = 900;
         bool explicitWorkers = false;
         for (int i = 2; i < args.Length; i += 2)
         {
             if (i + 1 >= args.Length) throw new ArgumentException($"missing value for {args[i]}");
             switch (args[i])
             {
+                case "--recovery-deadline-seconds":
+                    if (!double.TryParse(args[i + 1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out recoveryDeadline)
+                        || !double.IsFinite(recoveryDeadline) || recoveryDeadline <= 0 || recoveryDeadline > 86400)
+                        throw new ArgumentException("--recovery-deadline-seconds requires a number greater than 0 and at most 86400");
+                    break;
                 case "--skirmish": skirmish = args[i + 1]; break;
                 case "--workers":
                     if (explicitWorkers || !int.TryParse(args[i + 1], out workers) || workers < 1) throw new ArgumentException("--workers requires a positive integer");
@@ -43,7 +49,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
             }
         }
         if (worker is not null && explicitWorkers || skirmish is not null && worker is not null) throw new ArgumentException("--worker/--parent are internal child options; cannot combine with --workers");
-        return new(args[0], port, workers, worker, parent, skirmish);
+        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline);
     }
 }
 
@@ -89,9 +95,9 @@ internal static class Program
                 using var manager = new BotManager(options.Host, options.Port, partition);
                 await ProcessWorker.ServeAsync(manager, stop.Token);
             }
-            else if (options.Workers > 1)
+            else
             {
-                using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, stop.Token);
+                using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, stop.Token, recoveryDeadlineSeconds: options.RecoveryDeadlineSeconds);
                 EventHandler exit = (_, _) => supervisor.Dispose();
                 AppDomain.CurrentDomain.ProcessExit += exit;
                 try
@@ -100,14 +106,6 @@ internal static class Program
                     await ServeMcpAsync(supervisor.HandleAsync, stop.Token, supervisor: true);
                 }
                 finally { AppDomain.CurrentDomain.ProcessExit -= exit; }
-            }
-            else
-            {
-                // Default path retains the original single BotManager and probe.
-                using var manager = new BotManager(options.Host, options.Port);
-                Console.Error.WriteLine($"allegiance-mcp: gc = {(GCSettings.IsServerGC ? "server" : "workstation")}/{GCSettings.LatencyMode} (server GC recommended for large bot fleets)");
-                Console.Error.WriteLine($"allegiance-mcp: connected to live server {options.Host}:{options.Port} (probe seated); serving stdio MCP tools...");
-                await ServeMcpAsync((name, arguments, _) => Task.FromResult(McpTools.Handle(name, arguments, manager)), stop.Token);
             }
             return 0;
         }

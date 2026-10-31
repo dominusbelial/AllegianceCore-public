@@ -1,0 +1,54 @@
+{
+  "profileWritable": [
+    {
+      "repeat": 1,
+      "exit": 0
+    },
+    {
+      "repeat": 2,
+      "exit": 0
+    },
+    {
+      "repeat": 3,
+      "exit": 0
+    }
+  ],
+  "originalFixtureStop": [
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+      "label": "gate-isolation-00-1",
+      "repeat": 1,
+      "exit": 0,
+      "seconds": 0.9333430069964379,
+      "load": [
+        1.486328125,
+        1.72705078125,
+        2.3447265625
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+      "label": "gate-isolation-00-2",
+      "repeat": 2,
+      "exit": 0,
+      "seconds": 0.9582295540021732,
+      "load": [
+        1.486328125,
+        1.72705078125,
+        2.3447265625
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+      "label": "gate-isolation-00-3",
+      "repeat": 3,
+      "exit": 0,
+      "seconds": 1.0375427969993325,
+      "load": [
+        1.486328125,
+        1.72705078125,
+        2.3447265625
+      ]
+    }
+  ]
+}

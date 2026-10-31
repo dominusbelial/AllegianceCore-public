@@ -4,6 +4,34 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P900 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,686 passed / 10 failed / 3 optional skips**, 12,699
+executions in 543.3 seconds. All nine infrastructure checks passed. Five
+executions exceeded the 10-second Fast limit. The Fast sweep was not rerun.
+Changes are in the MCP fleet supervisor, its bot-host bookkeeping, and tests/docs;
+none of the failure/timing paths below changed. Each selected method ran three
+separate times after the five showcase runs, without overlapping this lane's
+other tests. Receipts: `docs/reports/P900_assets/fast-summary.json` and
+`docs/reports/P900_assets/isolations.json`.
+
+| Failure / timing offender | Three standalone results | Disposition |
+| --- | --- | --- |
+| `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository(Artwork)`, `MissingDirectoryHasNoDefault(Artwork/NativeSource)`, `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory` (five cases) | Each affected case fails 3/3; unaffected theory rows pass | Same existing worktree-local `TMPDIR` / checkout `local.env` discovery obstruction recorded under P899/P898. No resolver or path fixture changed. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail; pass / pass / pass with scratch `XDG_CONFIG_HOME` | Same read-only default user-profile obstruction. No profile/UI source changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail (1.210 / 1.259 / 1.259 s) | Existing null `DefendTarget` assertion at line 179, also 0/3 under P899. Remains open; no native NPC/sim logic changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing receipt/tick boundary: sweep observed 32.5 against upper bound 31. The auto-seat implementation/fixture is unchanged. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | All delay rows pass / delay 7 fails / all delay rows pass | Same floating boundary as P899/P898: `7.0000000000000009` exceeds 7. No timer source changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail (38.461 / 38.492 / 38.487 s) | Existing missing partial-tip receipt with final lock 1.000. Previously ledgered with 0/3 and intermittent results; remains open, not attributed solely to load. Also a Fast timing offender. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` (passing timing offender) | pass / pass / pass (3.890 / 3.852 / 4.000 s) | Sweep passed in 11.375 s; below limit alone. Existing sweep timing sensitivity; renderer unchanged. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` (passing timing offender) | pass / pass / pass (3.038 / 3.000 / 3.031 s); civ 3 also passes each time | Sweep passed in 11.080 s; below limit alone. Existing selector fixture timing sensitivity. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (passing timing offender) | pass / pass / pass (3.197 / 3.258 / 3.236 s) | Sweep passed in 10.965 s; below limit alone. Existing selection fixture timing sensitivity. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passing timing offender) | pass / pass / pass (9.750 / 9.884 / 9.571 s) | Sweep passed in 10.327 s; below limit alone. Same native-physics timing fixture recorded under P899 and earlier lanes. |
+
+The single Fast result remains **FAIL**. The five serial showcase never-parks
+runs pass **5/5**, matching P899's recorded base 5/5. P900's actual server-restart
+proofs and final rebuild/repetition receipts are recorded in `docs/reports/P900_REPORT.md`.
+
 ## 2026-10-31 Claude triage: final tree sweep `c6c0d51e` (P897, P898, P899)
 
 9 failures, `P682b` and `P807` passed. `MissileLock`, `NpcWingmanDefend`, `LiveSideSelect`, `SC4`, `P798`, `P796Coverage`

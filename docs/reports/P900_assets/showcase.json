@@ -1,0 +1,67 @@
+[
+  {
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:04:16.7819073",
+    "observeSeconds": 252.5,
+    "samples": 2521,
+    "reached": 24,
+    "bots": 30,
+    "longestIdleWithTargetSeconds": 0.0,
+    "shots": 927,
+    "hits": 112,
+    "kills": 1
+  },
+  {
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:03:56.1211787",
+    "observeSeconds": 232.4,
+    "samples": 2320,
+    "reached": 24,
+    "bots": 30,
+    "longestIdleWithTargetSeconds": 0.0,
+    "shots": 824,
+    "hits": 86,
+    "kills": 0
+  },
+  {
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:04:02.1778039",
+    "observeSeconds": 237.8,
+    "samples": 2375,
+    "reached": 24,
+    "bots": 30,
+    "longestIdleWithTargetSeconds": 1.317,
+    "shots": 903,
+    "hits": 223,
+    "kills": 1
+  },
+  {
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:03:20.1358329",
+    "observeSeconds": 196.3,
+    "samples": 1960,
+    "reached": 24,
+    "bots": 30,
+    "longestIdleWithTargetSeconds": 0.0,
+    "shots": 288,
+    "hits": 4,
+    "kills": 0
+  },
+  {
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:03:24.1736476",
+    "observeSeconds": 199.9,
+    "samples": 1996,
+    "reached": 24,
+    "bots": 30,
+    "longestIdleWithTargetSeconds": 0.0,
+    "shots": 203,
+    "hits": 3,
+    "kills": 0
+  }
+]

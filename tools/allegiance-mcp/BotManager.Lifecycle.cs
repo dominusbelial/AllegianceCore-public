@@ -22,7 +22,11 @@ internal sealed partial class BotManager
         ActiveBot[] bots;
         lock (_gate) bots = _bots.Where(b => name is null || b.Name == name).ToArray();
         foreach (var bot in bots) RemoveInactiveBot(bot, "stopped by operator");
-        if (clearHistory) lock (_gate) _removedBots.Clear();
+        lock (_gate)
+        {
+            foreach (var key in _fleetSlots.Where(s => name is null || s.Value.Name == name).Select(s => s.Key).ToArray()) _fleetSlots.Remove(key);
+            if (clearHistory) _removedBots.Clear();
+        }
         return bots.Length;
     }
 

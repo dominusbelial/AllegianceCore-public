@@ -35,6 +35,7 @@ public sealed partial class BotFixRegressionTests
         foreach (var bot in bots) roster.Add(bot);
         Set(manager, "_bots", roster);
         Set(manager, "_removedBots", new List<BotManager.RemovedBotView>());
+        Set(manager, "_fleetSlots", new Dictionary<(long, string), FleetSlot>());
         Set(manager, "_tickEngagers", new Dictionary<short, int>());
         Set(manager, "_clock", System.Diagnostics.Stopwatch.StartNew());
         Set(manager, "_defenseSettings", BotManager.DefenseSettings.Read(_ => null));
