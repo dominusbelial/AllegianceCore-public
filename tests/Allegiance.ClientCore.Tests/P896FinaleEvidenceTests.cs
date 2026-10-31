@@ -240,7 +240,7 @@ public sealed partial class BotFixRegressionTests
             Assert.Null(Get<double?>(P896Plan(rig.Run, 0), "KilledAt"));
             ((IDictionary)typeof(ClientWorld).GetField("_stations", FinaleFields)!
                 .GetValue(rig.Sessions[1].World)!).Clear();
-            string ended = P831Capture(() => Call("UpdateFinales", rig.Manager, rig.Created + 64));
+            string ended = P831Capture(() => Call("UpdateFinales", rig.Manager, rig.Created + 65));
             Assert.Equal("observed-lost", Get<string?>(P896Plan(rig.Run, 0), "KilledEvidence"));
             Assert.NotNull(Get<double?>(P896Plan(rig.Run, 0), "KilledAt"));
             Assert.Contains("outcome=station-killed", ended);
