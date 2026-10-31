@@ -1,0 +1,62 @@
+[
+  {
+    "run": "showcase-1",
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 381.7878739,
+        "message": ""
+      }
+    ],
+    "combatSummary": "P700 local 15v15: 377.9s, samples=3773, reached=26/30, longest speed<1 with target=0.000s, shots=1362, hits=2, kills=0"
+  },
+  {
+    "run": "showcase-2",
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 232.3178636,
+        "message": ""
+      }
+    ],
+    "combatSummary": "P700 local 15v15: 228.2s, samples=2279, reached=24/30, longest speed<1 with target=0.000s, shots=611, hits=41, kills=0"
+  },
+  {
+    "run": "showcase-3",
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 241.1674189,
+        "message": ""
+      }
+    ],
+    "combatSummary": "P700 local 15v15: 237.0s, samples=2367, reached=24/30, longest speed<1 with target=1.111s, shots=1128, hits=367, kills=2"
+  },
+  {
+    "run": "showcase-4",
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 256.0202203,
+        "message": ""
+      }
+    ],
+    "combatSummary": "P700 local 15v15: 252.2s, samples=2519, reached=24/30, longest speed<1 with target=0.501s, shots=2242, hits=555, kills=5"
+  },
+  {
+    "run": "showcase-5",
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 348.7257537,
+        "message": ""
+      }
+    ],
+    "combatSummary": "P700 local 15v15: 344.8s, samples=3443, reached=24/30, longest speed<1 with target=0.902s, shots=1196, hits=420, kills=2"
+  }
+]

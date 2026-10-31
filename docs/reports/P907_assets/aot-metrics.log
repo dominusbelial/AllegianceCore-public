@@ -1,0 +1,12 @@
+[thread-pool] scope=process windowSecs=0.850 threads=3 pendingItems=0 completedPerSecond=37.668 probeSamples=1 probeMeanMs=0.14 probeP95UpperMs=0.14 probeMaxMs=0.14 probePendingMs=0
+[udp-receive] windowSecs=0.850 asyncSamples=5 syncReceives=0 completionToWorkerMeanMs=0.014 completionToWorkerP95UpperMs=0.019 completionToWorkerMaxMs=0.019 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe
+[thread-pool] scope=process windowSecs=0.988 threads=3 pendingItems=0 completedPerSecond=22.26 probeSamples=1 probeMeanMs=0.113 probeP95UpperMs=0.113 probeMaxMs=0.113 probePendingMs=0
+[udp-receive] windowSecs=0.988 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe
+[thread-pool] scope=process windowSecs=0.989 threads=3 pendingItems=0 completedPerSecond=23.246 probeSamples=1 probeMeanMs=0.101 probeP95UpperMs=0.101 probeMaxMs=0.101 probePendingMs=0
+[udp-receive] windowSecs=0.989 asyncSamples=1 syncReceives=0 completionToWorkerMeanMs=0.006 completionToWorkerP95UpperMs=0.006 completionToWorkerMaxMs=0.006 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe
+[thread-pool] scope=process windowSecs=1.036 threads=3 pendingItems=0 completedPerSecond=21.23 probeSamples=1 probeMeanMs=0.067 probeP95UpperMs=0.067 probeMaxMs=0.067 probePendingMs=0
+[udp-receive] windowSecs=1.036 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe
+[thread-pool] scope=process windowSecs=0.987 threads=3 pendingItems=0 completedPerSecond=23.313 probeSamples=1 probeMeanMs=0.116 probeP95UpperMs=0.116 probeMaxMs=0.116 probePendingMs=0
+[udp-receive] windowSecs=0.987 asyncSamples=1 syncReceives=1 completionToWorkerMeanMs=0.195 completionToWorkerP95UpperMs=0.195 completionToWorkerMaxMs=0.195 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe
+[thread-pool] scope=process windowSecs=0.986 threads=3 pendingItems=0 completedPerSecond=22.304 probeSamples=1 probeMeanMs=0.071 probeP95UpperMs=0.071 probeMaxMs=0.071 probePendingMs=0
+[udp-receive] windowSecs=0.986 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe

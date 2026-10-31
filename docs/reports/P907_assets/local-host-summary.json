@@ -1,0 +1,53 @@
+[
+  {
+    "mode": "skirmish",
+    "repeat": 1,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.047 threads=7 pendingItems=0 completedPerSecond=87.481 probeSamples=4 probeMeanMs=0.284 probeP95UpperMs=0.654 probeMaxMs=0.654 probePendingMs=0",
+      "[local-host-proof] mode=skirmish botsAlive=True"
+    ]
+  },
+  {
+    "mode": "skirmish",
+    "repeat": 2,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.147 threads=9 pendingItems=0 completedPerSecond=91.396 probeSamples=4 probeMeanMs=0.194 probeP95UpperMs=0.455 probeMaxMs=0.455 probePendingMs=0",
+      "[local-host-proof] mode=skirmish botsAlive=True"
+    ]
+  },
+  {
+    "mode": "skirmish",
+    "repeat": 3,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.146 threads=7 pendingItems=0 completedPerSecond=95.521 probeSamples=4 probeMeanMs=0.278 probeP95UpperMs=0.643 probeMaxMs=0.643 probePendingMs=0",
+      "[local-host-proof] mode=skirmish botsAlive=True"
+    ]
+  },
+  {
+    "mode": "lan",
+    "repeat": 1,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.393 threads=7 pendingItems=0 completedPerSecond=99.258 probeSamples=5 probeMeanMs=0.13 probeP95UpperMs=0.255 probeMaxMs=0.255 probePendingMs=0",
+      "[udp-receive] windowSecs=4.393 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe",
+      "[local-host-proof] mode=lan botsAlive=True"
+    ]
+  },
+  {
+    "mode": "lan",
+    "repeat": 2,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.292 threads=7 pendingItems=0 completedPerSecond=94.828 probeSamples=5 probeMeanMs=0.125 probeP95UpperMs=0.156 probeMaxMs=0.156 probePendingMs=0",
+      "[udp-receive] windowSecs=4.292 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe",
+      "[local-host-proof] mode=lan botsAlive=True"
+    ]
+  },
+  {
+    "mode": "lan",
+    "repeat": 3,
+    "lines": [
+      "[thread-pool] scope=process windowSecs=4.042 threads=7 pendingItems=0 completedPerSecond=100.449 probeSamples=4 probeMeanMs=0.14 probeP95UpperMs=0.162 probeMaxMs=0.162 probePendingMs=0",
+      "[udp-receive] windowSecs=4.042 asyncSamples=0 syncReceives=0 completionToWorkerMeanMs=0 completionToWorkerP95UpperMs=0 completionToWorkerMaxMs=0 kernelArrivalToCompletion=unavailable schedulingProxy=thread-pool-probe",
+      "[local-host-proof] mode=lan botsAlive=True"
+    ]
+  }
+]

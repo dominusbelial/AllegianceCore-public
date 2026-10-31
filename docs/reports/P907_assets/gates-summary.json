@@ -1,0 +1,3136 @@
+{
+  "solutionWarnings": 0,
+  "solutionErrors": 0,
+  "toolProjects": 103,
+  "updatedAllocationProofWarnings": 0,
+  "nativeAotPublish": "passed",
+  "nativeAotUdpLogon": "passed",
+  "newRegressionAndTransport": {
+    "new-final-1": [
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.231206,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.2328944,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Histogram_preserves_mean_max_count_and_bounds_p95_without_record_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0020387,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+        "outcome": "Passed",
+        "seconds": 1.2246978,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Probe_does_not_queue_per_tick_and_drains_each_sample_once",
+        "outcome": "Passed",
+        "seconds": 1.0123293,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.3260152,
+        "message": ""
+      }
+    ],
+    "new-final-2": [
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Histogram_preserves_mean_max_count_and_bounds_p95_without_record_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0016067,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.2307321,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.2268865,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+        "outcome": "Passed",
+        "seconds": 1.2262096,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.3330801,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Probe_does_not_queue_per_tick_and_drains_each_sample_once",
+        "outcome": "Passed",
+        "seconds": 1.0120687,
+        "message": ""
+      }
+    ],
+    "new-final-3": [
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+        "outcome": "Passed",
+        "seconds": 1.2293875,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Probe_does_not_queue_per_tick_and_drains_each_sample_once",
+        "outcome": "Passed",
+        "seconds": 1.0119762,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.235114,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.3362959,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+        "outcome": "Passed",
+        "seconds": 1.2276982,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Histogram_preserves_mean_max_count_and_bounds_p95_without_record_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0017356,
+        "message": ""
+      }
+    ],
+    "transport": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: ThreadPerPeer, restart: False)",
+        "outcome": "Passed",
+        "seconds": 0.502918,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+        "outcome": "Passed",
+        "seconds": 0.56077,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.ClosePeer_FiresOnPeerLeft_Once",
+        "outcome": "Passed",
+        "seconds": 0.0021656,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0093886,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Boot_line_prints_the_active_transport_mode",
+        "outcome": "Failed",
+        "seconds": 0.0251242,
+        "message": "Assert.Contains() Failure: Sub-string not found\nString:    \"[boot] broadcast.interestTiers = False\\n[b\"\u00b7\u00b7\u00b7\nNot found: \"[boot] transport mode = thread-per-peer\""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Slow_but_progressing_human_under_the_cap_is_not_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.007191,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Oversized_greeting_length_is_rejected_and_dropped_quickly",
+        "outcome": "Passed",
+        "seconds": 0.0010362,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Unmarked_bot_peer_is_still_disconnected_on_stall",
+        "outcome": "Passed",
+        "seconds": 0.430874,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Telemetry_counts_shed_only_for_best_effort_stream",
+        "outcome": "Passed",
+        "seconds": 0.0116481,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.2249728,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer",
+        "outcome": "Failed",
+        "seconds": 0.0143734,
+        "message": "Assert.False() Failure\nExpected: False\nActual:   True"
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 0)",
+        "outcome": "Passed",
+        "seconds": 0.0009604,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+        "outcome": "Passed",
+        "seconds": 0.4078777,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+        "outcome": "Passed",
+        "seconds": 0.0054818,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.ConnectionCaps_RefuseOverLimit_NormalJoinsWork",
+        "outcome": "Passed",
+        "seconds": 0.6036745,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGracefulCloseTests.Graceful_close_retires_peer_before_drain_and_delivers_final_reply_before_eof(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0557381,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+        "outcome": "Passed",
+        "seconds": 0.157366,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Proof_keeps_arrivals_that_beat_tick_log_without_fabricating_age_or_gaps",
+        "outcome": "Passed",
+        "seconds": 0.0052254,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Overflow_reasons_are_distinct",
+        "outcome": "Passed",
+        "seconds": 1.62e-05,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+        "outcome": "Passed",
+        "seconds": 0.0464346,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_overflow_drops_and_disconnects_a_stalled_peer_without_leaking_workers",
+        "outcome": "Passed",
+        "seconds": 0.4206784,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0058193,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.SilentPeer_IsDroppedBy_IdleTimeout",
+        "outcome": "Passed",
+        "seconds": 2.024515,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Concurrent_writers_and_window_drains_conserve_all_counters",
+        "outcome": "Passed",
+        "seconds": 0.0032265,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+        "outcome": "Passed",
+        "seconds": 0.0207556,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.4599094,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.Drain_HandlerThrow_DoesNotLoseSiblingEvents",
+        "outcome": "Passed",
+        "seconds": 0.0014774,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: True)",
+        "outcome": "Passed",
+        "seconds": 0.0021132,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Closing_during_gather_keeps_buffers_leased_until_send_returns",
+        "outcome": "Passed",
+        "seconds": 0.0011564,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Uninstall_restores_the_original_Console_Out",
+        "outcome": "Passed",
+        "seconds": 0.0007592,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.NonBlockingSendLiveTests.Others_keep_ticking_and_mission_advances_while_one_peer_stalls_then_disconnects",
+        "outcome": "Passed",
+        "seconds": 1.3160284,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Silent_connection_is_eventually_dropped",
+        "outcome": "Passed",
+        "seconds": 0.3052451,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Summary_ranks_top_ten_and_uses_measured_wall_seconds",
+        "outcome": "Passed",
+        "seconds": 0.0066681,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.4181212,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+        "outcome": "Passed",
+        "seconds": 0.0002399,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+        "outcome": "Passed",
+        "seconds": 0.0003394,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Three_loopback_peers_receive_expected_fmids_and_exact_split_totals(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.00238,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy",
+        "outcome": "Passed",
+        "seconds": 0.0137402,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Stalled_coalesce_only_peer_is_still_disconnected_with_reason",
+        "outcome": "Passed",
+        "seconds": 0.413256,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_is_eventually_dropped",
+        "outcome": "Passed",
+        "seconds": 0.304398,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Reliable_park_lane_never_shed_and_never_coalesced",
+        "outcome": "Passed",
+        "seconds": 0.0066869,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Pacer_uses_deadline_and_enqueue_wakes_blocked_worker",
+        "outcome": "Passed",
+        "seconds": 2.8329301,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_preserves_per_peer_order_under_concurrent_enqueues",
+        "outcome": "Passed",
+        "seconds": 0.145928,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0249094,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Blocking_write_timeout_closes_the_connection",
+        "outcome": "Passed",
+        "seconds": 0.2097318,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0089769,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Worker_timings_include_active_writes_split_across_report_windows",
+        "outcome": "Passed",
+        "seconds": 0.0425059,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ordered_and_keyed_large_frames_fragment_reassemble_with_loss",
+        "outcome": "Passed",
+        "seconds": 1.253272,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+        "outcome": "Passed",
+        "seconds": 0.0040495,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Joined_but_idle_peer_is_not_dropped",
+        "outcome": "Passed",
+        "seconds": 1.2078175,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+        "outcome": "Passed",
+        "seconds": 0.0004641,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: False)",
+        "outcome": "Passed",
+        "seconds": 0.0001789,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.HeaderThenStallPeer_IsDroppedBy_FrameDeadline",
+        "outcome": "Passed",
+        "seconds": 2.0375139,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy",
+        "outcome": "Passed",
+        "seconds": 0.0077771,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Shutdown_and_dispose_remain_idempotent_after_blocking_receive",
+        "outcome": "Passed",
+        "seconds": 0.0035636,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Client_role_Send_before_join_still_throws",
+        "outcome": "Passed",
+        "seconds": 1.97e-05,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Oversized_greeting_length_is_rejected_and_dropped_quickly",
+        "outcome": "Passed",
+        "seconds": 0.0009741,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Unhandshaken_spoofed_and_replayed_packets_cannot_trigger_world_reply",
+        "outcome": "Passed",
+        "seconds": 1.2146714,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Out_of_range_wing_id_emits_one_traphack_event_and_flood_is_rate_limited",
+        "outcome": "Passed",
+        "seconds": 0.3992972,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Full_ushort_range_empty_and_malformed_payloads_remain_diagnostic_only",
+        "outcome": "Passed",
+        "seconds": 0.0193181,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Queued_frames_share_token_and_ack_without_waiting_for_more_frames",
+        "outcome": "Passed",
+        "seconds": 0.0290542,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Shutdown_flushes_queued_lines_to_the_sink_and_restores_console",
+        "outcome": "Passed",
+        "seconds": 0.0009389,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+        "outcome": "Passed",
+        "seconds": 0.0288218,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Blocking_write_timeout_closes_the_connection",
+        "outcome": "Passed",
+        "seconds": 0.0002714,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: True)",
+        "outcome": "Passed",
+        "seconds": 0.6474345,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+        "outcome": "Passed",
+        "seconds": 0.0101797,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 40, length: 100, firstTurnFrames: 32)",
+        "outcome": "Passed",
+        "seconds": 0.0005139,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Peer_whose_socket_keeps_accepting_bytes_is_never_disconnected_even_if_queue_never_empties",
+        "outcome": "Passed",
+        "seconds": 2.5249399,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+        "outcome": "Passed",
+        "seconds": 0.005214,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.0468336,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0537412,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Stalled_non_reading_peer_does_not_block_and_is_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.4316676,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Healthy_host_send_still_arrives_on_the_wire",
+        "outcome": "Passed",
+        "seconds": 0.0060013,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Default_server_boots_in_pool_mode",
+        "outcome": "Passed",
+        "seconds": 0.0161018,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Operator_line_carries_kind_check_site_player_ship_connection",
+        "outcome": "Passed",
+        "seconds": 0.0046752,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Superseding_unacked_poses_still_obeys_congestion_window",
+        "outcome": "Passed",
+        "seconds": 1.033169,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Byte_cap_overcapacity_disconnect_still_works_with_QueueOverCapacity",
+        "outcome": "Passed",
+        "seconds": 0.4278418,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Reliable_park_lane_never_shed_and_never_coalesced",
+        "outcome": "Passed",
+        "seconds": 0.00766,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Human_marked_peer_survives_the_bot_no_write_progress_window",
+        "outcome": "Passed",
+        "seconds": 2.0189925,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGracefulCloseTests.Graceful_close_retires_peer_before_drain_and_delivers_final_reply_before_eof(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0028641,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_config_boot_spins_up_exactly_the_requested_workers",
+        "outcome": "Passed",
+        "seconds": 0.0136616,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Peer_accepting_nothing_for_the_timeout_is_disconnected_with_NoWriteProgress",
+        "outcome": "Passed",
+        "seconds": 0.4265731,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0021759,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+        "outcome": "Passed",
+        "seconds": 0.0054246,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Stalled_non_reading_peer_does_not_block_and_is_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.4276632,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+        "outcome": "Passed",
+        "seconds": 2.5163862,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+        "outcome": "Passed",
+        "seconds": 0.0888704,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+        "outcome": "Passed",
+        "seconds": 0.000408,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Graceful_close_completes_all_reserved_frames_before_closing",
+        "outcome": "Passed",
+        "seconds": 0.0005012,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0090676,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 255)",
+        "outcome": "Passed",
+        "seconds": 0.2193253,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.PartialRead_FrameSplitAcrossTwoWrites_WithDelay_IsReassembled",
+        "outcome": "Passed",
+        "seconds": 0.1576649,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "outcome": "Passed",
+        "seconds": 0.2091328,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+        "outcome": "Passed",
+        "seconds": 0.0328193,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: True)",
+        "outcome": "Passed",
+        "seconds": 2.0765074,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.0036673,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.OversizedServerFrame_IsRejected_NormalFrame_Delivered",
+        "outcome": "Passed",
+        "seconds": 0.4040483,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_keeps_at_most_one_pending_frame_per_key",
+        "outcome": "Passed",
+        "seconds": 0.0088669,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Stalled_coalesce_only_peer_is_still_disconnected_with_reason",
+        "outcome": "Passed",
+        "seconds": 0.4161187,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup",
+        "outcome": "Passed",
+        "seconds": 0.0024487,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_keeps_at_most_one_pending_frame_per_key",
+        "outcome": "Passed",
+        "seconds": 0.0063101,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Three_loopback_peers_receive_expected_fmids_and_exact_split_totals(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0086432,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: False)",
+        "outcome": "Passed",
+        "seconds": 0.122796,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Rate_limiter_drops_expired_buckets_when_the_table_grows",
+        "outcome": "Passed",
+        "seconds": 0.0003927,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Stalled_stdout_does_not_block_the_sim_thread_even_verbose_on",
+        "outcome": "Passed",
+        "seconds": 2.0519873,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_concurrent_stdout_and_stderr_writers_never_tear_lines",
+        "outcome": "Passed",
+        "seconds": 0.1032785,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0020208,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+        "outcome": "Passed",
+        "seconds": 0.0068897,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPingThrottleTests.Ping_flood_over_the_reply_interval_is_dropped_and_counted",
+        "outcome": "Passed",
+        "seconds": 0.0042374,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Human_whose_queue_exceeds_the_hard_cap_is_disconnected_with_QueueHardCap",
+        "outcome": "Passed",
+        "seconds": 0.2872267,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+        "outcome": "Passed",
+        "seconds": 0.0076975,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+        "outcome": "Passed",
+        "seconds": 0.0026268,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+        "outcome": "Passed",
+        "seconds": 0.0837098,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Reliable_overflow_closes_peer_and_best_effort_expires_after_500ms",
+        "outcome": "Passed",
+        "seconds": 0.6357843,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Stall_detector_requires_queue_growth_and_distinguishes_idle_shedding_and_rate_collapse",
+        "outcome": "Passed",
+        "seconds": 0.0002532,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_stalled_peer_does_not_delay_a_neighbor_on_the_same_worker",
+        "outcome": "Passed",
+        "seconds": 0.699103,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_never_touches_guaranteed_ordered_frames",
+        "outcome": "Passed",
+        "seconds": 0.0076121,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "outcome": "Passed",
+        "seconds": 0.0079363,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Limiter_buckets_are_per_connection",
+        "outcome": "Passed",
+        "seconds": 0.0001397,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0119866,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+        "outcome": "Passed",
+        "seconds": 0.0002736,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Server_profiler_window_and_admin_dump_use_the_same_completed_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.0352142,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.0069339,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_never_touches_guaranteed_ordered_frames",
+        "outcome": "Passed",
+        "seconds": 0.0093875,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+        "outcome": "Passed",
+        "seconds": 0.008233,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Timeout_callback_can_dispose_transport_while_receiver_is_blocked",
+        "outcome": "Passed",
+        "seconds": 0.1634164,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.0058947,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 2)",
+        "outcome": "Passed",
+        "seconds": 0.0010772,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Udp_preference_falls_back_to_tcp_without_session_loss",
+        "outcome": "Passed",
+        "seconds": 3.0103098,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0291392,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Known_mix_splits_types_lanes_peers_and_counts_discarded_frames_once_per_type",
+        "outcome": "Passed",
+        "seconds": 0.0031001,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportNoWouldBlockSpinTests.Idle_pool_peer_accrues_almost_no_would_block_catches_over_one_second",
+        "outcome": "Passed",
+        "seconds": 1.3079118,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+        "outcome": "Passed",
+        "seconds": 0.0006581,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Blocked_write_hitting_send_timeout_records_SendTimeout_not_SendError",
+        "outcome": "Passed",
+        "seconds": 0.1581879,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Operator_line_omits_absent_fields_and_supports_boot_no_player",
+        "outcome": "Passed",
+        "seconds": 0.0001071,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Partial_writes_count_only_accepted_bytes_and_count_messages_at_completion",
+        "outcome": "Passed",
+        "seconds": 0.000653,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.0106862,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Silence_times_out_once_and_fresh_socket_reconnects",
+        "outcome": "Passed",
+        "seconds": 0.5256772,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Silent_connection_does_not_block_a_second_client_join",
+        "outcome": "Passed",
+        "seconds": 0.4067907,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 2147483647)",
+        "outcome": "Passed",
+        "seconds": 0.2090659,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: ThreadPerPeer, restart: True)",
+        "outcome": "Passed",
+        "seconds": 0.5039392,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.005664,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Overflow_reasons_are_distinct",
+        "outcome": "Passed",
+        "seconds": 0.0015943,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Joined_but_idle_peer_is_not_dropped",
+        "outcome": "Passed",
+        "seconds": 1.2071286,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+        "outcome": "Passed",
+        "seconds": 0.0090747,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+        "outcome": "Passed",
+        "seconds": 0.0246631,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: Pool, restart: False)",
+        "outcome": "Passed",
+        "seconds": 0.5021521,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Client_role_Send_before_join_still_throws",
+        "outcome": "Passed",
+        "seconds": 0.0003552,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "outcome": "Passed",
+        "seconds": 0.0063202,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 256)",
+        "outcome": "Passed",
+        "seconds": 0.2128697,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Real_sender_hooks_account_coalescing_shedding_partial_progress_and_failed_writes",
+        "outcome": "Passed",
+        "seconds": 0.0033541,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick",
+        "outcome": "Passed",
+        "seconds": 0.0103576,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0133937,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0102255,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Batching_is_default_off_and_roundtrips_through_aot_config",
+        "outcome": "Passed",
+        "seconds": 0.0476883,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: True)",
+        "outcome": "Passed",
+        "seconds": 0.0005909,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Multiple_sends_to_one_peer_preserve_fifo_order",
+        "outcome": "Passed",
+        "seconds": 0.006994,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: True)",
+        "outcome": "Passed",
+        "seconds": 0.0685301,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: False)",
+        "outcome": "Passed",
+        "seconds": 2.0829257,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 3)",
+        "outcome": "Passed",
+        "seconds": 0.0005478,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.223126,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Slow_but_progressing_human_under_the_cap_is_not_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.0082707,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+        "outcome": "Passed",
+        "seconds": 0.1466522,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Key_zero_false_and_coalescing_zero_preserve_fifo",
+        "outcome": "Passed",
+        "seconds": 0.0487796,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+        "outcome": "Passed",
+        "seconds": 0.0085526,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 1)",
+        "outcome": "Passed",
+        "seconds": 0.0028451,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Default_gate_off_emits_far_fewer_console_lines_than_verbose_on",
+        "outcome": "Passed",
+        "seconds": 0.3684087,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.0125365,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Peer_whose_socket_keeps_accepting_bytes_is_never_disconnected_even_if_queue_never_empties",
+        "outcome": "Passed",
+        "seconds": 2.5266148,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 20, length: 1000, firstTurnFrames: 16)",
+        "outcome": "Passed",
+        "seconds": 0.003424,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Unmarked_bot_peer_is_still_disconnected_on_stall",
+        "outcome": "Passed",
+        "seconds": 0.423802,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Remote_close_records_read_eof_reason",
+        "outcome": "Passed",
+        "seconds": 0.0155955,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols",
+        "outcome": "Passed",
+        "seconds": 0.0168942,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+        "outcome": "Passed",
+        "seconds": 0.0001728,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -2147483648)",
+        "outcome": "Passed",
+        "seconds": 0.2150214,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Multiple_sends_to_one_peer_preserve_fifo_order",
+        "outcome": "Passed",
+        "seconds": 0.009102,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Byte_cap_overcapacity_disconnect_still_works_with_QueueOverCapacity",
+        "outcome": "Passed",
+        "seconds": 0.4572847,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Limiter_allows_burst_within_window_then_suppresses",
+        "outcome": "Passed",
+        "seconds": 0.0042391,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "outcome": "Passed",
+        "seconds": 0.0054176,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: False)",
+        "outcome": "Passed",
+        "seconds": 0.2575859,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+        "outcome": "Passed",
+        "seconds": 0.010147,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_flood_disconnect_records_a_reason",
+        "outcome": "Passed",
+        "seconds": 0.4269575,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_partial_write_crosses_frame_boundaries_and_resumes_without_corruption",
+        "outcome": "Passed",
+        "seconds": 0.0020401,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: False)",
+        "outcome": "Passed",
+        "seconds": 0.0001783,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.One_way_silence_notifies_server_over_surviving_uplink",
+        "outcome": "Passed",
+        "seconds": 0.4190721,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: Pool, restart: True)",
+        "outcome": "Passed",
+        "seconds": 0.5046049,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+        "outcome": "Passed",
+        "seconds": 0.0029895,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines",
+        "outcome": "Passed",
+        "seconds": 0.0022696,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -1)",
+        "outcome": "Passed",
+        "seconds": 0.2140917,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Diagnostics_distinguish_superseding_from_partially_sent_frame_bytes",
+        "outcome": "Passed",
+        "seconds": 0.0010747,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Human_marked_peer_survives_the_bot_no_write_progress_window",
+        "outcome": "Passed",
+        "seconds": 2.0245707,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+        "outcome": "Passed",
+        "seconds": 0.0013362,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0054858,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.PeriodicHealthyPeer_IsNotDropped",
+        "outcome": "Passed",
+        "seconds": 8.4086901,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Partial_writes_reassemble_every_frame_byte_exact_in_order",
+        "outcome": "Passed",
+        "seconds": 0.0262816,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0393214,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Partial_and_blocked_writes_count_only_socket_acceptance_and_keep_inflight_backlog",
+        "outcome": "Passed",
+        "seconds": 0.0007804,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Graceful_close_delivers_final_ordered_frame_before_loss",
+        "outcome": "Passed",
+        "seconds": 0.0908176,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Peer_accepting_nothing_for_the_timeout_is_disconnected_with_NoWriteProgress",
+        "outcome": "Passed",
+        "seconds": 0.42377,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Queued_writer_splits_multiline_and_flushes_trailing_partial_line",
+        "outcome": "Passed",
+        "seconds": 0.001149,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+        "outcome": "Passed",
+        "seconds": 0.0002939,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ipv6_loopback_validates_endpoint_and_delivers_frames",
+        "outcome": "Passed",
+        "seconds": 0.0154632,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Guaranteed_flood_disconnect_records_a_reason",
+        "outcome": "Passed",
+        "seconds": 0.4257711,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "outcome": "Passed",
+        "seconds": 0.010695,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Human_whose_queue_exceeds_the_hard_cap_is_disconnected_with_QueueHardCap",
+        "outcome": "Passed",
+        "seconds": 0.2838635,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Reply_piggybacks_selective_ack_and_idle_worker_has_no_poll_ticks",
+        "outcome": "Passed",
+        "seconds": 0.2816054,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Guaranteed_own_ship_stream_never_triggers_overcapacity_disconnect",
+        "outcome": "Passed",
+        "seconds": 0.4079081,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Partial_writes_reassemble_every_frame_byte_exact_in_order",
+        "outcome": "Passed",
+        "seconds": 0.0062573,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Guaranteed_own_ship_stream_never_triggers_overcapacity_disconnect",
+        "outcome": "Passed",
+        "seconds": 0.4095438,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.074119,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Remote_close_records_read_eof_reason",
+        "outcome": "Passed",
+        "seconds": 0.0179627,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+        "outcome": "Passed",
+        "seconds": 2.4189884,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Telemetry_counts_shed_only_for_best_effort_stream",
+        "outcome": "Passed",
+        "seconds": 0.0080243,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Healthy_host_send_still_arrives_on_the_wire",
+        "outcome": "Passed",
+        "seconds": 0.0079897,
+        "message": ""
+      }
+    ],
+    "udp-transport-2": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Queued_frames_share_token_and_ack_without_waiting_for_more_frames",
+        "outcome": "Passed",
+        "seconds": 0.0223218,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.PartialRead_FrameSplitAcrossTwoWrites_WithDelay_IsReassembled",
+        "outcome": "Passed",
+        "seconds": 0.168081,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 255)",
+        "outcome": "Passed",
+        "seconds": 0.2031268,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Shutdown_and_dispose_remain_idempotent_after_blocking_receive",
+        "outcome": "Passed",
+        "seconds": 0.0029636,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Graceful_close_delivers_final_ordered_frame_before_loss",
+        "outcome": "Passed",
+        "seconds": 0.0922032,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Unhandshaken_spoofed_and_replayed_packets_cannot_trigger_world_reply",
+        "outcome": "Passed",
+        "seconds": 1.2194325,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Key_zero_false_and_coalescing_zero_preserve_fifo",
+        "outcome": "Passed",
+        "seconds": 0.05601,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Reliable_overflow_closes_peer_and_best_effort_expires_after_500ms",
+        "outcome": "Passed",
+        "seconds": 0.6362084,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: True)",
+        "outcome": "Passed",
+        "seconds": 0.6433777,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: False)",
+        "outcome": "Passed",
+        "seconds": 0.1236409,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.2234492,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0366675,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 2147483647)",
+        "outcome": "Passed",
+        "seconds": 0.2117688,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Pacer_uses_deadline_and_enqueue_wakes_blocked_worker",
+        "outcome": "Passed",
+        "seconds": 2.8338992,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 256)",
+        "outcome": "Passed",
+        "seconds": 0.2033039,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 0)",
+        "outcome": "Passed",
+        "seconds": 0.0005628,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 3)",
+        "outcome": "Passed",
+        "seconds": 0.0003228,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Silence_times_out_once_and_fresh_socket_reconnects",
+        "outcome": "Passed",
+        "seconds": 0.5237512,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 1)",
+        "outcome": "Passed",
+        "seconds": 0.0019401,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.2245781,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -1)",
+        "outcome": "Passed",
+        "seconds": 0.2092561,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -2147483648)",
+        "outcome": "Passed",
+        "seconds": 0.2167664,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ipv6_loopback_validates_endpoint_and_delivers_frames",
+        "outcome": "Passed",
+        "seconds": 0.0147962,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Udp_preference_falls_back_to_tcp_without_session_loss",
+        "outcome": "Passed",
+        "seconds": 3.0123977,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols",
+        "outcome": "Passed",
+        "seconds": 0.0210442,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Reply_piggybacks_selective_ack_and_idle_worker_has_no_poll_ticks",
+        "outcome": "Passed",
+        "seconds": 0.2829481,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0148374,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 2)",
+        "outcome": "Passed",
+        "seconds": 0.0009076,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Superseding_unacked_poses_still_obeys_congestion_window",
+        "outcome": "Passed",
+        "seconds": 1.0288394,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.One_way_silence_notifies_server_over_surviving_uplink",
+        "outcome": "Passed",
+        "seconds": 0.4173529,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ordered_and_keyed_large_frames_fragment_reassemble_with_loss",
+        "outcome": "Passed",
+        "seconds": 1.7491902,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: True)",
+        "outcome": "Passed",
+        "seconds": 0.3759814,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0175083,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Timeout_callback_can_dispose_transport_while_receiver_is_blocked",
+        "outcome": "Passed",
+        "seconds": 0.161647,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0225247,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: False)",
+        "outcome": "Passed",
+        "seconds": 0.0659991,
+        "message": ""
+      }
+    ],
+    "udp-transport-3": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 0)",
+        "outcome": "Passed",
+        "seconds": 0.0003709,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Graceful_close_delivers_final_ordered_frame_before_loss",
+        "outcome": "Passed",
+        "seconds": 0.0946865,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0399301,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0151153,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: False)",
+        "outcome": "Passed",
+        "seconds": 0.3689837,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Superseding_unacked_poses_still_obeys_congestion_window",
+        "outcome": "Passed",
+        "seconds": 1.0330824,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: True)",
+        "outcome": "Passed",
+        "seconds": 0.3681702,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Reliable_overflow_closes_peer_and_best_effort_expires_after_500ms",
+        "outcome": "Passed",
+        "seconds": 0.6525489,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Udp_preference_falls_back_to_tcp_without_session_loss",
+        "outcome": "Passed",
+        "seconds": 3.0104608,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: False)",
+        "outcome": "Passed",
+        "seconds": 0.1248454,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 1)",
+        "outcome": "Passed",
+        "seconds": 0.0019608,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 2147483647)",
+        "outcome": "Passed",
+        "seconds": 0.2039577,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols",
+        "outcome": "Passed",
+        "seconds": 0.018222,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.2242219,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Pacer_uses_deadline_and_enqueue_wakes_blocked_worker",
+        "outcome": "Passed",
+        "seconds": 2.8398301,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -1)",
+        "outcome": "Passed",
+        "seconds": 0.214826,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Reply_piggybacks_selective_ack_and_idle_worker_has_no_poll_ticks",
+        "outcome": "Passed",
+        "seconds": 0.2827634,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 3)",
+        "outcome": "Passed",
+        "seconds": 0.0002736,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -2147483648)",
+        "outcome": "Passed",
+        "seconds": 0.2188283,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Queued_frames_share_token_and_ack_without_waiting_for_more_frames",
+        "outcome": "Passed",
+        "seconds": 0.0299699,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ordered_and_keyed_large_frames_fragment_reassemble_with_loss",
+        "outcome": "Passed",
+        "seconds": 1.2370909,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Shutdown_and_dispose_remain_idempotent_after_blocking_receive",
+        "outcome": "Passed",
+        "seconds": 0.0031336,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 256)",
+        "outcome": "Passed",
+        "seconds": 0.2137425,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.2251629,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ipv6_loopback_validates_endpoint_and_delivers_frames",
+        "outcome": "Passed",
+        "seconds": 0.0083186,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0284281,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 2)",
+        "outcome": "Passed",
+        "seconds": 0.0008458,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0236804,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Timeout_callback_can_dispose_transport_while_receiver_is_blocked",
+        "outcome": "Passed",
+        "seconds": 0.1640556,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Silence_times_out_once_and_fresh_socket_reconnects",
+        "outcome": "Passed",
+        "seconds": 0.5245201,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Key_zero_false_and_coalescing_zero_preserve_fifo",
+        "outcome": "Passed",
+        "seconds": 0.0548225,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: True)",
+        "outcome": "Passed",
+        "seconds": 0.6464309,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Unhandshaken_spoofed_and_replayed_packets_cannot_trigger_world_reply",
+        "outcome": "Passed",
+        "seconds": 1.2202704,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.PartialRead_FrameSplitAcrossTwoWrites_WithDelay_IsReassembled",
+        "outcome": "Passed",
+        "seconds": 0.1678985,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.One_way_silence_notifies_server_over_surviving_uplink",
+        "outcome": "Passed",
+        "seconds": 0.4185077,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 255)",
+        "outcome": "Passed",
+        "seconds": 0.2085312,
+        "message": ""
+      }
+    ],
+    "transport-corrected": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0852644,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_is_eventually_dropped",
+        "outcome": "Passed",
+        "seconds": 0.3101819,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+        "outcome": "Passed",
+        "seconds": 0.0081013,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Human_marked_peer_survives_the_bot_no_write_progress_window",
+        "outcome": "Passed",
+        "seconds": 2.0410984,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.OversizedServerFrame_IsRejected_NormalFrame_Delivered",
+        "outcome": "Passed",
+        "seconds": 0.403576,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Guaranteed_own_ship_stream_never_triggers_overcapacity_disconnect",
+        "outcome": "Passed",
+        "seconds": 0.4078783,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Overflow_reasons_are_distinct",
+        "outcome": "Passed",
+        "seconds": 1.84e-05,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Remote_close_records_read_eof_reason",
+        "outcome": "Passed",
+        "seconds": 0.0186781,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 1)",
+        "outcome": "Passed",
+        "seconds": 0.0016742,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Boot_line_prints_the_active_transport_mode",
+        "outcome": "Passed",
+        "seconds": 0.0231301,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Queued_writer_splits_multiline_and_flushes_trailing_partial_line",
+        "outcome": "Passed",
+        "seconds": 0.0009401,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -2147483648)",
+        "outcome": "Passed",
+        "seconds": 0.2091846,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Default_gate_off_emits_far_fewer_console_lines_than_verbose_on",
+        "outcome": "Passed",
+        "seconds": 0.3655321,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_send_then_leave_every_receive_handled_once_in_order_then_released",
+        "outcome": "Passed",
+        "seconds": 0.0013977,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Multiple_sends_to_one_peer_preserve_fifo_order",
+        "outcome": "Passed",
+        "seconds": 0.0129988,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.0060585,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+        "outcome": "Passed",
+        "seconds": 0.0463567,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Blocked_write_hitting_send_timeout_records_SendTimeout_not_SendError",
+        "outcome": "Passed",
+        "seconds": 0.1631603,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Peer_accepting_nothing_for_the_timeout_is_disconnected_with_NoWriteProgress",
+        "outcome": "Passed",
+        "seconds": 0.4224889,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Guaranteed_own_ship_stream_never_triggers_overcapacity_disconnect",
+        "outcome": "Passed",
+        "seconds": 0.4104346,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Out_of_range_wing_id_emits_one_traphack_event_and_flood_is_rate_limited",
+        "outcome": "Passed",
+        "seconds": 0.3731616,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ordered_and_keyed_large_frames_fragment_reassemble_with_loss",
+        "outcome": "Passed",
+        "seconds": 1.8967432,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ReqPingData_SeatedPeerGetsRoster_NormalActionWorks",
+        "outcome": "Passed",
+        "seconds": 0.0849476,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Byte_cap_overcapacity_disconnect_still_works_with_QueueOverCapacity",
+        "outcome": "Passed",
+        "seconds": 0.427112,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Operator_line_carries_kind_check_site_player_ship_connection",
+        "outcome": "Passed",
+        "seconds": 0.0039471,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.Reload_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+        "outcome": "Passed",
+        "seconds": 0.0043824,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.ConsoleLogSanitize_TruncatesAndEscapes",
+        "outcome": "Passed",
+        "seconds": 0.0004063,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Oversized_packet_is_rejected_not_dispatched_others_keep_ticking",
+        "outcome": "Passed",
+        "seconds": 0.5689672,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Byte_cap_overcapacity_disconnect_still_works_with_QueueOverCapacity",
+        "outcome": "Passed",
+        "seconds": 0.4579727,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: True)",
+        "outcome": "Passed",
+        "seconds": 0.0007097,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportNoWouldBlockSpinTests.Idle_pool_peer_accrues_almost_no_would_block_catches_over_one_second",
+        "outcome": "Passed",
+        "seconds": 1.3078649,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 2147483647)",
+        "outcome": "Passed",
+        "seconds": 0.2138116,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPingThrottleTests.Ping_flood_over_the_reply_interval_is_dropped_and_counted",
+        "outcome": "Passed",
+        "seconds": 0.0035572,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Worker_decodes_once_before_tick_and_drain_runs_only_on_its_caller",
+        "outcome": "Passed",
+        "seconds": 0.0047576,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.HeaderThenStallPeer_IsDroppedBy_FrameDeadline",
+        "outcome": "Passed",
+        "seconds": 2.0262793,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: False)",
+        "outcome": "Passed",
+        "seconds": 0.1240325,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.0069523,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+        "outcome": "Passed",
+        "seconds": 0.1559795,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.4212432,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Uninstall_restores_the_original_Console_Out",
+        "outcome": "Passed",
+        "seconds": 0.0008009,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Summary_ranks_top_ten_and_uses_measured_wall_seconds",
+        "outcome": "Passed",
+        "seconds": 0.0052515,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Inbound_flood_from_one_peer_is_bounded_by_budget",
+        "outcome": "Passed",
+        "seconds": 0.0003129,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Ipv6_loopback_validates_endpoint_and_delivers_frames",
+        "outcome": "Passed",
+        "seconds": 0.0076098,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0269939,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Reply_piggybacks_selective_ack_and_idle_worker_has_no_poll_ticks",
+        "outcome": "Passed",
+        "seconds": 0.2807413,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.NonBlockingSendLiveTests.Others_keep_ticking_and_mission_advances_while_one_peer_stalls_then_disconnects",
+        "outcome": "Passed",
+        "seconds": 1.3872712,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+        "outcome": "Passed",
+        "seconds": 0.0737935,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 3)",
+        "outcome": "Passed",
+        "seconds": 0.0002961,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_config_boot_spins_up_exactly_the_requested_workers",
+        "outcome": "Passed",
+        "seconds": 0.0117312,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.2239962,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.ConnectionCaps_RefuseOverLimit_NormalJoinsWork",
+        "outcome": "Passed",
+        "seconds": 0.603844,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Healthy_host_send_still_arrives_on_the_wire",
+        "outcome": "Passed",
+        "seconds": 0.0069038,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.011723,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Partial_writes_reassemble_every_frame_byte_exact_in_order",
+        "outcome": "Passed",
+        "seconds": 0.0252084,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_overflow_drops_and_disconnects_a_stalled_peer_without_leaking_workers",
+        "outcome": "Passed",
+        "seconds": 0.4231338,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Stall_detector_requires_queue_growth_and_distinguishes_idle_shedding_and_rate_collapse",
+        "outcome": "Passed",
+        "seconds": 0.0001462,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+        "outcome": "Passed",
+        "seconds": 0.0054841,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Superseding_unacked_poses_still_obeys_congestion_window",
+        "outcome": "Passed",
+        "seconds": 1.0305229,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Peer_accepting_nothing_for_the_timeout_is_disconnected_with_NoWriteProgress",
+        "outcome": "Passed",
+        "seconds": 0.4263425,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_never_touches_guaranteed_ordered_frames",
+        "outcome": "Passed",
+        "seconds": 0.0095789,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Client_role_Send_before_join_still_throws",
+        "outcome": "Passed",
+        "seconds": 2.24e-05,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Client_role_Send_before_join_still_throws",
+        "outcome": "Passed",
+        "seconds": 0.0004313,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.0077864,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Three_loopback_peers_receive_expected_fmids_and_exact_split_totals(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0080277,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Unmarked_bot_peer_is_still_disconnected_on_stall",
+        "outcome": "Passed",
+        "seconds": 0.4311841,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Healthy_host_send_still_arrives_on_the_wire",
+        "outcome": "Passed",
+        "seconds": 0.0092677,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_EmitsMaxThenSuppressesWithPeriodicSummaries",
+        "outcome": "Passed",
+        "seconds": 0.0004549,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+        "outcome": "Passed",
+        "seconds": 0.4082917,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.PlayerReady_RelaysSendersOwnShip_NotForged",
+        "outcome": "Passed",
+        "seconds": 0.0793744,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.PeriodicHealthyPeer_IsNotDropped",
+        "outcome": "Passed",
+        "seconds": 8.4092597,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Partial_writes_count_only_accepted_bytes_and_count_messages_at_completion",
+        "outcome": "Passed",
+        "seconds": 0.0005231,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Oversized_greeting_length_is_rejected_and_dropped_quickly",
+        "outcome": "Passed",
+        "seconds": 0.0009296,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.005087,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFloodSafetyLiveTests.Unsupported_fmid_flood_log_is_rate_limited_others_keep_ticking",
+        "outcome": "Passed",
+        "seconds": 0.0277254,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Graceful_close_completes_all_reserved_frames_before_closing",
+        "outcome": "Passed",
+        "seconds": 0.0003734,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Stalled_non_reading_peer_does_not_block_and_is_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.4191272,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 2)",
+        "outcome": "Passed",
+        "seconds": 0.0012003,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Worker_timings_include_active_writes_split_across_report_windows",
+        "outcome": "Passed",
+        "seconds": 0.0424585,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines",
+        "outcome": "Passed",
+        "seconds": 0.0024424,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Flooding_peer_does_not_starve_a_normal_peer",
+        "outcome": "Passed",
+        "seconds": 0.0004185,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: False)",
+        "outcome": "Passed",
+        "seconds": 0.460671,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Incomplete_peer_does_not_block_ready_peer_or_let_leave_overtake_receive",
+        "outcome": "Passed",
+        "seconds": 0.0007189,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_preserves_per_peer_order_under_concurrent_enqueues",
+        "outcome": "Passed",
+        "seconds": 0.1467826,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0119545,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyThreadPerPeerTests.Peer_whose_socket_keeps_accepting_bytes_is_never_disconnected_even_if_queue_never_empties",
+        "outcome": "Passed",
+        "seconds": 2.52519,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Blocking_write_timeout_closes_the_connection",
+        "outcome": "Passed",
+        "seconds": 0.2097486,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Limiter_buckets_are_per_connection",
+        "outcome": "Passed",
+        "seconds": 0.0001187,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Churn_of_1000_peers_leaves_zero_retained_accounting_entries",
+        "outcome": "Passed",
+        "seconds": 0.0030167,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: True)",
+        "outcome": "Passed",
+        "seconds": 0.0026131,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+        "outcome": "Passed",
+        "seconds": 0.0068464,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_keeps_at_most_one_pending_frame_per_key",
+        "outcome": "Passed",
+        "seconds": 0.007505,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Joined_but_idle_peer_is_not_dropped",
+        "outcome": "Passed",
+        "seconds": 1.2071988,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Stalled_non_reading_peer_does_not_block_and_is_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.4279193,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: False)",
+        "outcome": "Passed",
+        "seconds": 0.3708104,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Full_ushort_range_empty_and_malformed_payloads_remain_diagnostic_only",
+        "outcome": "Passed",
+        "seconds": 0.0223538,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Carried_events_keep_fifo_ahead_of_mid_drain_arrivals",
+        "outcome": "Passed",
+        "seconds": 0.0057696,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+        "outcome": "Passed",
+        "seconds": 0.0089166,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: ThreadPerPeer, restart: True)",
+        "outcome": "Passed",
+        "seconds": 0.5025065,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Real_sender_hooks_account_coalescing_shedding_partial_progress_and_failed_writes",
+        "outcome": "Passed",
+        "seconds": 0.0012033,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0080103,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Overflow_reasons_are_distinct",
+        "outcome": "Passed",
+        "seconds": 0.0012101,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Silence_times_out_once_and_fresh_socket_reconnects",
+        "outcome": "Passed",
+        "seconds": 0.5282275,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Guaranteed_flood_disconnect_records_a_reason",
+        "outcome": "Passed",
+        "seconds": 0.4236424,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 20, length: 1000, firstTurnFrames: 16)",
+        "outcome": "Passed",
+        "seconds": 0.0033674,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Shutdown_and_dispose_remain_idempotent_after_blocking_receive",
+        "outcome": "Passed",
+        "seconds": 0.0021256,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Diagnostic_updates_and_samples_allocate_zero_bytes_after_warmup",
+        "outcome": "Passed",
+        "seconds": 0.0038213,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.ClosePeer_FiresOnPeerLeft_Once",
+        "outcome": "Passed",
+        "seconds": 0.0017271,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Wire_attacks_are_refused_and_next_valid_message_survives(decode: False)",
+        "outcome": "Passed",
+        "seconds": 0.0002187,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0067472,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy",
+        "outcome": "Passed",
+        "seconds": 0.0131434,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: True)",
+        "outcome": "Passed",
+        "seconds": 0.0085214,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0108836,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0095863,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Joined_but_idle_peer_is_not_dropped",
+        "outcome": "Passed",
+        "seconds": 1.2081888,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Silent_connection_does_not_block_a_second_client_join",
+        "outcome": "Passed",
+        "seconds": 0.4069536,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Authenticated_malformed_compact_records_close_without_publishing_peer(invalid: 0)",
+        "outcome": "Passed",
+        "seconds": 0.0007295,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.IntentionalClientShutdown_DoesNotRaiseOnSessionLost(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.2228356,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 255)",
+        "outcome": "Passed",
+        "seconds": 0.2088948,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Diagnostics_distinguish_superseding_from_partially_sent_frame_bytes",
+        "outcome": "Passed",
+        "seconds": 0.0006556,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Rate_limiter_drops_expired_buckets_when_the_table_grows",
+        "outcome": "Passed",
+        "seconds": 0.0003263,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Tick_batch_is_sorted_by_peer_then_sequence_and_budget_rotates_fairly(decouple: False)",
+        "outcome": "Passed",
+        "seconds": 0.0002122,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Stalled_coalesce_only_peer_is_still_disconnected_with_reason",
+        "outcome": "Passed",
+        "seconds": 0.4138235,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Guaranteed_one_shots_survive_a_stall_and_arrive_in_order(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0093398,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_keeps_at_most_one_pending_frame_per_key",
+        "outcome": "Passed",
+        "seconds": 0.0063944,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Telemetry_counts_shed_only_for_best_effort_stream",
+        "outcome": "Passed",
+        "seconds": 0.0083181,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Partial_writes_reassemble_every_frame_byte_exact_in_order",
+        "outcome": "Passed",
+        "seconds": 0.0076774,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Human_whose_queue_exceeds_the_hard_cap_is_disconnected_with_QueueHardCap",
+        "outcome": "Passed",
+        "seconds": 0.2782221,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "outcome": "Passed",
+        "seconds": 0.0072331,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick",
+        "outcome": "Passed",
+        "seconds": 0.0084921,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: Pool, restart: True)",
+        "outcome": "Passed",
+        "seconds": 0.5055688,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Chat_Relay_StampsSender_NotTheForgedSidSender",
+        "outcome": "Passed",
+        "seconds": 0.0889651,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+        "outcome": "Passed",
+        "seconds": 0.1752234,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.ServerHost_Multiple_peers_do_not_starve_each_other",
+        "outcome": "Passed",
+        "seconds": 0.0002306,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_concurrent_stdout_and_stderr_writers_never_tear_lines",
+        "outcome": "Passed",
+        "seconds": 0.0929198,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "outcome": "Passed",
+        "seconds": 0.010802,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.One_way_silence_notifies_server_over_surviving_uplink",
+        "outcome": "Passed",
+        "seconds": 0.4156279,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.InboundFlowControlTests.RateLimiter_WindowBoundary_ResetsBudget",
+        "outcome": "Passed",
+        "seconds": 0.0101516,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.LogonName_Over24Chars_IsRefused",
+        "outcome": "Passed",
+        "seconds": 2.817703,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Slow_but_progressing_human_under_the_cap_is_not_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.0087886,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Batching_is_default_off_and_roundtrips_through_aot_config",
+        "outcome": "Passed",
+        "seconds": 0.0460785,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Server_profiler_window_and_admin_dump_use_the_same_completed_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.0331908,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Multiple_sends_to_one_peer_preserve_fifo_order",
+        "outcome": "Passed",
+        "seconds": 0.0072089,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.SelfReplenishing_flood_is_bounded_and_returns_within_budget",
+        "outcome": "Passed",
+        "seconds": 0.000327,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Game_flow_stays_ordered_with_five_percent_loss_and_pose_backlog(park: True)",
+        "outcome": "Passed",
+        "seconds": 0.3240222,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Pacer_uses_deadline_and_enqueue_wakes_blocked_worker",
+        "outcome": "Passed",
+        "seconds": 2.8363465,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ServerHostBoundedDrainTests.Drain_release_never_recreates_a_departed_peers_accounting_entry",
+        "outcome": "Passed",
+        "seconds": 0.0001711,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 40, length: 100, firstTurnFrames: 32)",
+        "outcome": "Passed",
+        "seconds": 0.0005102,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierThreadPerPeerTests.Reliable_park_lane_never_shed_and_never_coalesced",
+        "outcome": "Passed",
+        "seconds": 0.0076475,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P671KeepAliveTransportTests.SilentPeer_IsDroppedBy_IdleTimeout",
+        "outcome": "Passed",
+        "seconds": 2.0230415,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Operator_line_omits_absent_fields_and_supports_boot_no_player",
+        "outcome": "Passed",
+        "seconds": 6.09e-05,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: 256)",
+        "outcome": "Passed",
+        "seconds": 0.2189678,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_partial_write_crosses_frame_boundaries_and_resumes_without_corruption",
+        "outcome": "Passed",
+        "seconds": 0.0018417,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Timeout_callback_can_dispose_transport_while_receiver_is_blocked",
+        "outcome": "Passed",
+        "seconds": 0.1625244,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.Logoff_ClosesConnection_SecondLogonCannotRearmShip",
+        "outcome": "Passed",
+        "seconds": 2.6502154,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportLivenessPolicyPoolTests.Peer_whose_socket_keeps_accepting_bytes_is_never_disconnected_even_if_queue_never_empties",
+        "outcome": "Passed",
+        "seconds": 2.5272789,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: True)",
+        "outcome": "Passed",
+        "seconds": 2.0779443,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Reliable_overflow_closes_peer_and_best_effort_expires_after_500ms",
+        "outcome": "Passed",
+        "seconds": 0.6410719,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyPoolTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+        "outcome": "Passed",
+        "seconds": 0.0100117,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)",
+        "outcome": "Passed",
+        "seconds": 0.0223666,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Latest_pending_key_wins_and_reliable_latest_survives_blackout(guaranteed: True)",
+        "outcome": "Passed",
+        "seconds": 0.645787,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Known_mix_splits_types_lanes_peers_and_counts_discarded_frames_once_per_type",
+        "outcome": "Passed",
+        "seconds": 0.0023568,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Queued_frames_share_token_and_ack_without_waiting_for_more_frames",
+        "outcome": "Passed",
+        "seconds": 0.0278525,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Graceful_close_delivers_final_ordered_frame_before_loss",
+        "outcome": "Passed",
+        "seconds": 0.0935206,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: True)",
+        "outcome": "Passed",
+        "seconds": 0.0068541,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "outcome": "Passed",
+        "seconds": 0.0066978,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Closing_during_gather_keeps_buffers_leased_until_send_returns",
+        "outcome": "Passed",
+        "seconds": 0.0008215,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Reliable_park_lane_never_shed_and_never_coalesced",
+        "outcome": "Passed",
+        "seconds": 0.0100803,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Unmarked_bot_peer_is_still_disconnected_on_stall",
+        "outcome": "Passed",
+        "seconds": 0.4247481,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_flood_disconnect_records_a_reason",
+        "outcome": "Passed",
+        "seconds": 0.4232851,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer",
+        "outcome": "Passed",
+        "seconds": 0.01226,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Unhandshaken_spoofed_and_replayed_packets_cannot_trigger_world_reply",
+        "outcome": "Passed",
+        "seconds": 1.2178077,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Concurrent_writers_and_window_drains_conserve_all_counters",
+        "outcome": "Passed",
+        "seconds": 0.003584,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: False)",
+        "outcome": "Passed",
+        "seconds": 0.0311701,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleLoopbackTests.Aligned_real_socket_burst_has_identical_commands_and_zero_sim_decode_when_enabled(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0667801,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_stalled_peer_does_not_delay_a_neighbor_on_the_same_worker",
+        "outcome": "Passed",
+        "seconds": 0.6943682,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: ThreadPerPeer, restart: False)",
+        "outcome": "Passed",
+        "seconds": 0.5030747,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.PartialRead_FrameSplitAcrossTwoWrites_WithDelay_IsReassembled",
+        "outcome": "Passed",
+        "seconds": 0.1681076,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Human_marked_peer_survives_the_bot_no_write_progress_window",
+        "outcome": "Passed",
+        "seconds": 2.0200467,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Pooled_data_frames_send_only_valid_bytes_and_own_their_copy",
+        "outcome": "Passed",
+        "seconds": 0.0067874,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_never_touches_guaranteed_ordered_frames",
+        "outcome": "Passed",
+        "seconds": 0.0074759,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0042348,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654DecoderAndLogTests.FireMissile_OutOfRangeClaimedSlice_Rejected_ValidDecodes",
+        "outcome": "Passed",
+        "seconds": 0.0025163,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Remote_close_records_read_eof_reason",
+        "outcome": "Passed",
+        "seconds": 0.0156547,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Blocking_write_timeout_closes_the_connection",
+        "outcome": "Passed",
+        "seconds": 0.0002833,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutThreadPerPeerTests.Silent_connection_is_eventually_dropped",
+        "outcome": "Passed",
+        "seconds": 0.3092523,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Key_zero_false_and_coalescing_zero_preserve_fifo",
+        "outcome": "Passed",
+        "seconds": 0.050824,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P661EgressLiveTests.Three_loopback_peers_receive_expected_fmids_and_exact_split_totals(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0022519,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningPoolTests.Human_whose_queue_exceeds_the_hard_cap_is_disconnected_with_QueueHardCap",
+        "outcome": "Passed",
+        "seconds": 0.2830322,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols",
+        "outcome": "Passed",
+        "seconds": 0.0199237,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGracefulCloseTests.Graceful_close_retires_peer_before_drain_and_delivers_final_reply_before_eof(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.002092,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895UdpTransportTests.Udp_preference_falls_back_to_tcp_without_session_loss",
+        "outcome": "Passed",
+        "seconds": 3.0105906,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Partial_and_blocked_writes_count_only_socket_acceptance_and_keep_inflight_backlog",
+        "outcome": "Passed",
+        "seconds": 0.0007429,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Game_flow_preserves_wire_order_across_pose_backlog_and_rotation(reliableOneShot: False)",
+        "outcome": "Passed",
+        "seconds": 0.0104013,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Identical_tick_inputs_produce_identical_simulation_and_wire_results_off_vs_on",
+        "outcome": "Passed",
+        "seconds": 0.032325,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Oversized_greeting_length_is_rejected_and_dropped_quickly",
+        "outcome": "Passed",
+        "seconds": 0.0024592,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "outcome": "Passed",
+        "seconds": 0.2080473,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+        "outcome": "Passed",
+        "seconds": 0.006905,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P673ReceiveDecoupleTests.Histogram_retains_100_ticks_and_attributes_fmids_bytes_and_peer_ids",
+        "outcome": "Passed",
+        "seconds": 0.0066139,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P895bUdpOverheadTests.Compact_records_preserve_full_key_range_and_fragment_boundaries(key: -1)",
+        "outcome": "Passed",
+        "seconds": 0.2127749,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendHardeningThreadPerPeerTests.Slow_but_progressing_human_under_the_cap_is_not_disconnected",
+        "outcome": "Passed",
+        "seconds": 0.0077041,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "outcome": "Passed",
+        "seconds": 0.0066483,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Shutdown_flushes_queued_lines_to_the_sink_and_restores_console",
+        "outcome": "Passed",
+        "seconds": 0.0009646,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Default_server_boots_in_pool_mode",
+        "outcome": "Passed",
+        "seconds": 0.0205546,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: ThreadPerPeer)",
+        "outcome": "Passed",
+        "seconds": 0.0046851,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: False)",
+        "outcome": "Passed",
+        "seconds": 2.0703961,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P654TransportConnectionLimitsTests.Drain_HandlerThrow_DoesNotLoseSiblingEvents",
+        "outcome": "Passed",
+        "seconds": 0.0010991,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportAcceptShutdownTests.Stop_between_running_check_and_accept_exits_even_after_restart(mode: Pool, restart: False)",
+        "outcome": "Passed",
+        "seconds": 0.5027339,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Stalled_coalesce_only_peer_is_still_disconnected_with_reason",
+        "outcome": "Passed",
+        "seconds": 0.4184956,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P813dReliableTierPoolTests.Telemetry_counts_shed_only_for_best_effort_stream",
+        "outcome": "Passed",
+        "seconds": 0.0106208,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+        "outcome": "Passed",
+        "seconds": 0.059679,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P855TrapHackTests.Limiter_allows_burst_within_window_then_suppresses",
+        "outcome": "Passed",
+        "seconds": 0.0035114,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Stalled_stdout_does_not_block_the_sim_thread_even_verbose_on",
+        "outcome": "Passed",
+        "seconds": 2.0576728,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportGracefulCloseTests.Graceful_close_retires_peer_before_drain_and_delivers_final_reply_before_eof(mode: Pool)",
+        "outcome": "Passed",
+        "seconds": 0.0562848,
+        "message": ""
+      },
+      {
+        "name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Proof_keeps_arrivals_that_beat_tick_log_without_fabricating_age_or_gaps",
+        "outcome": "Passed",
+        "seconds": 0.0050729,
+        "message": ""
+      }
+    ]
+  },
+  "glossary": "444 paths passed",
+  "compose": "passed",
+  "parity": "passed",
+  "newMedia": 0
+}

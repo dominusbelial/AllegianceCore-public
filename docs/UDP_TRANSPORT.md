@@ -135,3 +135,65 @@ IP/UDP headers and TCP's kernel ACKs/retransmissions. Clients use blocking
 receives, immediate paced producer sends and a one-shot deadline timer; an idle
 session waits for actual socket activity or its keepalive/timeout deadline.
 See [P895b's report](reports/P895B_REPORT.md) for the before/after qualification.
+
+## Scheduling diagnostics (P907)
+
+Enable `ALLEGIANCE_TICK_PROFILER=1` on the server process, or use
+`profiler.enabled: true`. Each profiler window also emits:
+
+* `[thread-pool] scope=process`: `threads` is `ThreadPool.ThreadCount`,
+  `pendingItems` is `PendingWorkItemCount`, and `completedPerSecond` is the
+  window delta of `CompletedWorkItemCount` divided by monotonic elapsed seconds.
+  These include every pool user in the process. Embedded hosting therefore
+  includes work from the client as well as the server.
+* `probeSamples`, `probeMeanMs`, `probeP95UpperMs`, `probeMaxMs`: delay from
+  enqueuing a reusable work item to its execution. There is at most one probe
+  outstanding and at most one enqueue per second, sampled from the simulation
+  thread without a pool timer. `probePendingMs` shows the age of an unfinished
+  probe, so a window with zero completed samples does not hide a current stall.
+* `[udp-receive]`: `asyncSamples` and `completionToWorkerMeanMs`,
+  `completionToWorkerP95UpperMs`, `completionToWorkerMaxMs` measure **managed
+  completion callback entry to processing on the existing dedicated UDP worker**,
+  including wake/scheduling and existing state-gate contention. `syncReceives`
+  counts synchronous completions separately; they do not become zero-delay
+  samples that dilute the async distribution. Only successful socket receives
+  enter these counters; protocol validation is later.
+
+Mean and max use exact stopwatch samples. P95 is an upper bound from fixed
+power-of-two microsecond buckets (capped at the observed max); it is deliberately
+named `P95UpperMs`. Empty distributions print zero with a zero sample count.
+An async sample belongs to the window where its worker processes it. Storage
+is fixed; recording does not allocate or take an additional per-datagram lock.
+The existing state gate is acquired once when a UDP reporting window drains.
+
+**Kernel arrival to managed completion is unavailable through this
+`SocketAsyncEventArgs.ReceiveFromAsync` path.** The .NET 10 socket result exposes
+no `SO_TIMESTAMP` ancillary arrival timestamp. Timing from posting a receive
+would include legitimate idle time and is not a useful arrival-delay estimate.
+The log says `kernelArrivalToCompletion=unavailable` and identifies
+`schedulingProxy=thread-pool-probe`. The pool probe estimates scheduling pressure,
+not per-datagram queue age. A tiny UDP handoff can coexist with an 800 ms pool
+delay because the timestamp starts only after managed callback dispatch. There
+is no client-side or network-latency claim in these counters.
+Reporting follows existing tick-profiler windows; a paused skirmish emits its
+next window after simulation ticks resume.
+
+For skirmish or Host LAN, set the profiler variable on the game client process.
+The shared server implementation prints the same lines; the existing console
+tee also writes them into `<data-dir>/logs/client.log`. Skirmish uses TCP, so it
+prints `[thread-pool]`; Host LAN enables the UDP listener and also prints
+`[udp-receive]`. No HUD style or renderer participates in this logging path.
+
+The metrics are off with the profiler. For a profiler-on cost comparison only,
+set `profiler.schedulingMetrics: false` in server JSON; the default is true.
+No pool tuning, completion inlining or receive-model changes are performed.
+
+MCP bots already support UDP: `ObservedSession` creates its transport through
+`TransportFactory.CreateClient`, which reads `ALLEGIANCE_TRANSPORT_PROTOCOL`.
+Workers inherit their supervisor's environment. To split a fleet today, run two
+MCP supervisors against the same TCP endpoint: one with the variable set to
+`tcp`, one with `udp` (and `ALLEGIANCE_TRANSPORT_UDP_PORT` if distinct). The setting
+is process-wide, so one supervisor cannot mix protocols per bot. Check server
+peer IDs: the high bit confirms actual UDP, since the bounded UDP handshake can
+fall back to TCP. See [the P907 report](reports/P907_REPORT.md) for exact commands,
+the local stall/cost evidence, and suggested investigation thresholds.

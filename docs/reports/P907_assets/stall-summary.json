@@ -1,0 +1,32 @@
+[
+  {
+    "repeat": 1,
+    "lines": [
+      "[stall-phase] phase=baseline threads=2 pending=0 completedPerSecond=64.256 probeSamples=1 probeMeanMs=0.055 probeP95UpperMs=0.055 probeMaxMs=0.055 probePendingMs=0 udpAsync=4 udpHandoffMaxMs=0.11",
+      "[stall-phase] phase=blocked threads=4 pending=31 completedPerSecond=1.05 probeSamples=0 probeMeanMs=0 probeP95UpperMs=0 probeMaxMs=0 probePendingMs=800.175 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-phase] phase=released threads=4 pending=0 completedPerSecond=368.001 probeSamples=1 probeMeanMs=800.447 probeP95UpperMs=800.447 probeMaxMs=800.447 probePendingMs=0 udpAsync=3 udpHandoffMaxMs=0.122",
+      "[stall-phase] phase=recovered threads=4 pending=0 completedPerSecond=1.666 probeSamples=1 probeMeanMs=0.141 probeP95UpperMs=0.141 probeMaxMs=0.141 probePendingMs=0 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-proof] udpSession=true sentToObservedMs=800.605 pendingProbeMs=800.175 releasedProbeMaxMs=800.447 recoveredProbeMaxMs=0.141"
+    ]
+  },
+  {
+    "repeat": 2,
+    "lines": [
+      "[stall-phase] phase=baseline threads=2 pending=0 completedPerSecond=65.365 probeSamples=1 probeMeanMs=0.065 probeP95UpperMs=0.065 probeMaxMs=0.065 probePendingMs=0 udpAsync=4 udpHandoffMaxMs=0.079",
+      "[stall-phase] phase=blocked threads=4 pending=31 completedPerSecond=1.05 probeSamples=0 probeMeanMs=0 probeP95UpperMs=0 probeMaxMs=0 probePendingMs=800.179 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-phase] phase=released threads=4 pending=0 completedPerSecond=378.45 probeSamples=1 probeMeanMs=800.4 probeP95UpperMs=800.4 probeMaxMs=800.4 probePendingMs=0 udpAsync=3 udpHandoffMaxMs=0.009",
+      "[stall-phase] phase=recovered threads=4 pending=0 completedPerSecond=1.666 probeSamples=1 probeMeanMs=0.142 probeP95UpperMs=0.142 probeMaxMs=0.142 probePendingMs=0 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-proof] udpSession=true sentToObservedMs=800.489 pendingProbeMs=800.179 releasedProbeMaxMs=800.4 recoveredProbeMaxMs=0.142"
+    ]
+  },
+  {
+    "repeat": 3,
+    "lines": [
+      "[stall-phase] phase=baseline threads=2 pending=0 completedPerSecond=67.376 probeSamples=1 probeMeanMs=0.052 probeP95UpperMs=0.052 probeMaxMs=0.052 probePendingMs=0 udpAsync=4 udpHandoffMaxMs=0.123",
+      "[stall-phase] phase=blocked threads=4 pending=31 completedPerSecond=1.05 probeSamples=0 probeMeanMs=0 probeP95UpperMs=0 probeMaxMs=0 probePendingMs=800.286 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-phase] phase=released threads=4 pending=0 completedPerSecond=377.616 probeSamples=1 probeMeanMs=800.602 probeP95UpperMs=800.602 probeMaxMs=800.602 probePendingMs=0 udpAsync=3 udpHandoffMaxMs=0.033",
+      "[stall-phase] phase=recovered threads=4 pending=0 completedPerSecond=1.666 probeSamples=1 probeMeanMs=0.166 probeP95UpperMs=0.166 probeMaxMs=0.166 probePendingMs=0 udpAsync=0 udpHandoffMaxMs=0",
+      "[stall-proof] udpSession=true sentToObservedMs=800.723 pendingProbeMs=800.286 releasedProbeMaxMs=800.602 recoveredProbeMaxMs=0.166"
+    ]
+  }
+]

@@ -11,12 +11,14 @@ public sealed class DualTransport : IServerTransport
     public UdpTransport Udp { get; }
     private readonly ushort _udpPort;
     public DualTransport(ITransportSite site, TcpTransport tcp, ushort udpPort,
-        EgressAccounting? egress, ReliableTelemetry? reliable, ServerCounters counters, bool park)
+        EgressAccounting? egress, ReliableTelemetry? reliable, ServerCounters counters, bool park,
+        bool measureReceiveDelay = false)
     {
         Tcp = tcp;
         _udpPort = udpPort;
         Udp = new UdpTransport(new UdpSite(site))
         { Egress = egress, Reliable = reliable, ServerCounters = counters, ReliableOneShot = park,
+            MeasureReceiveDelay = measureReceiveDelay,
             IdleTimeout = TcpTransport.DataLinkIdleTimeout, MaxBufferedBytes = (int)Math.Min(int.MaxValue, TcpTransport.HardCapBytes) };
     }
     public EgressAccounting? Egress => Tcp.Egress;

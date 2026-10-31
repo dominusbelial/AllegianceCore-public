@@ -150,6 +150,8 @@ public sealed partial class Server
         // editing a config file: "1"/"true" enables (log-only), "0"/"false"
         // forces off, and any other value is treated as the CSV output path.
         ApplyProfilerConfig(config.Profiler);
+        if (TickProfiler.Instance is not null && config.Profiler?.SchedulingMetrics != false)
+            _threadPoolTelemetry = new ThreadPoolTelemetry();
         if (TickProfiler.Instance is { } profiler)
             Console.WriteLine("[boot] *** TICK PROFILER ACTIVE (profiler.enabled=true) — per-subsystem + per-sector per-tick timing, "
                               + $"report every {profiler.ReportIntervalSeconds}s"
@@ -926,7 +928,8 @@ public sealed partial class Server
         if (!RequireLanListeners && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
             udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
         _host.Transport = protocol == "udp"
-            ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot)
+            ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
+                measureReceiveDelay: _threadPoolTelemetry is not null)
             : transport;
         _host.Transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);
         if (_host.Transport is DualTransport dual) Console.WriteLine($"[boot] UDP transport listening on {dual.UdpPort} (TCP remains available)");
@@ -2520,6 +2523,8 @@ public sealed partial class Server
     {
         if (_shutdown) return;
         _shutdown = true;
+        _threadPoolTelemetry?.Dispose();
+        _threadPoolTelemetry = null;
         TickProfiler.WindowReported -= EmitEgressWindow;
         // Heartbeat constructed last in Boot → torn down first, so its best-effort
         // deregister DELETE fires before the process tears down. Independent of the

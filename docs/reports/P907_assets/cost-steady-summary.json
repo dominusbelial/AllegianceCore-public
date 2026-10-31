@@ -1,0 +1,42 @@
+[
+  {
+    "protocol": "tcp",
+    "arm": "off",
+    "runs": 3,
+    "TickMeanMs": 5.083459472817132,
+    "TickP50Ms": 5.1238,
+    "TickP95Ms": 6.1528,
+    "AllocatedBytesPerSecond": 16998147.924343057,
+    "CpuCores": 0.4172569835963874
+  },
+  {
+    "protocol": "tcp",
+    "arm": "on",
+    "runs": 3,
+    "TickMeanMs": 5.064912685337726,
+    "TickP50Ms": 5.1349,
+    "TickP95Ms": 6.1314,
+    "AllocatedBytesPerSecond": 16164119.379211135,
+    "CpuCores": 0.4133203605901156
+  },
+  {
+    "protocol": "udp",
+    "arm": "off",
+    "runs": 3,
+    "TickMeanMs": 5.102357284768212,
+    "TickP50Ms": 4.9939,
+    "TickP95Ms": 6.4855,
+    "AllocatedBytesPerSecond": 24351686.828206312,
+    "CpuCores": 0.6121931167067285
+  },
+  {
+    "protocol": "udp",
+    "arm": "on",
+    "runs": 3,
+    "TickMeanMs": 4.790639403973505,
+    "TickP50Ms": 4.9336,
+    "TickP95Ms": 6.3155,
+    "AllocatedBytesPerSecond": 31222121.97869314,
+    "CpuCores": 0.60398622241083
+  }
+]
