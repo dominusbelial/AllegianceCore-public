@@ -98,6 +98,30 @@ See **[`docs/GUIDE.md`](docs/GUIDE.md)** for the full guide: prerequisites,
 getting the original art, building/running everything, client flags, testing,
 architecture, and troubleshooting.
 
+## Parity status
+
+How much of the original game's behaviour the port reproduces, as of 2026-10-31. Each row of the
+[matrices](docs/parity/) cites the native source, and a row only earns credit with production code and
+a test. [`scripts/parity-scorecard.py`](scripts/parity-scorecard.py) validates them and produces these
+numbers, weighting rows by importance.
+
+| Area | Weighted | Rows complete |
+|---|---:|---:|
+| Core game systems (`parity-matrix.csv`) | 100.00 % | 659 / 659 |
+| Lobby | 98.72 % | 29 / 30 |
+| Simulation rules | 97.57 % | 780 / 805 |
+| Effects | 100.00 % | 8 / 8 |
+| Sound engine | 100.00 % | 22 / 22 |
+| Bots | 92.73 % | 19 / 21 |
+| AllSrv admin UI | 68.18 % | 10 / 16 |
+| Training missions | 42.48 % | 102 / 237 |
+| Model tools | 0.00 % | 0 / 8 |
+
+Work is ongoing, so these are not final. Three simulation rows (tick order, collision order and
+broadcast order) are implemented behind default-off flags and stay partial until a 200v200 comparison
+decides them. Model tools show 0 % because they are not wired into anything players run yet, so they
+earn no headline credit. Task reports are in [`docs/reports/`](docs/reports/).
+
 ## Download and play
 
 Download the Windows x64 setup `.exe`, Linux x64 AppImage, or a portable bundle from
