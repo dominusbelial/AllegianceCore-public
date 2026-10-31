@@ -4730,3 +4730,32 @@ the limit. Evidence: `.scratch/p902/warp-isolation-{1,2,3}.log` and
 `.scratch/p902/isolated/p777-warp-{1,2,3}.trx`. No warp/sim/test-tier code changed.
 The complete sweep ran 12,737 cases in 544.3 s: 12,730 passed, 4 failed,
 3 skipped, and 2 timing offenders. All P902 cases passed in the sweep.
+
+
+## P905 Codex gate — 2026-10-31
+
+The single Fast sweep retained the existing/non-task failures below in its
+original results under `.scratch/p905/fast/`. Their source files were unchanged.
+
+| Test | Isolation result (three separate invocations) | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass / pass / pass with writable `.scratch/p905/config` as `XDG_CONFIG_HOME` | Existing sandbox/config-path failure: the fixture finally-block restores the user profile on a read-only path. No profile or chat code changed. Original sweep failure retained. |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | pass / pass / pass | Existing seeded-join/lobby timing failure; sweep expected side 1 but saw lobby side -2. The isolated runs use the required native/pooled runtime settings and server GC. No server, transport, client-world or seed fixture code changed. |
+
+Additional Core isolation receipts (three separate invocations each):
+
+| Test | Isolation outcomes | Observation |
+|---|---|---|
+| `P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots` | pass / pass / pass | Sweep measured 4,272 bytes against zero; isolated allocation assertions pass. No Core adapter or allocation code changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same persistent null-defend-target baseline failure recorded under P872/P887/P895/P902. Remains open; no sim/NPC code changed. |
+| `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | pass / pass / pass | Sweep saw neither hull drop nor kill; isolated real-wire runs pass. No projectile, wire or client prediction code changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | functional pass / pass / pass; 10.270 / 10.009 / 10.271 s | Sweep passed functionally in 11.265 s but exceeded the calibrated 10 s Fast limit. Existing near-boundary timing offender; no warp/flight code or timing threshold changed. |
+
+Receipts: `.scratch/p905/profile-isolation-summary.json`,
+`.scratch/p905/supervisor-and-seed-summary.json`,
+`.scratch/p905/core-isolation-summary.json` and `.scratch/p905/isolation-results/`.
+
+The sweep also exposed P905's tool-count contract assertion (13 expected, 14
+actual). That task regression was corrected for the added `bot_behavior` tool;
+the updated count test and the new named-worker routing test each passed three
+times alone. It is not classified as a flake. The Fast sweep was not repeated.

@@ -65,6 +65,8 @@ internal sealed partial class BotManager
             if (bot.FinaleBomberActive && bot.FinaleGrantVerified && bot.Finale is { } finale)
                 lock (finale.Sync) finale.StrikeStartedAt ??= now;
         }
+        bot.Routines?.NewLife();
+        bot.RoutinePurchaseAt = double.NegativeInfinity;
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
         bot.FlagTask = FlagDuty.None;
         bot.FlagAnchor = null;

@@ -159,6 +159,28 @@ internal sealed partial class WorkerSupervisor : IDisposable
         try
         {
             if (name == "spawn_scenario") return await SpawnScenarioAsync(args, ct);
+            if (name == "bot_behavior")
+            {
+                if (!args.TryGetProperty("name", out var requested) || requested.ValueKind != JsonValueKind.String)
+                    return Result(JsonSerializer.SerializeToElement(new { error = "bot_behavior: name is required" }), true);
+                string? botName = requested.GetString();
+                var inventories = await FanOut("list_active_bots", EmptyArgs, ct);
+                IWorker? owner = null;
+                for (int i = 0; i < inventories.Length; i++)
+                {
+                    var inventory = inventories[i];
+                    if (inventory.IsError || inventory.Data.ValueKind != JsonValueKind.Array) continue;
+                    if (!inventory.Data.EnumerateArray().Any(b => b.TryGetProperty("name", out var n) && n.GetString() == botName
+                        && (!b.TryGetProperty("status", out var status) || status.GetString() == "active"))) continue;
+                    if (owner is not null)
+                        return Result(JsonSerializer.SerializeToElement(new { error = "bot_behavior: ambiguous bot name" }), true);
+                    owner = _workers[i];
+                }
+                if (owner is null)
+                    return Result(JsonSerializer.SerializeToElement(new { error = "bot_behavior: active bot not found" }), true);
+                var changed = await SafeCall(owner, name, args, ct);
+                return Result(changed.Data, changed.IsError);
+            }
             if (name is "list_active_bots" or "list_drones")
             {
                 var replies = await FanOut(name, args, ct);

@@ -1,0 +1,54 @@
+{
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tool_build": {
+    "projects": 101,
+    "warnings": 0,
+    "errors": 0
+  },
+  "server_aot": {
+    "runtime": "linux-x64",
+    "configuration": "Release",
+    "clean": true,
+    "IL2026": 0,
+    "IL3050": 0
+  },
+  "p905_model_cases": 11,
+  "p905_live_methods": 4,
+  "each_new_test_isolated_repetitions": 3,
+  "additional_supervisor_methods_isolated": 2,
+  "showcase_never_parks": {
+    "passed": 5,
+    "runs": 5,
+    "server_gc": true,
+    "baseline_control_passed": 1,
+    "baseline_control_runs": 1
+  },
+  "fast": {
+    "sweeps": 1,
+    "executions": 12764,
+    "passed": 12755,
+    "failed": 6,
+    "skipped": 3,
+    "timing_offenders": 1,
+    "outcome": "FAIL retained",
+    "task_failure_fixed": "P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct: count contract updated; pass 3/3 alone",
+    "non_task_failures_ledgered": 5
+  },
+  "parity": {
+    "before_credit": 45,
+    "after_credit": 51,
+    "weight": 55,
+    "before_percent": 81.82,
+    "after_percent": 92.73,
+    "pending_rulings": [
+      "BOT-0016",
+      "BOT-0018"
+    ]
+  },
+  "glossary_links": 433,
+  "changes_committed": false,
+  "changes_pushed": false
+}

@@ -1,0 +1,73 @@
+{
+  "control": {
+    "outcome": "Passed",
+    "duration": "00:03:30.7326451",
+    "measurement": "P700 local 15v15: 207.4s, samples=2072, reached=24/30, longest speed<1 with target=0.000s, shots=582, hits=41, kills=0",
+    "source": ".scratch/p905/showcase-base-gc-results/showcase-base-gc.trx"
+  },
+  "working_tree": [
+    {
+      "outcome": "Passed",
+      "duration": "00:07:04.5370459",
+      "measurement": "P700 local 15v15: 420.8s, samples=4202, reached=24/30, longest speed<1 with target=1.925s, shots=1756, hits=417, kills=5",
+      "source": ".scratch/p905/showcase-gc-results/showcase-gc-1.trx"
+    },
+    {
+      "outcome": "Passed",
+      "duration": "00:03:57.6053144",
+      "measurement": "P700 local 15v15: 234.2s, samples=2339, reached=24/30, longest speed<1 with target=1.614s, shots=1228, hits=463, kills=3",
+      "source": ".scratch/p905/showcase-gc-results/showcase-gc-2.trx"
+    },
+    {
+      "outcome": "Passed",
+      "duration": "00:03:54.2899792",
+      "measurement": "P700 local 15v15: 230.6s, samples=2304, reached=24/30, longest speed<1 with target=0.000s, shots=1275, hits=234, kills=1",
+      "source": ".scratch/p905/showcase-gc-results/showcase-gc-3.trx"
+    },
+    {
+      "outcome": "Passed",
+      "duration": "00:07:06.4144374",
+      "measurement": "P700 local 15v15: 422.8s, samples=4222, reached=25/30, longest speed<1 with target=0.000s, shots=874, hits=1, kills=0",
+      "source": ".scratch/p905/showcase-gc-results/showcase-gc-4.trx"
+    },
+    {
+      "outcome": "Passed",
+      "duration": "00:03:22.5396698",
+      "measurement": "P700 local 15v15: 198.4s, samples=1982, reached=24/30, longest speed<1 with target=0.000s, shots=609, hits=11, kills=0",
+      "source": ".scratch/p905/showcase-gc-results/showcase-gc-5.trx"
+    }
+  ],
+  "process_runs": [
+    {
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 425.75,
+      "server_gc_environment": 1
+    },
+    {
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 238.58,
+      "server_gc_environment": 1
+    },
+    {
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 235.33,
+      "server_gc_environment": 1
+    },
+    {
+      "repeat": 4,
+      "exit": 0,
+      "wall_seconds": 427.41,
+      "server_gc_environment": 1
+    },
+    {
+      "repeat": 5,
+      "exit": 0,
+      "wall_seconds": 203.46,
+      "server_gc_environment": 1
+    }
+  ],
+  "server_gc_environment": 1
+}
