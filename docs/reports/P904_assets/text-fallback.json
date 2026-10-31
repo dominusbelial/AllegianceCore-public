@@ -1,0 +1,10 @@
+{
+  "offlineExportExit": 0,
+  "textConstantsPresent": true,
+  "productionBootExit": 1,
+  "message": [
+    "[boot] broadcast.encodeOnce = True",
+    "[boot] broadcast.minUpdateHz = 2 (requested 2); 0 = ranked budget only",
+    "server failed: static core '/home/domingo/allegiance-codex-p904/.scratch/p904/text-fallback/PCore001.igc' not found under artPath"
+  ]
+}

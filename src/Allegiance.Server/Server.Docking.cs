@@ -2122,12 +2122,10 @@ public sealed partial class Server
     /// point of the <c>c_cmdCurrent</c> SetTarget action
     /// (<c>WinTrek.cpp:8820-8852</c>), and native resolves it generically via
     /// <c>pMission-&gt;GetModel(objectType, objectID)</c>
-    /// (<c>FedSrv.CPP:7336</c>), which spans the whole mission with no side
-    /// restriction. The two-source scan mirrors
-    /// <see cref="FindSameSideShip"/>'s own P148 extension (peer ships first,
-    /// then every sector's model list for NPCs placed via
-    /// <c>Mission.PlaceShip</c>, which have no <c>_peerShips</c> entry) —
-    /// minus the side equality. Returns <c>null</c> for an unknown id, which
+    /// (<c>FedSrv.CPP:7337</c>), which spans the whole mission with no side
+    /// restriction. The shared resolver reads the mission registry, including
+    /// ships temporarily outside a cluster and NPCs without a peer entry.
+    /// Returns <c>null</c> for an unknown id, which
     /// the caller treats as native <c>GetModel</c> returning <c>NULL</c> (a
     /// clear-target / no-op, <c>FedSrv.CPP:7336-7338</c>).
     /// </summary>
@@ -2135,7 +2133,7 @@ public sealed partial class Server
     {
         // Native GetModel(OT_ship) uses the mission registry, including ships
         // without a peer or cluster (Igc/missionigc.cpp:3396-3397,3708-3715).
-        return mission?.GetShip(id);
+        return mission?.GetModel(IgcObjectType.Ship, id) as Ship;
     }
 
     /// <summary>P422 — resolve a runtime <see cref="Asteroid"/> by its

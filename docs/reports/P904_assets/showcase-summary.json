@@ -1,0 +1,122 @@
+[
+  {
+    "run": 1,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 232.0007,
+        "message": null
+      }
+    ],
+    "load": [
+      1.20751953125,
+      1.611328125,
+      1.85888671875
+    ],
+    "observationSeconds": 227.6,
+    "samples": 2273,
+    "reached": 24,
+    "longestParkSeconds": 0.707,
+    "shots": 968,
+    "hits": 173,
+    "kills": 1
+  },
+  {
+    "run": 2,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 232.6599,
+        "message": null
+      }
+    ],
+    "load": [
+      3.16748046875,
+      1.9130859375,
+      1.87353515625
+    ],
+    "observationSeconds": 228.4,
+    "samples": 2281,
+    "reached": 24,
+    "longestParkSeconds": 1.919,
+    "shots": 658,
+    "hits": 225,
+    "kills": 1
+  },
+  {
+    "run": 3,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 209.1125,
+        "message": null
+      }
+    ],
+    "load": [
+      0.64111328125,
+      1.28076171875,
+      1.619140625
+    ],
+    "observationSeconds": 205.3,
+    "samples": 2051,
+    "reached": 24,
+    "longestParkSeconds": 0.0,
+    "shots": 260,
+    "hits": 1,
+    "kills": 0
+  },
+  {
+    "run": 4,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 204.1277,
+        "message": null
+      }
+    ],
+    "load": [
+      0.875,
+      1.1279296875,
+      1.4873046875
+    ],
+    "observationSeconds": 200.0,
+    "samples": 1998,
+    "reached": 24,
+    "longestParkSeconds": 0.0,
+    "shots": 381,
+    "hits": 14,
+    "kills": 0
+  },
+  {
+    "run": 5,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 242.1627,
+        "message": null
+      }
+    ],
+    "load": [
+      2.1513671875,
+      1.34375,
+      1.4736328125
+    ],
+    "observationSeconds": 238.0,
+    "samples": 2377,
+    "reached": 24,
+    "longestParkSeconds": 1.002,
+    "shots": 1325,
+    "hits": 403,
+    "kills": 3
+  }
+]

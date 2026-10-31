@@ -1,0 +1,360 @@
+[
+  {
+    "row": "SIM-0147",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 7950,
+        "end": 8068,
+        "first": "// Do a periodic roll call. If we haven't heard from anyone for two roll calls in a row, waste 'em",
+        "last": "//NYI wind up another check?",
+        "sha256": "7b1aa10f20a08d897d478a07387d2e384477b27d3d3fecb0b23fb731973fdd31"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0156",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "Igc/igc.h",
+        "start": 4760,
+        "end": 4760,
+        "first": "virtual Time ServerTimeFromClientTime(Time   timeClient)",
+        "last": "virtual Time ServerTimeFromClientTime(Time   timeClient)",
+        "sha256": "0191e236a61bf44dcec5fcd3ab80b252c5582c4dd07d2179afaa9a3464a2f13d"
+      },
+      {
+        "path": "Igc/buildingeffectigc.h",
+        "start": 142,
+        "end": 142,
+        "first": "pdbe->timeStart = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(m_timeEnvelope);",
+        "last": "pdbe->timeStart = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(m_timeEnvelope);",
+        "sha256": "5690a7dfdfa03d3ea3daffaded8f7fa3e108e2d545ed749a6b85e84962f82070"
+      },
+      {
+        "path": "Igc/shipIGC.h",
+        "start": 1178,
+        "end": 1178,
+        "first": "pshipupdate->time = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(GetMyLastUpdate());",
+        "last": "pshipupdate->time = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(GetMyLastUpdate());",
+        "sha256": "19729e4a0ec12d939b7d3053cc43c541afc334a11f6b6c61ffc3fe179af30156"
+      },
+      {
+        "path": "Igc/shipIGC.h",
+        "start": 1208,
+        "end": 1208,
+        "first": "pshipupdate->time = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(GetMyLastUpdate());",
+        "last": "pshipupdate->time = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(GetMyLastUpdate());",
+        "sha256": "19729e4a0ec12d939b7d3053cc43c541afc334a11f6b6c61ffc3fe179af30156"
+      },
+      {
+        "path": "Igc/treasureIGC.cpp",
+        "start": 274,
+        "end": 274,
+        "first": "dataTreasure->time0 = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(m_data.time0);",
+        "last": "dataTreasure->time0 = GetMyMission()->GetIgcSite()->ServerTimeFromClientTime(m_data.time0);",
+        "sha256": "10289c1e090ea806730c122951d99dc13987b9ae0f25d5e0267b78e4b3fbd364"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0157",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "Igc/igc.h",
+        "start": 4764,
+        "end": 4764,
+        "first": "virtual Time ClientTimeFromServerTime(Time   timeServer)",
+        "last": "virtual Time ClientTimeFromServerTime(Time   timeServer)",
+        "sha256": "e9223bc7650e2d867dd1164a026f134c573b5db4ad6e9b841be3476f05648078"
+      },
+      {
+        "path": "Igc/buildingeffectigc.h",
+        "start": 50,
+        "end": 50,
+        "first": "m_timeEnvelope = pMission->GetIgcSite()->ClientTimeFromServerTime(dataBuilding->timeStart);",
+        "last": "m_timeEnvelope = pMission->GetIgcSite()->ClientTimeFromServerTime(dataBuilding->timeStart);",
+        "sha256": "44894b6b55d10f8d2531d04834398f5579359a96277fdace9e73993a83a7ab0e"
+      },
+      {
+        "path": "Igc/chaffigc.cpp",
+        "start": 48,
+        "end": 48,
+        "first": "Time    time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataChaff->time0);",
+        "last": "Time    time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataChaff->time0);",
+        "sha256": "4750a43954b99fdcc99009215e7af72d544557ed4ca5f70e937b3df9d1dc7673"
+      },
+      {
+        "path": "Igc/mineigc.cpp",
+        "start": 44,
+        "end": 44,
+        "first": "m_time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataMineBase->time0);",
+        "last": "m_time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataMineBase->time0);",
+        "sha256": "c22d04efc53790df4385f3edf6c070c873c58fa2af2fb902e7bb3e4a67aecad3"
+      },
+      {
+        "path": "Igc/probeigc.cpp",
+        "start": 51,
+        "end": 51,
+        "first": "m_time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataProbeBase->time0);",
+        "last": "m_time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(dataProbeBase->time0);",
+        "sha256": "5dbfae332b307749f487d2981b8eec2737289475bda273a0a6c46dfb7a1fbb06"
+      },
+      {
+        "path": "Igc/shipIGC.cpp",
+        "start": 3112,
+        "end": 3112,
+        "first": "timeUpdate = GetMyMission()->GetIgcSite()->ClientTimeFromServerTime(timeUpdate);",
+        "last": "timeUpdate = GetMyMission()->GetIgcSite()->ClientTimeFromServerTime(timeUpdate);",
+        "sha256": "08829c3c818e52ab9ce933e69882626e042b5c71e962af250f45a8344d9629f5"
+      },
+      {
+        "path": "Igc/shipIGC.cpp",
+        "start": 3306,
+        "end": 3306,
+        "first": "timeUpdate = GetMyMission()->GetIgcSite()->ClientTimeFromServerTime(timeUpdate);",
+        "last": "timeUpdate = GetMyMission()->GetIgcSite()->ClientTimeFromServerTime(timeUpdate);",
+        "sha256": "08829c3c818e52ab9ce933e69882626e042b5c71e962af250f45a8344d9629f5"
+      },
+      {
+        "path": "Igc/treasureIGC.cpp",
+        "start": 41,
+        "end": 41,
+        "first": "m_data.time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(m_data.time0);",
+        "last": "m_data.time0 = pMission->GetIgcSite()->ClientTimeFromServerTime(m_data.time0);",
+        "sha256": "16aeefcbc4fbd8496a00dcebf0d8694eb6e59e94f56ef5aae7c7bfdf6dabf2fd"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0171",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "Igc/clusterIGC.cpp",
+        "start": 41,
+        "end": 44,
+        "first": "m_pClusterSite = pMission->GetIgcSite()->CreateClusterSite(this);",
+        "last": "",
+        "sha256": "950facbcaf843f8a4e3f6118dd82bd184599cb20aa6043c987f964e2cf912888"
+      },
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 11181,
+        "end": 11216,
+        "first": "ClusterSiteImpl(IclusterIGC * pcluster)",
+        "last": "}",
+        "sha256": "3bab6e241a8f8134e40d15c662388d1c94272146bf9274b5494746698d1ad999"
+      },
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 11228,
+        "end": 11232,
+        "first": "TRef<ClusterSite> FedSrvSiteBase::CreateClusterSite(IclusterIGC* pCluster)",
+        "last": "}",
+        "sha256": "7c46537f7359c84d216450cc4ba4395b6232288a9c6fc78565423e1fe4544732"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0469",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 3834,
+        "end": 3846,
+        "first": "/* pkk May 6th: Disabled bandwidth patch",
+        "last": "const int cActivePerInterval = 2;",
+        "sha256": "0ce74baab0baa754de1fe553781de3fc38024e95c0c3bc745595755a6a56a606"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0517",
+    "verdict": "implemented/production",
+    "citations": [
+      {
+        "path": "FedSrv/fsmission.cpp",
+        "start": 2282,
+        "end": 2292,
+        "first": "void CFSMission::DoPayday(void)",
+        "last": "}",
+        "sha256": "72da3453e4d03089dee160a4479e22d51bf0105cb55096cbcf75767eab3efa3c"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0519",
+    "verdict": "implemented/production",
+    "citations": [
+      {
+        "path": "FedSrv/fsmission.cpp",
+        "start": 2328,
+        "end": 2593,
+        "first": "void CFSMission::DoTick(Time timeNow)",
+        "last": "}",
+        "sha256": "2bb37b00e45b59d52a68795e95f618f52d084a9a4141a3ccfd896f794286c908"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0523",
+    "verdict": "partial/test-only",
+    "citations": [
+      {
+        "path": "FedSrv/fsmission.cpp",
+        "start": 2718,
+        "end": 2733,
+        "first": "void CFSMission::MakeOverrideTechBits()",
+        "last": "}",
+        "sha256": "3b1e1ae2165868611494b91fc3b6ed63bbc27e4b45183bfb8c3a95321243968f"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0571",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "FedSrv/fsmission.cpp",
+        "start": 5606,
+        "end": 5622,
+        "first": "void CFSMission::UpdateLobby(Time now)",
+        "last": "}",
+        "sha256": "7242ea176f5167b2722409755d50b0d1b885264d6bb0cb57188e8b6ed799d452"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0635",
+    "verdict": "partial/test-only",
+    "citations": [
+      {
+        "path": "Igc/clusterIGC.cpp",
+        "start": 41,
+        "end": 44,
+        "first": "m_pClusterSite = pMission->GetIgcSite()->CreateClusterSite(this);",
+        "last": "",
+        "sha256": "950facbcaf843f8a4e3f6118dd82bd184599cb20aa6043c987f964e2cf912888"
+      },
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 11181,
+        "end": 11216,
+        "first": "ClusterSiteImpl(IclusterIGC * pcluster)",
+        "last": "}",
+        "sha256": "3bab6e241a8f8134e40d15c662388d1c94272146bf9274b5494746698d1ad999"
+      },
+      {
+        "path": "FedSrv/FedSrv.CPP",
+        "start": 11228,
+        "end": 11232,
+        "first": "TRef<ClusterSite> FedSrvSiteBase::CreateClusterSite(IclusterIGC* pCluster)",
+        "last": "}",
+        "sha256": "7c46537f7359c84d216450cc4ba4395b6232288a9c6fc78565423e1fe4544732"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0699",
+    "verdict": "partial/test-only",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3219,
+        "end": 3267,
+        "first": "int                 CmissionIGC::Export(int64_t  maskTypes,",
+        "last": "}",
+        "sha256": "698b0badb618cc964bcbd899ba3f4cf87cccbd2471e70c9050263085202a4c16"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0700",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3269,
+        "end": 3297,
+        "first": "void                CmissionIGC::Import(Time    now,",
+        "last": "}",
+        "sha256": "d973c3722e25f9f8acfae74d3994a339b33639d96450628225a782034bb9e61c"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0702",
+    "verdict": "implemented/production",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3386,
+        "end": 3416,
+        "first": "ImodelIGC*  CmissionIGC::GetModel(ObjectType type, ObjectID id) const",
+        "last": "}",
+        "sha256": "abd56fcd6245c210ea2831dd8805d73f6ab69dc01e81d075abbcd53b475d027c"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0703",
+    "verdict": "partial/test-only",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3422,
+        "end": 3504,
+        "first": "IbaseIGC*  CmissionIGC::GetBase(ObjectType type, ObjectID id) const",
+        "last": "}",
+        "sha256": "47763d8ea7cd794492cbe2d99eed509964a87b27c50009244e19877c61db0bd5"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0788",
+    "verdict": "partial/production",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 2390,
+        "end": 2678,
+        "first": "int     LoadIGCStaticCore (const char* name, ImissionIGC* pMission, bool fGetVersionOnly, void (*munge)(int size, char* data))",
+        "last": "}",
+        "sha256": "a8bdb68a91cd8c47e754e9bdd830649581723f97dd7ff699a14076a30f725038"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0789",
+    "verdict": "implemented/production",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3016,
+        "end": 3031,
+        "first": "void TerminateStatic(CstaticIGC*  pStatic)",
+        "last": "}",
+        "sha256": "646fb553669f6435d7b5d2519e3d2d05e980d54508803a9bbbe41c48c5a3d352"
+      }
+    ]
+  },
+  {
+    "row": "SIM-0790",
+    "verdict": "partial/test-only",
+    "citations": [
+      {
+        "path": "Igc/missionigc.cpp",
+        "start": 3187,
+        "end": 3217,
+        "first": "static int  ExportList(int64_t              maskTypes,",
+        "last": "}",
+        "sha256": "091501dbaf9eadefd0150b18bd869ecedea5de9843f9677c7ec9e2eda109e8b6"
+      }
+    ]
+  }
+]

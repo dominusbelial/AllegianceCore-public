@@ -4,6 +4,32 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P904 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,737 passed / 12 failed / 3 optional private-pack skips**, 12,752 executions in 538.7 s (including the runner’s scheduled quarantine executions). All nine infrastructure checks passed. Five Fast executions exceeded ten seconds; one was the failing missile-lock case. The Fast sweep was not rerun.
+
+Every failing or slow method, plus the affected ballot receipt failure, was repeated **three times alone** on pool/native/parallel/default-on GotoPlan with server GC and artwork. No unrelated production behavior or test assertion was changed.
+
+| Method / family | Isolation | Finding |
+|---|---|---|
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass / pass / pass; 4.276 / 4.001 / 4.069 s | Fast timing only (10.470 s); real GPU proof passes in 4.0–4.3 s alone. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass; 1.480 / 1.439 / 1.433 s | Known asynchronous remote death/respawn receipt intermittency (also P903/P899/P896). |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL / FAIL / FAIL; 38.375 / 38.390 / 38.345 s | Persistent existing missing partial-tip receipt with final lock 1.000; same 0/3 signature recorded under P901. Remains open and remains a Fast timing failure. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass; 3.222 / 3.272 / 3.172 s | Fast timing only (10.735 s); 3.2–3.3 s alone. Turret selection code unchanged. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass / pass / pass; 4.095 + 2.990 / 2.972 + 4.120 / 4.019 + 2.957 s | Fast timing offender for civ 25 (10.341 s); both cases pass each run, 2.96–4.12 s alone. Selection/repair logic unchanged. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | pass / pass / pass; 0.514 / 0.550 / 0.497 s | One affected-class run stopped after SIDE_INACTIVE before the later “is no more” chat had decoded; two further class runs and these exact-method runs pass. No assertion weakened. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / pass; 0.553 / 0.593 / 0.575 s | Known status-history intermittency (Expected -1 / Actual 1051), already reproduced with the original server under P890/P872. |
+| `LivePositionRequestTests.Empty_side_request_auto_accepts` | pass / pass / pass; 0.301 / 0.260 / 0.280 s | Side-selection/launch receipt timing failure in the parallel sweep; passes alone. |
+| `LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience` | pass / pass / pass; 1.473 / 1.501 / 1.417 s | Guaranteed SHIP_DELETE receipt timing; passes alone. Same family already ledgered under P899. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | FAIL / FAIL / FAIL; 1.224 / 1.225 / 1.300 s | Persistent existing null DefendTarget at line 179, identical to the unmodified-HEAD baseline documented under P901/P899/P898. Remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass; 9.967 / 10.078 / 9.792 s | Timing remains marginal: Fast 10.973 s; isolated 9.967 / 10.078 / 9.792 s. All assertions pass, but one standalone run still exceeds the Fast limit. |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | pass / pass / pass; 0.063 / 0.067 / 0.053 s | Suite sample reported 10704 MB against the 0.8–16 MB range; process-wide allocation sampling under concurrent test load. Profiler unchanged; 0.053–0.067 s alone. |
+| `PlayerBundlePathsTests` — four methods / seven cases | Same five case failures on each of three standalone runs; **7/7 pass ×3** with the directory-descriptor control | Required TMPDIR inside the worktree makes the synthetic “outside repository” executable find this checkout’s local.env. A `/proc/<controller>/fd/<directory>` alias keeps physical files in worktree scratch while placing the synthetic executable outside the repository’s lexical parent chain. This is the already documented P903/P901 environment issue, not a production resolver change. |
+
+The new P904 cases passed **42/42** across three isolated repetitions of each method. Other affected cohorts produced **314 passes / one ballot receipt failure**, followed by the exact ballot method’s 3/3 passes above; the three additional payday methods passed **9/9** standalone. Showcase never-parks passed **5/5**, with 24/30 reached in every run, real shots/hits and zero sim-pass failures. Test durations: 232.001 / 232.660 / 209.112 / 204.128 / 242.163 s; maximum stopped-with-target interval 1.919 s. This matches the saved P903 baseline’s 5/5 pass rate; no performance A/B is claimed.
+
+Evidence: [P904 report](reports/P904_REPORT.md), [Fast receipt](reports/P904_assets/fast-summary.json), [standalone checks](reports/P904_assets/isolation-summary.json), [showcase receipts](reports/P904_assets/showcase-summary.json). Raw logs/TRX remain in `.scratch/p904/fast/`, `.scratch/p904/results/`, `.scratch/p904/post-results/` and `.scratch/p904/gates/` in the task worktree.
+
 ## P903 verification (2026-10-31 UTC)
 
 One Fast sweep: **12,724 passed / 11 failed / 3 optional skips**, 12,738 executions

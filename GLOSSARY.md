@@ -141,6 +141,17 @@ list in **reverse**.
   travels as `LobbyGameResult.GameId` on career reports. Native:
   `Igc/missionigc.cpp:3846-3857,4211-4238`, `FedSrv/fsmission.cpp:2766`.
   Production regression: `tests/Allegiance.Core.Tests/P903ProductionReachabilityTests.cs`.
+- **Live generic model lookup / economic tick order (P904)** —
+  `src/Allegiance.Core/Model/Mission.Lookup.cs` resolves the eight native
+  command-target kinds from live registries; the server's chat/drone order
+  resolver uses it so static records cannot override registry deletions.
+  `src/Allegiance.Core/Model/Mission.cs` samples payday income after movement;
+  `src/Allegiance.Server/Server.Broadcast.cs` resolves timeout before the
+  Started-only ballot tail. Native: `Igc/missionigc.cpp:3386-3416`,
+  `FedSrv/FedSrv.CPP:8245-8278`, `FedSrv/fsmission.cpp:2508-2592`.
+  Certification (including independent old/new static-core consumer retirement):
+  `tests/Allegiance.Core.Tests/P904CertificationTests.cs`,
+  `docs/parity/p904-certification.csv`, `docs/reports/P904_REPORT.md`.
 - **Cross-side visibility sweep (P131/P797/P835)** — the every-10th-pass
   scanner×target sweep behind `SeenBySide` (`Sector.ResolveCrossSideVisibility`,
   `Sim/VisibilityMath.cs`, `Sim/SideVisibilityState.cs`). P835 adds the sweep's

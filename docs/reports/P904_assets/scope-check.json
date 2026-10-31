@@ -1,0 +1,35 @@
+{
+  "sim-rules-matrix.csv": [
+    "SIM-0147",
+    "SIM-0156",
+    "SIM-0157",
+    "SIM-0171",
+    "SIM-0469",
+    "SIM-0517",
+    "SIM-0519",
+    "SIM-0523",
+    "SIM-0571",
+    "SIM-0635",
+    "SIM-0699",
+    "SIM-0700",
+    "SIM-0702",
+    "SIM-0703",
+    "SIM-0788",
+    "SIM-0789",
+    "SIM-0790"
+  ],
+  "p868-na-audit.csv": [
+    "SIM-0517",
+    "SIM-0519",
+    "SIM-0702",
+    "SIM-0789"
+  ],
+  "working_tree_hygiene_code_files": [
+    "src/Allegiance.Core/Model/Mission.cs",
+    "src/Allegiance.Server/Server.Broadcast.cs",
+    "src/Allegiance.Server/Server.Docking.cs",
+    "src/Allegiance.Server/Server.ShipCommands.cs",
+    "src/Allegiance.Core/Model/Mission.Lookup.cs",
+    "tests/Allegiance.Core.Tests/P904CertificationTests.cs"
+  ]
+}
