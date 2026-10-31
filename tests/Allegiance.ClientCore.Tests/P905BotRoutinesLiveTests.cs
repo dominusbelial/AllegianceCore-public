@@ -108,10 +108,14 @@ public sealed class P905BotRoutinesLiveTests(ITestOutputHelper output)
         Assert.Equal(1, manager.ChangeBehavior(spawn.Name, null));
         // Force no facing completion: the routine must turn without thrust.
         Wait(() => ticker.Read(() => Math.Abs(ship.Controls.Yaw) + Math.Abs(ship.Controls.Pitch) > .01f), 10);
+        // Latched on the sim tick: a docker relaunches at once, so its docked
+        // window can fall between two polls.
+        bool docked = false;
+        ticker.Do(() => ticker.Before = () => docked |= ship.StationId is not null);
         // The probe acts as the other communal docker and returns its goto.
         manager.Probe.SendChat("", ChatTarget.Individual, spawn.ShipId,
             commandId: OrderChange.CidGoto, oidTarget: stationId, otTarget: (short)IgcObjectType.Station);
-        Wait(() => ticker.Read(() => ship.StationId is not null), 45);
+        Wait(() => ticker.Read(() => docked), 45);
         output.WriteLine("docker: wing=8; real sendcommand2 -> station QUEUED_COMMAND_UPDATE; typed override restored; actual docking observed");
         Assert.Equal(0, server.SimPassStageFailures);
     }

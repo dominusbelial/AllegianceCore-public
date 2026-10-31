@@ -210,3 +210,32 @@ generator, and its ELIZA include is only a placeholder. A modern alternative
 would use a capacity-relative unload policy with explicit commander assignments,
 typed events and a bounded social message queue. Capacity-policy changes need a
 separate decision and were not used to inflate this task's parity score.
+
+## Claude review fixes
+
+The review found four defects, fixed on this branch before merge:
+
+- BOT-0023 lacked `dm.pig:247-271` `OnShipDamaged`: a hit more than 2 seconds after
+  the previous one adopts the attacker when it is the nearest enemy, or when
+  there is no target. `DeathmatchRoutine.Damaged`, gated on ammo as native is.
+- `docker.pig:81` passes 8 as the sound id; the port sent it as the chat
+  recipient. Routing was unaffected because the server uses the sender's side.
+- Routine peers never ran `SampleCombatStats`, so `ClientWorld._hullHits` grew
+  for the life of a match and their hits were not counted. `DriveRoutine` now
+  samples each pass, which also supplies the attacker for the rule above.
+- The dispatch bookmark lived in the routine frame, so a new life or a role
+  change replayed every old CHATBUOY addressed to that ship. It now lives on
+  `BotRoutineStack` and survives both.
+
+Not closed: no bot commander sends these dispatches. Native
+`CommanderResearchAndExpand.cs:1555-1618` does; here a human commander's
+client (`Game1.StarmapClick.cs:292`) or an explicit caller does. The He3 table
+above is identical because the showcase has no routine peers, so it shows the
+feature costs the default game nothing, not that peer miners add income.
+
+The docker live test also failed 2 of 9 full runs: the docker docks and relaunches
+so quickly that a 25 ms poll could miss it. It now latches on the sim tick and
+passed 9/9. Unexplained and harmless to the result: in one instrumented run the
+docker flew 38 km out, turned back at about 34 s, and was next seen stopped by the
+station about 5 s later. Nothing else in that test orders it, so check this
+when `docker` first runs with peers.

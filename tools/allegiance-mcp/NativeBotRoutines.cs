@@ -11,6 +11,9 @@ internal sealed class BotRoutineStack(string initial)
     private readonly List<BotRoutine> _frames = [new(initial)];
     internal BotRoutine Top => _frames[^1];
     internal int Count => _frames.Count;
+    // Last dispatch already seen, kept across lives and role changes: native
+    // Miner.cs only reacts to a dispatch as it arrives, never to history.
+    internal object? LastBuoy;
     internal void Push(string behavior)
     {
         if (!BotRoutine.Valid(behavior)) throw new ArgumentException("Unknown bot behavior", nameof(behavior));
@@ -37,7 +40,6 @@ internal sealed class BotRoutine(string behavior)
     internal readonly DeathmatchRoutine Deathmatch = new();
     internal readonly RoutineTimer Chat = new();
     internal long ChatCursor;
-    internal object? LastBuoy;
     internal double LaunchAt = double.NegativeInfinity;
     internal QueuedCommandState? SavedOrder;
     internal short? SavedTarget;
@@ -149,6 +151,7 @@ internal readonly record struct DeathmatchCandidate(short Id, float DistanceSqua
 internal sealed class DeathmatchRoutine
 {
     private readonly RoutineTimer _find = new(), _update = new();
+    private double _lastDamage = double.NegativeInfinity;
     internal readonly RoutineTimer Rearm = new();
     internal short? Target { get; private set; }
     internal bool Close { get; private set; }
@@ -189,6 +192,17 @@ internal sealed class DeathmatchRoutine
             Target = null; Close = false; _update.Kill(); _find.Set(now, 3);
         }
         return true;
+    }
+    // dm.pig:247-271 OnShipDamaged: a hit over 2s after the previous one adopts
+    // the attacker only when it is also the nearest enemy, or there is no target.
+    internal void Damaged(double now, short attacker, IReadOnlyList<DeathmatchCandidate> ships)
+    {
+        double delta = now - _lastDamage;
+        _lastDamage = now;
+        if (delta <= 2 || Nearest(ships) is not { } nearest) return;
+        if (Target is not null && (nearest.Id != attacker || nearest.Id == Target)) return;
+        Target = nearest.Id;
+        _find.Kill(); _update.Set(now, 1); Rearm.Set(now, 3);
     }
     private static DeathmatchCandidate? Nearest(IReadOnlyList<DeathmatchCandidate> ships)
     {

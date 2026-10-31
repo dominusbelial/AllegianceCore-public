@@ -82,6 +82,34 @@ public sealed class P905BotRoutinesTests
     }
 
     [Fact]
+    public void Deathmatch_adopts_a_nearest_attacker_but_ignores_hits_within_two_seconds()
+    {
+        var dm = new DeathmatchRoutine();
+        DeathmatchCandidate[] ships = [new(1, 100, false), new(2, 400, false)];
+        dm.Flying(0, ships);
+        Assert.Equal((short)2, dm.Target);
+        dm.Damaged(1, 2, ships); // already the target
+        dm.Damaged(2.5, 1, ships); // nearest attacker, but 1.5s after the last hit
+        Assert.Equal((short)2, dm.Target);
+        dm.Damaged(5, 3, ships); // attacker is not the nearest enemy
+        Assert.Equal((short)2, dm.Target);
+        dm.Damaged(7.5, 1, ships);
+        Assert.Equal((short)1, dm.Target);
+    }
+
+    [Fact]
+    public void Dispatch_bookmark_survives_a_new_life_so_old_orders_are_not_replayed()
+    {
+        var stack = new BotRoutineStack("miner");
+        var seen = new object();
+        stack.LastBuoy = seen;
+        stack.NewLife();
+        stack.Push("docker");
+        Assert.True(stack.Pop());
+        Assert.Same(seen, stack.LastBuoy);
+    }
+
+    [Fact]
     public void Deathmatch_search_and_rearm_use_their_own_native_cadences()
     {
         var dm = new DeathmatchRoutine(); dm.Flying(0, []);

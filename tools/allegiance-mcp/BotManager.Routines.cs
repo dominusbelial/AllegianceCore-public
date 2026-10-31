@@ -22,6 +22,7 @@ internal sealed partial class BotManager
             if (bot.Cs is null) throw new InvalidOperationException("Behavior changes require a combat or routine peer");
             bot.Routines ??= new(bot.Behavior);
             if (push is null && bot.Routines.Count == 1) return 1;
+            lock (bot.Cs.Gate) bot.Routines.LastBuoy = bot.Cs.World.Events.ChatBuoys.LastOrDefault();
             bot.Routines.Top.SavedOrder = bot.OrderedCommand;
             bot.Routines.Top.SavedTarget = bot.TargetId;
             bot.Routines.Top.SavedOrderedTarget = bot.OrderedTargetId;
@@ -43,6 +44,9 @@ internal sealed partial class BotManager
         bot.ShipId = id;
         bot.Routines ??= new(bot.Behavior);
         var routine = bot.Routines.Top;
+        // Drains the hit and projectile buffers DriveCombat would otherwise
+        // consume, and stamps RecentAttackers for the deathmatch retarget.
+        SampleCombatStats(bot, cs, id, now);
         lock (cs.Gate)
         {
             if (!cs.World.Ships.TryGetValue(id, out var me) || me.Latest is not { } pose) return;
@@ -96,14 +100,15 @@ internal sealed partial class BotManager
         // Native Miner.cs:141-238 receives the actual cluster-buoy dispatch.
         // Object bookmarks survive bounded-list rollover without replaying
         // the most recent dispatch on every 50ms decision pass.
-        bool fresh = routine.LastBuoy is null || !w.Events.ChatBuoys.Any(b => ReferenceEquals(b, routine.LastBuoy));
+        var seen = bot.Routines!.LastBuoy;
+        bool fresh = seen is null || !w.Events.ChatBuoys.Any(b => ReferenceEquals(b, seen));
         foreach (var buoy in w.Events.ChatBuoys)
         {
-            if (ReferenceEquals(buoy, routine.LastBuoy)) { fresh = true; continue; }
+            if (ReferenceEquals(buoy, seen)) { fresh = true; continue; }
             if (!fresh || buoy.Cd.OidRecipient != bot.ShipId) continue;
             DispatchMiner(bot, routine, buoy.Db.ClusterId, buoy.Cd.CommandID, docked, now);
         }
-        routine.LastBuoy = w.Events.ChatBuoys.LastOrDefault();
+        bot.Routines.LastBuoy = w.Events.ChatBuoys.LastOrDefault();
         // The legacy CHATMESSAGE form can reference an already imported buoy
         // (Miner.cs:64-113). Promote the port's queued buoy slot once, just as
         // the shared order consumer promotes its ship/station/asteroid slots.
@@ -216,7 +221,7 @@ internal sealed partial class BotManager
             case DockerAction.Fly: cs.CommandControls(new(0, 0, 0, .6f), 0); break; // 80% in [-1,1]
             case DockerAction.Dock:
                 cs.CommandControls(new(0, 0, 0, -1), 0);
-                cs.SendChat("sendcommand2", ChatTarget.Team, 8); break;
+                cs.SendChat("sendcommand2", ChatTarget.Team, bot.Side, voiceOver: 8); break;
             default: cs.CommandControls(new(0, 0, 0, -1), 0); break;
         }
     }
@@ -230,7 +235,11 @@ internal sealed partial class BotManager
     {
         var cs = bot.Cs!;
         var dm = routine.Deathmatch;
-        dm.Tick(now, DeathmatchShips(bot, pose.Position));
+        var ships = DeathmatchShips(bot, pose.Position);
+        dm.Tick(now, ships);
+        if (pose.AmmoFraction > 0)
+            foreach (var (attacker, at) in bot.RecentAttackers)
+                if (at == now) { dm.Damaged(now, attacker, ships); break; }
         bool rearm = dm.Rearm.Pulse(now) && dm.MustRearm(pose.HullFraction, pose.AmmoFraction, pose.FuelFraction);
         if (rearm || dm.Target is null)
         {
