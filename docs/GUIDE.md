@@ -504,3 +504,15 @@ archive size gates and Claude's tag → CI → verify checklist are documented i
 both archives and checks an extracted Linux and Windows bundle before uploading
 a release. Manual `workflow_dispatch` only builds artifacts. Codex leaves the
 working tree for Claude's review and never tags, pushes or publishes.
+
+## Host a LAN game
+
+The main menu's **Host LAN game** runs the server inside your client and supplies
+its bots. Choose a name, optional password and port; Small or Medium fleets are
+available. Your friends join beside the bots using **Play LAN / Find Server** or
+**Direct Connect**. The host's status bar shows addresses, game port and current
+players (humans and bots). Guest password entry is **Tab** on either join screen.
+See [the hosting quickstart](../QUICKSTART.md#host-friends-from-the-client) for
+firewall ports, custom-port discovery, internet/Tailscale connections and ending
+the session. Closing the host ends the game for everyone. Ordinary offline
+skirmishes still accept no LAN guests.

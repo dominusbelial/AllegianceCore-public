@@ -88,7 +88,7 @@ public sealed partial class Game1
 
     private void RequestSkirmishSeat(short? side)
     {
-        if (_skirmish is null || _seatChange is not null || side == _skirmish.PlayerSide) return;
+        if (_skirmish is null || _skirmish.Options.HostLan || _seatChange is not null || side == _skirmish.PlayerSide) return;
         _requestedSeat = side;
         EnterLocalSpectator();
         _seatChange = _skirmish.SetPlayerSideAsync(side, _skirmishCancel?.Token ?? default);

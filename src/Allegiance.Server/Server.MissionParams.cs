@@ -81,6 +81,7 @@ public sealed partial class Server
         seeded = new MissionParamsMsg
         {
             StrGameName = g.Name ?? "game",
+            StrGamePassword = g.Password,
             // P853b — the misdef stand-in carries the same IGC-static identity
             // native's m_misdef.misparms does (fsmission.cpp:1803-1806 copies it
             // from there). The advertisement now stamps this whole block into

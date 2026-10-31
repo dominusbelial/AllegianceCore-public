@@ -1,0 +1,1886 @@
+{
+  "task": "P901",
+  "date": "2026-10-31",
+  "commits_or_pushes": false,
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0,
+    "receipt": ".scratch/p901/last-build.log"
+  },
+  "tools_build": {
+    "projects": 100,
+    "warnings": 0,
+    "errors": 0,
+    "receipt": ".scratch/p901/build-tools-final.log"
+  },
+  "server_aot": {
+    "rid": "linux-x64",
+    "clean": true,
+    "receipt": ".scratch/p901/gate-aot.log"
+  },
+  "fast_sweep": {
+    "runs": 1,
+    "executions": 12705,
+    "outcomes": {
+      "Passed": 12691,
+      "Failed": 11,
+      "NotExecuted": 3
+    },
+    "seconds": 544.305,
+    "passed": false,
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.054722763001336716,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "timing_offenders": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.8824468
+      },
+      {
+        "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "outcome": "Passed",
+        "seconds": 10.6239737
+      }
+    ]
+  },
+  "receipts": [
+    {
+      "file": ".scratch/p901/results/p901-played-1.trx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.005
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0018
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Unsafe_overrides_are_refused_even_from_non_UI_callers",
+          "outcome": "Passed",
+          "seconds": 0.0007
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.9398
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Separate_guests_discover_and_join_TCP_UDP_drop_rejoin_rotate_and_receive_host_shutdown",
+          "outcome": "Passed",
+          "seconds": 106.5905
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Default_skirmish_network_and_dedicated_defaults_are_unchanged",
+          "outcome": "Passed",
+          "seconds": 0.0094
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.9415
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 1.1445
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/p901-played-2.trx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Separate_guests_discover_and_join_TCP_UDP_drop_rejoin_rotate_and_receive_host_shutdown",
+          "outcome": "Passed",
+          "seconds": 106.3776
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0018
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.9318
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Default_skirmish_network_and_dedicated_defaults_are_unchanged",
+          "outcome": "Passed",
+          "seconds": 0.0094
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Unsafe_overrides_are_refused_even_from_non_UI_callers",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.933
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.0051
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 1.1859
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/p901-played-3.trx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Separate_guests_discover_and_join_TCP_UDP_drop_rejoin_rotate_and_receive_host_shutdown",
+          "outcome": "Passed",
+          "seconds": 106.5715
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 1.1271
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.0039
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Unsafe_overrides_are_refused_even_from_non_UI_callers",
+          "outcome": "Passed",
+          "seconds": 0.0005
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Both_styles_use_the_same_host_setup_and_normal_join_navigation",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.9242
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Default_skirmish_network_and_dedicated_defaults_are_unchanged",
+          "outcome": "Passed",
+          "seconds": 0.0073
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanOptionsTests.Lan_config_uses_both_transports_balanced_seats_and_no_offline_privileges",
+          "outcome": "Passed",
+          "seconds": 0.0014
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P901LanLiveTests.Taken_ports_fail_clearly_and_release_partial_listeners",
+          "outcome": "Passed",
+          "seconds": 0.9276
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/intro-career-1.trx",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_up_moves_basis_when_above_the_window",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_commit_description_adopts_text_and_leaves_edit_mode",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_basis_selection_findme_search_top",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_ingest_centers_rows_and_selects_profile",
+          "outcome": "Passed",
+          "seconds": 0.0011
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Menu_preserves_the_native_button_set_and_adds_showcase",
+          "outcome": "Passed",
+          "seconds": 0.0014
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_down_moves_basis_when_rows_remain_below",
+          "outcome": "Passed",
+          "seconds": 0.001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Each_main_menu_button_maps_to_its_native_command",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_default_sort_is_score_and_position_click_is_ignored",
+          "outcome": "Passed",
+          "seconds": 0.0014
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Navigation_wraps_around_the_menu",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Intro_main_menu_exposes_the_career_entry",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.All_civilizations_line_shows_the_lobby_rank_not_zero",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_loads_civs_and_edits_description",
+          "outcome": "Passed",
+          "seconds": 0.0105
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0041
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/intro-career-2.trx",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_ingest_centers_rows_and_selects_profile",
+          "outcome": "Passed",
+          "seconds": 0.0008
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_down_moves_basis_when_rows_remain_below",
+          "outcome": "Passed",
+          "seconds": 0.0008
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_loads_civs_and_edits_description",
+          "outcome": "Passed",
+          "seconds": 0.0084
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Intro_main_menu_exposes_the_career_entry",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Menu_preserves_the_native_button_set_and_adds_showcase",
+          "outcome": "Passed",
+          "seconds": 0.0011
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Each_main_menu_button_maps_to_its_native_command",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_default_sort_is_score_and_position_click_is_ignored",
+          "outcome": "Passed",
+          "seconds": 0.0011
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_commit_description_adopts_text_and_leaves_edit_mode",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0036
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_basis_selection_findme_search_top",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0034
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_up_moves_basis_when_above_the_window",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.All_civilizations_line_shows_the_lobby_rank_not_zero",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Navigation_wraps_around_the_menu",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/intro-career-3.trx",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Intro_main_menu_exposes_the_career_entry",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Navigation_wraps_around_the_menu",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_basis_selection_findme_search_top",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+          "outcome": "Passed",
+          "seconds": 0.004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_default_sort_is_score_and_position_click_is_ignored",
+          "outcome": "Passed",
+          "seconds": 0.0015
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Each_main_menu_button_maps_to_its_native_command",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_commit_description_adopts_text_and_leaves_edit_mode",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_ingest_centers_rows_and_selects_profile",
+          "outcome": "Passed",
+          "seconds": 0.0011
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.CharacterInfo_loads_civs_and_edits_description",
+          "outcome": "Passed",
+          "seconds": 0.0183
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_down_moves_basis_when_rows_remain_below",
+          "outcome": "Passed",
+          "seconds": 0.001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.All_civilizations_line_shows_the_lobby_rank_not_zero",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Menu_preserves_the_native_button_set_and_adds_showcase",
+          "outcome": "Passed",
+          "seconds": 0.0015
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P808CareerScreenModelTests.Leaderboard_page_up_moves_basis_when_above_the_window",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/p727-options-1.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0026
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_also_freezes_supervisor_defense_and_coordination_time",
+          "outcome": "Passed",
+          "seconds": 0.1368
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+          "outcome": "Passed",
+          "seconds": 0.0061
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+          "outcome": "Passed",
+          "seconds": 0.0017
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0056
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_capability_is_local_and_zero_freezes_the_pilot_clock",
+          "outcome": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0482
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0023
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/p727-options-2.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_also_freezes_supervisor_defense_and_coordination_time",
+          "outcome": "Passed",
+          "seconds": 0.137
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0027
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0024
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_capability_is_local_and_zero_freezes_the_pilot_clock",
+          "outcome": "Passed",
+          "seconds": 0.0101
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0462
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+          "outcome": "Passed",
+          "seconds": 0.006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+          "outcome": "Passed",
+          "seconds": 0.0017
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0058
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/p727-options-3.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+          "outcome": "Passed",
+          "seconds": 0.006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0025
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_capability_is_local_and_zero_freezes_the_pilot_clock",
+          "outcome": "Passed",
+          "seconds": 0.0101
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+          "outcome": "Passed",
+          "seconds": 0.0017
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0057
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0029
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_also_freezes_supervisor_defense_and_coordination_time",
+          "outcome": "Passed",
+          "seconds": 0.1376
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0023
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0007
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Human_pilot_identity_matches_native_wire_name",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+          "outcome": "Passed",
+          "seconds": 0.0006
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0026
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+          "outcome": "Passed",
+          "seconds": 0.0483
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Goal_presets_reach_skirmish_config_and_remembered_options",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/never-parks-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 206.9155
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/never-parks-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 217.0236
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/never-parks-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 270.1698
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/never-parks-4.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 220.2843
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/never-parks-5.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 466.544
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-scratch-1.trx",
+      "passed": 4,
+      "failed": 5,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0009
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Failed",
+          "seconds": 0.0041
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.0142
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0005
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "seconds": 0.0004
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-scratch-2.trx",
+      "passed": 4,
+      "failed": 5,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0007
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Failed",
+          "seconds": 0.0032
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.0141
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-scratch-3.trx",
+      "passed": 4,
+      "failed": 5,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.014
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0009
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Failed",
+          "seconds": 0.0042
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0003
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-control-1.trx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0036
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.0142
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-control-2.trx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0028
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/paths-control-3.trx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0001
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0004
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Passed",
+          "seconds": 0.0036
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "seconds": 0.0003
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "seconds": 0.0145
+        },
+        {
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Passed",
+          "seconds": 0.0002
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/profile-control-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0548
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/profile-control-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0546
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/profile-control-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0646
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-1-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip",
+          "outcome": "Passed",
+          "seconds": 1.842
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-1-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip",
+          "outcome": "Passed",
+          "seconds": 1.8531
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-1-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip",
+          "outcome": "Passed",
+          "seconds": 1.8752
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-2-1.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "seconds": 1.1878
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-2-2.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "seconds": 1.1858
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-2-3.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "seconds": 1.1701
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-3-1.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 1.0733
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-3-2.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 1.0624
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-3-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "seconds": 1.0096
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-4-1.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2206
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2833
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.454
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-4-2.trx",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.3493
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2047
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.3851
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-4-3.trx",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.1655
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.1889
+        },
+        {
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.5437
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-5-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.3464
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-5-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.2473
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-5-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.343
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-6-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.5969
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-6-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.6
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p901/results/isolation-6-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.5957
+        }
+      ]
+    }
+  ],
+  "isolation_methods": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names"
+    }
+  ],
+  "screenshots": [
+    "host-classic.png",
+    "host-modern.png"
+  ],
+  "hardware_not_run": [
+    "Windows",
+    "macOS",
+    "two-machine LAN",
+    "Tailscale",
+    "router forwarding",
+    "firewall prompts"
+  ]
+}

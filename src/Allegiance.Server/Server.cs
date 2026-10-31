@@ -833,6 +833,9 @@ public sealed partial class Server : IDisposable
     private Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? _hangarShipSpawner;
 
     /// <summary>The game worlds, in config order.</summary>
+    /// <summary>Embedded LAN host only: require both transports and discovery, irrespective of dedicated-server env overrides.</summary>
+    public bool RequireLanListeners { get; init; }
+
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");
 
     /// <summary>Total tick-loop passes so far (one pass ticks every mission once).</summary>

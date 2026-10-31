@@ -132,6 +132,7 @@ public sealed partial class Game1
         _hangarQuitConfirm = false;
         if (!confirm) return;
         _hangarLaunch.Cancel();
+        if (_skirmish?.Options.HostLan == true) { StopSkirmish(); return; }
         if (_session.World.MyShipId is { } me) _session.SendQuitMission(me, QuitSideReason.Quit);
         // The normal authoritative OwnMissionDeparture path returns to the browser.
     }

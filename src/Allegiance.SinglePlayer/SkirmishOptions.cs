@@ -18,6 +18,12 @@ public sealed record SkirmishOptions
         (1, "Dreghklar"), (2, "Technoflux"), (3, "Ga'Taraan"), (4, "Phoenix"), (5, "Omicron"),
         (18, "Gigacorp"), (25, "Iron Coalition"), (35, "Bios"), (101, "Belters"), (201, "Rixian")
     ];
+    /// <summary>Explicit multiplayer exposure; ordinary skirmishes remain loopback only.</summary>
+    public bool HostLan { get; init; }
+    public const int DefaultHostPort = 6073;
+    public int HostPort { get; init; } = DefaultHostPort;
+    public string GameName { get; init; } = "LAN game";
+    public string Password { get; init; } = "";
     public int? Seed { get; init; }
     public double ResearchSpeed { get; init; } = 1;
     public bool SpectatorDefault { get; init; }
@@ -135,6 +141,20 @@ public sealed record SkirmishOptions
         if (TechMode is not ("research" or "unlocked")) throw new ArgumentException("Invalid tech mode");
         if (!Enum.IsDefined(Commander)) throw new ArgumentException("Invalid commander");
         _ = Knobs;
+        if (HostLan)
+        {
+            if (HostPort is < 1024 or > 65534) throw new ArgumentException("LAN port must be 1024..65534 (discovery uses port + 1).");
+            if (string.IsNullOrWhiteSpace(GameName) || GameName.Length > 63 || GameName.Any(char.IsControl))
+                throw new ArgumentException("Enter a game name of 1..63 characters.");
+            if (Password.Length > 15 || Password.Any(c => c < 32 || c > 126))
+                throw new ArgumentException("Password must be at most 15 printable ASCII characters.");
+            if (TechMode != "research" || Seed is not null || Sizing is not null || StartCountdownSeconds is not null
+                || ResearchSpeed != 1 || Speed != SkirmishSpeed.Normal || GoalRotation is not null)
+                throw new ArgumentException("LAN hosting requires research tech and normal speed; benchmark and test overrides are unavailable.");
+            if (StartAsSpectator || SpectatorDefault) throw new ArgumentException("The LAN host must join as a normal pilot.");
+            if (Size is not (SkirmishSize.Small or SkirmishSize.Medium))
+                throw new ArgumentException("LAN hosting supports Small or Medium fleets.");
+        }
         var sizing = Sizing ?? new SkirmishSizing();
         return new()
         {
@@ -147,8 +167,9 @@ public sealed record SkirmishOptions
             // All owned pilots, commanders and probes originate from loopback.
             Transport = new()
             {
-                MaxConnections = Math.Max(1024, TeamSize * 2 + 32),
-                MaxConnectionsPerIp = Math.Max(64, TeamSize * 2 + 32),
+                MaxConnections = HostLan ? 128 : Math.Max(1024, TeamSize * 2 + 32),
+                MaxConnectionsPerIp = HostLan ? 64 : Math.Max(64, TeamSize * 2 + 32),
+                Protocol = HostLan ? "udp" : "tcp",
                 Mode = sizing.TransportMode,
                 PoolWorkers = sizing.PoolWorkers,
             },
@@ -158,22 +179,23 @@ public sealed record SkirmishOptions
                 ? null
                 : new() { ParallelBuild = sizing.ParallelBuild, MaxDegreeOfParallelism = sizing.BuildWorkers },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
-            Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
+            Port = HostLan ? HostPort : 0, BindAddress = HostLan ? "0.0.0.0" : "127.0.0.1",
+            Discovery = new() { Enabled = HostLan },
             SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
             Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation },
             LiveSettings = new()
             {
-                TestUnlock = new() { Enabled = TechMode == "unlocked", Money = 1_000_000 },
-                AdminCheats = Seed is not null ? new() { Enabled = true, AllowNames = [Benchmark.BenchmarkCommand.PilotName] } : null,
+                TestUnlock = new() { Enabled = !HostLan && TechMode == "unlocked", Money = 1_000_000 },
+                AdminCheats = !HostLan && Seed is not null ? new() { Enabled = true, AllowNames = [Benchmark.BenchmarkCommand.PilotName] } : null,
                 TimeDilation = "auto", AutoNextMatch = new() { Enabled = true },
-                TestHarness = new() { Enabled = TechMode == "unlocked", Money = 1_000_000, IgnoreTechGate = TechMode == "unlocked" }
+                TestHarness = new() { Enabled = !HostLan && TechMode == "unlocked", Money = 1_000_000, IgnoreTechGate = TechMode == "unlocked" }
             },
             Games = [new()
             {
-                Name = "Skirmish", Map = Map, Teams = 2, CivIds = [PlayerCiv, EnemyCiv],
+                Name = HostLan ? GameName.Trim() : "Skirmish", Password = HostLan ? Password : "", Map = Map, Teams = 2, CivIds = [PlayerCiv, EnemyCiv],
                 SideNames = [Civilizations.First(c => c.Id == PlayerCiv).Name, Civilizations.First(c => c.Id == EnemyCiv).Name],
                 // Worker probes and the research commander may occupy additional seats.
-                MaxPlayersPerTeam = TeamSize + 10, MaxTeamImbalance = 0x7fff,
+                MaxPlayersPerTeam = TeamSize + (HostLan ? 6 : 10), MaxTeamImbalance = HostLan ? 1 : 0x7fff,
                 ResearchPlans = new() { [0] = "auto", [1] = "auto" },
                 // P798 — native fog on the rig scale: the bot scouts unveil the map
                 // and the clash forms around the resources they find.
@@ -197,8 +219,8 @@ public sealed record SkirmishOptions
                 AllowFriendlyFire = AllowFriendlyFire, AllowAlliedViz = AllowAlliedViz,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
-                // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).
-                NpcWingmanAmmoResupply = true
+                // (clintlib.cpp:3672-3715, disconnected else branch).
+                NpcWingmanAmmoResupply = !HostLan
             }]
         };
     }

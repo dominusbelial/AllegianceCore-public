@@ -1281,6 +1281,7 @@ public sealed partial class Game1
         switch (State.GameOverBackPlanner.Plan(stage, ownSideActive, inTeamLobby))
         {
             case State.GameOverBackAction.LeaveMission:
+                if (_skirmish?.Options.HostLan == true) { StopSkirmish(); break; }
                 Console.WriteLine("[monogame] game-over Back: stage Over -> leave mission (LOG OFF)");
                 // P789 — leaving at game over latches the recorder summary.
                 CaptureSessionPerformance();

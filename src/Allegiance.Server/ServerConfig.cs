@@ -166,6 +166,9 @@ public sealed class GameConfig
     /// Explicit larger capacities remain available for extended fleet scenarios.</summary>
     public int MaxPlayersPerTeam { get; set; } = 100;
 
+    /// <summary>Native game password (Igc/igc.h:1120 strGamePassword), checked by the ordinary join gate.</summary>
+    public string Password { get; set; } = "";
+
     /// <summary>Native lobby default (FedSrv/fslobby.cpp:33): 0x7ffe selects
     /// rank balance; 0x7fff disables balance; other values limit player-count
     /// imbalance after NotStarted (FedSrv/fsmission.cpp:4612-4671).</summary>

@@ -919,11 +919,11 @@ public sealed partial class Server
             Console.WriteLine("[boot] transport reliableOneShot=OFF (one-shots ride the ordered lane)");
         LastEgressWindow = null;
         TickProfiler.WindowReported += EmitEgressWindow;
-        var protocolOverride = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL");
+        var protocolOverride = RequireLanListeners ? null : Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL");
         var protocol = (string.IsNullOrWhiteSpace(protocolOverride) ? _config.Transport?.Protocol ?? "tcp" : protocolOverride).Trim().ToLowerInvariant();
         if (protocol is not ("tcp" or "udp")) throw new ArgumentException("transport.protocol must be tcp or udp");
         ushort udpPort = _config.Transport?.UdpPort ?? 0;
-        if (Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
+        if (!RequireLanListeners && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
             udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
         _host.Transport = protocol == "udp"
             ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot)
@@ -988,6 +988,7 @@ public sealed partial class Server
         }
         catch (Exception ex)
         {
+            if (RequireLanListeners) throw new IOException("LAN discovery port is unavailable. Choose another game port.", ex);
             // A discovery bind failure must never take down the game server.
             Console.WriteLine($"[discovery] responder could not start: {ex.Message}");
             _discoveryResponder?.Dispose();

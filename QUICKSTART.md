@@ -98,3 +98,35 @@ Explicit TCP/UDP wins; `ALLEGIANCE_TRANSPORT_PROTOCOL` overrides Auto. The same
 row shows the active transport after fallback. Changes apply to the next join;
 local Skirmish/Training and default bots remain TCP. Server listener configuration
 and discovery compatibility are documented in [UDP transport](docs/UDP_TRANSPORT.md).
+
+### Host friends from the client
+
+Choose **Host LAN game** on the main menu (Classic or Modern). Type a game name,
+choose a TCP/UDP game port (default **6073**) and optionally a password, then start.
+The host plays normally; the top status line shows this PC's IPv4 addresses,
+port, and live player count (humans plus bots). Choose the address on the same
+network as your friends; a Tailscale interface address is also usable.
+
+Friends choose **Play LAN / Find Server** or **Direct Connect** and type
+`address:port`. On either screen, **Tab** switches to the optional password field;
+Tab again returns to the list/address. Passwords are masked and are not saved in
+player preferences. The LAN password is an access gate, not encrypted transport.
+Bots keep their seats; friends join beside them. Team capacity is 11 for Small or 21 for Medium, including humans, bots and helper pilots. Choose the smaller team; native balance permits two extra
+low-rank players. AI commanders handle research. Hosts use research tech at normal
+speed; pause, unlocked tech, offline resupply and benchmark overrides are unavailable.
+
+Allow **TCP and UDP 6073**, plus **UDP 6074** for discovery, on the host's firewall.
+For another game port, discovery uses that port plus one. Standard automatic LAN
+scanning uses the default discovery port; with a custom port, friends can use
+Direct Connect or add a favorite for that endpoint. A blocked firewall commonly
+means no LAN listing or a connection timeout. Windows may show a firewall prompt:
+allow the game on your private network. On Linux allow these ports in your active
+firewall; on macOS allow incoming connections for the app if prompted. Nothing
+opens the firewall automatically.
+
+Internet friends need TCP/UDP port forwarding to the host, or a reachable
+Tailscale IPv4 address in Direct Connect. No NAT traversal, relay, internet lobby
+listing, or host migration is provided. **Ctrl+F10**, **End LAN game for everyone**,
+leaving from the hangar/game-over screen, or closing the app ends the host and
+notifies guests. A dropped guest can join again through the normal server path;
+a grace/resume window is only available when configured as on a dedicated server.

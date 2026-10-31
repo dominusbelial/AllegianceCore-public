@@ -28,6 +28,7 @@ public sealed partial class SkirmishHost
     /// The caller disconnects its old pilot before changing seats, then uses normal POSITION_REQ.</summary>
     public async Task SetPlayerSideAsync(short? side, CancellationToken ct = default)
     {
+        if (Options.HostLan && side != PlayerSide) throw new InvalidOperationException("LAN hosts change teams through the ordinary multiplayer flow.");
         if (side is not (null or 0 or 1)) throw new ArgumentOutOfRangeException(nameof(side));
         ObjectDisposedException.ThrowIf(_disposed != 0, this);
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);

@@ -27,7 +27,7 @@ public sealed partial class Game1
     /// P785 adds the training slideshow screens (native ScreenIDTrainSlideshow /
     /// ScreenIDPostTrainSlideshow, Treki.h:31-32 — the port uses one view whose
     /// dismiss behaviour follows the slideshow kind).</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career, CreateGame }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career, CreateGame, HostLan }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -241,6 +241,8 @@ public sealed partial class Game1
         bool enter = ks.IsKeyDown(XnaKeys.Enter), esc = ks.IsKeyDown(XnaKeys.Escape);
         bool tab = ks.IsKeyDown(XnaKeys.Tab);
 
+        if (_introView is IntroView.FindServer or IntroView.DirectConnect)
+            if (tab && !_iTab) _editingLanPassword = !_editingLanPassword;
         switch (_introView)
         {
             case IntroView.Main:
@@ -270,6 +272,9 @@ public sealed partial class Game1
                 if (ks.IsKeyDown(XnaKeys.N) && !_iN) EnterCreateGame();
                 break;
 
+            case IntroView.HostLan:
+                UpdateHostLan(ks, up, down, enter, esc);
+                break;
             case IntroView.CreateGame:
                 UpdateCreateGame(ks, up, down, enter, esc);
                 break;
@@ -348,7 +353,9 @@ public sealed partial class Game1
         {
             if (_introEditingPilot && _introView == IntroView.Main && _pilotBuf.Length > 0)
                 _pilotBuf.Length--;
-            else if (_introEditingDirect && _introView == IntroView.DirectConnect && _directBuf.Length > 0)
+            else if (_introView is IntroView.FindServer or IntroView.DirectConnect && _editingLanPassword && _lanJoinPassword.Length > 0)
+                _lanJoinPassword.Length--;
+            else if (_introEditingDirect && !_editingLanPassword && _introView == IntroView.DirectConnect && _directBuf.Length > 0)
                 _directBuf.Length--;
         }
     }
@@ -358,6 +365,10 @@ public sealed partial class Game1
     {
         switch (IntroScreenModel.Activate(_introIndex))
         {
+            case IntroCommand.HostLan:
+                _introView = IntroView.HostLan;
+                _skirmishError = "";
+                break;
             case IntroCommand.SinglePlayer:   // → skirmish entry hook (P727 implements the skirmish).
                 _introView = IntroView.SinglePlayer;
                 break;
@@ -666,6 +677,7 @@ public sealed partial class Game1
                 case IntroView.FindServer: DrawIntroFindServer(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.DirectConnect: DrawIntroDirect(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.SinglePlayer: DrawIntroChooser(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.HostLan: DrawIntroHostLan(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.SkirmishSetup: DrawIntroSkirmishSetup(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Training: DrawIntroTraining(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.TrainingSlideshow: DrawIntroSlideshow(w, h, titleCol, dimCol, textCol); break;
@@ -780,6 +792,7 @@ public sealed partial class Game1
         if (_introFindError.Length > 0)
             _spriteBatch.DrawString(_hudSmall, _introFindError, new Vector2(50f, 96f), new Color(1f, 0.45f, 0.35f));
 
+        _spriteBatch.DrawString(_hudSmall, "TAB password: " + new string('*', _lanJoinPassword.Length) + (_editingLanPassword ? "_" : ""), new Vector2(50, h - 74), dimCol);
         var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)");
         _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)",
             new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
@@ -789,13 +802,14 @@ public sealed partial class Game1
     {
         DrawIntroTitle(w, "Direct Connect", "Type an address[:port]  -  a hostname, IPv4/IPv6, or a MagicDNS name", titleCol, dimCol);
 
-        var label = "Address: " + _directBuf.ToString() + (_introEditingDirect ? "_" : "");
+        var label = "Address: " + _directBuf.ToString() + (_introEditingDirect && !_editingLanPassword ? "_" : "");
         var lsz = _hudSmall.MeasureString(label);
         _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - lsz.X) / 2f, h * 0.42f),
             _introEditingDirect ? titleCol : textCol);
         _spriteBatch.Draw(_whitePixel, new Rectangle((int)(w / 2f - 170), (int)(h * 0.42f) + 14, 340, 2),
             new Color(0.25f, 0.5f, 0.5f, 0.8f));
 
+        _spriteBatch.DrawString(_hudSmall, "TAB password: " + new string('*', _lanJoinPassword.Length) + (_editingLanPassword ? "_" : ""), new Vector2(50, h * .53f), dimCol);
         var fsz = _hudSmall.MeasureString("TYPE address   ENTER connect   ESC back");
         _spriteBatch.DrawString(_hudSmall, "TYPE address   ENTER connect   ESC back",
             new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);

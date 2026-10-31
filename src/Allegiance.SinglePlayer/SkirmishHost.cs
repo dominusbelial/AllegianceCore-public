@@ -10,7 +10,7 @@ namespace Allegiance.SinglePlayer;
 /// <summary>Owns the embedded sim and its external bot supervisor for one local game.</summary>
 public sealed partial class SkirmishHost : IDisposable
 {
-    private readonly Srv _server = new() { AllowSinglePlayerPause = true };
+    private readonly Srv _server;
     private readonly CancellationTokenSource _stop = new();
     private readonly object _simGate = new();
     private readonly ProcessLifetime _ownership = new();
@@ -50,6 +50,7 @@ public sealed partial class SkirmishHost : IDisposable
     private SkirmishHost(SkirmishOptions options)
     {
         Options = options;
+        _server = new() { AllowSinglePlayerPause = !options.HostLan, RequireLanListeners = options.HostLan };
         PlayerSide = options.StartAsSpectator ? null : (short)0;
         // P889 — size the bot driver from the same shared-machine budget the
         // server resolver uses (client + bot reserve), not a flat "cores - 2".
@@ -65,9 +66,13 @@ public sealed partial class SkirmishHost : IDisposable
         try
         {
             var config = options.CreateConfig(artwork);
-            await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config, Benchmark.BenchmarkJson.Default.ServerConfig), cancellationToken);
+            // A LAN game's password never reaches the temp folder; Boot takes the config below.
+            if (!options.HostLan)
+                await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config, Benchmark.BenchmarkJson.Default.ServerConfig), cancellationToken);
             host._server.TickMeasured += ms => { lock (host._benchmarkTicks) if (host._measureTicks && host._benchmarkTicks.Count < 100000) host._benchmarkTicks.Add(ms); };
-            host._server.Boot(config);
+            try { host._server.Boot(config); }
+            catch (System.Net.Sockets.SocketException ex) when (options.HostLan)
+            { throw new IOException($"LAN game port {options.HostPort} (TCP/UDP) is unavailable. Close the other host or choose another port.", ex); }
             host._ticker = new Thread(host.Tick) { IsBackground = true, Name = "skirmish-server", Priority = ThreadPriority.BelowNormal };
             host._ticker.Start();
             var start = new ProcessStartInfo(driverPath ?? FindDriver())
@@ -95,6 +100,13 @@ public sealed partial class SkirmishHost : IDisposable
             start.Environment["ALLEGIANCE_LOCAL_PILOT"] = WirePilotName(commanderPilotName);
             // Private child environment: never inherited from another local match.
             start.Environment["ALLEGIANCE_SKIRMISH_COMMANDER"] = options.Commander == SkirmishCommander.You ? WirePilotName(commanderPilotName) : "";
+            if (options.HostLan)
+            {
+                // Child-only configuration: never grant privilege from an inherited developer shell.
+                start.Environment.Remove("ALLEGIANCE_PRIVILEGE_SECRET");
+                start.Environment.Remove("ALLEGIANCE_BENCHMARK_METRICS");
+                start.Environment["ALLEGIANCE_LAN_PASSWORD"] = options.Password;
+            }
             if (options.Seed is not null) start.Environment["ALLEGIANCE_BENCHMARK_METRICS"] = "1";
             var knobs = options.Knobs;
             start.Environment["ALLEGIANCE_BOT_ACCURACY"] = knobs.Accuracy.ToString(CultureInfo.InvariantCulture);
@@ -212,6 +224,7 @@ public sealed partial class SkirmishHost : IDisposable
     public async Task SetPausedAsync(bool paused, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed != 0, this);
+        if (Options.HostLan) throw new InvalidOperationException("LAN games cannot be paused.");
         long id = Interlocked.Increment(ref _request);
         var reply = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = reply;
@@ -235,6 +248,13 @@ public sealed partial class SkirmishHost : IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop.Cancel();
+        if (Options.HostLan)
+        {
+            _ticker?.Join();
+            lock (_simGate) _server.EndLanHost();
+            // Bound drain time for the guaranteed departure on TCP and UDP.
+            Thread.Sleep(250);
+        }
         foreach (var (_, pending) in _pending) pending.TrySetResult("Skirmish stopped");
         if (_driver is { } driver)
         {
