@@ -59,6 +59,9 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                 var watch = Stopwatch.StartNew();
                 bool destroyed = false;
                 double? firstKill = null;
+                // Retiring the mission clears its side registry (Mission.Lifetime.cs), so keep
+                // the sides for the deadline ranking below.
+                var sides = mission.Sides.ToArray();
                 while (watch.Elapsed.TotalSeconds < 1200 && mission.Stage != MissionStage.Over)
                 {
                     var bots = manager.ActiveBots();
@@ -128,13 +131,13 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                 // Station destruction remains mandatory. A timed match may end
                 // with active sides: native ranks kills/deaths at the deadline
                 // (FedSrv/fsmission.cpp:2468-2498), independently of elimination.
-                var eliminated = mission.Sides.Where(side => !side.Active).ToArray();
+                var eliminated = sides.Where(side => !side.Active).ToArray();
                 foreach (var side in eliminated)
                     Assert.DoesNotContain(mission.Sectors.SelectMany(sector => sector.StationRuntimes),
                         station => station.SideId == side.Id && station.Type.HasCapability(Allegiance.Core.DataStationTypeIGC.SabmRestart));
                 if (eliminated.Length == 0)
                 {
-                    var ranked = mission.Sides.OrderByDescending(side => side.Kills).ThenBy(side => side.Deaths).ToArray();
+                    var ranked = sides.OrderByDescending(side => side.Kills).ThenBy(side => side.Deaths).ToArray();
                     var best = ranked[0];
                     Assert.True(best.Kills > 0, "The live deadline must see earned ship kills");
                     bool tied = ranked.Skip(1).Any(side => side.Kills == best.Kills && side.Deaths == best.Deaths);

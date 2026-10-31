@@ -4531,3 +4531,13 @@ training runner (`--no-build --repeat 3`, Fast + Live with artwork) passed
 **80/80 ClientCore + 67/67 MonoGame** in each repetition, with no skipped
 lessons. Raw logs/TRX are retained in `.scratch/p897/`; compact results are in
 [the P897 validation artifact](reports/P897_assets/validation.json).
+
+## Batch P896 sweep triage (2026-10-31)
+
+| Test | Isolated result | Disposition |
+|---|---|---|
+| `P682NextMatchCombatLiveTests.P682b_…` (4 cases) | 4/4 after the fixture fix | Deterministic since P896: a side targets only stations its own worlds hold, and `ShowMap` reveals warps only, so side 0 armed with no target in match 2. Test now seeds station visibility on the live mission. |
+| `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` | Station killed in 4 of 9 runs, 1 of 3 with the fixture fix | Still unreliable, same `No station destruction` at a kills deadline as the earlier rows. Fixed one test bug: it ranked `mission.Sides` after retirement cleared them (`Mission.Lifetime.cs`), throwing `IndexOutOfRangeException` after a real kill. Failure counts include load from a parallel lane. |
+| `NpcAutopilotLiveTests.Damaged_npc_take_cover_now_produces_observable_movement` | 3/3 | Load flake, new to this ledger. |
+| `P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike` | 3/3 | Sweep miss 24.1 s vs 23.4 s control. |
+| `P796CoverageLiveTests.Loopback_showcase_with_varied_loadouts_builds_weapon_coverage` | 3/3 | Sweep saw 62% fired. |
