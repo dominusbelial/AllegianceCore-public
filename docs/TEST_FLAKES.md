@@ -4873,3 +4873,15 @@ Snapshot of `4c25346f` without media. Fast 12,702 tests, Live 232, Perf 73 (pass
 Fast budget offenders on the mini: `P796VariedLoadoutTests` (civ 35) 15.8 s, `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` 20.9 s, `SC2NaniteSupportTests` (civ 25) 19.8 s.
 
 `P905BotRoutinesLiveTests.Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3` failed once in 11 runs on the workstation, then passed 8/8, after the chat-cursor and `TypeOf` review fixes. The failure message was not captured and the cause is unknown. The fixture teleports the ship right after sending the dispatch, which is the first place to look.
+
+## Mini sweep batch-p902-p905 (2026-10-31, snapshot of 84597d2c)
+
+Perf passed. Fast and Live failed. The P900 tests and P799 no longer fail on the runner. Reruns on merged
+master `b2e8b196`:
+
+| Method / family | Rerun | Finding |
+|---|---|---|
+| `MusicLoadingTests`, `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | 3 × pass | Sweep-only. |
+| `MissionRotationLiveTests.Finished_...`, `P817NativeMinerDecisionCycleLiveTests`, `LiveSuicideShipDeleteTests`, `ConsoleLogNonBlockingTests` | 3 × pass | Sweep-only timing or shared console state, as ledgered before. |
+| `P682NextMatchCombatLiveTests.Mcp_bots_buy...`, `P730ShowcaseLiveTests.Two_local...` | 3 × pass | Sweep-only on the mini. Cause of the P730 `natural mining` miss not established. |
+| `MissileLockLiveTests`, `SC2SupportPhaseLiveTests`, `SC5CloakLiveTests`, `P832dArtifactBotLiveTests`, `SC4`, `P745`, `P798`, `NpcWingmanDefendLiveTests`, `DockDockingTests` | Not rerun | Seen in earlier sweeps or ledgered; remain open. |
