@@ -1,0 +1,79 @@
+{
+  "tier": "fast",
+  "seconds": 536.0450672610023,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 119,
+      "outcomes": {
+        "Passed": 119
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 4612,
+      "outcomes": {
+        "Passed": 4605,
+        "Failed": 4,
+        "NotExecuted": 3
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2070,
+      "outcomes": {
+        "Passed": 2070
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5973,
+      "outcomes": {
+        "Passed": 5967,
+        "Failed": 5,
+        "NotExecuted": 1
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.9520159151193635,
+    "referenceMs": 3.5891,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "outcome": "Passed",
+      "seconds": 10.033079
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 10.0295524
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 11.2076534
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "3 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.05879042000742629,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

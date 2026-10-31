@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Allegiance.Core/Allegiance.Core.csproj" />
+    <ProjectReference Include="../../src/Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+  </ItemGroup>
+</Project>

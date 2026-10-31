@@ -228,6 +228,18 @@ list in **reverse**.
   allocation attribution. `src/Allegiance.Core/Profiling/TickProfiler.cs`;
   env `ALLEGIANCE_TICK_PROFILER`, `ALLEGIANCE_TICK_PROFILER_INTERVAL`,
   `ALLEGIANCE_SLOW_TICK_MS`. Report: `docs/reports/P838_GC_PROFILE.md`.
+- **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
+  `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
+  `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry
+  to dedicated-worker delays in `src/Allegiance.Core/Transport/UdpTransport.ReceiveDelay.cs`.
+  `src/Allegiance.Server/Server.SchedulingMetrics.cs` emits both on profiler windows,
+  including embedded hosts via the existing client log tee. Kernel arrival time
+  is unavailable; the probe is a scheduling proxy. `profiler.schedulingMetrics`
+  disables these additions for cost A/B only. Proof: `tools/p907-scheduling-proof/`;
+  independent sampled GCAllocationTick totals (proof only) in
+  `tools/p895-transport-proof/AllocationEventMeter.cs` cross-check decreasing
+  runtime cumulative allocation counters without changing GC settings;
+  meaning and rig plan: `docs/reports/P907_REPORT.md`, `docs/UDP_TRANSPORT.md`.
 - **Random / determinism** — the seeded RNG abstraction behind reproducible
   generation. `src/Allegiance.Core/MapGen/MapRandom.cs`.
 

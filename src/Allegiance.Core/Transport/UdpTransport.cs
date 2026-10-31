@@ -137,6 +137,7 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
         _boundPort = (ushort)((IPEndPoint)_socket.LocalEndPoint!).Port;
         if (_host)
         {
+            if (MeasureReceiveDelay) _receiveDelay = new Allegiance.Core.Profiling.DelayHistogram();
             _receiveArgs.SetBuffer(_receive, 0, _receive.Length);
             _receiveArgs.Completed += ReceiveCompleted;
         }

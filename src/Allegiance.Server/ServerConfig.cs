@@ -716,6 +716,10 @@ public sealed class AdminCheatsConfig
 /// </summary>
 public sealed class ProfilerConfig
 {
+    /// <summary>P907: process pool probe and UDP completion handoff metrics when
+    /// the profiler is enabled. Disable only for measurement-cost A/B runs.</summary>
+    public bool SchedulingMetrics { get; set; } = true;
+
     /// <summary>Master switch. false (the default, and the meaning of an absent
     /// <c>profiler</c> section) leaves the server's tick un-instrumented.</summary>
     public bool Enabled { get; set; }

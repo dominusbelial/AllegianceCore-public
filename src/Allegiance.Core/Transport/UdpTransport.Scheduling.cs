@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Diagnostics;
 
 namespace Allegiance.Core.Transport;
 
@@ -92,6 +93,9 @@ public sealed partial class UdpTransport
 
     private void ReceiveCompleted(object? sender, SocketAsyncEventArgs args)
     {
+        // This is managed callback entry, NOT kernel arrival or OS completion.
+        // The ready flag publishes the timestamp to the existing worker.
+        if (_receiveDelay is not null) _receiveCompletedAt = Stopwatch.GetTimestamp();
         _receiveReady = true;
         Interlocked.Increment(ref _receiveSignals);
         // Socket cancellation can finish after an idempotent Shutdown/Dispose.
@@ -107,6 +111,7 @@ public sealed partial class UdpTransport
             if (!_receivePending)
             {
                 _receiveReady = false;
+                _receiveCompletedAt = 0;
                 _receiveArgs.RemoteEndPoint = _socket!.AddressFamily == AddressFamily.InterNetworkV6
                     ? new IPEndPoint(IPAddress.IPv6Any, 0) : new IPEndPoint(IPAddress.Any, 0);
                 _receivePending = true;
@@ -117,6 +122,11 @@ public sealed partial class UdpTransport
             _receivePending = false;
             if (_receiveArgs.SocketError is SocketError.ConnectionReset or SocketError.MessageSize) continue;
             if (_receiveArgs.SocketError != SocketError.Success) throw new SocketException((int)_receiveArgs.SocketError);
+            if (_receiveDelay is { } delay)
+            {
+                if (_receiveCompletedAt != 0) delay.Record(Stopwatch.GetTimestamp() - _receiveCompletedAt);
+                else _synchronousReceives++;
+            }
             int count = _receiveArgs.BytesTransferred;
             Interlocked.Add(ref _received, count);
             if (count <= Mtu) Receive(_receive.AsSpan(0, count), Normalize((IPEndPoint)_receiveArgs.RemoteEndPoint!), now);

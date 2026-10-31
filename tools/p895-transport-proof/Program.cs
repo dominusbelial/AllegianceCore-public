@@ -23,6 +23,11 @@ int delay = int.Parse(Option("--delay") ?? "0", CultureInfo.InvariantCulture);
 int jitter = int.Parse(Option("--jitter") ?? "0", CultureInfo.InvariantCulture);
 int kernelDelay = int.Parse(Option("--kernel-delay") ?? "0", CultureInfo.InvariantCulture);
 bool batchWrites = args.Contains("--tcp-batch-writes");
+bool profile = args.Contains("--profile");
+bool allocationEvents = args.Contains("--allocation-events");
+bool schedulingMetrics = Option("--scheduling-metrics") != "off";
+int warmupMs = int.Parse(Option("--warmup-ms") ?? "1500", CultureInfo.InvariantCulture);
+if (warmupMs is < 1500 or > 15000) throw new ArgumentException("bounded warmup: 1500..15000 ms");
 double loss = double.Parse(Option("--loss") ?? "0", CultureInfo.InvariantCulture);
 string state = Path.GetFullPath(Option("--state") ?? ".scratch/p895/proof");
 Directory.CreateDirectory(state);
@@ -35,6 +40,7 @@ Run();
 
 void Host()
 {
+    using var allocationMeter = allocationEvents ? new AllocationEventMeter() : null;
     using var log = new StreamWriter(Path.Combine(state, "host.log")); log.AutoFlush = true; Console.SetOut(log);
     using var server = new Server();
     server.SpawnInitialMinersAtBoot = false;
@@ -42,6 +48,7 @@ void Host()
     {
         Port = 0, ArtPath = ExternalPaths.Require(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc",
         UpdatesPerSecond = 20, BenchmarkSeed = 895,
+        Profiler = new() { Enabled = profile, SchedulingMetrics = schedulingMetrics },
         Transport = new() { Protocol = protocol, Mode = "pool", PoolWorkers = 2, MaxConnectionsPerIp = 256,
             TcpBatchWrites = batchWrites },
         Broadcast = new() { ImmutableSnapshot = true, EncodeOnce = true, ParallelBuild = true, ShipUpdateModel = "native" },
@@ -74,7 +81,7 @@ void Host()
     var total = Stopwatch.StartNew();
     bool measuring = false;
     TimeSpan cpuStart = TimeSpan.Zero;
-    long measureStart = 0, writtenStart = 0;
+    long measureStart = 0, writtenStart = 0, allocationStart = 0, sampledAllocationStart = 0, allocationSampleStart = 0;
     var udp = server.Host.Transport is DualTransport dual ? dual.Udp : server.Host.Transport as UdpTransport;
     UdpTransportStatistics? statsStart = null;
     var process = Process.GetCurrentProcess();
@@ -82,7 +89,7 @@ void Host()
     {
         long start = Stopwatch.GetTimestamp();
         if (!measuring && File.Exists(Path.Combine(state, "measure")))
-        { measuring = true; cpuStart = process.TotalProcessorTime; measureStart = start; writtenStart = server.Host.Transport!.TotalWrittenBytes; statsStart = udp?.SampleStatistics(); }
+        { measuring = true; cpuStart = process.TotalProcessorTime; measureStart = start; writtenStart = server.Host.Transport!.TotalWrittenBytes; statsStart = udp?.SampleStatistics(); allocationStart = GC.GetTotalAllocatedBytes(precise: true); sampledAllocationStart = allocationMeter?.Bytes ?? 0; allocationSampleStart = allocationMeter?.Samples ?? 0; }
         times.WriteLine(FormattableString.Invariant($"{server.LoopIterations + 1},{start}"));
         if (measuring && server.LoopIterations % 10 == 0)
         {
@@ -104,7 +111,11 @@ void Host()
     double measuredSeconds = measuring ? Stopwatch.GetElapsedTime(measureStart).TotalSeconds : 0;
     var metrics = new HostMetrics(ticks.Count, Quantile(ticks, .5), Quantile(ticks, .95), ticks.Count == 0 ? 0 : ticks.Max(),
         measuredSeconds == 0 ? 0 : (process.TotalProcessorTime - cpuStart).TotalSeconds / measuredSeconds,
-        server.LivePlayerCount, server.Host.Transport!.TotalWrittenBytes - writtenStart, tcp?.TcpBatchWrites == true);
+        server.LivePlayerCount, server.Host.Transport!.TotalWrittenBytes - writtenStart, tcp?.TcpBatchWrites == true,
+        ticks.Count == 0 ? 0 : ticks.Average(), measuredSeconds == 0 ? 0 : (GC.GetTotalAllocatedBytes(precise: true) - allocationStart) / measuredSeconds,
+        profile, schedulingMetrics, allocationMeter is null || measuredSeconds == 0 ? null : (allocationMeter.Bytes - sampledAllocationStart) / measuredSeconds,
+        (allocationMeter?.Samples ?? 0) - allocationSampleStart);
+    if (allocationEvents && metrics.AllocationSamples == 0) throw new IOException("runtime allocation events unavailable");
     if (statsStart is not null) File.WriteAllText(Path.Combine(state, "host-udp.json"), JsonSerializer.Serialize(udp!.SampleStatistics().Since(statsStart), ProofJson.Default.UdpTransportStatistics));
     File.WriteAllText(Path.Combine(state, "host-metrics.json"), JsonSerializer.Serialize(metrics, ProofJson.Default.HostMetrics));
 }
@@ -118,6 +129,10 @@ void Run()
     if (Path.GetFileNameWithoutExtension(Environment.ProcessPath) == "dotnet") start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
     foreach (string arg in new[] { "--host", "--state", state, "--protocol", protocol }) start.ArgumentList.Add(arg);
     if (batchWrites) start.ArgumentList.Add("--tcp-batch-writes");
+    if (profile) start.ArgumentList.Add("--profile");
+    if (allocationEvents) start.ArgumentList.Add("--allocation-events");
+    start.ArgumentList.Add("--scheduling-metrics");
+    start.ArgumentList.Add(schedulingMetrics ? "on" : "off");
     start.Environment["ALLEGIANCE_TRANSPORT_PROTOCOL"] = protocol;
     start.Environment["ALLEGIANCE_TRANSPORT_MAX_PER_IP"] = "256";
     using var host = Process.Start(start) ?? throw new IOException("failed to start proof server");
@@ -163,7 +178,7 @@ void Run()
             client.Session.SendPositionReq(0);
         }
         Wait(() => clients.All(c => { lock (c.Session.Gate) return c.Session.World.MyShipId is not null; }), 30000, "all scripted clients seated");
-        Thread.Sleep(1500);
+        Thread.Sleep(warmupMs);
         foreach (var client in clients) client.Measuring = true;
         File.WriteAllText(Path.Combine(state, "measure"), "start");
         long bytesStart = ProxyBytes(proxies);
@@ -272,7 +287,9 @@ static class Access
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_transport")]
     public static extern ref ITransport? Transport(ConnectionSession session);
 }
-internal sealed record HostMetrics(int Ticks, double TickP50Ms, double TickP95Ms, double TickMaxMs, double CpuCores, int Connected, long WrittenBytes, bool TcpBatchWrites);
+internal sealed record HostMetrics(int Ticks, double TickP50Ms, double TickP95Ms, double TickMaxMs, double CpuCores, int Connected, long WrittenBytes, bool TcpBatchWrites,
+    double TickMeanMs, double AllocatedBytesPerSecond, bool Profiler, bool SchedulingMetrics,
+    double? SampledAllocatedBytesPerSecond, long AllocationSamples);
 internal sealed record Measurement(string Protocol, string Impairment, int Bots, double Loss, int DelayMs, int JitterMs, int Seconds,
     int PoseSamples, double PoseP50Ms, double PoseP95Ms, double PoseMaxMs, double LongestPoseGapMs,
     int FlowSamples, double FlowP50Ms, double FlowP95Ms, double FlowMaxMs, double? BytesPerSecond,

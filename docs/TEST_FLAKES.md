@@ -4,6 +4,53 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P907 verification (2026-10-31 UTC)
+
+Exactly one Fast sweep: **12,789 passed / 9 failed / 4 skipped**, 12,802
+executions in **536.045 s**. All nine infrastructure checks passed. Three
+executions exceeded ten seconds. All six P907 regressions passed in the sweep
+and **18/18** across three standalone cohort runs. The Fast sweep was not rerun.
+
+Four sound/source failures were harness errors: this lane supplied the native
+`src` directory where those tests expect the repository root. The tester-core
+case also skipped for that reason; the other three skips were the optional
+Meshy pack. The isolated controls use the correct native root. Physical scratch
+stays inside the worktree; the bundle-path control uses a `/proc/<parent>/fd/`
+directory alias to restore its outside-repository fixture assumption. Baseline
+code defaults remain pool/native/parallel/default-on GotoPlan with server GC;
+legacy tests retain their explicit configuration choices.
+
+The final controls ran serially after all five showcases. An interleaved
+follow-up harness attempt was discarded; only the fresh `isolation-final`
+receipts are used below. No production behavior or test assertion was changed.
+
+| Method / family | Three standalone results | Finding |
+|---|---|---|
+| `P676WeaponReadyCueTests.Ready_cue_matches_native_sound_ordinal_and_has_the_real_bundled_wave_and_pipeline_entry`; `P678LobbyStatusTests.Player_waiting_voice_uses_the_real_native_wave_and_content_pipeline`; `P692NotificationCueTests.Teleport_feedback_uses_native_critical_and_noncritical_ordinals_and_bundled_assets`; `P732VoiceCatalogTests.Generated_sound_ids_and_templates_match_native_enum_and_verbatim_mdl` | Each **pass/pass/pass**, 12/12 total | Correcting the native repository root fixes all four source-path failures; no sound, asset or client code edit. |
+| `NativeTesterCoreTests.Tester_core_parses_exactly_and_loads` | **pass/pass/pass**, 0.019/0.028/0.023 s | The extra native tester core is present and passes after the same harness correction; the sweep skip is retained in its original receipt. |
+| `TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer`; `Boot_line_prints_the_active_transport_mode` | Each **pass/pass/pass**, 6/6 total | Initial broad-suite pool environment pin overrode explicit legacy-mode config. Clearing that override restores both tests. The complete corrected transport/loopback suite passes **214/214**; the UDP/loopback cohort passes **36/36 × 3**. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, 4.144/3.938/4.225 s | Sweep-only timing: 10.033 s. Existing real-hull GPU proof sensitivity; renderer unchanged. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.293/3.199/3.270 s | Sweep-only timing: 10.030 s. Existing purchase/selection fixture sensitivity; no bot code change. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, 9.699/9.649/9.709 s | Sweep timing: 11.208 s. Same native-physics timing fixture remains close to the ten-second limit. |
+| `P780PodRescueProbeLiveTests.Rescue_probe_deployed_via_FIRE_EXPENDABLE_rescues_a_pod` | **pass/pass/pass**, 0.336/0.336/0.324 s | Sweep missed the rescue receipt; the real deployment/rescue path passes alone. No rescue or simulation rule changed. |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | **pass/pass/pass**, 0.015/0.015/0.015 s with descriptor alias | Same worktree-local TMPDIR/root-discovery fixture obstruction recorded under P906/P904 and earlier lanes. No resolver or fixture edit. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **fail/pass/pass**, 0.591/0.559/0.557 s | Existing stale dock-status receipt: expected station -1, actual 1051, matching P906/P904. Intermittent even alone; remains open. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.192/1.212/1.179 s | Existing null `DefendTarget`, with earlier unmodified-HEAD controls already ledgered under P901/P899/P898 and repeated under P906/P904. Remains open; no wingman/steering rule changed. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **fail/fail/fail**, 0.372/0.355/0.366 s | Expected flying state 3, actual docked state 2. Same receipt signature previously ledgered on `c395ed6a` under P896 (fail/fail/pass alone). Remains open; no status/broadcast rule changed. |
+
+Showcase never-parks passes **5/5**, matching P906's saved baseline pass rate.
+Test durations: **381.788 / 232.318 / 241.167 / 256.020 / 348.726 s**. Every run
+reached at least 24/30 objectives, recorded real shots/hits and asserted zero
+simulation-stage failures. Maximum stopped-with-target interval: **1.111 s**.
+There were no concurrent tests/builds from this lane during those runs.
+
+The single Fast result remains **FAIL**; the persistent/intermittent cases above
+are not reclassified as passing. See [P907 report](reports/P907_REPORT.md),
+[Fast receipt](reports/P907_assets/fast-summary.json),
+[three-run controls](reports/P907_assets/isolation-summary.json), and
+[showcase receipts](reports/P907_assets/showcase-summary.json). Raw final
+controls remain under `.scratch/p907/isolation-final/`.
+
 ## P906 verification (2026-10-31 UTC)
 
 One Fast sweep: **12,778 passed / 15 failed / 3 optional private-pack skips**,

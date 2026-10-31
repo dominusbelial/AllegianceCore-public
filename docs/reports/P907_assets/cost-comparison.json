@@ -1,0 +1,120 @@
+[
+  {
+    "protocol": "tcp",
+    "retainedClients": 200,
+    "runsPerArm": 3,
+    "comparison": {
+      "TickMeanMs": {
+        "offMedian": 5.175471111111112,
+        "onMedian": 5.256598762376241,
+        "medianDeltaPercent": 1.5675413797781035,
+        "offRange": [
+          4.865617574257422,
+          5.241131034482754
+        ],
+        "onRange": [
+          5.235292326732677,
+          5.281988641975315
+        ]
+      },
+      "TickP95Ms": {
+        "offMedian": 6.1302,
+        "onMedian": 6.5363,
+        "medianDeltaPercent": 6.624579948451914,
+        "offRange": [
+          6.0163,
+          6.4188
+        ],
+        "onRange": [
+          6.3487,
+          6.8676
+        ]
+      },
+      "CpuCores": {
+        "offMedian": 0.42297260372368395,
+        "onMedian": 0.43015302137788364,
+        "medianDeltaPercent": 1.6976082117343028,
+        "offRange": [
+          0.4135933838248891,
+          0.42518832070807655
+        ],
+        "onRange": [
+          0.4154639695459985,
+          0.43272305229747543
+        ]
+      },
+      "SampledAllocatedBytesPerSecond": {
+        "offMedian": 33679753.64293604,
+        "onMedian": 35479297.15152138,
+        "medianDeltaPercent": 5.343101756811008,
+        "offRange": [
+          33367998.170064107,
+          33719448.53360588
+        ],
+        "onRange": [
+          33490086.485816404,
+          36748576.08248763
+        ]
+      }
+    }
+  },
+  {
+    "protocol": "udp",
+    "retainedClients": 200,
+    "runsPerArm": 3,
+    "comparison": {
+      "TickMeanMs": {
+        "offMedian": 5.11015732009926,
+        "onMedian": 5.124639356435641,
+        "medianDeltaPercent": 0.28339707428224337,
+        "offRange": [
+          5.070702475247524,
+          5.378325990099004
+        ],
+        "onRange": [
+          4.697255086848634,
+          5.152826732673268
+        ]
+      },
+      "TickP95Ms": {
+        "offMedian": 6.5357,
+        "onMedian": 6.6104,
+        "medianDeltaPercent": 1.1429533179307505,
+        "offRange": [
+          6.4556,
+          6.7206
+        ],
+        "onRange": [
+          6.2819,
+          6.7125
+        ]
+      },
+      "CpuCores": {
+        "offMedian": 0.6310680698140779,
+        "onMedian": 0.6222980678021662,
+        "medianDeltaPercent": -1.3897077718566075,
+        "offRange": [
+          0.6257100541099808,
+          0.6600028221013716
+        ],
+        "onRange": [
+          0.6119876584346731,
+          0.6578300818354067
+        ]
+      },
+      "SampledAllocatedBytesPerSecond": {
+        "offMedian": 65778261.5990134,
+        "onMedian": 65480303.395815045,
+        "medianDeltaPercent": -0.4529736663074546,
+        "offRange": [
+          65742493.36514985,
+          66000626.449197896
+        ],
+        "onRange": [
+          65450817.69496846,
+          65954339.650328964
+        ]
+      }
+    }
+  }
+]

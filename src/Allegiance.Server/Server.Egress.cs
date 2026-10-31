@@ -17,6 +17,7 @@ public sealed partial class Server
 
     private void EmitEgressWindow()
     {
+        EmitSchedulingWindow();
         EmitSendWindow();
         // P866 — the named native server counters (FedSrv/counters.h:10-21), on
         // the same photometer window as the egress rows. Independent of the
