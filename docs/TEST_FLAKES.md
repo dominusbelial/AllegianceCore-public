@@ -4636,3 +4636,37 @@ lessons. Raw logs/TRX are retained in `.scratch/p897/`; compact results are in
 | `NpcAutopilotLiveTests.Damaged_npc_take_cover_now_produces_observable_movement` | 3/3 | Load flake, new to this ledger. |
 | `P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike` | 3/3 | Sweep miss 24.1 s vs 23.4 s control. |
 | `P796CoverageLiveTests.Loopback_showcase_with_varied_loadouts_builds_weapon_coverage` | 3/3 | Sweep saw 62% fired. |
+
+## P902 Codex gate — 2026-10-31
+
+The single Fast sweep (`tiers-20261031T143154.448549Z`) again hit the existing
+sandbox/profile-path failure in
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`.
+Its fixture finally-block restores the default user `player.json` on a read-only
+configuration directory. This is unrelated to the audio-template/quality work.
+Three isolated runs with `XDG_CONFIG_HOME` pointing to `.scratch/p902/config`
+passed **3/3** (61 / 76 / 74 ms). No profile/chat test or handler was changed.
+Evidence: `.scratch/p902/profile-isolation-{1,2,3}.log` and
+`.scratch/p902/isolated/p761-profile-{1,2,3}.trx`; retain the original Fast result.
+
+Additional P902 Fast observations, with each failed method isolated three times:
+
+| Test | Three isolation outcomes | Observation |
+|---|---|---|
+| `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim(training: False, model: "port")` | pass / fail / pass (all four theory cases run each time; the other three pass throughout) | Same skirmish/port sustained-aim assertion as the sweep. The failure includes large forward/shot drift. The P902 changes are in the Game/audio layer, which this client-core test does not execute; no prediction, server, sim or test code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip, despite final lock 1.000. The failed isolation runs for 38 s; earlier gates already ledger this method. No wire/lock code changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent baseline failure: expected charge ship, actual null at line 179. Previous ledger entries already reproduce it on unmodified HEAD; P902 changes no sim or NPC code. |
+
+Evidence: `.scratch/p902/{aim,missile,wingman}-isolation-{1,2,3}.log` and
+`.scratch/p902/isolated/`. These outcomes are retained without changing the
+unrelated fixtures or parity rows. Host load sampled during triage was
+10.10 / 5.93 / 3.91 on 24 logical CPUs; this was not a synthetic-load experiment.
+
+The same P902 sweep also flagged the already-passing
+`P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` for its calibrated Fast
+execution time (10.278 s versus a 10.000 s limit). Three isolated runs **pass
+3/3** at **10.077 / 10.114 / 10.071 s**; the timing classification remains over
+the limit. Evidence: `.scratch/p902/warp-isolation-{1,2,3}.log` and
+`.scratch/p902/isolated/p777-warp-{1,2,3}.trx`. No warp/sim/test-tier code changed.
+The complete sweep ran 12,737 cases in 544.3 s: 12,730 passed, 4 failed,
+3 skipped, and 2 timing offenders. All P902 cases passed in the sweep.

@@ -1,0 +1,221 @@
+{
+  "task": "P902",
+  "date": "2026-10-31",
+  "commits_or_pushes": false,
+  "parity": {
+    "effect": {
+      "before": "16/18",
+      "after": "18/18"
+    },
+    "sound": {
+      "before": "46/54",
+      "after": "54/54",
+      "design_replaced_weight": 1
+    }
+  },
+  "build": {
+    "solution_warnings": 0,
+    "solution_errors": 0,
+    "tool_projects": 101,
+    "server_AOT": "pass without IL2026/IL3050"
+  },
+  "isolated_tests": {
+    "P902SoundTemplateTests": [
+      32,
+      32,
+      32
+    ],
+    "P806OptionsMenuTests": [
+      7,
+      7,
+      7
+    ],
+    "Sound3DTests": [
+      22,
+      22,
+      22
+    ]
+  },
+  "backend": {
+    "repeats": 3,
+    "valid_bundled_templates": 61,
+    "known_invalid_native_region": "smallTurretSound",
+    "frames_per_allocation_check": 120,
+    "managed_bytes_each_check": [
+      0,
+      0,
+      0
+    ],
+    "forced_device_failure_repeats": 3
+  },
+  "silent_live_flight": {
+    "mission": "Started",
+    "pilot": "launched",
+    "frames": 1139,
+    "observation_seconds": 10,
+    "audio_device_diagnostics": 1,
+    "baseline_parallel_build": true,
+    "baseline_pool_transport": true
+  },
+  "showcase": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:03:44.9603655",
+      "metrics": "P700 local 15v15: 220.8s, samples=2205, reached=24/30, longest speed<1 with target=0.507s, shots=905, hits=202, kills=2"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:03:58.2663281",
+      "metrics": "P700 local 15v15: 234.0s, samples=2336, reached=24/30, longest speed<1 with target=0.206s, shots=1268, hits=231, kills=1"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:03:35.1394481",
+      "metrics": "P700 local 15v15: 211.4s, samples=2111, reached=24/30, longest speed<1 with target=0.000s, shots=682, hits=32, kills=0"
+    },
+    {
+      "run": 4,
+      "outcome": "Passed",
+      "duration": "00:03:50.1061572",
+      "metrics": "P700 local 15v15: 225.6s, samples=2253, reached=24/30, longest speed<1 with target=0.000s, shots=269, hits=72, kills=0"
+    },
+    {
+      "run": 5,
+      "outcome": "Passed",
+      "duration": "00:05:32.8572615",
+      "metrics": "P700 local 15v15: 329.2s, samples=3288, reached=24/30, longest speed<1 with target=0.000s, shots=645, hits=1, kills=0"
+    }
+  ],
+  "fast": {
+    "total": 12737,
+    "seconds": 544.2588147670031,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4612,
+        "outcomes": {
+          "Passed": 4608,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2056,
+        "outcomes": {
+          "Passed": 2054,
+          "Failed": 2
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5922,
+        "outcomes": {
+          "Passed": 5921,
+          "Failed": 1
+        }
+      }
+    },
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "2 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "timing_offenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.1458837
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.2781342
+      }
+    ]
+  },
+  "non_task_isolation": {
+    "profile": {
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "seconds": [
+        0.061,
+        0.076,
+        0.074
+      ],
+      "writable_XDG_CONFIG_HOME": true
+    },
+    "skirmish_port_aim": {
+      "outcomes": [
+        "Passed",
+        "Failed",
+        "Passed"
+      ],
+      "all_theory_cases_per_run": 4
+    },
+    "missile_partial_tip": {
+      "outcomes": [
+        "Passed",
+        "Failed",
+        "Passed"
+      ],
+      "seconds": [
+        1.675,
+        38.522,
+        1.829
+      ]
+    },
+    "wingman_return": {
+      "outcomes": [
+        "Failed",
+        "Failed",
+        "Failed"
+      ],
+      "existing_baseline_failure": true
+    },
+    "warp_measurement": {
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "seconds": [
+        10.077,
+        10.114,
+        10.071
+      ],
+      "timing_limit_seconds": 10
+    }
+  },
+  "static_checks": {
+    "glossary_paths": 421,
+    "scorecard": "pass",
+    "only_six_requested_rows_changed": true,
+    "csv_LF": true,
+    "working_tree_hygiene": "pass"
+  },
+  "limitations": [
+    "OpenAL device format is driver-owned; quality uses native software voice budgets",
+    "native undefined signed-16 repeat-fire overlap corrected deterministically",
+    "desktop source ownership bridges pinned MonoGame SourceId field",
+    "mobile and physical audio devices not tested"
+  ]
+}

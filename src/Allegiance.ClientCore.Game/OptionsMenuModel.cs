@@ -42,7 +42,7 @@ namespace Allegiance.ClientCore.MonoGame;
 /// P871 restores native's Force Feedback switch
 /// (<c>idmToggleEnableFeedback</c> 'E', :4599, default on) now that the port
 /// drives a real rumble device. Native's era-specific items with no port
-/// control — sound quality/hardware, DirectSound8 usage, the separate SFX and
+/// control — hardware acceleration, DirectSound8 usage, the separate SFX and
 /// voice-over mixers and the mouse-acceleration/wheel-delay submenu — are
 /// omitted rather than faked; the P806 report lists them.</para>
 ///
@@ -68,6 +68,7 @@ public sealed class OptionsMenuModel
         MusicVolumeUp,
         MusicVolumeDown,
         Toggle3DSound,
+        CycleAudioQuality,
         ToggleFilterChatsToAll,
         ToggleMuteChatSender,
         ToggleLinearControls,
@@ -98,7 +99,8 @@ public sealed class OptionsMenuModel
         // native's context-menu mute, WinTrek.cpp:3731-3734,4310): the newest
         // relayed sender's display name, or null when the log is empty.
         string? ChatMuteTarget = null,
-        bool ChatMuteTargetMuted = false);
+        bool ChatMuteTargetMuted = false,
+        Audio.AudioQuality AudioQuality = Audio.AudioQuality.Medium);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -139,6 +141,9 @@ public sealed class OptionsMenuModel
                     // (its sound menu is quality/hardware only), so this is a port
                     // addition for A/B-ing the 3D mix by ear.
                     new Row("Positional 3D Sound: " + OnOff(state.Sound3DOn), OptionsCommand.Toggle3DSound, 'P'),
+                    new Row("Sound Quality: " + Audio.AudioQualityPresets.Normalize(state.AudioQuality)
+                        + " (" + Audio.AudioQualityPresets.Budget(state.AudioQuality).DesiredVoices
+                        + " voices)", OptionsCommand.CycleAudioQuality, 'Q'),
                 };
             case Page.Game:
                 return new[]

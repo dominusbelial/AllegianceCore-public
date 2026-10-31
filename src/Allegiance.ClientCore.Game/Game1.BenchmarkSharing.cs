@@ -116,6 +116,9 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.ToggleMusic:         // native idmToggleMusic
                     _music?.Toggle();
                     break;
+                case OptionsMenuModel.OptionsCommand.CycleAudioQuality:
+                    CycleOptionsAudioQuality();
+                    break;
                 case OptionsMenuModel.OptionsCommand.Toggle3DSound:       // P893 — port addition (no native counterpart)
                     ToggleOptions3DSound();
                     break;
@@ -206,7 +209,8 @@ public sealed partial class Game1
             Sound3DOn: _sound?.Sound3DEnabled ?? _optionsPrefs.Enable3DSound,
             ChatMuteTarget: NewestDirectoryLine?.Sender,
             ChatMuteTargetMuted: NewestDirectoryLine is { } newest
-                && _directoryChat.IsMuted(newest.SenderId));
+                && _directoryChat.IsMuted(newest.SenderId),
+            AudioQuality: _sound?.Quality ?? _optionsPrefs.AudioQuality);
     }
 
     /// <summary>P871b — native <c>contextMute</c> (<c>WinTrek/WinTrek.cpp:3731-3734</c>,
@@ -225,6 +229,16 @@ public sealed partial class Game1
         }
         bool mute = !_directoryChat.IsMuted(newest.SenderId);
         SetDirectorySenderMuted(newest.Sender, mute);
+    }
+
+    /// <summary>Native low/medium/high software voice budgets, persisted and
+    /// applied immediately in the shared options path (P902).</summary>
+    private void CycleOptionsAudioQuality()
+    {
+        EnsureOptionsPrefs();
+        _optionsPrefs.AudioQuality = Audio.AudioQualityPresets.Next(_optionsPrefs.AudioQuality);
+        _optionsPrefs.Save();
+        if (_sound is { } sound) sound.Quality = _optionsPrefs.AudioQuality;
     }
 
     /// <summary>P893 — flip the positional-3D sound switch (Sound Options →

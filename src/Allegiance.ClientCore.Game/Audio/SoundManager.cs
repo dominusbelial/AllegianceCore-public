@@ -10,7 +10,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 
 /// <summary>
 /// P213 — real sound for the MonoGame POC, on MonoGame's own audio stack
-/// (<see cref="SoundEffect"/> / <see cref="SoundEffectInstance"/>, NOT the
+/// (<see cref="SoundEffect"/> / <see cref="AudioVoice"/>, NOT the
 /// original's obsolete DirectSound3D <c>src/soundengine/</c> plumbing — that
 /// is DirectX-specific and irrelevant to a cross-platform MonoGame client).
 /// Owns every sound scoped to what is actually flyable in the POC today:
@@ -63,7 +63,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
 {
     private readonly ContentManager _content;
     private readonly SerializedVoiceQueue _serializedVoices = new();
-    private readonly Dictionary<string, SoundEffectInstance> _serializedActive = new();
+    private readonly Dictionary<string, AudioVoice> _serializedActive = new();
     private readonly Dictionary<SoundEffect, NativeVoiceCue> _serializedTemplates = new();
     private readonly long _soundClockStart = Stopwatch.GetTimestamp();
     private double SoundNow => Stopwatch.GetElapsedTime(_soundClockStart).TotalSeconds;
@@ -114,8 +114,17 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     public void UpdateAudioFrame(float deltaSeconds)
     {
         if (!IsLoaded) return;
-        UpdateSerializedVoices();
-        ApplyVoiceBudget(deltaSeconds);
+        try
+        {
+            foreach (var voice in _managedVoices) voice.Instance?.Pump();
+            UpdateSerializedVoices();
+            ApplyVoiceBudget(deltaSeconds);
+        }
+        catch (Exception ex)
+        {
+            IsLoaded = false;
+            WarnOnce($"audio device failed; continuing silently ({ex.GetType().Name})");
+        }
     }
 
     private void UpdateSerializedVoices()
@@ -140,21 +149,21 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     // accelsmall turn / accelcapital sidethrust. Interior and exterior rows share
     // the same underlying assets (native plays one loop instance and mutes the
     // other volume bus by camera view — see the Update/UpdateTurnThruster docs).
-    private SoundEffectInstance? _engine;            // accelsmall — small main-thruster loop (SIM-0373/0379)
-    private SoundEffectInstance? _engineCapital;     // accelcapital — capital main-thruster loop (SIM-0373/0379)
-    private SoundEffectInstance? _cockpitHum;        // sshipint — small interior hum (SIM-0372)
-    private SoundEffectInstance? _cockpitHumCapital; // lshipint — capital interior hum (SIM-0372)
-    private SoundEffectInstance? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
-    private SoundEffectInstance? _turnThrusterCapital; // accelsmall — capital turn bed (SIM-0374/0380)
-    private SoundEffectInstance? _sideThrustSmall;     // accelsmall — fighter sidethrust loop (SIM-0376/0382)
-    private SoundEffectInstance? _sideThrustCapital;   // accelcapital — capital sidethrust loop (SIM-0377/0383)
-    private SoundEffectInstance? _missileTone; // missilelock — P230 lock-acquired looping beep
+    private AudioVoice? _engine;            // accelsmall — small main-thruster loop (SIM-0373/0379)
+    private AudioVoice? _engineCapital;     // accelcapital — capital main-thruster loop (SIM-0373/0379)
+    private AudioVoice? _cockpitHum;        // sshipint — small interior hum (SIM-0372)
+    private AudioVoice? _cockpitHumCapital; // lshipint — capital interior hum (SIM-0372)
+    private AudioVoice? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
+    private AudioVoice? _turnThrusterCapital; // accelsmall — capital turn bed (SIM-0374/0380)
+    private AudioVoice? _sideThrustSmall;     // accelsmall — fighter sidethrust loop (SIM-0376/0382)
+    private AudioVoice? _sideThrustCapital;   // accelcapital — capital sidethrust loop (SIM-0377/0383)
+    private AudioVoice? _missileTone; // missilelock — P230 lock-acquired looping beep
     // P264 — the incoming-missile warning loop (missileLockSound =
     // LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364), played
     // while an enemy missile's target is the local ship, pitched 0.75..1.25 by
     // the best lock (trekigc.cpp:5065).
-    private SoundEffectInstance? _missileWarning;
-    private SoundEffectInstance? _boundsWarning;
+    private AudioVoice? _missileWarning;
+    private AudioVoice? _boundsWarning;
     private SoundEffect? _boundsVoice;
     private SoundEffect? _crowdingVoice;
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
@@ -184,14 +193,14 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private readonly HashSet<string> _weaponShotFailures = new(StringComparer.Ordinal);
     // P465 — per-mount burst loops during sustained fire (native's per-mount
     // m_vpBurstSound[mount], trekigc.cpp:999-1004), keyed by the firing mount id.
-    private readonly Dictionary<int, SoundEffectInstance> _weaponBursts = new();
+    private readonly Dictionary<int, AudioVoice> _weaponBursts = new();
     // P787b — per-mount weapon activate loops while the weapon is active
     // (native's per-mount m_vpActiveSound[mount], trekigc.cpp:984-986), keyed by
     // the firing mount id, and the manned-turret turn loop (native's
     // m_vpTurretSound[mount], trekigc.cpp:988-996 — the port's gunner loop is a
     // single instance, see Game1.TurretGunner).
-    private readonly Dictionary<int, SoundEffectInstance> _weaponActivates = new();
-    private SoundEffectInstance? _turretTurn;
+    private readonly Dictionary<int, AudioVoice> _weaponActivates = new();
+    private AudioVoice? _turretTurn;
     private short _turretTurnSoundId;
     // P787b — the docked station's interior ambient loop (native
     // m_psoundAmbient, trekigc.cpp:5076-5087: restarted whenever the station
@@ -200,13 +209,13 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     // the port loops the bundled shipint component at pitch 0.5 (the
     // intermittent component's gigambient/ironambient waves are not bundled —
     // documented remainder).
-    private SoundEffectInstance? _stationInteriorAmbient;
+    private AudioVoice? _stationInteriorAmbient;
     private short _stationInteriorSoundId;
     // P871 — native Window::StartSound(SoundID, ISoundPositionSource*)
     // (WinTrek/WinTrek.cpp:11271-11280): id-keyed loops retained by the caller,
     // plus the gunner's interior loop (PlaySoundIf, WinTrek/trekigc.cpp:1300-1314)
     // and the listener position the positional generic cues attenuate against.
-    private readonly Dictionary<short, SoundEffectInstance> _nativeLoops = new();
+    private readonly Dictionary<short, AudioVoice> _nativeLoops = new();
     private readonly PlaySoundIfSlot _gunnerInteriorSlot = new();
     private Allegiance.Core.Collision.Vector3? _listenerPosition;
 
@@ -228,17 +237,17 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private int _voices3DLastFrame;
     private SoundEffect _shipInt = null!;   // shipint — the station-interior loop component
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
-    private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
+    private readonly Dictionary<ProjectileEntity, AudioVoice> _projectileAmbients = new();
     // P237 — warp ambient loop (alephloop), one instance per warp within earshot,
     // keyed by the warp's real WarpId (the ClientWorld.Warps dictionary key).
     private SoundEffect _warpAmbient = null!;      // alephloop — alephSound, sounddef.mdl:385
-    private readonly Dictionary<short, SoundEffectInstance> _warpAmbients = new();
+    private readonly Dictionary<short, AudioVoice> _warpAmbients = new();
     // P236 — missile launch one-shot (lrgslideout), in-flight ambient loop
     // (mmissile), and the three scale-tiered explosion one-shots.
     private SoundEffect _missileLaunch = null!;   // lrgslideout — HornetMissileLaunch, sounddef.mdl:1302
     private SoundEffect _missileAmbient = null!;  // mmissile — HornetMissileFlight, sounddef.mdl:1303
     private readonly Dictionary<ExplosionSoundTier, SoundEffect> _explosions = new(); // explosionshockwave/ef24/ef120
-    private readonly Dictionary<short, SoundEffectInstance> _missileAmbients = new(); // keyed by MissileID (P234)
+    private readonly Dictionary<short, AudioVoice> _missileAmbients = new(); // keyed by MissileID (P234)
     // P260 — probe cues. Real single-default assets: the deploy one-shot is the
     // real dropobject wave (native deployProbeSound = dropobject, sounddef.mdl:369,
     // P755), and the ambient is the scanning-loop default (per-type ambientSound
@@ -247,30 +256,30 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private SoundEffect _mineDeploy = null!;      // P717 — dropmine (deployMineSound, sounddef.mdl:368)
     private SoundEffect _chaffDeploy = null!;     // P755 — dropobject (deployChaffSound, sounddef.mdl:367)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
-    private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
+    private readonly Dictionary<short, AudioVoice> _probeAmbients = new(); // keyed by ProbeId
     // P267/P756 — hull maneuvering-thruster loops. Native keeps separate
     // interior and exterior instances (trekigc.cpp:1317-1319 and :1341-1343)
     // and mutes the wrong volume bus by camera view; the bundled PCore001
     // assets happen to be the same pair for both buses, but the instances are
     // kept distinct so custom cores with different interior/exterior sounds
     // are honored.
-    private SoundEffectInstance? _turnThruster;                // adjust — smallShipTurnInteriorSound, sounddef id 300 (:1016)
-    private SoundEffectInstance? _turnThrusterExterior;        // adjust — smallShipTurnExteriorSound, sounddef id 340 (:1017)
-    private SoundEffectInstance? _turnThrusterExteriorCapital; // accelsmall — capitalShipTurnExteriorSound, sounddef id 360 (:1024)
+    private AudioVoice? _turnThruster;                // adjust — smallShipTurnInteriorSound, sounddef id 300 (:1016)
+    private AudioVoice? _turnThrusterExterior;        // adjust — smallShipTurnExteriorSound, sounddef id 340 (:1017)
+    private AudioVoice? _turnThrusterExteriorCapital; // accelsmall — capitalShipTurnExteriorSound, sounddef id 360 (:1024)
     // P267 — hull exterior loop (shipout), audible in the chase/exterior view
     // (native's always-on exterior muted by camera mode).
-    private SoundEffectInstance? _shipExterior;   // shipout — smallShipExteriorSound, sounddef id 180 (:1013)
+    private AudioVoice? _shipExterior;   // shipout — smallShipExteriorSound, sounddef id 180 (:1013)
     // P267 — station exterior ambient loop (shipout), one looped instance per
     // station within earshot, keyed by the station's real StationId
     // (ClientWorld.Stations key). Real default = the loop inside
     // ILStationExternalSound (sounddef id 380), see StationAmbientSoundCurve.
     private SoundEffect _stationAmbient = null!;      // shipout
-    private readonly Dictionary<short, SoundEffectInstance> _stationAmbients = new();
+    private readonly Dictionary<short, AudioVoice> _stationAmbients = new();
     // P787b — per-asteroid ambient loop (SIM-0345): native's AmbientSoundSite
     // on every asteroid (trekigc.cpp:1432-1434) plays the shared
     // asteroidSound = pitch-0.35 shipout loop (sounddef.mdl). Keyed by the
     // asteroid's real AsteroidId; one instance per rock in earshot.
-    private readonly Dictionary<short, SoundEffectInstance> _asteroidAmbients = new();
+    private readonly Dictionary<short, AudioVoice> _asteroidAmbients = new();
     // P451 — id → asset-stem table for the base UNDER-ATTACK / CRITICAL voice
     // cues, covering EXACTLY the SoundIDs the real PCore001 station types decode
     // for UnderAttackSound / CriticalSound (dump: garrison=820, outpost=821,
@@ -435,8 +444,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     // ripcordOnLoopSound = ImportWave("countdownStart") (sounddef.mdl:347), the
     // same countdown-tick wave native loops while a ripcord countdown runs;
     // miningSound = ThreeDSound(200, LoopingSound(miningsound)) (sounddef.mdl:379).
-    private SoundEffectInstance? _ripcordLoop;    // countdownstart — ripcordOnLoopSound
-    private SoundEffectInstance? _miningLoop;     // miningsound — miningSound
+    private AudioVoice? _ripcordLoop;    // countdownstart — ripcordOnLoopSound
+    private AudioVoice? _miningLoop;     // miningsound — miningSound
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -488,7 +497,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     // M-3 — the ambience one-shot lives in a ReplacingSlot so that replacing
     // it disposes the previous instance (instead of abandoning a stopped
     // instance undisposed every ~10s and accumulating leaked voice handles).
-    private readonly ReplacingSlot<SoundEffectInstance> _ambienceSlot = new(i => Safe(i.Dispose));
+    private readonly ReplacingSlot<AudioVoice> _ambienceSlot = new(i => Safe(i.Dispose));
     private int _ambienceLastIndex = -1;
     private readonly Random _rng = new();
 
@@ -507,7 +516,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     {
         public long Id;
         public SoundCategory Category;
-        public SoundEffectInstance? Instance;
+        public AudioVoice? Instance;
         public bool IsLoop;
         public bool Essential;      // always-admitted (never culled), still counted
         public float Loudness;      // target 0..1 pre-budget (from distance)
@@ -529,11 +538,50 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         public float BasePitch;              // template pitch (octaves) the 3D pass adds Doppler onto
         public float Pan;                    // last 3D solve result
         public float PitchDelta;
+        public SoundCone? Cone;
+        public Vector3 Facing;
+        public float TemplateGainDb;
     }
 
     private readonly List<Voice> _managedVoices = new();
     private long _nextVoiceId = 1;
-    private readonly VoiceBudgetConfig _voiceBudgetCfg = new(DesiredVoices: 16, MaxVoices: 24);
+    private VoiceBudgetConfig _voiceBudgetCfg = AudioQualityPresets.Budget(AudioQuality.Medium);
+    private AudioQuality _quality = AudioQuality.Medium;
+    public AudioQuality Quality
+    {
+        get => _quality;
+        set { _quality = AudioQualityPresets.Normalize(value); _voiceBudgetCfg = AudioQualityPresets.Budget(_quality); }
+    }
+    public VoiceBudgetConfig QualityBudget => _voiceBudgetCfg;
+    private readonly Dictionary<string, SoundPcm> _pcm = new(StringComparer.Ordinal);
+    private readonly RepeatFirePcmCache _repeatFire = new();
+    private readonly AudioDevice _device;
+    private bool _loadAttempted;
+    private SoundPcm Pcm(string stem)
+    {
+        if (!_pcm.TryGetValue(stem, out var pcm))
+            _pcm.Add(stem, pcm = SoundPcm.ReadContent(_content.RootDirectory, "Sounds/" + stem));
+        return pcm;
+    }
+    private AudioVoice AsrLoop(string stem, SoundTemplateSettings settings)
+    {
+        var pcm = Pcm(stem);
+        var template = settings.RepeatSeconds > 0 ? _repeatFire.Get(pcm, settings.RepeatSeconds)
+            : new AsrSoundTemplate(pcm, settings.LoopSeconds > 0
+                ? AsrRegion.FromSeconds(pcm, settings.LoopStartSeconds, settings.LoopSeconds) : AsrRegion.Whole(pcm));
+        return new AudioVoice(template) { Pitch = new PitchSoundTemplate(settings.PitchFactor).Octaves() };
+    }
+    private AudioVoice? TryAsrLoop(string stem, SoundTemplateSettings settings)
+    {
+        try { return AsrLoop(stem, settings); }
+        catch (Exception ex) { WarnOnce($"ASR sound unavailable: {ex.Message}"); return null; }
+    }
+    private void ReleaseVoice(AudioVoice inst)
+    {
+        inst.Release();
+        if (VoiceFor(inst) is { } voice) voice.IsLoop = false;
+        else inst.Dispose();
+    }
     private float _voiceAgeClock;
     private float _masterVolume = 1f;
     private readonly Dictionary<SoundCategory, float> _categoryVolumes = new();
@@ -573,7 +621,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         set { _logBudgetTelemetry = value; _lastTelemetryLog = DateTime.MinValue; }
     }
 
-    private long Track(SoundEffectInstance inst, SoundCategory cat, bool isLoop,
+    private long Track(AudioVoice inst, SoundCategory cat, bool isLoop,
         bool essential, float loudness, bool audible, bool started,
         Native3DRole role3D = Native3DRole.ProbeAmbient, float basePitch = 0f,
         bool has3DEmitter = false)
@@ -589,13 +637,13 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         return id;
     }
 
-    private Voice? VoiceFor(SoundEffectInstance inst) =>
+    private Voice? VoiceFor(AudioVoice inst) =>
         _managedVoices.FirstOrDefault(v => ReferenceEquals(v.Instance, inst));
 
     /// <summary>Store a tracked loop's per-frame loudness/audibility (from its
     /// distance) WITHOUT touching the instance — the budget settles the actual
     /// volume each frame.</summary>
-    private void SetTrackedLoudness(SoundEffectInstance inst, float loudness)
+    private void SetTrackedLoudness(AudioVoice inst, float loudness)
     {
         if (VoiceFor(inst) is { } v)
         {
@@ -604,7 +652,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         }
     }
 
-    private void ForgetVoice(SoundEffectInstance inst)
+    private void ForgetVoice(AudioVoice inst)
     {
         if (VoiceFor(inst) is { } v) _managedVoices.Remove(v);
     }
@@ -621,12 +669,12 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             StartOneShot(sfx, cat, volume);
     }
 
-    private SoundEffectInstance? StartOneShot(SoundEffect sfx, SoundCategory cat, float volume)
+    private AudioVoice? StartOneShot(SoundEffect sfx, SoundCategory cat, float volume)
     {
-        SoundEffectInstance? inst = null;
+        AudioVoice? inst = null;
         try
         {
-            inst = sfx.CreateInstance();
+            inst = new AudioVoice(sfx.CreateInstance());
             inst.Volume = Math.Clamp(volume * CategoryVolume(cat) * _masterVolume, 0f, 1f);
             inst.Play();
             Track(inst, cat, isLoop: false, essential: false,
@@ -734,7 +782,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
                 v.HasLastEmitter = true;
 
                 var result = Sound3DMix.Solve(
-                    new Voice3DState(v.Loudness, v.BasePitch, v.Emitter, v.Role3D),
+                    new Voice3DState(v.Loudness, v.BasePitch, v.Emitter, v.Role3D, v.Cone, v.Facing, v.TemplateGainDb),
                     listener, enabled3D: true);
                 // The 3D gain REPLACES the curve loudness (the planner's curve
                 // value returns next frame via SetTrackedLoudness); audibility
@@ -776,7 +824,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             bool ad = v.Essential || admitted.Contains(v.Id);
             if (!v.IsLoop)
             {
-                if (!ad) { if (v.Instance is { } o) { if (o.State == SoundState.Playing) Safe(o.Stop); Safe(o.Dispose); } }
+                if (!ad) { if (v.Instance is { } o) { if (o.State == SoundState.Playing) Safe(o.Stop); Safe(o.Dispose); v.Instance = null; } }
                 // P893 — positioned one-shots keep tracking the listener while
                 // they play (native updates every virtual buffer each frame).
                 else if (v.HasEmitter && _sound3DEnabled && v.Instance is { } pos)
@@ -855,7 +903,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// and callers' updates are no-ops.</summary>
     public bool IsLoaded { get; private set; }
 
-    public SoundManager(ContentManager content) => _content = content;
+    public SoundManager(ContentManager content, AudioDevice? device = null)
+    {
+        _content = content;
+        _device = device ?? new AudioDevice(diagnostic: Console.WriteLine);
+    }
 
     /// <summary>
     /// Load every cue from content and prepare the looping instances. Does not
@@ -866,6 +918,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// </summary>
     public void Load()
     {
+        if (_loadAttempted) return;
+        _loadAttempted = true;
+        if (!_device.TryInitialize()) return;
         try
         {
             _engine = Loop($"Sounds/{ShipLoopBeds.FighterMainThruster}");
@@ -1259,7 +1314,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// <summary>P893 — attach (or, with a null position, detach) a world emitter
     /// to an already-tracked instance: the per-frame position/velocity source
     /// native's <c>ModelPointSoundSource</c> provides (trekigc.cpp:453-541).</summary>
-    private void SetWorldEmitter(SoundEffectInstance inst, Native3DRole role,
+    private void SetWorldEmitter(AudioVoice inst, Native3DRole role,
         Allegiance.Core.Collision.Vector3? position)
     {
         if (VoiceFor(inst) is not { } v) return;
@@ -1317,29 +1372,50 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// silent NULL, exactly like native. Returns the instance native's call hands
     /// back (the caller may retain it for <c>PlaySoundIf</c>).
     /// </summary>
-    public SoundEffectInstance? StartSound(short soundId, NativeSoundSource? source)
+    public AudioVoice? StartSound(short soundId, NativeSoundSource? source)
     {
         if (!IsLoaded) return null;
         if (!NativeSoundDispatch.TryPlan(soundId, source, _listenerPosition, out var playback)) return null;
-        var sfx = LoadVoice(playback.Stem);
+        var settings = NativeSoundTemplateSettings.Resolve(soundId);
+        string stem = settings.Stem ?? playback.Stem;
+        var sfx = LoadVoice(stem);
         if (sfx is null) return null;
-        if (playback.Looping)
+        bool authoredLoop = playback.Looping || settings.LoopSeconds > 0 || settings.RepeatSeconds > 0;
+        if (authoredLoop)
         {
             if (_nativeLoops.TryGetValue(soundId, out var existing) && existing.State != SoundState.Stopped)
                 return existing;
-            SoundEffectInstance? loop = null;
+            AudioVoice? loop = null;
             try
             {
-                loop = sfx.CreateInstance();
-                loop.IsLooped = true;
+                loop = AsrLoop(stem, settings);
                 loop.Volume = Math.Clamp(playback.Volume * _masterVolume, 0f, 1f);
                 loop.Play();
                 _nativeLoops[soundId] = loop;
+                Track(loop, SoundCategory.Warning, isLoop: true, essential: false,
+                    loudness: playback.Volume, audible: true, started: true, basePitch: loop.Pitch);
+                ConfigureEffectSource(loop, source);
                 return loop;
             }
             catch { if (loop is not null) Safe(loop.Dispose); return null; }
         }
-        return StartOneShot(sfx, SoundCategory.Warning, playback.Volume);
+        var shot = StartOneShot(sfx, SoundCategory.Warning, playback.Volume);
+        if (shot is not null)
+        {
+            shot.Pitch = new PitchSoundTemplate(settings.PitchFactor).Octaves();
+            if (VoiceFor(shot) is { } voice) voice.BasePitch = shot.Pitch;
+            ConfigureEffectSource(shot, source);
+        }
+        return shot;
+    }
+
+    private void ConfigureEffectSource(AudioVoice instance, NativeSoundSource? source)
+    {
+        if (source is not { } emitter || VoiceFor(instance) is not { } voice) return;
+        SetWorldEmitter(instance, Native3DRole.ProbeAmbient, emitter.Position);
+        voice.Cone = emitter.Cone;
+        voice.Facing = ToXna(emitter.Facing);
+        voice.TemplateGainDb = emitter.GainDb;
     }
 
     /// <summary>P871 / SIM-0346 — native <c>PlaySoundIf</c>
@@ -1359,6 +1435,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
                 if (_retainedInstances.Remove(slot, out var playing))
                 {
                     bool looped = playing.IsLooped;
+                    ForgetVoice(playing);
                     Safe(playing.Stop);
                     Safe(playing.Dispose);
                     if (looped)
@@ -1369,7 +1446,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         }
     }
 
-    private readonly Dictionary<PlaySoundIfSlot, SoundEffectInstance> _retainedInstances = new();
+    private readonly Dictionary<PlaySoundIfSlot, AudioVoice> _retainedInstances = new();
     /// <summary>P871 / SIM-0371 — maintain the gunner interior loop
     /// (<c>WinTrek/trekigc.cpp:1300-1314</c>): play iff the local ship is boarded
     /// as a gunner, with the mounted turret hardpoint's <c>interiorSound</c>.
@@ -1854,7 +1931,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     }
 
     /// <summary>P465 — begin (or keep) a mount's sustained-fire burst loop: a
-    /// looping <c>SoundEffectInstance</c> of the weapon's <c>burstSound</c> wave,
+    /// looping <c>AudioVoice</c> of the weapon's <c>burstSound</c> wave,
     /// keyed by the firing mount id. Native keeps one such per-mount loop while
     /// <c>fFiringBurst</c> is true (trekigc.cpp:999-1004); this POC's own-shot
     /// echo drives it for the local ship's held fire. Starting an already-playing
@@ -1863,10 +1940,13 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     public void StartWeaponBurst(int mount, short burstSoundId)
     {
         if (!IsLoaded || _weaponBursts.ContainsKey(mount)) return;
-        var sfx = WeaponWaveByStem(WeaponSoundMap.BurstStem(burstSoundId));
+        var settings = NativeSoundTemplateSettings.Resolve(burstSoundId);
+        string stem = settings.Stem ?? WeaponSoundMap.BurstStem(burstSoundId);
+        var sfx = WeaponWaveByStem(stem);
         if (sfx is null) return;
-        var inst = sfx.CreateInstance();
-        inst.IsLooped = true;
+        AudioVoice inst;
+        try { inst = AsrLoop(stem, settings); }
+        catch (Exception ex) { WarnOnce($"burst sound unavailable: {ex.Message}"); return; }
         Safe(inst.Play);
         _weaponBursts[mount] = inst;
         Track(inst, SoundCategory.WeaponBurst, isLoop: true, essential: false,
@@ -1880,9 +1960,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         if (!IsLoaded) return;
         if (_weaponBursts.Remove(mount, out var inst))
         {
-            ForgetVoice(inst);
-            if (inst.State == SoundState.Playing) Safe(inst.Stop);
-            Safe(inst.Dispose);
+            ReleaseVoice(inst);
         }
     }
 
@@ -1909,7 +1987,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         if (!WeaponSoundMap.TryResolveActivation(activateSoundId, out var stem)) return;
         var sfx = WeaponWaveByStem(stem);
         if (sfx is null) return;
-        var inst = sfx.CreateInstance();
+        var inst = new AudioVoice(sfx.CreateInstance());
         inst.IsLooped = true;
         Safe(inst.Play);
         _weaponActivates[mount] = inst;
@@ -1965,7 +2043,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         if (!WeaponSoundMap.TryResolveTurn(turnSoundId, out var stem)) return;
         var sfx = WeaponWaveByStem(stem);
         if (sfx is null) return;
-        var loop = sfx.CreateInstance();
+        var loop = new AudioVoice(sfx.CreateInstance());
         loop.IsLooped = true;
         Safe(loop.Play);
         _turretTurn = loop;
@@ -1999,9 +2077,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             _stationInteriorSoundId = 0;
             if (action == AmbientSwitchRule.Action.Stop) return;
         }
-        var inst = _shipInt.CreateInstance();
-        inst.IsLooped = true;
-        Safe(() => inst.Pitch = -0.5f);   // PitchSound(0.5) — half rate
+        var inst = TryAsrLoop("shipint", new SoundTemplateSettings(PitchFactor: 0.5f));
+        if (inst is null) return;
         Safe(inst.Play);
         _stationInteriorAmbient = inst;
         _stationInteriorSoundId = interiorSoundId;
@@ -2042,8 +2119,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || key is null || _projectileAmbients.ContainsKey(key)) return;
-        var inst = _projectileAmbient.CreateInstance();
-        inst.IsLooped = true;
+        var inst = TryAsrLoop("erbeam", SoundTemplateSettings.Default);
+        if (inst is null) return;
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _projectileAmbients[key] = inst;
@@ -2091,7 +2168,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _warpAmbients.ContainsKey(warpId)) return;
-        var inst = _warpAmbient.CreateInstance();
+        var inst = new AudioVoice(_warpAmbient.CreateInstance());
         inst.IsLooped = true;
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
@@ -2155,7 +2232,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _missileAmbients.ContainsKey(missileId)) return;
-        var inst = _missileAmbient.CreateInstance();
+        var inst = new AudioVoice(_missileAmbient.CreateInstance());
         inst.IsLooped = true;
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
@@ -2394,7 +2471,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _probeAmbients.ContainsKey(probeId)) return;
-        var inst = _probeAmbient.CreateInstance();
+        var inst = new AudioVoice(_probeAmbient.CreateInstance());
         inst.IsLooped = true;
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
@@ -2492,9 +2569,10 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// audible in the chase/exterior camera view and silenced in the cockpit
     /// (mirroring how the interior hum behaves in the opposite view). No-op when
     /// audio is not loaded.</summary>
-    public void UpdateShipExterior(bool exteriorView)
+    public void UpdateShipExterior(bool exteriorView, bool capitalHull = false)
     {
         if (!IsLoaded || _shipExterior is not { } ext) return;
+        ext.Pitch = new PitchSoundTemplate(capitalHull ? 0.5f : 1f).Octaves();
         if (exteriorView)
         {
             SetLoopVolume(ext, 0.35f * _masterVolume);
@@ -2516,14 +2594,15 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _stationAmbients.ContainsKey(stationId)) return;
-        var inst = _stationAmbient.CreateInstance();
+        var inst = new AudioVoice(_stationAmbient.CreateInstance());
+        inst.Pitch = new PitchSoundTemplate(0.5f).Octaves();
         inst.IsLooped = true;
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _stationAmbients[stationId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
             loudness: volume, audible: volume > 0f, started: true,
-            role3D: Native3DRole.StationAmbient);
+            role3D: Native3DRole.StationAmbient, basePitch: new PitchSoundTemplate(0.5f).Octaves());
         SetWorldEmitter(inst, Native3DRole.StationAmbient, position);
     }
 
@@ -2569,15 +2648,15 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         Allegiance.Core.Collision.Vector3? position = null)
     {
         if (!IsLoaded || _asteroidAmbients.ContainsKey(asteroidId)) return;
-        var inst = _stationAmbient.CreateInstance();   // same shipout wave
+        var inst = new AudioVoice(_stationAmbient.CreateInstance());   // same shipout wave
         inst.IsLooped = true;
-        Safe(() => inst.Pitch = -0.35f);               // PitchSound(0.35)
+        Safe(() => inst.Pitch = new PitchSoundTemplate(0.35f).Octaves()); // native PitchSound(0.35)
         SetLoopVolume(inst, volume);
         Safe(inst.Play);
         _asteroidAmbients[asteroidId] = inst;
         Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
             loudness: volume, audible: volume > 0f, started: true,
-            role3D: Native3DRole.AsteroidAmbient, basePitch: -0.35f);
+            role3D: Native3DRole.AsteroidAmbient, basePitch: new PitchSoundTemplate(0.35f).Octaves());
         SetWorldEmitter(inst, Native3DRole.AsteroidAmbient, position);
     }
 
@@ -2751,7 +2830,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             index = (index + 1) % _ambienceVariants.Length;
         _ambienceLastIndex = index;
 
-        var inst = _ambienceVariants[index].CreateInstance();
+        var inst = new AudioVoice(_ambienceVariants[index].CreateInstance());
         inst.Volume = 0.22f;   // low, unobtrusive background bed (native: GainSound(-7, ...))
         Safe(inst.Play);
         // M-3 — slot replacement disposes the previous (now-stopped) instance
@@ -2759,18 +2838,18 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         _ambienceSlot.Replace(inst);
     }
 
-    private SoundEffectInstance Loop(string asset)
+    private AudioVoice Loop(string asset)
     {
         var sfx = LoadSound(asset);
-        var inst = sfx.CreateInstance();
+        var inst = new AudioVoice(sfx.CreateInstance());
         inst.IsLooped = true;
         return inst;
     }
 
-    private static void SetLoopVolume(SoundEffectInstance inst, float volume) =>
+    private static void SetLoopVolume(AudioVoice inst, float volume) =>
         Safe(() => inst.Volume = Math.Clamp(volume, 0f, 1f));
 
-    private static void EnsurePlaying(SoundEffectInstance inst)
+    private static void EnsurePlaying(AudioVoice inst)
     {
         if (inst.State != SoundState.Playing) Safe(inst.Play);
     }
@@ -2800,6 +2879,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
         _serializedActive.Clear();
         if (_disposed) return;
         _disposed = true;
+        IsLoaded = false;
+        _repeatFire.Clear();
+        _pcm.Clear();
         try
         {
             _engine?.Dispose();

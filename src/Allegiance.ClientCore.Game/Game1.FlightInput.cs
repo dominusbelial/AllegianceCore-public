@@ -2883,7 +2883,7 @@ public sealed partial class Game1
                         exteriorView: exteriorView,
                         capitalHull: capitalHull,
                         exteriorSoundId: ownHull.ManuveringThrusterExteriorSound);
-                    _sound?.UpdateShipExterior(exteriorView);
+                    _sound?.UpdateShipExterior(exteriorView, capitalHull);
 
                     // P787b — SIM-0411: the docked station's interior ambient
                     // (native trekigc.cpp:5076-5087: while docked at a station on
