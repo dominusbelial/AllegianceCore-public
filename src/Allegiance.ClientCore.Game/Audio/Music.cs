@@ -71,12 +71,18 @@ public sealed class Music : IDisposable
     /// <summary>The actual mix volume currently on the station bed's instance.</summary>
     public float StationActualVolume => _station?.Volume ?? 0f;
 
-    public Music(ContentManager content) => _content = content;
+    private readonly AudioDevice _device;
+    public Music(ContentManager content, AudioDevice? device = null)
+    {
+        _content = content;
+        _device = device ?? new AudioDevice(diagnostic: Console.WriteLine);
+    }
 
     /// <summary>Load real beds when supplied. Missing beds remain silent.
     /// Playback begins only after the player enables music.</summary>
     public void Load()
     {
+        if (!_device.TryInitialize()) return;
         _flight = Track(FlightAsset);
         _station = Track(StationAsset);
     }

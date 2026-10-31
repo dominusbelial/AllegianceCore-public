@@ -49,8 +49,8 @@ public sealed class P806OptionsMenuTests
         menu.Activate(State);                            // open Sound Options
         var rows = menu.Rows(State);
         // P893 added the positional-3D switch (a port addition — native's sound
-        // menu has no 3D toggle), so the submenu is music ×3 + 3D = 4 rows.
-        Assert.Equal(4, rows.Count);
+        // menu has no 3D toggle). P902 restores quality as a fifth row.
+        Assert.Equal(5, rows.Count);
         Assert.Equal("Music: on", rows[0].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleMusic, rows[0].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.MusicVolumeUp, rows[1].Command);

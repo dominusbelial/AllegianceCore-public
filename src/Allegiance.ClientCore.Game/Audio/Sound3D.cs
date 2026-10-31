@@ -34,7 +34,8 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// factories exist (<c>treksound.cpp:93-120</c>, sounddef's
 /// <c>ConeSoundTemplateFactory</c>) but zero <c>ConeSound(...)</c> declarations
 /// appear in the native artwork tree — so the port implements the math (tested)
-/// and applies no cones, exactly like native.</item>
+/// and applies no cones to bundled sounds, exactly like native. Effect sources
+/// may explicitly supply one through the same production mix.</item>
 /// <item><b>Doppler</b> — the engine's Doppler factor is the 1.0 default set in
 /// the engine constructor (<c>ds3dengine.cpp:237</c>); DirectSound applies it
 /// to the projected relative velocity of source and listener with its default
@@ -253,14 +254,17 @@ public readonly record struct World3DEmitter(Vector3 Position, Vector3 Velocity)
 /// <param name="BaseLoudness">The pre-3D loudness the planner/curve produced
 /// (used verbatim when 3D is off — today's behaviour).</param>
 /// <param name="BasePitch">The voice's template pitch in MonoGame octaves
-/// (e.g. the asteroid loop's −0.35), so the Doppler delta adds on top.</param>
+/// (e.g. the asteroid loop's log2(0.35)), so the Doppler delta adds on top.</param>
 /// <param name="Emitter">Current emitter position/velocity.</param>
 /// <param name="Role">Which native template family this voice belongs to.</param>
 public readonly record struct Voice3DState(
     float BaseLoudness,
     float BasePitch,
     World3DEmitter Emitter,
-    Native3DRole Role);
+    Native3DRole Role,
+    SoundCone? Cone = null,
+    Vector3 Facing = default,
+    float TemplateGainDb = 0);
 
 /// <summary>One world voice's 3D mix outputs for the frame.</summary>
 /// <param name="Loudness">Effective pre-budget loudness 0..1 (native gain:
@@ -290,10 +294,11 @@ public static class Sound3DMix
         Vector3 rel = voice.Emitter.Position - listener.Position;
         float dist = rel.Length();
         float db = Sound3DModel.DistanceGainDb(Native3DMix.MinDistance(voice.Role), dist);
-        // Cone attenuation: native applies cones only to non-listener-relative
-        // sources (ds3dvirtualbuffer.cpp:775-777); no artwork sound declares one
-        // (see Sound3DModel remarks), so no cone gain is added here — the math
-        // (Sound3DModel.ConeGainDb) is ported + tested for future use.
+        // Effect-side ConeSound/GainSound wrappers participate in the actual
+        // mix, including audibility. Omitted cones preserve the shipping mix.
+        db += voice.TemplateGainDb;
+        if (dist > 1e-4f && voice.Cone is { } cone)
+            db += cone.GainDb(voice.Facing, -rel);
         bool audible = db > Sound3DModel.MinAudibleDb;
         float pan = listener.HasBasis ? Sound3DModel.Pan(rel, listener.Right) : 0f;
         float pitchFactor = dist > 1e-4f
@@ -303,7 +308,8 @@ public static class Sound3DMix
         // view): native skips 3D processing entirely for that voice
         // (ds3dvirtualbuffer.cpp:723-726) — full volume, centred, unshifted.
         if (dist <= 1e-4f)
-            return new Voice3DResult(1f, true, 0f, 0f);
+            return new Voice3DResult(Sound3DModel.DbToLinear(voice.TemplateGainDb),
+                voice.TemplateGainDb > Sound3DModel.MinAudibleDb, 0f, 0f);
         return new Voice3DResult(Sound3DModel.DbToLinear(db), audible, pan,
             Sound3DModel.DopplerPitchOctaves(pitchFactor));
     }

@@ -75,6 +75,10 @@ public sealed class IntroPreferences
     /// 3D mix can be A/B'd by ear against the pre-P893 curve mix.</summary>
     public bool Enable3DSound { get; set; } = true;
 
+    /// <summary>Native midQuality default (ds3dengine.cpp:333), persisted by the
+    /// shared Sound Options menu. OpenAL presets control voice count.</summary>
+    public Audio.AudioQuality AudioQuality { get; set; } = Audio.AudioQuality.Medium;
+
     /// <summary>P761 — the pilot's profile description, edited on the character
     /// sheet (native CharInfoScreen OnButtonApply sends
     /// CHARACTER_INFO_EDIT_DESCRIPTION to the club server; this port has no

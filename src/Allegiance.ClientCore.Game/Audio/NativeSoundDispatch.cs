@@ -11,7 +11,8 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// (<c>WinTrek/trekigc.cpp:4945,4965-4973</c>). A null source is native's
 /// <c>NULL</c> — the cue plays unpositioned (cockpit range).
 /// </summary>
-public readonly record struct NativeSoundSource(Vector3 Position)
+public readonly record struct NativeSoundSource(Vector3 Position,
+    Vector3 Facing = default, SoundCone? Cone = null, float GainDb = 0)
 {
     /// <summary>
     /// <c>ThingSiteImpl::GetSoundSource(vectOffset)</c>
@@ -19,7 +20,7 @@ public readonly record struct NativeSoundSource(Vector3 Position)
     /// rotates into the model's frame; here the caller passes the already-world
     /// offset and the source is that point.
     /// </summary>
-    public NativeSoundSource WithWorldOffset(Vector3 offset) => new(Position + offset);
+    public NativeSoundSource WithWorldOffset(Vector3 offset) => this with { Position = Position + offset };
 }
 
 /// <summary>What a resolved <c>StartSound</c> asked the mixer to do.</summary>
