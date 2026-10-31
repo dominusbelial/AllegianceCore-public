@@ -26,7 +26,7 @@ using CompactQuant = Allegiance.Core.Wire.CompactQuant;
 /// walks <see cref="Models"/>, invoking each model's <c>Update</c> exactly as
 /// the C++ models loop does (<c>clusterIGC.cpp:241-253</c>).
 /// </remarks>
-public sealed class Sector : IClusterIgc
+public sealed partial class Sector : IClusterIgc
 {
     /// <summary>The underlying <c>OT_cluster</c> record.</summary>
     public DataClusterIGC Cluster { get; }
@@ -977,7 +977,10 @@ public sealed class Sector : IClusterIgc
     {
         if (timeUpdate <= LastUpdate) return;   // now > m_lastUpdate guard (clusterIGC.cpp:99)
         double dt = timeUpdate - LastUpdate;    // chunk length — the collision sweep width
+        bool started = Mission?.Stage == MissionStage.Started; // clusterIGC.cpp:103 captures once before callbacks
         UpdateCount++;
+        _nativeMotionTime = LastUpdate;
+        if (DefersMovement) (_nativeMovementStarts ??= []).Clear();
         LastUpdate = timeUpdate;
 
         // clusterIGC.cpp:162-198,231. The native inactive reset is the
@@ -1004,6 +1007,20 @@ public sealed class Sector : IClusterIgc
             if (Mission?.Stage == MissionStage.Started) ResolveConsumedRockVisibility();
         }
 
+        if (started && Mission?.NativeShipPhasesEnabled == true)
+        {
+            using var phaseScope = TickProfiler.Enter("sim.shipPhases");
+            (_nativeStoppedPlots ??= []).Clear();
+            // A fresh membership walk per phase admits ships added by an earlier
+            // phase. Recheck membership after every callback (clusterIGC.cpp:177-218).
+            foreach (var ship in _models.OfType<Ship>().ToArray())
+                if (_modelMembership.ContainsKey(ship)) ship.PreplotMove(timeUpdate);
+            foreach (var ship in _models.OfType<Ship>().ToArray())
+                if (_modelMembership.ContainsKey(ship) && ship.PlotMove(timeUpdate)) _nativeStoppedPlots.Add(ship);
+            foreach (var ship in _models.OfType<Ship>().ToArray())
+                if (_modelMembership.ContainsKey(ship) && !NativePlotStopped(ship)) ship.ExecutePlottedMove(timeUpdate);
+        }
+
         // Snapshot: the models loop must survive a model that self-terminates
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
         using (TickProfiler.Enter("sim.models"))
@@ -1014,11 +1031,22 @@ public sealed class Sector : IClusterIgc
                 if (!_modelMembership.ContainsKey(model)) continue; // a previous model's blast may destroy it
                 _updatingModel = model;
                 _modelStateTime = timeUpdate;
+                if (DefersMovement) _nativeMovementStarts![model] = model.LastUpdate;
                 try { model.Update(timeUpdate); }
                 finally { _updatingModel = null; }
             }
         }
 
+        if (DefersMovement) ResolveStationRegen((float)dt); // native ordinary station Update precedes contacts
+
+        if (Mission?.NativeCollisionQueueEnabled == true)
+        {
+            using var collisionScope = TickProfiler.Enter("sim.collisionQueue");
+            if (Active && started)
+                ResolveNativeCollisionQueue(timeUpdate, (float)dt);
+        }
+        else
+        {
         // The C++ collision block sits AFTER the models loop, still inside the
         // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
         // Ported as the combat pass below (projectile ↔ ship resolution).
@@ -1060,6 +1088,8 @@ public sealed class Sector : IClusterIgc
         // See ResolveShipStationCollisions.
         { using (TickProfiler.Enter("sim.collision")) ResolveShipStationCollisions(timeUpdate, (float)dt); }
 
+        }
+
         // P762b / SIM-0064 — apply accumulated mine damage AFTER every collision
         // pass, matching native's collision → mines → Move order
         // (clusterIGC.cpp:322-345). The port's Move runs inside each model's
@@ -1070,20 +1100,23 @@ public sealed class Sector : IClusterIgc
         // (clusterIGC.cpp:255); the stage/Active check lives inside.
         if (Mission?.Stage == MissionStage.Started)
             using (TickProfiler.Enter("sim.mines"))
-                ResolveMineDetonations(timeUpdate, (float)dt);
+                if (!DefersMovement) ResolveMineDetonations(timeUpdate, (float)dt);
+
+        if (DefersMovement && Active && started)
+            CompleteNativeMovement(timeUpdate);
 
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
         // (stationIGC.h:189-213) — see Station.Regenerate for the
         // armor-then-shield sequencing.
-        { using (TickProfiler.Enter("sim.station")) ResolveStationRegen((float)dt); }
+        { using (TickProfiler.Enter("sim.station")) if (!DefersMovement) ResolveStationRegen((float)dt); }
 
         // The aleph pass — one swept test of every ship and missile against
         // every warp's cone (ResolveAlephCollisions; before P777b this was the
         // ship-only ResolveWarpCollisions plus a separate point-in-sphere
         // warp-bomb trigger under "sim.combat").
-        { using (TickProfiler.Enter("sim.warp")) ResolveAlephCollisions(timeUpdate, (float)dt); }
+        { using (TickProfiler.Enter("sim.warp")) if (!DefersMovement) ResolveAlephCollisions(timeUpdate, (float)dt); }
 
         // Scheduled warp-bomb detonation half. A real missile reaching a warp
         // arms a WARP_BOMB(188) broadcast in the aleph pass above and a 15 s-
@@ -1093,7 +1126,7 @@ public sealed class Sector : IClusterIgc
         // Dock proximity pass — ship vs the sector's stations. See
         // ResolveDockCollisions for the spec, the friendly gate and the
         // simplified-radius reasoning.
-        { using (TickProfiler.Enter("sim.docking")) ResolveDockCollisions(timeUpdate); }
+        { using (TickProfiler.Enter("sim.docking")) if (!DefersMovement) ResolveDockCollisions(timeUpdate); }
 
         // Mining proximity pass — ship vs the sector's asteroids. See
         // ResolveMining gathers ready miners, arbitrates each rock, then pays
@@ -1121,7 +1154,7 @@ public sealed class Sector : IClusterIgc
         // other c_habmRescue, within the sum-of-spheres radius, is handed to the
         // host's PerformRescue (PLAYER_RESCUED(16) + placement). See
         // ResolveRescueEvents.
-        { using (TickProfiler.Enter("sim.rescue")) ResolveRescueEvents(); }
+        { using (TickProfiler.Enter("sim.rescue")) if (!DefersMovement) ResolveRescueEvents(); }
 
         // P301 — station-side pod rescue proximity pass. A drifting
         // c_habmLifepod within proximity of a SAME-side station whose type
@@ -1131,7 +1164,7 @@ public sealed class Sector : IClusterIgc
         // base (docking cancels the P279 oxygen timer). Detected here, drained
         // and performed by the host (Server.PerformStationRescue) — no wire
         // half in Core. See ResolveStationRescueEvents for the spec.
-        { using (TickProfiler.Enter("sim.rescue")) ResolveStationRescueEvents(); }
+        { using (TickProfiler.Enter("sim.rescue")) if (!DefersMovement) ResolveStationRescueEvents(); }
 
         // P780 — rescue-probe pod rescue pass. A drifting lifepod that touches
         // a probe whose type carries c_eabmRescue (own/allied pods) or
@@ -1141,7 +1174,7 @@ public sealed class Sector : IClusterIgc
         // drain; the host's probe branch (Server.PerformStationRescue) does the
         // placement. O(1) early-out when the sector holds no rescue probe.
         // See ResolveProbeRescueEvents for the spec.
-        { using (TickProfiler.Enter("sim.rescue")) ResolveProbeRescueEvents((float)dt); }
+        { using (TickProfiler.Enter("sim.rescue")) if (!DefersMovement) ResolveProbeRescueEvents((float)dt); }
 
         // Carrier-landing geometric pass — P116. Every friendly same-side ship
         // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
@@ -1150,14 +1183,14 @@ public sealed class Sector : IClusterIgc
         // shortcut. P754b: the landing is handled (and the relaunch performed)
         // inside the site callback, as native does (FedSrv.CPP:12814-13031). See
         // ResolveCarrierLandings.
-        { using (TickProfiler.Enter("sim.rescue")) ResolveCarrierLandings(); }
+        { using (TickProfiler.Enter("sim.rescue")) if (!DefersMovement) ResolveCarrierLandings(); }
 
         // Treasure pickup proximity pass — P123. A rescue-capable, player-typed
         // ship overlapping a c_tcCash treasure picks it up: the sector records
         // the (ship, treasure) pair; the host credits the ship's side, broadcasts
         // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
         // the treasure. See ResolveTreasurePickups for the spec.
-        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups(timeUpdate, (float)dt); }
+        { using (TickProfiler.Enter("sim.economy")) if (!DefersMovement) ResolveTreasurePickups(timeUpdate, (float)dt); }
 
         // Cross-side visibility sweep — P132. Every ship/station/probe in the
         // sector has its SeenBySide state recomputed against every side's
@@ -1474,7 +1507,9 @@ public sealed class Sector : IClusterIgc
     // at entry, behaviour identical).
     private readonly HashSet<Ship> _stationRescueDone = [];
 
-    private void ResolveStationRescueEvents()
+    private void ResolveStationRescueEvents() => ResolveStationRescueEventsCore(null, null);
+
+    private void ResolveStationRescueEventsCore(Ship? onlyShip, Station? onlyStation)
     {
         if (_stationRuntimes.Count == 0) return;
 
@@ -1482,6 +1517,7 @@ public sealed class Sector : IClusterIgc
         done.Clear();                             // one rescue per ship per tick
         foreach (var station in _stationRuntimes)
         {
+            if (onlyStation is not null && !ReferenceEquals(station, onlyStation)) continue;
             if (station.Dead) continue;
             // The native gate (shipIGC.cpp:862-867): the station type must
             // carry c_sabmRescue; RescueAny is not consulted for stations.
@@ -1490,6 +1526,7 @@ public sealed class Sector : IClusterIgc
             foreach (var model in _models)
             {
                 if (model is not Ship s) continue;
+                if (onlyShip is not null && !ReferenceEquals(s, onlyShip)) continue;
                 if (done.Contains(s)) continue;
                 // Flying, placed, alive, sided, in-mission — same eligibility
                 // the P115 rescue pass applies before its own gates.
@@ -2289,8 +2326,11 @@ public sealed class Sector : IClusterIgc
         using (TickProfiler.Enter("combat.detect")) events = detector.Detect(dt, CombatPair);
         using var dispatchScope = TickProfiler.Enter("combat.dispatch");
         var spent = new HashSet<IOrdnance>();
-        foreach (var ev in events)
-        {
+        foreach (var ev in events) ResolveCombatCollision(now, ev, spent);
+    }
+
+    private void ResolveCombatCollision(double now, CollisionEvent ev, HashSet<IOrdnance> spent)
+    {
             // Identify the ordnance and the non-ordnance target in whatever
             // registration order the detector returned them. A combat event is
             // an ordnance↔non-ordnance pair; since P100 the non-ordnance side can
@@ -2303,10 +2343,10 @@ public sealed class Sector : IClusterIgc
             var probe = ev.B.Data as Probe ?? ev.A.Data as Probe;
             var asteroid = ev.B.Data as Asteroid ?? ev.A.Data as Asteroid;
             var station = ev.B.Data as Station ?? ev.A.Data as Station;
-            if (ord is null || (ship is null && probe is null && asteroid is null && station is null)) continue;
-            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) continue;
-            if (ord is Missile { IsDud: true }) continue; // missileigc.cpp:428
-            if (spent.Contains(ord)) continue;            // already terminated this step
+            if (ord is null || (ship is null && probe is null && asteroid is null && station is null)) return;
+            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) return;
+            if (ord is Missile { IsDud: true }) return; // missileigc.cpp:428
+            if (spent.Contains(ord)) return;            // already terminated this step
 
             // P467 — the round's damage multiplier from its LAUNCHER's side
             // global attributes: a gun (Projectile) round scales by
@@ -2328,12 +2368,12 @@ public sealed class Sector : IClusterIgc
             // Impact positions at the collision time, exactly as the C++
             // HandleCollision computes them (projectileIGC.cpp:174-175):
             // position1 = ordnance pos + vel·tCollision, position2 = target pos + vel·tCollision.
-            var position1 = ord.Position + ord.Velocity * ev.TCollision;
+            var position1 = (DefersMovement ? (ReferenceEquals(ev.A.Data, ord) ? ev.A.Position : ev.B.Position) : ord.Position) + ord.Velocity * ev.TCollision;
 
             if (ship is not null)
             {
-                if (ship.Dead) continue;                  // already killed this step
-                if (ReferenceEquals(ord.Launcher, ship)) continue; // never hit your own launcher
+                if (ship.Dead) return;                  // already killed this step
+                if (ReferenceEquals(ord.Launcher, ship)) return; // never hit your own launcher
 
                 // Friendly-fire gate (shipIGC.cpp:1222-1228). Friendly fire is
                 // always off — ordnance never damages another ship on the same
@@ -2356,7 +2396,7 @@ public sealed class Sector : IClusterIgc
                     && shooter.SideId is { } shooterSide
                     && ship.SideId == shooterSide
                     && ord.Power >= 0f)
-                    continue;
+                    return;
 
                 // P549 — a warp-bomb missile striking a NON-warp target does NO
                 // damage (native missileigc.cpp:459-466): the `eabm & c_eabmWarpBomb`
@@ -2371,10 +2411,10 @@ public sealed class Sector : IClusterIgc
                     Terminate(warpBombMissile);                            // HandleCollision → Terminate (P754b: notifies the site)
                     if (warpBombMissile.Launcher is Ship wbLauncher)
                         wbLauncher.Mission?.Site.MissileDestroyedEvent(warpBombMissile);
-                    continue;
+                    return;
                 }
 
-                var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
+                var position2 = (DefersMovement ? (ReferenceEquals(ev.A.Data, ship) ? ev.A.Position : ev.B.Position) : ship.Position) + ship.CollisionVelocity * ev.TCollision;
 
                 // Damage = decoded ordnance Power × the launcher side's
                 // c_gaDamageGuns factor (P467); C++ projectileIGC.cpp:177-190.
@@ -2439,8 +2479,8 @@ public sealed class Sector : IClusterIgc
                 // friendly/allied launcher while friendly fire is off; a sensor
                 // or RescueAny probe always takes the hit. See
                 // Probe.ReceiveDamage.
-                if (probe.Dead) continue;              // already destroyed this step
-                if (ReferenceEquals(ord.Launcher, probe)) continue; // symmetric self-guard (never fires: a probe is never a launcher)
+                if (probe.Dead) return;              // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, probe)) return; // symmetric self-guard (never fires: a probe is never a launcher)
                 // P491: the armed probe's OWN round emerges from its own body
                 // (no emission-point offset in this port) — pass it through to
                 // its real target exactly as native's self-launch does (the
@@ -2449,7 +2489,7 @@ public sealed class Sector : IClusterIgc
                 // launcher for the wire broadcast, so the probe's round is
                 // tagged via Projectile.OriginProbe instead).
                 if (ReferenceEquals((ord as Projectile)?.OriginProbe, probe))
-                    continue;
+                    return;
 
                 var position2 = probe.Position;         // probe never moves → zero collision velocity (probeigc.cpp:115,142)
 
@@ -2503,8 +2543,8 @@ public sealed class Sector : IClusterIgc
                 // impact regardless of the damage result ("In any case, kill the
                 // projectile", projectileIGC.cpp:229-230), so the termination
                 // below is unconditional, exactly as the probe/asteroid branches.
-                if (station.Dead) continue;            // already destroyed this step
-                if (ReferenceEquals(ord.Launcher, station)) continue; // symmetric self-guard (never fires: a station is never a launcher)
+                if (station.Dead) return;            // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, station)) return; // symmetric self-guard (never fires: a station is never a launcher)
 
                 // Spawned-inside guard (P125): a round whose collision the swept
                 // detector reports at tCollision ≤ 0 began this step ALREADY inside
@@ -2519,7 +2559,7 @@ public sealed class Sector : IClusterIgc
                 // would otherwise self-destruct against the base at t=0. Native never
                 // sees this — a ship inside a station is docked and does not fire.
                 if (ev.TCollision <= 0f)
-                    continue;
+                    return;
 
                 // Station never moves → zero collision velocity (stationIGC.cpp:244
                 // c_mtStatic; a static body). position2 is its fixed centre.
@@ -2621,8 +2661,8 @@ public sealed class Sector : IClusterIgc
                 // SideId, no gated nested branch), so a rock takes direct fire
                 // from ANYONE, unconditionally, always. Do not add a gate that
                 // does not exist natively. See Asteroid.ReceiveDamage.
-                if (asteroid!.Dead) continue;             // already destroyed this step
-                if (ReferenceEquals(ord.Launcher, asteroid)) continue; // symmetric self-guard (never fires: an asteroid is never a launcher)
+                if (asteroid!.Dead) return;             // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, asteroid)) return; // symmetric self-guard (never fires: an asteroid is never a launcher)
 
                 // Asteroid never moves → zero collision velocity (asteroidigc.cpp:36
                 // c_mtStatic; SetRadius/SetPosition at asteroidigc.cpp:39-40, no
@@ -2695,7 +2735,7 @@ public sealed class Sector : IClusterIgc
             // both branches).
             if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
-        }
+
     }
 
     /// <summary>
@@ -4039,7 +4079,8 @@ public sealed class Sector : IClusterIgc
             // Native dt=(e.time-m_lastUpdate)-m_tOffset (clusterIGC.cpp:409,419).
             // The port integrates models separately; each clock identifies the
             // timestamp of its stored position, including a model mid-OnUpdate.
-            double stateTime = ReferenceEquals(target, _updatingModel) ? _modelStateTime : target.LastUpdate;
+            double stateTime = DefersMovement ? Math.Max(_nativeMotionTime, NativeMovementStart(target))
+                : ReferenceEquals(target, _updatingModel) ? _modelStateTime : target.LastUpdate;
             Vector3 p = target.Position + target.CollisionVelocity * (float)(e.Time - stateTime);
             if (!ExplosionAmount(e, p, radius, out float amount)) continue;
             using (TickProfiler.Enter("blast.damage"))
@@ -4483,6 +4524,11 @@ public sealed class Sector : IClusterIgc
         var warp = _alephWarps[hitWarp];
         var contact = start + (end - start) * hitT;
 
+        ResolveAlephMissileContact(missile, warp, contact, now);
+    }
+
+    private void ResolveAlephMissileContact(Missile missile, ResolvedWarp warp, Vector3 contact, double now)
+    {
         if (missile.MissileType.HasWarpBombCapability)
         {
             // (1) schedule the pair's detonation using the loaded core delay.
@@ -4602,10 +4648,12 @@ public sealed class Sector : IClusterIgc
     /// onto a station it transited onto. Freshly spawned ships have
     /// <c>LastWarpTime == -∞</c> so are ready immediately.</para>
     /// </remarks>
-    private void ResolveDockCollisions(double now)
+    private void ResolveDockCollisions(double now) => ResolveDockCollisionsCore(now, null, null);
+
+    private void ResolveDockCollisionsCore(double now, Ship? onlyShip, Station? onlyStation)
     {
         if (_stations.Count == 0) return;               // nothing to dock at
-        foreach (var model in _models.ToArray())
+        foreach (var model in onlyShip is null ? _models.ToArray() : new Model[] { onlyShip })
         {
             if (model is not Ship ship) continue;
             if (ship.Dead) continue;                      // the dead cannot dock
@@ -4632,6 +4680,7 @@ public sealed class Sector : IClusterIgc
             for (int si = 0; si < _stations.Count; si++)
             {
                 var station = _stations[si];
+                if (onlyStation is not null && station.StationId != onlyStation.StationId) continue;
 
                 // P550 — the dock's real arrival + type gates (native OT_station
                 // case, shipIGC.cpp:719-867). Resolve the station's runtime (its

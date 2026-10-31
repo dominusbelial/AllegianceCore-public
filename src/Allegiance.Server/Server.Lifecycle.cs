@@ -1415,6 +1415,9 @@ public sealed partial class Server
         // standard the server's own ghost gates compare deaths against.
         mission.Lives = g.Lives;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
+        mission.NativeShipPhasesEnabled = _config.Sim.NativeShipPhases;
+        mission.NativeCollisionQueueEnabled = _config.Sim.NativeCollisionQueue;
+        Console.WriteLine($"[boot] sim.nativeShipPhases={mission.NativeShipPhasesEnabled} sim.nativeCollisionQueue={mission.NativeCollisionQueueEnabled} (P906 experimental; default off)");
         mission.NativeGotoPlanEnabled = _config.Sim.ResolveNativeGotoPlan();
         Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (native NPC travel; false = legacy port steering)");
         g.Treasure.Validate();
@@ -1871,7 +1874,7 @@ public sealed partial class Server
         string trans = _transportMode == TransportMode.Pool
             ? $"transport=pool ({_transportPoolWorkers} workers)"
             : "transport=thread-per-peer";
-        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; broadcast.interestTiers={_broadcastInterestTiersEnabled}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
+        TickProfiler.SetLabel($"{bcast}; {trans}; shipUpdateModel={_shipUpdateModel}; broadcast.immutableSnapshot={_broadcastSnapshotEnabled}; broadcast.encodeOnce={_broadcastEncodeOnceEnabled}; broadcast.interestTiers={_broadcastInterestTiersEnabled}; sim.nativeShipPhases={_config.Sim.NativeShipPhases}; sim.nativeCollisionQueue={_config.Sim.NativeCollisionQueue}; sim.timeScale={_timeScale:R}");   // P612 — P604 label + sim time scale
     }
 
     private static string ParseShipUpdateModel(string modelStr)

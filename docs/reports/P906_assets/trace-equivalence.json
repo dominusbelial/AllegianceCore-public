@@ -1,0 +1,21 @@
+{
+  "dispatchHead": "84597d2c3ebdc441d18494cbf40a4d19d735cc54",
+  "base": {
+    "Seed": 906,
+    "Ticks": 400,
+    "Ships": 200,
+    "Rounds": 1000,
+    "TraceBytes": 4401600,
+    "Sha256": "7B5E31264FBC932385D09E120835FF595D2142EC472760837E7E2367DFACAE4D"
+  },
+  "workingTreeOff": {
+    "Seed": 906,
+    "Ticks": 400,
+    "Ships": 200,
+    "Rounds": 1000,
+    "TraceBytes": 4401600,
+    "Sha256": "7B5E31264FBC932385D09E120835FF595D2142EC472760837E7E2367DFACAE4D"
+  },
+  "equal": true,
+  "fixture": "400 fixed production Mission.Update ticks; 200 ships, 1000 projectiles and 24 fixed asteroids; random treasure regeneration disabled."
+}

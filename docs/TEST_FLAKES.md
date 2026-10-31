@@ -4,6 +4,55 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P906 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,778 passed / 15 failed / 3 optional private-pack skips**,
+12,796 executions in 540.1 s. All nine infrastructure checks passed; six
+executions exceeded ten seconds. The Fast sweep was not rerun.
+
+One task regression was found and fixed: extending a private station-rescue
+method with optional parameters broke P754's reflection invocation. The original
+private signatures are restored through separate core helpers. The complete
+`P754CallbackTests` cohort then passed **24/24** across three isolated runs. This
+is a repaired task regression, not a flake.
+
+All other failing or slow methods were repeated three times alone with server
+GC, pool/native/parallel/default-on GotoPlan and artwork. Environment controls
+keep physical scratch in this worktree; no unrelated production behavior or
+assertion was changed.
+
+| Method / family | Isolation | Finding |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail/fail/fail normally; pass/pass/pass with writable `XDG_CONFIG_HOME` | Sandbox rejects the normal profile write outside the worktree. Redirecting the profile/cache into task scratch passes; no product edit. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass/pass/pass; 3.741/3.875/4.324 s | Fast timing only (10.937 s); same family recorded under P904. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass/pass/pass; 3.276/3.271/3.308 s | Fast timing only (12.119 s), previously ledgered. |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass/pass/pass; 1.577/1.593/1.621 s | Parallel sweep join timeout (28.960 s); same known family. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 6/6 pass across three method runs; 2.998–4.036 s/case | Fast timing for civ 25 (11.948 s); previously ledgered. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 9/9 pass across three method runs; 3.412–5.433 s/case | Fast timing for civ 35 (10.116 s); purchase assertions pass alone. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass/pass/pass; 0.588/0.601/0.581 s | Known stale dock-status receipt (expected -1, actual 1051), matching P904. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail/fail/fail; 0.994/1.043/1.062 s | Existing receipt/simulation-clock boundary: 31.000000000000309, 31.30 and 32.20 against [28,31]. The same family has unmodified-HEAD failures documented below. Remains open. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail; 1.191/1.247/1.251 s | Existing null DefendTarget signature, matching P904/P901 and their base controls. Remains open. |
+| `P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod` | pass/pass/pass; 0.344/0.412/0.350 s | Sweep missed the rescue tick budget; assertions pass alone. |
+| `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | pass/pass/pass; 0.804/0.906/0.928 s | Same rescue-budget family already recorded below; no default rescue/Goto policy change. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass; 9.565/10.035/9.649 s | Sweep 10.536 s; timing remains marginal and one isolated pass also exceeds ten seconds. |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | pass/pass/pass; 0.069/0.060/0.074 s | Sweep missed the global profiler's top-allocation line during concurrent tests; profiler code unchanged. |
+| `P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets` | pass/pass/pass; 0.006/0.007/0.006 s | Sweep's global step-attribution sample was empty; standalone assertions pass. |
+| `PlayerBundlePathsTests` | same five failures in each normal 9-case class run; 27/27 pass across three descriptor-control runs | Worktree TMPDIR places the synthetic executable under this checkout's local.env. A `/proc/<controller>/fd/<directory>` alias removes that lexical ancestor while retaining physical files in scratch. Same environment issue documented under P904/P903. |
+
+Showcase never-parks passed **5/5**, serially with artwork and all experimental
+flags off. Each run reached 24/30 objectives, recorded real shots/hits and asserted
+zero simulation-stage failures. Test durations: **215.204 / 460.195 / 221.579 /
+228.158 / 196.831 s**; maximum stopped-with-target interval **0.907 s**. This
+matches P904/P903's saved 5/5 baseline pass rate. The long second observation
+needed 456.5 s to meet the unchanged coverage conditions; no controlled showcase
+performance A/B is claimed and no assertion was weakened. See the
+[showcase receipts](reports/P906_assets/showcase-summary.json).
+
+See [P906 report](reports/P906_REPORT.md),
+[Fast receipt](reports/P906_assets/fast-summary.json), and
+[isolation receipts](reports/P906_assets/failures-summary.json). Raw logs/TRX
+remain under `.scratch/p906/fast/` and `.scratch/p906/failures/`.
+
 ## P904 verification (2026-10-31 UTC)
 
 One Fast sweep: **12,737 passed / 12 failed / 3 optional private-pack skips**, 12,752 executions in 538.7 s (including the runner’s scheduled quarantine executions). All nine infrastructure checks passed. Five Fast executions exceeded ten seconds; one was the failing missile-lock case. The Fast sweep was not rerun.

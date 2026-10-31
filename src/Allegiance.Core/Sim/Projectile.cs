@@ -116,6 +116,6 @@ public sealed class Projectile : Model, IOrdnance
                 ProjectileType.BlastPower * damageScale, ProjectileType.BlastRadius,
                 _timeExpire, expiryPos, Launcher), _timeExpire);
         }
-        Position += Velocity * (float)dt;
+        if (!_sector.DefersMovement) Position += Velocity * (float)dt;
     }
 }

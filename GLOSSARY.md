@@ -134,6 +134,18 @@ list in **reverse**.
   Native: `Igc/common.cpp:1157-2333`, `Igc/shipIGC.cpp:2795-2833`.
   Local A/B and independent C++ formula trace: `tools/p817-gotoplan-proof/`;
   report `docs/reports/P817_NATIVE_GOTOPLAN.md`.
+- **Experimental native tick order (P906)** — independent, default-off server JSON
+  `sim.nativeShipPhases` and `sim.nativeCollisionQueue` bind to each mission in
+  `src/Allegiance.Server/Server.Lifecycle.cs`. Ship-wide preplot/plot/execute
+  helpers live in `src/Allegiance.Core/Sim/Ship.TickOrder.cs`; the common swept
+  contact timeline, bounce recalculation and final movement live in
+  `src/Allegiance.Core/Model/Sector.TickOrder.cs`; zero-duration boundary tests
+  use `src/Allegiance.Core/Collision/NarrowPhase.cs`. Native:
+  `Igc/clusterIGC.cpp:170-345,592-706`, `_Utility/HitTest.cpp:187-202`. Existing `sim.nativeBroadcastOrder`
+  remains separate and default off (`FedSrv/FedSrv.CPP:4237-4254`). All three
+  rows remain partial pending the rig decision; limitations and the local
+  200-client proof (`tools/p906-tick-order-proof/`) are recorded in
+  `docs/reports/P906_REPORT.md`.
 - **Mission replay identity (P903)** — first generation and rotation bookkeeping
   in `src/Allegiance.Server/Server.Lifecycle.cs` and
   `src/Allegiance.Server/Server.Lobby.cs` feeds `Mission.ReplayCount` and cached

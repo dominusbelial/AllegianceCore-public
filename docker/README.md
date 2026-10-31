@@ -212,6 +212,15 @@ profiler label record the resolved value. Keep the other broadcast settings the
 same when comparing the two modes. See
 [`P788C_NATIVE_TICK_ORDER_2.md`](../docs/reports/P788C_NATIVE_TICK_ORDER_2.md).
 
+P906 adds two independent experimental server JSON settings (both default
+`false`): `sim.nativeShipPhases` gathers all ships' preplot, plot and execute
+steps before ordinary model updates; `sim.nativeCollisionQueue` uses one swept
+contact timeline with bounce recalculation and defers movement until contacts
+and accumulated mine damage finish. Set these in the mounted server config.
+Keep `sim.nativeBroadcastOrder` off while testing either new setting. Do not
+combine experiments for acceptance: each requires Claude's separate rig A/B.
+See [`P906_REPORT.md`](../docs/reports/P906_REPORT.md) for coverage and limitations.
+
 ### Native game goals (P832a)
 
 Set `games[].goals` in the mounted server JSON, for example

@@ -1,0 +1,40 @@
+{
+  "dispatchHead": "84597d2c3ebdc441d18494cbf40a4d19d735cc54",
+  "solution": {
+    "command": "dotnet build AllegianceCore.slnx -v:q -nologo",
+    "warnings": 0,
+    "errors": 0,
+    "passed": true
+  },
+  "tools": {
+    "command": "tools/build-tools.sh",
+    "projects": 102,
+    "warnings": 0,
+    "errors": 0,
+    "passed": true
+  },
+  "serverAot": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true",
+    "warnings": 0,
+    "errors": 0,
+    "passed": true
+  },
+  "dockerComposeConfig": {
+    "passed": true
+  },
+  "glossaryLinks": {
+    "passed": true,
+    "distinctPaths": 438
+  },
+  "p868Audit": {
+    "passed": true,
+    "rows": 200,
+    "A": 79,
+    "B": 119,
+    "C": 2
+  },
+  "notes": [
+    "Raw build logs are in .scratch/p906/; no commits or pushes performed.",
+    "Only a source-comment citation was corrected after the final build; executable code is unchanged."
+  ]
+}

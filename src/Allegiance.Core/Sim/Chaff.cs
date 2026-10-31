@@ -149,6 +149,6 @@ public sealed class Chaff : Model
             _radius = r > 1.0f ? r : 1.0f;
         }
 
-        Position += Velocity * (float)dt;   // constant velocity — no acceleration (chaffigc.cpp:52,59)
+        if (!_sector.DefersMovement) Position += Velocity * (float)dt;   // constant velocity — no acceleration (chaffigc.cpp:52,59)
     }
 }
