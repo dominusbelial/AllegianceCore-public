@@ -66,7 +66,9 @@ public sealed partial class SkirmishHost : IDisposable
         try
         {
             var config = options.CreateConfig(artwork);
-            await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config, Benchmark.BenchmarkJson.Default.ServerConfig), cancellationToken);
+            // A LAN game's password never reaches the temp folder; Boot takes the config below.
+            if (!options.HostLan)
+                await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config, Benchmark.BenchmarkJson.Default.ServerConfig), cancellationToken);
             host._server.TickMeasured += ms => { lock (host._benchmarkTicks) if (host._measureTicks && host._benchmarkTicks.Count < 100000) host._benchmarkTicks.Add(ms); };
             try { host._server.Boot(config); }
             catch (System.Net.Sockets.SocketException ex) when (options.HostLan)

@@ -65,8 +65,9 @@ interface endpoints and current seated players (humans + bots), refreshed once
 per second. It only reads interfaces; it does not probe firewall/NAT, select a
 preferred route, or open ports automatically. Friends select the LAN listing or
 type an endpoint in Direct Connect. **Tab** edits the join password on either
-screen. Passwords are not stored in player preferences; the existing temporary
-server config contains the launch password, like a dedicated server config.
+screen. Passwords are not stored in player preferences, and a LAN host writes no
+temporary server config (Claude's review); the bot driver gets it through its
+private process environment.
 The password is an access gate on the existing unencrypted game transport.
 
 Bots keep their seats. Small starts with four combat bots beside the host on
