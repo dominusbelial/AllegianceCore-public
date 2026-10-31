@@ -66,7 +66,7 @@ public sealed partial class Server
         {
             var p = _sendPeerWindows[i];
             if (p.EnqueuedBytes == 0 && p.WrittenBytes == 0 && p.QueuedBytes == 0) continue;
-            Console.WriteLine($"[send-peer] peer={p.Peer} enqueuedBytes={p.EnqueuedBytes} writtenBytes={p.WrittenBytes} queuedBytes={p.QueuedBytes} noProgressMs={p.NoProgressMs}");
+            Console.WriteLine($"[send-peer] peer={p.Peer} enqueuedBytes={p.EnqueuedBytes} writtenBytes={p.WrittenBytes} queuedBytes={p.QueuedBytes} noProgressMs={p.NoProgressMs} inflightBytes={p.InflightBytes} supersededFrames={p.SupersededFrames} pollBlocked={p.PollBlocked}");
         }
         if (window.DrainCollapsed)
             Console.WriteLine(FormattableString.Invariant($"[send-stall] windowSecs={window.Seconds:0.000} enqueuedBytes={window.EnqueuedBytes} writtenBytes={window.WrittenBytes} queuedBytes={window.QueuedBytes} queueGrowthBytes={window.QueueGrowthBytes} workers={window.Workers} peers={window.Peers}"));

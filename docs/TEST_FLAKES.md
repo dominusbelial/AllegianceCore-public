@@ -4,6 +4,42 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P898 verification (2026-10-30)
+
+One Fast run on base `b4a4721a` plus the default-off TCP batching experiment:
+**11,903 passed / 10 failed / 3 optional skips**, 11,916 executions in 535.8 s.
+All nine infrastructure checks passed. Three executions exceeded the 10 s Fast
+limit. The complete sweep was not rerun. Receipts:
+`.scratch/p898/fast/summary.json` and `.scratch/p898/tests/`; compact isolation
+receipts are included with `docs/reports/P898_REPORT.md`.
+
+| Failure / timing offender | Three standalone results | Checked cause / disposition |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail/fail/fail with original environment; pass/pass/pass with scratch `XDG_CONFIG_HOME` (0.065 s each) | Filesystem sandbox makes the real `~/.config/AllegianceCore/player.json` read-only. The unchanged test writes/restores it at line 237. This is an environment obstruction, not a transport failure. No product/profile code changed. |
+| `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository(Artwork)`, `MissingDirectoryHasNoDefault(Artwork/NativeSource)`, `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory` (five cases) | all five fail 3/3 with worktree-local `TMPDIR`; all nine class cases pass 3/3 when the same scratch storage is mounted outside `/work` in a local container | Lane rules place temporary fixtures under the real checkout. `ExternalPaths.FindRepoRoot` walks from the fake executable directory into the actual checkout and reads its `local.env`, defeating the tests' outside-repository premise. The container bind keeps physical scratch storage in the worktree while restoring the intended path topology. No resolver/test code changed. |
+| `BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast` | pass/pass/pass (0.193/0.192/0.177 s) | Sweep saw null `KilledEvidence` instead of `observed-lost` at `P896FinaleEvidenceTests.cs:244`. Unchanged bot/model fixture; specific shared-state or scheduling trigger not established. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass/pass/pass (1.797/1.736/1.844 s) | Sweep timed out after 38.179 s with full lock but without the partial tip. Also a Fast timing offender. No missile/lock/tip code changed; receipt timing intermittency. |
+| `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | pass/pass/pass (0.901/1.762/0.866 s) | Sweep's diverter failed to rescue before its tick budget; unchanged rescue/Goto logic. No claim that CPU load alone is the cause. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail (0.830/0.805/0.809 s) | Same null `DefendTarget` failure previously reproduced on unmodified HEAD and recorded under P892c/P892d/P895. TCP batching defaults off and no wingman/simulation logic changed; existing failure remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passing timing offender) | pass/pass/pass (9.863/9.882/9.675 s) | Sweep passed in 10.510 s, just over its 10 s limit. Existing slow native-physics fixture; no warp code changed. |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (passing timing offender) | pass/pass/pass (1.628/1.634/1.586 s) | Sweep passed in 10.570 s. Unchanged artwork/native-map fixture; passing outside the concurrent sweep. |
+
+The final broad transport filter (including existing Perf-tagged cases) had
+**216 passed / 1 failed** out of 217. The earlier 215-case pass is also retained.
+`ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout`
+failed its immediate `HeavyShipsUpdates.Count > 0` receipt assertion at line 283
+in 0.170 s, then passed **3/3 alone** (0.450/0.429/0.433 s). This exact assertion
+is already ledgered in earlier transport/integration sweeps; it does not wait for
+asynchronous receipts after its tight 300-tick loop. No stdout or broadcast
+behavior changed in P898. Receipts: `transport-complete.trx` and
+`stdout-isolation-{1,2,3}.trx` under `.scratch/p898/tests/`. This is a separate
+transport-filter observation, not an extra failure in the one Fast sweep above.
+
+The measured TCP sweep and the required showcase repetitions also ran on this
+shared host. Load averages accompany every performance run in the P898 JSON;
+no synthetic CPU load was used. These observations do not reclassify persistent
+failures or erase the failed Fast result.
+
 ## 2026-10-30 Claude triage: batch sweep `73b375bc`, merged master `c395ed6a`
 
 | Test | Evidence | Verdict |

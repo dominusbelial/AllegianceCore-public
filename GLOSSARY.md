@@ -328,6 +328,15 @@ list in **reverse**.
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **TCP small-write pressure (P898)** — fixed 8 KiB send buffers can exhaust
+  kernel packet memory at WAN RTTs even with zero loss. Default-off
+  `transport.tcpBatchWrites` gathers up to 32 pending frames (16 KiB gathering
+  budget) per nonblocking pool send, retaining framing, partial progress and
+  existing liveness deadlines: `src/Allegiance.Core/Transport/TcpTransport.cs`.
+  Counters: `src/Allegiance.Core/Transport/SendDiagnostics.cs`; regression tests:
+  `tests/Allegiance.Core.Tests/Transport/P898TcpWriteTests.cs`; private-container
+  kernel-netem sweep: `tools/p895-transport-proof/run-tcp-delay-matrix.py`.
+  Report: `docs/reports/P898_REPORT.md`.
 - **Worker-pool sizing / host profile (P889)** — one resolver turns logical
   cores × expected players × `hostProfile` (`dedicated` | `shared`) into the
   parallel-build and transport-pool sizes, replacing the independent

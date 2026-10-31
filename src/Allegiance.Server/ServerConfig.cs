@@ -849,6 +849,9 @@ public sealed class BroadcastConfig
 /// </summary>
 public sealed class TransportConfig
 {
+    /// <summary>P898 experiment, default off: bounded gather writes in the TCP
+    /// pool. Keeps the existing small send buffer and liveness deadlines.</summary>
+    public bool TcpBatchWrites { get; set; }
     /// <summary>P895: tcp (default), or udp to add a UDP listener alongside TCP.
     /// ALLEGIANCE_TRANSPORT_PROTOCOL overrides this setting.</summary>
     public string? Protocol { get; set; }

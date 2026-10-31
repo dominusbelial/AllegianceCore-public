@@ -402,6 +402,11 @@ public sealed class TcpTransport : IServerTransport
     /// </summary>
     public bool ReliableOneShot { get; set; }
 
+    /// <summary>P898 experiment, default off: gather at most 32 queued frames
+    /// into one nonblocking pool socket send (16 KiB gathering budget). TCP frame
+    /// boundaries, partial progress, and the 8 KiB socket buffer are preserved.</summary>
+    public bool TcpBatchWrites { get; init; }
+
     public void Host(ushort port = 0) => Host(port, null);
 
     public void Host(ushort port, IPAddress? bindAddress)
@@ -714,6 +719,7 @@ public sealed class TcpTransport : IServerTransport
                 Reliable = Reliable,
                 ReliableOneShotPark = ReliableOneShot,
                 ServerCounters = ServerCounters,
+                BatchWrites = TcpBatchWrites && _mode == TransportMode.Pool,
             };
             lock (_gate)
             {
@@ -1454,6 +1460,12 @@ public sealed class TcpTransport : IServerTransport
         // experimental park-lane switch, copied from the owning transport.
         internal ReliableTelemetry? Reliable;
         internal bool ReliableOneShotPark;
+        internal bool BatchWrites;
+        private Queue<QueuedFrame>? _writeBatch;
+        private List<ArraySegment<byte>>? _batchSegments;
+        private bool _batchSendActive;
+        private long _batchBytes;
+        private long _supersededFrames, _pollBlocked;
         private long _enqueuedBytes, _writtenBytes, _reportedEnqueued, _reportedWritten;
         // Classification is diagnostic only, independent of IsHuman (which
         // controls liveness policy). Greeting classification covers join traffic.
@@ -1497,6 +1509,7 @@ public sealed class TcpTransport : IServerTransport
         // writes, would-block, and timeout behaviour without OS socket timing.
         // When set, SendInflight consults it instead of the real socket/stream.
         internal Func<byte[], int, int, SendOutcome>? SendOverride = null; // set by tests via InternalsVisibleTo/reflection
+        internal Func<IList<ArraySegment<byte>>, SendOutcome>? BatchSendOverride = null;
 
         public PeerSender(NetworkStream stream, TcpClient tcpClient, Action<DisconnectReason> onDead)
         {
@@ -1560,7 +1573,7 @@ public sealed class TcpTransport : IServerTransport
                 bool wasEmpty = _orderedQueue.First is null
                                 && _streamQueue.First is null
                                 && _parkQueue.First is null
-                                && _inflight is null;
+                                && _inflight is null && _batchBytes == 0;
 
                 if (coalesceKey != 0)
                 {
@@ -1573,6 +1586,7 @@ public sealed class TcpTransport : IServerTransport
                         // frame keeps its stream-lane position and the byte
                         // accounting stays exact.
                         _queuedBytes -= existing.Value.Length;
+                        _supersededFrames++;
                         Egress?.Record(existing.Value.Frame.AsSpan(0, existing.Value.Length), EgressHarness, true, EgressEvent.Coalesced);
                         Reliable?.RecordCoalesced(ClassOf(coalesceKey, existing.Value.Guaranteed));
                         ReturnFrame(existing.Value);
@@ -1585,7 +1599,7 @@ public sealed class TcpTransport : IServerTransport
                         // capacity (guaranteed traffic is never dropped here).
                         // Streaming ship-state frames are sent non-guaranteed,
                         // so they are the natural shed candidates.
-                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        while (_queuedBytes + _batchBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
                         var node = RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled));
                         _streamQueue.AddLast(node);
                         _coalesceNodes[coalesceKey] = node;
@@ -1611,7 +1625,7 @@ public sealed class TcpTransport : IServerTransport
                     }
                     else
                     {
-                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        while (_queuedBytes + _batchBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
                         _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
                         _queuedBytes += length;
                         if (guaranteed) Reliable?.RecordOneShotParked(false);
@@ -1644,9 +1658,9 @@ public sealed class TcpTransport : IServerTransport
                     Interlocked.Exchange(ref _lastWriteProgressUtcTicks, now.Ticks);
                     _overflowSinceUtc = null;
                 }
-                else if (_orderedQueue.First is not null || _streamQueue.First is not null || _parkQueue.First is not null || _inflight is not null)
+                else if (_orderedQueue.First is not null || _streamQueue.First is not null || _parkQueue.First is not null || _inflight is not null || _batchBytes != 0)
                 {
-                    _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
+                    _overflowSinceUtc = _queuedBytes + _batchBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
                     long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
                     // P619c — a connected HUMAN client gets a longer no-progress
                     // grace, and its overflow-disconnect is DISABLED: coalescing
@@ -1678,7 +1692,7 @@ public sealed class TcpTransport : IServerTransport
                 // exemption, so a guaranteed-only flood (e.g. PING reply
                 // amplification) that nothing can shed must never be allowed to
                 // grow a peer's queue past a bounded size.
-                if (_queuedBytes > HardCapBytes)
+                if (_queuedBytes + _batchBytes > HardCapBytes)
                 {
                     _disconnected = true;
                     _reason = DisconnectReason.QueueHardCap;
@@ -1739,7 +1753,11 @@ public sealed class TcpTransport : IServerTransport
                 // SendOverride fake sink is installed (P645 test seam), the test
                 // controls writability through the sink, so don't gate on the
                 // real socket.
-                if (SendOverride is null && !SocketReady()) return DrainResult.Blocked;
+                if (SendOverride is null && !SocketReady())
+                {
+                    _pollBlocked++;
+                    return DrainResult.Blocked;
+                }
             }
             // Outside the lock: one non-blocking socket send of the in-flight
             // frame's remaining bytes. Reports partial progress / would-block,
@@ -1758,10 +1776,15 @@ public sealed class TcpTransport : IServerTransport
             lock (_sync)
             {
                 long written = Interlocked.Read(ref _writtenBytes);
-                long queued = _queuedBytes + (_inflight is not null ? _inflightLength - _inflightOffset : 0);
+                long queued = _queuedBytes + _batchBytes + (_inflight is not null ? _inflightLength - _inflightOffset : 0);
                 var row = new PeerSendWindow(id, _enqueuedBytes - _reportedEnqueued,
                     written - _reportedWritten, queued, queued > 0
-                        ? Math.Max(0, (DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastWriteProgressUtcTicks)) / TimeSpan.TicksPerMillisecond) : 0);
+                        ? Math.Max(0, (DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastWriteProgressUtcTicks)) / TimeSpan.TicksPerMillisecond) : 0)
+                {
+                    InflightBytes = _batchBytes + (_inflight is null ? 0 : _inflightLength - _inflightOffset),
+                    SupersededFrames = _supersededFrames,
+                    PollBlocked = _pollBlocked,
+                };
                 _reportedEnqueued = _enqueuedBytes;
                 _reportedWritten = written;
                 return row;
@@ -1824,6 +1847,12 @@ public sealed class TcpTransport : IServerTransport
         private bool PromoteHeadLocked()
         {
             if (_inflight != null) return true;
+            if (_writeBatch?.TryDequeue(out var batched) == true)
+            {
+                _batchBytes -= batched.Length;
+                SetInflight(batched);
+                return true;
+            }
             LinkedListNode<QueuedFrame> node;
             // P813d — the reliable park lane drains FIRST (one-shots ahead of
             // everything); then the ordered lane; then the stream lane.
@@ -1836,16 +1865,110 @@ public sealed class TcpTransport : IServerTransport
             // key so the NEXT enqueue for that key appends fresh instead of
             // pointing at this (now-consumed) node.
             if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
-            _inflight = node.Value.Frame;
-            _inflightLength = node.Value.Length;
-            _inflightPooled = node.Value.Pooled;
-            _inflightOffset = 0;
-            _inflightStream = node.Value.CoalesceKey != 0;
+            SetInflight(node.Value);
             _queuedBytes -= _inflightLength;
             RecycleNode(node);
             if (_parkQueue.First is null && _orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
-            else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+            else if (_queuedBytes + _batchBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
+        }
+
+        private void SetInflight(QueuedFrame frame)
+        {
+            _inflight = frame.Frame;
+            _inflightLength = frame.Length;
+            _inflightPooled = frame.Pooled;
+            _inflightOffset = 0;
+            _inflightStream = frame.CoalesceKey != 0;
+        }
+
+        // One writer owns the batch until Send has returned, including during
+        // Close. Enqueue can only supersede nodes still in the pending lanes.
+        private DrainResult SendBatch()
+        {
+            lock (_sync)
+            {
+                if (_disconnected) return DrainResult.Dead;
+                _batchSendActive = true;
+                _writeBatch ??= new(32);
+                _batchSegments ??= new(32);
+            }
+            try
+            {
+                lock (_sync)
+                {
+                    _batchSegments.Clear();
+                    int bytes = _inflightLength - _inflightOffset;
+                    _batchSegments.Add(new(_inflight!, _inflightOffset, bytes));
+                    foreach (var frame in _writeBatch)
+                    {
+                        _batchSegments.Add(new(frame.Frame, 0, frame.Length));
+                        bytes += frame.Length;
+                    }
+                    // Gather complete frames only. An oversized head still uses
+                    // partial writes; it never pulls extra frames with it.
+                    while (_batchSegments.Count < 32 && bytes < 16 * 1024)
+                    {
+                        var node = _parkQueue.First ?? _orderedQueue.First ?? _streamQueue.First;
+                        if (node is null || bytes + node.Value.Length > 16 * 1024) break;
+                        var frame = node.Value;
+                        node.List!.Remove(node);
+                        if (frame.CoalesceKey != 0) _coalesceNodes.Remove(frame.CoalesceKey);
+                        _queuedBytes -= frame.Length;
+                        _batchBytes += frame.Length;
+                        _writeBatch.Enqueue(frame);
+                        _batchSegments.Add(new(frame.Frame, 0, frame.Length));
+                        bytes += frame.Length;
+                        RecycleNode(node);
+                    }
+                }
+                SendOutcome outcome;
+                if (BatchSendOverride is { } sink) outcome = sink(_batchSegments);
+                else
+                {
+                    int written = _tcpClient.Client.Send(_batchSegments, SocketFlags.None, out var error);
+                    outcome = error is SocketError.WouldBlock or SocketError.TryAgain ? SendOutcome.Blocked()
+                        : error == SocketError.TimedOut ? SendOutcome.TimedOut()
+                        : error == SocketError.Success ? SendOutcome.Sent(written) : SendOutcome.Faulted();
+                }
+                if (outcome.WouldBlock) return DrainResult.Blocked;
+                if (outcome.Error || outcome.Timeout)
+                {
+                    FailAndClose(outcome.Timeout ? DisconnectReason.SendTimeout : DisconnectReason.SendError);
+                    return DrainResult.Dead;
+                }
+                int sent = outcome.Bytes;
+                if (sent <= 0) return DrainResult.Blocked;
+                while (sent > 0)
+                {
+                    int n = Math.Min(sent, _inflightLength - _inflightOffset);
+                    var result = AdvanceInflight(n);
+                    if (result == DrainResult.Dead) return result;
+                    sent -= n;
+                    lock (_sync)
+                        if (_inflight is null && _writeBatch.Count > 0) PromoteHeadLocked();
+                }
+                return DrainResult.Wrote;
+            }
+            finally
+            {
+                lock (_sync)
+                {
+                    _batchSendActive = false;
+                    _batchSegments.Clear();
+                    if (_disconnected) ReleaseBatchLocked();
+                }
+            }
+        }
+
+        private void ReleaseBatchLocked()
+        {
+            if (_inflightPooled) _framePool.Return(_inflight!);
+            _inflight = null;
+            _inflightPooled = false;
+            if (_writeBatch is not null)
+                while (_writeBatch.TryDequeue(out var frame)) ReturnFrame(frame);
+            _batchBytes = 0;
         }
 
         /// <summary>P645 — one send attempt of the in-flight frame's remaining
@@ -1889,14 +2012,18 @@ public sealed class TcpTransport : IServerTransport
                 if (o.WouldBlock) return DrainResult.Blocked;
                 return AdvanceInflight(o.Bytes);
             }
-            if (_nonBlocking)
+            if (_nonBlocking || BatchSendOverride is not null)
             {
                 var sock = _tcpClient.Client;
                 int n;
                 try
                 {
                     diagnostics?.BeginWrite();
-                    try { n = sock.Send(_inflight!, _inflightOffset, _inflightLength - _inflightOffset, SocketFlags.None); }
+                    try
+                    {
+                        if (BatchWrites) return SendBatch();
+                        n = sock.Send(_inflight!, _inflightOffset, _inflightLength - _inflightOffset, SocketFlags.None);
+                    }
                     finally { diagnostics?.EndWrite(); }
                 }
                 catch (SocketException se)
@@ -1966,7 +2093,7 @@ public sealed class TcpTransport : IServerTransport
                     _inflightOffset = 0;
                 }
                 else return DrainResult.Wrote; // partial progress — resume next turn
-                if (!_closeAfterDrain || _orderedQueue.Count != 0 || _streamQueue.Count != 0 || _parkQueue.Count != 0)
+                if (!_closeAfterDrain || _orderedQueue.Count != 0 || _streamQueue.Count != 0 || _parkQueue.Count != 0 || _writeBatch is { Count: > 0 })
                     return DrainResult.Wrote;
             }
             // Owner callbacks acquire the transport gate; keep them outside _sync.
@@ -2087,7 +2214,7 @@ public sealed class TcpTransport : IServerTransport
             {
                 if (_disconnected || _closeAfterDrain) return;
                 _closeAfterDrain = true;
-                drained = _inflight is null && _orderedQueue.Count == 0 && _streamQueue.Count == 0 && _parkQueue.Count == 0;
+                drained = _inflight is null && _batchBytes == 0 && _orderedQueue.Count == 0 && _streamQueue.Count == 0 && _parkQueue.Count == 0;
                 if (!drained)
                     _drainCloseTimer = new Timer(_ => FailAndClose(DisconnectReason.Shutdown),
                         null, TimeSpan.FromMilliseconds(SendTimeoutMs), Timeout.InfiniteTimeSpan);
@@ -2109,6 +2236,7 @@ public sealed class TcpTransport : IServerTransport
                 foreach (var frame in _parkQueue) ReturnFrame(frame);
                 _orderedQueue.Clear(); _streamQueue.Clear(); _parkQueue.Clear(); _coalesceNodes.Clear();
                 _queuedBytes = 0;
+                if (BatchWrites && !_batchSendActive) ReleaseBatchLocked();
                 // The sole writer may still be inside Send. It owns the in-flight
                 // lease until completion; Close never returns its buffer early.
                 Monitor.PulseAll(_sync);
