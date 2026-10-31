@@ -1,0 +1,2 @@
+row_id,matrix,class,reason,native_cite,action
+SIM-0821,sim-rules-matrix.csv,A,P903 whole-tree native Cancel search finds no call or override of Ballot::Cancel; only its declaration and definition. Dead method sets m_bCanceled and leaves notification as a REVIEW comment. Port keeps supported cancellation input/discard behavior.,FedSrv/fsmission.cpp:5836-5844,retain n/a: no reachable native behavior; FedSrv/fsmission.h:95 declaration and FedSrv/fsmission.cpp:5836-5844 definition are the only Ballot Cancel sites. See docs/reports/P903_REPORT.md.

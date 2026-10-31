@@ -1,0 +1,231 @@
+{
+  "base": "c583d7dd",
+  "solutionBuild": {
+    "passed": true,
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolsBuild": {
+    "passed": true,
+    "projects": 101
+  },
+  "serverAot": {
+    "passed": true,
+    "runtime": "linux-x64",
+    "warnings": []
+  },
+  "fast": {
+    "tier": "fast",
+    "seconds": 518.5937519430008,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4612,
+        "outcomes": {
+          "Passed": 4608,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2056,
+        "outcomes": {
+          "Passed": 2055,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5923,
+        "outcomes": {
+          "Passed": 5914,
+          "Failed": 9
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9773209549071618,
+      "referenceMs": 3.6845,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 10.9781865
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 11.2642597
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 10.9788757
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.9336663
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "4 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.061477497991290875,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "isolated": [
+    {
+      "receipt": "P817NativeGotoPlanTests-3.trx",
+      "counts": {
+        "Passed": 43
+      }
+    },
+    {
+      "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-1.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "P870Core2TxtTests-2.trx",
+      "counts": {
+        "Passed": 29
+      }
+    },
+    {
+      "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-3.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "P817NativeGotoPlanTests-1.trx",
+      "counts": {
+        "Passed": 43
+      }
+    },
+    {
+      "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-1.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-3.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-2.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "p903-run1.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "p903-run2.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-1.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "P870Core2TxtTests-1.trx",
+      "counts": {
+        "Passed": 29
+      }
+    },
+    {
+      "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-2.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "P870Core2TxtTests-3.trx",
+      "counts": {
+        "Passed": 29
+      }
+    },
+    {
+      "receipt": "P817NativeGotoPlanTests-2.trx",
+      "counts": {
+        "Passed": 43
+      }
+    },
+    {
+      "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-3.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "p903-run3.trx",
+      "counts": {
+        "Passed": 1
+      }
+    },
+    {
+      "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-2.trx",
+      "counts": {
+        "Passed": 1
+      }
+    }
+  ],
+  "qualification": "qualification-summary.json",
+  "showcase": "showcase-summary.json",
+  "nativeAudit": {
+    "rows": 200,
+    "originalRows": 199,
+    "supplementalRows": 1,
+    "passed": true
+  },
+  "scope": {
+    "changedRows": 27,
+    "otherRowsChanged": 0,
+    "scorerChanged": false,
+    "composeChanged": false
+  },
+  "scorecard": {
+    "before": "2059/2146",
+    "after": "2072/2144"
+  }
+}

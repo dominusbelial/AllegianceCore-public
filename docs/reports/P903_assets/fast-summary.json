@@ -1,0 +1,86 @@
+{
+  "tier": "fast",
+  "seconds": 518.5937519430008,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 119,
+      "outcomes": {
+        "Passed": 119
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 4612,
+      "outcomes": {
+        "Passed": 4608,
+        "NotExecuted": 3,
+        "Failed": 1
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2056,
+      "outcomes": {
+        "Passed": 2055,
+        "Failed": 1
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5923,
+      "outcomes": {
+        "Passed": 5914,
+        "Failed": 9
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.9773209549071618,
+    "referenceMs": 3.6845,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "outcome": "Passed",
+      "seconds": 10.9781865
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 11.2642597
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 10.9788757
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 10.9336663
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.ClientCore.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "4 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.061477497991290875,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

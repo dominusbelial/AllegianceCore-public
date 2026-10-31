@@ -1,0 +1,110 @@
+[
+  {
+    "receipt": "P817NativeGotoPlanTests-3.trx",
+    "counts": {
+      "Passed": 43
+    }
+  },
+  {
+    "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-1.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "P870Core2TxtTests-2.trx",
+    "counts": {
+      "Passed": 29
+    }
+  },
+  {
+    "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-3.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "P817NativeGotoPlanTests-1.trx",
+    "counts": {
+      "Passed": 43
+    }
+  },
+  {
+    "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-1.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-3.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-2.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "p903-run1.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "p903-run2.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-1.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "P870Core2TxtTests-1.trx",
+    "counts": {
+      "Passed": 29
+    }
+  },
+  {
+    "receipt": "Cancelled_ballot_is_dropped_without_announcing_or_resolving-2.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "P870Core2TxtTests-3.trx",
+    "counts": {
+      "Passed": 29
+    }
+  },
+  {
+    "receipt": "P817NativeGotoPlanTests-2.trx",
+    "counts": {
+      "Passed": 43
+    }
+  },
+  {
+    "receipt": "Replay_count_increments_after_first_generation_and_invalidates_context-3.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "p903-run3.trx",
+    "counts": {
+      "Passed": 1
+    }
+  },
+  {
+    "receipt": "Context_name_is_the_cached_UZ_timestamp_mission_and_replay_string-2.trx",
+    "counts": {
+      "Passed": 1
+    }
+  }
+]
