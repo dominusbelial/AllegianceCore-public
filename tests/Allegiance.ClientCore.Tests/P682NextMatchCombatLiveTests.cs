@@ -29,7 +29,7 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         var config = P660NextMatchLiveTests.Config(true, intermission: 2);
         // P797 fog + 0e87f190: a finale registers only once each side has SEEN an enemy station
         // (native discovery). This test is about next-match combat, not scouting — one bomber per
-        // side never explores — so reveal the map like the other P797 stopgaps.
+        // side never explores — so reveal the warps like the other P797 stopgaps.
         foreach (var g in config.Games) g.ShowMap = true;
         config.LiveSettings.TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
         config.LiveSettings.TestUnlock = new() { Enabled = true, AllTech = true, Money = 1_000_000 };
@@ -59,8 +59,20 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         object? previousRun = null;
         for (int match = 1; match <= 3; match++)
         {
-            Wait(() => server.Missions[0].Stage == MissionStage.Started && manager.FinaleStatus().Length == match,
-                $"match {match} automatic start and fresh finale", seconds: 240);   // fog: recon finds the base first
+            // P896: a side only targets a station its own worlds hold, and ShowMap reveals
+            // warps, not stations (Mission.RevealMap). Seed what the showcase's scouts
+            // would discover, on whatever mission is live (the P660 showcase fixture).
+            Wait(() =>
+            {
+                var live = server.Missions[0];
+                if (live.Stage is MissionStage.Started or MissionStage.Starting)
+                    foreach (var st in live.Sectors.SelectMany(s => s.StationRuntimes))
+                        foreach (var sideId in live.Sides.Select(s => s.Id))
+                            st.SideVisibility.SetSideVisibility(sideId, true);
+                return live.Stage == MissionStage.Started && manager.FinaleStatus().Length == match
+                    && manager.FinaleStatus().All(r => JsonSerializer.SerializeToElement(r).GetProperty("wings")
+                        .EnumerateArray().All(w => w.GetProperty("targetStation").GetInt16() >= 0));
+            }, $"match {match} automatic start and fresh finale", seconds: 240);
             Wait(() =>
             {
                 bool flying = false;
