@@ -1,0 +1,1070 @@
+{
+  "Base": "b4a4721a",
+  "BuildExitCodes": {
+    "solution-status": 0,
+    "build-tools-final-status": 0,
+    "aot-final-status": 0
+  },
+  "ToolProjects": 97,
+  "Tests": [
+    {
+      "Receipt": ".scratch/p898/tests/p898-complete-1.trx",
+      "Counts": {
+        "Passed": 16
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Proof_keeps_arrivals_that_beat_tick_log_without_fabricating_age_or_gaps",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0068742"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0045570"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_partial_write_crosses_frame_boundaries_and_resumes_without_corruption",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0035297"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Batching_is_default_off_and_roundtrips_through_aot_config",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0510440"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0670302"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0106424"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 20, length: 1000, firstTurnFrames: 16)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0130735"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Closing_during_gather_keeps_buffers_leased_until_send_returns",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0010397"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Graceful_close_completes_all_reserved_frames_before_closing",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005846"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4604788",
+          "Measurement": "P898 small-frame paused reader: batching=False noProgressBudgetMs=400 droppedAfterMs=446.590"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4636243",
+          "Measurement": "P898 small-frame paused reader: batching=True noProgressBudgetMs=400 droppedAfterMs=446.938"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 40, length: 100, firstTurnFrames: 32)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0006169"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0604377"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0173969"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Diagnostics_distinguish_superseding_from_partially_sent_frame_bytes",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0008562"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0257727"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p898-complete-2.trx",
+      "Counts": {
+        "Passed": 16
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4606701",
+          "Measurement": "P898 small-frame paused reader: batching=False noProgressBudgetMs=400 droppedAfterMs=446.975"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4250386",
+          "Measurement": "P898 small-frame paused reader: batching=True noProgressBudgetMs=400 droppedAfterMs=407.851"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Graceful_close_completes_all_reserved_frames_before_closing",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005754"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 20, length: 1000, firstTurnFrames: 16)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0131221"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Batching_is_default_off_and_roundtrips_through_aot_config",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0514702"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0649372"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_partial_write_crosses_frame_boundaries_and_resumes_without_corruption",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0036886"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0345754"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0058478"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0163671"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0087910"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Closing_during_gather_keeps_buffers_leased_until_send_returns",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0009389"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 40, length: 100, firstTurnFrames: 32)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005776"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0576983"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Proof_keeps_arrivals_that_beat_tick_log_without_fabricating_age_or_gaps",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0070734"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Diagnostics_distinguish_superseding_from_partially_sent_frame_bytes",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0008415"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p898-complete-3.trx",
+      "Counts": {
+        "Passed": 16
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Closing_during_gather_keeps_buffers_leased_until_send_returns",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0009478"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 20, length: 1000, firstTurnFrames: 16)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0130450"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Batching_is_default_off_and_roundtrips_through_aot_config",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0508281"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4624114",
+          "Measurement": "P898 small-frame paused reader: batching=False noProgressBudgetMs=400 droppedAfterMs=447.499"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0175460"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_turn_respects_frame_and_byte_budgets(frames: 40, length: 100, firstTurnFrames: 32)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005819"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Gather_partial_write_crosses_frame_boundaries_and_resumes_without_corruption",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0036994"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Paused_reader_with_small_gatherable_frames_keeps_no_progress_deadline(batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4240362",
+          "Measurement": "P898 small-frame paused reader: batching=True noProgressBudgetMs=400 droppedAfterMs=407.382"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0794737"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Proof_keeps_arrivals_that_beat_tick_log_without_fabricating_age_or_gaps",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0070016"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Diagnostics_distinguish_superseding_from_partially_sent_frame_bytes",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0008721"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P670SendStallTests.Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(batchWrites: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.0591330"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0080032"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: ThreadPerPeer, batching: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0050073"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Sends_large_frames_exactly_and_keeps_small_socket_buffer(mode: Pool, batching: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0276857"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.Transport.P898TcpWriteTests.Graceful_close_completes_all_reserved_frames_before_closing",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005676"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/showcase-1.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "Outcome": "Passed",
+          "Duration": "00:04:11.3609745"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/showcase-2.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "Outcome": "Passed",
+          "Duration": "00:03:47.8477709"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/showcase-3.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "Outcome": "Passed",
+          "Duration": "00:04:06.0120490"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/showcase-4.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "Outcome": "Passed",
+          "Duration": "00:03:39.0256954"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/showcase-5.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "Outcome": "Passed",
+          "Duration": "00:03:20.5587171"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-original-1.trx",
+      "Counts": {
+        "Failed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0498213"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-original-2.trx",
+      "Counts": {
+        "Failed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0487184"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-original-3.trx",
+      "Counts": {
+        "Failed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0506698"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-xdg-1.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0652485"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-xdg-2.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0649618"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p761-xdg-3.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0650430"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-original-1.trx",
+      "Counts": {
+        "Failed": 5,
+        "Passed": 4
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002569"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0035857"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002586"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001856"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0004203"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0007642"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002879"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0001521"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0003689"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-original-2.trx",
+      "Counts": {
+        "Failed": 5,
+        "Passed": 4
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002503"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001747"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002152"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0035217"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0006351"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0005350"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0005523"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0007423"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0001216"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-original-3.trx",
+      "Counts": {
+        "Passed": 4,
+        "Failed": 5
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001914"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0004666"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0009790"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002243"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0002914"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0001524"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0044249"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.0003711"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002468"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-container-1.trx",
+      "Counts": {
+        "Passed": 9
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0140889"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0000625"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001711"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001128"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0030435"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001854"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002292"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002688"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001392"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-container-2.trx",
+      "Counts": {
+        "Passed": 9
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0003627"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0041424"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0140417"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0000863"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002684"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0003074"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002318"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0003251"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001631"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/bundle-container-3.trx",
+      "Counts": {
+        "Passed": 9
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001513"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002147"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002369"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0102499"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002890"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0001907"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0003691"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0000843"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0038756"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p896-isolation-1.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.1934159"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p896-isolation-2.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.1923761"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/p896-isolation-3.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.1770688"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/missile-isolation-1.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.7970344"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/missile-isolation-2.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.7363624"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/missile-isolation-3.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.8441782"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/core-isolation-1.trx",
+      "Counts": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.8303684"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.9007840"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/core-isolation-2.trx",
+      "Counts": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.8049309"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.7624538"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/core-isolation-3.trx",
+      "Counts": {
+        "Passed": 1,
+        "Failed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.8663987"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.8088306"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/timing-isolation-1.trx",
+      "Counts": {
+        "Passed": 2
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.8628853"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.6275189"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/timing-isolation-2.trx",
+      "Counts": {
+        "Passed": 2
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.8819171"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.6335694"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/timing-isolation-3.trx",
+      "Counts": {
+        "Passed": 2
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "Outcome": "Passed",
+          "Duration": "00:00:01.5861298"
+        },
+        {
+          "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.6754476"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/stdout-isolation-1.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4495318"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/stdout-isolation-2.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4290228"
+        }
+      ]
+    },
+    {
+      "Receipt": ".scratch/p898/tests/stdout-isolation-3.trx",
+      "Counts": {
+        "Passed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.4334046"
+        }
+      ]
+    }
+  ],
+  "TransportRuns": [
+    {
+      "Receipt": ".scratch/p898/tests/transport.trx",
+      "Counts": {
+        "Passed": 209
+      },
+      "Cases": []
+    },
+    {
+      "Receipt": ".scratch/p898/tests/transport-final.trx",
+      "Counts": {
+        "Passed": 215
+      },
+      "Cases": []
+    },
+    {
+      "Receipt": ".scratch/p898/tests/transport-complete.trx",
+      "Counts": {
+        "Passed": 216,
+        "Failed": 1
+      },
+      "Cases": [
+        {
+          "Name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "Outcome": "Failed",
+          "Duration": "00:00:00.1708933"
+        }
+      ]
+    }
+  ],
+  "Fast": {
+    "Passed": false,
+    "Seconds": 535.7910040009956,
+    "Projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 3806,
+        "outcomes": {
+          "Passed": 3802,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2050,
+        "outcomes": {
+          "Passed": 2048,
+          "Failed": 2
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5913,
+        "outcomes": {
+          "Passed": 5906,
+          "Failed": 7
+        }
+      }
+    },
+    "TimingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.1789237
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.510386
+      },
+      {
+        "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "outcome": "Passed",
+        "seconds": 10.5702692
+      }
+    ],
+    "Errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "3 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "RawReceipt": ".scratch/p898/fast/summary.json"
+  }
+}

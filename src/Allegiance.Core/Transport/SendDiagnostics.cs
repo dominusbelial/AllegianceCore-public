@@ -6,7 +6,14 @@ public enum SendWorkerState { Idle, Scanning, Writing, Backpressure }
 
 /// <summary>Socket acceptance, including the five-byte outer frame header; not remote delivery.</summary>
 public readonly record struct PeerSendWindow(ConnectionId Peer, long EnqueuedBytes, long WrittenBytes,
-    long QueuedBytes, long NoProgressMs);
+    long QueuedBytes, long NoProgressMs)
+{
+    /// <summary>P898: current application frame remainder, not kernel TCP flight.</summary>
+    public long InflightBytes { get; init; }
+    /// <summary>P898: lifetime counts for this peer, not window deltas.</summary>
+    public long SupersededFrames { get; init; }
+    public long PollBlocked { get; init; }
+}
 
 public readonly record struct SendWorkerWindow(int Worker, SendWorkerState State, long WriteCalls,
     double BusyWriteMs, double LongestWriteMs, double CurrentWriteMs);

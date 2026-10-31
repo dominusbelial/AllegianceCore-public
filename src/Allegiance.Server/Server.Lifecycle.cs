@@ -902,12 +902,15 @@ public sealed partial class Server
             Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
             Reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null,
             ReliableOneShot = _reliableOneShot,
+            TcpBatchWrites = _config.Transport?.TcpBatchWrites == true,
             // P866 — native g.pServerCounters (FedSrv/counters.h) is ALWAYS on in
             // native (the callback guards on NULL but the standalone server
             // allocates it), so the port's named counters are always fed too,
             // independent of the profiler-gated egress lane above.
             ServerCounters = Counters,
         }; // site set; assign the back-ref next
+        if (transport.TcpBatchWrites && _transportMode == TransportMode.Pool)
+            Console.WriteLine("[boot] transport tcpBatchWrites=ON (EXPERIMENTAL; pool gather sends, 8 KiB socket buffer retained)");
         if (_reliableOneShot)
             Console.WriteLine("[boot] transport reliableOneShot=PARK-LANE (EXPERIMENTAL; one-shots parked ahead of stream/ordered)");
         else

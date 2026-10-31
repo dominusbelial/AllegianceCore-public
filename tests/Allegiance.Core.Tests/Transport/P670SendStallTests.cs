@@ -42,11 +42,14 @@ public sealed class P670SendStallTests(ITestOutputHelper output)
         catch { client.Dispose(); throw; }
     }
 
-    [Fact]
-    public void Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Three_paused_readers_do_not_starve_sixteen_healthy_peers_on_one_worker_and_drop_for_no_progress(bool batchWrites)
     {
         var site = new Site();
-        var host = new TcpTransport(site, TransportMode.Pool, 1) { Egress = new EgressAccounting() };
+        var host = new TcpTransport(site, TransportMode.Pool, 1)
+        { Egress = new EgressAccounting(), TcpBatchWrites = batchWrites };
         var slow = new List<(ConnectionId Id, TcpClient Client)>();
         var healthy = new List<(ConnectionId Id, TcpClient Client)>();
         TimeSpan previous = TcpTransport.NoWriteProgressTimeout;
