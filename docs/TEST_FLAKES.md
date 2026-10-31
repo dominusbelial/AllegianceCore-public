@@ -4,6 +4,16 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## 2026-10-31 Claude triage: final tree sweep `c6c0d51e` (P897, P898, P899)
+
+9 failures, `P682b` and `P807` passed. `MissileLock`, `NpcWingmanDefend`, `LiveSideSelect`, `SC4`, `P798`, `P796Coverage`
+and `P745` are the known set. New to this sweep:
+
+| test | sweep result | isolated, master `ff075743` | verdict |
+| --- | --- | --- | --- |
+| `TurretServerClockLiveTests.Turret_gunner_updates_stamped_from_the_ping_clock_are_accepted_and_fire` | no turret projectiles (13 s), first time in 14 mini sweeps | 3/3 pass | Load flake, watch. |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | one of 200 pods ran out of oxygen | 2/3 pass | Known flake, same signature as the earlier ledger entries, not a broadcast failure. |
+
 ## 2026-10-31 Claude triage: batch sweep `5ebf01c4` (P897, P898)
 
 18 failures. `P682b` x4 and `P745` were already fixed on master. `SC4`, `P798`, `P796Coverage`, `MissileLock`,
