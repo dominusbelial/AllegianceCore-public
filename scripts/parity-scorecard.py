@@ -14,7 +14,12 @@ MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv", "training-matrix.csv",
 STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n/a"}
 COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
-REACHABILITY = {"production", "config-only", "test-only"}
+REACHABILITY = {"production", "config-only", "test-only", "offline-tool"}
+# A native capability reached only by operator commands (AllSrv -Core2Text), whose
+# port equivalent is a standalone tool. It earns credit only when complete with a
+# tools/ citation; the reachability block prints its weight so it stays visible.
+OFFLINE_TOOL = "offline-tool"
+CREDITED_REACHABILITY = {"production", OFFLINE_TOOL}
 # A native mechanism whose player-facing outcome the port delivers through a different,
 # modern design (e.g. the DirectPlay routing lobby -> the HTTP directory). It stays in
 # the denominator and earns credit only when complete with a "REPLACED:" reason naming
@@ -54,6 +59,9 @@ def read_matrix(path):
                     raise ValueError(f"{location}: invalid training identity, status, weight or empty rule/evidence")
                 if "reachability" in header and row["reachability"] not in REACHABILITY:
                     raise ValueError(f"{location}: invalid reachability {row['reachability']!r}")
+                if row.get("reachability") == OFFLINE_TOOL and (
+                        row["port_status"] not in COMPLETE or "tools/" not in row["port_cite_or_reason"]):
+                    raise ValueError(f"{location}: offline-tool must be complete and cite tools/")
                 if row["port_status"] not in STATUSES:
                     raise ValueError(f"{location}: invalid status {row['port_status']!r}")
                 if row.get("native_class") == DESIGN_REPLACED and (
@@ -86,7 +94,7 @@ def read_matrix(path):
 def score(rows):
     eligible = [row for row in rows if row["port_status"] not in EXCLUDED]
     completed = [row for row in eligible if row["port_status"] in COMPLETE
-                 and row.get("reachability", "production") == "production"]
+                 and row.get("reachability", "production") in CREDITED_REACHABILITY]
     visual = [row for row in completed if row["port_status"] == "done-visual"]
     weight = sum((Decimal(row["weight"]) for row in eligible), Decimal(0))
     credit = sum((Decimal(row["weight"]) for row in completed), Decimal(0))
@@ -124,7 +132,7 @@ def main(argv=None):
                   f"{percentage(done, count)} ({done}/{count}) | visual {visual_weight} | "
                   f"replaced {replaced_weight}")
         if rows and "reachability" in rows[0]:
-            print("Reachability (non-production stays in the denominator; earns no headline credit):")
+            print("Reachability (config-only and test-only stay in the denominator; earn no headline credit):")
             for reachability in sorted(REACHABILITY):
                 group = [row for row in rows if row["reachability"] == reachability]
                 eligible = [row for row in group if row["port_status"] not in EXCLUDED]

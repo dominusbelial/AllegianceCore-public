@@ -170,4 +170,24 @@ public class P674ParityScorecardTests
         finally { File.Delete(path); }
     }
 
+    [Fact]
+    public void Offline_tool_needs_a_complete_tools_citation_and_earns_visible_credit()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            const string header = "area,native_item,native_cite,port_status,port_cite_or_reason,weight,reachability\n";
+            File.WriteAllText(path, header + "area,one,native,implemented,tools/core2txt/CoreTable.cs,2,offline-tool\n"
+                + "area,two,native,implemented,reason,2,production\n");
+            var result = Run(path);
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("TOTAL | 100.00% (4/4)", result.Output);
+            Assert.Contains("offline-tool: 1 rows; 1 eligible; 1 implemented; implemented weight 2", result.Output);
+            File.WriteAllText(path, header + "area,one,native,implemented,src/Server.cs,2,offline-tool\n");
+            Assert.Contains("offline-tool must be complete and cite tools/", Run(path).Output);
+            File.WriteAllText(path, header + "area,one,native,partial,tools/core2txt/CoreTable.cs,2,offline-tool\n");
+            Assert.Contains("offline-tool must be complete and cite tools/", Run(path).Output);
+        }
+        finally { File.Delete(path); }
+    }
 }
