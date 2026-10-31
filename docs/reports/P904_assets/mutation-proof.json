@@ -1,0 +1,47 @@
+[
+  {
+    "experiment": ".scratch/p904/mutation/mutation.trx",
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Sim_tick_gates_ballots_by_stage_and_timeout_wins_over_a_passing_draw(stage: Over, expired: False)",
+        "outcome": "Failed",
+        "message": "Assert.Contains() Failure: Item not found in collection\nCollection: []\nNot found:  PendingBallot { Abstaining = [0, 0, 0, 0, 0, \u00b7\u00b7\u00b7], BallotText = \"\", Canceled = False, EligibleShips = [], ExcludedSideId = -1, \u00b7\u00b7\u00b7 }"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Sim_tick_gates_ballots_by_stage_and_timeout_wins_over_a_passing_draw(stage: Starting, expired: False)",
+        "outcome": "Failed",
+        "message": "Assert.Empty() Failure: Collection was not empty\nCollection: [GameOver { EjectPods = False, GameoverMessage = \"The game was declared a draw\", NumSides = 2, Sides = [SideEndgameInfo { SideName = Alpha, CivId = 1, R = 0.7372549, G = 0.627451, B = 0, A = 1, CKills = 10, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = Bravo, CivId = 3, R = 0, G = 0.5411765, B = 0.8509804, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, \u00b7\u00b7\u00b7], SideWinner = -1 }]"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Sim_tick_gates_ballots_by_stage_and_timeout_wins_over_a_passing_draw(stage: Started, expired: False)",
+        "outcome": "Passed",
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Sim_tick_gates_ballots_by_stage_and_timeout_wins_over_a_passing_draw(stage: NotStarted, expired: False)",
+        "outcome": "Failed",
+        "message": "Assert.Empty() Failure: Collection was not empty\nCollection: [GameOver { EjectPods = False, GameoverMessage = \"The game was declared a draw\", NumSides = 2, Sides = [SideEndgameInfo { SideName = Alpha, CivId = 1, R = 0.7372549, G = 0.627451, B = 0, A = 1, CKills = 10, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = Bravo, CivId = 3, R = 0, G = 0.5411765, B = 0.8509804, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, SideEndgameInfo { SideName = <bug>, CivId = -1, R = 0.5, G = 0.5, B = 0.5, A = 1, CKills = 0, CDeaths = 0, CEjections = 0, CBaseKills = 0, CBaseCaptures = 0, CFlags = 0, CArtifacts = 0 }, \u00b7\u00b7\u00b7], SideWinner = -1 }]"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Sim_tick_gates_ballots_by_stage_and_timeout_wins_over_a_passing_draw(stage: Started, expired: True)",
+        "outcome": "Failed",
+        "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   -1"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Generic_model_lookup_and_chat_orders_use_live_registries_for_every_native_kind",
+        "outcome": "Failed",
+        "message": "Assert.True() Failure\nExpected: True\nActual:   False"
+      }
+    ]
+  },
+  {
+    "experiment": ".scratch/p904/movement-before/movement-before.trx",
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P904CertificationTests.Payday_reads_station_income_after_the_same_ticks_movement",
+        "outcome": "Failed",
+        "message": "Assert.Equal() Failure: Values differ\nExpected: 798\nActual:   675"
+      }
+    ]
+  }
+]

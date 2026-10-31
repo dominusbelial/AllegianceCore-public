@@ -1,0 +1,1184 @@
+[
+  {
+    "name": "payday-Mission_accrues_once-1",
+    "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+    "exit": 0,
+    "seconds": 1.5479489830031525,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "outcome": "Passed",
+        "seconds": 0.1070514,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-Mission_accrues_once-2",
+    "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+    "exit": 0,
+    "seconds": 1.4918150150042493,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "outcome": "Passed",
+        "seconds": 0.0872281,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-Mission_accrues_once-3",
+    "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+    "exit": 0,
+    "seconds": 1.4911605570086977,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "method": "Allegiance.Core.Tests.PaydayTests.Mission_accrues_once_per_boundary_at_the_flat_cadence",
+        "outcome": "Passed",
+        "seconds": 0.0985963,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-WirePayday_fires_on_-1",
+    "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+    "exit": 0,
+    "seconds": 6.304256161994999,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "outcome": "Passed",
+        "seconds": 4.8978431,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-WirePayday_fires_on_-2",
+    "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+    "exit": 0,
+    "seconds": 6.138723399009905,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "outcome": "Passed",
+        "seconds": 4.7949808,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-WirePayday_fires_on_-3",
+    "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+    "exit": 0,
+    "seconds": 6.149772475997452,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "method": "Allegiance.Core.Tests.PaydayTests.WirePayday_fires_on_cadence_with_correct_per_side_value",
+        "outcome": "Passed",
+        "seconds": 4.8165581,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-ZeroPlayerSide_does_-1",
+    "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+    "exit": 0,
+    "seconds": 4.031233321002219,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "outcome": "Passed",
+        "seconds": 2.6934893,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-ZeroPlayerSide_does_-2",
+    "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+    "exit": 0,
+    "seconds": 4.111954566993518,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "outcome": "Passed",
+        "seconds": 2.7607651,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "payday-ZeroPlayerSide_does_-3",
+    "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+    "exit": 0,
+    "seconds": 4.146277439009282,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "method": "Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying",
+        "outcome": "Passed",
+        "seconds": 2.8408583,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-01-1",
+    "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "exit": 0,
+    "seconds": 1.671133417999954,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "outcome": "Passed",
+        "seconds": 0.3005297,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-01-2",
+    "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "exit": 0,
+    "seconds": 1.5901442040049005,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "outcome": "Passed",
+        "seconds": 0.260484,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-01-3",
+    "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "exit": 0,
+    "seconds": 1.6884843909938354,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "method": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+        "outcome": "Passed",
+        "seconds": 0.2796223,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-02-1",
+    "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "exit": 0,
+    "seconds": 11.336013556006947,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 9.9667838,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-02-2",
+    "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "exit": 0,
+    "seconds": 11.528138194000348,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.0780159,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-02-3",
+    "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "exit": 0,
+    "seconds": 11.140750806996948,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 9.791813,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-03-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 1,
+    "seconds": 1.3397958479908993,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Failed",
+        "seconds": 0.0145095,
+        "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-03-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 1,
+    "seconds": 1.306159715008107,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Failed",
+        "seconds": 0.0148982,
+        "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-03-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 1,
+    "seconds": 1.369195731007494,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Failed",
+        "seconds": 0.0145744,
+        "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-04-1",
+    "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+    "exit": 0,
+    "seconds": 1.9210480430047028,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "outcome": "Passed",
+        "seconds": 0.5531384,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-04-2",
+    "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+    "exit": 0,
+    "seconds": 1.8753240869991714,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "outcome": "Passed",
+        "seconds": 0.5925541,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-04-3",
+    "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+    "exit": 0,
+    "seconds": 1.8980870520026656,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+        "outcome": "Passed",
+        "seconds": 0.5745526,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-05-1",
+    "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+    "exit": 0,
+    "seconds": 2.7811118310055463,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "outcome": "Passed",
+        "seconds": 1.4728746,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-05-2",
+    "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+    "exit": 0,
+    "seconds": 2.827747890012688,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "outcome": "Passed",
+        "seconds": 1.5013548,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-05-3",
+    "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+    "exit": 0,
+    "seconds": 2.792072811003891,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "outcome": "Passed",
+        "seconds": 1.4169012,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-06-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 1,
+    "seconds": 1.3752003820118262,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0008912,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Failed",
+        "seconds": 0.0042723,
+        "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)"
+      }
+    ]
+  },
+  {
+    "name": "solo-06-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 1,
+    "seconds": 1.341643103005481,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0006923,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Failed",
+        "seconds": 0.0033152,
+        "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)"
+      }
+    ]
+  },
+  {
+    "name": "solo-06-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 1,
+    "seconds": 1.3695875210105442,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Failed",
+        "seconds": 0.0041437,
+        "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-p904/.scra\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0008885,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-07-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 1,
+    "seconds": 1.3860337209916906,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.0002159,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.001175,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0035209,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-07-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 1,
+    "seconds": 1.387141719009378,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0028618,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.0001678,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.0009121,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-07-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 1,
+    "seconds": 1.4135867389995838,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.0002105,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Failed",
+        "seconds": 0.0011833,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)"
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.003606,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-08-1",
+    "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+    "exit": 0,
+    "seconds": 1.4317110319971107,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "outcome": "Passed",
+        "seconds": 0.0629197,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-08-2",
+    "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+    "exit": 0,
+    "seconds": 1.4077825700078392,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "outcome": "Passed",
+        "seconds": 0.0672649,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-08-3",
+    "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+    "exit": 0,
+    "seconds": 1.371995078996406,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "method": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+        "outcome": "Passed",
+        "seconds": 0.0534186,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-09-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 1,
+    "seconds": 1.3146669949928764,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Failed",
+        "seconds": 0.0030786,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-09-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 1,
+    "seconds": 1.317374253005255,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Failed",
+        "seconds": 0.0040129,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-09-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 1,
+    "seconds": 1.338828249994549,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Failed",
+        "seconds": 0.0039942,
+        "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+      }
+    ]
+  },
+  {
+    "name": "solo-10-1",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+    "exit": 1,
+    "seconds": 2.5248875569959637,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "outcome": "Failed",
+        "seconds": 1.2235174,
+        "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+      }
+    ]
+  },
+  {
+    "name": "solo-10-2",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+    "exit": 1,
+    "seconds": 2.570601560000796,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "outcome": "Failed",
+        "seconds": 1.2247601,
+        "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+      }
+    ]
+  },
+  {
+    "name": "solo-10-3",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+    "exit": 1,
+    "seconds": 2.6708808839903213,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+        "outcome": "Failed",
+        "seconds": 1.2998081,
+        "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+      }
+    ]
+  },
+  {
+    "name": "solo-11-1",
+    "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "exit": 0,
+    "seconds": 4.150629424999352,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 3.2223951,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-11-2",
+    "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "exit": 0,
+    "seconds": 4.218212430991116,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 3.2716249,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-11-3",
+    "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "exit": 0,
+    "seconds": 4.070205640004133,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 3.1721967,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-12-1",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "exit": 1,
+    "seconds": 39.327055601999746,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.3745464,
+        "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+      }
+    ]
+  },
+  {
+    "name": "solo-12-2",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "exit": 1,
+    "seconds": 39.28938558200025,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.3896877,
+        "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+      }
+    ]
+  },
+  {
+    "name": "solo-12-3",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "exit": 1,
+    "seconds": 39.24348458700115,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.3452731,
+        "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+      }
+    ]
+  },
+  {
+    "name": "solo-13-1",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "exit": 0,
+    "seconds": 2.437097325004288,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.4800109,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-13-2",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "exit": 0,
+    "seconds": 2.377175845002057,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.4386133,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-13-3",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "exit": 0,
+    "seconds": 2.3885107910027727,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.4328452,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-14-1",
+    "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "exit": 0,
+    "seconds": 8.020899095994537,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 4.094935,
+        "message": null
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 2.9901178,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-14-2",
+    "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "exit": 0,
+    "seconds": 7.989645777997794,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 2.9721505,
+        "message": null
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 4.1200279,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-14-3",
+    "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "exit": 0,
+    "seconds": 7.867383945005713,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 4.0185663,
+        "message": null
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 2.957252,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-15-1",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "exit": 0,
+    "seconds": 5.258486910999636,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 4.2756045,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-15-2",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "exit": 0,
+    "seconds": 5.020284230005927,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 4.0008198,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-15-3",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "exit": 0,
+    "seconds": 5.117485916009173,
+    "results": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 4.0692074,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-16-1",
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "exit": 0,
+    "seconds": 1.8391113879915792,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "outcome": "Passed",
+        "seconds": 0.5144233,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-16-2",
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "exit": 0,
+    "seconds": 1.907003665008233,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "outcome": "Passed",
+        "seconds": 0.5499032,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "solo-16-3",
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "exit": 0,
+    "seconds": 1.8473891919857124,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+        "outcome": "Passed",
+        "seconds": 0.4965399,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-03-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 0,
+    "seconds": 1.3091520890011452,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Passed",
+        "seconds": 0.0147927,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-03-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 0,
+    "seconds": 1.3137859550042776,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Passed",
+        "seconds": 0.0146403,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-03-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "exit": 0,
+    "seconds": 1.305436185997678,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "outcome": "Passed",
+        "seconds": 0.0145574,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-06-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 0,
+    "seconds": 1.3158264910016442,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0036136,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0003644,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-06-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 0,
+    "seconds": 1.353596061002463,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0036677,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0004192,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-06-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "exit": 0,
+    "seconds": 1.3392352649971144,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0003654,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "outcome": "Passed",
+        "seconds": 0.0036504,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-07-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 0,
+    "seconds": 1.2878805990039837,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0002525,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0027673,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.000104,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-07-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 0,
+    "seconds": 1.3552221940044546,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 9.4e-05,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0028024,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0002449,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-07-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "exit": 0,
+    "seconds": 1.33566401200369,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0003165,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0001252,
+        "message": null
+      },
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+        "outcome": "Passed",
+        "seconds": 0.0035636,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-09-1",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 0,
+    "seconds": 1.3252215609973064,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Passed",
+        "seconds": 0.0035535,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-09-2",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 0,
+    "seconds": 1.368538400012767,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Passed",
+        "seconds": 0.0028357,
+        "message": null
+      }
+    ]
+  },
+  {
+    "name": "path-control-09-3",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "exit": 0,
+    "seconds": 1.3411654480005382,
+    "results": [
+      {
+        "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "outcome": "Passed",
+        "seconds": 0.0035953,
+        "message": null
+      }
+    ]
+  }
+]

@@ -195,23 +195,6 @@ public sealed partial class Server
         // removal the flag-off path ran immediately (FedSrv.CPP:4549-4566). Cheap
         // no-op (an empty table) with the feature off.
         Step("reconnectGrace", AdvanceReconnectGrace);
-        // P187 — resolve pending ballots this tick (the port of native
-        // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
-        // ballot whose expiration passed or whose votes are all in is tallied
-        // and resolved (pass/fail), its type effect applied, then removed.
-        // Runs on the sim thread right after the mission tick so a ballot
-        // created during this tick's transport drain is resolved this same
-        // tick if it already has every vote (e.g. an initiator-only side).
-        // P860 — index the list instead of enumerating it: a ballot that ends the
-        // game rotates the mission in place (RotateMissionAfterGameOver's
-        // `_missions[idx] = fresh`), and a List<T> indexer SET bumps the version, so
-        // the old foreach aborted this stage with "Collection was modified" on EVERY
-        // ballot-driven game-over (observed in the P480 rotation tests). Mission
-        // count and indexes are stable across a rotation, so indexing is exact.
-        Step("ballots", () =>
-        {
-            for (int i = 0; i < _missions.Count; i++) ResolveBallots(_missions[i], now);
-        });
         // P871b — the lobby's CREATE_MISSION_REQ relay: provision a mission the
         // player just created through the new-game wizard (the request the
         // heartbeat claimed this tick). Runs BEFORE periodicRules so the fresh
@@ -219,6 +202,16 @@ public sealed partial class Server
         // tick it is advertised to the joining client.
         Step("claimedGames", DrainClaimedGames);
         Step("periodicRules", () => AdvancePeriodicRules(now));
+        // Native DoTick resolves timeout/game-over before its ballot tail
+        // (FedSrv/fsmission.cpp:2508-2512,2584-2592), only in Started
+        // (FedSrv/FedSrv.CPP:8247-8278). A passing draw must not replace a
+        // timeout winner in the same tick. Rotation keeps the index stable.
+        Step("ballots", () =>
+        {
+            for (int i = 0; i < _missions.Count; i++)
+                if (_missions[i].Stage == MissionStage.Started)
+                    ResolveBallots(_missions[i], now);
+        });
         // P853 — drop the params snapshots of rotated-out missions (a no-op
         // table scan while no mission has ever been edited).
         Step("missionParamsPrune", PruneMissionParams);

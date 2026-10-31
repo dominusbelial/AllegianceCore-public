@@ -1596,37 +1596,17 @@ public sealed partial class Server
     /// (<c>otTarget</c>/<c>oidTarget</c>, chosen by the sender's client) to the
     /// server-side model for the queued order. <c>found=false</c> when the target
     /// cannot be resolved (the order is dropped, matching native's
-    /// <c>pmodel == NULL</c> → non-command rule). A Model target (a Ship) returns
+    /// <c>pmodel == NULL</c> → non-command rule). A Model target returns
     /// the live model; a non-Model target (station / asteroid / warp, which the
     /// port cannot store as <see cref="Ship.QueuedShipTarget"/>) returns the wire
     /// target so the client's HUD still names it.</summary>
     private (bool Found, Model? Model, IgcObjectType Ot, short Oid) ResolveChatOrderTarget(Mission? mission, IgcObjectType ot, short oid)
     {
-        switch (ot)
-        {
-            case IgcObjectType.Ship:
-                var s = FindShipAnySide(oid, mission);
-                return s is not null ? (true, s, IgcObjectType.Ship, oid) : (false, null, (IgcObjectType)(-1), -1);
-            case IgcObjectType.Station:
-                if (mission is not null)
-                    foreach (var sec in mission.Sectors)
-                        foreach (var st in sec.Stations)
-                            if (st.StationId == oid)
-                                return (true, null, IgcObjectType.Station, oid);
-                return (false, null, (IgcObjectType)(-1), -1);
-            case IgcObjectType.Asteroid:
-                var a = FindAsteroidById(oid, mission);
-                return a is not null ? (true, null, IgcObjectType.Asteroid, oid) : (false, null, (IgcObjectType)(-1), -1);
-            case IgcObjectType.Warp:
-                if (mission is not null)
-                    foreach (var sec in mission.Sectors)
-                        foreach (var w in sec.Warps)
-                            if (w.Warp.WarpId == oid)
-                                return (true, null, IgcObjectType.Warp, oid);
-                return (false, null, (IgcObjectType)(-1), -1);
-            default:
-                return (false, null, (IgcObjectType)(-1), -1);
-        }
+        // Static records cannot establish live model identity; only the
+        // mission registry is authoritative (Igc/missionigc.cpp:3386-3416).
+        var model = mission?.GetModel(ot, oid);
+        return model is not null ? (true, model as Model, ot, oid)
+            : (false, null, (IgcObjectType)(-1), -1);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

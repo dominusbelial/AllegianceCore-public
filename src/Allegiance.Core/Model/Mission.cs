@@ -1023,42 +1023,6 @@ public sealed partial class Mission : IMissionIgc
             RefreshSideVisibility();
         }
 
-        // ── payday (P51/P443): the reference DoTick payday block (fsmission.cpp:
-        // 2514-2552), folded into the same per-Update pass. Seed on the first
-        // Started tick, then fire when now crosses the armed time, accruing
-        // each side's income — the base <c>IncomePerPayday × (1 + IncomeMoney)</c>
-        // (fsmission.cpp:2536) plus Σ over the side's stations of
-        // <c>GetStationType()->GetIncome()</c> (fsmission.cpp:2538-2546; see
-        // <see cref="StationIncomeFor"/>, which reads the live runtime stations
-        // so capture re-siding and destruction fall out of current ownership) —
-        // and reporting it through the site seam.
-        // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
-        // lives in the host's PaydayEvent handler, mirroring the split between
-        // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
-        // Timeout wins before DoTick's economy (FedSrv/fsmission.cpp:2508-2516).
-        // The host resolves the winner after movement; suppress a payday that
-        // otherwise occurs inside this port's combined mission/economy update.
-        bool countdownExpired = HasCountdownExpired(now);
-        if (Stage == MissionStage.Started && !countdownExpired && NextPaydayTime == 0)
-            NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
-        if (Stage == MissionStage.Started && !countdownExpired && now >= NextPaydayTime)
-        {
-            double treasureElapsed = PaydayInterval + now - NextPaydayTime;
-            if (AllowDevelopments && TreasureParameters.AllowDevelopments) // fsmission.cpp:2520
-            {
-                foreach (var side in Sides)
-                {
-                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
-                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
-                    income = (long)(income * ShowcaseIncomeMultiplier); // P703 opt-in pacing extension
-                    side.Money += income;                          // fsmission.cpp:2536
-                    Site.PaydayEvent(side, income);                // site seam → host payout
-                }
-            }
-            RegenerateTreasures(now, treasureElapsed);
-            NextPaydayTime += PaydayInterval;           // keep phase (fsmission.cpp:2519)
-        }
-
         double deltaT = now - LastUpdate;
         if (deltaT >= 600.0)
             throw new InvalidOperationException(
@@ -1100,6 +1064,44 @@ public sealed partial class Mission : IMissionIgc
                     Site.ClusterUpdateEvent(sector);    // faithful site call (c++:357)
             }
             LastUpdate = timeUpdate;
+        }
+
+        // MoveShips finishes the mission's model updates before DoTick reads
+        // current station ownership/types for income (FedSrv/FedSrv.CPP:8245-8278).
+        // ── payday (P51/P443): the reference DoTick payday block (fsmission.cpp:
+        // 2514-2552), folded into the same per-Update pass. Seed on the first
+        // Started tick, then fire when now crosses the armed time, accruing
+        // each side's income — the base <c>IncomePerPayday × (1 + IncomeMoney)</c>
+        // (fsmission.cpp:2536) plus Σ over the side's stations of
+        // <c>GetStationType()->GetIncome()</c> (fsmission.cpp:2538-2546; see
+        // <see cref="StationIncomeFor"/>, which reads the live runtime stations
+        // so capture re-siding and destruction fall out of current ownership) —
+        // and reporting it through the site seam.
+        // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
+        // lives in the host's PaydayEvent handler, mirroring the split between
+        // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
+        // Timeout wins before DoTick's economy (FedSrv/fsmission.cpp:2508-2516).
+        // The host resolves the winner after movement; suppress a payday that
+        // otherwise occurs inside this port's combined mission/economy update.
+        bool countdownExpired = HasCountdownExpired(now);
+        if (Stage == MissionStage.Started && !countdownExpired && NextPaydayTime == 0)
+            NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
+        if (Stage == MissionStage.Started && !countdownExpired && now >= NextPaydayTime)
+        {
+            double treasureElapsed = PaydayInterval + now - NextPaydayTime;
+            if (AllowDevelopments && TreasureParameters.AllowDevelopments) // fsmission.cpp:2520
+            {
+                foreach (var side in Sides)
+                {
+                    long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                                + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
+                    income = (long)(income * ShowcaseIncomeMultiplier); // P703 opt-in pacing extension
+                    side.Money += income;                          // fsmission.cpp:2536
+                    Site.PaydayEvent(side, income);                // site seam → host payout
+                }
+            }
+            RegenerateTreasures(now, treasureElapsed);
+            NextPaydayTime += PaydayInterval;           // keep phase (fsmission.cpp:2519)
         }
 
         // postcondition on the chunked path: the last chunk equals now.
