@@ -34,12 +34,21 @@ internal static class McpTools
                         side = new { type = "integer", @enum = new[] { 0, 1 }, description = "Side id to seat on (see list_active_bots / server config). Omit to auto-pick the first available side." },
                         parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the hull's real native preferred loadout at `tech_level`." },
                         tech_level = new { type = "integer", @default = 0, minimum = 0, description = "Optional tech level for a combat bot's omitted-parts loadout (P539b/P556): 0 = the scenario hull's native preferred loadout; N advances the scenario hull floor(N/2) steps along its SuccessorHullID chain (tech 2+ flies the successor hull) and advances each of the resulting hull's native preferred parts N steps along its SuccessorPartID chain (keeping only parts that CanMountPart, including the shield chain), stopping at chain ends. Higher tech flies a tougher hull with a stronger gun and shield — for deterministic showcase fights." },
-                        behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
+                        behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat", "miner", "docker", "deathmatch", "chatter" }, @default = "idle", description = "Opt-in routines: miner waits for commander dispatch and hauls ore; docker faces rocks and performs communal docking; deathmatch uses native piglet targeting; chatter sends a scripted string at most once per worker per 30s. Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
                         target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "hull" },
                 }),
+            },
+            new Tool
+            {
+                Name = "bot_behavior",
+                Description = "Push a typed C# behavior onto a world-owning bot, suspending the previous routine; omit push to pop and resume it. The base behavior cannot be popped. No scripting host.",
+                InputSchema = Schema(new { type = "object", properties = new {
+                    name = new { type = "string" },
+                    push = new { type = "string", @enum = new[] { "idle", "weave", "combat", "miner", "docker", "deathmatch", "chatter" } },
+                }, required = new[] { "name" } }),
             },
             new Tool
             {
@@ -236,6 +245,7 @@ internal static class McpTools
                 "despawn_bot" => OptStr(args, "name") is { Length: > 0 } botName
                     ? Ok(JsonSerializer.Serialize(new { stopped = mgr.StopBots(botName, false) })) : Err("despawn_bot: required name is missing"),
                 "spawn_bot" => SpawnBot(args, mgr),
+                "bot_behavior" => ChangeBehavior(args, mgr),
                 "spawn_scenario" => SpawnScenario(args, mgr),
                 "get_perf_stats" => GetPerfStats(args, mgr),
                 "run_hull_matrix" => RunHullMatrix(args, mgr),
@@ -283,6 +293,14 @@ internal static class McpTools
         }
     }
 
+    private static CallToolResult ChangeBehavior(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (OptStr(args, "name") is not { Length: > 0 } name) return Err("bot_behavior: name is required");
+        string? behavior = OptStr(args, "push");
+        if (behavior is not null && !BotRoutine.Valid(behavior)) return Err("bot_behavior: unknown behavior");
+        return Ok(JsonSerializer.Serialize(new { count = mgr.ChangeBehavior(name, behavior) }));
+    }
+
     internal static CallToolResult SpawnBotError(IDictionary<string, JsonElement> args, BotManager mgr, CallToolResult error)
     {
         int? side = OptInt(args, "side") ?? (mgr.ProbeSide >= 0 ? mgr.ProbeSide : null);
@@ -303,8 +321,8 @@ internal static class McpTools
             return Err("spawn_bot: required argument `hull` (name or substring) is missing");
 
         string behavior = OptStr(args, "behavior") is { } bb && bb.Length > 0 ? bb : "idle";
-        if (behavior is not ("idle" or "weave" or "combat"))
-            return Err($"spawn_bot: behavior must be 'idle', 'weave' or 'combat', got '{behavior}'");
+        if (!BotRoutine.Valid(behavior))
+            return Err($"spawn_bot: unknown behavior (use idle, weave, combat, miner, docker, deathmatch or chatter), got '{behavior}'");
 
         // target_sector is combat-only. Resolve it against the probe's live
         // sector map (same exact-over-substring rules as hulls/parts) BEFORE
@@ -347,7 +365,7 @@ internal static class McpTools
             // picks — the native preferred shield is what a real player can
             // kill. A caller who wants P539's dogfight gun names it explicitly
             // via `parts`. idle/weave keeps the standing parity loadout.
-            parts = behavior == "combat"
+            parts = behavior is "combat" or "miner" or "docker" or "deathmatch" or "chatter"
                 ? (techLoadout = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techLevel)).Value.Parts
                 : Catalog.DefaultParts();
         var flyHullId = techLoadout?.HullId ?? hull.Id;

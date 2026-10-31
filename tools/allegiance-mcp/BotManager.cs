@@ -500,7 +500,7 @@ internal sealed partial class BotManager : IDisposable
         LoadoutGrant granted = default;
         string? grantWarning = null;
 
-        if (behavior == "combat")
+        if (behavior is "combat" or "miner" or "docker" or "deathmatch" or "chatter")
         {
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
@@ -548,7 +548,7 @@ internal sealed partial class BotManager : IDisposable
                 MedevacScout = medevacScout,
                 CanBuyRescueProbe = canBuyRescueProbe,
                 Difficulty = _difficulty,
-                TechLoadouts = true,
+                TechLoadouts = behavior == "combat",
                 DefensiveMineDuty = defensiveMines,
                 AlephFieldDuty = alephFieldDuty,
                 PurchasePacer = _loadoutPurchasePacer,
@@ -1892,10 +1892,20 @@ bool isThreat =
                             continue;
                         }
                         Interlocked.Increment(ref bot.AiDecisions);
-                        if (bot.Behavior != "combat") HandleOrders(bot, now);
+                        if (bot.Behavior is "miner" or "docker" or "deathmatch" or "chatter")
+                        {
+                            DriveRoutine(bot, now);
+                        }
+                        else if (bot.Behavior != "combat") HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
                             DriveCombat(bot, now, prep[i]);
+                        }
+                        else if (bot.Cs is { } weaveCs && bot.Behavior == "weave")
+                        {
+                            double yaw = Math.Sin(now * bot.WeaveFreq + bot.WeavePhase) * bot.WeaveAmp;
+                            double throttle = 0.55 + 0.25 * Math.Sin(now * bot.WeaveFreq * 0.7 + bot.WeavePhase * 1.3);
+                            weaveCs.CommandControls(new ControlData((float)yaw, 0, 0, (float)throttle), 0);
                         }
                         else if (bot.Bot?.ShipAssignment is not null && bot.Behavior == "weave")
                         {
@@ -2244,7 +2254,8 @@ bool isThreat =
                 // (a fresh client, seated+launched like any spawned combat bot).
                 if (bot.Bot is not null)
                     UpgradeToCombat(bot);
-                bot.Behavior = "combat";
+                if (bot.Behavior is not ("miner" or "docker" or "deathmatch" or "chatter"))
+                    bot.Behavior = "combat";
             }
         }
     }
@@ -3078,7 +3089,7 @@ bool isThreat =
     /// weapon range (the P556 root cause). Shared by the nearest-enemy and P431
     /// commanded-target paths.</summary>
     private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now,
-        int engagerCount, int engagerRank, bool stationTarget = false)
+        int engagerCount, int engagerRank, bool stationTarget = false, bool? boostOverride = null)
     {
         using var frameScope = new DecisionFrameScope(cs);
         lock (cs.Gate)
@@ -3297,6 +3308,8 @@ bool isThreat =
         }
         else if (!fire) bot.FireTriggerHeld = false;
 
+        if (boostOverride is { } boost)
+            state = boost ? state | ShipControlState.AfterburnerButton : state & ~ShipControlState.AfterburnerButton;
         int stateM = CloakApproach(bot, cs, state | (fire ? ShipControlState.AllWeapons : 0));
         bot.AttackAfterburnerHeld = (stateM & ShipControlState.AfterburnerButton) != 0;
 

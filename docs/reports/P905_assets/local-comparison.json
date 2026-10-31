@@ -1,0 +1,183 @@
+{
+  "receipts": [
+    {
+      "run": "income-gc-control",
+      "reference": "47fc17d6",
+      "server_gc": true,
+      "initial_miners": 2,
+      "window_simulation_seconds": 600.100000000002,
+      "observation_wall_seconds": 265.5171543,
+      "ore_units": [
+        113.84066772460938,
+        113.88037109375
+      ],
+      "gross_He3_credit_value_before_integer_conversion": [
+        9107.25341796875,
+        9110.4296875
+      ],
+      "native_integral_treasury_credits_from_sale_logs": [
+        9106,
+        9110
+      ],
+      "deliveries": [
+        2,
+        2
+      ],
+      "active_bots": 30,
+      "kills": 3,
+      "kills_per_wall_minute": 0.6779223002541798,
+      "shots": 1571,
+      "ship_hits": 717,
+      "refused_log_lines": 0,
+      "idle_with_target": {
+        "CurrentCount": 0,
+        "BotsLastMinute": 0,
+        "SampleAgeSeconds": 0.3124601000000098
+      },
+      "source": ".scratch/p905/income-gc-control/"
+    },
+    {
+      "run": "income-gc-working",
+      "reference": "working-tree",
+      "server_gc": true,
+      "initial_miners": 2,
+      "window_simulation_seconds": 600.1500000000019,
+      "observation_wall_seconds": 266.3716599,
+      "ore_units": [
+        113.84066772460938,
+        113.88037109375
+      ],
+      "gross_He3_credit_value_before_integer_conversion": [
+        9107.25341796875,
+        9110.4296875
+      ],
+      "native_integral_treasury_credits_from_sale_logs": [
+        9106,
+        9110
+      ],
+      "deliveries": [
+        2,
+        2
+      ],
+      "active_bots": 30,
+      "kills": 3,
+      "kills_per_wall_minute": 0.6757475628885399,
+      "shots": 2237,
+      "ship_hits": 1165,
+      "refused_log_lines": 0,
+      "idle_with_target": {
+        "CurrentCount": 0,
+        "BotsLastMinute": 0,
+        "SampleAgeSeconds": 0.41433430000000726
+      },
+      "source": ".scratch/p905/income-gc-working/"
+    },
+    {
+      "run": "income-gc-dock-control",
+      "reference": "47fc17d6",
+      "server_gc": true,
+      "initial_miners": 2,
+      "window_simulation_seconds": 600.000000000002,
+      "observation_wall_seconds": 262.7205998,
+      "ore_units": [
+        113.84066772460938,
+        113.88037109375
+      ],
+      "gross_He3_credit_value_before_integer_conversion": [
+        9107.25341796875,
+        9110.4296875
+      ],
+      "native_integral_treasury_credits_from_sale_logs": [
+        9106,
+        9110
+      ],
+      "deliveries": [
+        2,
+        2
+      ],
+      "active_bots": 30,
+      "kills": 5,
+      "kills_per_wall_minute": 1.1418975148061459,
+      "shots": 3498,
+      "ship_hits": 1480,
+      "refused_log_lines": 0,
+      "idle_with_target": {
+        "CurrentCount": 0,
+        "BotsLastMinute": 0,
+        "SampleAgeSeconds": 0.6459714999999733
+      },
+      "source": ".scratch/p905/income-gc-dock-control/",
+      "docked_nonpod_at_end": 0,
+      "nonpod_docked_for_at_least_5_wall_seconds": []
+    },
+    {
+      "run": "income-gc-dock-working",
+      "reference": "working-tree",
+      "server_gc": true,
+      "initial_miners": 2,
+      "window_simulation_seconds": 600.050000000002,
+      "observation_wall_seconds": 262.2173522,
+      "ore_units": [
+        113.84066772460938,
+        113.88037109375
+      ],
+      "gross_He3_credit_value_before_integer_conversion": [
+        9107.25341796875,
+        9110.4296875
+      ],
+      "native_integral_treasury_credits_from_sale_logs": [
+        9106,
+        9110
+      ],
+      "deliveries": [
+        2,
+        2
+      ],
+      "active_bots": 30,
+      "kills": 7,
+      "kills_per_wall_minute": 1.6017246626747077,
+      "shots": 3745,
+      "ship_hits": 1336,
+      "refused_log_lines": 0,
+      "idle_with_target": {
+        "CurrentCount": 0,
+        "BotsLastMinute": 0,
+        "SampleAgeSeconds": 0.8971876999999608
+      },
+      "source": ".scratch/p905/income-gc-dock-working/",
+      "docked_nonpod_at_end": 0,
+      "nonpod_docked_for_at_least_5_wall_seconds": []
+    }
+  ],
+  "aggregate": {
+    "47fc17d6": {
+      "runs": 2,
+      "kills": 8,
+      "wall_seconds": 528.2377541000001,
+      "kills_per_wall_minute": 0.9086817371049396,
+      "ore_units_per_side": [
+        227.68133544921875,
+        227.7607421875
+      ],
+      "integral_treasury_credits_per_side": [
+        18212,
+        18220
+      ]
+    },
+    "working-tree": {
+      "runs": 2,
+      "kills": 10,
+      "wall_seconds": 528.5890121,
+      "kills_per_wall_minute": 1.1350973748324724,
+      "ore_units_per_side": [
+        227.68133544921875,
+        227.7607421875
+      ],
+      "integral_treasury_credits_per_side": [
+        18212,
+        18220
+      ]
+    }
+  },
+  "limits": "Local 15v15 P700 fixture with seeded player wallets, native miners and legal purchase message paths. This does not certify 200v200 rig performance. Integral credits use the native floor on each sale; the printed one-decimal sale values do not straddle an integer boundary in these receipts."
+}

@@ -846,6 +846,18 @@ list in **reverse**.
 - **Bot behaviors** — weave/loiter/combat, scenarios, research, defense, siege.
   `tools/allegiance-mcp/BotManager.*.cs` (Combat, Defense, Siege, StrikeMass,
   Research, Support, Coordination, Orders).
+- **Ordered miner / Piglet routines (P905)** — explicit `spawn_bot` behaviors
+  `miner`, `docker`, `deathmatch`, `chatter` in
+  `tools/allegiance-mcp/BotManager.Routines.cs`, with typed state and timers in
+  `tools/allegiance-mcp/NativeBotRoutines.cs`. The `bot_behavior` tool pushes a
+  named C# routine or pops to the retained previous role; there is no scripting
+  host. Ordered peer miners supplement the engine drones; showcase keeps its
+  existing fleet and economy. Chat is opt-in and capped per worker. Native:
+  `Wopr/Wopr/Strategies/Miner.cs:141-284`, `Pigs/Piglets/docker.pig:36-90`,
+  `Pigs/Piglets/dm.pig:65-174`, `Pigs/Piglets/chatter.pig:217-244`.
+  Local income comparison: `tools/p905-local-income-proof.py`.
+  Stack/timer replacement proposals await approval in
+  `docs/reports/P905_REPORT.md`; their matrix statuses remain partial.
 - **Showcase role fallback (P821)** — native hull ability flags do not define
   scout/interceptor duties. Missing roles score legal small craft for the requested
   duty, retaining variety and purchase gates: `tools/allegiance-mcp/TechLoadoutSelector.cs`,

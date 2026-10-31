@@ -43,12 +43,34 @@ public sealed class P658SupervisorTests
     public void OptionsDefaultAndInternalWorkerAreDistinct()
     {
         Assert.Equal(1, DriverOptions.Parse(["localhost", "6073"]).Workers);
-        // P798b — `get_side_intel` is a real read-only tool, so the surface grew by one.
-        Assert.Equal(13, McpTools.Definitions().Count);
-        Assert.Equal(16, McpTools.Definitions(supervisor: true).Count);
+        // P905 adds typed behavior overrides to both tool surfaces.
+        Assert.Equal(14, McpTools.Definitions().Count);
+        Assert.Equal(17, McpTools.Definitions(supervisor: true).Count);
+        Assert.Contains(McpTools.Definitions(), t => t.Name == "bot_behavior");
         Assert.Null(DriverOptions.Parse(["localhost", "6073", "--workers", "1"]).Worker);
         Assert.Equal(new WorkerPartition(1, 2), DriverOptions.Parse(["localhost", "6073", "--worker", "2/2"]).Worker);
         Assert.Throws<ArgumentException>(() => DriverOptions.Parse(["localhost", "6073", "--worker", "2/2", "--workers", "2"]));
+    }
+
+    [Fact]
+    public async Task Behavior_override_routes_to_the_named_bots_worker()
+    {
+        var workers = new[] { new FakeWorker(0), new FakeWorker(1) };
+        foreach (var worker in workers)
+            worker.Handler = method => Task.FromResult(method == "list_active_bots"
+                ? Reply(new[] { new { name = $"worker-{worker.Index}", status = "active" } })
+                : Reply(new { count = 2 }));
+        using var supervisor = new WorkerSupervisor(workers, coordinate: false);
+        var result = await supervisor.HandleAsync("bot_behavior", new Dictionary<string, JsonElement>
+            { ["name"] = Json("worker-1"), ["push"] = Json("docker") }, CancellationToken.None);
+        Assert.False(result.IsError);
+        Assert.Equal(2, Body(result).GetProperty("count").GetInt32());
+        Assert.DoesNotContain("bot_behavior", workers[0].Calls);
+        Assert.Contains("bot_behavior", workers[1].Calls);
+        result = await supervisor.HandleAsync("bot_behavior", new Dictionary<string, JsonElement>
+            { ["name"] = Json("missing") }, CancellationToken.None);
+        Assert.True(result.IsError);
+        Assert.Equal(1, workers[1].Calls.Count(c => c == "bot_behavior"));
     }
 
     private sealed class FakeWorker(int index) : IWorker

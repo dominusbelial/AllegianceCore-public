@@ -1,0 +1,99 @@
+parity-matrix.csv: validated 688 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+autoupdate | 100.00% (12/12) | 100.00% (5/5) | visual 0 | replaced 0
+bots | n/a (0/0) | n/a (0/0) | visual 0 | replaced 0
+client | 100.00% (2/2) | 100.00% (1/1) | visual 0 | replaced 0
+commander | 100.00% (85.000/85.000) | 100.00% (47/47) | visual 0 | replaced 0
+commands | 100.00% (588/588) | 100.00% (190/190) | visual 0 | replaced 0
+content | 100.00% (8/8) | 100.00% (4/4) | visual 0 | replaced 0
+fedmsg | 100.00% (517/517) | 100.00% (126/126) | visual 0 | replaced 0
+hud | 100.00% (328/328) | 100.00% (110/110) | visual 75 | replaced 0
+lobby | 100.00% (56.500/56.500) | 100.00% (37/37) | visual 0 | replaced 0
+mission | 100.00% (3/3) | 100.00% (1/1) | visual 0 | replaced 0
+parts | 100.00% (161/161) | 100.00% (42/42) | visual 0 | replaced 0
+screens | 100.00% (121.000/121.000) | 100.00% (96/96) | visual 0 | replaced 0
+TOTAL | 100.00% (1881.500/1881.500) | 100.00% (659/659) | visual 75 | replaced 0
+sim-rules-matrix.csv: validated 857 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+FedSrv mission rules (event-driven) | 95.55% (730/764) | 94.94% (319/336) | visual 0 | replaced 0
+callbacks | 98.52% (200/203) | 95.89% (70/73) | visual 0 | replaced 0
+constants | 100.00% (135/135) | 100.00% (39/39) | visual 0 | replaced 0
+periodic | 87.76% (43/49) | 82.35% (14/17) | visual 0 | replaced 0
+session | 100.00% (19/19) | 100.00% (6/6) | visual 0 | replaced 0
+sounds | 100.00% (593/593) | 100.00% (231/231) | visual 0 | replaced 0
+treasure | 100.00% (3/3) | 100.00% (1/1) | visual 0 | replaced 0
+updates | 97.51% (353/362) | 97.96% (96/98) | visual 0 | replaced 0
+visibility | 100.00% (6/6) | 100.00% (2/2) | visual 0 | replaced 0
+warnings | 100.00% (10/10) | 100.00% (2/2) | visual 0 | replaced 0
+TOTAL | 97.57% (2092/2144) | 96.89% (780/805) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 1 rows; 1 eligible; 0 implemented; implemented weight 0
+offline-tool: 6 rows; 6 eligible; 6 implemented; implemented weight 12
+production: 813 rows; 784 eligible; 774 implemented; implemented weight 2080
+test-only: 37 rows; 14 eligible; 9 implemented; implemented weight 18
+training-matrix.csv: validated 241 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+training-framework | 43.62% (130/298) | 44.71% (38/85) | visual 0 | replaced 0
+training-integration | 47.72% (157/329) | 45.35% (39/86) | visual 0 | replaced 0
+training-missions | 34.31% (94/274) | 35.94% (23/64) | visual 0 | replaced 0
+training-tools | 100.00% (3/3) | 100.00% (2/2) | visual 0 | replaced 0
+TOTAL | 42.48% (384/904) | 43.04% (102/237) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 225 rows; 221 eligible; 102 implemented; implemented weight 384
+test-only: 16 rows; 16 eligible; 13 implemented; implemented weight 32
+lobby-matrix.csv: validated 35 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+lobby | 98.72% (77/78) | 96.67% (29/30) | visual 0 | replaced 11
+TOTAL | 98.72% (77/78) | 96.67% (29/30) | visual 0 | replaced 11
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 1 rows; 1 eligible; 1 implemented; implemented weight 1
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 34 rows; 29 eligible; 29 implemented; implemented weight 77
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+soundengine-matrix.csv: validated 23 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+sound | 100.00% (54/54) | 100.00% (22/22) | visual 0 | replaced 1
+TOTAL | 100.00% (54/54) | 100.00% (22/22) | visual 0 | replaced 1
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 23 rows; 22 eligible; 22 implemented; implemented weight 54
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+allsrvui-matrix.csv: validated 16 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+admin | 68.18% (30/44) | 62.50% (10/16) | visual 0 | replaced 0
+TOTAL | 68.18% (30/44) | 62.50% (10/16) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 16 rows; 16 eligible; 10 implemented; implemented weight 30
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+effect-matrix.csv: validated 16 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+effect | 100.00% (18/18) | 100.00% (8/8) | visual 0 | replaced 0
+TOTAL | 100.00% (18/18) | 100.00% (8/8) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 2 rows; 0 eligible; 0 implemented; implemented weight 0
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 14 rows; 8 eligible; 8 implemented; implemented weight 18
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+bots-matrix.csv: validated 25 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+bots | 92.73% (51/55) | 90.48% (19/21) | visual 0 | replaced 0
+TOTAL | 92.73% (51/55) | 90.48% (19/21) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 2 rows; 0 eligible; 0 implemented; implemented weight 0
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 23 rows; 21 eligible; 19 implemented; implemented weight 51
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+model-tools-matrix.csv: validated 11 rows
+area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight | design-replaced-weight
+model-tools | 0.00% (0/18) | 0.00% (0/8) | visual 0 | replaced 0
+TOTAL | 0.00% (0/18) | 0.00% (0/8) | visual 0 | replaced 0
+Reachability (config-only and test-only stay in the denominator; earn no headline credit):
+config-only: 11 rows; 8 eligible; 5 implemented; implemented weight 12
+offline-tool: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+production: 0 rows; 0 eligible; 0 implemented; implemented weight 0
+test-only: 0 rows; 0 eligible; 0 implemented; implemented weight 0

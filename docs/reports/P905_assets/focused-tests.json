@@ -1,0 +1,471 @@
+{
+  "unit_and_initial_live": [
+    {
+      "test": "Ordered_miner_waits_ignores_duplicate_flying_dispatch_and_accepts_after_docking",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Ordered_miner_waits_ignores_duplicate_flying_dispatch_and_accepts_after_docking",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Ordered_miner_waits_ignores_duplicate_flying_dispatch_and_accepts_after_docking",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.93
+    },
+    {
+      "test": "Wopr_absolute_ore_threshold_is_strict",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Wopr_absolute_ore_threshold_is_strict",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.93
+    },
+    {
+      "test": "Wopr_absolute_ore_threshold_is_strict",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.95
+    },
+    {
+      "test": "Docker_waits_faces_before_throttle_stops_then_repeats",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Docker_waits_faces_before_throttle_stops_then_repeats",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Docker_waits_faces_before_throttle_stops_then_repeats",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.98
+    },
+    {
+      "test": "Face_uses_native_angular_drift_and_quarter_radius_completion",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.97
+    },
+    {
+      "test": "Face_uses_native_angular_drift_and_quarter_radius_completion",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Face_uses_native_angular_drift_and_quarter_radius_completion",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.92
+    },
+    {
+      "test": "Deathmatch_retains_close_target_replaces_far_missing_or_pod_without_fleet_caps",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Deathmatch_retains_close_target_replaces_far_missing_or_pod_without_fleet_caps",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.95
+    },
+    {
+      "test": "Deathmatch_retains_close_target_replaces_far_missing_or_pod_without_fleet_caps",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.92
+    },
+    {
+      "test": "Deathmatch_search_and_rearm_use_their_own_native_cadences",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.95
+    },
+    {
+      "test": "Deathmatch_search_and_rearm_use_their_own_native_cadences",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.92
+    },
+    {
+      "test": "Deathmatch_search_and_rearm_use_their_own_native_cadences",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Typed_stack_preserves_suspended_state_and_never_pops_the_base",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.98
+    },
+    {
+      "test": "Typed_stack_preserves_suspended_state_and_never_pops_the_base",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.97
+    },
+    {
+      "test": "Typed_stack_preserves_suspended_state_and_never_pops_the_base",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Timer_coalesces_missed_intervals_repeats_reschedules_and_cancels",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.97
+    },
+    {
+      "test": "Timer_coalesces_missed_intervals_repeats_reschedules_and_cancels",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Timer_coalesces_missed_intervals_repeats_reschedules_and_cancels",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.94
+    },
+    {
+      "test": "Four_hundred_opted_in_chatters_share_one_bounded_chat_budget",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 0.96
+    },
+    {
+      "test": "Four_hundred_opted_in_chatters_share_one_bounded_chat_budget",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 0.95
+    },
+    {
+      "test": "Four_hundred_opted_in_chatters_share_one_bounded_chat_budget",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 0.98
+    },
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 19.74
+    },
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 19.85
+    },
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 19.85
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 5.04
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 5.1
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 34.43
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 3.53
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 3.46
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 3.47
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 31.55
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 31.49
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 31.55
+    }
+  ],
+  "server_gc_live": [
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 21.2,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 21.52,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 19.83,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 5.2,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 5.16,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Docker_faces_and_communal_chat_queues_a_real_station_order_and_stack_resumes",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 5.69,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 4.27,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 3.61,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Deathmatch_searches_real_visible_enemies_and_retargets_after_a_kill",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 3.56,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 31.63,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 31.56,
+      "server_gc_environment": 1
+    },
+    {
+      "test": "Chatter_is_explicit_and_uses_real_chat_with_a_worker_budget",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 31.66,
+      "server_gc_environment": 1
+    }
+  ],
+  "supervisor_and_seed_isolations": [
+    {
+      "test": "P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 1.08
+    },
+    {
+      "test": "P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 1.1
+    },
+    {
+      "test": "P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 1.16
+    },
+    {
+      "test": "P658SupervisorTests.Behavior_override_routes_to_the_named_bots_worker",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 1.15
+    },
+    {
+      "test": "P658SupervisorTests.Behavior_override_routes_to_the_named_bots_worker",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 1.12
+    },
+    {
+      "test": "P658SupervisorTests.Behavior_override_routes_to_the_named_bots_worker",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 1.18
+    },
+    {
+      "test": "ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 2.23
+    },
+    {
+      "test": "ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 2.2
+    },
+    {
+      "test": "ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 2.11
+    }
+  ],
+  "core_isolations": [
+    {
+      "test": "P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 1.42
+    },
+    {
+      "test": "P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 1.43
+    },
+    {
+      "test": "P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 1.46
+    },
+    {
+      "test": "NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 1,
+      "exit": 1,
+      "wall_seconds": 2.55
+    },
+    {
+      "test": "NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 2,
+      "exit": 1,
+      "wall_seconds": 2.58
+    },
+    {
+      "test": "NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 3,
+      "exit": 1,
+      "wall_seconds": 2.51
+    },
+    {
+      "test": "LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 2.69
+    },
+    {
+      "test": "LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 2.81
+    },
+    {
+      "test": "LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 2.82
+    },
+    {
+      "test": "P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 11.66
+    },
+    {
+      "test": "P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 11.33
+    },
+    {
+      "test": "P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 11.67
+    }
+  ],
+  "profile_writable_config_isolations": [
+    {
+      "repeat": 1,
+      "exit": 0,
+      "wall_seconds": 1.22
+    },
+    {
+      "repeat": 2,
+      "exit": 0,
+      "wall_seconds": 1.2
+    },
+    {
+      "repeat": 3,
+      "exit": 0,
+      "wall_seconds": 1.22
+    }
+  ]
+}
