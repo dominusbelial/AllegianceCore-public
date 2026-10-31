@@ -1,0 +1,17 @@
+{
+  "worker1": {
+    "lossesAtCrash": 224,
+    "reasons": {
+      "local-transport-error": 194,
+      "server-eof": 3,
+      "connect-exception": 27
+    }
+  },
+  "worker2": {
+    "lossesAtCrash": 195,
+    "reasons": {
+      "local-transport-error": 194,
+      "server-eof": 1
+    }
+  }
+}

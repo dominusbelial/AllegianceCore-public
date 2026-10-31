@@ -1,0 +1,67 @@
+[
+  {
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:03:33.5443242",
+    "summary": "P700 local 15v15: 209.4s, samples=2092, reached=24/30, longest speed<1 with target=0.306s, shots=654, hits=198, kills=2",
+    "seconds": 209.4,
+    "samples": 2092,
+    "reached": 24,
+    "longestStoppedWithTargetSeconds": 0.306,
+    "shots": 654,
+    "hits": 198,
+    "kills": 2
+  },
+  {
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:06:16.7633772",
+    "summary": "P700 local 15v15: 373.1s, samples=3726, reached=24/30, longest speed<1 with target=2.013s, shots=2223, hits=993, kills=10",
+    "seconds": 373.1,
+    "samples": 3726,
+    "reached": 24,
+    "longestStoppedWithTargetSeconds": 2.013,
+    "shots": 2223,
+    "hits": 993,
+    "kills": 10
+  },
+  {
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:03:23.4157077",
+    "summary": "P700 local 15v15: 199.2s, samples=1990, reached=24/30, longest speed<1 with target=0.406s, shots=941, hits=164, kills=2",
+    "seconds": 199.2,
+    "samples": 1990,
+    "reached": 24,
+    "longestStoppedWithTargetSeconds": 0.406,
+    "shots": 941,
+    "hits": 164,
+    "kills": 2
+  },
+  {
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:05:50.0076557",
+    "summary": "P700 local 15v15: 346.0s, samples=3455, reached=24/30, longest speed<1 with target=1.109s, shots=1975, hits=421, kills=4",
+    "seconds": 346.0,
+    "samples": 3455,
+    "reached": 24,
+    "longestStoppedWithTargetSeconds": 1.109,
+    "shots": 1975,
+    "hits": 421,
+    "kills": 4
+  },
+  {
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:03:23.9767735",
+    "summary": "P700 local 15v15: 200.1s, samples=1999, reached=24/30, longest speed<1 with target=0.000s, shots=328, hits=2, kills=0",
+    "seconds": 200.1,
+    "samples": 1999,
+    "reached": 24,
+    "longestStoppedWithTargetSeconds": 0.0,
+    "shots": 328,
+    "hits": 2,
+    "kills": 0
+  }
+]

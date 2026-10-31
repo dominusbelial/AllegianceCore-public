@@ -1,0 +1,12 @@
+{
+  "sdk": "10.0.400",
+  "aotDependencies": [
+    "Microsoft.DotNet.ILCompiler/10.0.11",
+    "Microsoft.NET.ILLink.Tasks/10.0.11",
+    "runtime.linux-x64.Microsoft.DotNet.ILCompiler/10.0.11"
+  ],
+  "runtimePacks": {
+    "Microsoft.NETCore.App.Runtime.linux-x64": "10.0.11",
+    "Microsoft.NETCore.App.Runtime.NativeAOT.linux-x64": "10.0.11"
+  }
+}

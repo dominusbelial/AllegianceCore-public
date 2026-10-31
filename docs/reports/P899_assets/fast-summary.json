@@ -1,0 +1,74 @@
+{
+  "tier": "fast",
+  "seconds": 527.8398978750047,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 119,
+      "outcomes": {
+        "Passed": 119
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 4580,
+      "outcomes": {
+        "Passed": 4576,
+        "NotExecuted": 3,
+        "Failed": 1
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2050,
+      "outcomes": {
+        "Passed": 2048,
+        "Failed": 2
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5922,
+      "outcomes": {
+        "Passed": 5915,
+        "Failed": 7
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.9738992042440319,
+    "referenceMs": 3.6716,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+      "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+      "outcome": "Failed",
+      "seconds": 21.2930709
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 10.4012418
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.ClientCore.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "2 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.0784363559941994,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

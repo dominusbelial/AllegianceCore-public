@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using Allegiance.Core.Transport;
@@ -70,7 +69,7 @@ internal sealed class BroadcastSnapshot
 internal sealed class BroadcastPublisher : IDisposable
 {
     private readonly object _gate = new();
-    private readonly ConcurrentBag<BroadcastSnapshot> _pool = new();
+    private readonly BroadcastPool<BroadcastSnapshot> _pool = new(3);
     private readonly Action<BroadcastDelivery, ReadOnlyMemory<byte>> _send;
     private readonly Thread _thread;
     private readonly ParallelOptions _options;
@@ -79,6 +78,7 @@ internal sealed class BroadcastPublisher : IDisposable
     internal long CoalescedSnapshots, DroppedStreamFrames, PublishedSnapshots, PublishTimestampTicks;
     internal long SnapshotContainersCreated, EncodeFailures, PublishAllocatedBytes;
     internal Action? BeforeEncode; // deterministic stalled-worker test seam
+    internal Action? BeforePoolReturn; // exceptional pool-return test seam
     internal Action<Exception>? OnError;
 
     internal BroadcastPublisher(Action<BroadcastDelivery, byte[]> send, int workers)
@@ -130,7 +130,7 @@ internal sealed class BroadcastPublisher : IDisposable
                         previous.Deliveries[keep++] = delivery;
                     else
                     {
-                        delivery.Packet.Release();
+                        Release(delivery.Packet);
                         Interlocked.Increment(ref DroppedStreamFrames);
                     }
                 }
@@ -150,10 +150,24 @@ internal sealed class BroadcastPublisher : IDisposable
 
     private void Return(BroadcastSnapshot snapshot)
     {
-        foreach (var delivery in snapshot.Deliveries) delivery.Packet.Release();
+        // A release may fail after accepting the packet into its pool. Never
+        // retry it: that could create two leases on the same buffer. Continue
+        // through every remaining delivery so one bad release cannot leak them.
+        foreach (var delivery in snapshot.Deliveries) Release(delivery.Packet);
         snapshot.Deliveries.Clear();
         snapshot.AfterPublish.Clear();
-        _pool.Add(snapshot);
+        try
+        {
+            BeforePoolReturn?.Invoke();
+            _pool.Add(snapshot);
+        }
+        catch (Exception e) { Failed(e); } // empty container can be collected
+    }
+
+    private void Release(BroadcastPacket packet)
+    {
+        try { packet.Release(); }
+        catch (Exception e) { Failed(e); }
     }
 
     private static bool HasNewerStream(BroadcastSnapshot snapshot, BroadcastDelivery previous)
@@ -174,19 +188,21 @@ internal sealed class BroadcastPublisher : IDisposable
     {
         while (true)
         {
-            BroadcastSnapshot snapshot;
-            lock (_gate)
-            {
-                while (_pending is null && !_stopping) Monitor.Wait(_gate);
-                if (_pending is null) return;
-                snapshot = _pending;
-                _pending = null;
-                _active = true;
-            }
-            long start = Stopwatch.GetTimestamp();
-            long allocated = GC.GetAllocatedBytesForCurrentThread();
+            BroadcastSnapshot? snapshot = null;
+            long start = 0, allocated = 0;
             try
             {
+                // Include acquisition/waiting in the exception boundary too.
+                lock (_gate)
+                {
+                    while (_pending is null && !_stopping) Monitor.Wait(_gate);
+                    if (_pending is null) return;
+                    snapshot = _pending;
+                    _pending = null;
+                    _active = true;
+                }
+                start = Stopwatch.GetTimestamp();
+                allocated = GC.GetAllocatedBytesForCurrentThread();
                 BeforeEncode?.Invoke();
                 // Each packet is immutable; duplicate references encode once.
                 Parallel.For(0, snapshot.Deliveries.Count, _options, i =>
@@ -231,10 +247,22 @@ internal sealed class BroadcastPublisher : IDisposable
             catch (Exception e) { Failed(e); }
             finally
             {
-                Interlocked.Add(ref PublishTimestampTicks, Stopwatch.GetTimestamp() - start);
-                Return(snapshot);
-                Interlocked.Add(ref PublishAllocatedBytes, GC.GetAllocatedBytesForCurrentThread() - allocated);
-                lock (_gate) { _active = false; Monitor.PulseAll(_gate); }
+                if (snapshot is not null)
+                {
+                    // Return contains packet/container failures. The completion
+                    // signal must still run if cleanup changes in the future.
+                    try
+                    {
+                        Interlocked.Add(ref PublishTimestampTicks, Stopwatch.GetTimestamp() - start);
+                        Return(snapshot);
+                    }
+                    catch (Exception e) { Failed(e); }
+                    finally
+                    {
+                        Interlocked.Add(ref PublishAllocatedBytes, GC.GetAllocatedBytesForCurrentThread() - allocated);
+                        lock (_gate) { _active = false; Monitor.PulseAll(_gate); }
+                    }
+                }
             }
         }
     }
