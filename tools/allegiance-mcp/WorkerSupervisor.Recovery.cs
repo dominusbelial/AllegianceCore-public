@@ -46,9 +46,12 @@ internal sealed partial class WorkerSupervisor
         }
         if (replay)
         {
-            // Explicit map overrides and minefield coordinates belong to the old
-            // map. Re-derive objectives from the fresh side's observations.
-            args.Remove("target_sector");
+            // Ids and minefield coordinates belong to the old map, so objectives
+            // are re-derived from the fresh side's observations. A sector NAME is
+            // the operator's intent: it holds if the new map has that sector.
+            if (args["target_sector"]?.GetValue<string>() is { } target && !short.TryParse(target, out _))
+                args["__target_optional"] = true;
+            else args.Remove("target_sector");
             if (args["minefields"] is JsonObject fields)
             {
                 fields["at"] = "rendezvous";

@@ -58,6 +58,26 @@ public sealed class P900FleetRecoveryLiveTests(ITestOutputHelper output)
     }
 
     [SkippableFact]
+    public async Task Named_target_holds_on_the_same_map_and_yields_on_a_map_without_it()
+    {
+        Require.Artwork();
+        await using var run = await FleetRun.Start(output, workers: 2);
+        await run.Spawn(2, target: "Sedna");
+        await run.KillServer();
+        await run.WaitFleet(f => f.GetProperty("recovering").GetInt32() == 4);
+        await run.StartServer("XXV_simple.igc", [1, 3]);
+        await run.WaitFleet(f => f.GetProperty("active").GetInt32() == 4 && f.GetProperty("ok").GetBoolean());
+        Assert.All(await run.Inventory(), b => Assert.Equal(1063, b.GetProperty("targetSector").GetInt16()));
+
+        await run.KillServer();
+        await run.WaitFleet(f => f.GetProperty("recovering").GetInt32() == 4);
+        await run.StartServer("m2xspiderw.igc", [25, 3]);
+        await run.WaitFleet(f => f.GetProperty("active").GetInt32() == 4 && f.GetProperty("ok").GetBoolean());
+        Assert.All(await run.Inventory(), b => Assert.True(b.GetProperty("targetSector").ValueKind == JsonValueKind.Null
+            || b.GetProperty("targetSector").GetInt16() != 1063, "Sedna is not on the new map"));
+    }
+
+    [SkippableFact]
     public async Task Deadline_exhaustion_is_visible_and_does_not_retry_forever()
     {
         Require.Artwork();

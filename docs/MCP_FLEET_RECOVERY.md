@@ -54,9 +54,8 @@ cache on worker zero, so `EnsureCommander` cannot retain old commanders. The
 driver retains its existing `PCore001` catalog contract; this feature does not add
 arbitrary static-core switching.
 
-Explicit `target_sector` overrides are retained in the original request but
-cleared for replay so a reused numeric ID cannot name a different objective.
-Bots derive new targets from the new map. Requested minefield counts/sides are
+A numeric `target_sector` is dropped on replay. A sector name is kept and holds if
+the new map has that sector; otherwise bots derive new targets from the new map. Requested minefield counts/sides are
 replayed with fresh automatic placement; old coordinate/aleph overrides are
 discarded. Before a new clash is known, placement uses the freshly observed
 friendly home. Ordinary layer build/placement failures remain visible in worker

@@ -80,7 +80,7 @@ Joins follow the normal sequential logon/seat/purchase/launch path within each
 worker, with the workers operating in parallel.
 
 Original map overrides are retained as request history but are not replayed as
-identities: `target_sector` is cleared and ordinary discovery derives new
+identities: a numeric `target_sector` is cleared (Claude's review keeps a sector name when the new map has it, as the rig's `Alderan`) and ordinary discovery derives new
 objectives. Requested minefield counts/sides are replayed with automatic fresh
 placement; stale coordinate/aleph overrides are discarded. If a clash is not yet
 known, placement uses the freshly observed friendly home. Existing layer-build

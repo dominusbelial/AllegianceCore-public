@@ -440,6 +440,18 @@ internal static class McpTools
             : SpawnScenarioHomogeneous(args, mgr);
     }
 
+    /// <summary>P900 — a recovery replay keeps a named target only if the new map has
+    /// it; otherwise the side computes its clash as it does with no override.</summary>
+    private static short? ScenarioTarget(IDictionary<string, JsonElement> args, string query, BotManager mgr)
+    {
+        try { return Catalog.ResolveSector(query, mgr.ProbeClusters()).Id; }
+        catch (ArgumentException) when (args.ContainsKey("__target_optional"))
+        {
+            Console.Error.WriteLine($"[fleet] target_sector '{query}' is not on this map; using computed objectives");
+            return null;
+        }
+    }
+
     private static CallToolResult SpawnScenarioHomogeneous(IDictionary<string, JsonElement> args, BotManager mgr)
     {
         var finaleSettings = ReadFinaleSettings(args, false);
@@ -454,7 +466,7 @@ internal static class McpTools
 
         short? targetSector = null;
         if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
-            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+            targetSector = ScenarioTarget(args, ts, mgr);
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
         // P798 — the explicit showcase target is the optional override; without
@@ -655,7 +667,7 @@ internal static class McpTools
 
         short? targetSector = null;
         if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
-            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+            targetSector = ScenarioTarget(args, ts, mgr);
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
         // P798 — the explicit showcase target is the optional override; without
