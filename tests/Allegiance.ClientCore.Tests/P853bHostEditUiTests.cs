@@ -101,6 +101,8 @@ public sealed class P853bHostEditUiTests
     private static void Seat(ConnectionSession session, bool owner = false, MissionParamsMsg? advertised = null,
         int assembledSides = 2)
     {
+        // JOINED_MISSION loads the mission core; without it the seat never forms.
+        Allegiance.TestInfra.Require.Artwork();
         var p = advertised ?? Params();
         var sides = Enumerable.Range(0, assembledSides)
             .Select(i => new SideRoster.SideRecord((short)i, (short)(i == 0 ? 1 : 3), (short)1,
@@ -145,7 +147,7 @@ public sealed class P853bHostEditUiTests
     /// settings unlocked and in a non-squad game — the same conditions the server
     /// checks before it would accept the message (<c>FedSrv.CPP:7433-7436</c>,
     /// <c>teamscreen.cpp:1592-1594,960-965</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void TeamName_is_leader_only_and_gated_on_stage_lock_and_squad_game()
     {
         using var session = JoinedSession();
@@ -168,7 +170,7 @@ public sealed class P853bHostEditUiTests
         Assert.Equal("GAME ALREADY STARTED", TeamNameEdit.BlockedReason(world));
     }
 
-    [Fact]
+    [SkippableFact]
     public void TeamName_is_refused_when_locked_or_a_squad_game()
     {
         using (var locked = JoinedSession(advertised: Params(lockTeamSettings: true)))
@@ -186,7 +188,7 @@ public sealed class P853bHostEditUiTests
 
     /// <summary>⭐ The rename message: <c>squadID = NA</c> and the typed name
     /// trimmed and capped at 24 characters (<c>teamscreen.cpp:895,1049-1058</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void TeamName_plan_sends_NA_and_the_trimmed_24_char_name()
     {
         using var session = JoinedSession();
@@ -208,7 +210,7 @@ public sealed class P853bHostEditUiTests
     }
 
     /// <summary>⭐ An empty / whitespace edit shows an error and plans NOTHING.</summary>
-    [Fact]
+    [SkippableFact]
     public void TeamName_empty_edit_shows_the_error_and_sends_nothing()
     {
         using var session = JoinedSession();
@@ -224,7 +226,7 @@ public sealed class P853bHostEditUiTests
     /// <summary>The lobby title follows the server's rename echo (P853
     /// <c>SideNameOverride</c>), so the rename is visible in the pane that issued
     /// it and on every other client.</summary>
-    [Fact]
+    [SkippableFact]
     public void Side_rename_echo_updates_the_lobby_and_pane_name()
     {
         using var session = JoinedSession();
@@ -238,7 +240,7 @@ public sealed class P853bHostEditUiTests
 
     /// <summary>⭐ Owner-only, and only before the start (native's
     /// <c>bCanChangeSettings</c>, <c>teamscreen.cpp:1585-1589</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void Settings_form_is_owner_only_and_not_started_only()
     {
         using (var plain = JoinedSession(owner: false))
@@ -259,7 +261,7 @@ public sealed class P853bHostEditUiTests
     /// passes <c>MissionParamsMsg.Invalid(true)</c> — the shared Core validator the
     /// server runs before anything else (<c>igc.h:1339-1506</c>,
     /// <c>FedSrv.CPP:7534</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void Settings_form_builds_params_that_pass_Invalid_from_current_mission_values()
     {
         var advertised = Params(lives: 5, teams: 3);
@@ -288,7 +290,7 @@ public sealed class P853bHostEditUiTests
     /// params cell alone — the server adopts the whole blob
     /// (<c>fsmission.cpp:1843</c>), so a field the client never learned would be
     /// silently zeroed.</summary>
-    [Fact]
+    [SkippableFact]
     public void Settings_form_preserves_the_fields_it_does_not_model()
     {
         var advertised = Params(lives: 3, teams: 2);
@@ -326,7 +328,7 @@ public sealed class P853bHostEditUiTests
     /// NOTHING: the server boots a sender whose params are invalid
     /// (<c>FedSrv.CPP:7534</c>). Native shows the identical message box and never
     /// queues the message (<c>newgamescreen.cpp:1117-1119</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void Settings_form_invalid_edit_shows_the_Invalid_string_and_sends_nothing()
     {
         using var session = JoinedSession(owner: true);
@@ -361,7 +363,7 @@ public sealed class P853bHostEditUiTests
     /// (<c>artwork/newgamescreen.mdl:283-353</c>), with TEAMS capped at the
     /// assembled side count (P853's documented grow clamp: the server cannot
     /// create sides live, <c>MissionParamsMsg</c>/<c>Server.MissionParams.cs</c>).</summary>
-    [Fact]
+    [SkippableFact]
     public void Settings_form_steps_native_values_and_caps_teams_at_the_native_six_slot_maximum()
     {
         using var session = JoinedSession(owner: true, advertised: Params(teams: 2), assembledSides: 4);
@@ -414,7 +416,7 @@ public sealed class P853bHostEditUiTests
     /// <summary>⭐ Both messages cross real TCP exactly once, in the native layouts:
     /// SET_TEAM_INFO(15) with <c>squadID = NA</c>, and MISSIONPARAMS(113) as the
     /// 256-byte params struct the server validates.</summary>
-    [Fact]
+    [SkippableFact]
     public async Task Rename_and_settings_plans_go_out_as_the_native_messages()
     {
         var hostSite = new Site();
@@ -456,7 +458,7 @@ public sealed class P853bHostEditUiTests
     /// misdef, clintlib.cpp:670-673): the flags the port's old advertisement zeroed
     /// — squad game, allied rip, the lock bits — arrive intact, and the wire width
     /// is unchanged at 864.</summary>
-    [Fact]
+    [SkippableFact]
     public void MissionDef_advertises_the_whole_params_block()
     {
         var p = Params(squadGame: true, lockTeamSettings: true, teams: 4, lives: 7);

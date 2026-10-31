@@ -4,6 +4,14 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## 2026-10-31 Claude triage: public CI without artwork
+
+CI's Fast tier was red on 21 tests. 19 needed the mission core and did not skip: `P896` x7, `P853bHostEditUiTests` x11 (JOINED_MISSION
+loads the core, so the seat never formed), `P787BShopHoverAndPickTests.A_resting_pointer...`. `P889PoolSizingTests.Calibration_entry...`
+read the runner's core count and the small budget clamped the calibrated 6; now fixed at 16 cores. `P629ConfigTests.Invalid_mode_fails_boot...`
+found a real order bug: a mistyped `sim.crowdingPenalty` failed only after the artwork check, now rejected first. CI's filter run locally with
+artwork hidden: 7,762 tests, 0 failed. `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` ran 10.8 s over the 10 s limit with Codex on the host.
+
 ## 2026-10-31 Claude triage: final tree sweep `c6c0d51e` (P897, P898, P899)
 
 9 failures, `P682b` and `P807` passed. `MissileLock`, `NpcWingmanDefend`, `LiveSideSelect`, `SC4`, `P798`, `P796Coverage`

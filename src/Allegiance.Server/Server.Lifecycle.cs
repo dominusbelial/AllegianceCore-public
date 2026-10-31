@@ -70,6 +70,8 @@ public sealed partial class Server
         // only requests a deferred flush; it never reads the not-yet-bound host.
         ResolveBroadcastSnapshot();
         InitUpdateCadence();
+        // A mistyped mode fails here, before the artwork check and any transport.
+        _ = _config.Sim.CrowdingEnabled;
         // Civ/plan rejection precedes host-reading profiler callbacks and transport.
         ValidatePaths();
         LoadStaticMapCatalog();

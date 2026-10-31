@@ -120,9 +120,10 @@ public sealed class P787BShopHoverAndPickTests
         Assert.Equal(2, Get<int>(game, "_shopHoverRow"));   // last hover tracks the re-entered row
     }
 
-    [Fact]
+    [SkippableFact]
     public void A_resting_pointer_does_not_undo_keyboard_navigation()
     {
+        Allegiance.TestInfra.Require.Artwork();
         // Native OnListHover acts on a hover CHANGE (loadout.cpp:1168-1184); the port's
         // cursor follows the hovered row only when that row changes.
         var catalog = ShopCatalog.TryLoad(ExternalPaths.Resolve(ExternalResourceKind.Artwork))

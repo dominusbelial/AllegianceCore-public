@@ -128,6 +128,8 @@ public sealed class P889PoolSizingTests
     [Fact]
     public void Calibration_entry_overrides_the_resolver_on_this_machine_only()
     {
+        // Fixed, so a small runner's worker budget cannot clamp the calibrated 6.
+        const int Cores = 16;
         var entry = new SizingCalibrationEntry
         {
             Players = 34, Profile = "shared", ParallelBuild = false, BuildWorkers = 1,
@@ -136,11 +138,11 @@ public sealed class P889PoolSizingTests
         };
         var profile = new MachineSizingProfile
         {
-            Cores = Environment.ProcessorCount,
+            Cores = Cores,
             Version = PoolSizingProfileStore.CurrentVersion,
             Entries = [entry],
         };
-        var sizing = PoolSizingResolver.Resolve(Environment.ProcessorCount, 34, HostProfile.Shared, profile);
+        var sizing = PoolSizingResolver.Resolve(Cores, 34, HostProfile.Shared, profile);
         Assert.False(sizing.ParallelBuild);
         Assert.Equal(1, sizing.BuildWorkers);
         Assert.Equal(TransportMode.Pool, sizing.TransportMode);
@@ -148,13 +150,13 @@ public sealed class P889PoolSizingTests
         Assert.Contains("calibrated on this machine", sizing.Reason);
 
         // Different core count or build → stale profile is ignored.
-        var otherCores = profile with { Cores = Environment.ProcessorCount + 1 };
-        Assert.Null(otherCores.Match(Environment.ProcessorCount, HostProfile.Shared, 34));
+        var otherCores = profile with { Cores = Cores + 1 };
+        Assert.Null(otherCores.Match(Cores, HostProfile.Shared, 34));
         var otherBuild = profile with { Version = "old" };
-        Assert.Null(otherBuild.Match(Environment.ProcessorCount, HostProfile.Shared, 34));
+        Assert.Null(otherBuild.Match(Cores, HostProfile.Shared, 34));
         // Different profile or a very different player count → no match.
-        Assert.Null(profile.Match(Environment.ProcessorCount, HostProfile.Dedicated, 34));
-        Assert.Null(profile.Match(Environment.ProcessorCount, HostProfile.Shared, 200));
+        Assert.Null(profile.Match(Cores, HostProfile.Dedicated, 34));
+        Assert.Null(profile.Match(Cores, HostProfile.Shared, 200));
     }
 
     [Fact]
