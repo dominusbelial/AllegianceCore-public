@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate all 199 P868 classifications against the live parity matrices.
+"""Validate the original 199 P868 classifications and later source audits.
 
 General-matrix row IDs use area::native_item because that matrix has no row_id.
 Optional --native-root verifies every native source citation against a local,
@@ -14,6 +14,8 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRICES = {"sim-rules-matrix.csv": 164, "parity-matrix.csv": 35}
+# Later source audits may add exclusions without rewriting P868's fixed inventory.
+SUPPLEMENTAL_AUDITS = ("p903-exclusions.csv",)
 CITE = re.compile(r"([\w/]+\.(?:cpp|CPP|h|H)):(\d+)(?:-(\d+))?")
 
 
@@ -33,6 +35,11 @@ def validate(root=ROOT, native_root=None):
         raise ValueError("audit columns must be row_id,matrix,class,reason,native_cite,action")
     if collections.Counter(row["matrix"] for row in audit) != collections.Counter(MATRICES):
         raise ValueError("audit must contain the original 164 sim and 35 general exclusions")
+    for name in SUPPLEMENTAL_AUDITS:
+        supplemental = read(root / "docs/parity" / name)
+        if not supplemental or set(supplemental[0]) != expected_columns:
+            raise ValueError(f"{name}: invalid supplemental audit columns")
+        audit.extend(supplemental)
     current = {}
     for matrix in MATRICES:
         for row in read(root / "docs/parity" / matrix):
@@ -100,7 +107,7 @@ def validate(root=ROOT, native_root=None):
             raise ValueError(f"unclassified current exclusion: {key}")
     counts = collections.Counter(row["class"] for row in audit)
     completed = sum(row["action"].startswith("implemented:") for row in audit)
-    print(f"P868: {len(audit)} rows; A={counts['A']} B={counts['B']} C={counts['C']}; "
+    print(f"P868 + supplemental audits: {len(audit)} rows; A={counts['A']} B={counts['B']} C={counts['C']}; "
           f"B implemented={completed}, partial={counts['B'] - completed}")
     if native_root:
         print(f"Native citation bounds/text checked in {len(sources)} files; "

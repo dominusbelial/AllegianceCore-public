@@ -1474,6 +1474,10 @@ public sealed partial class Server
         mission.CreatedAt = _simNow;
         mission.CreatedWallTime = DateTimeOffset.UtcNow;
         mission.MissionId = (short)(_config.Games.IndexOf(g) + 1);   // native mission ids start at 1 (imission 0 is the NA sentinel)
+        // P903 / SIM-0750: native GenerateMission marks the initial generation
+        // before counting subsequent reuses (Igc/missionigc.cpp:3846-3857).
+        // Rotation transfers the old generation state and advances it again.
+        mission.BeginReplay();
         _missionConfigs[mission] = g;   // P802 — for a lobby civ's research-plan re-selection
         // P871b / SIM-0146 — the lobby-directed lifecycle (native's
         // "created before its players arrive", FedSrv.CPP:7867-7869): only these

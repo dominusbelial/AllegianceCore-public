@@ -122,14 +122,25 @@ list in **reverse**.
 - **Flight model / physics** — acceleration, drag, turn rates, afterburner.
   Key: `src/Allegiance.Core/Sim/` (`Acceleration`, `Physics`, `TurnRate`…).
   *Native:* `shipIGC.cpp`, `rotvel.cpp`.
-- **Native NPC GotoPlan (P817, experimental)** — pure waypoint masks, reverse-drag
+- **Native NPC GotoPlan (P817/P875, production default)** — pure waypoint masks, reverse-drag
   stopping distance, warp route search, directional dodge/diversion, angular
   stopping drift, boost handling and builder/layer completion: `src/Allegiance.Core/Sim/NativeGotoPlan.cs`,
   `src/Allegiance.Core/Sim/Ship.NativeGotoPlan.cs`. Per-mission flag
-  `sim.nativeGotoPlan` / `ALLEGIANCE_SIM_NATIVE_GOTOPLAN` defaults off.
+  `sim.nativeGotoPlan` / `ALLEGIANCE_SIM_NATIVE_GOTOPLAN` defaults on in
+  `src/Allegiance.Server/SimConfig.cs`; the environment overrides configuration.
+  `src/Allegiance.Server/Server.Lifecycle.cs` binds it to each assembled mission.
+  `docker-compose.yml` still explicitly defaults the environment override to `0`;
+  see the deployment caveat in `docs/reports/P903_REPORT.md`.
   Native: `Igc/common.cpp:1157-2333`, `Igc/shipIGC.cpp:2795-2833`.
   Local A/B and independent C++ formula trace: `tools/p817-gotoplan-proof/`;
   report `docs/reports/P817_NATIVE_GOTOPLAN.md`.
+- **Mission replay identity (P903)** — first generation and rotation bookkeeping
+  in `src/Allegiance.Server/Server.Lifecycle.cs` and
+  `src/Allegiance.Server/Server.Lobby.cs` feeds `Mission.ReplayCount` and cached
+  `GetContextName` in `src/Allegiance.Core/Model/Mission.cs`; the native context
+  travels as `LobbyGameResult.GameId` on career reports. Native:
+  `Igc/missionigc.cpp:3846-3857,4211-4238`, `FedSrv/fsmission.cpp:2766`.
+  Production regression: `tests/Allegiance.Core.Tests/P903ProductionReachabilityTests.cs`.
 - **Cross-side visibility sweep (P131/P797/P835)** — the every-10th-pass
   scanner×target sweep behind `SeenBySide` (`Sector.ResolveCrossSideVisibility`,
   `Sim/VisibilityMath.cs`, `Sim/SideVisibilityState.cs`). P835 adds the sweep's
@@ -1105,6 +1116,11 @@ list in **reverse**.
   decision (partial). General-matrix identities use `area::native_item`.
   `tools/p868-na-audit.py` checks coverage, statuses and citation integrity;
   `docs/reports/P868_REPORT.md` records decisions, remaining branches and gates.
+  Later exclusions retain that inventory: `docs/parity/p903-exclusions.csv`
+  records the source-confirmed unused `Ballot::Cancel`; the same validator checks
+  its supplemental classification. `docs/reports/P903_REPORT.md` audits default
+  NPC travel, replay identity and the distinct offline export/live text-import paths;
+  tool reachability/scorer policy remains deferred.
 - **`docs/parity/parity-matrix.csv`** — the master native-behaviour parity
   matrix (rows closed with `done` / `done-visual` / `n/a` per the lane rules; a `design-replaced` native_class row is credited only when complete with a `REPLACED:` reason and is reported in its own scorecard column).
 - **`docs/parity/sim-rules-matrix.csv`** — sim-rule equivalence rows.

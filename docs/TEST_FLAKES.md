@@ -4,6 +4,40 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P903 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,724 passed / 11 failed / 3 optional skips**, 12,738 executions
+in 518.6 s. All nine infrastructure checks passed. Four passing executions exceeded
+the calibrated 10 s Fast limit. The failed sweep was not rerun.
+
+Every failing method and timing offender was repeated three times in isolation:
+
+| Test / group | Isolation result | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail (read-only user profile); **pass / pass / pass** with scratch `XDG_CONFIG_HOME` | Existing sandbox profile obstruction, as in P901/P899/P898. Profile/UI code unchanged. |
+| Five `PlayerBundlePathsTests` cases: executable Artwork fallback, missing Artwork/NativeSource, local-config precedence, native-source subdirectory | Same five cases fail in each of three method runs with worktree `TMPDIR`; whole class **9/9 passes ×3** with a `/proc` directory-descriptor alias to the same physical scratch storage | Existing fixture topology obstruction: ancestor lookup discovers the checkout's `local.env`. The alias restores the intended outside-checkout pathname while all writes remain inside the authorized worktree. Resolver/fixtures unchanged. |
+| `P780PodRescueProbeTests.Probe_rescue_pass_allocates_nothing` | **3/3 pass**, 0.073 / 0.067 / 0.094 s | Sweep measured 3,488 bytes against zero; isolated allocation check succeeds. Rescue/simulation code unchanged. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | **3/3 pass**, 1.432 / 1.453 / 1.429 s | Existing death-receipt timing intermittency, also recorded under P899/P896/P892c; death/respawn code unchanged. |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **3/3 pass**, 1.768 / 1.767 / 1.743 s | Sweep receipt/timing failure; mining/broadcast code unchanged. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | **3/3 pass**, 1.604 / 1.619 / 1.563 s | Sweep receipt/timing failure; lifepod/endurance/HUD behavior unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail**, 1.215 / 1.239 / 1.170 s | Persistent pre-existing null `DefendTarget` at line 179, identical to the open P901/P899/P898 baseline issue. No wingman steering change; remains open. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **3/3 pass**, 3.738 / 3.853 / 3.720 s | Sweep passed at 10.978 s; timing offender only. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **3/3 pass**, 3.341 / 3.210 / 3.220 s | Sweep passed at 11.264 s; timing offender only. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases pass **3/3**; all six case durations ≤4.216 s | Sweep civ 25 passed at 10.979 s; timing offender only. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **3/3 pass**, 9.922 / 9.807 / 9.716 s | Sweep passed at 10.934 s; timing offender only. |
+
+The new P903 server replay/result regression passed three baseline-setting runs,
+the new Python audit tests passed **3/3 ×3**, and the existing P817 (43 cases),
+P870 text-core (29 cases), two P872 replay/context tests and ballot-discard test
+all passed three isolated runs. The new regression failed before the fix because
+boot left `HasGenerated=false`; that deliberate red receipt is not a flake.
+
+Compact receipts: [P903 isolated checks](reports/P903_assets/isolated-summary.json),
+[failure/timing controls](reports/P903_assets/qualification-summary.json).
+Raw Fast/isolation receipts: `.scratch/p903/fast/`, `.scratch/p903/isolated/` and
+`.scratch/p903/qualification/`. The serial showcase never-parks gate passed **5/5** (335.425 / 247.538 / 347.380 / 236.239 / 214.849 s), compared with the recent P901 baseline's 5/5; every run observed real combat and zero sim-pass stage failures.
+[Showcase metrics](reports/P903_assets/showcase-summary.json) include all five load snapshots.
+
 ## P901 verification (2026-10-31 UTC)
 
 One Fast sweep: **12,691 passed / 11 failed / 3 optional skips**, 12,705 executions
