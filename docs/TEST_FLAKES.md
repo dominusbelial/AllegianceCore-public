@@ -4,6 +4,34 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P899 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,686 passed / 10 failed / 3 optional skips**, 12,699
+executions in 527.8 s. All nine infrastructure checks passed. Two executions
+exceeded the 10 s Fast limit. The full sweep was not rerun. Raw receipts were
+moved from the runner's default `TestResults/` destination into
+`.scratch/p899/fast-run/`; compact receipts are in
+`docs/reports/P899_assets/fast-summary.json` and
+`docs/reports/P899_assets/isolations.json`. Isolations ran serially after the
+sweep and before showcase; none overlapped this lane's showcase workload.
+
+| Failure / timing offender | Three standalone results | Checked cause / disposition |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail with the original environment; pass / pass / pass with scratch `XDG_CONFIG_HOME` (0.044 / 0.053 / 0.053 s) | Existing sandbox obstruction: the user profile is read-only. No profile/UI source changed. Same signature and writable-root control as P898. |
+| `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository(Artwork)`, `MissingDirectoryHasNoDefault(Artwork/NativeSource)`, `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory` (five cases) | Each affected case fails 3/3; unaffected theory rows pass | Existing fixture topology obstruction: required worktree-local `TMPDIR` puts the fake executable under the real checkout, so `ExternalPaths.FindRepoRoot` finds the checkout's `local.env`. Same five cases as P898; resolver/fixtures unchanged. P898 records an outside-checkout container-mount control. |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | pass / pass / pass (1.751 / 1.794 / 1.758 s) | Existing chat receipt-order signature: expected ChatTarget -2, actual 0 at line 229. No chat logic changed; 335 broadcast/transport tests also pass. |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass / pass / pass (1.692 / 1.636 / 1.620 s) | Sweep's loopback join condition timed out at line 116 (21.293 s, also a timing offender). Existing join/timing intermittency; no mine or bot logic changed. CPU load alone is not established as the trigger. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | All three delay rows pass in each of three isolated method runs | Existing floating boundary: sweep observed `7.0000000000000009` against upper bound 7, at line 81. Timer code unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail (1.203 / 1.253 / 1.192 s) | Long-recorded baseline null `DefendTarget` assertion at line 179, including unmodified-HEAD evidence in earlier lanes and P898. No wingman/simulation logic changed; failure remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passing timing offender) | pass / pass / pass (9.433 / 9.615 / 9.737 s) | Passed sweep in 10.401 s; below the 10 s limit alone. Existing native-physics fixture timing sensitivity, no warp code changed. |
+
+The single Fast result remains **FAIL**. P899's five new containment tests pass
+3/3 standalone runs; the 200-client measurement and snapshot reuse checks pass
+3/3 per server-GC variant, and the full broadcast/transport filter passes
+335/335. The five serial showcase never-parks repetitions also pass **5/5**,
+matching the base lane's recorded 5/5; receipts are in
+`docs/reports/P899_assets/showcase.json`.
+
 ## P898 verification (2026-10-30)
 
 One Fast run on base `b4a4721a` plus the default-off TCP batching experiment:

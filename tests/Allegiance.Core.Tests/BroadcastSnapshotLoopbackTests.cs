@@ -20,7 +20,7 @@ public sealed class BroadcastSnapshotLoopbackTests
 {
     // Async raw receivers avoid adding one client send thread per player to
     // the server measurement. All players greet, log on, seat, and drain real TCP.
-    private sealed class Peer : IDisposable
+    internal sealed class Peer : IDisposable
     {
         private readonly TcpClient _client = new() { NoDelay = true };
         private readonly Task _reader;

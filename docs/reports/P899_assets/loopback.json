@@ -1,0 +1,118 @@
+{
+  "configuration": {
+    "runtime": "10.0.11",
+    "build": "Debug JIT",
+    "serverGc": true,
+    "clients": 200,
+    "ticksPerRun": 200,
+    "warmupTicks": 40,
+    "pacedHz": 20,
+    "parallelBuild": true,
+    "immutableSnapshot": true,
+    "encodeOnce": true,
+    "shipUpdateModel": "native",
+    "nativeGotoPlan": true,
+    "transport": "pool",
+    "workers": 4
+  },
+  "order": [
+    "bag-1",
+    "stack-1",
+    "stack-2",
+    "bag-2",
+    "bag-3",
+    "stack-3"
+  ],
+  "bag": {
+    "runs": [
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 15.672937999999995,
+        "p95Ms": 19.7835,
+        "allocatedBytesPerTick": 1794006,
+        "publishAllocatedBytesPerTick": 78486,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 782600
+      },
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 16.943809000000005,
+        "p95Ms": 20.1172,
+        "allocatedBytesPerTick": 1793788,
+        "publishAllocatedBytesPerTick": 78974,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 783820
+      },
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 15.732067999999996,
+        "p95Ms": 19.959,
+        "allocatedBytesPerTick": 1790293,
+        "publishAllocatedBytesPerTick": 78113,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 783996
+      }
+    ],
+    "median": {
+      "meanMs": 15.732067999999996,
+      "p95Ms": 19.959,
+      "allocatedBytesPerTick": 1793788,
+      "publishAllocatedBytesPerTick": 78486
+    }
+  },
+  "stack": {
+    "runs": [
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 16.136808999999985,
+        "p95Ms": 19.6166,
+        "allocatedBytesPerTick": 1793765,
+        "publishAllocatedBytesPerTick": 78253,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 781210
+      },
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 16.6300775,
+        "p95Ms": 20.4836,
+        "allocatedBytesPerTick": 1781720,
+        "publishAllocatedBytesPerTick": 78225,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 785389
+      },
+      {
+        "serverGc": true,
+        "clients": 200,
+        "ticks": 200,
+        "meanMs": 16.2968665,
+        "p95Ms": 20.6528,
+        "allocatedBytesPerTick": 1802914,
+        "publishAllocatedBytesPerTick": 79331,
+        "containers": 3,
+        "EncodeFailures": 0,
+        "framesReceived": 787409
+      }
+    ],
+    "median": {
+      "meanMs": 16.2968665,
+      "p95Ms": 20.4836,
+      "allocatedBytesPerTick": 1793765,
+      "publishAllocatedBytesPerTick": 78253
+    }
+  }
+}

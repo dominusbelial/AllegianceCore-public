@@ -1,0 +1,16 @@
+{
+  "serverRestarted": true,
+  "botsBefore": 1,
+  "botsAfter": 0,
+  "sameWorkerAlive": true,
+  "removed": [
+    {
+      "name": "mcp-w1-b001-9490",
+      "shipId": 8099,
+      "status": "removed",
+      "reason": "connection lost"
+    }
+  ],
+  "observationSecondsAfterRestart": 8,
+  "graceOptIn": false
+}

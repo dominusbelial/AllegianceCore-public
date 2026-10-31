@@ -1,0 +1,484 @@
+[
+  {
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+    "label": "1",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Failed",
+            "duration": "00:00:00.0607729"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Failed",
+            "duration": "00:00:00.0612328"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Failed",
+            "duration": "00:00:00.0600413"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+    "label": "2",
+    "runs": [
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+            "outcome": "Passed",
+            "duration": "00:00:01.7510185"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+            "outcome": "Passed",
+            "duration": "00:00:01.7940780"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+            "outcome": "Passed",
+            "duration": "00:00:01.7580038"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+    "label": "3",
+    "runs": [
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+            "outcome": "Passed",
+            "duration": "00:00:01.6921839"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+            "outcome": "Passed",
+            "duration": "00:00:01.6360447"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+            "outcome": "Passed",
+            "duration": "00:00:01.6195265"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+    "label": "4",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:01.2032794"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:01.2528018"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:01.1918437"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+    "label": "5",
+    "runs": [
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1777474"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2006857"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Passed",
+            "duration": "00:00:00.4851278"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Passed",
+            "duration": "00:00:00.5730328"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2565464"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1652515"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2188736"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2559033"
+          },
+          {
+            "test": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Passed",
+            "duration": "00:00:00.5209052"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "label": "6",
+    "runs": [
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.4328518"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.6148794"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.7371969"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "label": "7",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0147908"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0047493"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0147704"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "label": "8",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0037412"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0011672"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002104"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002230"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0012170"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0037871"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0011780"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0040327"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002270"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "label": "9",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0034286"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0043892"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0033787"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "label": "10",
+    "runs": [
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0044606"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009185"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009128"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0044955"
+          }
+        ]
+      },
+      {
+        "exitCode": 1,
+        "rows": [
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0008007"
+          },
+          {
+            "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0038417"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+    "label": "profile-scratch",
+    "runs": [
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Passed",
+            "duration": "00:00:00.0438355"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Passed",
+            "duration": "00:00:00.0534280"
+          }
+        ]
+      },
+      {
+        "exitCode": 0,
+        "rows": [
+          {
+            "test": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "outcome": "Passed",
+            "duration": "00:00:00.0532896"
+          }
+        ]
+      }
+    ]
+  }
+]

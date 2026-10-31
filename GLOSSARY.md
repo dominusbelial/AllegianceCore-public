@@ -406,6 +406,15 @@ list in **reverse**.
   death/eject/missile/relaunch transcript and per-step measurements live in
   `tests/Allegiance.Core.Tests/P863bSurgeBudgetTests.cs`; report
   `docs/reports/P863b_REPORT.md`.
+- **Broadcast reuse and failure containment (P899)** — cross-thread snapshot
+  and single-delivery packet reuse uses explicitly locked stacks in
+  `src/Allegiance.Server/BroadcastPool.cs`, consumed by
+  `src/Allegiance.Server/BroadcastSnapshot.cs` and
+  `src/Allegiance.Server/PooledPosePacket.cs`. Cleanup reports failures without
+  skipping remaining packet releases or stranding publication waiters. Proofs:
+  `tests/Allegiance.Core.Tests/P899PublisherTests.cs`,
+  `tests/Allegiance.Core.Tests/P899LoopbackMeasurements.cs`,
+  `tools/p899-runtime-proof/Program.cs`; report `docs/reports/P899_REPORT.md`.
 - **Per-world cache retention across rotation (P884)** — every per-ship /
   per-peer latch on the server is scoped to ONE world: native resets the same
   `CfsMission` and nukes every cluster (`Igc/missionigc.cpp:3804-3828`, called at

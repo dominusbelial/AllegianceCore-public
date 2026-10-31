@@ -1,0 +1,7 @@
+runtime=.NET 10.0.11 assembly=10.0.11+e2f47b0110ed922f21a1522da67279133ce28f32
+LocalPush IL_01fa: add.ovf
+real paced transfers=100 overflow=none retained=3
+runtime=.NET 10.0.11 assembly=10.0.11+e2f47b0110ed922f21a1522da67279133ce28f32
+LocalPush IL_01fa: add.ovf
+SYNTHETIC historical-counter seed: occupancy=3; two paced pushes, one foreign steal
+seeded overflow; addTake=2147483647; head=28; tail=32

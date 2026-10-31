@@ -1,0 +1,47 @@
+{
+  "rows": 32,
+  "containers": {
+    "3": 32
+  },
+  "first": {
+    "built": "820000",
+    "buildMeanMs": "9.055",
+    "buildBytesPerTick": "333822",
+    "publishMeanMs": "9.986",
+    "published": "819874",
+    "coalesced": "125",
+    "droppedStreams": "254118",
+    "failures": "0",
+    "containers": "3",
+    "heavyEncodes": "307716809",
+    "singleEncodes": "297899656",
+    "lightEncodes": "266721985",
+    "relativePositions": "4187571114",
+    "publishAllocatedBytes": "186651858688"
+  },
+  "last": {
+    "built": "823100",
+    "buildMeanMs": "9.062",
+    "buildBytesPerTick": "333793",
+    "publishMeanMs": "9.981",
+    "published": "822974",
+    "coalesced": "125",
+    "droppedStreams": "254118",
+    "failures": "0",
+    "containers": "3",
+    "heavyEncodes": "308896095",
+    "singleEncodes": "299042600",
+    "lightEncodes": "267701171",
+    "relativePositions": "4206085291",
+    "publishAllocatedBytes": "187277798680"
+  },
+  "lastServerCounters": {
+    "utc": "2026-10-31T01:13:10.006617420Z",
+    "cTimeouts": "2",
+    "cTimeoutsPerSecond": "0.000",
+    "cPacketsOut": "4121090043",
+    "cPacketsOutPerSecond": "41960.242",
+    "cBytesOut": "175830575465",
+    "cBytesOutPerSecond": "1559198.593"
+  }
+}

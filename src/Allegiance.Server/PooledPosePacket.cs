@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
@@ -12,8 +11,8 @@ namespace Allegiance.Server;
 // The transport copies the span synchronously before this storage is reused.
 internal sealed class PooledPosePacket : BroadcastPacket
 {
-    private static readonly ConcurrentBag<PooledPosePacket>[] Pools =
-        Enumerable.Range(0, 18).Select(_ => new ConcurrentBag<PooledPosePacket>()).ToArray();
+    private static readonly BroadcastPool<PooledPosePacket>[] Pools =
+        Enumerable.Range(0, 18).Select(_ => new BroadcastPool<PooledPosePacket>()).ToArray();
     private int _bucket;
     private byte[] _buffer = [];
     private int _length;
