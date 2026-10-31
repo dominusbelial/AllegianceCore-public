@@ -99,6 +99,7 @@ internal static class McpTools
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
                         loadout_mode = new { type = "string", @enum = new[] { "best", "varied" }, description = "P796 — purchase policy within the existing legality: 'best' = today's per-role argmax; 'varied' = deterministic seeded least-recently-used rotation that spreads purchases across every legal, affordable hull/part of the side's real techs (role rules keep bombers on anti-base strike and support on nanite). Default: 'varied' for preset:\"showcase\" (the point of P796 — every legal weapon gets used), 'best' everywhere else." },
                         loadout_seed = new { type = "integer", @default = 796, description = "P796 — the varied policy's deterministic seed. Same seed + same usage state = same choices." },
+                        recover = new { type = "boolean", description = "Replay remaining desired slots after corroborated server loss. Default true for multiplayer showcase, false for other presets. Always disabled in game-owned skirmish. Deadline is the driver's --recovery-deadline-seconds (default 900)." },
                         minefields = new { type = "object", description = "P557 — lay minefields via native LAYER drones before the fleets meet: { side: 'a'|'b'|'both', count: int (fields per side, default 1), at: 'rendezvous' (default; in front of the enemy's arrival aleph) | 'aleph:<sector>' | { sector, x, y, z } }. Invests the side's layer-drone bucket (the 221 testUnlock money covers it), waits for the drone, and orders it to build at the location." },
                         wingman = new { type = "object", description = "P557 — scenario-default native wingman behaviour mask: { strafe?: bool, use_missiles?: bool, use_mines?: bool }. Default = UseMissiles|UseMines (native WingmanBehaviourBitMask, igc.h:785-794)." },
                     },
@@ -439,6 +440,18 @@ internal static class McpTools
             : SpawnScenarioHomogeneous(args, mgr);
     }
 
+    /// <summary>P900 — a recovery replay keeps a named target only if the new map has
+    /// it; otherwise the side computes its clash as it does with no override.</summary>
+    private static short? ScenarioTarget(IDictionary<string, JsonElement> args, string query, BotManager mgr)
+    {
+        try { return Catalog.ResolveSector(query, mgr.ProbeClusters()).Id; }
+        catch (ArgumentException) when (args.ContainsKey("__target_optional"))
+        {
+            Console.Error.WriteLine($"[fleet] target_sector '{query}' is not on this map; using computed objectives");
+            return null;
+        }
+    }
+
     private static CallToolResult SpawnScenarioHomogeneous(IDictionary<string, JsonElement> args, BotManager mgr)
     {
         var finaleSettings = ReadFinaleSettings(args, false);
@@ -453,7 +466,7 @@ internal static class McpTools
 
         short? targetSector = null;
         if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
-            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+            targetSector = ScenarioTarget(args, ts, mgr);
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
         // P798 — the explicit showcase target is the optional override; without
@@ -539,8 +552,8 @@ internal static class McpTools
             .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
             .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
             .Select(item => item.slot).ToList();
-        var batch = new SpawnBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots);
-        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
+        var batch = mgr.CreateScenarioBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots, args, sideA, sideB);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), slots = mgr.ScenarioSlots(), totals = new[] { new { side = sideA, requested = size }, new { side = sideB, requested = size } } }));
         batch.Run(refill, mgr.IsSpawnActive);
         var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
@@ -654,7 +667,7 @@ internal static class McpTools
 
         short? targetSector = null;
         if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
-            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+            targetSector = ScenarioTarget(args, ts, mgr);
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
         // P798 — the explicit showcase target is the optional override; without
@@ -786,8 +799,8 @@ internal static class McpTools
             .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
             .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
             .Select(item => item.slot).ToList();
-        var batch = new SpawnBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots);
-        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
+        var batch = mgr.CreateScenarioBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots, args, sideA, sideB);
+        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), slots = mgr.ScenarioSlots(), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
         batch.Run(refill, mgr.IsSpawnActive);
         var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
@@ -909,7 +922,12 @@ internal static class McpTools
                 try
                 {
                     short enemySide = (side == sideA) ? sideB : sideA;
-                    var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, side, enemySide, core, out var note);
+                    // Recovery re-runs layer orders on the fresh map. If scouts
+                    // have not resolved a clash yet, defend the freshly observed
+                    // home rather than carrying old coordinates/warp ids.
+                    short? freshTarget = GetProp(mfj, "__fresh_map") is { ValueKind: JsonValueKind.True }
+                        ? rendezvous ?? mgr.FindSideHomeSector(side) : rendezvous;
+                    var placement = ResolveMinefieldPlacement(atRaw, mgr, freshTarget, side, enemySide, core, out var note);
                     var invest = mgr.Invest(side, layerId, null, observe);
                     if (invest.Completed && invest.Drone is { } drone && placement is { } pl)
                     {

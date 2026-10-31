@@ -1,0 +1,1962 @@
+{
+  "base": "9cb2c9c7",
+  "sdk": "10.0.400",
+  "builds": [
+    {
+      "label": "solution-build",
+      "exit": 0,
+      "seconds": 8.214867949005566,
+      "load": [
+        1.99755859375,
+        1.71826171875,
+        2.18212890625
+      ]
+    },
+    {
+      "label": "aot-publish",
+      "exit": 0,
+      "seconds": 17.69530881900573,
+      "load": [
+        3.3232421875,
+        2.0263671875,
+        2.27587890625
+      ]
+    },
+    {
+      "label": "build-tools",
+      "exit": 0,
+      "seconds": 104.38173412901233,
+      "load": [
+        3.240234375,
+        2.46142578125,
+        2.41015625
+      ]
+    }
+  ],
+  "newTests": [
+    {
+      "label": "isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-1",
+      "exit": 0,
+      "seconds": 25.00585974099522,
+      "load": [
+        2.6298828125,
+        2.3759765625,
+        2.38232421875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Two_real_restarts_replay_fresh_map_civs_and_remaining_slots",
+          "outcome": "Passed",
+          "duration": "00:00:24.0584435"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-1.trx"
+    },
+    {
+      "label": "isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-2",
+      "exit": 0,
+      "seconds": 24.478106488997582,
+      "load": [
+        2.20654296875,
+        2.296875,
+        2.35546875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Two_real_restarts_replay_fresh_map_civs_and_remaining_slots",
+          "outcome": "Passed",
+          "duration": "00:00:23.5088560"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-2.trx"
+    },
+    {
+      "label": "isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-3",
+      "exit": 0,
+      "seconds": 25.16748816499603,
+      "load": [
+        1.6474609375,
+        2.15869140625,
+        2.30810546875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Two_real_restarts_replay_fresh_map_civs_and_remaining_slots",
+          "outcome": "Passed",
+          "duration": "00:00:24.2277336"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Two_real_restarts_replay_fresh_map_civs_and_remaining_slots-3.trx"
+    },
+    {
+      "label": "isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-1",
+      "exit": 0,
+      "seconds": 12.913761105010053,
+      "load": [
+        1.498046875,
+        2.1005859375,
+        2.2861328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Deadline_exhaustion_is_visible_and_does_not_retry_forever",
+          "outcome": "Passed",
+          "duration": "00:00:12.0182905"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-1.trx"
+    },
+    {
+      "label": "isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-2",
+      "exit": 0,
+      "seconds": 12.954640227995696,
+      "load": [
+        1.3408203125,
+        2.04736328125,
+        2.26611328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Deadline_exhaustion_is_visible_and_does_not_retry_forever",
+          "outcome": "Passed",
+          "duration": "00:00:12.0212343"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-2.trx"
+    },
+    {
+      "label": "isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-3",
+      "exit": 0,
+      "seconds": 12.952956392997294,
+      "load": [
+        1.32080078125,
+        2.01123046875,
+        2.25146484375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Deadline_exhaustion_is_visible_and_does_not_retry_forever",
+          "outcome": "Passed",
+          "duration": "00:00:12.0568456"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Deadline_exhaustion_is_visible_and_does_not_retry_forever-3.trx"
+    },
+    {
+      "label": "isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-1",
+      "exit": 0,
+      "seconds": 23.422410678002052,
+      "load": [
+        1.240234375,
+        1.943359375,
+        2.22314453125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Partial_respawn_reports_failed_slots_without_replaying_successes",
+          "outcome": "Passed",
+          "duration": "00:00:22.4879165"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-1.trx"
+    },
+    {
+      "label": "isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-2",
+      "exit": 0,
+      "seconds": 23.33032157100388,
+      "load": [
+        1.0859375,
+        1.86474609375,
+        2.1904296875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Partial_respawn_reports_failed_slots_without_replaying_successes",
+          "outcome": "Passed",
+          "duration": "00:00:22.3308805"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-2.trx"
+    },
+    {
+      "label": "isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-3",
+      "exit": 0,
+      "seconds": 23.9621997869981,
+      "load": [
+        0.88671875,
+        1.76123046875,
+        2.14697265625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Partial_respawn_reports_failed_slots_without_replaying_successes",
+          "outcome": "Passed",
+          "duration": "00:00:22.9865778"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Partial_respawn_reports_failed_slots_without_replaying_successes-3.trx"
+    },
+    {
+      "label": "isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-1",
+      "exit": 0,
+      "seconds": 17.178782582996064,
+      "load": [
+        0.8515625,
+        1.69482421875,
+        2.1162109375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport",
+          "outcome": "Passed",
+          "duration": "00:00:16.2350368"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-1.trx"
+    },
+    {
+      "label": "isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-2",
+      "exit": 0,
+      "seconds": 16.318297339006676,
+      "load": [
+        0.958984375,
+        1.677734375,
+        2.1025390625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport",
+          "outcome": "Passed",
+          "duration": "00:00:15.4144741"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-2.trx"
+    },
+    {
+      "label": "isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-3",
+      "exit": 0,
+      "seconds": 17.099472660993342,
+      "load": [
+        1.1708984375,
+        1.6923828125,
+        2.10009765625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport",
+          "outcome": "Passed",
+          "duration": "00:00:16.1991094"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Stop_and_clear_during_recovery_cancel_pending_slots_and_late_transport-3.trx"
+    },
+    {
+      "label": "isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-1",
+      "exit": 0,
+      "seconds": 9.336850995998248,
+      "load": [
+        1.3720703125,
+        1.71923828125,
+        2.10400390625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart",
+          "outcome": "Passed",
+          "duration": "00:00:08.3360445"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-1.trx"
+    },
+    {
+      "label": "isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-2",
+      "exit": 0,
+      "seconds": 11.172259525003028,
+      "load": [
+        1.6962890625,
+        1.7783203125,
+        2.119140625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart",
+          "outcome": "Passed",
+          "duration": "00:00:10.2686881"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-2.trx"
+    },
+    {
+      "label": "isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-3",
+      "exit": 0,
+      "seconds": 9.317264912999235,
+      "load": [
+        1.65625,
+        1.7685546875,
+        2.1123046875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart",
+          "outcome": "Passed",
+          "duration": "00:00:08.3573603"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_bot_drop_does_not_rebuild_or_refill_it_on_later_server_restart-3.trx"
+    },
+    {
+      "label": "isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-1",
+      "exit": 0,
+      "seconds": 9.630715399995097,
+      "load": [
+        1.62890625,
+        1.75927734375,
+        2.10498046875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_probe_drop_needs_fleet_loss_before_recovery",
+          "outcome": "Passed",
+          "duration": "00:00:08.6816607"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-1.trx"
+    },
+    {
+      "label": "isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-2",
+      "exit": 0,
+      "seconds": 10.788915482000448,
+      "load": [
+        1.91357421875,
+        1.81689453125,
+        2.1201171875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_probe_drop_needs_fleet_loss_before_recovery",
+          "outcome": "Passed",
+          "duration": "00:00:09.8429600"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-2.trx"
+    },
+    {
+      "label": "isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-3",
+      "exit": 0,
+      "seconds": 9.88792670199473,
+      "load": [
+        1.77294921875,
+        1.78955078125,
+        2.107421875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Lone_probe_drop_needs_fleet_loss_before_recovery",
+          "outcome": "Passed",
+          "duration": "00:00:08.9746175"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Lone_probe_drop_needs_fleet_loss_before_recovery-3.trx"
+    },
+    {
+      "label": "isolated-Multiple_requested_presets_each_replay_once-1",
+      "exit": 0,
+      "seconds": 9.35172501100169,
+      "load": [
+        1.96875,
+        1.83056640625,
+        2.11669921875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Multiple_requested_presets_each_replay_once",
+          "outcome": "Passed",
+          "duration": "00:00:08.4529891"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Multiple_requested_presets_each_replay_once-1.trx"
+    },
+    {
+      "label": "isolated-Multiple_requested_presets_each_replay_once-2",
+      "exit": 0,
+      "seconds": 9.845043063993216,
+      "load": [
+        1.8935546875,
+        1.8193359375,
+        2.109375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Multiple_requested_presets_each_replay_once",
+          "outcome": "Passed",
+          "duration": "00:00:08.9728353"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Multiple_requested_presets_each_replay_once-2.trx"
+    },
+    {
+      "label": "isolated-Multiple_requested_presets_each_replay_once-3",
+      "exit": 0,
+      "seconds": 9.62621299699822,
+      "load": [
+        1.75,
+        1.79248046875,
+        2.0966796875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Multiple_requested_presets_each_replay_once",
+          "outcome": "Passed",
+          "duration": "00:00:08.6271576"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Multiple_requested_presets_each_replay_once-3.trx"
+    },
+    {
+      "label": "isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-1",
+      "exit": 0,
+      "seconds": 14.211806744991918,
+      "load": [
+        1.6328125,
+        1.7685546875,
+        2.08349609375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Despawn_new_name_during_partial_replay_cancels_its_stable_slot",
+          "outcome": "Passed",
+          "duration": "00:00:13.2038711"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-1.trx"
+    },
+    {
+      "label": "isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-2",
+      "exit": 0,
+      "seconds": 14.221806008994463,
+      "load": [
+        1.54248046875,
+        1.74560546875,
+        2.0712890625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Despawn_new_name_during_partial_replay_cancels_its_stable_slot",
+          "outcome": "Passed",
+          "duration": "00:00:13.2827393"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-2.trx"
+    },
+    {
+      "label": "isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-3",
+      "exit": 0,
+      "seconds": 14.468723483994836,
+      "load": [
+        1.42822265625,
+        1.708984375,
+        2.0537109375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Despawn_new_name_during_partial_replay_cancels_its_stable_slot",
+          "outcome": "Passed",
+          "duration": "00:00:13.5202230"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Despawn_new_name_during_partial_replay_cancels_its_stable_slot-3.trx"
+    },
+    {
+      "label": "isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-1",
+      "exit": 0,
+      "seconds": 5.859366493998095,
+      "load": [
+        1.3134765625,
+        1.68017578125,
+        2.04248046875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers",
+          "outcome": "Passed",
+          "duration": "00:00:04.9092465"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-1.trx"
+    },
+    {
+      "label": "isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-2",
+      "exit": 0,
+      "seconds": 5.753286071994808,
+      "load": [
+        1.36865234375,
+        1.685546875,
+        2.0419921875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers",
+          "outcome": "Passed",
+          "duration": "00:00:04.8201306"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-2.trx"
+    },
+    {
+      "label": "isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-3",
+      "exit": 0,
+      "seconds": 5.709635054008686,
+      "load": [
+        1.49951171875,
+        1.70751953125,
+        2.04736328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers",
+          "outcome": "Passed",
+          "duration": "00:00:04.7414042"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-Skirmish_shaped_exit_disables_recovery_and_reaps_workers-3.trx"
+    },
+    {
+      "label": "isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-1",
+      "exit": 0,
+      "seconds": 26.04821653899853,
+      "load": [
+        1.7666015625,
+        1.76220703125,
+        2.05712890625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.One_hundred_showcase_bots_return_after_real_restart_with_paced_connections",
+          "outcome": "Passed",
+          "duration": "00:00:25.0963915"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-1.trx"
+    },
+    {
+      "label": "isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-2",
+      "exit": 0,
+      "seconds": 25.804220139994868,
+      "load": [
+        1.74560546875,
+        1.7646484375,
+        2.05029296875
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.One_hundred_showcase_bots_return_after_real_restart_with_paced_connections",
+          "outcome": "Passed",
+          "duration": "00:00:24.8388327"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-2.trx"
+    },
+    {
+      "label": "isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-3",
+      "exit": 0,
+      "seconds": 25.58928112599824,
+      "load": [
+        2.0185546875,
+        1.83447265625,
+        2.06494140625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P900FleetRecoveryLiveTests.One_hundred_showcase_bots_return_after_real_restart_with_paced_connections",
+          "outcome": "Passed",
+          "duration": "00:00:24.6533266"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/isolated-One_hundred_showcase_bots_return_after_real_restart_with_paced_connections-3.trx"
+    }
+  ],
+  "regressions": [
+    {
+      "label": "regression-P658SupervisorTests-1",
+      "exit": 0,
+      "seconds": 1.1928470739949262,
+      "load": [
+        2.0185546875,
+        1.83447265625,
+        2.06494140625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RefilledBotLostDuringParallelSpawnDoesNotInflateRefillCount",
+          "outcome": "Passed",
+          "duration": "00:00:00.0573912"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"clear_bots\", key: \"cleared\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000487"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LaterScenarioStillSpawnsOnHealthyWorkerAndReportsLostPartition",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054327"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 7, workers: 3, expected: [3, 2, 2])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000011"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"abc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000052"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 0, workers: 2, expected: [0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000008"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.DisposingProcessWorkerKillsItsChildAndDrainsStderr",
+          "outcome": "Passed",
+          "duration": "00:00:00.0210717"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.MergeRemovesBotLostWhileAnotherWorkerWasStillSpawning",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019837"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 2500, epoch: 0, required: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005717"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0282469"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010973"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 0, epoch: 1, required: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0096284"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.ExitDuringSpawnContributesFailedRequestedSlots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009895"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WorkerEnvelopesAndPooledCadenceRetainStallCounters",
+          "outcome": "Passed",
+          "duration": "00:00:00.0164571"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WingWaitsForMembersOnBothWorkersAndHonorsSpawnHold",
+          "outcome": "Passed",
+          "duration": "00:00:00.0068236"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"stop_bots\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011929"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PrivateWorkerRpcMethodsAreNotExposedAsMcpTools",
+          "outcome": "Passed",
+          "duration": "00:00:00.0208770"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 2, expected: [98, 97])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000033"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PartitionCountsEachSideIndependentlyAndKeepsOriginalSlotIndices",
+          "outcome": "Passed",
+          "duration": "00:00:00.0024280"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SpawnRunsInParallelAndMergesHonestCountsFailuresAndBotList",
+          "outcome": "Passed",
+          "duration": "00:00:00.0058589"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"-2\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000719"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RecallQuotaIsGlobalRankedOnceAndExpiresAfterQuietMinimum",
+          "outcome": "Passed",
+          "duration": "00:00:00.0107380"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 13, workers: 2, expected: [7, 6])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001488"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SynchronizedWingsRespectObjectivesMissionsAndTimeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002440"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"0\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005915"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"despawn_bot\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093173"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 1, workers: 4, expected: [1, 0, 0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029719"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 1, expected: [195])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000009"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P658SupervisorTests-1.trx"
+    },
+    {
+      "label": "regression-P658SupervisorTests-2",
+      "exit": 0,
+      "seconds": 1.1504912949894788,
+      "load": [
+        2.0185546875,
+        1.83447265625,
+        2.06494140625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"despawn_bot\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0088184"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SynchronizedWingsRespectObjectivesMissionsAndTimeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002229"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"abc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000052"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SpawnRunsInParallelAndMergesHonestCountsFailuresAndBotList",
+          "outcome": "Passed",
+          "duration": "00:00:00.0065352"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 2500, epoch: 0, required: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007226"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"stop_bots\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013041"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PartitionCountsEachSideIndependentlyAndKeepsOriginalSlotIndices",
+          "outcome": "Passed",
+          "duration": "00:00:00.0028306"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.DisposingProcessWorkerKillsItsChildAndDrainsStderr",
+          "outcome": "Passed",
+          "duration": "00:00:00.0278501"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PrivateWorkerRpcMethodsAreNotExposedAsMcpTools",
+          "outcome": "Passed",
+          "duration": "00:00:00.0204197"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"-2\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000727"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 1, expected: [195])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000005"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 7, workers: 3, expected: [3, 2, 2])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000006"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 0, epoch: 1, required: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0117621"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"clear_bots\", key: \"cleared\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000505"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.ExitDuringSpawnContributesFailedRequestedSlots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010251"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 2, expected: [98, 97])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000031"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 0, workers: 2, expected: [0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000005"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0272084"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.MergeRemovesBotLostWhileAnotherWorkerWasStillSpawning",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023419"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LaterScenarioStillSpawnsOnHealthyWorkerAndReportsLostPartition",
+          "outcome": "Passed",
+          "duration": "00:00:00.0056656"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"0\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005001"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WingWaitsForMembersOnBothWorkersAndHonorsSpawnHold",
+          "outcome": "Passed",
+          "duration": "00:00:00.0058718"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010513"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RecallQuotaIsGlobalRankedOnceAndExpiresAfterQuietMinimum",
+          "outcome": "Passed",
+          "duration": "00:00:00.0106316"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WorkerEnvelopesAndPooledCadenceRetainStallCounters",
+          "outcome": "Passed",
+          "duration": "00:00:00.0220753"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 13, workers: 2, expected: [7, 6])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001235"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RefilledBotLostDuringParallelSpawnDoesNotInflateRefillCount",
+          "outcome": "Passed",
+          "duration": "00:00:00.0458393"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 1, workers: 4, expected: [1, 0, 0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023412"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P658SupervisorTests-2.trx"
+    },
+    {
+      "label": "regression-P658SupervisorTests-3",
+      "exit": 0,
+      "seconds": 1.1676499449968105,
+      "load": [
+        2.0185546875,
+        1.83447265625,
+        2.06494140625
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"abc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000055"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 2, expected: [98, 97])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000033"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"despawn_bot\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0090421"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 1, expected: [195])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SpawnRunsInParallelAndMergesHonestCountsFailuresAndBotList",
+          "outcome": "Passed",
+          "duration": "00:00:00.0059874"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RefilledBotLostDuringParallelSpawnDoesNotInflateRefillCount",
+          "outcome": "Passed",
+          "duration": "00:00:00.0568803"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PrivateWorkerRpcMethodsAreNotExposedAsMcpTools",
+          "outcome": "Passed",
+          "duration": "00:00:00.0205398"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 0, epoch: 1, required: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0124596"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 2500, epoch: 0, required: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005815"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 0, workers: 2, expected: [0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 13, workers: 2, expected: [7, 6])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001493"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"clear_bots\", key: \"cleared\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000534"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010808"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 1, workers: 4, expected: [1, 0, 0, 0])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029840"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: \"stop_bots\", key: \"stopped\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012855"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.ExitDuringSpawnContributesFailedRequestedSlots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010626"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0270211"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WingWaitsForMembersOnBothWorkersAndHonorsSpawnHold",
+          "outcome": "Passed",
+          "duration": "00:00:00.0061893"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.DisposingProcessWorkerKillsItsChildAndDrainsStderr",
+          "outcome": "Passed",
+          "duration": "00:00:00.0223760"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.PartitionCountsEachSideIndependentlyAndKeepsOriginalSlotIndices",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025560"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 7, workers: 3, expected: [3, 2, 2])",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.MergeRemovesBotLostWhileAnotherWorkerWasStillSpawning",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025296"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.WorkerEnvelopesAndPooledCadenceRetainStallCounters",
+          "outcome": "Passed",
+          "duration": "00:00:00.0221906"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.LaterScenarioStillSpawnsOnHealthyWorkerAndReportsLostPartition",
+          "outcome": "Passed",
+          "duration": "00:00:00.0088148"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RecallQuotaIsGlobalRankedOnceAndExpiresAfterQuietMinimum",
+          "outcome": "Passed",
+          "duration": "00:00:00.0115582"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"-2\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000927"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: \"0\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006001"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.SynchronizedWingsRespectObjectivesMissionsAndTimeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002445"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P658SupervisorTests-3.trx"
+    },
+    {
+      "label": "regression-P655ProbeWorkersLiveTests-1",
+      "exit": 0,
+      "seconds": 17.994847085996298,
+      "load": [
+        1.63720703125,
+        1.76318359375,
+        2.0361328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.4819550"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Probe_reports_side_refusal_instead_of_waiting_for_seat_timeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0857229"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: True)",
+          "outcome": "Passed",
+          "duration": "00:00:16.5418329"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P655ProbeWorkersLiveTests-1.trx"
+    },
+    {
+      "label": "regression-P655ProbeWorkersLiveTests-2",
+      "exit": 0,
+      "seconds": 18.136494530001073,
+      "load": [
+        1.4150390625,
+        1.70849609375,
+        2.01318359375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: True)",
+          "outcome": "Passed",
+          "duration": "00:00:16.5616005"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Probe_reports_side_refusal_instead_of_waiting_for_seat_timeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0768774"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5857772"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P655ProbeWorkersLiveTests-2.trx"
+    },
+    {
+      "label": "regression-P655ProbeWorkersLiveTests-3",
+      "exit": 0,
+      "seconds": 18.128578053001547,
+      "load": [
+        1.22265625,
+        1.64599609375,
+        1.98583984375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Probe_reports_side_refusal_instead_of_waiting_for_seat_timeout",
+          "outcome": "Passed",
+          "duration": "00:00:00.0873078"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: True)",
+          "outcome": "Passed",
+          "duration": "00:00:16.5979029"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5410606"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P655ProbeWorkersLiveTests-3.trx"
+    },
+    {
+      "label": "regression-P657SpawnReliabilityTests-1",
+      "exit": 0,
+      "seconds": 0.9926859460101696,
+      "load": [
+        1.22265625,
+        1.64599609375,
+        1.98583984375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005812"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001189"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003598"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002988"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: True, spawned: 2, failed: 0, refilled: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152260"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.SpawnBotError_ReportsRequestedSideCountsAndReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0090252"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009376"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001785"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006133"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.DisconnectDuringLaunch_FailsWithoutSecondPurchase",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001869"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: False, spawned: 1, failed: 1, refilled: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002308"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.PermanentlyFailedSlots_GetOnlyOneRefill_AndRetainBothReasons",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022457"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RealWait_IsBounded_AndMissingAckIsReported",
+          "outcome": "Passed",
+          "duration": "00:00:00.0406751"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RefusedLoadout_FailsEvenWhenOwnShipIsFlying",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005578"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LateSeatAck_IsIgnoredUntilRequestedPurchaseAckArrives",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003653"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0190208"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: True, spawned: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0024657"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004851"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014505"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002598"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: False, spawned: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001455"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007578"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0087589"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015320"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657SpawnReliabilityTests-1.trx"
+    },
+    {
+      "label": "regression-P657SpawnReliabilityTests-2",
+      "exit": 0,
+      "seconds": 1.0381525910052005,
+      "load": [
+        1.28515625,
+        1.65234375,
+        1.986328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005444"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: False, spawned: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001834"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.DisconnectDuringLaunch_FailsWithoutSecondPurchase",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002414"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RefusedLoadout_FailsEvenWhenOwnShipIsFlying",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007386"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004927"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003386"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: True, spawned: 2, failed: 0, refilled: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0189711"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LateSeatAck_IsIgnoredUntilRequestedPurchaseAckArrives",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004358"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003770"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004020"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003667"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0232623"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011577"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007473"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003836"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.SpawnBotError_ReportsRequestedSideCountsAndReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0110410"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013094"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.PermanentlyFailedSlots_GetOnlyOneRefill_AndRetainBothReasons",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029651"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011239"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004951"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: True, spawned: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0032470"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RealWait_IsBounded_AndMissingAckIsReported",
+          "outcome": "Passed",
+          "duration": "00:00:00.0405801"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: False, spawned: 1, failed: 1, refilled: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002821"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0102622"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657SpawnReliabilityTests-2.trx"
+    },
+    {
+      "label": "regression-P657SpawnReliabilityTests-3",
+      "exit": 0,
+      "seconds": 1.0571517210046295,
+      "load": [
+        1.28515625,
+        1.65234375,
+        1.986328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0091628"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008669"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002774"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RealWait_IsBounded_AndMissingAckIsReported",
+          "outcome": "Passed",
+          "duration": "00:00:00.0404309"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004404"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003149"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: False, spawned: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001557"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002158"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003491"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.PermanentlyFailedSlots_GetOnlyOneRefill_AndRetainBothReasons",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022445"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RefusedLoadout_FailsEvenWhenOwnShipIsFlying",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005769"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: \"cluster\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0183006"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.DisconnectDuringLaunch_FailsWithoutSecondPurchase",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001890"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"status\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015130"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: \"undock\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003203"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LateSeatAck_IsIgnoredUntilRequestedPurchaseAckArrives",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003361"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: True, spawned: 2, failed: 0, refilled: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0158121"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.SpawnBotError_ReportsRequestedSideCountsAndReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0086910"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007365"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: True, spawned: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0024552"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010907"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005014"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004061"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: False, spawned: 1, failed: 1, refilled: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002345"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657SpawnReliabilityTests-3.trx"
+    },
+    {
+      "label": "regression-P657bStallTelemetryTests-1",
+      "exit": 0,
+      "seconds": 1.1290708629967412,
+      "load": [
+        1.28515625,
+        1.65234375,
+        1.986328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"server closed connection (EOF)\", intentional: False, reason: \"server-eof\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005189"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072466"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PendingSpawnRollbackDisposesAndUntracksSession_WithOneReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0101551"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 0, starved: 11, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentEpisodesAreRateLimited_AndRecoverImmediately",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002240"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+          "outcome": "Passed",
+          "duration": "00:00:00.0450323"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1001, starved: 0, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000088"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DedicatedWatchdogHasHighestPriority_AndLoggerFlushesOnShutdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.1032734"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.MinuteAggregatesAndResets_WhileReadersPreserveCompletedMinute",
+          "outcome": "Passed",
+          "duration": "00:00:00.0046809"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 999, starved: 9, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001515"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041055"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossSnapshotPreservesWatchdogAgeAndIncidentState_AndShowsUnfinishedPass",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001912"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LocalReceiveExceptionIsLoggedOnce_WithTypeAndDetail",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003336"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"read I/O error\", intentional: False, reason: \"local-transport-error\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003050"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DelayedMinuteUsesActualDuration_AndDoesNotReplayEmptyWindows",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002357"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.WatchdogLogsReceiveStarvation_WithFreshLossSnapshotAndNoDuplicateLosses",
+          "outcome": "Passed",
+          "duration": "00:00:00.0059280"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1000, starved: 10, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009141"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PoolStarvationRequiresBacklogAndNoCompletedWork_AndResetsOnProgress",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002031"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"connection disposed\", intentional: True, reason: \"our-disposal\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021164"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.FakeClockWatchdogLogsLateWakeupAndMinute_WithoutCatchupOrReaderReset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008277"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.UnavailableLogWriterDoesNotInterruptClientCleanup_AndReportsDroppedLines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003747"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657bStallTelemetryTests-1.trx"
+    },
+    {
+      "label": "regression-P657bStallTelemetryTests-2",
+      "exit": 0,
+      "seconds": 1.1159802569891326,
+      "load": [
+        1.28515625,
+        1.65234375,
+        1.986328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.FakeClockWatchdogLogsLateWakeupAndMinute_WithoutCatchupOrReaderReset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008471"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"server closed connection (EOF)\", intentional: False, reason: \"server-eof\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003679"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1001, starved: 0, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000029"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.WatchdogLogsReceiveStarvation_WithFreshLossSnapshotAndNoDuplicateLosses",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036228"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PoolStarvationRequiresBacklogAndNoCompletedWork_AndResetsOnProgress",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002222"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PendingSpawnRollbackDisposesAndUntracksSession_WithOneReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0104218"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"read I/O error\", intentional: False, reason: \"local-transport-error\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002798"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossSnapshotPreservesWatchdogAgeAndIncidentState_AndShowsUnfinishedPass",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002017"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.UnavailableLogWriterDoesNotInterruptClientCleanup_AndReportsDroppedLines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004247"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037614"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"connection disposed\", intentional: True, reason: \"our-disposal\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019432"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1000, starved: 10, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009545"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.MinuteAggregatesAndResets_WhileReadersPreserveCompletedMinute",
+          "outcome": "Passed",
+          "duration": "00:00:00.0046855"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 999, starved: 9, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001542"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+          "outcome": "Passed",
+          "duration": "00:00:00.0578407"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DelayedMinuteUsesActualDuration_AndDoesNotReplayEmptyWindows",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002186"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LocalReceiveExceptionIsLoggedOnce_WithTypeAndDetail",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002948"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071055"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DedicatedWatchdogHasHighestPriority_AndLoggerFlushesOnShutdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.1041939"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentEpisodesAreRateLimited_AndRecoverImmediately",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002141"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 0, starved: 11, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657bStallTelemetryTests-2.trx"
+    },
+    {
+      "label": "regression-P657bStallTelemetryTests-3",
+      "exit": 0,
+      "seconds": 1.149185344009311,
+      "load": [
+        1.28515625,
+        1.65234375,
+        1.986328125
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"server closed connection (EOF)\", intentional: False, reason: \"server-eof\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005005"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 999, starved: 9, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001547"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PendingSpawnRollbackDisposesAndUntracksSession_WithOneReason",
+          "outcome": "Passed",
+          "duration": "00:00:00.0104191"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.UnavailableLogWriterDoesNotInterruptClientCleanup_AndReportsDroppedLines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005199"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DelayedMinuteUsesActualDuration_AndDoesNotReplayEmptyWindows",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002398"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossSnapshotPreservesWatchdogAgeAndIncidentState_AndShowsUnfinishedPass",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002026"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071431"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"read I/O error\", intentional: False, reason: \"local-transport-error\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001635"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1000, starved: 10, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009542"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LocalReceiveExceptionIsLoggedOnce_WithTypeAndDetail",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002872"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.FakeClockWatchdogLogsLateWakeupAndMinute_WithoutCatchupOrReaderReset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008342"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem",
+          "outcome": "Passed",
+          "duration": "00:00:00.0571863"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 0, starved: 11, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1001, starved: 0, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000030"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DedicatedWatchdogHasHighestPriority_AndLoggerFlushesOnShutdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.1039730"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: \"connection disposed\", intentional: True, reason: \"our-disposal\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017363"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.WatchdogLogsReceiveStarvation_WithFreshLossSnapshotAndNoDuplicateLosses",
+          "outcome": "Passed",
+          "duration": "00:00:00.0049873"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentEpisodesAreRateLimited_AndRecoverImmediately",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002170"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.MinuteAggregatesAndResets_WhileReadersPreserveCompletedMinute",
+          "outcome": "Passed",
+          "duration": "00:00:00.0058945"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PoolStarvationRequiresBacklogAndNoCompletedWork_AndResetsOnProgress",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003457"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037188"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-P657bStallTelemetryTests-3.trx"
+    },
+    {
+      "label": "regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-1",
+      "exit": 0,
+      "seconds": 1.0548946249909932,
+      "load": [
+        1.5029296875,
+        1.69140625,
+        1.99755859375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0362378"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-1.trx"
+    },
+    {
+      "label": "regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-2",
+      "exit": 0,
+      "seconds": 0.968151389999548,
+      "load": [
+        1.5029296875,
+        1.69140625,
+        1.99755859375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0356387"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-2.trx"
+    },
+    {
+      "label": "regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-3",
+      "exit": 0,
+      "seconds": 0.9777090410061646,
+      "load": [
+        1.5029296875,
+        1.69140625,
+        1.99755859375
+      ],
+      "cases": [
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0274740"
+        }
+      ],
+      "trx": ".scratch/p900/final/results/regression-BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory-3.trx"
+    }
+  ],
+  "rawEvidenceDirectories": [
+    ".scratch/p900/live-0d48253c6b3d48998288cd4e3749fa6b",
+    ".scratch/p900/live-15cdd2f8486d40ab85bb91bef5198b9f",
+    ".scratch/p900/live-24821361866045ffb37b95c22b1048b3",
+    ".scratch/p900/live-291feb487aaf4b8ab89d092943590c7e",
+    ".scratch/p900/live-2e5966a237214d9cb57a0831aa10542c",
+    ".scratch/p900/live-3a2e003ee51d46318a2897ec66bbfa38",
+    ".scratch/p900/live-40b08b5ba9a54c9e9cc1fdf1e3ff7667",
+    ".scratch/p900/live-472381b9613c49d88990aad7f6ade095",
+    ".scratch/p900/live-4d82bf343a0e45d7a4311ec5177bb634",
+    ".scratch/p900/live-4ff87e2eff9b4cd8a45fded0bca39ddb",
+    ".scratch/p900/live-52a5bc6b53384f75af98c7a1b335b5a8",
+    ".scratch/p900/live-55f5334178584d9ba74462b34262a67a",
+    ".scratch/p900/live-58e2b62648c24bc7b5c066016606d47a",
+    ".scratch/p900/live-71aee679edb5411581e6839ef9db3910",
+    ".scratch/p900/live-7b6fd20f5d494cc388992e06f4bd581e",
+    ".scratch/p900/live-7efc3a0318a54b0d8805e522057ae42a",
+    ".scratch/p900/live-7f821467efa243dbb47f91663dbf236c",
+    ".scratch/p900/live-8ebccd0a61f54d0d8910005d397bcc84",
+    ".scratch/p900/live-900262ffdc93427e8d3531e964337d09",
+    ".scratch/p900/live-a4101750409446c980519091d2449d9d",
+    ".scratch/p900/live-a612c12eb1bd43d3a77f4c337a7ca0d9",
+    ".scratch/p900/live-a66a167c598d4d85a53091b6b73d30c7",
+    ".scratch/p900/live-bd32e87d54ba4768a3698d31ada07611",
+    ".scratch/p900/live-c2fc90191edb433597e7ffcd55d32a83",
+    ".scratch/p900/live-c5d6f45db93b40489f6877c18a27b2d3",
+    ".scratch/p900/live-c5db0bf795724290bc1a4e84ea6b0e93",
+    ".scratch/p900/live-c66f018160ed411ab9c4ce287bf5d9d0",
+    ".scratch/p900/live-c8f72e33838b4d63a37d23777138e885",
+    ".scratch/p900/live-dc2622edca2248bdbb8357aca31e4742",
+    ".scratch/p900/live-f715e6b230644569a0cfb02e5ee1320b"
+  ]
+}

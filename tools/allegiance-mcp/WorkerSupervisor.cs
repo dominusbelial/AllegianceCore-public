@@ -5,10 +5,10 @@ using ModelContextProtocol.Protocol;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed class WorkerSupervisor : IDisposable
+internal sealed partial class WorkerSupervisor : IDisposable
 {
     private readonly IWorker[] _workers;
-    private readonly ScenarioCoordinator _coordinator;
+    private ScenarioCoordinator _coordinator;
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _mutation = new(1);
     private readonly object _gate = new();
@@ -28,7 +28,7 @@ internal sealed class WorkerSupervisor : IDisposable
             string.Equals(Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_SYNC_WINGS"), "on", StringComparison.OrdinalIgnoreCase));
         _coordination = coordinate ? CoordinateAsync() : Task.CompletedTask;
     }
-    internal static async Task<WorkerSupervisor> StartAsync(string host, ushort port, int count, CancellationToken ct)
+    internal static async Task<WorkerSupervisor> StartAsync(string host, ushort port, int count, CancellationToken ct, bool recovery = true, double recoveryDeadlineSeconds = 900)
     {
         var workers = new List<IWorker>();
         try
@@ -37,7 +37,7 @@ internal sealed class WorkerSupervisor : IDisposable
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(90));
             await Task.WhenAll(workers.Select(w => w.CallAsync("__ping", EmptyArgs, timeout.Token)));
-            return new(workers);
+            return new(workers) { _workerFactory = i => ProcessWorker.Start(host, port, i, count), _recoveryEnabled = recovery, _recoveryDeadline = TimeSpan.FromSeconds(recoveryDeadlineSeconds) };
         }
         catch { foreach (var worker in workers) worker.Dispose(); throw; }
     }
@@ -56,7 +56,6 @@ internal sealed class WorkerSupervisor : IDisposable
         var lastDecisions = CoordinationDecisions.Empty;
         while (!_stop.IsCancellationRequested)
         {
-            if (_paused) { await Task.Delay(200, _stop.Token); continue; }
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
@@ -74,7 +73,8 @@ internal sealed class WorkerSupervisor : IDisposable
                     }
                     catch (OperationCanceledException) { return null; }
                 }));
-                if (_paused) continue;
+                if (await ObserveFleetAsync(current)) { lastDecisions = CoordinationDecisions.Empty; continue; }
+                if (_paused) { await Task.Delay(200, _stop.Token); continue; }
                 // A live but unresponsive worker may contain unstaged members. Hold
                 // fleet releases and new recalls until its state is known again.
                 bool incomplete = _workers.Where(w => w.Alive).Any(w => current[Array.IndexOf(_workers, w)] is not { SampleAgeMs: < 2000 });
@@ -119,7 +119,8 @@ internal sealed class WorkerSupervisor : IDisposable
     }
     internal bool Healthy => _workers.All(w => w.Alive);
     internal int[] ProcessIds => _workers.Select(w => w.Pid).ToArray();
-    private object[] WorkerStatus() => _workers.Select(w => (object)new { worker = w.Index + 1, pid = w.Pid, status = w.Alive ? "running" : "lost", error = w.Failure }).ToArray();
+    private object[] WorkerStatus() => _workers.Select(w => (object)new { worker = w.Index + 1, pid = w.Pid,
+        status = w.Alive ? "running" : "lost", error = w.Failure, fleet = WorkerFleetStatus(w.Index) }).ToArray();
     private JsonElement[] LostBots()
     {
         lock (_gate) return _workers.Where(w => !w.Alive).SelectMany(w => _knownBots.GetValueOrDefault(w.Index) ?? [])
@@ -140,7 +141,20 @@ internal sealed class WorkerSupervisor : IDisposable
     {
         if (!ToolNames.Contains(name)) return Result(JsonSerializer.SerializeToElement(new { error = $"unknown tool '{name}'" }), true);
         var args = JsonSerializer.SerializeToElement(arguments ?? new Dictionary<string, JsonElement>());
+        long requestEpoch = Interlocked.Read(ref _fleetEpoch);
         bool mutating = name is not ("list_active_bots" or "get_perf_stats" or "list_hulls" or "list_parts" or "list_drones" or "get_side_intel" or "get_weapon_coverage");
+        if (name is "stop_bots" or "clear_bots" or "despawn_bot")
+        {
+            var observed = name == "despawn_bot" ? await ResolveRecoveryNameAsync(args, ct) : [];
+            int canceled = CancelDesired(name, args, observed);
+            lock (_gate)
+                if (_recovering || _workers.All(w => !w.Alive))
+                    return Result(JsonSerializer.SerializeToElement(new Dictionary<string, object>
+                    {
+                        [name == "clear_bots" ? "cleared" : "stopped"] = canceled,
+                        ["fleet"] = FleetStatus(), ["workers"] = WorkerStatus(),
+                    }));
+        }
         if (mutating) await _mutation.WaitAsync(ct);
         try
         {
@@ -148,6 +162,8 @@ internal sealed class WorkerSupervisor : IDisposable
             if (name is "list_active_bots" or "list_drones")
             {
                 var replies = await FanOut(name, args, ct);
+                if (Interlocked.Read(ref _fleetEpoch) != requestEpoch)
+                    return Result(JsonSerializer.SerializeToElement(new { error = "fleet epoch changed; request inventory again", fleet = FleetStatus() }), true);
                 var rows = new List<JsonElement>();
                 for (int i = 0; i < replies.Length; i++)
                 {
@@ -163,8 +179,17 @@ internal sealed class WorkerSupervisor : IDisposable
             }
             if (name == "get_perf_stats")
             {
-                var replies = await FanOut("__perf", args, ct);
-                return Result(SupervisorResults.MergePerf(replies, WorkerStatus(), LostBots()), replies.All(r => r.IsError));
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeout.CancelAfter(1500);
+                WorkerReply[] replies;
+                try { replies = await FanOut("__perf", args, timeout.Token); }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    replies = _workers.Select(w => new WorkerReply(true, JsonSerializer.SerializeToElement(new { error = "worker stats timed out", worker = w.Index + 1 }))).ToArray();
+                }
+                var report = JsonNode.Parse(SupervisorResults.MergePerf(replies, WorkerStatus(), LostBots()).GetRawText())!.AsObject();
+                report["fleet"] = JsonSerializer.SerializeToNode(FleetStatus());
+                return Result(JsonSerializer.SerializeToElement(report), replies.All(r => r.IsError));
             }
             if (name == "get_side_intel")
             {
@@ -214,8 +239,26 @@ internal sealed class WorkerSupervisor : IDisposable
 
     private async Task<CallToolResult> SpawnScenarioAsync(JsonElement args, CancellationToken ct)
     {
+        long spawnEpoch = Interlocked.Read(ref _fleetEpoch);
+        var scenario = PrepareDesired(args);
+        // Explicit new operator work can start after a canceled/exhausted fleet;
+        // no background retry remains armed by stop/clear.
+        if (_workerFactory is not null && !_recovering && _workers.Any(w => !w.Alive))
+        {
+            bool restart;
+            lock (_gate) restart = _fleetState == "stopped";
+            if (restart)
+            {
+                for (int i = 0; i < _workers.Length; i++)
+                    if (!_workers[i].Alive) { _workers[i].Dispose(); _workers[i] = _workerFactory(i); }
+                using var startup = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                startup.CancelAfter(TimeSpan.FromSeconds(35));
+                await FanOut("__ping", EmptyArgs, startup.Token);
+            }
+        }
         // Preflight all original plans before spawning; retain each child's exact
         // slot counts so an exit during spawn becomes failed slots, never success.
+        args = ScenarioArguments(scenario, replay: false);
         var plans = await FanOut("__plan", args, ct);
         if (plans.Where((p, i) => p.IsError && _workers[i].Alive).Any() || plans.All(p => p.IsError))
             return Result(JsonSerializer.SerializeToElement(new { failures = plans.Where(p => p.IsError).Select(p => p.Data), workers = WorkerStatus() }), true);
@@ -228,7 +271,8 @@ internal sealed class WorkerSupervisor : IDisposable
                     requested = WorkerPartition.Split(totals[sideIndex].GetProperty("requested").GetInt32(), _workers.Length)[_workers[i].Index] };
                 plans[i] = new(false, JsonSerializer.SerializeToElement(new { sideA = Side(0), sideB = Side(1) }));
             }
-        Interlocked.Increment(ref _spawning);
+        if (!RegisterDesired(scenario, plans))
+            return Result(JsonSerializer.SerializeToElement(new { canceled = true, fleet = FleetStatus() }));
         try
         {
             var held = await FanOut("__hold", JsonSerializer.SerializeToElement(true), ct);
@@ -242,9 +286,21 @@ internal sealed class WorkerSupervisor : IDisposable
                 try { return await SafeCall(w, "__state", EmptyArgs, timeout.Token); }
                 catch (OperationCanceledException) { return new WorkerReply(true, JsonSerializer.SerializeToElement(new { error = "worker state timed out" })); }
             }));
+            if (Interlocked.Read(ref _fleetEpoch) != spawnEpoch)
+                return Result(JsonSerializer.SerializeToElement(new { error = "fleet epoch ended during spawn", fleet = FleetStatus() }), true);
             for (int i = 0; i < states.Length; i++)
             {
-                if (!states[i].IsError) lock (_gate) Remember(_workers[i].Index, states[i].Data.Deserialize<WorkerState>()!.Bots);
+                if (!states[i].IsError) lock (_gate)
+                {
+                    if (_fleetEpoch != spawnEpoch) continue;
+                    var state = states[i].Data.Deserialize<WorkerState>()!;
+                    Remember(_workers[i].Index, state.Bots);
+                    foreach (var row in state.Fleet ?? [])
+                    {
+                        var slots = _desired.FirstOrDefault(s => s.Id == row.Scenario)?.Slots.GetValueOrDefault(_workers[i].Index);
+                        if (slots?.ContainsKey(row.Key) == true) slots[row.Key] = row;
+                    }
+                }
                 else if (replies[i].Data.TryGetProperty("grants", out var grants)) lock (_gate)
                 {
                     var known = grants.EnumerateArray().Select(g => { var row = JsonNode.Parse(g.GetRawText())!.AsObject(); row["status"] = "active"; return JsonSerializer.SerializeToElement(row); });
@@ -267,6 +323,7 @@ internal sealed class WorkerSupervisor : IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop.Cancel();
+        lock (_gate) _recoveryCancel?.Cancel();
         foreach (var worker in _workers) worker.Dispose();
         try { _coordination.GetAwaiter().GetResult(); } catch (OperationCanceledException) { }
         _stop.Dispose();

@@ -1,0 +1,26 @@
+[
+  {
+    "run": 1,
+    "bots": 100,
+    "workers": 2,
+    "fullSeconds": 12.7798485,
+    "spreadSeconds": 8.7367385,
+    "peakJoinsPer100Ms": 2
+  },
+  {
+    "run": 2,
+    "bots": 100,
+    "workers": 2,
+    "fullSeconds": 12.4282193,
+    "spreadSeconds": 8.6003634,
+    "peakJoinsPer100Ms": 2
+  },
+  {
+    "run": 3,
+    "bots": 100,
+    "workers": 2,
+    "fullSeconds": 12.1077652,
+    "spreadSeconds": 8.581428,
+    "peakJoinsPer100Ms": 2
+  }
+]

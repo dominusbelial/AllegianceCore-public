@@ -11,7 +11,7 @@ internal static class SkirmishDriver
         if (await Console.In.ReadLineAsync(ct) != "start") throw new IOException("Game ownership handshake missing");
         var counts = options.Skirmish!.Split('/').Select(int.Parse).ToArray();
         if (counts.Length != 2 || counts.Any(n => n is < 1 or > 200)) throw new ArgumentException("--skirmish requires countA/countB");
-        using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, ct);
+        using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, ct, recovery: false);
         using var output = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
         using var writes = new SemaphoreSlim(1);
         async Task Send(object message)

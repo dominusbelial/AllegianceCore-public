@@ -1,5 +1,10 @@
 # P658 — bot driver supervisor
 
+P900 update: multiplayer invocation now uses a supervisor even with one worker.
+Showcase recovery, cancellation, and fleet health are documented in
+[MCP fleet recovery](../MCP_FLEET_RECOVERY.md). The single-manager invocation
+description below records P658's behavior before P900.
+
 Implemented on `codex/p658`, with P657/P657b already present at `d8852bc7`.
 Changes are confined to `tools/allegiance-mcp`, the requested ClientCore tests,
 and this report. No commits or pushes were made.

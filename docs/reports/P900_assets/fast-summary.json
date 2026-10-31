@@ -1,0 +1,92 @@
+{
+  "tier": "fast",
+  "seconds": 543.3383606019925,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 119,
+      "outcomes": {
+        "Passed": 119
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 4580,
+      "outcomes": {
+        "Passed": 4576,
+        "NotExecuted": 3,
+        "Failed": 1
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2050,
+      "outcomes": {
+        "Passed": 2049,
+        "Failed": 1
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5922,
+      "outcomes": {
+        "Passed": 5914,
+        "Failed": 8
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.9623076923076923,
+    "referenceMs": 3.6279,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "outcome": "Passed",
+      "seconds": 11.3751304
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 11.0800357
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 10.9647339
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "outcome": "Failed",
+      "seconds": 38.2382629
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 10.3265568
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.ClientCore.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "5 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.056388996992609464,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

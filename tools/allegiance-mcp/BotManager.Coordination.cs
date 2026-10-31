@@ -20,7 +20,7 @@ internal sealed partial class BotManager
         var snapshot = Volatile.Read(ref _coordinationState);
         bool started = Volatile.Read(ref _startedLoop);
         return new(snapshot, bots, started ? Environment.TickCount64 - snapshot.PublishedAtMs : 0,
-            started ? snapshot.Epoch : CoordinationEpoch, CoordinationEpoch);
+            started ? snapshot.Epoch : CoordinationEpoch, CoordinationEpoch, Probe.Lost || !Probe.Connected, ScenarioSlots());
     }
     internal bool CoordinationHolding => Volatile.Read(ref _coordinationHolding) != 0;
     internal void HoldCoordination(bool hold)
