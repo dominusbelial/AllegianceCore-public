@@ -4,6 +4,19 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## 2026-10-31 Claude triage: batch sweep `5ebf01c4` (P897, P898)
+
+18 failures. `P682b` x4 and `P745` were already fixed on master. `SC4`, `P798`, `P796Coverage`, `MissileLock`,
+`NpcWingmanDefend` and `LiveSideSelect` are ledgered above and below. The rest:
+
+| test | sweep result | isolated, master `2d462d72` | verdict |
+| --- | --- | --- | --- |
+| `P692EquipmentLiveTests.Held_dispenser...(kind: "chaff")` | line 47, chaff gone from the server sector | 9/13 failed; 0/20 at `102f8940`, 7/20 at `cc7781a7`, bisect first bad `76c6355e` (P887 pool transport changed delivery timing) | **Test bug, fixed.** A docked ship's clock stops, so the test deployed at ship time 30.06 with the mission at 32.30 and the 2 s chaff had already expired; one tick before the client read removed it. Now steps from the mission clock, class 30/30. |
+| `P807GameOverHandoffTests.P807_394_peer_handoff...` | phase slice 158.5 ms over 135.9 ms | 6/8 passed; one failure was declare sim work 160.9 ms over its scaled 150 ms budget, a different budget from the sweep | Timing flake on single max samples. Sweep commit predates P899, so the broadcast lock is not the cause. |
+| `StationCombatLiveTests.Lethal_hit...`, `Shield_regenerates...` | shot never landed (24.6 s, 18.6 s) | 3/3 pass; passed in the `c6c0d51e` Fast tier | Load, first time in 14 mini sweeps. |
+| `KillShipLiveTests.VictimShipEntity_MarkedDead...` | victim never died in 4800 ticks | passed in every isolated run; passed in the `c6c0d51e` Fast tier | Load. |
+| `P877MineDamageLiveTests.Chased_bot...`, `NpcWingmanAttackLiveTests.Wingman_engages...` | join timeout; target null | 3/3 pass; passed in the `c6c0d51e` Fast tier | Known load flakes. |
+
 ## P899 verification (2026-10-31 UTC)
 
 One Fast sweep: **12,686 passed / 10 failed / 3 optional skips**, 12,699

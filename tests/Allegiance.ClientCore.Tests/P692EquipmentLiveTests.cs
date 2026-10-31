@@ -32,7 +32,9 @@ public sealed class P692EquipmentLiveTests
         var part = ship.MountPart(new(0, 0, "", "", "P692", "", 0, [], [], 0, 0, 32000, -1, 0, "", subtype), 1, 0, 240)!;
         Assert.Equal(1, part.Amount);
         ship.StateM = kind == "chaff" ? ShipControlState.ChaffFire : ShipControlState.MineFire;
-        ship.Update(ship.LastUpdate + .01); ship.StateM = 0;
+        // A docked ship's own clock stops, so step from the mission clock: a stale
+        // now would give the 2 s chaff an expiry that has already passed.
+        ship.Update(ship.Mission.LastUpdate + .01); ship.StateM = 0;
         // P787a — a 1-round launcher fired dry with no spare in cargo is DROPPED
         // the native way (BaseClient::Reload failure → FM_CS_DROP_PART +
         // Terminate, clintlib.cpp:3685-3695), so the mounted launcher is gone
