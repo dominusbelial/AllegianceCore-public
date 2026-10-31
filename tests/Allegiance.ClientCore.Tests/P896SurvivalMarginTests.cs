@@ -24,14 +24,17 @@ public sealed class P896SurvivalMarginTests(ITestOutputHelper output)
     /// 7/10) — the same real record P801's volley arithmetic asserts.</summary>
     private const short GarrisonType = 315;
 
-    private static StrikeVolley.StationProfile Profile() =>
-        StrikeVolley.Profile(Catalog.RepresentativeCore(), GarrisonType)
+    private static StrikeVolley.StationProfile Profile()
+    {
+        Allegiance.TestInfra.Require.Artwork();
+        return StrikeVolley.Profile(Catalog.RepresentativeCore(), GarrisonType)
             ?? throw new InvalidOperationException("no garrison 315 in the representative core");
+    }
 
     /// <summary>A real Stealth Bomber magazine: two SRM Anti-Base 2 rounds, 4 s apart.</summary>
     private static StrikeVolley.Loadout Ab2() => new(23, [new StrikeVolley.Mount(8, 500, 2, 4)], CloakCapable: true);
 
-    [Fact]
+    [SkippableFact]
     public void P896_Margin_zero_is_exactly_the_todays_wave_arithmetic()
     {
         var off = StrikeVolley.Compute(Profile(), [Ab2()], hullsAvailable: 12);
@@ -46,7 +49,7 @@ public sealed class P896SurvivalMarginTests(ITestOutputHelper output)
         Assert.Equal(off, withInputs);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0.5, 4, 0, 2)]   // 4 losses × 0.5 = 2 extra bombers
     [InlineData(0.5, 0, 3, 2)]   // no losses yet, but 3 defenders seen → 1.5 → 2
     [InlineData(1.0, 2, 5, 5)]   // defenders dominate: 5 extra
@@ -62,7 +65,7 @@ public sealed class P896SurvivalMarginTests(ITestOutputHelper output)
         Assert.True(on.BombersRequired <= StrikeVolley.MaxPlannedBombers);
     }
 
-    [Fact]
+    [SkippableFact]
     public void P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap()
     {
         // The reserved wing (Settings.Bombers) is the hard bound: a margin cannot

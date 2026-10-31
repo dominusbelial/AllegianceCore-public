@@ -104,9 +104,10 @@ public sealed partial class BotFixRegressionTests
 
     private static bool P896Triggered(object run) => Get<double?>(run, "TriggeredAt") is not null;
 
-    [Fact]
+    [SkippableFact]
     public void P896_Station_absence_is_not_death_and_destruction_is_remembered()
     {
+        Allegiance.TestInfra.Require.Artwork();
         using var world = new ConnectionSession();
         world.World.Reset();
         world.World.Apply(new ExportStation { Station = P896Garrison(70, 1, 1) });
