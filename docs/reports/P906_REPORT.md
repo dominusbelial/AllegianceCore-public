@@ -213,6 +213,15 @@ If host load makes the result inconclusive, counterbalance the order in a fresh
 pair. Record keep/reject separately per flag; do not enable combinations or
 promote matrix status from these experiments alone.
 
+## Claude's review note
+
+Stress with 400 overlapping ships in a 60-unit cube, 200 ticks, Debug: `sim.nativeCollisionQueue`
+never hung, but the worst tick was 3,776 ms against 11.9 ms with the flag off (mean 20.7 ms against
+1.1 ms). Each bounce rebuilds the remaining sweep and the P863 tick budget does not bound that loop.
+The fixture is deliberately extreme. The loopback table above has stationary ships and no bounces,
+so its -16% says nothing about this cost. On the rig, judge this flag on tick max and overruns at
+aleph and station clumps as well as p95.
+
 ## Native intent
 
 **Design:** phase barriers and chronological collision dispatch make same-tick
