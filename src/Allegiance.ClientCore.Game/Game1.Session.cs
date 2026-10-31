@@ -1202,6 +1202,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] transport={_session.ActiveTransportProtocol} selected={_session.TransportProtocol}: {_transportReason}");
             var logon = Request(_playerName);
             logon.DwCookie = missionCookie;
+            logon.MissionPassword = _skirmish?.Options.HostLan == true ? _skirmish.Options.Password : _lanJoinPassword.ToString();
             if (_skirmish is null && _identityClient?.Account is not null)
             {
                 var listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified);
@@ -1499,7 +1500,13 @@ public sealed partial class Game1
 
         if (_state == ClientState.Intro)
         {
-            if (_introView == IntroView.Main && _introEditingPilot && _pilotBuf.Length < 24)
+            if (_introView == IntroView.HostLan)
+                _hostLanScreen.Type(c);
+            else if (_introView is IntroView.FindServer or IntroView.DirectConnect && _editingLanPassword)
+            {
+                if (c <= 126 && _lanJoinPassword.Length < 15) _lanJoinPassword.Append(c);
+            }
+            else if (_introView == IntroView.Main && _introEditingPilot && _pilotBuf.Length < 24)
                 _pilotBuf.Append(c);
             else if (_introView == IntroView.DirectConnect && _introEditingDirect && _directBuf.Length < 128)
                 _directBuf.Append(c);

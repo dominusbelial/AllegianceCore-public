@@ -65,7 +65,8 @@ public sealed class P808CareerScreenModelTests
     {
         // P808c — the career screens are reached from the intro (the port's lobby
         // portal; native reaches them from the club lobby).
-        Assert.Equal("Career", IntroScreenModel.MainLabels[^1]);
+        // P901 appends hosting; Career keeps its existing slot.
+        Assert.Equal("Career", IntroScreenModel.MainLabels[10]);
         Assert.Equal(IntroCommand.Career, IntroScreenModel.Activate(10));
     }
 

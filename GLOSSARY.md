@@ -744,6 +744,16 @@ list in **reverse**.
   `tools/p853b-hostedit-proof/`, report `docs/reports/P853B_REPORT.md`.
 - **Input** — keyboard/mouse/joystick/gamepad rebindable.
   `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`, `Game1.KeyBind.cs`.
+- **Host LAN game (P901)** — explicit `SkirmishOptions.HostLan` exposes the embedded server
+  on TCP+UDP with discovery; offline defaults remain loopback/ephemeral. Shared setup:
+  `src/Allegiance.SinglePlayer/HostLanScreenModel.cs`,
+  `src/Allegiance.ClientCore.Game/Game1.HostLan.cs`; owned shutdown:
+  `src/Allegiance.Server/Server.LanHost.cs`. Friends join beside fixed bots with native
+  numeric team balance, including the native low-rank allowance. Passwords use the
+  ordinary mission join gate. Tests: `tests/Allegiance.ClientCore.Tests/P901LanHostTests.cs`;
+  process/window proof: `tools/p901-lan-proof/Program.cs`; native intent:
+  `docs/parity/p901-lan-host.csv`; report:
+  `docs/reports/P901_REPORT.md`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
   (`SkirmishHost.cs`, `SkirmishOptions.cs`), hosted from `Game1.Skirmish.cs`.
 - **Training** — the native training missions. `src/Allegiance.SinglePlayer/Training/`.

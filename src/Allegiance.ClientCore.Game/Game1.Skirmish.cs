@@ -101,7 +101,7 @@ public sealed partial class Game1
                 if (_benchmark is not null) _playerName = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.PilotName;
                 else if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
                 var preferences = IntroPreferences.Load();
-                if (_benchmark is null && _calibration is null) { preferences.Pilot = _playerName; preferences.Skirmish = SkirmishPrefs.From(_skirmish.Options); preferences.Save(); }
+                if (_benchmark is null && _calibration is null) { preferences.Pilot = _playerName; if (!_skirmish.Options.HostLan) preferences.Skirmish = SkirmishPrefs.From(_skirmish.Options); preferences.Save(); }
                 if (_benchmark is null && _skirmish.Options.StartAsSpectator) { ObserveBenchmarkSharingSession(); StopIntroScan(); EnterLocalSpectator(); return; }
                 // Local ports are ephemeral; do not save them as a remembered multiplayer server.
                 _returnToIntroOnFailure = true;
@@ -138,7 +138,7 @@ public sealed partial class Game1
                 if (_session.World.MyShipId is { } pilot && _session.World.Ships.TryGetValue(pilot, out var ship))
                     _skirmish.SetFocusSector(ship.SectorId);
         UpdateSeatChange();
-        HandleSkirmishSeatKeys(keys);
+        if (_skirmish?.Options.HostLan != true) HandleSkirmishSeatKeys(keys);
         bool ctrl = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl);
         bool pauseKey = keys.IsKeyDown(Keys.Pause) || (ctrl && keys.IsKeyDown(Keys.P));
         bool exitKey = ctrl && keys.IsKeyDown(Keys.F10);
@@ -152,7 +152,7 @@ public sealed partial class Game1
 
     private void ToggleSkirmishPause()
     {
-        if (_skirmish is not null && _skirmishPause is null)
+        if (_skirmish is not null && !_skirmish.Options.HostLan && _skirmishPause is null)
             _skirmishPause = _skirmish.SetPausedAsync(!_skirmish.Paused, _skirmishCancel?.Token ?? default);
     }
 
@@ -160,6 +160,7 @@ public sealed partial class Game1
     {
         // P789 — leaving a Showcase (or any match) early still latches the
         // recorder's summary once, off the frame path.
+        bool wasLanHost = _skirmish?.Options.HostLan == true;
         CaptureSessionPerformance();
         _skirmishCancel?.Cancel();
         _session.Dispose();
@@ -172,7 +173,7 @@ public sealed partial class Game1
         _skirmishCancel = null;
         _mainMenuVisible = false;
         _state = ClientState.Intro;
-        _introView = IntroView.SinglePlayer;
+        _introView = wasLanHost ? IntroView.HostLan : IntroView.SinglePlayer;
         _skirmishError = "";
     }
 
@@ -196,7 +197,8 @@ public sealed partial class Game1
                 ? "You command | I invest | F3 command view" : "AI commander active"));
         if (_seatChange is not null) status = "Changing seat (waiting for a playable match)...";
         if (_skirmishError.Length > 0) status = _skirmishError;
-        status += "   Ctrl+1 Join Alpha   Ctrl+2 Join Bravo   Ctrl+0 Spectate   Ctrl+P Pause   Ctrl+F10 End";
+        if (_skirmish.Options.HostLan) status = _skirmish.Failure ?? _skirmish.LanStatus;
+        else status += "   Ctrl+1 Join Alpha   Ctrl+2 Join Bravo   Ctrl+0 Spectate   Ctrl+P Pause   Ctrl+F10 End";
         _spriteBatch.Begin();
         _spriteBatch.Draw(_whitePixel, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, LocalSpectating ? 126 : 30), new Color(0, 0, 0, 210));
         float scale = Math.Min(1f, (GraphicsDevice.Viewport.Width - 24) / _hudSmall.MeasureString(status).X);

@@ -292,3 +292,16 @@ Named core leases and standalone character IDs are process-local memory stores;
 they need no additional Docker volume. The existing artwork mount supplies core
 and map files. Core cache entries retire with their last consumer; standalone
 IDs reset when the server process exits.
+
+### LAN hosting ports
+
+The desktop client's **Host LAN game** needs no Compose service. It embeds the
+same server and bot driver already shipped in the player bundle. Default ports
+are TCP+UDP 6073 for play and UDP 6074 for discovery. For a dedicated container
+that should answer LAN discovery, an operator can additionally publish
+`6074:6074/udp` in a private override. A custom desktop host port uses discovery at port + 1.
+`ALLEGIANCE_LAN_PASSWORD` is a private child-process value supplied by the desktop
+host to its bot driver, never an operator environment setting or a Compose secret.
+Game-config `password` defaults empty; the existing mission password gate enforces
+it for humans and bots, including after match rotation. Do not publish a desktop
+host through the lobby. See the [player hosting instructions](../QUICKSTART.md#host-friends-from-the-client).

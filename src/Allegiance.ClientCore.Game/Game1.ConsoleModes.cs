@@ -219,7 +219,8 @@ public sealed partial class Game1
         Console.WriteLine($"[p642] main menu={_mainMenuVisible}");
     }
 
-    private string[] CurrentMainMenuItems => _skirmish is null ? MainMenuItems
+    private string[] CurrentMainMenuItems => _skirmish?.Options.HostLan == true ? MainMenuItems.Concat(new[] { "End LAN game for everyone" }).ToArray()
+        : _skirmish is null ? MainMenuItems
         : MainMenuItems.Concat(new[] { _skirmish.Paused ? "Resume skirmish" : "Pause skirmish", "End skirmish", "Join Alpha", "Join Bravo", "Return to spectator" }).ToArray();
 
     private void UpdateMainMenu(KeyboardState keys)
@@ -242,7 +243,7 @@ public sealed partial class Game1
                     case 4: if (_state == ClientState.Flying) ApplyConsoleMode("ConModeGameState"); break;
                     case 5: Exit(); break;
                     case 6: _graphicsSettingsVisible = true; _graphicsRow = 6; _graphicsPrevious = keys; break;
-                    case 7: ToggleSkirmishPause(); break;
+                    case 7: if (_skirmish?.Options.HostLan == true) StopSkirmish(); else ToggleSkirmishPause(); break;
                     case 8: StopSkirmish(); break;
                     case 9: RequestSkirmishSeat(0); break;
                     case 10: RequestSkirmishSeat(1); break;

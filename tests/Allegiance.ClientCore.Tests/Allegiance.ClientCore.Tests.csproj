@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../tools/skirmish-proof/skirmish-proof.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../tools/p901-lan-proof/p901-lan-proof.csproj" ReferenceOutputAssembly="false" />
     <Using Include="Xunit" />
   </ItemGroup>
 

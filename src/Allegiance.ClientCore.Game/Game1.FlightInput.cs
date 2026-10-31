@@ -389,11 +389,13 @@ public sealed partial class Game1
         if (_state is ClientState.Flying or ClientState.ReadyCheck or ClientState.SideSelect
             && world.OwnMissionDeparture is { } departure)
         {
+            if (_skirmish?.Options.HostLan == true) { StopSkirmish(); return; }
             _state = ClientState.Lobby;
             // P758 — native OnQuitMission's QSR_* → strMessage switch
             // (trekigc.cpp:5265-5335); message-less reasons fall back to a plain
             // "You left the mission." lobby line.
-            _lobbyError = ClientWorld.OwnBootMessage(departure.Reason) ?? "You left the mission.";
+            _lobbyError = departure.Reason == QuitSideReason.ServerShutdown && !string.IsNullOrWhiteSpace(departure.Message)
+                ? departure.Message : ClientWorld.OwnBootMessage(departure.Reason) ?? "You left the mission.";
             _session.Dispose();
         }
 
@@ -405,6 +407,12 @@ public sealed partial class Game1
         // frozen world. Latched so this runs exactly once; Esc still quits.
         if (_session.Lost && !_disconnectTransitioned)
         {
+            if (_skirmish?.Options.HostLan == true)
+            {
+                StopSkirmish();
+                _skirmishError = "The host connection was lost. The LAN game has ended.";
+                return;
+            }
             _disconnectTransitioned = true;
             Console.WriteLine("[monogame] SESSION LOST — connection to server dropped; controls disabled");
             if (_state is ClientState.Flying or ClientState.ReadyCheck or ClientState.SideSelect)

@@ -4,6 +4,43 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P901 verification (2026-10-31 UTC)
+
+One Fast sweep: **12,691 passed / 11 failed / 3 optional skips**, 12,705 executions
+in 544.3 s. All nine infrastructure checks passed. Two passing executions exceeded
+the calibrated 10 s Fast limit. The full sweep was not rerun.
+
+One task-related assertion expected Career to remain the last menu item. P901
+appends Host LAN while preserving Career at slot 10; that assertion now pins slot
+10. The complete affected intro/layout/career selection passes **30/30, three
+isolated runs**. This was a corrected menu-test assumption, not a flake.
+
+All remaining failing methods and timing offenders were repeated three times:
+
+| Test / group | Isolation result | Classification |
+|---|---|---|
+| Five `PlayerBundlePathsTests` cases: executable Artwork fallback, missing Artwork/NativeSource, local-config precedence, native-source subdirectory | Same five fail in each of 3 runs with worktree-local `TMPDIR`; all **9/9 pass in each of 3 controls** using a `/proc` directory-descriptor alias to the same physical scratch directory | Existing fixture topology obstruction: ancestor lookup finds this checkout's `local.env`. No resolver or fixture changes; physical writes remain inside the authorized worktree. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **3/3 pass** with writable scratch `XDG_CONFIG_HOME` | Sweep tried to restore the read-only real user profile. Same sandbox obstruction recorded in P898/P899. |
+| `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` | **3/3 pass**, 1.842 / 1.853 / 1.875 s | Sweep's victim never died in 4,800 ticks; isolated gameplay succeeds. No combat/spectator translation code changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail**, 1.188 / 1.186 / 1.170 s | Persistent pre-existing null `DefendTarget` assertion at line 179; identical unmodified-HEAD evidence and 3/3 failures are already recorded under P899/P898/P895/P892c. No wingman/simulation code changed; remains open. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail / fail / pass** | Failed samples reached sim time 32.2 outside the fixture's [28,31] window. Existing asynchronous receipt/clock sensitivity; LAN hosts use explicit POSITIONREQ, with auto-seat disabled. No auto-seat policy change. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | **pass / fail / fail** across three complete theory runs (3 / 2 / 2 cases passed) | Failures are inclusive-upper-bound floating-point assertions: 7.0000000000000009 > 7 and 5.0000000000000009 > 5. No timer/warp-bomb source changed; remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **3/3 pass**, 9.346 / 9.247 / 9.343 s | Sweep passed at 10.882 s, exceeding the Fast time budget. Timing offender only. |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | **3/3 pass**, 1.597 / 1.600 / 1.596 s | Sweep passed at 10.624 s, exceeding the Fast time budget. Timing offender only. |
+
+Task checks: **10/10 P901 cases ×3**, including four independent TCP/UDP guest
+processes, native countdown game over/next match, safety and teardown; **29/29
+affected offline-skirmish cases ×3**. Showcase never-parks: **5/5 passed**, serial,
+with artwork, pool/native defaults and server GC (206.9 / 217.0 / 270.2 / 220.3 /
+466.5 s). Passive load snapshots on 24 available CPUs were 3.33 / 2.39 / 2.19
+(1/5/15-minute averages) during the last showcase and 2.81 / 2.61 / 2.34 early in
+the final lifecycle/isolation batch; no artificial contention was introduced.
+
+Compact receipts: [P901 validation](reports/P901_assets/validation.json).
+Raw receipts: `.scratch/p901/fast/`, `.scratch/p901/results/` and
+`.scratch/p901/isolation-methods.json`. The failed Fast sweep remains a failed
+gate; neither its receipts nor the unrelated assertions/timeouts were relaxed.
+
 ## 2026-10-31 Claude triage: public CI without artwork
 
 CI's Fast tier was red on 21 tests. 19 needed the mission core and did not skip: `P896` x7, `P853bHostEditUiTests` x11 (JOINED_MISSION

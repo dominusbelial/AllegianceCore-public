@@ -56,6 +56,8 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # Desktop Host LAN passes ALLEGIANCE_LAN_PASSWORD privately to its owned bot
+  # driver; it is not a server/container setting and must not be set here.
   # Optional bot owner transfer uses botAuthenticationSecret in the mounted server JSON.
   # null disables the role; keep real credentials in a private config override.
   server:
@@ -65,6 +67,9 @@ services:
     command: ["--identity-issuer", "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"]
     ports:
       - "6073:6073"
+      # Desktop Host LAN also uses UDP 6074 (game port + 1) for discovery.
+      # It runs in the client, outside Compose; dedicated discovery is opt-in
+      # through an operator port mapping, preserving this service's exposure.
       - "${ALLEGIANCE_TRANSPORT_UDP_PORT:-6073}:${ALLEGIANCE_TRANSPORT_UDP_PORT:-6073}/udp"
     volumes:
       - trial-artwork:/artwork:ro
