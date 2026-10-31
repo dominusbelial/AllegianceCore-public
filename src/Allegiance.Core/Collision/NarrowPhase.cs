@@ -49,10 +49,20 @@ public static class NarrowPhase
     /// </summary>
     public static CollisionTest TestPair(Collider a, Collider b, float dt)
     {
+        if (!(dt > 0))
+            throw new ArgumentOutOfRangeException(nameof(dt), "step duration must be positive");
+        return TestPairWindow(a, b, dt);
+    }
+
+    // P906: native HitTest.cpp:187-202 admits tStart == tStop, including its
+    // existing 1/128s tolerance. Keep the public positive-duration contract for
+    // ordinary sweeps; newly born and recalculated boundary contacts use this.
+    internal static CollisionTest TestBoundaryPair(Collider a, Collider b) => TestPairWindow(a, b, 0);
+
+    private static CollisionTest TestPairWindow(Collider a, Collider b, float dt)
+    {
         const float tStart = 0f;
         float tStop = dt;
-        if (!(tStop > tStart))
-            throw new ArgumentOutOfRangeException(nameof(dt), "step duration must be positive");
 
         var dP = a.Position - b.Position;
         float r = b.EffectiveRadius + a.EffectiveRadius;

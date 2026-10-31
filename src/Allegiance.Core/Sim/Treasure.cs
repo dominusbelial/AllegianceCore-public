@@ -54,5 +54,6 @@ public sealed class Treasure : Model, ITreasureIgc
         Position = TreasureMotion.PositionAt(TreasureMotion.Vector(Data.P0), TreasureMotion.Vector(Data.V0), now - CreatedAt);
         Velocity = TreasureMotion.VelocityAt(TreasureMotion.Vector(Data.V0), now - CreatedAt);
         _sweepVelocity = (Position - PreviousPosition) / (float)dt;
+        if (OwnerSector.DefersMovement) Position = PreviousPosition;
     }
 }

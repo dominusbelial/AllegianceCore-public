@@ -228,7 +228,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 Position += deltaV * (float)(_timeReady - LastUpdate);
             _impactTime -= activeDt;
         }
-        Position += Velocity * (float)dt;
+        if (!_sector.DefersMovement) Position += Velocity * (float)dt;
 
         // MSL-1 — NON-NATIVE defensive guard. Native has no such check; a
         // non-finite kinematic state can only come from a numeric fault

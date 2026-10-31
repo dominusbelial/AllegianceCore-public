@@ -39,6 +39,12 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>P817 experimental native NPC travel, default off. Player and MCP controls are excluded.</summary>
     public bool NativeGotoPlanEnabled { get; set; }
 
+    /// <summary>P906 experimental all-ship phases (clusterIGC.cpp:170-253), default off.</summary>
+    public bool NativeShipPhasesEnabled { get; set; }
+
+    /// <summary>P906 experimental collision-time queue (clusterIGC.cpp:255-343), default off.</summary>
+    public bool NativeCollisionQueueEnabled { get; set; }
+
     /// <summary>P872/SIM-0146 — the mission's lifecycle origin. Boot-configured
     /// and admin worlds (every mission the port assembles today) persist
     /// forever, matching the ruling of Domingo 2026-10-28: native lets admin

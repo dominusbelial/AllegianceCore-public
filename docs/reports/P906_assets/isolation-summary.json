@@ -1,0 +1,611 @@
+[
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0374029
+  },
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0002551
+  },
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0002639
+  },
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0374073
+  },
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0477833
+  },
+  {
+    "file": "All_ship_execute_precedes_ordinary_models_only_when_enabled-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_ship_execute_precedes_ordinary_models_only_when_enabled",
+    "outcome": "Passed",
+    "seconds": 0.0002954
+  },
+  {
+    "file": "All_three_server_flags_and_new_mission_flags_default_off-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "outcome": "Passed",
+    "seconds": 0.0142891
+  },
+  {
+    "file": "All_three_server_flags_and_new_mission_flags_default_off-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "outcome": "Passed",
+    "seconds": 0.0136297
+  },
+  {
+    "file": "All_three_server_flags_and_new_mission_flags_default_off-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.All_three_server_flags_and_new_mission_flags_default_off",
+    "outcome": "Passed",
+    "seconds": 0.0137154
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.045787
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0006834
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0365038
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0004931
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0458691
+  },
+  {
+    "file": "Boarded_ship_does_not_execute_an_independent_move_in_global_phases-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Boarded_ship_does_not_execute_an_independent_move_in_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0007835
+  },
+  {
+    "file": "Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "outcome": "Passed",
+    "seconds": 0.0595966
+  },
+  {
+    "file": "Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "outcome": "Passed",
+    "seconds": 0.0587002
+  },
+  {
+    "file": "Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact",
+    "outcome": "Passed",
+    "seconds": 0.0511459
+  },
+  {
+    "file": "Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat-1.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "outcome": "Passed",
+    "seconds": 0.2586264
+  },
+  {
+    "file": "Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat-2.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "outcome": "Passed",
+    "seconds": 0.2829791
+  },
+  {
+    "file": "Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat-3.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Broadcast_boundary_changes_same_tick_wire_pose_but_preserves_fixed_input_combat",
+    "outcome": "Passed",
+    "seconds": 0.2568331
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0386518
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0068464
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0067968
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0385237
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.0423215
+  },
+  {
+    "file": "Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Burnout_blast_before_ship_update_observes_executed_velocity_only_with_global_phases",
+    "outcome": "Passed",
+    "seconds": 0.007706
+  },
+  {
+    "file": "Duplicate_and_reverse_time_do_not_repeat_phases_or_movement-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "outcome": "Passed",
+    "seconds": 0.0419184
+  },
+  {
+    "file": "Duplicate_and_reverse_time_do_not_repeat_phases_or_movement-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "outcome": "Passed",
+    "seconds": 0.0418961
+  },
+  {
+    "file": "Duplicate_and_reverse_time_do_not_repeat_phases_or_movement-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Duplicate_and_reverse_time_do_not_repeat_phases_or_movement",
+    "outcome": "Passed",
+    "seconds": 0.041705
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.005295
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.056492
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.0051364
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.0465678
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.0570305
+  },
+  {
+    "file": "Earlier_aleph_contact_consumes_missile_before_later_ship_contact-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_aleph_contact_consumes_missile_before_later_ship_contact",
+    "outcome": "Passed",
+    "seconds": 0.0052804
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0064141
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0525568
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0414063
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0065385
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0525998
+  },
+  {
+    "file": "Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue(enabled: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Earlier_rock_contact_preempts_later_lethal_round_only_in_time_queue",
+    "outcome": "Passed",
+    "seconds": 0.0066976
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: False, started: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0259313
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: True, started: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0003564
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: True, started: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0004871
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: False, started: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0338956
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: True, started: False)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0004412
+  },
+  {
+    "file": "Inactive_or_not_started_queue_neither_collides_nor_moves-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves(active: False, started: True)",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Inactive_or_not_started_queue_neither_collides_nor_moves",
+    "outcome": "Passed",
+    "seconds": 0.0265598
+  },
+  {
+    "file": "Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "outcome": "Passed",
+    "seconds": 0.0479083
+  },
+  {
+    "file": "Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "outcome": "Passed",
+    "seconds": 0.0480545
+  },
+  {
+    "file": "Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Newborn_round_is_not_swept_back_before_its_creation_and_moves_only_its_age",
+    "outcome": "Passed",
+    "seconds": 0.0480888
+  },
+  {
+    "file": "Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0431606
+  },
+  {
+    "file": "Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0535381
+  },
+  {
+    "file": "Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Pending_probe_rescue_excludes_pod_from_later_contacts_and_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0542716
+  },
+  {
+    "file": "Recalculation_at_tick_end_keeps_other_simultaneous_contacts-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "outcome": "Passed",
+    "seconds": 0.0423141
+  },
+  {
+    "file": "Recalculation_at_tick_end_keeps_other_simultaneous_contacts-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "outcome": "Passed",
+    "seconds": 0.052467
+  },
+  {
+    "file": "Recalculation_at_tick_end_keeps_other_simultaneous_contacts-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Recalculation_at_tick_end_keeps_other_simultaneous_contacts",
+    "outcome": "Passed",
+    "seconds": 0.043286
+  },
+  {
+    "file": "Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "outcome": "Passed",
+    "seconds": 0.0389488
+  },
+  {
+    "file": "Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "outcome": "Passed",
+    "seconds": 0.0496558
+  },
+  {
+    "file": "Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Round_born_inside_target_hits_at_creation_instead_of_before_birth_or_not_at_all",
+    "outcome": "Passed",
+    "seconds": 0.0491592
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-1.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0200228
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-1.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0205466
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-1.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.1293197
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-1.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0417537
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-2.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0205869
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-2.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0220264
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-2.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0202752
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-2.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.115015
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-3.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.022033
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-3.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: False, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0188419
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-3.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: True)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.1329361
+  },
+  {
+    "file": "Server_binds_independent_flags_to_every_assembled_mission-3.trx",
+    "test": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission(phases: True, collisions: False)",
+    "method": "Allegiance.Core.Tests.P906ProductionOrderTests.Server_binds_independent_flags_to_every_assembled_mission",
+    "outcome": "Passed",
+    "seconds": 0.0212092
+  },
+  {
+    "file": "Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "outcome": "Passed",
+    "seconds": 0.0519677
+  },
+  {
+    "file": "Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "outcome": "Passed",
+    "seconds": 0.0521637
+  },
+  {
+    "file": "Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Simultaneous_treasure_contacts_keep_insertion_order_and_pick_only_once",
+    "outcome": "Passed",
+    "seconds": 0.0515091
+  },
+  {
+    "file": "Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "outcome": "Passed",
+    "seconds": 0.0499191
+  },
+  {
+    "file": "Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "outcome": "Passed",
+    "seconds": 0.0494107
+  },
+  {
+    "file": "Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Stage_change_in_model_callback_does_not_cancel_a_tick_that_started_running",
+    "outcome": "Passed",
+    "seconds": 0.0384735
+  },
+  {
+    "file": "Starting_stage_does_not_execute_ship_phase_passes-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "outcome": "Passed",
+    "seconds": 0.0227865
+  },
+  {
+    "file": "Starting_stage_does_not_execute_ship_phase_passes-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "outcome": "Passed",
+    "seconds": 0.0294685
+  },
+  {
+    "file": "Starting_stage_does_not_execute_ship_phase_passes-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Starting_stage_does_not_execute_ship_phase_passes",
+    "outcome": "Passed",
+    "seconds": 0.0227862
+  },
+  {
+    "file": "Swept_mine_contact_is_applied_before_final_movement-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0494914
+  },
+  {
+    "file": "Swept_mine_contact_is_applied_before_final_movement-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0493776
+  },
+  {
+    "file": "Swept_mine_contact_is_applied_before_final_movement-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Swept_mine_contact_is_applied_before_final_movement",
+    "outcome": "Passed",
+    "seconds": 0.0438579
+  },
+  {
+    "file": "Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero-1.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "outcome": "Passed",
+    "seconds": 0.0524883
+  },
+  {
+    "file": "Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero-2.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "outcome": "Passed",
+    "seconds": 0.0505936
+  },
+  {
+    "file": "Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero-3.trx",
+    "test": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "method": "Allegiance.Core.Tests.P906TickOrderTests.Tick_end_newborn_contact_uses_native_boundary_window_and_legacy_api_still_rejects_zero",
+    "outcome": "Passed",
+    "seconds": 0.0491445
+  }
+]

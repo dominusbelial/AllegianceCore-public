@@ -1,0 +1,2711 @@
+[
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "method": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "outcome": "Passed",
+    "seconds": 0.0015236
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.1006138
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.0749816
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "outcome": "Passed",
+    "seconds": 0.0097942
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "outcome": "Passed",
+    "seconds": 0.0054472
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.1053683
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0979121
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "outcome": "Passed",
+    "seconds": 0.0133998
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "outcome": "Passed",
+    "seconds": 0.0058354
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "outcome": "Passed",
+    "seconds": 1.0231482
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "method": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "outcome": "Passed",
+    "seconds": 0.0081573
+  },
+  {
+    "file": "ChaffTests-1.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "outcome": "Passed",
+    "seconds": 0.0013025
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "method": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "outcome": "Passed",
+    "seconds": 0.0012376
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0405628
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "outcome": "Passed",
+    "seconds": 0.0134341
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "outcome": "Passed",
+    "seconds": 0.010461
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "method": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "outcome": "Passed",
+    "seconds": 0.0072121
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "outcome": "Passed",
+    "seconds": 0.9768061
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "outcome": "Passed",
+    "seconds": 0.0058271
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.0399262
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "outcome": "Passed",
+    "seconds": 0.0053253
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0855506
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0688833
+  },
+  {
+    "file": "ChaffTests-2.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "outcome": "Passed",
+    "seconds": 0.0012419
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "method": "Allegiance.Core.Tests.ChaffTests.Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser",
+    "outcome": "Passed",
+    "seconds": 0.0012319
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_does_not_spoof_when_the_roll_favors_the_missile",
+    "outcome": "Passed",
+    "seconds": 0.0039381
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_chaff_launcher_creates_chaff_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0505998
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_creates_chaff_and_spoofs_only_the_missile_targeting_the_firer",
+    "outcome": "Passed",
+    "seconds": 0.0132003
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_wire_messages_round_trip_with_native_sizes",
+    "outcome": "Passed",
+    "seconds": 0.0015045
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_empty_chaff_launcher_is_refused",
+    "outcome": "Passed",
+    "seconds": 1.00681
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "method": "Allegiance.Core.Tests.ChaffTests.Spoofed_missile_drops_its_chaff_target_when_the_chaff_leaves_the_cluster",
+    "outcome": "Passed",
+    "seconds": 0.0069156
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0399653
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_chaff_spoofs_a_zero_resistance_missile_targeting_the_firer_over_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.0973043
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "outcome": "Passed",
+    "seconds": 0.0970376
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "method": "Allegiance.Core.Tests.ChaffTests.DeployChaff_with_no_threatening_missile_spoofs_nothing",
+    "outcome": "Passed",
+    "seconds": 0.0041428
+  },
+  {
+    "file": "ChaffTests-3.trx",
+    "test": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "method": "Allegiance.Core.Tests.ChaffTests.Chaff_radius_grows_and_it_expires_after_lifespan",
+    "outcome": "Passed",
+    "seconds": 0.0095834
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0003137
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "outcome": "Passed",
+    "seconds": 0.0104921
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0008179
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "outcome": "Passed",
+    "seconds": 0.0019296
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "outcome": "Passed",
+    "seconds": 0.0007655
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "outcome": "Passed",
+    "seconds": 0.0004885
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "outcome": "Passed",
+    "seconds": 0.0072041
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "outcome": "Passed",
+    "seconds": 0.0001137
+  },
+  {
+    "file": "CollisionDetectionTests-1.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "outcome": "Passed",
+    "seconds": 0.005723
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "outcome": "Passed",
+    "seconds": 0.0004817
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0008092
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "outcome": "Passed",
+    "seconds": 0.0007544
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "outcome": "Passed",
+    "seconds": 0.0101654
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "outcome": "Passed",
+    "seconds": 0.0056291
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "outcome": "Passed",
+    "seconds": 0.0069733
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "outcome": "Passed",
+    "seconds": 0.0019524
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "outcome": "Passed",
+    "seconds": 0.0001042
+  },
+  {
+    "file": "CollisionDetectionTests-2.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0002598
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0003668
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+    "outcome": "Passed",
+    "seconds": 0.0001171
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+    "outcome": "Passed",
+    "seconds": 0.0008149
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+    "outcome": "Passed",
+    "seconds": 0.0009004
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+    "outcome": "Passed",
+    "seconds": 0.0019955
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+    "outcome": "Passed",
+    "seconds": 0.0004983
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+    "outcome": "Passed",
+    "seconds": 0.0061291
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+    "outcome": "Passed",
+    "seconds": 0.011575
+  },
+  {
+    "file": "CollisionDetectionTests-3.trx",
+    "test": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "method": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+    "outcome": "Passed",
+    "seconds": 0.007513
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "outcome": "Passed",
+    "seconds": 0.0022991
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.1148495
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "outcome": "Passed",
+    "seconds": 0.0168321
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.0019105
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "outcome": "Passed",
+    "seconds": 0.0018904
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.1151596
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.0019034
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "outcome": "Passed",
+    "seconds": 0.013316
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Station_hull_lets_a_ship_pass_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.0019092
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Elongated_asteroid_hulls_let_a_ship_pass_through_empty_sphere_corners",
+    "outcome": "Passed",
+    "seconds": 0.0133752
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Resolver_bounces_off_asteroid_hull_but_not_through_empty_sphere_corner",
+    "outcome": "Passed",
+    "seconds": 0.112236
+  },
+  {
+    "file": "P621ConvexHullCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "method": "Allegiance.Core.Tests.P621ConvexHullCollisionTests.Cache_resolves_once_and_falls_back_null",
+    "outcome": "Passed",
+    "seconds": 0.0018698
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"probe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002602
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002914
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 105, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 3.01e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 2.97e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "outcome": "Passed",
+    "seconds": 0.0001886
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0001817
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.0003946
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 4.43e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0003309
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"rescueProbe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 5.69e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 3.56e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.0019811
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"asteroid\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002999
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0005551
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 4.07e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 6, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.00021
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 5, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.0003813
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: -1, capabilities: 0, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0299315
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0040473
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 0.0002135
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 104, expected: 0.99995999999999996)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 2e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "outcome": "Passed",
+    "seconds": 0.0040254
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0002808
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0003575
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0008453
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "outcome": "Passed",
+    "seconds": 0.0015482
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0003036
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "outcome": "Passed",
+    "seconds": 0.016198
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 0, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0004175
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 7.21e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 3e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "outcome": "Passed",
+    "seconds": 0.0001895
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 2, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.0015306
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 16384, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0006916
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0001184
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 9.35e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 0.0001005
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 1, stateTime: 0)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0034962
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "outcome": "Passed",
+    "seconds": 0.0002863
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 5.39e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 9.16e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0001387
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 0.000155
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 2.2e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.0002077
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 6.26e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.000131
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 6.36e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 0, stateTime: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0001912
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 6.09e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 10)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 3.6e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "outcome": "Passed",
+    "seconds": 0.0001588
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"probe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 6.18e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 4.15e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0001238
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "outcome": "Passed",
+    "seconds": 0.0003078
+  },
+  {
+    "file": "P649CombatBlastParityTests-1.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 0, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.0237494
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.000398
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 2, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.0015186
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.0001269
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 2.95e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 0, stateTime: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0001722
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "outcome": "Passed",
+    "seconds": 0.0002863
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "outcome": "Passed",
+    "seconds": 0.0002982
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 0, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0004298
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 9.14e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0003534
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 6, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.0001962
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: -1, capabilities: 0, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0259238
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 3.83e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "outcome": "Passed",
+    "seconds": 0.0001541
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "outcome": "Passed",
+    "seconds": 0.0124329
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"rescueProbe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 4.4e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0003118
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0001122
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 6.41e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 0.0001503
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 0.000213
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "outcome": "Passed",
+    "seconds": 0.0001821
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 10)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 3.49e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 4.15e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"probe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 6.13e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0005462
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0001337
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 7.82e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002539
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 5, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.0002593
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 6.05e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"asteroid\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002475
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0001814
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 2.13e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0001396
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 1, stateTime: 0)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0027298
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.000196
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 16384, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0006936
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "outcome": "Passed",
+    "seconds": 0.0001989
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 2.94e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.0019838
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 7.45e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 8.97e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "outcome": "Passed",
+    "seconds": 0.0015515
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 5.13e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002166
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "outcome": "Passed",
+    "seconds": 0.0039727
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 9.89e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0040258
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 0, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.0173823
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0002771
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 105, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 2.44e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 6.3e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0008248
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 104, expected: 0.99995999999999996)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 4.65e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0001172
+  },
+  {
+    "file": "P649CombatBlastParityTests-2.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"probe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0001985
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 105, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 2.52e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Splash_passes_NoWarn_and_NoDebris_without_losing_the_damage_row",
+    "outcome": "Passed",
+    "seconds": 0.0015254
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 8.97e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: -1, capabilities: 0, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0296487
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0001789
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_missile_is_sampled_at_blast_time",
+    "outcome": "Passed",
+    "seconds": 0.0001536
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 3.38e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Lethal_splash_removes_targets_and_notifies_each_death_once_even_without_a_launcher",
+    "outcome": "Passed",
+    "seconds": 0.0160915
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: False, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 6.21e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.0019866
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 9.84e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Launcherless_station_damage_uses_matrix_before_hostile_capture",
+    "outcome": "Passed",
+    "seconds": 0.0039004
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 6, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.0001956
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0039902
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"probe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 6.59e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 2, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 0.0015246
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 7)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 6.1e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 2.91e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0002674
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 0.0005417
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 2.27e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"armedProbe\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0003014
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 5, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.000281
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle(allow: True, self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Ship_friendly_and_self_splash_obeys_the_mission_toggle",
+    "outcome": "Passed",
+    "seconds": 4.12e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.0001985
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Expiring_missile_blast_does_not_destroy_or_notify_its_source_twice",
+    "outcome": "Passed",
+    "seconds": 0.0002908
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 3.97e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_destroyed_by_splash_creates_its_secondary_blast_once",
+    "outcome": "Passed",
+    "seconds": 0.0001871
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 16384, expected: 0.600000024)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0007025
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"armedProbe\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0008318
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 5)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 2.96e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 7.87e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"asteroid\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 0.0001126
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Allied_sides_obey_target_immunity_and_can_repair",
+    "outcome": "Passed",
+    "seconds": 0.0001336
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 8.38e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"missile\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002504
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate(projectileId: 1, capabilities: 0, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Same_side_missile_probe_damage_matches_the_native_probe_gate",
+    "outcome": "Passed",
+    "seconds": 0.0004461
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"rescueProbe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 5.57e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "outcome": "Passed",
+    "seconds": 0.0002821
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source(capabilities: 4, delay: 10)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "outcome": "Passed",
+    "seconds": 3.57e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 104, expected: 0.99995999999999996)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 1.86e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one(self: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Friendly_and_self_repair_splash_heals_and_caps_at_one",
+    "outcome": "Passed",
+    "seconds": 0.0001276
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage(distance: 0, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Surface_boundary_is_strict_and_overlap_is_full_damage",
+    "outcome": "Passed",
+    "seconds": 0.0220997
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Missile_killed_at_the_zero_position_sentinel_does_not_create_a_secondary_blast",
+    "outcome": "Passed",
+    "seconds": 0.0001823
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_repairable_target_heals_caps_and_uses_launcher_experience",
+    "outcome": "Passed",
+    "seconds": 6.4e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"missile\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 9.1e-05
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 0.0001483
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"probe\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002183
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order(reverseOrder: False)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "outcome": "Passed",
+    "seconds": 0.0003576
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: True, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0001191
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity(kind: \"ship\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Non_ship_launchers_obey_friendly_immunity",
+    "outcome": "Passed",
+    "seconds": 0.0002149
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source(dual: True)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "outcome": "Passed",
+    "seconds": 0.0003879
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 1, stateTime: 0)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0035511
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"asteroid\", allow: False, expected: 0.59999999999999998)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0002883
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp(time: 0, stateTime: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Moving_ship_is_sampled_at_the_explosion_timestamp",
+    "outcome": "Passed",
+    "seconds": 0.0001984
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract(kind: \"station\", allow: False, expected: 1)",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Target_specific_friendly_fire_rules_preserve_probe_contract",
+    "outcome": "Passed",
+    "seconds": 0.0003211
+  },
+  {
+    "file": "P649CombatBlastParityTests-3.trx",
+    "test": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage(kind: \"station\")",
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Every_native_target_takes_surface_falloff_with_flagged_matrix_damage",
+    "outcome": "Passed",
+    "seconds": 5.71e-05
+  },
+  {
+    "file": "P762SectorTickTests-1.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "outcome": "Passed",
+    "seconds": 0.0397729
+  },
+  {
+    "file": "P762SectorTickTests-1.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "outcome": "Passed",
+    "seconds": 0.0248204
+  },
+  {
+    "file": "P762SectorTickTests-1.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "outcome": "Passed",
+    "seconds": 0.0119818
+  },
+  {
+    "file": "P762SectorTickTests-1.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "outcome": "Passed",
+    "seconds": 0.1738576
+  },
+  {
+    "file": "P762SectorTickTests-2.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "outcome": "Passed",
+    "seconds": 0.035803
+  },
+  {
+    "file": "P762SectorTickTests-2.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "outcome": "Passed",
+    "seconds": 0.1648388
+  },
+  {
+    "file": "P762SectorTickTests-2.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "outcome": "Passed",
+    "seconds": 0.0233192
+  },
+  {
+    "file": "P762SectorTickTests-2.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "outcome": "Passed",
+    "seconds": 0.0216664
+  },
+  {
+    "file": "P762SectorTickTests-3.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_walks_ships_back_to_front_so_children_take_their_hit_before_parents_die",
+    "outcome": "Passed",
+    "seconds": 0.0186067
+  },
+  {
+    "file": "P762SectorTickTests-3.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Mine_damage_kills_and_finalises_the_ship_in_a_started_tick",
+    "outcome": "Passed",
+    "seconds": 0.1546957
+  },
+  {
+    "file": "P762SectorTickTests-3.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Visibility_and_cluster_callback_run_once_per_ten_active_started_passes",
+    "outcome": "Passed",
+    "seconds": 0.0107335
+  },
+  {
+    "file": "P762SectorTickTests-3.trx",
+    "test": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "method": "Allegiance.Core.Tests.P762SectorTickTests.Inactive_sector_skips_mine_damage_and_the_visibility_cadence",
+    "outcome": "Passed",
+    "seconds": 0.0341376
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "outcome": "Passed",
+    "seconds": 0.0111158
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "outcome": "Passed",
+    "seconds": 0.0839348
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "outcome": "Passed",
+    "seconds": 0.0161034
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "outcome": "Passed",
+    "seconds": 10.7472184
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "outcome": "Passed",
+    "seconds": 0.0087937
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "outcome": "Passed",
+    "seconds": 0.0065757
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "outcome": "Passed",
+    "seconds": 0.0246572
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "outcome": "Passed",
+    "seconds": 0.0022245
+  },
+  {
+    "file": "P777bMissileAlephConeTests-1.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0013699
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "outcome": "Passed",
+    "seconds": 0.0082083
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "outcome": "Passed",
+    "seconds": 10.5930329
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0013604
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "outcome": "Passed",
+    "seconds": 0.090679
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "outcome": "Passed",
+    "seconds": 0.0024686
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "outcome": "Passed",
+    "seconds": 0.0107063
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "outcome": "Passed",
+    "seconds": 0.0219487
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "outcome": "Passed",
+    "seconds": 0.0151645
+  },
+  {
+    "file": "P777bMissileAlephConeTests-2.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "outcome": "Passed",
+    "seconds": 0.0122538
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_reaching_the_aleph_dies_and_explodes_at_the_contact_point",
+    "outcome": "Passed",
+    "seconds": 0.0350994
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Swept_first_contact_matches_the_cone_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0013588
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_crossing_the_disc_triggers_in_one_tick",
+    "outcome": "Passed",
+    "seconds": 0.0093204
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Exact_sweep_agrees_with_brute_force_and_dominates_the_p776_sampler",
+    "outcome": "Passed",
+    "seconds": 10.7363158
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Zero_length_segment_equals_touches",
+    "outcome": "Passed",
+    "seconds": 0.0022933
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Dud_missile_ignores_the_aleph",
+    "outcome": "Passed",
+    "seconds": 0.0107031
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_passing_90u_in_front_of_the_disc_does_not_trigger",
+    "outcome": "Passed",
+    "seconds": 0.0854365
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Warp_bomb_from_behind_hits_the_cone",
+    "outcome": "Passed",
+    "seconds": 0.0124345
+  },
+  {
+    "file": "P777bMissileAlephConeTests-3.trx",
+    "test": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "method": "Allegiance.Core.Tests.P777bMissileAlephConeTests.Plain_missile_without_blast_dies_without_damage",
+    "outcome": "Passed",
+    "seconds": 0.0074252
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0200061
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "outcome": "Passed",
+    "seconds": 0.3122453
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0199173
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0192694
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0208795
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0221833
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0582155
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0367962
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0237144
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "outcome": "Passed",
+    "seconds": 0.0375107
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0201498
+  },
+  {
+    "file": "P788cNativeTickOrderTests-1.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "outcome": "Passed",
+    "seconds": 0.0312343
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "outcome": "Passed",
+    "seconds": 0.0196348
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0573183
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0168086
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.019714
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0193377
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0340312
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0208266
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "outcome": "Passed",
+    "seconds": 0.3146438
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0179865
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0179777
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0166957
+  },
+  {
+    "file": "P788cNativeTickOrderTests-2.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "outcome": "Passed",
+    "seconds": 0.0272365
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Scripted_echo_is_validated_without_rounding_server_flight_or_bypassing_rejection",
+    "outcome": "Passed",
+    "seconds": 0.0197788
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Mixed_started_and_starting_missions_each_send_once_in_their_own_phase",
+    "outcome": "Passed",
+    "seconds": 0.0267208
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.017943
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0437189
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0197688
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: True, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0190684
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: True, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0214186
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0180078
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: True, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0180341
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary(native: False, snapshot: False, tiers: False)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Ship_poses_are_projected_once_at_the_selected_update_boundary",
+    "outcome": "Passed",
+    "seconds": 0.0189633
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose(native: False, tiers: True)",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Stopped_turrets_send_LIGHT_identifiers_including_self_and_override_saved_active_pose",
+    "outcome": "Passed",
+    "seconds": 0.0478344
+  },
+  {
+    "file": "P788cNativeTickOrderTests-3.trx",
+    "test": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "method": "Allegiance.Core.Tests.P788cNativeTickOrderTests.Player_warp_never_rearms_on_time_legacy_rejected_or_stale_updates",
+    "outcome": "Passed",
+    "seconds": 0.3415578
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "outcome": "Passed",
+    "seconds": 0.1489388
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "outcome": "Passed",
+    "seconds": 0.0168084
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.4509479
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "outcome": "Passed",
+    "seconds": 0.005436
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0034171
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "outcome": "Passed",
+    "seconds": 0.0078071
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "outcome": "Passed",
+    "seconds": 0.0049861
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "outcome": "Passed",
+    "seconds": 0.0177931
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "outcome": "Passed",
+    "seconds": 0.007679
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0032718
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "outcome": "Passed",
+    "seconds": 0.1759487
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.4595842
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+    "outcome": "Passed",
+    "seconds": 0.0060072
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0040684
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+    "outcome": "Passed",
+    "seconds": 0.4729416
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+    "outcome": "Passed",
+    "seconds": 0.00935
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+    "outcome": "Passed",
+    "seconds": 0.0176767
+  },
+  {
+    "file": "ShipAsteroidCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "method": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+    "outcome": "Passed",
+    "seconds": 0.1490214
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "outcome": "Passed",
+    "seconds": 0.005454
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "outcome": "Passed",
+    "seconds": 0.0046588
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "outcome": "Passed",
+    "seconds": 0.0040608
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "outcome": "Passed",
+    "seconds": 0.1027359
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0067739
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "outcome": "Passed",
+    "seconds": 0.0094108
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "outcome": "Passed",
+    "seconds": 0.0035653
+  },
+  {
+    "file": "ShipShipCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "outcome": "Passed",
+    "seconds": 0.0035687
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "outcome": "Passed",
+    "seconds": 0.0079451
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "outcome": "Passed",
+    "seconds": 0.0030171
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "outcome": "Passed",
+    "seconds": 0.0971627
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "outcome": "Passed",
+    "seconds": 0.0047371
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "outcome": "Passed",
+    "seconds": 0.0033239
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0054872
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "outcome": "Passed",
+    "seconds": 0.0040093
+  },
+  {
+    "file": "ShipShipCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "outcome": "Passed",
+    "seconds": 0.0033465
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+    "outcome": "Passed",
+    "seconds": 0.0030243
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+    "outcome": "Passed",
+    "seconds": 0.0080798
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+    "outcome": "Passed",
+    "seconds": 0.0048207
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+    "outcome": "Passed",
+    "seconds": 0.0033949
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+    "outcome": "Passed",
+    "seconds": 0.0055175
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+    "outcome": "Passed",
+    "seconds": 0.0040001
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+    "outcome": "Passed",
+    "seconds": 0.0974016
+  },
+  {
+    "file": "ShipShipCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "method": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+    "outcome": "Passed",
+    "seconds": 0.0030244
+  },
+  {
+    "file": "ShipStationCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "outcome": "Passed",
+    "seconds": 0.0047669
+  },
+  {
+    "file": "ShipStationCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0050915
+  },
+  {
+    "file": "ShipStationCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "outcome": "Passed",
+    "seconds": 0.004842
+  },
+  {
+    "file": "ShipStationCollisionTests-1.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "outcome": "Passed",
+    "seconds": 0.0931754
+  },
+  {
+    "file": "ShipStationCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0044363
+  },
+  {
+    "file": "ShipStationCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "outcome": "Passed",
+    "seconds": 0.083496
+  },
+  {
+    "file": "ShipStationCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "outcome": "Passed",
+    "seconds": 0.0041209
+  },
+  {
+    "file": "ShipStationCollisionTests-2.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "outcome": "Passed",
+    "seconds": 0.0042359
+  },
+  {
+    "file": "ShipStationCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+    "outcome": "Passed",
+    "seconds": 0.0043736
+  },
+  {
+    "file": "ShipStationCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+    "outcome": "Passed",
+    "seconds": 0.0038737
+  },
+  {
+    "file": "ShipStationCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+    "outcome": "Passed",
+    "seconds": 0.0874623
+  },
+  {
+    "file": "ShipStationCollisionTests-3.trx",
+    "test": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "method": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+    "outcome": "Passed",
+    "seconds": 0.0044184
+  },
+  {
+    "file": "TreasureExpiryTests-1.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "outcome": "Passed",
+    "seconds": 0.0407191
+  },
+  {
+    "file": "TreasureExpiryTests-1.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "outcome": "Passed",
+    "seconds": 0.0267762
+  },
+  {
+    "file": "TreasureExpiryTests-1.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "outcome": "Passed",
+    "seconds": 0.0065741
+  },
+  {
+    "file": "TreasureExpiryTests-1.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "outcome": "Passed",
+    "seconds": 0.0246734
+  },
+  {
+    "file": "TreasureExpiryTests-2.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "outcome": "Passed",
+    "seconds": 0.0495532
+  },
+  {
+    "file": "TreasureExpiryTests-2.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "outcome": "Passed",
+    "seconds": 0.0279248
+  },
+  {
+    "file": "TreasureExpiryTests-2.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "outcome": "Passed",
+    "seconds": 0.0249833
+  },
+  {
+    "file": "TreasureExpiryTests-2.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "outcome": "Passed",
+    "seconds": 0.0082022
+  },
+  {
+    "file": "TreasureExpiryTests-3.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasurePastItsExpireAt_IsRemovedAndRaisesTreasureDestroyedEvent",
+    "outcome": "Passed",
+    "seconds": 0.0277137
+  },
+  {
+    "file": "TreasureExpiryTests-3.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.ExpireAtIsConstructionNowPlusLifespan",
+    "outcome": "Passed",
+    "seconds": 0.0492365
+  },
+  {
+    "file": "TreasureExpiryTests-3.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.TreasureWithinItsLifetime_IsNotExpired",
+    "outcome": "Passed",
+    "seconds": 0.0072408
+  },
+  {
+    "file": "TreasureExpiryTests-3.trx",
+    "test": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "method": "Allegiance.Core.Tests.TreasureExpiryTests.FifteenShipLootField_AllExpireByTheirNativeLifespans",
+    "outcome": "Passed",
+    "seconds": 0.0208631
+  }
+]

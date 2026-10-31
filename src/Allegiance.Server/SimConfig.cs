@@ -20,6 +20,12 @@ public sealed class SimConfig
     /// ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER overrides this setting.</summary>
     public bool NativeBroadcastOrder { get; set; }
 
+    /// <summary>P906 / SIM-0062 experimental global preplot, plot, execute, default off.</summary>
+    public bool NativeShipPhases { get; set; }
+
+    /// <summary>P906 / SIM-0063 experimental swept collision-time queue, default off.</summary>
+    public bool NativeCollisionQueue { get; set; }
+
     /// <summary>native (default) or off. Does not disable out-of-bounds damage.</summary>
     public string CrowdingPenalty { get; set; } = "native";
 
