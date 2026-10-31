@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>Shared helpers for the per-type codecs: native mask/token plumbing,
 /// color/float token lists.</summary>
@@ -53,7 +53,7 @@ internal static class CodecUtil
         foreach (string t in CoreTable.Tokens(row.S(col)))
         {
             if (k >= 4) break;
-            w.F32(off + 4 * k, CoreTable.ParseFloat(t));
+            w.F32(off + 4 * k, row.FloatToken(col, t));
             k++;
         }
     }
@@ -72,7 +72,7 @@ internal static class CodecUtil
         foreach (string t in CoreTable.Tokens(row.S(col)))
         {
             if (k >= count) break;
-            w.F32(off + 4 * k, CoreTable.ParseFloat(t));
+            w.F32(off + 4 * k, row.FloatToken(col, t));
             k++;
         }
     }

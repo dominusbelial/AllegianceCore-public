@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>OT_stationType</c> codec (524-byte <c>DataStationTypeIGC</c>,
@@ -93,14 +93,14 @@ public sealed class StationTypeCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.TypesOfStations.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             short id = unchecked((short)row.I(0));
             var w = new PayloadBuilder(DataStationTypeIGC.Size) { Id = id };
             w.I16(446, id);
 
             foreach (var sfxCells in sfxRows)
             {
-                var s = new TextRow(sfxCells);
+                var s = text.Row(sfxCells);
                 if (s.I(0) != id) continue;
                 w.I16(460, unchecked((short)s.I(1)));
                 w.I16(462, unchecked((short)s.I(2)));

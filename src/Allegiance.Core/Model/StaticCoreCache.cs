@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using Allegiance.Core.StaticCoreText;
 
 namespace Allegiance.Core.Model;
 
@@ -7,6 +8,16 @@ namespace Allegiance.Core.Model;
 /// caller retaining it; the cache relinquishes ownership at the last lease.</summary>
 public sealed class StaticCoreCache
 {
+    public const int TextVersion = 1337;
+
+    /// <summary>Native name/Constants.csv fallback (missionigc.cpp:2637-2640).
+    /// Configured paths may include the optional binary .igc suffix.</summary>
+    public static string TextDirectory(string binaryPath) =>
+        binaryPath.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? binaryPath[..^4] : binaryPath;
+
+    private static string BinaryPath(string path) =>
+        path.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? path : path + ".igc";
+
     public static StaticCoreCache Shared { get; } = new();
     private readonly object _gate = new();
     private readonly Dictionary<string, Entry> _entries = new(StringComparer.OrdinalIgnoreCase);
@@ -21,8 +32,10 @@ public sealed class StaticCoreCache
         lock (_gate)
         {
             if (_entries.TryGetValue(name, out var entry)) return entry.Core.Version;
+            path = BinaryPath(path); // native getFile(name, ".igc"), missionigc.cpp:2410
             // Native version-only reads never parse records or acquire a consumer.
-            if (!File.Exists(path)) return -1; // missionigc.cpp:2672-2676 (NA)
+            if (!File.Exists(path))
+                return File.Exists(Path.Combine(TextDirectory(path), "Constants.csv")) ? TextVersion : -1;
             using var stream = File.OpenRead(path);
             Span<byte> version = stackalloc byte[4];
             stream.ReadExactly(version);
@@ -36,11 +49,38 @@ public sealed class StaticCoreCache
         {
             if (!_entries.TryGetValue(name, out var entry))
             {
-                entry = new Entry(StaticCore.Load(IgcReader.ParseFile(path, encrypted)));
+                path = BinaryPath(path);
+                // A present binary never probes or parses the text folder. Only
+                // absence selects text; corrupt/unreadable binaries must fail.
+                IgcFile file;
+                try { file = IgcReader.ParseFile(path, encrypted); }
+                catch (FileNotFoundException) { file = ImportText(path); }
+                catch (DirectoryNotFoundException) { file = ImportText(path); }
+                entry = new Entry(StaticCore.Load(file));
                 _entries.Add(name, entry);
             }
             entry.Consumers++;
             return new Lease(this, name, entry.Core);
+        }
+    }
+
+    private static IgcFile ImportText(string path)
+    {
+        string folder = TextDirectory(path);
+        if (!File.Exists(Path.Combine(folder, "Constants.csv")))
+            throw new FileNotFoundException($"Static core binary '{path}' and text '{folder}/Constants.csv' not found.", path);
+        try
+        {
+            byte[] body = StaticCoreRoundtrip.ImportBody(folder, out _, runtime: true);
+            byte[] raw = new byte[8 + body.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(raw, TextVersion);
+            BinaryPrimitives.WriteInt32LittleEndian(raw.AsSpan(4), body.Length);
+            body.CopyTo(raw, 8);
+            return IgcReader.Parse(raw);
+        }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OverflowException)
+        {
+            throw new InvalidDataException($"Malformed static core text '{folder}': {e.Message}", e);
         }
     }
 

@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>OT_development</c> codec (468-byte <c>DataDevelopmentIGC</c>,
@@ -70,7 +70,7 @@ public sealed class DevelopmentCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.Developments.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             short id = unchecked((short)row.I(0));
             var w = new PayloadBuilder(DataDevelopmentIGC.Size) { Id = id };
             w.I16(464, id);
@@ -98,7 +98,7 @@ public sealed class DevelopmentCodec : ITypeCodec
             int written = 0;
             foreach (var gasCells in gasRows)
             {
-                var g = new TextRow(gasCells);
+                var g = text.Row(gasCells);
                 if (g.I(0) != id) continue;
                 if (g.S(1) != devName) continue;
                 found = true;
@@ -174,7 +174,7 @@ public sealed class DroneCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.TypesOfDrones.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             short id = unchecked((short)row.I(0));
             var w = new PayloadBuilder(DataDroneTypeIGC.Size) { Id = id };
             w.I16(380, id);
@@ -258,7 +258,7 @@ public sealed class CivilizationCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.Civilizations.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             short id = unchecked((short)row.I(0));
             var w = new PayloadBuilder(DataCivilizationIGC.Size) { Id = id };
             w.I16(262, id);
@@ -279,7 +279,7 @@ public sealed class CivilizationCodec : ITypeCodec
             string civName = row.S(3);
             foreach (var gasCells in gasRows)
             {
-                var g = new TextRow(gasCells);
+                var g = text.Row(gasCells);
                 if (g.I(0) != id) continue;
                 if (g.S(1) != civName) continue;
                 for (int i = 0; i < DataCivilizationIGC.GaCount && i + 2 < g.Count; i++)
@@ -347,7 +347,7 @@ public sealed class TreasureSetCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.TypesOfTreasures.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             short id = unchecked((short)row.I(0));
             int n = row.I(2);
             var entries = new List<(int Id, byte Code, int Chance)>();

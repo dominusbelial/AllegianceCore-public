@@ -1,0 +1,356 @@
+{
+  "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst": {
+    "project": "Allegiance.Core.Tests",
+    "initial": [
+      {
+        "outcome": "Failed",
+        "seconds": 0.1130285,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.Core.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 1,
+        "receipt": ".scratch/p908/isolation/07-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+            "outcome": "Failed",
+            "seconds": 0.3604047,
+            "message": "Assert.Equal() Failure: Values differ"
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/07-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+            "outcome": "Passed",
+            "seconds": 0.3083346,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/07-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+            "outcome": "Passed",
+            "seconds": 0.312738,
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured": {
+    "project": "Allegiance.Core.Tests",
+    "initial": [
+      {
+        "outcome": "Passed",
+        "seconds": 10.7910202,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.Core.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/06-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 9.7855316,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/06-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 9.9355381,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/06-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 9.6065029,
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge": {
+    "project": "Allegiance.Core.Tests",
+    "initial": [
+      {
+        "outcome": "Failed",
+        "seconds": 0.7683403,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.Core.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 1,
+        "receipt": ".scratch/p908/isolation/05-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.177921,
+            "message": "Assert.Same() Failure: Values are not the same instance"
+          }
+        ]
+      },
+      {
+        "exit": 1,
+        "receipt": ".scratch/p908/isolation/05-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.1411375,
+            "message": "Assert.Same() Failure: Values are not the same instance"
+          }
+        ]
+      },
+      {
+        "exit": 1,
+        "receipt": ".scratch/p908/isolation/05-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.2379346,
+            "message": "Assert.Same() Failure: Values are not the same instance"
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity": {
+    "project": "Allegiance.Core.Tests",
+    "initial": [
+      {
+        "outcome": "Failed",
+        "seconds": 1.4304273,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.Core.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/04-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7985549,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/04-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7933937,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/04-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7633625,
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts": {
+    "project": "Allegiance.ClientCore.Tests",
+    "initial": [
+      {
+        "outcome": "Passed",
+        "seconds": 10.0732445,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.ClientCore.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/03-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 3.0576905,
+            "message": null
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.031402,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/03-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 2.9969477,
+            "message": null
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.0602292,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/03-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 3.0588094,
+            "message": null
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.104874,
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats": {
+    "project": "Allegiance.ClientCore.Tests",
+    "initial": [
+      {
+        "outcome": "Passed",
+        "seconds": 10.5123923,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.ClientCore.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/02-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 3.2136033,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/02-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 3.4324936,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/02-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 3.142994,
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live": {
+    "project": "Allegiance.ClientCore.MonoGame.Tests",
+    "initial": [
+      {
+        "outcome": "Failed",
+        "seconds": 1.4777874,
+        "receipt": ".scratch/p908/fast-tier/fast/Allegiance.ClientCore.MonoGame.Tests-main.trx"
+      }
+    ],
+    "repeats": [
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/01-1.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+            "outcome": "Passed",
+            "seconds": 1.5034379,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/01-2.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+            "outcome": "Passed",
+            "seconds": 1.5583785,
+            "message": null
+          }
+        ]
+      },
+      {
+        "exit": 0,
+        "receipt": ".scratch/p908/isolation/01-3.trx",
+        "results": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+            "outcome": "Passed",
+            "seconds": 1.5467187,
+            "message": null
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.TestInfra;
 using Allegiance.Tools.Core2Txt;
+using Allegiance.Core.StaticCoreText;
 
 namespace Allegiance.Core.Tests;
 

@@ -1,3 +1,4 @@
+using Allegiance.Core.StaticCoreText;
 using Allegiance.Core;
 
 namespace Allegiance.Tools.Core2Txt;

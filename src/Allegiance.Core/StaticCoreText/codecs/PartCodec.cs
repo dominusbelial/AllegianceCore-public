@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>OT_partType</c> codec. Native splits the part list across six files by
@@ -170,7 +170,7 @@ public sealed class PartCodec : ITypeCodec
         {
             foreach (var cells in text.Rows(spec.BaseName))
             {
-                var row = new TextRow(cells);
+                var row = text.Row(cells);
                 result.Add(spec == CoreFiles.Expendables
                     ? ReadLauncher(row)
                     : ReadPart(table, row, spec));
