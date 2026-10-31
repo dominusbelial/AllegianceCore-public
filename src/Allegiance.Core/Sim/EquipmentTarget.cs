@@ -60,7 +60,8 @@ public sealed class EquipmentTarget : Model
     public static IgcObjectType TypeOf(Model? target) => target switch
     {
         Ship => IgcObjectType.Ship, EquipmentTarget t => t.ObjectType,
-        Probe => IgcObjectType.Probe, Mine => IgcObjectType.Mine, _ => (IgcObjectType)(-1)
+        Probe => IgcObjectType.Probe, Mine => IgcObjectType.Mine,
+        Treasure => IgcObjectType.Treasure, Buoy => IgcObjectType.Buoy, _ => (IgcObjectType)(-1)
     };
 
     public static short? SideOf(Model target) => target is EquipmentTarget { _body: Station st } ? st.SideId : BlastDamage.SideOf(target);

@@ -14,6 +14,8 @@ internal sealed class BotRoutineStack(string initial)
     // Last dispatch already seen, kept across lives and role changes: native
     // Miner.cs only reacts to a dispatch as it arrives, never to history.
     internal object? LastBuoy;
+    // Same rule for chat: docker.pig:86-96 answers a request as it arrives.
+    internal long ChatCursor;
     internal void Push(string behavior)
     {
         if (!BotRoutine.Valid(behavior)) throw new ArgumentException("Unknown bot behavior", nameof(behavior));
@@ -39,7 +41,6 @@ internal sealed class BotRoutine(string behavior)
     internal readonly DockerRoutine Docker = new();
     internal readonly DeathmatchRoutine Deathmatch = new();
     internal readonly RoutineTimer Chat = new();
-    internal long ChatCursor;
     internal double LaunchAt = double.NegativeInfinity;
     internal QueuedCommandState? SavedOrder;
     internal short? SavedTarget;

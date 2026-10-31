@@ -4775,3 +4775,5 @@ Snapshot of `4c25346f` without media. Fast 12,702 tests, Live 232, Perf 73 (pass
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | Status parent 1051, expected -1 | Known intermittent. |
 
 Fast budget offenders on the mini: `P796VariedLoadoutTests` (civ 35) 15.8 s, `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` 20.9 s, `SC2NaniteSupportTests` (civ 25) 19.8 s.
+
+`P905BotRoutinesLiveTests.Ordered_peer_mines_only_after_dispatch_then_returns_and_sells_real_He3` failed once in 11 runs on the workstation, then passed 8/8, after the chat-cursor and `TypeOf` review fixes. The failure message was not captured and the cause is unknown. The fixture teleports the ship right after sending the dispatch, which is the first place to look.

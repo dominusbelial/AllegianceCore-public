@@ -103,10 +103,12 @@ public sealed class P905BotRoutinesTests
         var stack = new BotRoutineStack("miner");
         var seen = new object();
         stack.LastBuoy = seen;
+        stack.ChatCursor = 7;
         stack.NewLife();
         stack.Push("docker");
         Assert.True(stack.Pop());
         Assert.Same(seen, stack.LastBuoy);
+        Assert.Equal(7, stack.ChatCursor);
     }
 
     [Fact]

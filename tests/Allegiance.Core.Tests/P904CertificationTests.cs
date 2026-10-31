@@ -74,6 +74,8 @@ public sealed class P904CertificationTests
                 "ResolveChatOrderTarget", mission, type, id)!;
             Assert.True(resolved.Found); Assert.Equal((type, id), (resolved.Type, resolved.Id));
             Assert.Same(model as SimModel, resolved.Model);
+            // A model target takes its queued wire type from here, not the caller.
+            if (resolved.Model is { } live) Assert.Equal(type, EquipmentTarget.TypeOf(live));
             remove();
             Assert.Null(mission.GetModel(type, id));
             var removed = ((bool Found, SimModel? Model, IgcObjectType Type, short Id))Call(server,

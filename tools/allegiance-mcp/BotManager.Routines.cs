@@ -20,21 +20,47 @@ internal sealed partial class BotManager
             ActiveBot bot;
             lock (_gate) bot = _bots.Single(b => b.Name == name);
             if (bot.Cs is null) throw new InvalidOperationException("Behavior changes require a combat or routine peer");
-            bot.Routines ??= new(bot.Behavior);
-            if (push is null && bot.Routines.Count == 1) return 1;
-            lock (bot.Cs.Gate) bot.Routines.LastBuoy = bot.Cs.World.Events.ChatBuoys.LastOrDefault();
-            bot.Routines.Top.SavedOrder = bot.OrderedCommand;
-            bot.Routines.Top.SavedTarget = bot.TargetId;
-            bot.Routines.Top.SavedOrderedTarget = bot.OrderedTargetId;
-            if (push is null) bot.Routines.Pop(); else bot.Routines.Push(push);
-            bot.Behavior = bot.Routines.Top.Behavior;
-            bot.TargetId = bot.Routines.Top.SavedTarget;
-            bot.OrderedTargetId = bot.Routines.Top.SavedOrderedTarget;
-            bot.OrderedCommand = bot.Routines.Top.SavedOrder;
+            var routines = StartRoutines(bot);
+            if (push is null && routines.Count == 1) return 1;
+            lock (bot.Cs.Gate) routines.LastBuoy = bot.Cs.World.Events.ChatBuoys.LastOrDefault();
+            routines.Top.SavedOrder = bot.OrderedCommand;
+            routines.Top.SavedTarget = bot.TargetId;
+            routines.Top.SavedOrderedTarget = bot.OrderedTargetId;
+            if (push is null) routines.Pop(); else routines.Push(push);
+            bot.Behavior = routines.Top.Behavior;
+            bot.TargetId = routines.Top.SavedTarget;
+            bot.OrderedTargetId = routines.Top.SavedOrderedTarget;
+            bot.OrderedCommand = routines.Top.SavedOrder;
             bot.DecisionFrame = null;
             bot.Cs.CommandControls(new(0, 0, 0, -1), 0);
-            return bot.Routines.Count;
+            return routines.Count;
         }
+    }
+
+    private static BotRoutineStack StartRoutines(ActiveBot bot)
+    {
+        if (bot.Routines is { } started) return started;
+        var routines = bot.Routines = new(bot.Behavior);
+        lock (bot.Cs!.Gate) routines.ChatCursor = bot.Cs.World.Events.ChatSequence;
+        return routines;
+    }
+
+    // docker.pig:86-96: communal traffic control sends a real goto order back
+    // to the sender; the ordinary acceptance/docking path flies it. Native hears
+    // this in any flying state, so it runs ahead of a commander order.
+    private void AnswerDockRequests(ActiveBot bot, bool docked)
+    {
+        var cs = bot.Cs!;
+        var chats = cs.World.Events;
+        if (bot.Behavior == "docker" && !docked)
+            foreach (var chat in chats.ChatsAfter(bot.Routines!.ChatCursor))
+            {
+                if (!chat.Message.StartsWith("sendcommand2", StringComparison.Ordinal) || chat.SidSender == bot.ShipId) continue;
+                DataStationIGC? station = cs.World.Stations.Values.Where(s => s.ClusterId == CsSector(cs)).Select(s => (DataStationIGC?)s).FirstOrDefault();
+                if (station is not null) cs.SendChat("", ChatTarget.Individual, chat.SidSender,
+                    commandId: OrderChange.CidGoto, oidTarget: station.Value.StationId, otTarget: (short)IgcObjectType.Station);
+            }
+        bot.Routines!.ChatCursor = chats.ChatSequence;
     }
 
     private void DriveRoutine(ActiveBot bot, double now)
@@ -42,8 +68,7 @@ internal sealed partial class BotManager
         var cs = bot.Cs!;
         if (!RefreshLife(bot, cs, now) || cs.World.MyShipId is not { } id) return;
         bot.ShipId = id;
-        bot.Routines ??= new(bot.Behavior);
-        var routine = bot.Routines.Top;
+        var routine = StartRoutines(bot).Top;
         // Drains the hit and projectile buffers DriveCombat would otherwise
         // consume, and stamps RecentAttackers for the deathmatch retarget.
         SampleCombatStats(bot, cs, id, now);
@@ -51,6 +76,7 @@ internal sealed partial class BotManager
         {
             if (!cs.World.Ships.TryGetValue(id, out var me) || me.Latest is not { } pose) return;
             bool docked = me.StationId >= 0;
+            AnswerDockRequests(bot, docked);
             if (bot.Behavior == "miner" && Catalog.IsLifepodHull(me.HullId)
                 && UpdatePodState(bot, cs, now)) { DrivePodHome(bot, cs, now); return; }
             if (bot.Behavior == "miner") { DriveOrderedMiner(bot, routine, now, docked, pose); return; }
@@ -191,16 +217,6 @@ internal sealed partial class BotManager
     private void DriveDocker(ActiveBot bot, BotRoutine routine, double now, ServerShipUpdate pose)
     {
         var cs = bot.Cs!;
-        // docker.pig:86-96: communal traffic control sends a real goto order
-        // back to the sender; the ordinary acceptance/docking path flies it.
-        foreach (var chat in cs.World.Events.ChatsAfter(routine.ChatCursor))
-        {
-            if (!chat.Message.StartsWith("sendcommand2", StringComparison.Ordinal) || chat.SidSender == bot.ShipId) continue;
-            DataStationIGC? station = cs.World.Stations.Values.Where(s => s.ClusterId == CsSector(cs)).Select(s => (DataStationIGC?)s).FirstOrDefault();
-            if (station is not null) cs.SendChat("", ChatTarget.Individual, chat.SidSender,
-                commandId: OrderChange.CidGoto, oidTarget: station.Value.StationId, otTarget: (short)IgcObjectType.Station);
-        }
-        routine.ChatCursor = cs.World.Events.ChatSequence;
         if (routine.Docker.Rock is null)
         {
             var rocks = cs.World.Asteroids.Values.Where(a => a.ClusterId == CsSector(cs)).ToArray();

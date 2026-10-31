@@ -233,6 +233,13 @@ client (`Game1.StarmapClick.cs:292`) or an explicit caller does. The He3 table
 above is identical because the showcase has no routine peers, so it shows the
 feature costs the default game nothing, not that peer miners add income.
 
+A read-only review by a second session found one more: the docker's chat cursor
+began at 0 and reset each life, so it answered old `sendcommand2` chats, and it
+skipped requests during a commander order. Answers now run first in every
+flying pass and the cursor lives on the stack. It also found a P904 regression:
+`EquipmentTarget.TypeOf` had no treasure or buoy case, so those newly accepted
+chat orders were queued with wire type -1. Both are fixed.
+
 The docker live test also failed 2 of 9 full runs: the docker docks and relaunches
 so quickly that a 25 ms poll could miss it. It now latches on the sim tick and
 passed 9/9. Unexplained and harmless to the result: in one instrumented run the
