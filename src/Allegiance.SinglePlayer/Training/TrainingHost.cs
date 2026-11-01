@@ -245,6 +245,22 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         server.Boot(TrainingConfig(variant, artPath));
         var mission = server.Missions[0];
         mission.IsTraining = true;
+        // Native local ThingSite::SetCluster reveals predictable objects to
+        // both visibility slots (WinTrek/trekigc.cpp:1996-2010). The loopback
+        // server must give its simulation the same static-world knowledge.
+        foreach (var side in mission.Sides)
+            foreach (var cluster in mission.Sectors)
+            {
+                foreach (var station in cluster.StationRuntimes) station.SideVisibility.SetSideVisibility(side.Id, true);
+                foreach (var rock in cluster.Mineable) rock.SideVisibility.SetSideVisibility(side.Id, true);
+                foreach (var warp in cluster.Warps) warp.SideVisibility.SetSideVisibility(side.Id, true);
+            }
+        if (variant == BasicFlight)
+        {
+            // training/mission2.cpp:102-103: enlarged practice flight bounds.
+            mission.SetFloatConstant(1, 20000f);
+            mission.SetFloatConstant(2, 100f);
+        }
         // training/trainingmission.cpp:670-685,718-728: training has its own palette.
         (byte R, byte G, byte B)[] colors = [(188, 160, 0), (0, 138, 217), (156, 16, 102),
             (50, 140, 20), (255, 145, 145), (50, 200, 125)];
@@ -272,6 +288,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         mission.PlaceShip(player, sector);
         EquipDefaultTrainingLoadout(player);
         ApplyMissionShipSetup(variant, player);   // mission3.cpp:168-186 / mission4.cpp:110-137
+        if (variant == Nanite) ApplyNaniteTech(mission, player.HullType);
         if (variant == CommandView) player.StationId = 1050; // training/mission5.cpp:95-96
 
         // Commander wingman (hull 412, side 0, native LoadUniverse CreateDrone("Commander",…412,0,c_ptWingman),
@@ -399,11 +416,40 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
         else if (variant == EnemyEngagement)
         {
-            // mission4.cpp:126 — fGroupFire = true (activate all starting weapons).
-            ship.StateM |= ShipControlState.AllWeapons;
+            // mission4.cpp:127-128 changes the client group-fire mode, handled
+            // by SetupTrainingView. The trigger stays released (shipIGC.cpp:30).
             // mission4.cpp:131-136 — remove the missile magazine.
             ship.TryRemovePart(EquipmentType.Magazine, 0, out _);
         }
+        else if (variant == Nanite)
+        {
+            // training/mission8.cpp:90,106,120-139. This is CreateUniverse's
+            // cargo recipe, distinct from the unused SetCargoNanAction.
+            ship.Position = new Coll.Vector3(-1500, 1500, 0);
+            ship.TryRemovePart(EquipmentType.Dispenser, 0, out _);
+            var core = ship.Mission!.Core;
+            if (!core.TryBuildExpendableLauncher(59, out var prox))
+                throw new InvalidDataException("Training core is missing proximity mine 59.");
+            ship.MountPart(prox, short.MaxValue, 0, ExpandedPartData.FullyMounted);
+            for (int slot = 0; slot < Ship.CargoCapacity; slot++)
+            {
+                ship.ClearCargoSlot(slot);
+                ship.MountPart(slot == 0 ? core.PartTypes[190] : prox, short.MaxValue,
+                    unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
+            }
+        }
+    }
+
+    private static void ApplyNaniteTech(Mission mission, DataHullTypeIGC hull)
+    {
+        // training/mission8.cpp:109-116,142-145. Apply (OR), preserving the
+        // native all-tech trainee side supplied by LoadUniverse.
+        var nan = mission.Core.PartTypes[190];
+        mission.Sides[0].DevelopmentTechs = mission.Sides[0].DevelopmentTechs.Or(new TechTreeBitMask(nan.TtbmEffects)
+            .Or(new(hull.TtbmEffects)).Or(new(hull.TtbmRequired)));
+        var sniper = mission.Core.PartTypes[60];
+        mission.Sides[1].DevelopmentTechs = mission.Sides[1].DevelopmentTechs
+            .Or(new TechTreeBitMask(sniper.TtbmEffects)).Or(new(sniper.TtbmRequired));
     }
 
     /// <summary>
@@ -522,7 +568,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         // M4's routed NPC orders run in the real simulation. A position nudge in the source
         // sector cannot implement intersector travel or retain collision response.
         if (StartSectorId == PracticeArena.StartSector
-            || (_clientBound && StartSectorId == EnemyEngagement.StartSector)) return;
+            || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
+                || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))) return;
         // Zero the sim ships' own throttle so the server does not integrate their Controls field
         // into unintended motion; movement is driven exclusively by the host autopilot pass below
         // (and, for the player, by the mission's scripted goals, which read the decoupled applied
@@ -692,9 +739,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             if (ship is null) return;
             // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
             // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
-            // (A queued Goto still arms the autopilot pass here so a proof that accepts it can fly; the M8
-            // driver pins the bomber to the player's live position, so the player's own queued "meet me"
-            // flight does not break M8's within-radius gate.)
+            // A queued Goto is presented to the real client and waits for acceptance.
             if (command != TrainingMissionIds.CommandQueued)
                 _commands[shipId] = commandId;
 
@@ -734,24 +779,38 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                     _buoySlots[key] = newBuoy;
                 }
                 ship.SetCommand((short)command, model, (short)commandId);
-                // Arena and networked M4 orders use the simulation's real plans.
-                // Other variants retain their scripted movement owner.
+                // Connected combat/command lessons use real simulation plans.
+                // M2 and detached legacy script tests retain their movement owner.
                 if (ship.IsNpc && (StartSectorId == PracticeArena.StartSector
-                    || (_clientBound && StartSectorId == EnemyEngagement.StartSector)))
+                    || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
+                        || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))))
                 {
                     ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;
                     ship.BuilderAsteroidTarget = commandId == TrainingMissionIds.CmdBuild && targetAsteroidId is { } rock ? ResolveAsteroid(rock) : null;
                     ship.PlanTarget = model is EquipmentTarget { Body: Station st } ? st.Data : null;
                     if (commandId == TrainingMissionIds.CmdBuild && ship.BuilderAsteroidTarget is { } buildRock)
                         ship.SetBuilderBuild(buildRock);
+                    // training/mission5.cpp:319-346 -> shipIGC.cpp:4050-4110:
+                    // a layer's Build on a real waypoint deploys its base expendable.
+                    if (commandId == TrainingMissionIds.CmdBuild && ship.PilotType == Ship.PilotTypeLayer && model is not null)
+                        ArmTrainingLayer(ship, model);
+                    if (commandId == TrainingMissionIds.CmdMine && targetAsteroidId is { } mineRock)
+                        ship.MiningAsteroidTarget = ResolveAsteroid(mineRock);
                     ship.PlanCommandId = (short)commandId;
-                    if (StartSectorId == PracticeArena.StartSector)
+                    if (commandId == TrainingMissionIds.CmdRepair)
+                        ship.SetRepairOrder(model as Ship, (model as EquipmentTarget)?.Body as Station);
+                    else if (commandId == TrainingMissionIds.CmdDefend && model is Ship charge)
                     {
-                        if (commandId == TrainingMissionIds.CmdRepair)
-                            ship.SetRepairOrder(model as Ship, (model as EquipmentTarget)?.Body as Station);
-                        else if (commandId == TrainingMissionIds.CmdAttack && model is Ship or Probe)
-                            ship.SetWingmanAttackOrder(model);
+                        // Offline friendly orders set current + accepted slots
+                        // (clintlib.cpp:2374-2417); native accepted autopilot
+                        // orders replace the plan (shipIGC.h:766-772).
+                        ship.SetGoto(null);
+                        ship.DefendTarget = charge;
                     }
+                    else if (commandId == TrainingMissionIds.CmdAttack && model is Ship or Probe or EquipmentTarget { Body: Station })
+                        // The accepted target owns native sight-loss investigation
+                        // in M4 as well (shipIGC.cpp:2410-2460,2707-2758).
+                        ship.SetWingmanAttackOrder(model);
                 }
             }
 
@@ -768,7 +827,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 else if (targetShipId is { } tsid2 && ResolveShip(tsid2) is { } target)
                 {
                     _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid2);
-                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position));
+                    // Native ResetWaypoint retains the model target, so a moving
+                    // escort is followed across alephs (shipIGC.cpp:3990-4003).
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position,
+                        TargetType: IgcObjectType.Ship, TargetId: target.Id));
                 }
                 else if (targetStationId is { } stid && _stations.TryGetValue(stid, out var station))
                 {
@@ -829,11 +891,14 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// world query the probe-visibility rule uses (<c>Mission.CanSideSeeCluster</c>).</summary>
     public int GetProbeCount()
     {
-        int n = 0;
-        foreach (var sector in Mission.Sectors)
-            foreach (var m in sector.Models)
-                if (m is Probe p && !p.Dead) n++;
-        return n;
+        lock (_simGate)
+        {
+            int n = 0;
+            foreach (var sector in Mission.Sectors)
+                foreach (var m in sector.Models)
+                    if (m is Probe p && !p.Dead) n++;
+            return n;
+        }
     }
 
     /// <summary>Resolve a real asteroid from the mission's runtime <see cref="Sector.Mineable"/>

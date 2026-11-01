@@ -268,7 +268,7 @@ public sealed class P708ShipUpdateTests
         Call(s, "UpdateWingmanTravel", 20.0); Call(s, "UpdateWingmanCombat", .05f);
         Assert.Same(probe, s.CommandTarget); Assert.NotEqual(0, s.StateM & ShipControlState.AllWeapons);
         s.SetGoto(new(GotoKind.Waypoint, 0, new(0, 1000, 0)));
-        Assert.Null(Read<Probe?>(s, "_attackProbeTarget"));
+        Assert.Null(Read<Probe?>(s, "_attackStaticTarget"));
     }
 
     [SkippableTheory]

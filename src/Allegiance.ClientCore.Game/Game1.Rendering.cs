@@ -2033,7 +2033,7 @@ public sealed partial class Game1
                 string? selectedName = sel >= 0 && sel < rosterRows.Count ? rosterRows[sel].Name : null;
                 var joinRequests = rosterRows.Where(r => r.IsJoinRequest).Select(r => r.Name).ToArray();
                 lines = Rendering.TeamPaneLayout.Build(
-                    _session.World.ScoreRoster, _session.World.RankTable, briefs,
+                    Rendering.TeamPaneLayout.Entries(_session.World), _session.World.RankTable, briefs,
                     _session.World.IsSideActive,
                     _session.World.MyMoney,
                     activeBallotText,
@@ -2049,7 +2049,7 @@ public sealed partial class Game1
                     .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
                     .ToArray();
                 if (_consolePanes.Team == TeamConsoleSize.Mini)
-                    lines = TeamPaneLayout.Compact(lines, _session.World.ScoreRoster, _session.World.MySideId);
+                    lines = TeamPaneLayout.Compact(lines, TeamPaneLayout.Entries(_session.World), _session.World.MySideId);
             }
             _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines, _consolePanes.Team == TeamConsoleSize.Mini);
         }

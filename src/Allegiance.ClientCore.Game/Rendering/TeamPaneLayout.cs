@@ -22,16 +22,32 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// SET_TEAM_LEADER, PLAYER_READY and SET_WINGID; enemy wing membership is
 /// omitted because native relays wing assignments only to teammates.</para>
 ///
-/// <para><b>Ship status</b> is derived from the live ship entity: dead/gone →
+/// <para><b>Ship status</b> uses the last-known life/docking state: dead →
 /// "<c>DEAD</c>"; docked (<c>StationId != -1</c>, the same docked gate the
 /// autoproof uses, Game1.AutoProof.cs:42-43) → "<c>DOCKED</c>"; otherwise the
-/// sector "<c>SEC &lt;id&gt;</c>".</para>
+/// last-known sector name, including while out of view.</para>
 ///
 /// <para><b>ASCII safety</b> applies to every string (see
 /// <see cref="ScoreboardLayout.AsciiSafe"/>).</para>
 /// </summary>
 public static class TeamPaneLayout
 {
+    // Native teampane.cpp:500-512,997-1003: the team pane includes friendly
+    // and previously spotted drones. ScoreRoster intentionally counts humans
+    // only; sharing that population made M5's Miner 01 impossible to select.
+    public static IReadOnlyList<ScoreRosterEntry> Entries(ClientWorld world)
+    {
+        var rows = world.ScoreRoster.ToList();
+        foreach (var ship in world.Ships.Values)
+        {
+            if (ship.Player is not { IsHuman: false, ISide: >= 0 } player) continue;
+            bool ally = world.MySideId is { } side && world.AreAllied(side, player.ISide) && world.MissionAllowAlliedViz;
+            if (player.ISide != world.MySideId && !ally && !(ship.StatusSectorKnown && ship.HullId >= 0)) continue;
+            rows.Add(new(player.CharacterName, player.ISide, player.NKills, player.NDeaths, player.NEjections, player.Rank));
+        }
+        return rows;
+    }
+
     // Native WinTrek.cpp:10061-10081 / teampane.cpp: compact team roster.
     public static IReadOnlyList<Line> Compact(IReadOnlyList<Line> expanded,
         IReadOnlyList<ScoreRosterEntry> entries, short? side)
@@ -327,7 +343,9 @@ public static class TeamPaneLayout
     private static string StatusFor(IReadOnlyDictionary<string, ShipBrief> ships, string name)
     {
         if (!ships.TryGetValue(name, out var sb)) return "?";
-        if (sb.Dead || sb.Gone) return "DEAD";
+        // Native draws last-seen life state, not the current view's presence
+        // (teampane.cpp:1828,1894-1905). Leaving a view is not a death.
+        if (sb.Dead) return "DEAD";
         // P775 review — no status ever landed (a PLAYERINFO-only ship): native
         // draws SectorName(NA) = "unknown" (teampane.cpp:1577-1583, 1901-1905),
         // never DOCKED (that needs a c_ssDocked last-seen state, :1828).

@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
@@ -45,6 +46,37 @@ public sealed partial class TrainingHost
         lock (_simGate)
             if (ResolveShip(shipId) is { BuilderStationType: null } ship)
                 ship.LayerLaidExpendableTypeId = (short)typeId;
+    }
+
+    // Igc/shipIGC.cpp:4053-4114. Native generates a waypoint in front of a
+    // warp; armed towers spread in a randomly pitched/yawed range shell.
+    private void ArmTrainingLayer(Ship ship, Model target)
+    {
+        if (target is Buoy buoy)
+        {
+            ship.SetLayerBuild(new Ship.LayerBuildGoal(buoy.Data.ClusterId, buoy.Position));
+            return;
+        }
+        if (target is not EquipmentTarget { Body: ResolvedWarp warp }) return;
+        var orientation = Orientation.Identity;
+        orientation.Set(ToCore(new(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2])));
+        var position = warp.Position;
+        if (Mission.Core.ProbeTypes.TryGetValue(ship.LayerLaidExpendableTypeId, out var tower))
+        {
+            float range = Mission.Core.ProjectileTypes.TryGetValue(tower.ProjectileTypeId, out var projectile)
+                ? projectile.Lifespan * projectile.Speed * .8f : tower.ScannerRange * .7f;
+            range += Random.Shared.NextSingle() * .1f;
+            float pitch, yaw;
+            do { pitch = Random.Shared.NextSingle() * MathF.PI / 2; yaw = Random.Shared.NextSingle() * MathF.PI / 2; }
+            while (pitch < MathF.PI / 4 && yaw < MathF.PI / 4);
+            orientation.Pitch(Random.Shared.Next(2) == 0 ? -pitch : pitch);
+            orientation.Yaw(Random.Shared.Next(2) == 0 ? -yaw : yaw);
+            position += orientation.GetForward() * range;
+        }
+        else if (Mission.Core.MineTypes.TryGetValue(ship.LayerLaidExpendableTypeId, out var mine))
+            position += orientation.GetForward() * mine.MineRadius;
+        else return;
+        ship.SetLayerBuild(new Ship.LayerBuildGoal(warp.Warp.ClusterId, position));
     }
 
     // training/CreateDroneAction.cpp:91-198. Run after the native default loadout.

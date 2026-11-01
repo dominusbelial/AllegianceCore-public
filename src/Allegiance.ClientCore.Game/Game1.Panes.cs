@@ -426,7 +426,7 @@ public sealed partial class Game1
     /// are up (its handler early-returns the flight input).</summary>
     private void HandleTeamPaneControls(Microsoft.Xna.Framework.Input.KeyboardState ks, bool composing)
     {
-        bool active = _teamPaneVisible && !_investActive && !_dockedActive
+        bool active = _teamPaneVisible && !_investActive && (!_dockedActive || _cameraMode == CameraMode.Command)
             && _state == ClientState.Flying && !composing;
         bool ballot;
         Flight.TeamPaneControls.Result r;
@@ -704,7 +704,7 @@ public sealed partial class Game1
             RunShopHover(null);
             return;
         }
-        var mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        var mouse = ReadProofMouse();
         var vp = GraphicsDevice.Viewport;
         int idx = Rendering.DockedTouchZones.RowIndex(vp.Width, vp.Height, _shopModel.RowCount, mouse.X, mouse.Y);
         RunShopHover(idx < 0 ? null : idx);
@@ -1333,7 +1333,7 @@ public sealed partial class Game1
     /// <see cref="Rendering.GameOverScreenRenderer"/>'s last draw.</summary>
     private void HandleGameOverTableClick()
     {
-        var mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        var mouse = ReadProofMouse();
         bool down = mouse.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
         bool edge = down && !_gameOverHeaderClickWasDown;
         _gameOverHeaderClickWasDown = down;

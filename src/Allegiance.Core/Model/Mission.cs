@@ -132,7 +132,10 @@ public sealed partial class Mission : IMissionIgc
     }
 
     /// <summary>The type universe the mission draws on.</summary>
-    public StaticCore Core { get; }
+    public StaticCore Core { get; private set; }
+
+    /// <summary>Native mission-owned float constants; never mutate the shared core cache.</summary>
+    public void SetFloatConstant(int index, float value) => Core = Core.WithFloatConstant(index, value);
 
     /// <summary>Native local training owns completion, outside FedSrv match rules
     /// (training/trainingmission.cpp:744-779).</summary>

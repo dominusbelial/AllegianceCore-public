@@ -1664,6 +1664,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         oldSector.Remove(sh);
         destSector.Add(sh);
         sh.Sector = destSector;
+        // Native shipIGC.h:235-242 rebases the model clock to the destination
+        // cluster and stops its guns. A destination updated later this tick
+        // must integrate the exit motion before testing its collision sweep.
+        sh.InitClock(destSector.LastUpdate);
+        sh.StateM &= ~ShipControlState.WeaponsMask;
 
         // P760 — native warp-state handshake (fsship.cpp:81,1185-1191).
         // Player ships enter NoUpdate immediately; NPCs stay Ready.

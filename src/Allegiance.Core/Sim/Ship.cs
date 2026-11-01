@@ -2094,7 +2094,7 @@ public sealed partial class Ship : Model, IShipIgc
         {
             if (_attackTarget == value) return;
             _attackTarget = value;
-            if (value is not null) _attackProbeTarget = null;
+            if (value is not null) _attackStaticTarget = null;
             if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer)) CommandTarget = value;
             if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
             DronePlanChanged();
@@ -5951,7 +5951,7 @@ public sealed partial class Ship : Model, IShipIgc
                 ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {g.ClusterId} refused: docked at station {StationId} (cannot autopilot while berthed)");
                 return;
             }
-            _attackProbeTarget = null;
+            _attackStaticTarget = null;
             _acceptedWingmanAttackTarget = null;
             _wingmanInterruptedGoto = null;
             // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
@@ -7833,7 +7833,7 @@ public sealed partial class Ship : Model, IShipIgc
 
     public void SetRepairOrder(Ship? target, Station? station = null)
     {
-        _attackProbeTarget = null;
+        _attackStaticTarget = null;
         _acceptedWingmanAttackTarget = null;
         _wingmanInterruptedGoto = null;
         AttackTarget = null;

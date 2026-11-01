@@ -335,6 +335,7 @@ public class Mission8 : TrainingMission
         {   // spawn the bomber (mission8.cpp:434-440)
             var g = new Goal(ElapsedTimeCondition.Create(2.0f, Site));
             var bomber = new CreateDroneAction(Site, "Commander", BomberId, 604, 0, PilotWingman);
+            bomber.SetCreatedTechLevel(0); // mission8.cpp:436: native tech-level-zero recipe
             bomber.SetCreatedLocation(StartSector, _homeRedDoor);
             g.AddStartAction(bomber);
             gl.AddGoal(g);
@@ -342,7 +343,7 @@ public class Mission8 : TrainingMission
 
         {   // order the bomber to the aleph waypoint (mission8.cpp:442-448)
             var g = new Goal(ElapsedTimeCondition.Create(2.0f, Site));
-            g.AddStartAction(new CreateWaypointAction(Site, alephBuoy1, new Vector3(-2500f, 2500f, 0f), EnemySector));
+            g.AddStartAction(new CreateWaypointAction(Site, alephBuoy1, new Vector3(-2500f, 2500f, 0f), StartSector));
             g.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, BomberId), CommandCurrent,
                 new TargetRef(ObjectType.Buoy, alephBuoy1), CmdGoto));
             g.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, BomberId), CommandAccepted,

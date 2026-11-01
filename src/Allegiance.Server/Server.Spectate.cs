@@ -81,7 +81,8 @@ public sealed partial class Server
     /// </summary>
     private Sector BroadcastSectorFor(ConnectionId from, Sector ownSector)
     {
-        if (_spectateSector.TryGetValue(from, out var sid) && _peerShips.TryGetValue(from, out var live) && SectorById(live.Ship.Mission, sid) is { } spec)
+        if (_spectateSector.TryGetValue(from, out var sid) && _peerShips.TryGetValue(from, out var live)
+            && (!LocalTraining || live.Ship.StationId is not null) && SectorById(live.Ship.Mission, sid) is { } spec)
             return spec;
         return ownSector;
     }

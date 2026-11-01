@@ -51,6 +51,8 @@ public enum ObjectType
 /// </summary>
 public interface ITrainingObject
 {
+    string Name => "target";
+    Vector3 Right => Vector3.Cross(Forward, Vector3.UnitZ);
     TargetRef Ref { get; }
     float Radius { get; }
     Vector3 Position { get; }

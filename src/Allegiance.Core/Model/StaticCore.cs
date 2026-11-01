@@ -49,7 +49,17 @@ public sealed class StaticCore
     public IReadOnlyDictionary<short, DataTreasureSetIGC>    TreasureSets    { get; }
 
     /// <summary>The single <c>OT_constants</c> record (exactly one per core).</summary>
-    public DataConstantsIGC Constants { get; }
+    public DataConstantsIGC Constants { get; private set; }
+
+    // Native Igc/missionigc.h:426-429: per-mission SetFloatConstant. Cached static
+    // cores are shared, so detach the constants before a training override.
+    internal StaticCore WithFloatConstant(int index, float value)
+    {
+        var copy = (StaticCore)MemberwiseClone();
+        copy.Constants = Constants with { FloatConstants = (float[])Constants.FloatConstants.Clone() };
+        copy.Constants.FloatConstants[index] = value;
+        return copy;
+    }
 
     private StaticCore(
         int version,

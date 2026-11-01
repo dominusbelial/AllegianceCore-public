@@ -77,8 +77,20 @@ public sealed partial class Ship
 
     }
 
+    // Native DoNothing is legal with or without a target (shipIGC.h:1606-1616),
+    // so PreplotShipMove never replaces it with a default order (:1934-1943).
+    // Training uses the real command slots; preserve its explicitly idle tableau.
+    private bool HoldsTrainingOrder => Mission?.IsTraining == true && IsNpc && !IsRunningAway
+        && AcceptedShipCommandId == OrderChange.CidDoNothing;
+
     private bool PlotMoveCore(double now, double dt)
     {
+        if (HoldsTrainingOrder)
+        {
+            Controls = ControlData.Neutral;
+            StateM &= ShipControlState.SelectedWeaponMask;
+            return false;
+        }
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
@@ -139,6 +151,7 @@ public sealed partial class Ship
 
     private void ValidateNpcPlan(double now)
     {
+        if (HoldsTrainingOrder) return;
         // SIM-0101 — NPC plan legality: every tick revalidate the Plan slot
         // and, if it is illegal, recover a legal Accepted order or fall through
         // to the default-order/take-cover path (shipIGC.cpp:1934-1945). Native

@@ -889,6 +889,34 @@ list in **reverse**.
   remembers its next lesson; native `-training` starts Free Flight. Real-window
   proof: `tools/p910-training-proof/`; row audit and remaining gaps:
   `docs/reports/P910_REPORT.md`.
+- **Lesson universes and window completion (P912)** — M2 bounds use a private
+  constants copy through `src/Allegiance.Core/Model/Mission.cs`; M8 cargo/tech
+  and native M5 drone placement live in
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.cs` and
+  `src/Allegiance.ClientCore/Training/Mission5.cs`. Connected M5/M8 orders use
+  real simulation plans (`src/Allegiance.SinglePlayer/Training/TrainingHost.Bindings.cs`),
+  with native predictable-object visibility and station combat in
+  `src/Allegiance.Core/Sim/Ship.NpcUpdates.cs`. Transfers rebase the model clock
+  in `src/Allegiance.Server/ServerHost.cs` (native `Igc/shipIGC.h:235-242`)
+  so the arrival sector integrates the exit before testing collisions. Docked training previews stream their confirmed sector through
+  `src/Allegiance.Server/Server.ShipCommands.cs` and
+  `src/Allegiance.ClientCore.Game/Game1.Commanding.cs`. Shared team-pane drone
+  entries and last-known status live in `src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs`.
+  Training sonic chat shares the current typed-chat recipient plan in
+  `src/Allegiance.ClientCore.Game/Game1.Session.cs`; command height drags use
+  `src/Allegiance.ClientCore.Game/Rendering/CommandCamera.cs`.
+  Explicit command-view input clears a scripted cockpit pane mask in
+  `src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs`
+  (`WinTrek/WinTrek.cpp:6833-6843,9894-9932`).
+  Friendly Defend chat arms a real escort in the training host; readiness and
+  native goal construction share one replicated-world lock in
+  `src/Allegiance.ClientCore.Game/Game1.Training.cs`.
+  The opt-in key/pointer
+  driver is `src/Allegiance.ClientCore.Game/Game1.TrainingProof.Advanced.cs`;
+  window assertions and receipts are in `tools/p912-training-proof/` and
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs`.
+  Native: `training/mission2.cpp:102-103`, `training/mission5.cpp:84-106,180-247`,
+  `training/mission8.cpp:87-145,442-448`, `WinTrek/trekigc.cpp:1996-2010`. Audit: `docs/reports/P912_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
   start-to-finish through the production path: client orders/target picks use the real
   `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied

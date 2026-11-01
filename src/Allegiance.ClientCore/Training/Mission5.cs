@@ -93,22 +93,22 @@ public class Mission5 : TrainingMission
         // (mission5.cpp:181-247): three tower builders + four miners + the stealth-fighter scout,
         // then "do nothing" commands on every drone but Miner 01.
         var neptune = Site.Resolve(new TargetRef(ObjectType.Station, StartSector))?.Position ?? Vector3.Zero;
-        var mars = Site.Resolve(new TargetRef(ObjectType.Station, MarsSector))?.Position ?? Vector3.Zero;
+        var mars = Site.Resolve(new TargetRef(ObjectType.Station, 1052))?.Position ?? Vector3.Zero;
 
-        root.AddStartAction(BuildDrone($"Tower Layer 01", Builder1Id, 418, PilotLayer, StartSector, neptune, 120f));
-        root.AddStartAction(BuildDrone($"Tower Layer 02", Builder2Id, 418, PilotLayer, StartSector, neptune, -120f));
-        root.AddStartAction(BuildDrone($"Tower Layer 03", Builder3Id, 418, PilotLayer, StartSector, neptune, 240f));
-
-        root.AddStartAction(BuildDrone($"Miner 01", Miner1Id, 438, PilotMiner, StartSector, neptune, 300f));
-        root.AddStartAction(BuildDrone($"Miner 02", Miner2Id, 438, PilotMiner, MarsSector, mars, 300f));
-        root.AddStartAction(BuildDrone($"Miner 03", Miner3Id, 438, PilotMiner, MarsSector, mars, -300f));
-        root.AddStartAction(BuildDrone($"Miner 04", Miner4Id, 438, PilotMiner, MarsSector, mars, 500f));
-
-        // Scout placed between Mars station and the Mars aleph (mission5.cpp:221-224).
-        var marsWarp = Site.Resolve(new TargetRef(ObjectType.Ship, 1052))?.Position
-                       ?? mars + new Vector3(400f, 0f, 0f);
-        root.AddStartAction(BuildDrone($"Stealth Fighter", ScoutId, 411, PilotWingman, MarsSector,
-            mars + (marsWarp - mars) * 0.6f, 0f));
+        // training/mission5.cpp:181-224: independent native cube samples, and
+        // the scout lies 50..75% of the way from Mars station 1052 to warp 1052.
+        Vector3 Cube(float xy, float z) => new((Random.Shared.NextSingle() * 2 - 1) * xy,
+            (Random.Shared.NextSingle() * 2 - 1) * xy, (Random.Shared.NextSingle() * 2 - 1) * z);
+        root.AddStartAction(BuildDrone("Tower Layer 01", Builder1Id, 418, PilotLayer, StartSector, neptune + Cube(300, 300)));
+        root.AddStartAction(BuildDrone("Tower Layer 02", Builder2Id, 418, PilotLayer, StartSector, neptune + Cube(300, 300)));
+        root.AddStartAction(BuildDrone("Tower Layer 03", Builder3Id, 418, PilotLayer, StartSector, neptune + Cube(300, 300)));
+        root.AddStartAction(BuildDrone("Miner 01", Miner1Id, 438, PilotMiner, StartSector, neptune + Cube(600, 300)));
+        root.AddStartAction(BuildDrone("Miner 02", Miner2Id, 438, PilotMiner, MarsSector, mars + Cube(600, 300)));
+        root.AddStartAction(BuildDrone("Miner 03", Miner3Id, 438, PilotMiner, MarsSector, mars + Cube(600, 300)));
+        root.AddStartAction(BuildDrone("Miner 04", Miner4Id, 438, PilotMiner, MarsSector, mars + Cube(600, 300)));
+        var marsWarp = Site.Resolve(new TargetRef(ObjectType.Warp, 1052))?.Position ?? mars;
+        root.AddStartAction(BuildDrone("Stealth Fighter", ScoutId, 411, PilotWingman, MarsSector,
+            mars + (marsWarp - mars) * (0.5f + Random.Shared.NextSingle() * 0.25f)));
 
         // Tell everyone except Miner 01 to do nothing (mission5.cpp:227-246).
         foreach (int id in new[] { ScoutId, Miner2Id, Miner3Id, Miner4Id, Builder1Id, Builder2Id, Builder3Id })
@@ -127,11 +127,11 @@ public class Mission5 : TrainingMission
     }
 
     private CreateDroneAction BuildDrone(string name, int shipId, int hullId, int pilotType, int sector,
-        Vector3 anchor, float offset)
+        Vector3 position)
     {
         var cda = new CreateDroneAction(Site, name, shipId, hullId, 0, pilotType);
         if (pilotType == PilotLayer) cda.SetExpendableType(87); // training/mission5.cpp:183,189,195
-        cda.SetCreatedLocation(sector, anchor + new Vector3(offset, offset * 0.5f, offset * 0.25f));
+        cda.SetCreatedLocation(sector, position);
         return cda;
     }
 
@@ -295,9 +295,15 @@ public class Mission5 : TrainingMission
         // tm_5_12 — create the enemy scout (side 1), tell it to do nothing, set its signature to infinity.
         {
             var goal = CreatePlaySoundGoal(Tm5_12);
-            var mars = Site.Resolve(new TargetRef(ObjectType.Station, MarsSector))?.Position ?? Vector3.Zero;
+            // training/mission5.cpp:481-486: spawn relative to the actual aleph.
+            var aleph = Site.Resolve(new TargetRef(ObjectType.Warp, 1052));
+            var forward = aleph?.Forward ?? Vector3.UnitX;
+            var right = aleph?.Right ?? Vector3.UnitY;
+            var position = (aleph?.Position ?? Vector3.Zero)
+                + forward * (800 + Random.Shared.NextSingle() * 400)
+                + right * (-100 + Random.Shared.NextSingle() * 300);
             var cda = new CreateDroneAction(Site, "Enemy Scout", EnemyScoutId, 310, 1, PilotWingman);
-            cda.SetCreatedLocation(MarsSector, mars + new Vector3(400f, 100f, 0f)); // near the Mars aleph
+            cda.SetCreatedLocation(MarsSector, position);
             goal.AddStartAction(cda);
             goal.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, EnemyScoutId), CommandAccepted, null, CmdDoNothing));
             goal.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, EnemyScoutId), CommandCurrent, null, CmdDoNothing));

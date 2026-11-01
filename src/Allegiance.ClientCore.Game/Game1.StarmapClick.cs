@@ -53,7 +53,7 @@ public sealed partial class Game1
             return false;
         }
 
-        var mouse = Mouse.GetState();
+        var mouse = ReadProofMouse();
         var cursor = new NumericsVec2(mouse.X, mouse.Y);
         var vp = GraphicsDevice.Viewport;
         float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
@@ -150,7 +150,7 @@ public sealed partial class Game1
     /// </summary>
     private void HandleStarmapClick()
     {
-        var mouse = Mouse.GetState();
+        var mouse = ReadProofMouse();
         bool down = mouse.LeftButton == ButtonState.Pressed;
         if (down && !_mapLeftButtonWasDown)
             ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y));

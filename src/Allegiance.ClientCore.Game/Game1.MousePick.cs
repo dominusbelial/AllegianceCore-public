@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Allegiance.Core;
+using Allegiance.Core.Wire;
 using Allegiance.Core.Sim;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Flight;
@@ -48,10 +49,10 @@ public sealed partial class Game1
     /// </summary>
     internal const float PointerPickRadius = 0.085f;
 
-    /// <summary>P587 — squared pointer drag (in NORMALIZED screen units) above
+    /// <summary>P587 — squared pointer drag (in pixel units) above
     /// which a click is treated as a drag and the pick is cancelled — the port
-    /// of native's &gt;100 px² drag test (console.cpp:1931-1934).</summary>
-    internal const float PointerDragCancelSq = 0.006f;
+    /// of native's &gt;100 px² drag test (console.cpp:1920-1925).</summary>
+    internal const float PointerDragCancelSq = 100f;
 
     // Per-frame edge latches for the pointer-mode buttons (so a press that
     // straddles two frames still fires exactly once) and the drag tracker.
@@ -181,9 +182,11 @@ public sealed partial class Game1
         }
         if (rightReleased)
         {
-            bool wasClick = _ptrRightDown && SquaredDrag(ms.X, ms.Y, _ptrDragStart) <= PointerDragCancelSq;
+            bool wasDown = _ptrRightDown;
+            bool wasClick = wasDown && SquaredDrag(ms.X, ms.Y, _ptrDragStart) <= PointerDragCancelSq;
             _ptrRightDown = false;
             if (wasClick) ActOnRightPick(me, own, pos, orient, ms);
+            else if (wasDown && _cameraMode == CameraMode.Command) IssueCommandAtPosition(ms);
         }
 
         _ptrLeftWasDown = left;
@@ -279,8 +282,42 @@ public sealed partial class Game1
         }
         else
         {
-            Console.WriteLine("[monogame] pointer: no command target under the cursor");
+            if (_cameraMode == CameraMode.Command) IssueCommandAtPosition(ms);
+            else Console.WriteLine("[monogame] pointer: no command target under the cursor");
         }
+    }
+
+    private short _positionBuoyId = 30000;
+
+    // WinTrek/console.cpp:1940-1972: a visible recipient can receive a
+    // waypoint order on empty space; an explicit Build permits tower layers.
+    // A click lands on the XY plane; a drag selects native height (:1705-1735).
+    private void IssueCommandAtPosition(MouseState mouse)
+    {
+        List<AutopilotTarget> recipients;
+        short sector;
+        bool layer;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            recipients = CommandFanout.Recipients(_commandGroup, _commandee, _commandRecipientColumn >= 4,
+                (short)_commandWing, world.MyShipId ?? -1, world.Ships, world.MySideId);
+            sector = RenderSector(CurrentOwnSector() ?? -1);
+            layer = recipients.Any(r => world.Ships.TryGetValue(r.Id, out var ship) && ShipIsLayer(ship.HullId));
+        }
+        if (recipients.Count == 0 || sector < 0) return;
+        if (LiveComposeState == NativeComposeState.Command && _commandVerb != OrderChange.CidGoto
+            && !(_commandVerb == OrderChange.CidBuild && layer)) return;
+        if (!_commandCamera.TryPickPosition(new Vector2(_ptrDragStart.X, _ptrDragStart.Y),
+            new Vector2(mouse.X, mouse.Y), GraphicsDevice.Viewport, out var point)) return;
+        short verb = LiveComposeState == NativeComposeState.Command ? _commandVerb : OrderChange.CidDefault;
+        lock (_session.Gate)
+            while (_session.World.CommandBuoys.ContainsKey(_positionBuoyId)) _positionBuoyId--;
+        var buoy = new DataBuoyIGC([point.X, point.Y, point.Z], sector, DataBuoyIGC.CBuoyWaypoint, _positionBuoyId--, true);
+        foreach (var recipient in recipients)
+            _session.SendChatBuoy("", Allegiance.Core.Sim.ChatTarget.Individual, recipient.Id, buoy, commandId: verb);
+        SetComposeState(NativeComposeState.NotComposing);
+        Console.WriteLine($"[monogame] pointer: position order {verb} sector {sector} to {recipients.Count} ships");
     }
 
     /// <summary>
@@ -336,7 +373,9 @@ public sealed partial class Game1
         float hw = GraphicsDevice.Viewport.Width * 0.5f;
         float hh = GraphicsDevice.Viewport.Height * 0.5f;
         float nx = hw <= 0f ? 0f : (ms.X - cx) / hw;
-        float ny = hh <= 0f ? 0f : (ms.Y - cy) / hh;
+        // WinTrek/console.cpp:1860-1862 uses native y-up image points.
+        // SDL's mouse is y-down; match the clip-space projector above.
+        float ny = hh <= 0f ? 0f : (cy - ms.Y) / hh;
         return new NumericsVec2(nx, ny);
     }
 

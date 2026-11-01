@@ -88,7 +88,7 @@ public sealed partial class Game1
         float Axis(string positive, string negative) => (ActionDown(keys, positive) ? 1 : 0) - (ActionDown(keys, negative) ? 1 : 0);
         float right = Axis("YawRight", "YawLeft") + .5f * Axis("ThrustRight", "ThrustLeft");
         float downAxis = Axis("PitchDown", "PitchUp") + .5f * Axis("ThrustDown", "ThrustUp");
-        var mouse = Mouse.GetState();
+        var mouse = ReadProofMouse();
         var vp = GraphicsDevice.Viewport;
         // Native 8px gutter / 12px divisor; suppress pan while selecting (8469).
         if (IsActive && mouse.LeftButton != ButtonState.Pressed && mouse.RightButton != ButtonState.Pressed
@@ -111,13 +111,14 @@ public sealed partial class Game1
             {
                 Vector3 center = ownPosition;
                 float radius = _myRenderRadius;
+                bool stationAnchor = false;
                 if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
                     && own.StationId >= 0 && world.Stations.TryGetValue(own.StationId, out var station))
-                { center = new Vector3(station.Position[0], station.Position[1], station.Position[2]); radius = ResolveStationRadius(station); }
-                _commandCamera.Center(center, radius);
+                { center = new Vector3(station.Position[0], station.Position[1], station.Position[2]); radius = ResolveStationRadius(station); stationAnchor = true; }
+                _commandCamera.Center(center, radius, stationAnchor: stationAnchor);
                 _commandCentered = true;
             }
-            if (world.ViewClusterVersion != _commandViewVersion && _dockedActive)
+            if (world.ViewClusterVersion != _commandViewVersion && CommandViewerDocked)
             {
                 _commandViewVersion = world.ViewClusterVersion;
                 _commandCamera.Center(world.ViewedClusterPosition is { } position ? PoseConverter.ToXna(position) : Vector3.Zero,
@@ -167,8 +168,13 @@ public sealed partial class Game1
         }
     }
 
+    // training/mission5.cpp:95-105: docked command view has no hangar UI.
+    // Use the actual ship station, including ghosts and training, for previews.
+    private bool CommandViewerDocked => _session.World.MyShipId is { } me
+        && _session.World.Ships.TryGetValue(me, out var own) && own.StationId >= 0;
+
     // Only a server-confirmed docked sector preview changes the drawn cluster.
-    private short RenderSector(short ownSector) => _benchmark is not null && _benchViewSector is { } benchmarkSector ? benchmarkSector : LocalSpectating ? _skirmishCamera.SectorId : _cameraMode == CameraMode.Command && _dockedActive
+    private short RenderSector(short ownSector) => _benchmark is not null && _benchViewSector is { } benchmarkSector ? benchmarkSector : LocalSpectating ? _skirmishCamera.SectorId : _cameraMode == CameraMode.Command && CommandViewerDocked
         ? _session.World.ViewedClusterId ?? ownSector : ownSector;
     private bool ShipInDrawnSector(short id, short me)
     {
@@ -447,7 +453,7 @@ public sealed partial class Game1
                 if (_camSmoothInit && ProjectToScreen(new Vector3(0, 3 * CommandGridRenderer.Radius / 4, 0),
                     _camDisplay.RelativeView(), _camDisplay.Projection(GraphicsDevice.Viewport.AspectRatio, 10, 80000), _camDisplay.Eye, out var north))
                     _spriteBatch.DrawString(_hudSmall, "NORTH", north, Color.White);
-                var mouse = Mouse.GetState();
+                var mouse = ReadProofMouse();
                 if (_ptrLeftDown)
                 {
                     int x = (int)MathF.Min(_ptrDragStart.X, mouse.X), y0 = (int)MathF.Min(_ptrDragStart.Y, mouse.Y);

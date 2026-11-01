@@ -78,7 +78,7 @@ internal sealed class TeamPaneControls
     internal IReadOnlyList<RosterRow> BuildRoster(ClientWorld world, Func<short, string>? hullName = null)
     {
         var rows = new List<RosterRow>();
-        foreach (var g in world.ScoreRoster.GroupBy(e => e.SideId).OrderBy(g => g.Key))
+        foreach (var g in TeamPaneLayout.Entries(world).GroupBy(e => e.SideId).OrderBy(g => g.Key))
         {
             // P761 — the same TeamPaneSort order the layout draws (native's
             // comparators + tie-breaks, see TeamPaneSort's remarks). P761b — the
