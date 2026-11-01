@@ -360,16 +360,27 @@ public abstract class TrainingMission
             SpawnGroup = spawnGroup,
         };
 
+        bool spawned = false;
         if (spawnOnAdd)
         {
             bool exists = ShipExists(action.ShipId);
             if (!exists)
+            {
                 action.Execute();
+                spawned = true;
+            }
             rd.DestroyedTime = 0;
         }
         else
         {
             rd.DestroyedTime = Site.TimeSeconds;
+        }
+        // trainingmission.cpp:304-313: an unspawned recipe holds its buoy for all later spawns.
+        if (!spawned && action.CommandTarget is { Type: ObjectType.Buoy } buoy
+            && Site.Resolve(buoy) is not null && Site is ITrainingDroneSite consumers)
+        {
+            consumers.AddBuoyConsumer(buoy.Id);
+            action.SetAddedConsumer();
         }
 
         _respawns.Insert(0, rd);

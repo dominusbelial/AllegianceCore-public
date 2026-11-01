@@ -1803,6 +1803,8 @@ public sealed partial class Game1
     /// Closes the menu.</summary>
     private void SendQuickChatLeaf(QuickChatSendAction send)
     {
+        // Native quick-chat command selection, not queued-order acceptance (WinTrek.cpp:986).
+        _session.World.AcknowledgeTrainingCommand(send.CommandId);
         CloseQuickChat();
         var order = ResolveQuickChatOrder(send);
         _session.SendChat("", send.Target,

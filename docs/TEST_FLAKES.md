@@ -4934,3 +4934,20 @@ master `b2e8b196`:
 | `MissionRotationLiveTests.Finished_...`, `P817NativeMinerDecisionCycleLiveTests`, `LiveSuicideShipDeleteTests`, `ConsoleLogNonBlockingTests` | 3 × pass | Sweep-only timing or shared console state, as ledgered before. |
 | `P682NextMatchCombatLiveTests.Mcp_bots_buy...`, `P730ShowcaseLiveTests.Two_local...` | 3 × pass | Sweep-only on the mini. Cause of the P730 `natural mining` miss not established. |
 | `MissileLockLiveTests`, `SC2SupportPhaseLiveTests`, `SC5CloakLiveTests`, `P832dArtifactBotLiveTests`, `SC4`, `P745`, `P798`, `NpcWingmanDefendLiveTests`, `DockDockingTests` | Not rerun | Seen in earlier sweeps or ledgered; remain open. |
+
+## P909 — Fast sweep, 2026-10-31
+
+The one required Fast sweep ran with local artwork. Unrelated failures below
+were isolated three times; training task tests passed separately. Raw sweep and
+isolation evidence is in `.scratch/p909/fast/` and `.scratch/p909/tests/`.
+
+| Test | Three-run isolation | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail at the default read-only profile; pass / pass / pass with task-local writable `XDG_CONFIG_HOME` | Existing sandbox profile-restoration failure in the fixture finally block. Original failure retained; no profile implementation changed. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass | Existing loopback timing flake: sweep missed the death latch after 2,500 ticks. P909's server changes are guarded by LocalTraining; this test uses the multiplayer path. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | all three delay cases pass / pass / pass | Existing floating boundary: sweep delay 7 observed `7.0000000000000009` against upper bound 7. Core timer code is unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing deterministic baseline: null defend target at line 179, already ledgered under P872/P887/P895/P902/P905. Core NPC code is unchanged; remains open. |
+| `NpcAsteroidContentionLiveTests.Two_same_side_idle_miners_lower_ore_keeps_rock_higher_ore_redirected_to_unload` | pass / pass / pass | Existing load-sensitive miner progress case: sweep ore stayed at 10, and 16.747 s exceeded the 10 s Fast budget. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Sweep included a station-bearing ShipStatus for another ship in its all-status assertion; tested docking code is unchanged. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | Sweep passed but took 10.644 s, above its calibrated 10 s Fast budget; isolation evidence is `slow-isolation-{1,2,3}.trx`. No warp sim code changed. |
+| `SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | pass / pass / pass | Quarantine sweep failed its lethal restart-station hit after 20.765 s; runner retry passed, then the three isolation runs passed. Also a Fast timing overrun. No elimination code changed. |

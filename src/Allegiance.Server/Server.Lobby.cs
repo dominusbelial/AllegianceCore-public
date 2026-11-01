@@ -5291,6 +5291,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             new BuyLoadoutAck
             {
                 HullId = live.Ship.HullType.HullId,
+                // Local native training shares the equipped ship (training/trainingmission.cpp:810-854).
+                // Our loopback client needs the same real parts through the ordinary loadout message.
+                Parts = LocalTraining ? live.Ship.ExportInventoryForAck() : [],
                 FBoughtEverything = false,
                 FLaunch = false,
             }.Encode(),

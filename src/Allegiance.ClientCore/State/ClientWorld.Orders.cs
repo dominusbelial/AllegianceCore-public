@@ -18,6 +18,15 @@ public sealed partial class ClientWorld
     /// Access under the session gate.</summary>
     public QueuedCommandState? MyCurrentCommand { get; private set; }
 
+    // training/CommandAcknowledgedCondition.cpp:21,37-46; WinTrek.cpp:986.
+    public int LastAcknowledgedCommand { get; private set; } = -3;
+    // training/ShowEyeballAction.cpp:34-37 writes the real status, until the next status update.
+    public void SetTrainingDetected(bool detected)
+    {
+        if (MyShipId is { } me && _ships.TryGetValue(me, out var ship)) ship.Detected = detected;
+    }
+    public void AcknowledgeTrainingCommand(int commandId) => LastAcknowledgedCommand = commandId;
+
     public void ClearAcceptedCommand() => MyAcceptedCommand = null;
 
     /// <summary>HUD-8b — install/clear the current target command mirror of native
