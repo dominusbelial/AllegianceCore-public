@@ -37,6 +37,15 @@ public sealed class P911TrainingArenaTests : IDisposable
     private static Allegiance.Server.Server Server(TrainingHost host) =>
         (Allegiance.Server.Server)typeof(TrainingHost).GetField("_server", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(host)!;
 
+    [SkippableFact, Trait("Requires", "Artwork")]
+    public void Scripted_waypoint_defaults_to_native_waypoint_type()
+    {
+        // training/CreateWaypointAction.h:28: type = c_buoyWaypoint.
+        Require.Artwork(); using var host = TrainingHost.Start(TrainingHost.PracticeArena);
+        new CreateWaypointAction(new TrainingHostSite(host), 7100, N.Zero, 2080).Execute();
+        Assert.Equal(DataBuoyIGC.CBuoyWaypoint, host.Mission.GetBuoy(7100)!.Data.Type);
+    }
+
     [SkippableTheory, Trait("Requires", "Artwork")]
     [InlineData(false)] [InlineData(true)]
     public void Native_selection_close_attack_and_armed_assistance_precede_ordinary_default(bool free)

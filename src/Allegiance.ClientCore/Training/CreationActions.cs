@@ -19,7 +19,7 @@ public sealed class CreateWaypointAction : Action
     private readonly int _type;
     private readonly bool _visible;
 
-    public CreateWaypointAction(ITrainingSite site, int buoyId, Vector3 position, int sectorId, int type = 1, bool visible = true)
+    public CreateWaypointAction(ITrainingSite site, int buoyId, Vector3 position, int sectorId, int type = Allegiance.Core.DataBuoyIGC.CBuoyWaypoint, bool visible = true)
     {
         _site = site;
         _buoyId = buoyId;

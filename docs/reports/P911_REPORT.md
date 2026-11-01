@@ -248,3 +248,11 @@ expressions. A modern design would use a consistent weighted target comparator,
 an explicit plan-target type, deterministic injectable randomness, collision-free
 patrol sampling, and scoped lifetime handles for buoys. Those alternatives must
 be explicit product decisions rather than silent parity changes.
+
+## Claude's review
+
+- **Fixed:** `CreateWaypointAction` defaulted to type 1, which is `c_buoyCluster`; native defaults to `c_buoyWaypoint` (`training/CreateWaypointAction.h:28`). Missions 2, 4 and 8 use that default, and P911 corrected only the arena's explicit values. The default is now `DataBuoyIGC.CBuoyWaypoint`, with `Scripted_waypoint_defaults_to_native_waypoint_type`.
+- **Checked against native:** `HandleArenaDefaultOrder` matches `mission6.cpp:82-287` branch by branch apart from the recorded TRN-0238 gaps. Arena tech, `ShipKilled` and `CanSee` also match. `Sector.Mineable` holds every rock, so the patrol and line-of-sight checks see all asteroids.
+- **TRN-0215 stays partial:** the row's rule has no confirmed native source. The cited line sits in the miner and constructor retreat path, and native exempts nanite wingmen from retreat.
+- **Open:** arena patrol buoys take ids from `TrainingHost.NextId`, narrowed to `short`. A very long Free Flight session could wrap, roughly a day at 20 picks a minute. Not fixed.
+
