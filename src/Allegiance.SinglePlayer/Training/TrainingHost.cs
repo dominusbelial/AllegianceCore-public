@@ -254,7 +254,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             side.ColorR = color.R / 255f; side.ColorG = color.G / 255f; side.ColorB = color.B / 255f;
             side.ConquestPercent = 100 / 6;
         }
-        mission.Sides[0].DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)255, TechTreeBitMask.ByteCount).ToArray());
+        if (variant == PracticeArena || variant == FreeFlight) ApplyArenaTech(mission);
+        else mission.Sides[0].DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)255, TechTreeBitMask.ByteCount).ToArray());
         mission.Stage = MissionStage.Started;   // bypass the ready-up lobby (established P180 pattern)
         ApplyMissionSideMaxEnergy(variant, mission);   // mission3.cpp:187-190 / mission4.cpp:113-116
 
@@ -323,12 +324,11 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, station {trainee.StationId?.ToString() ?? "none"}");
             return (trainee, sector);
         };
-        // Route the server's real kill-credit events into the active mission's kill counter (M6), so
-        // kill goals read the real credit (ejections excluded via the !bLifepod gate in BroadcastKillShip).
-        server.KillCreditGranted += (launcher, victim) =>
-        {
-            try { host.RecordKillCredit(launcher, victim); } catch { /* training-only observer */ }
-        };
+        server.Host.TrainingDefaultOrder = host.HandleArenaDefaultOrder;
+        if (variant == PracticeArena || variant == FreeFlight)
+            // training/mission6.cpp:392-395; mission10.cpp:388-391.
+            foreach (var warp in mission.Sectors.SelectMany(s => s.Warps))
+                warp.SideVisibility.SetSideVisibility(1, true);
         server.TrainingShipDeath = host.HandleTraineeDeath;
         server.TrainingStationDeath = host.HandleStationDeath;
         return host;
@@ -381,6 +381,21 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             ship.StateM = (ship.StateM & ~ShipControlState.SelectedWeaponMask) | (0 & ShipControlState.SelectedWeaponMask);
             // mission3.cpp:182 — fGroupFire = false.
             ship.StateM &= ~ShipControlState.AllWeapons;
+        }
+        else if (variant == PracticeArena || variant == FreeFlight)
+        {
+            ship.StateM |= ShipControlState.AllWeapons;
+            // training/mission6.cpp:351-367; mission10.cpp:347-363.
+            var magazines = ship.CargoHold.Select((p, i) => (p, i))
+                .Where(slot => slot.p?.EquipmentType == EquipmentType.Magazine).Select(slot => -slot.i - 1).ToArray();
+            ship.TryRemovePart(EquipmentType.Magazine, 0, out _);
+            foreach (var mount in magazines) ship.TryRemoveCargoPart(mount, out _);
+            if (ship.Mission!.Core.TryBuildExpendableLauncher(154, out var seeker))
+            {
+                ship.MountPart(seeker, 5, 0, ExpandedPartData.FullyMounted);
+                foreach (var mount in magazines)
+                    ship.MountPart(seeker, 5, unchecked((byte)mount), ExpandedPartData.FullyMounted);
+            }
         }
         else if (variant == EnemyEngagement)
         {
@@ -506,7 +521,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     {
         // M4's routed NPC orders run in the real simulation. A position nudge in the source
         // sector cannot implement intersector travel or retain collision response.
-        if (_clientBound && StartSectorId == EnemyEngagement.StartSector) return;
+        if (StartSectorId == PracticeArena.StartSector
+            || (_clientBound && StartSectorId == EnemyEngagement.StartSector)) return;
         // Zero the sim ships' own throttle so the server does not integrate their Controls field
         // into unintended motion; movement is driven exclusively by the host autopilot pass below
         // (and, for the player, by the mission's scripted goals, which read the decoupled applied
@@ -718,9 +734,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                     _buoySlots[key] = newBuoy;
                 }
                 ship.SetCommand((short)command, model, (short)commandId);
-                // M4's networked host delegates navigation/combat/construction to the sim.
-                // Other variants still use AdvanceAutopilot's scripted movement owner.
-                if (ship.IsNpc && _clientBound && StartSectorId == EnemyEngagement.StartSector)
+                // Arena and networked M4 orders use the simulation's real plans.
+                // Other variants retain their scripted movement owner.
+                if (ship.IsNpc && (StartSectorId == PracticeArena.StartSector
+                    || (_clientBound && StartSectorId == EnemyEngagement.StartSector)))
                 {
                     ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;
                     ship.BuilderAsteroidTarget = commandId == TrainingMissionIds.CmdBuild && targetAsteroidId is { } rock ? ResolveAsteroid(rock) : null;
@@ -728,6 +745,13 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                     if (commandId == TrainingMissionIds.CmdBuild && ship.BuilderAsteroidTarget is { } buildRock)
                         ship.SetBuilderBuild(buildRock);
                     ship.PlanCommandId = (short)commandId;
+                    if (StartSectorId == PracticeArena.StartSector)
+                    {
+                        if (commandId == TrainingMissionIds.CmdRepair)
+                            ship.SetRepairOrder(model as Ship, (model as EquipmentTarget)?.Body as Station);
+                        else if (commandId == TrainingMissionIds.CmdAttack && model is Ship or Probe)
+                            ship.SetWingmanAttackOrder(model);
+                    }
                 }
             }
 
@@ -736,7 +760,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 if (targetBuoyId is { } bid && ResolveWaypoint(bid) is { } wp)
                 {
                     _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
-                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
+                    ship.SetGoto(StartSectorId == PracticeArena.StartSector
+                        ? new GotoOrder(Mission.GetBuoy((short)bid)?.Data.Type == DataBuoyIGC.CBuoyCluster ? GotoKind.Cluster : GotoKind.Waypoint,
+                            (short)wp.SectorId, ToCore(wp.Position), TargetType: IgcObjectType.Buoy, TargetId: (short)bid)
+                        : new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
                 }
                 else if (targetShipId is { } tsid2 && ResolveShip(tsid2) is { } target)
                 {
@@ -1269,25 +1296,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
     /// <summary>Bind the mission that receives the real kill-credit count (native ShipKilled hook).</summary>
     public void SetActiveMission(TrainingMission mission) => _activeMission = mission;
-
-    /// <summary>
-    /// Apply a <em>real kill-credit</em> outcome to the active mission's kill counter — native
-    /// <c>TrainingMission::ShipKilled</c> (<c>trainingmission.cpp:515-524</c>): the launcher must be on
-    /// the player's side and the victim a wingman (<c>c_ptWingman</c>). The server's real kill-credit
-    /// path (which already excludes ejections via the <c>!bLifepod</c> gate) routes here; the headless
-    /// proof scripts a kill outcome through this same single method (mirroring how
-    /// <see cref="DestroyDrone"/> scripts the destroyed outcome).
-    /// </summary>
-    public void RecordKillCredit(int launcherId, int victimId)
-    {
-        if (_clientBound) return; // client session drains the simulation death hook once (trekigc.cpp:4265)
-        var launcher = ResolveShip(launcherId);
-        var victim = ResolveShip(victimId);
-        bool playerSide = launcher is not null && launcher.SideId == PlayerShip.SideId;
-        bool wingman = victim is not null && victim.PilotType == Ship.PilotTypeWingman; // c_ptWingman
-        _activeMission?.ShipKilled(playerSide && wingman);
-    }
-
 
     public int GetSectorId(int shipId) => ResolveShip(shipId) is { } s && s.Sector is { } sec ? sec.Id : -1;
 

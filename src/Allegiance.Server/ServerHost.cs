@@ -794,6 +794,12 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// and the native SoundID verbatim supply everything the team-chat broadcast
     /// (as the wire <c>VoiceOver</c>) needs.
     /// </summary>
+    // Igc/shipIGC.h:2438: training overrides precede ordinary wingman acquisition.
+    // Unbound on every ordinary multiplayer/skirmish/showcase host.
+    internal Func<Ship, bool>? TrainingDefaultOrder;
+    public bool HandlePickDefaultOrder(IShipIgc ship) =>
+        TrainingDefaultOrder is { } choose && ship is Ship concrete && choose(concrete);
+
     public Action<Ship, short, short, string>? DroneChat;
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.DroneChatEvent"/>: raise the <see cref="DroneChat"/>

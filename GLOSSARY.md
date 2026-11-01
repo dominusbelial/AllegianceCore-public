@@ -866,6 +866,19 @@ list in **reverse**.
   `src/Allegiance.ClientCore/Training/AdditionalPrimitives.cs`.
   Both-style loopback tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P909TrainingBindingsTests.cs`.
   Exact remaining gaps and the native caller audit: `docs/reports/P909_REPORT.md`.
+- **Arena order policy and combat waves (P911)** — shared native Practice Arena /
+  Free Flight targeting, assistance, pursuit and hidden patrol buoys in
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Arena.cs`, reached through
+  the optional `ServerHost.HandlePickDefaultOrder` callback. The live plan reader
+  `src/Allegiance.Core/Sim/Ship.CommandPlan.cs` preserves the distinction between
+  accepted orders and navigation-created plan buoys. Arena movement and mounted
+  recipes run in the real simulation; headless and connected client tests reach
+  49 projectile deaths with the controlled range fixture
+  `tests/_shared/P911ArenaFiringRange.cs`. Respawn removal releases deferred buoy
+  holds. Native: `training/mission6.cpp:82-287`, `training/mission10.cpp:78-283`,
+  `Igc/shipIGC.h:707-718,2438`. Non-training tick comparison:
+  `tools/p911-arena-proof/`; exact remaining parity gaps:
+  `docs/reports/P911_REPORT.md`.
 - **Training client integration (P910)** — local IGC death/station events and
   chat recipient/default-drone hooks bind through
   `src/Allegiance.ClientCore.Game/Training/TrainingRuntime.cs` and

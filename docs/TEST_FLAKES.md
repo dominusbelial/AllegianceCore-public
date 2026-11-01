@@ -5025,3 +5025,39 @@ failures below was isolated this batch, so this sweep does not clear P908 or P90
 | `MissileLockLiveTests`, `NpcWingmanDefendLiveTests` | sweep fail | See the P910 section. |
 | `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | Expected 5, Actual 6 again | Second sweep in a row. Still open, cause not established. |
 | `SC2SupportPhase`, `SC4`, `P745`, `P798` | sweep fail, not rerun | Already ledgered showcase outcomes. |
+
+## P911 Codex gates — 2026-11-01
+
+The single Fast-tier sweep retained its failures; isolated controls do not turn
+it into a green sweep. Full results and remaining arena parity gaps are in
+`docs/reports/P911_REPORT.md`. Source for chat/profile behavior was unchanged.
+
+| Method | Three isolated invocations | Classification |
+|---|---|---|
+| `P761StartChatComposeTests.StartChatEdge_OpensCompose_WhileNothingModalOwnsTheKeys` | pass / pass / pass | Sweep-only compose assertion at line 86; isolated method keeps its original environment. No chat/profile implementation change. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail at the original default profile; pass / pass / pass with writable task `XDG_CONFIG_HOME` | Already-ledgered sandbox obstruction: fixture restoration at line 237 cannot write the default user profile. The writable-root control uses the same test and source. |
+
+Raw method-filtered results are retained under `.scratch/p911/isolation-*`.
+The sweep finished with **12,859 passed, 11 failed, 3 existing optional skips**,
+all nine infrastructure checks passing, and no timing offenders. Quarantine
+cases passed and no quarantine flakes were reported. The additional failures
+received separate method-filtered invocations:
+
+| Method / cases | Three isolated invocations | Classification |
+|---|---|---|
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository` (Artwork case) | fail / fail / fail (the SkyPack case passes) | Mandated in-checkout `TMPDIR` lets ancestor `local.env`/config discovery win over the simulated bundle. Same five-case obstruction as P909/P910. |
+| `PlayerBundlePathsTests.MissingDirectoryHasNoDefault` (Artwork and NativeSource cases) | fail / fail / fail for both (the SkyPack case passes) | Same in-checkout ancestor-config discovery. |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | fail / fail / fail | Same ancestor-config obstruction. |
+| `PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory` | fail / fail / fail | Same ancestor-config obstruction. |
+| `SwapPartTests.SwapPart_swaps_two_occupied_slots_sectorwide_moves_and_silent_noop` | pass / pass / pass | Sweep saw a late prior `SWAP_PART` during the silent-noop assertion at line 270; isolated delivery controls pass. No swap/transport source changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing baseline null defend target at line 179, documented before P911. Ordinary defend behavior remains unchanged; new buoy resolution is gated to training. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | pass / pass / pass | Sweep terminal position was 1756.13 m from launch rather than 1848.56 m. The earlier-destruction signature was already ledgered; no missile code changed. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | pass / pass / pass | Sweep-only resignation timing/state assertion. No ballot/economy/server-lifecycle source changed. |
+
+There was exactly one actual Fast sweep (`tiers-20261101T063655.304067Z`). An
+older training wrapper continued after an interrupt; a temporary launch guard
+prevented its queued duplicate Fast command, and was restored before handoff.
+The superseded development training run's two arena-leak regressions were fixed
+by restricting native arena order handling to Missions 6/10, then verified three
+times in isolation and by the complete training gate. Superseded results do not
+count as final green gates. The retained Fast sweep remains **failed**.

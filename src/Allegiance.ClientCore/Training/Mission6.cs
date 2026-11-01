@@ -1,4 +1,5 @@
 using System.Numerics;
+using Allegiance.Core;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
 
 namespace Allegiance.ClientCore.Training;
@@ -9,9 +10,9 @@ namespace Allegiance.ClientCore.Training;
 /// respawned, and escalating waves of enemy wingmen (scout/fighter/bomber) attack — each wave is a
 /// <see cref="KillsReachedCondition"/> threshold that drives <see cref="ModifyCreateDroneActionAction"/>
 /// escalations (hull, tech level, name, behaviour) applied to the respawning <see cref="CreateDroneAction"/>s.
-/// The kill count is the mission's <em>real kill credit</em> (native <c>TrainingMission::ShipKilled</c>,
-/// trainingmission.cpp:515-524), fed by the server's kill-credit path — so an ejection (which the
-/// <c>!bLifepod</c> gate excludes from credit) can never inflate it. Pure data against an injected
+/// The kill count follows native <c>TrainingMission::ShipKilled</c> (trainingmission.cpp:515-524),
+/// fed by the local IGC death hook: the launcher must be on the trainee's side and the victim
+/// a wingman. Live tests drive these events with real projectiles. Pure data against an injected
 /// <see cref="ITrainingSite"/>; the embedded host realises the drones, respawns and kill credit.
 /// </summary>
 public class Mission6 : TrainingMission
@@ -160,10 +161,10 @@ public class Mission6 : TrainingMission
             var carrierAction = new CreateDroneAction(Site, "Enemy Carrier", EnemyCarrierId, 325, 1, PilotCarrier);
             carrierAction.SetCreatedLocation(EnemySector, new Vector3(-1000f, 280f, -50f));
             carrierAction.SetCreatedCommand(nearNeptuneAlephBuoy, ObjectType.Buoy, CmdGoto);
-            goal.AddStartAction(new CreateWaypointAction(Site, homeSectorBuoy, Vector3.Zero, StartSector, 0 /*c_buoyCluster*/, false));
+            goal.AddStartAction(new CreateWaypointAction(Site, homeSectorBuoy, Vector3.Zero, StartSector, DataBuoyIGC.CBuoyCluster /* Igc/igc.h:554 */, false));
             goal.AddStartAction(new AddRespawnAction(this, _enemy1Action, 10.0f, 1));
             goal.AddStartAction(new AddRespawnAction(this, _enemy2Action, 10.0f, 1));
-            goal.AddStartAction(new CreateWaypointAction(Site, nearNeptuneAlephBuoy, new Vector3(3560f, 4880f, 850f), MarsSector, 1 /*c_buoyWaypoint*/, false));
+            goal.AddStartAction(new CreateWaypointAction(Site, nearNeptuneAlephBuoy, new Vector3(3560f, 4880f, 850f), MarsSector, DataBuoyIGC.CBuoyWaypoint /* Igc/igc.h:553 */, false));
             goal.AddStartAction(new AddRespawnAction(this, carrierAction, 60.0f, -1, false));
             goalList.AddGoal(goal);
         }
@@ -443,7 +444,7 @@ public class Mission6 : TrainingMission
             goal.AddStartAction(f);
             goal.AddStartAction(b);
             int insideHomeBuoy = GenId(5003);
-            goal.AddStartAction(new CreateWaypointAction(Site, insideHomeBuoy, new Vector3(1500f, 2500f, 300f), StartSector, 1, false));
+            goal.AddStartAction(new CreateWaypointAction(Site, insideHomeBuoy, new Vector3(1500f, 2500f, 300f), StartSector, DataBuoyIGC.CBuoyWaypoint, false));
             goal.AddStartAction(new SetCommandAction(Site, new TargetRef(ObjectType.Ship, EnemyCarrierId), CommandAccepted,
                 new TargetRef(ObjectType.Buoy, insideHomeBuoy), CmdGoto));
             goalList.AddGoal(goal);

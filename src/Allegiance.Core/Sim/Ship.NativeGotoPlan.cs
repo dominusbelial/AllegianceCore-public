@@ -196,6 +196,15 @@ public sealed partial class Ship
         out G.Target target, out Station? station, out Ship? carrier)
     {
         station = null; carrier = null;
+        // training/mission6.cpp:274-283 assigns real hidden buoy identities.
+        // ResetWaypoint's default OT_buoy objective (shipIGC.cpp:4053,4160)
+        // remains a live point target, rather than an absent typed model.
+        if (type == IgcObjectType.Buoy && Mission!.IsTraining && Mission.GetBuoy(id) is { } buoy)
+        {
+            target = new(NativeKey(G.Kind.Point, id), buoy.Data.ClusterId, G.Kind.Point,
+                G.Objective.Goto, buoy.Position, buoy.Data.Visible ? 20 : 2);
+            return true;
+        }
         for (int i = 0; i < Mission!.Sectors.Count; i++)
         {
             var sector = Mission.Sectors[i];

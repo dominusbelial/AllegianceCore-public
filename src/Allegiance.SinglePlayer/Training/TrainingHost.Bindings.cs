@@ -96,7 +96,7 @@ public sealed partial class TrainingHost
             {
                 byte slot = unchecked((byte)mount);
                 if (ship.CargoHold[Ship.CargoSlotForMount(mount)] is { } old)
-                    ship.TryRemovePart(old.EquipmentType, slot, out _);
+                    ship.TryRemoveCargoPart(mount, out _);
                 ship.MountPart(prox, 127, slot, ExpandedPartData.FullyMounted);
             }
         }
