@@ -80,6 +80,17 @@ Every T test below uses a real embedded TrainingHost, loopback ConnectionSession
 | TRN-0085 CreateDrone accepted command | Partial | `training/CreateDroneAction.cpp:201-207` | `src/Allegiance.ClientCore/Training/CreationActions.cs:32` | T3 | Creation targets now set the accepted slot with the real model and add the extra native buoy recipe hold. Remaining: native ship-slot consumers on death or server-issued replacement are not centrally retired; host bookkeeping covers host-issued writes only. |
 | TRN-0086 CurrentTarget eliminated cache | Implemented | `training/CurrentTarget.cpp:46-71` | `src/Allegiance.ClientCore/Training/CombatConditionsAndActions.cs:15` | T4 | Caches the initial invalid target as well as valid targets; switching live selections reanchors, while an eliminated cached target is preserved for destruction checks. |
 
+## Review correction: respawn buoy hold
+
+Codex's report said native never sets `b_addedConsumer`. That is wrong:
+`TrainingMission::AddRespawn` adds the hold and calls `SetAddedConsumer` for a recipe it
+did not spawn (`training/trainingmission.cpp:304-313`, `CreateDroneAction.h:54-57`), so
+later spawns add no further hold. The port added none at registration and one on every
+respawn, which is what Mission 6 and Mission 10's carrier hit. Claude's review ported
+that flow (`TrainingMission.AddRespawn`, `CreateDroneAction.Execute`); the
+destructor release (`CreateDroneAction.cpp:50-55`) stays unported with TRN-0085's
+other retirement gaps. `Respawn_recipe_takes_one_buoy_hold_at_registration` covers it.
+
 ## Native caller audit
 
 `rg` over the native training implementation finds no construction of `CreateProbeAction`, `SetCargoNanAction`, `SuspendedPlaySoundAction`, or `TurnShipAboutCondition`. Some lessons include the headers; includes are not executable callers. SuspendedSoundFinishedCondition is constructed by SuspendedPlaySoundAction and `ResetAction::PlaySound` (`training/resetaction.cpp:98-109`), but the former has no lesson caller and ResetAction's Execute body is commented out (`training/resetaction.cpp:43-88`). These five rows remain test-only. Adding lesson steps would change native behavior and was deliberately avoided.
@@ -136,5 +147,5 @@ Late docked-source fallback and live buoy lookup edge corrections were additiona
 
 - **Design:** conditions observe the same selected models, camera, input and fractions that gameplay uses. A training diagnostic field is not a substitute for those values. Commands and spawn recipes retain real object identity.
 - **Era constraint:** native training shares the client simulation in one process. This port's embedded server plus loopback mirror requires ordinary model/loadout replication while retaining local own-ship input authority. Managed references replace manual sound-action deletion; unused native classes remain unused.
-- **Native bugs:** CreateDroneAction initializes `b_addedConsumer` false (`CreateDroneAction.cpp:42`) and tests it when adding a hold (`:206-207`) but never sets it true; its destructor release (`:50-55`) therefore never executes. The port preserves the per-execution extra recipe hold rather than silently claiming the flag is repaired. Below tech -3, native leaves `pprox` uninitialized (`:177-184`); the mine-capable port rejects that invalid input explicitly. Neither is a new modern lesson rule.
+- **Native bugs:** Below tech -3, native leaves `pprox` uninitialized (`:177-184`); the mine-capable port rejects that invalid input explicitly. It is not a new modern lesson rule.
 - **Modern alternative:** a centrally owned model lease and explicit typed recipe/save-loadout API would remove the remaining buoy lifetime and cache gaps. Those should preserve native externally visible behavior and need their own production proofs. A camera/console facility interface remains shared between both HUDs; lesson scripts should not synthesize input or duplicate UI state.

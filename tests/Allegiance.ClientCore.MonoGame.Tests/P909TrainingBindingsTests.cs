@@ -242,6 +242,25 @@ public sealed class P909TrainingBindingsTests : IDisposable
 
     [SkippableTheory, Trait("Requires", "Artwork")]
     [InlineData(HudStyle.Classic)] [InlineData(HudStyle.Modern)]
+    public void Respawn_recipe_takes_one_buoy_hold_at_registration(HudStyle style)
+    {
+        Require.Artwork(); using var c = new Client(style);
+        var mission = new ProbeMission(c.Site); mission.Start();
+        c.Site.CreateWaypoint(4930, new(1000, 500, 0), c.Host.StartSectorId, 0, true);
+        int created = c.Host.BuoyConsumerCount(4930);
+        var recipe = new CreateDroneAction(c.Site, "carrier", 4931, 310, 1, Ship.PilotTypePlayer);
+        recipe.SetCreatedLocation(c.Host.StartSectorId, new(1000, 0, 0));
+        recipe.SetCreatedCommand(4930, ObjectType.Buoy, 5);
+        new AddRespawnAction(mission, recipe, 1).Execute();   // trainingmission.cpp:304-313
+        Assert.Equal(created + 1, c.Host.BuoyConsumerCount(4930));
+        recipe.Execute();
+        recipe.Execute();
+        // The recipe's hold plus the accepted slot's own; neither grows per spawn.
+        Assert.Equal(created + 2, c.Host.BuoyConsumerCount(4930));
+    }
+
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(HudStyle.Classic)] [InlineData(HudStyle.Modern)]
     public void Respawn_modifications_and_geometry_use_native_radii_and_live_identity(HudStyle style)
     {
         Require.Artwork(); using var c = new Client(style);

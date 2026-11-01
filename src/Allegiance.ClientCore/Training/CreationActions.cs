@@ -136,6 +136,10 @@ public sealed class CreateDroneAction : Action
     private Vector3 _spawnOffset;
     private TargetRef? _commandTarget;
     private int _commandId;
+    private bool _addedConsumer;
+
+    internal TargetRef? CommandTarget => _commandTarget;
+    internal void SetAddedConsumer() => _addedConsumer = true;   // CreateDroneAction.h:54-57
 
     public CreateDroneAction(ITrainingSite site, string name, int shipId, int hullId, int sideId, int pilotType)
     {
@@ -161,9 +165,8 @@ public sealed class CreateDroneAction : Action
             if (_site is ITrainingDroneSite drones) drones.CopyDroneOrientation(id, _spawnAtShipId);
         }
         else _site.PlaceDrone(id, _sectorId, _position, _forward, _up, _commandTarget, _commandId);
-        // Native never sets b_addedConsumer after adding: preserve its per-execution hold.
-        // training/CreateDroneAction.cpp:42,50-55,204-207.
-        if (_commandTarget is { Type: ObjectType.Buoy } buoy && _site.Resolve(buoy) is not null
+        // training/CreateDroneAction.cpp:204-207: AddRespawn's hold replaces the per-spawn one.
+        if (_commandTarget is { Type: ObjectType.Buoy } buoy && !_addedConsumer && _site.Resolve(buoy) is not null
             && _site is ITrainingDroneSite consumers) consumers.AddBuoyConsumer(buoy.Id);
     }
 
