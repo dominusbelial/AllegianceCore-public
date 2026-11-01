@@ -1,0 +1,33 @@
+{
+  "native_citations": [
+    "training/mission6.cpp:82-287",
+    "training/mission10.cpp:78-283"
+  ],
+  "normalized_equal": true,
+  "normalization": "Replace class names with MissionArena and strip trailing whitespace on each line.",
+  "normalized_sha256": "e20ce158c4ff23a76bf350d6cde8255d8213e6ca16098c7ed7b53b45cbde6876",
+  "raw_diff": [
+    "--- training/mission6.cpp",
+    "+++ training/mission10.cpp",
+    "@@ -1,6 +1,6 @@",
+    "-    bool       Mission6::HandlePickDefaultOrder(IshipIGC* pShip)",
+    "+    bool       Mission10::HandlePickDefaultOrder(IshipIGC* pShip)",
+    "     {",
+    "-        debugf(\"Mission6::HandlePickDefaultOrder for %s\\n\", pShip->GetName());",
+    "+        debugf(\"Mission10::HandlePickDefaultOrder for %s\\n\", pShip->GetName());",
+    "         ZAssert(pShip->GetCluster());",
+    "         bool orderSet = false;",
+    " ",
+    "@@ -47,8 +47,8 @@",
+    "                         }",
+    "                     }",
+    "                 }",
+    "-                else if (dist < minClusterTargetDRel && s->GetFraction() > 0.0f &&",
+    "-                    (GetKillCount() > 2 || s->GetPilotType() < c_ptPlayer))",
+    "+                else if (dist < minClusterTargetDRel && s->GetFraction() > 0.0f && ",
+    "+                    (GetKillCount() > 2 || s->GetPilotType() < c_ptPlayer)) ",
+    "                 {",
+    "                     pSameClusterTarget = s;",
+    "                     minClusterTargetDRel = (s->GetPilotType() == c_ptMiner ? dist : dist * 1.5f); //prefer targeting miners"
+  ]
+}

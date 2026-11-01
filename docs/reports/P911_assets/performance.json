@@ -1,0 +1,224 @@
+{
+  "base": {
+    "runs": [
+      {
+        "run": 1,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 855.6575,
+            "bytes": 475185440
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 395.6138,
+            "bytes": 473817552
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 429.3888,
+            "bytes": 474942000
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 332.6071,
+            "bytes": 474664280
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 330.8115,
+            "bytes": 474736128
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 746.8157,
+            "bytes": 475882424
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 437.9142,
+            "bytes": 474469928
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 322.4265,
+            "bytes": 474542840
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 320.6231,
+            "bytes": 474139512
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 277.4882,
+            "bytes": 474249424
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 873.0591,
+            "bytes": 476051648
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 502.1328,
+            "bytes": 475443440
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 364.2168,
+            "bytes": 474803560
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 263.7516,
+            "bytes": 474459928
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 227.4487,
+            "bytes": 474379848
+          }
+        ]
+      }
+    ],
+    "median_last_three_ms_per_tick": 0.32242649999999995,
+    "median_last_three_bytes_per_tick": 474542.84
+  },
+  "current": {
+    "runs": [
+      {
+        "run": 1,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 765.56,
+            "bytes": 474429928
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 372.3065,
+            "bytes": 472891912
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 350.5233,
+            "bytes": 473627880
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 301.5742,
+            "bytes": 473568104
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 234.9031,
+            "bytes": 473797312
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 749.2345,
+            "bytes": 475599064
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 408.6152,
+            "bytes": 474159704
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 323.6189,
+            "bytes": 474637520
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 224.7265,
+            "bytes": 474364776
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 220.4382,
+            "bytes": 474547560
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "samples": [
+          {
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 755.2447,
+            "bytes": 474983504
+          },
+          {
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 430.2103,
+            "bytes": 473180728
+          },
+          {
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 296.9712,
+            "bytes": 474330216
+          },
+          {
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 272.997,
+            "bytes": 474493992
+          },
+          {
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 259.8878,
+            "bytes": 474325136
+          }
+        ]
+      }
+    ],
+    "median_last_three_ms_per_tick": 0.272997,
+    "median_last_three_bytes_per_tick": 474330.216
+  }
+}

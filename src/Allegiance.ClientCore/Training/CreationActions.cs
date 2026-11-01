@@ -139,6 +139,13 @@ public sealed class CreateDroneAction : Action
     private bool _addedConsumer;
 
     internal TargetRef? CommandTarget => _commandTarget;
+    internal void ReleaseAddedConsumer()
+    {
+        // training/CreateDroneAction.cpp:48-57 (native destructor).
+        if (_addedConsumer && _commandTarget is { Type: ObjectType.Buoy } buoy)
+            _site.ReleaseConsumer(buoy.Id);
+        _addedConsumer = false;
+    }
     internal void SetAddedConsumer() => _addedConsumer = true;   // CreateDroneAction.h:54-57
 
     public CreateDroneAction(ITrainingSite site, string name, int shipId, int hullId, int sideId, int pilotType)

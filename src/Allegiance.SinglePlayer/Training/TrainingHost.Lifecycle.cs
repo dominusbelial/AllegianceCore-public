@@ -37,6 +37,8 @@ public sealed partial class TrainingHost
                 _lifecycleEvents.Enqueue(new(false, default, 0, ShipKill: true,
                     OwnSideWingman: launcher is not null && TargetSide(launcher) == PlayerShip.SideId
                         && ship.PilotType == Ship.PilotTypeWingman));
+            else _activeMission?.ShipKilled(launcher is not null && TargetSide(launcher) == PlayerShip.SideId
+                && ship.PilotType == Ship.PilotTypeWingman);
             return false;
         }
         if (_deadSector is not null) return true;

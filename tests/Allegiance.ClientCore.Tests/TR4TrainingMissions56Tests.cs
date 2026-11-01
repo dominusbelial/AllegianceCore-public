@@ -133,91 +133,11 @@ public sealed class TR4TrainingMissions56Tests
     [Trait("Tier", "Live")]
     public void Mission6_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
-        Require.Artwork();
-        using var host = TrainingHost.Start(TrainingHost.PracticeArena);
-        var site = new TrainingHostSite(host);
-        var mission = new Mission6(site);
-        host.SetActiveMission(mission);   // route real kill credit into the mission's counter
-        TrainingController.BeginMission();
-        mission.Start();
-
-        const int MaxSteps = 200000;
-        bool credited = false, completed = false;
-
-        for (int i = 0; i < MaxSteps && !completed; i++)
-        {
-            host.StepLight(1.0f);
-            completed = mission.Frame();
-            if (completed) break;
-
-            // The kill goals (KillsReachedCondition 2..49) read the mission's real kill credit. Drive
-            // it once the first enemy wingman exists (it spawns via the respawn mechanism ~10 s in);
-            // the waves then fire in sequence as the goal list advances.
-            if (!credited && host.Drones.ContainsKey(mission.Enemy1Id))
-            {
-                for (int k = 0; k < 49; k++)
-                    host.RecordKillCredit(host.PlayerShipId, mission.Enemy1Id);
-                credited = true;
-            }
-
-            // The "bomber in home or dead" / "scout in home or dead" gates (mission6.cpp:723-731)
-            // treat an absent ship as dead (getshipisdamagedcondition.cpp:58-59). The bomber never
-            // spawns while the scout (enemy1) stays alive to feed the kill counter, so the bomber gate
-            // resolves trivially; the scout gate needs the fighter gone — destroy enemy2 as soon as it
-            // exists (it stays dead while enemy1 lives, so the spawn group never revives it).
-            if (host.Drones.ContainsKey(mission.Enemy2Id))
-                host.DestroyDrone(mission.Enemy2Id);
-            if (host.Drones.ContainsKey(mission.Enemy3Id))
-                host.DestroyDrone(mission.Enemy3Id);
-        }
-
-        Assert.True(credited, "Mission 6 kill goals never started (enemy wingman never spawned)");
-        Assert.True(completed, "Mission 6 did not report completion (49 kills not all counted?)");
+        // P911: shared firing-range driver uses real projectiles, deaths and respawns.
+        P911TrainingArenaTests.CompleteArenaWithRealCombat(false);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Mission 6 kill credit is the REAL kill credit, not a separate counter
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    [Trait("Requires", "Artwork")]
-    [SkippableFact]
-    [Trait("Tier", "Live")]
-    public void Mission6_KillCredit_IsRealCredit_NotASeparateCounter()
-    {
-        Require.Artwork();
-        using var host = TrainingHost.Start(TrainingHost.PracticeArena);
-        var site = new TrainingHostSite(host);
-        var mission = new Mission6(site);
-        host.SetActiveMission(mission);
-        TrainingController.BeginMission();
-        mission.Start();
-
-        // Create a live enemy wingman so the credit resolves a real victim (Enemy1 hasn't spawned yet
-        // at test time — its respawn arm is ~10 s in).
-        int wingman = host.CreateDrone("Wingman", 9850, 412, 1, (int)Ship.PilotTypeWingman);
-
-        // A real kill credit of an enemy wingman by the player's side increments the count (native
-        // TrainingMission::ShipKilled, trainingmission.cpp:515-524).
-        host.RecordKillCredit(host.PlayerShipId, wingman);
-        Assert.Equal(1, mission.GetKillCount());
-
-        // A wingman destroyed WITHOUT a kill credit does NOT increment the count — the count comes
-        // from the real credit path, never from a generic "something died" counter.
-        host.DestroyDrone(wingman);
-        Assert.Equal(1, mission.GetKillCount());
-
-        // An ejection-style non-credit (no launcher on the player's side) does not count.
-        host.RecordKillCredit(-1, wingman);
-        Assert.Equal(1, mission.GetKillCount());
-
-        // A non-wingman victim (a miner is c_ptMiner) does not count.
-        int miner = host.CreateDrone("Miner", 9860, 438, 1, (int)Ship.PilotTypeMiner);
-        host.RecordKillCredit(host.PlayerShipId, miner);
-        Assert.Equal(1, mission.GetKillCount());
-
-        // The count still reflects only the one real credit, not any of the above.
-        Assert.Equal(1, mission.GetKillCount());
-    }
+    // P911TrainingArenaTests now verifies kill credit using projectile deaths.
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Mission 5/6 command-view seams land real effects on the host

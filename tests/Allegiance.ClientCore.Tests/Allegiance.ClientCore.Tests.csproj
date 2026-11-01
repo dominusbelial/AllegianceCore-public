@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+    <Compile Include="../_shared/P911ArenaFiringRange.cs" Link="_shared/P911ArenaFiringRange.cs" />
     <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
     <Compile Include="../_shared/DockTestPlacement.cs" Link="_shared/DockTestPlacement.cs" />
     <!-- P744 — hardware-relative perf-budget calibration (PerfCalibration). -->

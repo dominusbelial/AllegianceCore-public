@@ -135,39 +135,8 @@ public sealed class TR5TrainingMissions810Tests
     [Trait("Tier", "Live")]
     public void Mission10_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
-        Require.Artwork();
-        using var host = TrainingHost.Start(TrainingHost.FreeFlight);
-        var site = new TrainingHostSite(host);
-        var mission = new Mission10(site);
-        host.SetActiveMission(mission);   // route real kill credit into the mission's counter
-        TrainingController.BeginMission();
-        mission.Start();
-
-        const int MaxSteps = 200000;
-        bool credited = false, completed = false;
-
-        for (int i = 0; i < MaxSteps && !completed; i++)
-        {
-            host.StepLight(1.0f);
-            completed = mission.Frame();
-            if (completed) break;
-
-            // Same escalating kill-goal waves as Mission 6 (2..49); drive the real kill credit once
-            // the first enemy wingman exists, and clear the "bomber/scout in home or dead" gates.
-            if (!credited && host.Drones.ContainsKey(mission.Enemy1Id))
-            {
-                for (int k = 0; k < 49; k++)
-                    host.RecordKillCredit(host.PlayerShipId, mission.Enemy1Id);
-                credited = true;
-            }
-            if (host.Drones.ContainsKey(mission.Enemy2Id))
-                host.DestroyDrone(mission.Enemy2Id);
-            if (host.Drones.ContainsKey(mission.Enemy3Id))
-                host.DestroyDrone(mission.Enemy3Id);
-        }
-
-        Assert.True(credited, "Mission 10 kill goals never started (enemy wingman never spawned)");
-        Assert.True(completed, "Mission 10 did not report completion (49 kills not all counted?)");
+        // P911: shared firing-range driver uses real projectiles, deaths and respawns.
+        P911TrainingArenaTests.CompleteArenaWithRealCombat(true);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

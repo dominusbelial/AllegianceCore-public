@@ -393,6 +393,14 @@ public abstract class TrainingMission
         _respawns.Insert(0, rd);
     }
 
+    // training/trainingmission.cpp:318-324: remove every matching recipe.
+    public void RemoveRespawn(int shipId)
+    {
+        foreach (var rd in _respawns.Where(rd => rd.SpawnAction?.ShipId == shipId))
+            rd.SpawnAction!.ReleaseAddedConsumer();
+        _respawns.RemoveAll(rd => rd.SpawnAction?.ShipId == shipId);
+    }
+
     private bool ShipExists(int id) => Site is ITrainingLifecycleSite lifecycle
         ? lifecycle.TrainingShipExists(id) : Site.Resolve(new TargetRef(ObjectType.Ship, id)) is not null;
 }
