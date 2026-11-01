@@ -7,6 +7,7 @@ using Allegiance.ClientCore.MonoGame.LiveProof;
 // exception handler BEFORE anything that can throw, so a crash always leaves a
 // report even when launched from Finder / a .desktop shortcut with no console.
 CrashLog.Install();
+bool startTraining = Game1.LaunchOptions.TakeTrainingSwitch(ref args);
 
 // P889 — bounded per-machine sizing calibration. Parsed (and stripped) before
 // the benchmark parser so `--calibrate small` never looks like a benchmark.
@@ -594,6 +595,7 @@ RecordingAssetSource? recorder = assetManifestPath is not null
 
 var opts = new Game1.LaunchOptions
 {
+    StartTraining = startTraining,
     Benchmark = benchmark,
     Calibration = calibration,
     BenchmarkCollectorUrl = savedPlayer?.Benchmark?.CollectorUrl ?? PlayerConfig.ReadBenchmarkCollectorUrl(),

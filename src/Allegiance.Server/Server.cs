@@ -791,7 +791,7 @@ public sealed partial class Server : IDisposable
     // Embedded local training replaces multiplayer trainee death, before loot /
     // pod / scoring. Native WinTrek/trekigc.cpp:4254-4267.
     internal Func<Ship, IModelIgc?, bool>? TrainingShipDeath;
-    internal Action<Station>? TrainingStationDeath;
+    internal Action<Station, Model?>? TrainingStationDeath;
     internal bool LocalTraining { get; set; }
 
     internal void ReplicateTrainingRestore(Ship ship, Sector sector) => OnShipWarped(ship, sector, sector);

@@ -381,7 +381,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             if (goal == "2.3" && !chatted)
             {
                 t.Connection.SendChat("x", ChatTarget.Everyone);
-                t.Mission.RecordChat(ChatEveryone); // actual send event, Game1.Session.cs SendChatLine
+                // The real ReceiveChat/local-echo hook records the recipient.
                 chatted = true;
             }
             int space = t.Count("Press the SPACEBAR");

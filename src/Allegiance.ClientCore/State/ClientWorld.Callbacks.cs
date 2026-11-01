@@ -238,6 +238,13 @@ public sealed partial class ClientWorld
     /// <summary>BaseClient::ReceiveChat notifies after insertion
     /// (clintlib/clintlib.cpp:2160-2172; WinTrek/trekigc.cpp:4788-4822).
     /// The same callback covers ordinary chat and chat carrying a buoy.</summary>
+    // Native WinTrek/trekigc.cpp:4545-4548,4567-4574. Bound only by the
+    // local lesson; ordinary multiplayer worlds have no training receiver.
+    public Func<bool>? TrainingCommandViewEnabled { get; set; }
+    public Action<int>? TrainingChatRecipient { get; set; }
+    public Func<ChatMessage, bool>? TrainingDroneChat { get; set; }
+    public Action<DataBuoyIGC>? TrainingImportBuoy { get; set; }
+    public Action<StationDestroyed, DataStationIGC?>? TrainingStationDestroyed { get; set; }
     public event Action? ChatReceived;
     public void ReceiveChat(ChatMessage message)
     {
@@ -257,6 +264,16 @@ public sealed partial class ClientWorld
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.VoiceOver, message.Message, message.MessageIsAbsent);
         if (message.MessageIsAbsent && message.VoiceOver != Na)
             message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.VoiceOver);
+        if (TrainingChatRecipient is { } trainingChat)
+        {
+            if (_ships.ContainsKey(message.SidSender) && message.OidRecipient == message.SidSender
+                && TrainingCommandViewEnabled?.Invoke() != true)
+            {
+                message.OtTarget = -1;
+                message.OidTarget = -1;
+            }
+            trainingChat(message.ChatTarget);
+        }
         _events.Record(message);
         // Resolve captions and voice before notifying listeners, retaining the
         // P710 precedence and P732 immutable voice template (trekigc.cpp:4530-4560).
@@ -264,7 +281,7 @@ public sealed partial class ClientWorld
         bool senderIsLeader = sender != Na
             && _ships.TryGetValue(sender, out var entity)
             && TeamLeaderShipIdFor(entity.SideId) == sender;
-        var kind = ClassifyChatSound(message, MyShipId, senderIsLeader);
+        var kind = ClassifyChatSound(message, MyShipId, senderIsLeader, training: TrainingChatRecipient is not null);
         if (kind is { } k && (k != ClientSoundEventKind.ChatVoiceOver || voice is not null))
             RecordSoundEvent(k, k == ClientSoundEventKind.ChatVoiceOver ? message.VoiceOver : sender, voice: voice);
         if (message.SidSender == -1 && message.ChatTarget == (int)ChatTarget.Individual
@@ -289,11 +306,20 @@ public sealed partial class ClientWorld
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.Cd.VoiceOver, message.Message, message.MessageIsAbsent);
         if (message.MessageIsAbsent && message.Cd.VoiceOver != Na)
             message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.Cd.VoiceOver);
+        if (TrainingChatRecipient is { } recipient)
+        {
+            if (_ships.ContainsKey(message.Cd.SidSender) && message.Cd.OidRecipient == message.Cd.SidSender
+                && TrainingCommandViewEnabled?.Invoke() != true)
+                message.Cd.CommandID = -1; // null target: a buoy has no separate target-id field
+            recipient(message.Cd.ChatTarget);
+        }
         _events.Record(message);
         var chat = new ChatMessage { Message = message.Message, Cd = message.Cd, MessageIsAbsent = message.MessageIsAbsent };
-        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false);
+        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false, training: TrainingChatRecipient is not null);
         if (kind == ClientSoundEventKind.ChatVoiceOver && voice is not null)
             RecordSoundEvent(kind.Value, message.Cd.VoiceOver, voice: voice);
+        else if (TrainingChatRecipient is not null && kind is { } cue && cue != ClientSoundEventKind.ChatVoiceOver)
+            RecordSoundEvent(cue, message.Cd.SidSender);
         ChatReceived?.Invoke();
     }
 }

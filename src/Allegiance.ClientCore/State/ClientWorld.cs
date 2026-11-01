@@ -3722,6 +3722,8 @@ public sealed partial class ClientWorld
     /// planner's disappearance pass.</summary>
     private void Apply(StationDestroyed destroyed)
     {
+        // WinTrek/trekigc.cpp:4351: retain both ids before removing the station.
+        TrainingStationDestroyed?.Invoke(destroyed, _stations.TryGetValue(destroyed.StationId, out var trainingStation) ? trainingStation : null);
         RemoveLastBase(destroyed.StationId);
         // P896 — record the evidence BEFORE the table lookup: the message is a
         // WHOLE-MISSION broadcast, so it also arrives for a station this world
@@ -3786,6 +3788,8 @@ public sealed partial class ClientWorld
     /// must be called under the session gate like every other world mutation.</summary>
     public void PostOwnChatLine(string text, ChatTarget target, short oidRecipient)
     {
+        // Native SendChat's local ReceiveChat echo reaches the training recipient hook too.
+        TrainingChatRecipient?.Invoke((int)target);
         _events.Record(new ChatMessage
         {
             Message = text,
@@ -4557,7 +4561,7 @@ public sealed partial class ClientWorld
     /// <c>m_fm.IsConnected()</c> (always true in this client, present so the
     /// offline branch is faithfully representable).</summary>
     public static ClientSoundEventKind? ClassifyChatSound(
-        ChatMessage m, short? myShipId, bool senderIsLeader, bool online = true)
+        ChatMessage m, short? myShipId, bool senderIsLeader, bool online = true, bool training = false)
     {
         // Native voices outgoing sonic chat locally, then ignores its wire
         // echo (appmsg.cpp:2644). The port voices that single server echo.
@@ -4577,7 +4581,7 @@ public sealed partial class ClientWorld
             m.ChatTarget == (int)Allegiance.Core.Sim.ChatTarget.Individual
             && (m.OidRecipient == Na || (myShipId is { } mine && m.OidRecipient == mine));
         if (individualToMe)
-            return senderIsLeader
+            return training || senderIsLeader
                 ? ClientSoundEventKind.ChatCommander  // commander/training PM (:4546)
                 : ClientSoundEventKind.ChatPersonal;  // (:4548)
 

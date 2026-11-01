@@ -90,6 +90,44 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite, 
     }
     public bool TrainingShipExists(int shipId) => _f.Host?.TrainingShipExists(shipId)
         ?? Resolve(new TargetRef(ObjectType.Ship, shipId)) is not null;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<(StationDestroyed Event, DataStationIGC? Station)> _stationDeaths = new();
+    public void AttachClientHooks(TrainingMission mission)
+    {
+        World.TrainingCommandViewEnabled = () => mission.CommandViewEnabled;
+        World.TrainingChatRecipient = RecordChat;
+        if (_f.Host is TrainingHost host) World.TrainingDroneChat = host.HandleTrainingDroneChat;
+        World.TrainingImportBuoy = data => CreateWaypoint(data.BuoyId, ToVec(data.Position), data.ClusterId, data.Type, data.Visible);
+        World.TrainingStationDestroyed = (destroyed, station) => _stationDeaths.Enqueue((destroyed, station));
+    }
+    public void DetachClientHooks()
+    {
+        World.TrainingCommandViewEnabled = null;
+        World.TrainingChatRecipient = null;
+        World.TrainingDroneChat = null;
+        World.TrainingImportBuoy = null;
+        World.TrainingStationDestroyed = null;
+    }
+    private readonly Dictionary<int, int> _localStationDispatches = new();
+    public void MarkStationDispatched(int stationId) => _localStationDispatches[stationId] =
+        _localStationDispatches.GetValueOrDefault(stationId) + 1;
+    public void DispatchStationDeaths(TrainingMission mission)
+    {
+        while (_stationDeaths.TryDequeue(out var death))
+        {
+            // trekigc.cpp:4351 forwards every event, retaining station and launcher.
+            // trainingmission.cpp:539-548 filters to the last own restart base.
+            var destroyed = death.Event;
+            if (_localStationDispatches.GetValueOrDefault(destroyed.StationId) is > 0 and var dispatched)
+            {
+                _localStationDispatches[destroyed.StationId] = dispatched - 1;
+                continue; // this wire echo follows the full local IGC event
+            }
+            bool last = _f.Host is TrainingHost host && host.IsLastTrainingRestartStation(destroyed.StationId,
+                death.Station?.SideId, death.Station?.StationTypeId);
+            mission.StationDestroyed(new(ObjectType.Station, destroyed.StationId),
+                destroyed.Launcher < 0 ? null : new TargetRef(ObjectType.Ship, destroyed.Launcher), last);
+        }
+    }
     private TrainingLifecycleEvent _death;
     public bool TryTakeLifecycleEvent(out TrainingLifecycleEvent trainingEvent)
     {
@@ -402,12 +440,20 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite, 
     public void RecordKeyPress(int key) { if (!_keys.Contains(key)) _keys.Add(key); KeyPressed?.Invoke(key); }
     public bool ConsumeChat(int recipient)
     {
-        int i = _chats.IndexOf(recipient);
-        if (i < 0) return false;
-        _chats.RemoveAt(i);
-        return true;
+        lock (_chats)
+        {
+            int i = _chats.IndexOf(recipient);
+            if (i < 0) return false;
+            _chats.RemoveAt(i);
+            return true;
+        }
     }
-    public void RecordChat(int recipient) => _chats.Add(recipient);
+    public void RecordChat(int recipient)
+    {
+        // training/GetChatCondition.cpp:47-58: receipt is a boolean latch,
+        // not a count of duplicate echoes waiting to advance later goals.
+        lock (_chats) if (!_chats.Contains(recipient)) _chats.Add(recipient);
+    }
 
     // ── world creation (training-host universe — TR-2b host scope) ───────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
@@ -499,7 +545,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite, 
         _messages.Add(text);
         World.ReceiveChat(new ChatMessage
         {
-            Message = text, SidSender = (short)CommanderId,
+            Message = text, SidSender = (short)CommanderId, CommandID = -1, OidTarget = -1, OtTarget = -1,
             ChatTarget = (int)ChatTarget.Individual, OidRecipient = World.MyShipId ?? -1,
         });
     }

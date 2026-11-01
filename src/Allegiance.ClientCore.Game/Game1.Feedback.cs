@@ -153,7 +153,12 @@ public sealed partial class Game1
             // evaluates the lifetime per frame (console.cpp:914-931), so a tip pushed
             // before a training mission ends keeps the 30 s lifetime while training
             // lasts. The port stores the set time and prunes the same way.
-            _criticalTips.Add((text, _nowSeconds));
+            // WinTrek/console.cpp:1047-1060: training overwrites slot 0;
+            // slots 1..3 keep their values and timestamps.
+            if (Allegiance.ClientCore.Training.TrainingController.IsTraining && _criticalTips.Count > 0)
+                _criticalTips[^1] = (text, _nowSeconds);
+            else
+                _criticalTips.Add((text, _nowSeconds));
             if (_criticalTips.Count > Rendering.HudConsoleFormat.CriticalTipSlots)
                 _criticalTips.RemoveAt(0);
         }

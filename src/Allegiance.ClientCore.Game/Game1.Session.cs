@@ -44,6 +44,14 @@ public sealed partial class Game1
         /// <summary>P889 — the bounded per-machine sizing calibration
         /// (<c>--calibrate [size]</c>); null for an ordinary launch.</summary>
         public Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand? Calibration;
+        public bool StartTraining;
+        // WinTrek/trekapp.cpp:518-521; trainingscreen.cpp:105-108.
+        public static bool TakeTrainingSwitch(ref string[] arguments)
+        {
+            bool requested = arguments.Contains("-training") || arguments.Contains("--training");
+            arguments = arguments.Where(a => a is not ("-training" or "--training")).ToArray();
+            return requested;
+        }
         public string PlayerName = "monogame";
         public string? BenchmarkCollectorUrl;
 
@@ -1160,8 +1168,9 @@ public sealed partial class Game1
         _transportReason = choice.Reason;
     }
 
-    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null)
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false)
     {
+        if (!training) ReleaseTraining();
         _moderation.Reset();
         // P894 — the reconnect/resume logon reports the same client build as the
         // first logon so the server's minimum-client-version gate answers both.
@@ -1255,6 +1264,7 @@ public sealed partial class Game1
     /// </summary>
     private void AbortConnect()
     {
+        if (ExitTrainingSession()) return;
         string reason = _connectFailureReason ?? "unknown connect failure";
         _connectFailureReason = null;
         switch (ConnectScreenLayout.AbortDestination(_returnToIntroOnFailure, _returnToLobbyOnFailure))
@@ -1446,11 +1456,8 @@ public sealed partial class Game1
             if (send.EchoLocally)
                 lock (_session.Gate)
                     _session.World.PostOwnChatLine(text, send.Target, send.OidRecipient);
-            // P880a — GetChatCondition production binding: a real player chat send routes to the
-            // active mission's RecordChat (native trainingmission.cpp:327-331 RecordChat), so the
-            // M4 "chat with the squad" goal observes the player's own chat instead of a host-injected
-            // one. Only the primary subject counts once per send loop.
-            _trainingSession?.Mission.RecordChat((int)send.Target);
+            // ReceiveChat (or PostOwnChatLine for a private/local-only echo)
+            // owns the training recipient latch. Do not record this send twice.
         }
     }
 

@@ -969,7 +969,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationDestroyed(Station station, Model? launcher)
     {
-        TrainingStationDeath?.Invoke(station);
+        TrainingStationDeath?.Invoke(station, launcher);
         using var scope = TickProfiler.Enter("combat.stationEvents");
         short launcherId = -1;                     // NA
         if (launcher is Ship s) launcherId = s.Id;

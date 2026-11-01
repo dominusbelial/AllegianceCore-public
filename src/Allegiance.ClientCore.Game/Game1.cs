@@ -1557,6 +1557,7 @@ public sealed partial class Game1 : Game
     private Allegiance.SinglePlayer.Benchmark.SizingCalibrationCommand? _calibrationCommand;
     public Game1(LaunchOptions opts)
     {
+        _trainingLaunchRequested = opts.StartTraining;
         _calibrationCommand = opts.Calibration;
         _launchBorderless = opts.Borderless;
         _graphics = new GraphicsDeviceManager(this)
@@ -2045,6 +2046,7 @@ public sealed partial class Game1 : Game
 
     protected override void UnloadContent()
     {
+        ReleaseTraining();
         DisposeBenchmark();
         DisposeSkirmish();
         _sound?.Dispose();

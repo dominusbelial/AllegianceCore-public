@@ -2156,7 +2156,9 @@ public sealed partial class Server
         {
             var live = kv.Value;
             var ship = live.Ship;
-            if (ship.QueuedCommandId == OrderChange.CidNone)
+            // WinTrek.cpp:10720-10721: local lessons never arm the ordinary
+            // queued-order timeout. The port owns that timer on the server.
+            if (ship.Mission?.IsTraining == true || ship.QueuedCommandId == OrderChange.CidNone)
                 continue;
             if (now - ship.QueuedAt >= Ship.QueuedCommandAutoRejectSeconds)
             {

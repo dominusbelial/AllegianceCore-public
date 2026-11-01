@@ -1,0 +1,2055 @@
+{
+  "new_tests": [
+    {
+      "path": ".scratch/p910/final-validation/tests/p910-final-1.trx",
+      "times": {
+        "creation": "2026-10-31T23:35:44.3577213-05:00",
+        "queuing": "2026-10-31T23:35:44.3577213-05:00",
+        "start": "2026-10-31T23:35:42.6228593-05:00",
+        "finish": "2026-10-31T23:35:48.9450375-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "64",
+        "executed": "64",
+        "passed": "64",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/p910-final-2.trx",
+      "times": {
+        "creation": "2026-10-31T23:35:51.0439839-05:00",
+        "queuing": "2026-10-31T23:35:51.0439839-05:00",
+        "start": "2026-10-31T23:35:49.3195220-05:00",
+        "finish": "2026-10-31T23:35:55.8151162-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "64",
+        "executed": "64",
+        "passed": "64",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/p910-final-3.trx",
+      "times": {
+        "creation": "2026-10-31T23:35:57.9351756-05:00",
+        "queuing": "2026-10-31T23:35:57.9351756-05:00",
+        "start": "2026-10-31T23:35:56.2017891-05:00",
+        "finish": "2026-10-31T23:36:02.5537071-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "64",
+        "executed": "64",
+        "passed": "64",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "affected_mission4": [
+    {
+      "path": ".scratch/p910/final-validation/tests/mission4-1.trx",
+      "times": {
+        "creation": "2026-11-01T00:21:54.8526478-05:00",
+        "queuing": "2026-11-01T00:21:54.8526478-05:00",
+        "start": "2026-11-01T00:15:42.1500964-05:00",
+        "finish": "2026-11-01T00:21:54.8552356-05:00"
+      },
+      "durations": [
+        "00:06:12.0260417"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/mission4-2.trx",
+      "times": {
+        "creation": "2026-11-01T00:28:20.9853268-05:00",
+        "queuing": "2026-11-01T00:28:20.9853269-05:00",
+        "start": "2026-11-01T00:21:55.2520500-05:00",
+        "finish": "2026-11-01T00:28:20.9879580-05:00"
+      },
+      "durations": [
+        "00:06:25.0991933"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/mission4-3.trx",
+      "times": {
+        "creation": "2026-11-01T00:34:48.5731749-05:00",
+        "queuing": "2026-11-01T00:34:48.5731749-05:00",
+        "start": "2026-11-01T00:28:21.3744926-05:00",
+        "finish": "2026-11-01T00:34:48.5757125-05:00"
+      },
+      "durations": [
+        "00:06:26.5190962"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "showcase": [
+    {
+      "path": ".scratch/p910/final-validation/tests/showcase-1.trx",
+      "times": {
+        "creation": "2026-11-01T00:21:01.8651896-05:00",
+        "queuing": "2026-11-01T00:21:01.8651896-05:00",
+        "start": "2026-11-01T00:17:11.0761524-05:00",
+        "finish": "2026-11-01T00:21:01.8683239-05:00"
+      },
+      "durations": [
+        "00:03:50.2675475"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/showcase-2.trx",
+      "times": {
+        "creation": "2026-11-01T00:24:35.3859037-05:00",
+        "queuing": "2026-11-01T00:24:35.3859037-05:00",
+        "start": "2026-11-01T00:21:02.2361549-05:00",
+        "finish": "2026-11-01T00:24:35.3890752-05:00"
+      },
+      "durations": [
+        "00:03:32.6056680"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/showcase-3.trx",
+      "times": {
+        "creation": "2026-11-01T00:28:42.3515078-05:00",
+        "queuing": "2026-11-01T00:28:42.3515078-05:00",
+        "start": "2026-11-01T00:24:35.7738902-05:00",
+        "finish": "2026-11-01T00:28:42.3540162-05:00"
+      },
+      "durations": [
+        "00:04:06.0311211"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/showcase-4.trx",
+      "times": {
+        "creation": "2026-11-01T00:32:34.4620725-05:00",
+        "queuing": "2026-11-01T00:32:34.4620726-05:00",
+        "start": "2026-11-01T00:28:42.7234962-05:00",
+        "finish": "2026-11-01T00:32:34.4651195-05:00"
+      },
+      "durations": [
+        "00:03:51.2084316"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/tests/showcase-5.trx",
+      "times": {
+        "creation": "2026-11-01T00:36:31.7128416-05:00",
+        "queuing": "2026-11-01T00:36:31.7128416-05:00",
+        "start": "2026-11-01T00:32:34.8363885-05:00",
+        "finish": "2026-11-01T00:36:31.7179423-05:00"
+      },
+      "durations": [
+        "00:03:56.3156902"
+      ],
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "training": [
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/1/Allegiance.ClientCore.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:36:03.4832239-05:00",
+        "queuing": "2026-10-31T23:36:03.4832239-05:00",
+        "start": "2026-10-31T23:36:02.9400081-05:00",
+        "finish": "2026-10-31T23:36:06.7974919-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "80",
+        "executed": "80",
+        "passed": "80",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/1/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:36:08.8923814-05:00",
+        "queuing": "2026-10-31T23:36:08.8923815-05:00",
+        "start": "2026-10-31T23:36:07.1740068-05:00",
+        "finish": "2026-10-31T23:46:42.4597439-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "145",
+        "executed": "145",
+        "passed": "145",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/2/Allegiance.ClientCore.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:46:43.3531226-05:00",
+        "queuing": "2026-10-31T23:46:43.3531226-05:00",
+        "start": "2026-10-31T23:46:42.8395395-05:00",
+        "finish": "2026-10-31T23:46:46.6741311-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "80",
+        "executed": "80",
+        "passed": "80",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/2/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:46:48.8024380-05:00",
+        "queuing": "2026-10-31T23:46:48.8024380-05:00",
+        "start": "2026-10-31T23:46:47.0435146-05:00",
+        "finish": "2026-10-31T23:57:22.5198022-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "145",
+        "executed": "145",
+        "passed": "145",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/3/Allegiance.ClientCore.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:57:23.4359458-05:00",
+        "queuing": "2026-10-31T23:57:23.4359458-05:00",
+        "start": "2026-10-31T23:57:22.8960766-05:00",
+        "finish": "2026-10-31T23:57:26.5852070-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "80",
+        "executed": "80",
+        "passed": "80",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p910/final-validation/training-evidence/3/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "times": {
+        "creation": "2026-10-31T23:57:28.6892218-05:00",
+        "queuing": "2026-10-31T23:57:28.6892218-05:00",
+        "start": "2026-10-31T23:57:26.9543553-05:00",
+        "finish": "2026-11-01T00:08:03.8908565-05:00"
+      },
+      "durations": null,
+      "counters": {
+        "total": "145",
+        "executed": "145",
+        "passed": "145",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    }
+  ],
+  "scorecards": {
+    "before": [
+      "training-framework | 76.17% (227/298) | 72.94% (62/85) | visual 0 | replaced 0",
+      "training-integration | 47.72% (157/329) | 45.35% (39/86) | visual 0 | replaced 0",
+      "training-missions | 34.31% (94/274) | 35.94% (23/64) | visual 0 | replaced 0",
+      "training-tools | 100.00% (3/3) | 100.00% (2/2) | visual 0 | replaced 0",
+      "TOTAL | 53.21% (481/904) | 53.16% (126/237) | visual 0 | replaced 0"
+    ],
+    "after": [
+      "training-framework | 76.17% (227/298) | 72.94% (62/85) | visual 0 | replaced 0",
+      "training-integration | 72.34% (238/329) | 73.26% (63/86) | visual 0 | replaced 0",
+      "training-missions | 34.31% (94/274) | 35.94% (23/64) | visual 0 | replaced 0",
+      "training-tools | 100.00% (3/3) | 100.00% (2/2) | visual 0 | replaced 0",
+      "TOTAL | 62.17% (562/904) | 63.29% (150/237) | visual 0 | replaced 0"
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "classic-chooser.png",
+      "sha256": "8cab018dfcc9a57438d18b9b872c6dde09fab0e60e7f1ad7c171a542807e1f2c",
+      "bytes": 25519,
+      "visually_inspected": true
+    },
+    {
+      "file": "classic-lesson.png",
+      "sha256": "5b5a6602b83498c72ae6954833365be51b4dd7efa681e48de95f723f8928fb01",
+      "bytes": 111523,
+      "visually_inspected": true
+    },
+    {
+      "file": "classic-quit.png",
+      "sha256": "9c6f60ed28225402e9a7f5256d32a28dfc63e164f6254fbf7c8e9a8e393e7a3c",
+      "bytes": 118147,
+      "visually_inspected": true
+    },
+    {
+      "file": "modern-chooser.png",
+      "sha256": "8cab018dfcc9a57438d18b9b872c6dde09fab0e60e7f1ad7c171a542807e1f2c",
+      "bytes": 25519,
+      "visually_inspected": true
+    },
+    {
+      "file": "modern-lesson.png",
+      "sha256": "d8547efff718f12bb8b09b739dfdc63a2b9cabac25659d23931a84b8db0ab7e6",
+      "bytes": 127195,
+      "visually_inspected": true
+    },
+    {
+      "file": "modern-quit.png",
+      "sha256": "f1afc731db6fb5a9d9fec5d5db166ae6dc5f698e3a35b63143f97799e5c04641",
+      "bytes": 135236,
+      "visually_inspected": true
+    }
+  ],
+  "assigned": {
+    "rows": 29,
+    "weight": 97,
+    "implemented": [
+      "TRN-0166",
+      "TRN-0177",
+      "TRN-0180",
+      "TRN-0185",
+      "TRN-0186",
+      "TRN-0187",
+      "TRN-0188",
+      "TRN-0190",
+      "TRN-0191",
+      "TRN-0193",
+      "TRN-0194",
+      "TRN-0198",
+      "TRN-0201",
+      "TRN-0204",
+      "TRN-0205",
+      "TRN-0209",
+      "TRN-0210",
+      "TRN-0212",
+      "TRN-0213",
+      "TRN-0214",
+      "TRN-0225",
+      "TRN-0226",
+      "TRN-0227",
+      "TRN-0240"
+    ],
+    "partial": [
+      "TRN-0167",
+      "TRN-0189",
+      "TRN-0197",
+      "TRN-0208",
+      "TRN-0228"
+    ]
+  },
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 119,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4663,
+        "live": 46,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2070,
+        "live": 151,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 5983,
+        "live": 66,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 544.2839991750079,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 119,
+            "outcomes": {
+              "Passed": 119
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4663,
+            "outcomes": {
+              "Passed": 4660,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2070,
+            "outcomes": {
+              "Passed": 2069,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 5983,
+            "outcomes": {
+              "Passed": 5976,
+              "Failed": 7
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9760212201591513,
+          "referenceMs": 3.6796,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "outcome": "Failed",
+            "seconds": 38.3079174
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.5235282
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "2 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.05554239099728875,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05554239099728875,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "non_task_isolations": [
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-1-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.3562870",
+          "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-1-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.3246917",
+          "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-1-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.3350833",
+          "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "run": 1,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-2-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.3890382",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "run": 2,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-2-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4253663",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "run": 3,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-2-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4315802",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-3-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Failed",
+          "duration": "00:00:00.5542654",
+          "message": "Assert.All() Failure: 1 out of 4 items in the collection did not pass.\n[0]: Item:  ShipStatusMessage { Detected = False, HullId = 13, ParentId = -1, SectorId = 1053, ShipId = 8098, \u00b7\u00b7\u00b7 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: -1\n            Actual:   1051"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-3-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Failed",
+          "duration": "00:00:00.5469352",
+          "message": "Assert.All() Failure: 1 out of 4 items in the collection did not pass.\n[0]: Item:  ShipStatusMessage { Detected = False, HullId = 13, ParentId = -1, SectorId = 1053, ShipId = 8098, \u00b7\u00b7\u00b7 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: -1\n            Actual:   1051"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-3-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Failed",
+          "duration": "00:00:00.5743274",
+          "message": "Assert.All() Failure: 1 out of 4 items in the collection did not pass.\n[0]: Item:  ShipStatusMessage { Detected = False, HullId = 13, ParentId = -1, SectorId = 1053, ShipId = 8098, \u00b7\u00b7\u00b7 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: -1\n            Actual:   1051"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+      "run": 1,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-4-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+          "outcome": "Passed",
+          "duration": "00:00:01.9159378",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+      "run": 2,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-4-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+          "outcome": "Passed",
+          "duration": "00:00:01.9036831",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+      "run": 3,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-4-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts",
+          "outcome": "Passed",
+          "duration": "00:00:01.8780806",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-5-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.1928247",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-5-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.1305165",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-5-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.1729816",
+          "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "run": 1,
+      "exit": 0,
+      "source": "superseded Fast timing",
+      "trx": ".scratch/p910/final-validation/isolations/case-6-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.8231331",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "run": 2,
+      "exit": 0,
+      "source": "superseded Fast timing",
+      "trx": ".scratch/p910/final-validation/isolations/case-6-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.9315500",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "run": 3,
+      "exit": 0,
+      "source": "superseded Fast timing",
+      "trx": ".scratch/p910/final-validation/isolations/case-6-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.6741745",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled",
+      "run": 1,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-7-1.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2299284",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2386775",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2299084",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3553296",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled",
+      "run": 2,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-7-2.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2324782",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2277735",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3534245",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2392181",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled",
+      "run": 3,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-7-3.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2352803",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"shared\", profiler: True, scheduling: False)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2278787",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: True, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2279941",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled(profile: \"dedicated\", profiler: False, scheduling: True)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3526916",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-8-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0150264",
+          "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"./.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-8-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0148406",
+          "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"./.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-8-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0146641",
+          "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"./.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-9-1.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001754",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029355",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0009153",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Artwork\"\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-9-2.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001604",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0009095",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Artwork\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029556",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-9-3.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0011982",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Artwork\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002255",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036953",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-10-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0042187",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-10-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0032885",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-10-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0042636",
+          "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"~/Development/Allegiance\"\n           \u2191 (pos 0)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "run": 1,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-11-1.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0045492",
+          "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"./.scra\"\u00b7\u00b7\u00b7\nActual:   \"~/Development/Artwork\"\n                         \u2191 (pos 14)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009488",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "run": 2,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-11-2.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007098",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0033607",
+          "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"./.scra\"\u00b7\u00b7\u00b7\nActual:   \"~/Development/Artwork\"\n                         \u2191 (pos 14)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "run": 3,
+      "exit": 1,
+      "source": "final Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-11-3.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009411",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0044052",
+          "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"./.scra\"\u00b7\u00b7\u00b7\nActual:   \"~/Development/Artwork\"\n                         \u2191 (pos 14)"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "run": 1,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-12-1.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3218371",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "run": 2,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-12-2.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3063558",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "run": 3,
+      "exit": 0,
+      "source": "superseded Fast",
+      "trx": ".scratch/p910/final-validation/isolations/case-12-3.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3222221",
+          "message": ""
+        }
+      ]
+    }
+  ],
+  "base": "45789f611e6e05b4359e0b718df2726c3f402ca2",
+  "worktree_only": true,
+  "workflow": {
+    "extra_superseded_fast_sweeps": 2,
+    "one_fast_requirement_met": false,
+    "last_superseded_fast": {
+      "failed": 10,
+      "timing_offenders": 2
+    },
+    "prior_superseded_results_overwritten": true,
+    "final_evidence_unique_paths": true,
+    "affected_mission4_method_only_invocations_overlapped_later_fast_and_showcase": true
+  },
+  "checks": {
+    "solution_warnings": 0,
+    "solution_errors": 0,
+    "tools_projects_built": 105,
+    "server_linux_x64_native_aot": "pass; no IL2026/IL3050",
+    "glossary_paths": 460,
+    "native_audit_rules": 241,
+    "native_audit_primitive_types": 82,
+    "native_audit_errors": 0,
+    "changed_assigned_matrix_rows": 29
+  },
+  "baseline_overrides": {
+    "ALLEGIANCE_BROADCAST_PARALLEL_BUILD": "1",
+    "ALLEGIANCE_TRANSPORT_MODE": "pool",
+    "ALLEGIANCE_SHIP_UPDATE_MODEL": "native",
+    "ALLEGIANCE_SIM_NATIVE_GOTOPLAN": "1",
+    "DOTNET_gcServer": "1",
+    "performance_claims": false
+  },
+  "hygiene": {
+    "files_scanned": 31,
+    "findings": []
+  }
+}

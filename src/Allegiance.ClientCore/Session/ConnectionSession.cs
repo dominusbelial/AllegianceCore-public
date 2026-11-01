@@ -626,6 +626,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// Everyone/Team/Individual(+aliases)/AllSector/FriendlySector and drops the
     /// rest, which the server logs. The relayed message (including the sender's
     /// own echo) lands in <see cref="ClientWorld.Events.Chats"/>.</summary>
+    // clintlib.cpp:2368: only these channels address a ship; the others carry a
+    // side, cluster or NA id, which can equal an unrelated ship id.
+    private static bool IsShipRecipient(ChatTarget target) =>
+        target is ChatTarget.Individual or ChatTarget.Group or ChatTarget.GroupNoEcho;
+
     public void SendChat(
         string message,
         ChatTarget target = ChatTarget.Everyone,
@@ -650,6 +655,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             OidTarget = oidTarget,
             OtTarget = otTarget,
         };
+        lock (Gate)
+        {
+            // Native offline self chat is received locally, never sent to a server
+            // (clintlib.cpp:2421-2424). Its training guard must run before orders
+            // can be applied by the embedded host (trekigc.cpp:4567-4574).
+            if (World.TrainingChatRecipient is not null && IsShipRecipient(target) && msg.OidRecipient == World.MyShipId
+                && World.TrainingCommandViewEnabled?.Invoke() != true)
+            {
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+            if (World.TrainingDroneChat?.Invoke(msg) == true)
+            {
+                // Native clintlib.cpp:2463-2470 echoes only the primary group subject.
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+        }
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -705,6 +728,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             },
             Db = db,
         };
+        lock (Gate)
+        {
+            if (World.TrainingChatRecipient is not null && IsShipRecipient(target) && msg.OidRecipient == World.MyShipId
+                && World.TrainingCommandViewEnabled?.Invoke() != true)
+            {
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+            if (World.TrainingDroneChat is { } trainingOrder)
+            {
+                World.TrainingImportBuoy?.Invoke(db);
+                var chat = new ChatMessage { Message = message, Cd = msg.Cd,
+                    OtTarget = (short)IgcObjectType.Buoy, OidTarget = db.BuoyId };
+                if (trainingOrder(chat))
+                {
+                    msg.Cd.CommandID = chat.CommandID;
+                    if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                    return;
+                }
+            }
+        }
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 

@@ -267,6 +267,13 @@ public sealed partial class Game1
             base.Update(gameTime);
             return;
         }
+        // Teardown precedes another lesson frame: the host may already have
+        // retired its local universe when the transport reports departure.
+        if ((_session.Lost || _session.World.OwnMissionDeparture is not null) && ExitTrainingSession())
+        {
+            base.Update(gameTime);
+            return;
+        }
         // TR-2 — pump the active training mission every frame (native TrainingMission::Frame).
         UpdateTraining(gameTime.ElapsedGameTime.TotalSeconds);
         // P785 — real-window proof hook: ALLEGIANCE_TRAINING_OVERLAY=<id> forces the
@@ -354,7 +361,7 @@ public sealed partial class Game1
         // name and Enter sends POSITIONREQ, teamscreen.cpp:2962-2982). Only while
         // a mission is live — never during the initial connect.
         if (_state is ClientState.Flying or ClientState.ReadyCheck
-            && world.MySideId == ClientWorld.SideTeamLobby && world.Mission is not null)
+            && !TrainingActive && world.MySideId == ClientWorld.SideTeamLobby && world.Mission is not null)
         {
             _sideSelectFromGameOver = true;   // stay until admitted to an ACTIVE side
             _sideSelectIndex = 0;
@@ -462,7 +469,7 @@ public sealed partial class Game1
             HandleGameOverTableClick();
         }
 
-        if (HandleHangarQuitInput(ks, _chatActive || _qcMenuOpen))
+        if (UpdateTrainingQuitInput(ks) || HandleHangarQuitInput(ks, _chatActive || _qcMenuOpen))
         {
             // The native quit popup owns Enter/Escape before the normal menu.
             _escWasDown = ActionDown(ks, "MainMenu");
@@ -537,6 +544,7 @@ public sealed partial class Game1
                     Console.WriteLine("[monogame] teleport pane -> closed by Escape");
                     break;
                 case EscapeUiAction.Loadout:
+                    if (TrainingActive) break; // console.cpp:1128-1131
                     _hangarOnly = true;
                     Console.WriteLine("[monogame] loadout -> hangar by Escape");
                     break;
@@ -561,7 +569,7 @@ public sealed partial class Game1
         bool altF4 = KeyOf("Quit").Matches(ks);
         if (altF4 && !_altF4WasDown)
         {
-            Exit();
+            if (!RequestTrainingQuit()) Exit();
         }
         _altF4WasDown = altF4;
 
@@ -1643,7 +1651,7 @@ public sealed partial class Game1
             Allegiance.ClientCore.Training.TrainingController.IsTraining);
         if (!composing && fCloak && !_fCloakWasDown)
         {
-            _cloakToggled = !_cloakToggled;
+            _cloakToggled = ApprovedTrainingToggle(_cloakToggled, ShipControlState.CloakActive);
             Console.WriteLine(_cloakToggled
                 ? "[monogame] cloak ON (CloakActive)"
                 : "[monogame] cloak OFF");
@@ -1898,7 +1906,7 @@ public sealed partial class Game1
         bool lockVec = ActionDown(ks, "LockVector");
         if (!composing && lockVec && !_lockVectorKeyWasDown)
         {
-            _coastToggled = !_coastToggled;
+            _coastToggled = ApprovedTrainingToggle(_coastToggled, ShipControlState.CoastButton);
             // P723 — SIM-0286: native plays vectorLockSound on every LockVector
             // key press (TK_LockVector, WinTrek.cpp:9463; wave "vector").
             _sound?.PlayVectorLock();
