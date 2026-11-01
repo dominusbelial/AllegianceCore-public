@@ -1,0 +1,79 @@
+{
+  "task": "P909",
+  "working_tree_only": true,
+  "training_before": {
+    "credit": 384,
+    "weight": 904,
+    "percent": 42.48
+  },
+  "training_after": {
+    "credit": 481,
+    "weight": 904,
+    "percent": 53.21
+  },
+  "assigned_rows": {
+    "implemented_production": 24,
+    "implemented_test_only": 5,
+    "partial": 5
+  },
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tool_projects_built": 104,
+  "server_native_aot": "passed; no IL2026/IL3050",
+  "new_real_site_tests": {
+    "per_repeat": 12,
+    "repeats": 3,
+    "failed": 0,
+    "skipped": 0,
+    "hud_styles": [
+      "Classic",
+      "Modern"
+    ]
+  },
+  "headless_training_tests_final_source": {
+    "per_repeat": 80,
+    "repeats": 3,
+    "failed": 0,
+    "skipped": 0
+  },
+  "full_training_gate": {
+    "headless_per_repeat": 80,
+    "client_per_repeat": 79,
+    "repeats": 3,
+    "passed_executions": 477,
+    "failed": 0,
+    "skipped": 0,
+    "qualification": "Earlier repetitions preceded the final docked-source and live buoy edge corrections; the final source passed all new real-site and headless cases three times."
+  },
+  "fast_sweep": {
+    "runs": 1,
+    "discovered": 12826,
+    "seconds": 577.4,
+    "passed": false,
+    "skipped": 3,
+    "failing_executions": 7,
+    "timing_overruns": 3,
+    "ledger": "docs/TEST_FLAKES.md"
+  },
+  "showcase": {
+    "repeats": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_audit": {
+    "rules": 241,
+    "primitives": 82,
+    "errors": 0
+  },
+  "glossary_paths_checked": 455,
+  "matrix_rows_changed": 34,
+  "evidence_root": ".scratch/p909/",
+  "screenshots": [
+    "classic.png",
+    "modern.png",
+    "command-classic.png",
+    "command-modern.png"
+  ]
+}

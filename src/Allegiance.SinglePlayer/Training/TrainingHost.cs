@@ -37,7 +37,7 @@ public interface ITrainingHost
         int behaviour = 0, int stationType = -1, int techLevel = 1);
     void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         int? commandTargetShipId, int commandId);
-    void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null);
+    void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null, int? targetProbeId = null, int? targetMineId = null, int? targetTreasureId = null);
     void SetAutopilot(int shipId, bool on);
     /// <summary>Whether a ship is currently on autopilot (<c>IshipIGC::GetAutopilot</c>;
     /// the host flies any Goto'd ship and flags it here).</summary>
@@ -55,6 +55,10 @@ public interface ITrainingHost
     TargetRef? GetCommandTarget(int shipId);
     /// <summary>The accepted/current command id of a ship (<c>GetCommandID(c_cmdAccepted)</c>).</summary>
     int GetCommandId(int shipId);
+    bool HasCommand(int shipId, int commandId);
+    void AddBuoyConsumer(int buoyId);
+    void CopyDroneOrientation(int shipId, int sourceId);
+    void ConfigureExpendable(int shipId, int typeId);
     /// <summary>Whether <paramref name="ship"/> sees <paramref name="target"/> in scanner range
     /// (<c>IshipIGC::InScannerRange</c>).</summary>
     bool InScannerRange(int shipId, TargetRef target);
@@ -155,7 +159,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
     // M8 nanite / repair / station state (native mission8.cpp / stationIGC.cpp:147-156).
     private readonly Dictionary<int, HostStation> _stations = new();   // station id -> map record
-    private readonly Dictionary<int, float> _stationFractions = new(); // armour fraction (1 = full)
     private readonly Dictionary<int, float> _shipFractions = new();    // ship armour fraction (1 = full)
     private readonly HashSet<(int ShipId, int PartId)> _mountedParts = new(); // mounted part ids
     private readonly HashSet<int> _releasedConsumers = new();                 // released waypoint-buoy consumers
@@ -215,7 +218,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             foreach (var st in mission.Map.Stations)
                 if (st.StationId == startSector) { homeId = (short)st.StationId; break; }
         HomeStationId = homeId;
-        _stationFractions[HomeStationId] = 1.0f;
     }
 
     /// <summary>The universe each native training mission boots: map, player hull, start sector and
@@ -553,35 +555,43 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// has not been created. Lets the client <c>Resolve</c> a <see cref="ObjectType.Buoy"/>
     /// through the embedded host's waypoint table.</summary>
     public Allegiance.ClientCore.Training.ITrainingObject? ResolveWaypoint(int buoyId)
-        => !_releasedConsumers.Contains(buoyId) && _waypoints.TryGetValue(buoyId, out var wp)
-            ? new WaypointObject(new Allegiance.ClientCore.Training.TargetRef(
-                Allegiance.ClientCore.Training.ObjectType.Buoy, buoyId), wp)
-            : null;
+        => Mission.GetBuoy((short)buoyId) is { } buoy ? new WaypointObject(buoy) : null;
 
-    /// <summary>Geometry surface for a host waypoint record (native <c>OT_buoy</c>).</summary>
-    private sealed class WaypointObject : Allegiance.ClientCore.Training.ITrainingObject
+    /// <summary>Live mission buoy geometry, including navigation-created buoys without an authored recipe.</summary>
+    private sealed class WaypointObject(Buoy buoy) : Allegiance.ClientCore.Training.ITrainingObject
     {
-        private readonly Waypoint _wp;
-        public WaypointObject(Allegiance.ClientCore.Training.TargetRef r, Waypoint wp) { Ref = r; _wp = wp; }
-        public Allegiance.ClientCore.Training.TargetRef Ref { get; }
-        public float Radius => 10f;
-        public System.Numerics.Vector3 Position => _wp.Position;
+        public Allegiance.ClientCore.Training.TargetRef Ref => new(Allegiance.ClientCore.Training.ObjectType.Buoy, buoy.Id);
+        public float Radius => buoy.Data.Visible ? 20f : 2f; // Igc/buoyigc.cpp:45-48
+        public System.Numerics.Vector3 Position => ToNum(buoy.Position);
         public System.Numerics.Vector3 Velocity => System.Numerics.Vector3.Zero;
         public System.Numerics.Vector3 Forward => System.Numerics.Vector3.UnitX;
-        public int SectorId => _wp.SectorId;
+        public int SectorId => buoy.Data.ClusterId;
     }
 
     // ── ITrainingHost handlers ──────────────────────────────────────────────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
     {
-        lock (_simGate) _waypoints[buoyId] = new Waypoint(position, sectorId, buoyType, visible);
+        lock (_simGate)
+        {
+            _releasedConsumers.Remove(buoyId);
+            _waypoints[buoyId] = new Waypoint(position, sectorId, buoyType, visible);
+            Mission.AddBuoy(new Buoy(new DataBuoyIGC([position.X, position.Y, position.Z],
+                (short)sectorId, (byte)buoyType, (short)buoyId, visible)));
+        }
     }
 
     public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId)
     {
-        // No OT_probe runtime model in the training arc; a probe is inert to Mission 2's script
-        // (only CreateWaypoint is used). Recorded for completeness, unused.
-        _waypoints[probeId] = new Waypoint(position, sectorId, typeId, true);
+        // training/CreateProbeAction.cpp:38-49; ordinary simulation and EXPORT path.
+        lock (_simGate)
+        {
+            var sector = Mission.Sectors.First(s => s.Id == sectorId);
+            var type = Mission.Core.ProbeTypes[(short)typeId];
+            var probe = new Probe((short)probeId, sector, type, ToCore(position), Mission.LastUpdate,
+                (short)sideId);
+            sector.Add(probe);
+            Mission.Site.ProbeCreatedEvent(probe);
+        }
     }
 
     public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
@@ -611,13 +621,15 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             // (FedSrv.CPP:2269).
             _server.AnnounceNewShip(ship);
             EquipDefaultTrainingLoadout(ship); // identity precedes equipment, training/trainingmission.cpp:620-629
+            ApplyDroneTechLevel(ship, techLevel);
+            _destroyed.Remove(id);
+            _shipFractions.Remove(id);
             _drones[id] = ship;
             _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
             _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
             _droneTechLevels[id] = techLevel;      // negative tech-level loadout
             // Apply the wingman behaviour to the real sim ship so it actually behaves as
-            // configured (SetWingmanBehaviour, createdroneaction.cpp:201-203). Full tech-level
-            // loadout application remains the TRN-0010 gap; constructor base data is applied below.
+            // configured (CreateDroneAction.cpp:198). Constructor base data is applied below.
             ship.WingmanBehaviour = behaviour;
             if (stationType >= 0 && Mission.Core.StationTypes.TryGetValue((short)stationType, out var baseType))
             {
@@ -643,7 +655,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             ship.Position = ToCore(position);
             ship.Velocity = Coll.Vector3.Zero;   // placing a drone sets its state; clears any residual sim velocity
             ship.SetOrientation(ori);
-            var sector = Mission.Sectors.FirstOrDefault(s => s.Id == sectorId);
+            var sector = Mission.Sectors.FirstOrDefault(s => s.Id == (sectorId == -1 ? StartSectorId : sectorId));
             if (sector is not null && ship.Sector != sector)
             {
                 // training/CreateDroneAction.cpp:75-80 calls SetCluster, which replaces
@@ -656,7 +668,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         }
     }
 
-    public void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null)
+    public void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId, int? targetAsteroidId = null, int? targetWarpId = null, int? targetProbeId = null, int? targetMineId = null, int? targetTreasureId = null)
     {
         lock (_simGate)
         {
@@ -678,14 +690,15 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             Model? model = null;
             if (targetShipId is { } tsid) model = ResolveShip(tsid);
             else if (targetStationId is { } stid)
-                model = EquipmentTarget.Resolve(ship.Sector, IgcObjectType.Station, (short)stid);
+                model = Mission.Sectors.Select(sec => EquipmentTarget.Resolve(sec, IgcObjectType.Station, (short)stid)).FirstOrDefault(m => m is not null);
             if (targetAsteroidId is { } aid)
                 model = Mission.Sectors.Select(sec => EquipmentTarget.Resolve(sec, IgcObjectType.Asteroid, (short)aid)).FirstOrDefault(m => m is not null);
             if (targetWarpId is { } wid)
                 model = Mission.Sectors.Select(sec => EquipmentTarget.Resolve(sec, IgcObjectType.Warp, (short)wid)).FirstOrDefault(m => m is not null);
-            if (targetBuoyId is { } buoyId && _waypoints.TryGetValue(buoyId, out var waypoint))
-                model = new Buoy(new DataBuoyIGC { BuoyId = (short)buoyId, ClusterId = (short)waypoint.SectorId,
-                    Position = [waypoint.Position.X, waypoint.Position.Y, waypoint.Position.Z] });
+            if (targetProbeId is { } probeId) model = Mission.GetProbe((short)probeId);
+            if (targetMineId is { } mineId) model = Mission.GetMine((short)mineId);
+            if (targetTreasureId is { } treasureId) model = Mission.GetTreasure((short)treasureId);
+            if (targetBuoyId is { } buoyId) model = Mission.GetBuoy((short)buoyId);
             if (command == TrainingMissionIds.CommandQueued && _clientBound && ReferenceEquals(ship, PlayerShip))
             {
                 var ot = targetBuoyId.HasValue ? IgcObjectType.Buoy : EquipmentTarget.TypeOf(model);
@@ -695,6 +708,15 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             }
             if (command is TrainingMissionIds.CommandCurrent or TrainingMissionIds.CommandAccepted)
             {
+                var key = (shipId, command);
+                _buoySlots.TryGetValue(key, out int? oldBuoy);
+                int? newBuoy = model is Buoy buoy ? buoy.Id : null;
+                if (newBuoy != oldBuoy)
+                {
+                    if (newBuoy is { } add) AddBuoyConsumer(add);
+                    if (oldBuoy is { } release) ReleaseConsumer(release);
+                    _buoySlots[key] = newBuoy;
+                }
                 ship.SetCommand((short)command, model, (short)commandId);
                 // M4's networked host delegates navigation/combat/construction to the sim.
                 // Other variants still use AdvanceAutopilot's scripted movement owner.
@@ -711,7 +733,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
             if (commandId == TrainingMissionIds.CmdGoto)
             {
-                if (targetBuoyId is { } bid && _waypoints.TryGetValue(bid, out var wp))
+                if (targetBuoyId is { } bid && ResolveWaypoint(bid) is { } wp)
                 {
                     _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
                     ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
@@ -791,23 +813,9 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// lists (native <c>pMission->GetModel(OT_asteroid, id)</c>, getsectorcondition.cpp:27-51).
     /// An asteroid is a live runtime rock with <see cref="Asteroid.Data"/> and a
     /// <see cref="Asteroid.Sector"/>.</summary>
-    public Asteroid? ResolveAsteroid(int id)
-    {
-        foreach (var sector in Mission.Sectors)
-            foreach (var a in sector.Mineable)
-                if (a.Data.AsteroidId == id) return a;
-        return null;
-    }
+    public Asteroid? ResolveAsteroid(int id) => Mission.GetAsteroid((short)id);
 
-    /// <summary>Resolve a real probe model from the mission's sector model lists
-    /// (native <c>pMission->GetModel(OT_probe, id)</c>); <c>null</c> when absent.</summary>
-    public Probe? ResolveProbe(int id)
-    {
-        foreach (var sector in Mission.Sectors)
-            foreach (var m in sector.Models)
-                if (m is Probe p && p.Id == id && !p.Dead) return p;
-        return null;
-    }
+    public Probe? ResolveProbe(int id) => Mission.GetProbe((short)id) is { Dead: false } probe ? probe : null;
 
     /// <summary>Damage a ship by a collision amount, then reset controls and fire all weapons —
     /// <c>DoDamageAdjustableAction::Execute</c> (dodamageadjustableaction.cpp:27-36):
@@ -866,18 +874,17 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// indirection and <c>GetCommandCondition</c>).</summary>
     public void SetCommandTarget(int shipId, TargetRef? target, int commandId = TrainingMissionIds.CmdGoto)
     {
-        _commandTargets[shipId] = target;
-        _commands[shipId] = commandId;
+        IssueCommand(shipId, TrainingMissionIds.CommandCurrent,
+            target is { Type: ObjectType.Ship } ? target.Value.Id : null,
+            target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
+            target is { Type: ObjectType.Station } ? target.Value.Id : null,
+            commandId, target is { Type: ObjectType.Asteroid } ? target.Value.Id : null,
+            target is { Type: ObjectType.Warp } ? target.Value.Id : null);
     }
 
     public TargetRef? GetCommandTarget(int shipId)
     {
-        // A scripted target (the mission's CreateUniverse/headless driver) owns the slot;
-        // otherwise read the ship's LIVE c_cmdCurrent target (shipIGC.h:2624; the read behind
-        // GetTargetCondition, gettargetcondition.cpp:52) — the real model the server wrote from
-        // an ordinary client ORDER_CHANGE. A buoy has no runtime Model, so it only exists in
-        // the scripted slot.
-        if ((!_clientBound || shipId != PlayerShipId) && _commandTargets.TryGetValue(shipId, out var scripted)) return scripted;
+        // Read the live slot, including mission-owned buoy identity (training/CurrentTarget.cpp:42).
         if (ResolveShip(shipId) is { } ship && ship.CommandTarget is { } model)
         {
             var type = EquipmentTarget.TypeOf(model);
@@ -889,12 +896,18 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 IgcObjectType.Probe => ObjectType.Probe,
                 IgcObjectType.Buoy => ObjectType.Buoy,
                 IgcObjectType.Warp => ObjectType.Warp,
+                IgcObjectType.Mine => ObjectType.Mine, IgcObjectType.Treasure => ObjectType.Treasure,
                 _ => null,
             };
             if (trainingType is { } t && model.Id >= 0) return new TargetRef(t, model.Id);
         }
         return null;
     }
+
+    // training/GetCommandCondition.cpp:43-53: compare both independent slots.
+    public bool HasCommand(int shipId, int commandId)
+        => ResolveShip(shipId) is not { } ship || ship.AcceptedShipCommandId == commandId
+            || ship.CurrentCommandId == commandId;
 
     public int GetCommandId(int shipId)
         => _clientBound && shipId == PlayerShipId ? (PlayerShip.AcceptedShipCommandId != TrainingMissionIds.CmdNone
@@ -919,22 +932,20 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     public int GetCommandAcknowledged() => _commandAcknowledged;
 
     /// <summary>Armour fraction (0 = destroyed/absent, 1 = pristine) behind <c>GetShipIsDamagedCondition</c>.
-    /// Stations read the host's tracked armour fraction (<see cref="_stationFractions"/>), so Mission 8's
-    /// damaged-then-repaired home station and destroyed enemy outpost resolve against the real host.</summary>
+    /// Ships, stations, asteroids, probes and mines read the live model fraction, never diagnostic damage tables.</summary>
     public float GetFraction(TargetRef model)
     {
         if (model.Type == ObjectType.Ship)
         {
             if (IsDestroyed(model.Id)) return 0f;
-            // The REAL ship armour fraction (IshipIGC::GetFraction) when the model is live;
-            // the host's tracked value remains the floor for damage actions that only
-            // record a fraction (Mission 8's scripted bomber dent).
-            float tracked = _shipFractions.TryGetValue(model.Id, out var f) ? f : 1f;
-            return ResolveShip(model.Id) is { } ship ? Math.Min(tracked, ship.Fraction) : tracked;
+            return ResolveShip(model.Id)?.Fraction ?? 0f;
         }
         if (model.Type == ObjectType.Station)
             return GetStationFraction(model.Id);
-        return ResolveShip(model.Id) is { } ? 1f : 0f;
+        if (model.Type == ObjectType.Asteroid) return ResolveAsteroid(model.Id)?.Fraction ?? 0f;
+        if (model.Type == ObjectType.Probe) return ResolveProbe(model.Id)?.Fraction ?? 0f;
+        if (model.Type == ObjectType.Mine) return Mission.GetMine((short)model.Id)?.Fraction ?? 0f;
+        return 0f;
     }
 
     /// <summary>A ship's armour fraction (1 = full, 0 = destroyed; <c>IshipIGC::GetFraction</c>). By
@@ -1053,21 +1064,27 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// <summary>A station's armour fraction (1 = pristine, 0 = destroyed; <c>IstationIGC</c> reads
     /// behind <c>GetShipIsDamagedCondition(OT_station,…)</c>). Unknown station ids report 0.</summary>
     public float GetStationFraction(int stationId)
-        => _stationFractions.TryGetValue(stationId, out var f) ? f
-            : (_stations.ContainsKey(stationId) ? 1f : 0f);
+        => Mission.Sectors.SelectMany(s => s.StationRuntimes)
+            .FirstOrDefault(s => s.StationId == stationId) is { Dead: false } station ? station.ArmorFraction : 0f;
 
     /// <summary>Knock a station's armour down by <paramref name="amount"/> — the write behind
     /// <c>DamageStationAction</c> (Mission 8 goal 1's start action, mission8.cpp:203). Mission 8
-    /// damages 12500; scaled to a meaningful armour-fraction drop (~0.017 per 1000).</summary>
+    /// applies the native 12500 collision-damage hit through the real damage matrix.</summary>
     public void DamageStation(int stationId, float amount)
     {
-        float cur = _stationFractions.TryGetValue(stationId, out var f) ? f : 1f;
-        _stationFractions[stationId] = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+        lock (_simGate)
+        {
+            var station = Mission.Sectors.SelectMany(s => s.StationRuntimes).FirstOrDefault(s => s.StationId == stationId);
+            if (station is not null && station.ReceiveDamage(0, amount, Mission.LastUpdate,
+                new(-1, 0, 0), new(1, 0, 0), null) == DamageResult.Killed)
+            {
+                Mission.Sectors.First(s => s.StationRuntimes.Contains(station)).RemoveStation(station);
+                Mission.Site.KillStationEvent(station, null!, amount);
+            }
+        }
     }
 
-    /// <summary>Restore a station to full armour (the repaired outcome the nanite gun produces; the
-    /// headless proof scripts it, mirroring how <see cref=\"RecordKillCredit\"/> scripts a kill).</summary>
-    public void RepairStation(int stationId) => _stationFractions[stationId] = 1f;
+    public void RepairStation(int stationId) => DamageStation(stationId, -1e9f);
 
     /// <summary>TRUE when a ship has a part of the given part type mounted — <c>GetShipHasMountedCondition</c>
     /// (getshiphasmountedcondition.cpp:36-45): a part in the ship's real <see cref="Ship.Parts"/>
@@ -1163,7 +1180,17 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// longer resolves through <see cref="ResolveWaypoint"/>.</summary>
     public void ReleaseConsumer(int buoyId)
     {
-        lock (_simGate) _releasedConsumers.Add(buoyId);
+        lock (_simGate)
+        {
+            int count = BuoyConsumerCount(buoyId);
+            if (count > 1) _buoyConsumers[buoyId] = count - 1;
+            else
+            {
+                _buoyConsumers.Remove(buoyId);
+                _releasedConsumers.Add(buoyId);
+                if (Mission.GetBuoy((short)buoyId) is { } buoy) Mission.DeleteBuoy(buoy);
+            }
+        }
     }
 
     /// <summary>The host radar LOD mode (<c>SetRadarLODAction</c>, setradarlodaction.cpp:31-36;
@@ -1172,10 +1199,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     public void SetRadarLod(int lod) => RadarLod = lod;
 
     /// <summary>The native <c>SetCargoNanAction</c> cargo recipe (setcargonanaction.cpp:22-52):
-    /// ensure a nanite weapon (part 190) is carried on the front mount and fill the cargo hold
-    /// with gatling (33) + proximity mines (59). Best-effort against the mission core — parts the
-    /// universe cannot represent are skipped, mirroring how <see cref="EquipDefaultTrainingLoadout"/>
-    /// tolerates unresolvable part ids.</summary>
+    /// keep the front weapon (or install nanite 190 if empty), carry its gatling/nanite
+    /// counterpart in slot -1 and proximity mines in the remaining cargo slots.</summary>
     public void SetCargoNan(int shipId)
     {
         lock (_simGate)
@@ -1183,19 +1208,23 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             if (ResolveShip(shipId) is not { } s || s.Mission is not { } mission) return;
             DataPartTypeIGC? Part(short id) => mission.Core.PartTypes.TryGetValue(id, out var p)
                 || mission.Core.TryBuildExpendableLauncher(id, out p) ? p : null;
-            // setdronenanaction.cpp:36-40 — terminate any existing front weapon, then mount nanite 190.
-            s.TryRemovePart(EquipmentType.Weapon, 0, out _);
-            if (Part(190) is { } nan && s.HullType.CanMountPart(nan, 0))
+            // training/SetCargoNanAction.cpp:53-106: keep an existing front weapon.
+            var front = s.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 0);
+            s.TryRemovePart(EquipmentType.Dispenser, 0, out _);
+            if (Part(59) is { } prox) s.MountPart(prox, short.MaxValue, 0, ExpandedPartData.FullyMounted);
+            if (front is null && Part(190) is { } nan)
+            {
                 s.MountPart(nan, 0, 0, ExpandedPartData.FullyMounted);
-            // Fill the cargo hold: slot -1 gatling 33, remaining slots prox 59 (0x7fff amount).
-            DataPartTypeIGC? gat = Part(33);
-            DataPartTypeIGC? prox = Part(59);
+                front = s.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 0);
+            }
+            if (front is null) return;
             for (int slot = 0; slot < Ship.CargoCapacity; slot++)
             {
                 s.ClearCargoSlot(slot);
-                var item = slot == 0 ? gat : prox;
-                if (item is { } ip)
-                    s.MountPart(ip, short.MaxValue, unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
+                short id = slot == 0 ? (front.PartId == 190 ? (short)33 : (short)190) : (short)59;
+                if (Part(id) is { } part)
+                    s.MountPart(part, slot == 0 ? (short)0 : short.MaxValue,
+                        unchecked((byte)(-slot - 1)), ExpandedPartData.FullyMounted);
             }
         }
     }
@@ -1261,25 +1290,36 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
     public int GetSectorId(int shipId) => ResolveShip(shipId) is { } s && s.Sector is { } sec ? sec.Id : -1;
 
-    /// <summary>Heuristic for <c>IshipIGC::InScannerRange</c> (<c>shipseesobjectcondition.cpp:47-50</c>):
-    /// same sector and within 1500 m. Drives the cosmetic enemy-detection eyeball; not a full
-    /// signature-vs-range calc (a TR-4 sim concern).</summary>
+    // training/ShipSeesObjectCondition.cpp:43-50; Igc/shipIGC.h:341-369.
     public bool InScannerRange(int shipId, TargetRef target)
     {
-        if (ResolveShip(shipId) is not { } s || s.Sector is not { } sec) return false;
-        var t = new TrainingHostSite(this).Resolve(target);
-        if (t is null || t.SectorId != sec.Id) return false;
-        return (t.Position - ToNum(s.Position)).LengthSquared() <= 1500f * 1500f;
+        lock (_simGate)
+        {
+            if (ResolveShip(shipId) is not { Sector: { }, StationId: null, ParentShip: null, Dead: false } ship) return false;
+            var sector = ship.Sector;
+            if (sector is null) return false;
+            var geometry = new TrainingHostSite(this).Resolve(target);
+            if (geometry is null) return false;
+            var model = Mission.GetModel((IgcObjectType)target.Type, (short)target.Id);
+            float signature = model switch
+            {
+                Ship t => t.EffectiveSignature, Station t => t.Type.Signature,
+                Asteroid t => t.Data.Signature, Probe t => t.ProbeType.Signature, Mine t => t.MineType.Signature, _ => 1f,
+            };
+            short? side = model switch { Ship t => t.SideId, Station t => t.SideId, Probe t => t.SideId, Mine t => t.SideId, _ => null };
+            if (side is { } sid)
+                signature /= Mission.Sides.First(s => s.Id == sid).GlobalAttributes.Get(GlobalAttributeSet.Signature);
+            var rocks = sector.Mineable.Select(a => new VisibilityMath.SightBody(
+                new(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius)).ToArray();
+            return VisibilityMath.InScannerRange(new(ship.Position, ship.Radius), ship.EffectiveScannerRange(), sector.Id,
+                new(ToCore(geometry.Position), geometry.Radius), signature, (short)geometry.SectorId, rocks,
+                model is Ship { Flag: not null });
+        }
     }
 
     private static System.Numerics.Vector3 ToNum(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
 
-    internal Ship? ResolveShip(int id)
-    {
-        if (id == PlayerShipId) return PlayerShip;
-        if (id == CommanderShipId) return CommanderShip;
-        return _drones.TryGetValue(id, out var d) && d.Sector is not null && !d.Dead ? d : null;
-    }
+    internal Ship? ResolveShip(int id) => Mission.GetShip((short)id) is { Dead: false } ship ? ship : null;
 
     private int _next = 4000;
     private int NextId() => _next++;

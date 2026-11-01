@@ -130,6 +130,7 @@ public class Mission5 : TrainingMission
         Vector3 anchor, float offset)
     {
         var cda = new CreateDroneAction(Site, name, shipId, hullId, 0, pilotType);
+        if (pilotType == PilotLayer) cda.SetExpendableType(87); // training/mission5.cpp:183,189,195
         cda.SetCreatedLocation(sector, anchor + new Vector3(offset, offset * 0.5f, offset * 0.25f));
         return cda;
     }

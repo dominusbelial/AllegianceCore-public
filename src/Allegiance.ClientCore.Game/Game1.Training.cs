@@ -221,6 +221,7 @@ public sealed partial class Game1
             // geometric conditions (pointing/range) read the truth instead of the lagged
             // replicated broadcast (the real-window pointing-goal flake).
             OwnPosition = () => _ownSim.HaveHull ? ToSys(_ownSim.Position) : null,
+            OwnVelocity = () => _ownSim.HaveHull ? ToSys(_ownSim.Velocity) : null,
             // P881a — the own-ship simulator's real hull kinematics so TurnToAction's
             // turnToFace (Igc/common.cpp:152-252) actually steers the player during the
             // scripted demonstrations (M2 goal 2, M3 goals 5/7/8).
@@ -230,7 +231,15 @@ public sealed partial class Game1
             // P881a — training orders for the own ship use the real client ORDER_CHANGE path.
             OwnOrder = SendTrainingOwnOrder,
             OwnAutopilot = SetTrainingAutopilot,
-            SetCameraMode = mode => _cameraMode = TrainingCameraMode(mode),
+            SetCameraMode = SetTrainingDisplayMode,
+            PickedObject = () => _commandee is { } picked && TrainingTargetType(picked.Kind) is { } type
+                ? new TargetRef(type, picked.Id) : null,
+            ViewSector = () => _session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var own)
+                ? RenderSector(own.SectorId) : -1,
+            OwnAutopilotActive = () => _autoPilotEngaged,
+            SelectWeapon = ToggleFixedWeapon,
+            SwapPart = SwapTrainingPart,
+            SetEyeball = shown => _session.World.SetTrainingDetected(shown),
             ShowPane = mask => ShowTrainingPane(mask),
             DeathCamera = (focus, radius) =>
             {
@@ -279,6 +288,7 @@ public sealed partial class Game1
         ObjectType.Probe => IgcObjectType.Probe,
         ObjectType.Buoy => IgcObjectType.Buoy,
         ObjectType.Warp => IgcObjectType.Warp,
+        ObjectType.Mine => IgcObjectType.Mine, ObjectType.Treasure => IgcObjectType.Treasure,
         _ => null,
     };
 
@@ -295,7 +305,7 @@ public sealed partial class Game1
             if (_autoPilotEngaged) DisengageAutopilot(AutopilotDisengageReason.ToggleOff);
             return;
         }
-        if (target is not { } t) return;
+        if (target is not { } t) { _autoPilotEngaged = true; return; }
         TargetKind? kind = t.Type switch
         {
             ObjectType.Ship => TargetKind.Ship,
@@ -328,11 +338,15 @@ public sealed partial class Game1
     private void ShowTrainingPane(int paneMask)
     {
         _consolePanes = new Rendering.ConsolePaneState(
-            GameState: false,
+            GameState: (paneMask & (int)Rendering.ConsoleOverlayMask.GameState) != 0,
             Inventory: (paneMask & TrainingMissionIds.PaneInventory) != 0,
-            Nav: false,
+            Nav: (paneMask & TrainingMissionIds.PaneSector) != 0,
             Team: (paneMask & TrainingMissionIds.PaneExpandedTeam) != 0
-                ? Rendering.TeamConsoleSize.Expanded : Rendering.TeamConsoleSize.Hidden);
+                ? Rendering.TeamConsoleSize.Expanded : (paneMask & (int)Rendering.ConsoleOverlayMask.Team) != 0
+                    ? Rendering.TeamConsoleSize.Mini : Rendering.TeamConsoleSize.Hidden);
+        _investActive = (paneMask & (int)Rendering.ConsoleOverlayMask.Investment) != 0;
+        _teleportActive = (paneMask & (int)Rendering.ConsoleOverlayMask.TeleportPane) != 0;
+        _trainingCommandPane = (paneMask & (int)Rendering.ConsoleOverlayMask.CommandPane) != 0;
         _minimapExpanded = _consolePanes.Nav;
         _teamPaneVisible = _consolePanes.Team != Rendering.TeamConsoleSize.Hidden;
     }
@@ -343,12 +357,54 @@ public sealed partial class Game1
     /// <c>cmCockpit=0</c> → <c>(CameraMode)0 = Command</c>) silently put every training mission into the
     /// command view, whose <c>CommandCameraActive</c> path (<c>Game1.FlightInput.cs:2431</c>) freezes the
     /// flight controls. This is the native-id → port-enum mapping <c>SetDisplayModeAction</c> must use.</summary>
+    // training/setdisplaymodeaction.cpp:32-40; WinTrek/Treki.h:108-126.
+    private void SetTrainingDisplayMode(int mode)
+    {
+        _cameraMode = TrainingCameraMode(mode);
+        _trainingCommandPane = mode is 12 or 13;
+        if (_commandCamera is { } camera) camera.TopDown = mode == 13;
+    }
+
     internal static Rendering.CameraMode TrainingCameraMode(int nativeCamera) => nativeCamera switch
     {
-        TrainingMissionIds.CameraCockpit => Rendering.CameraMode.Cockpit,
-        TrainingMissionIds.CameraExternalOrbit => Rendering.CameraMode.ExternalOrbit,
-        TrainingMissionIds.CameraExternalStation => Rendering.CameraMode.ExternalStation,
-        _ => Rendering.CameraMode.Cockpit,
+        0 => Rendering.CameraMode.Cockpit,
+        1 => Rendering.CameraMode.External,
+        2 => Rendering.CameraMode.Chase,
+        3 => Rendering.CameraMode.ExternalTarget,
+        4 => Rendering.CameraMode.ExternalBase,
+        5 => Rendering.CameraMode.ExternalMissile,
+        6 => Rendering.CameraMode.ExternalFlyBy,
+        7 => Rendering.CameraMode.ExternalFlyByTarget,
+        8 => Rendering.CameraMode.ExternalOrbit,
+        9 => Rendering.CameraMode.ExternalStation,
+        10 => Rendering.CameraMode.ExternalOverride,
+        11 => Rendering.CameraMode.ExternalTurret,
+        12 or 13 => Rendering.CameraMode.Command,
+        _ => throw new ArgumentOutOfRangeException(nameof(nativeCamera)),
+    };
+
+    private bool _trainingCommandPane = true;
+
+    // training/SwapWeaponAction.cpp:35 -> native SwapPart equipment/mount, including turrets.
+    private void SwapTrainingPart(int equipmentType, int mount)
+    {
+        int fixedWeapons = FixedMountCount();
+        string? action = (EquipmentType)equipmentType switch
+        {
+            EquipmentType.Weapon => mount < fixedWeapons ? $"SwapWeapon{mount + 1}" : $"SwapTurret{mount - fixedWeapons + 1}",
+            EquipmentType.Magazine => "SwapMissile", EquipmentType.Dispenser => "SwapMine",
+            EquipmentType.Afterburner => "SwapAfterburner", EquipmentType.Shield => "SwapShield",
+            EquipmentType.Cloak => "SwapCloak", EquipmentType.ChaffLauncher => "SwapChaff", _ => null,
+        };
+        if (action is not null) SwapFlightEquipment(action);
+    }
+
+    private static ObjectType? TrainingTargetType(TargetKind kind) => kind switch
+    {
+        TargetKind.Ship => ObjectType.Ship, TargetKind.Station => ObjectType.Station,
+        TargetKind.Warp => ObjectType.Warp, TargetKind.Asteroid => ObjectType.Asteroid,
+        TargetKind.Probe => ObjectType.Probe, TargetKind.Buoy => ObjectType.Buoy,
+        TargetKind.Treasure => ObjectType.Treasure, _ => null,
     };
 
     internal static TrainingMission CreateTrainingMission(int missionId, ITrainingSite site) => missionId switch
@@ -602,6 +658,7 @@ public sealed partial class Game1
         _consolePanes = default;
         _minimapExpanded = _teamPaneVisible = _investActive = _teleportActive = false;
         _throttle = -1;
+        _trainingCommandPane = true;
     }
 
     /// <summary>

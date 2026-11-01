@@ -854,6 +854,18 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Training/TrainingInputGate.cs` before handlers in
   both HUD styles. Mission5 starts docked; other lessons start airborne.
   Certification and remaining gaps: `docs/reports/P882a_REPORT.md`.
+- **Training site state and drone recipes (P909)** —
+  `src/Allegiance.ClientCore.Game/Training/ClientTrainingSite.cs` binds command
+  selection, viewed cluster, quick-chat acknowledgement, equipment and native camera ids
+  to the real client; independent key latches live in
+  `src/Allegiance.ClientCore/Training/SiteConditions.cs`.
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Bindings.cs` applies native
+  tech substitutions, expendable base data, requested-ship turn math and rolled spawn orientation; Mission6/10
+  use the live carrier-relative recipes. Live registries and fractions feed shared
+  geometry/scanner predicates. Unused native sound/turn primitives are in
+  `src/Allegiance.ClientCore/Training/AdditionalPrimitives.cs`.
+  Both-style loopback tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P909TrainingBindingsTests.cs`.
+  Exact remaining gaps and the native caller audit: `docs/reports/P909_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
   start-to-finish through the production path: client orders/target picks use the real
   `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied

@@ -42,6 +42,7 @@ public sealed class ClientTrainingFacilities
     /// conditions (pointing, range) must read THIS, not the lagged replicated broadcast, or they
     /// can desync from where the ship actually is/points (the real-window pointing-goal flake).</summary>
     public Func<Vector3?>? OwnPosition { get; init; }
+    public Func<Vector3?>? OwnVelocity { get; init; }
     /// <summary>TR-2b — the in-process training-host API the creation/command/autopilot actions
     /// call on the embedded server. When null (no host), those actions keep the explicit logged
     /// no-op seams so the absence is auditable rather than silent.</summary>
@@ -60,26 +61,30 @@ public sealed class ClientTrainingFacilities
     public Action<int>? ShowPane { get; init; }
     /// <summary>P881a — the enemy-detection eyeball toggle (<c>ShowEyeballAction</c>).</summary>
     public Action<bool>? SetEyeball { get; init; }
+    public Func<TargetRef?>? PickedObject { get; init; }
+    public Func<int>? ViewSector { get; init; }
+    public Func<bool>? OwnAutopilotActive { get; init; }
+    public Action<int>? SelectWeapon { get; init; }
+    public Action<int, int>? SwapPart { get; init; }
     public Action<int>? SetupTraining { get; init; }
     public Action<System.Numerics.Vector3, float>? DeathCamera { get; init; }
     public System.Action? RestoreCamera { get; init; }
 }
 
 /// <summary>
-/// TR-2 — <see cref="ITrainingSite"/> bound to the real game: every geometry and ship-state read
-/// comes from the replicated <see cref="ClientWorld"/>, controls flow through the live
-/// <see cref="ConnectionSession"/>, and the deferred <c>TurnToFace</c> uses the native
-/// <c>turnToFace</c> ship-sim math (<see cref="TrainingTurnTo"/>) fed by the own-ship simulator's
-/// hull kinematics. The training-host creation actions (CreateWaypoint/CreateDrone/PlaceDrone/
-/// IssueCommand/SetAutopilot/SetDisplayMode) need the embedded server's training universe —
-/// outside this session's scope — so they are logged no-ops the host fills in; every read/query
-/// path is real.
+/// The real local-training bridge: own pose/controls come from the client simulator,
+/// UI queries use Game1 facilities, and world actions use the embedded mission. Remote
+/// models resolve in the complete authored universe, independent of replication interest.
 /// </summary>
-public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
+public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite, ITrainingDroneSite, ITrainingKeySite
 {
+    public void AddBuoyConsumer(int buoyId) => _f.Host?.AddBuoyConsumer(buoyId);
+    public void CopyDroneOrientation(int shipId, int sourceId) => _f.Host?.CopyDroneOrientation(shipId, sourceId);
+    public void ConfigureExpendable(int shipId, int typeId) => _f.Host?.ConfigureExpendable(shipId, typeId);
     public int CommanderId => _f.Host is TrainingHost host ? host.CommanderShipId : -1;
     public void SetupTraining(int missionId)
     {
+        World.AcknowledgeTrainingCommand(TrainingMissionIds.CmdDoNothing); // trainingmission.cpp:161
         SetHudOverlay(0); // Training.cpp:55-56
         _f.SetupTraining?.Invoke(missionId);
     }
@@ -147,7 +152,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         {
             var w = World;
             return w.MyShipId is { } me && w.Ships.TryGetValue(me, out var ship) && ship.Latest is { } up
-                ? new TrainingShipObject(me, ship, up)
+                ? new TrainingShipObject(me, ship, up, _f.OwnPosition?.Invoke(), _f.OwnOrientation?.Invoke()?.F, ShipRadius(ship), _f.OwnVelocity?.Invoke())
                 : _f.Host is TrainingHost h && w.MyShipId == h.PlayerShipId && PlayerDocked
                     ? new TrainingHostSite(h).PlayerShip
                     : throw new InvalidOperationException("Training: no player ship in the replicated world");
@@ -159,6 +164,8 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         int id = r.Id == TargetRef.Na ? (World.MyShipId ?? -1) : r.Id;
         if (id < 0) return null;
         var w = World;
+        if (_f.Host is TrainingHost embedded && (r.Type != ObjectType.Ship || !IsOwnShip(r)))
+            return new TrainingHostSite(embedded).Resolve(r);
         switch (r.Type)
         {
             case ObjectType.Ship:
@@ -174,7 +181,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
                 var posOv = own ? _f.OwnPosition?.Invoke() : null;
                 System.Numerics.Vector3? fwdOv = null;
                 if (own && _f.OwnOrientation?.Invoke() is { } o) fwdOv = o.F;
-                return new TrainingShipObject((short)id, ship, up, posOv, fwdOv);
+                return new TrainingShipObject((short)id, ship, up, posOv, fwdOv, ShipRadius(ship), own ? _f.OwnVelocity?.Invoke() : null);
             case ObjectType.Warp:
                 if (w.Warps.TryGetValue((short)id, out var warp))
                     return new TrainingStaticObject(r, ToVec(warp.Position), warp.ClusterId, warp.Radius, ToVec(warp.Forward));
@@ -202,12 +209,16 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         }
     }
 
+    private float ShipRadius(ShipEntity ship) => World.MissionCore?.HullTypes.TryGetValue(ship.HullId, out var hull) == true
+        ? hull.Length * 0.5f : 0f;
+
     private static Vector3 ToVec(float[] v) => v is { Length: 3 } ? new Vector3(v[0], v[1], v[2]) : Vector3.Zero;
     private static Vector3 ToSys(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
 
     // ── ship state reads (real replicated world) ───────────────────────────
     public bool GetAutopilot(TargetRef ship)
-        => _f.Host is { } h ? h.IsAutopilot(ResolveId(ship)) : false; // host flies Goto'd ships on autopilot
+        => IsOwnShip(ship) && _f.OwnAutopilotActive is { } active ? active()
+            : _f.Host is { } h && h.IsAutopilot(ResolveId(ship)); // host flies Goto'd ships on autopilot
     public int GetStateM(TargetRef ship)
     {
         // Own ship: the client's local state mask (native GetShip()->GetStateM()), which carries
@@ -237,10 +248,10 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     /// getshipisdestroyedcondition.h:27-28).</summary>
     public bool IsShipDestroyed(TargetRef ship)
     {
+        if (_f.Host is { } host) return host.GetFraction(ship) == 0f;
         int id = ResolveId(ship);
-        if (id < 0 || !World.Ships.TryGetValue((short)id, out var entity)) return true;
-        if (entity.IsDead || entity.Latest is null) return true;
-        return _f.Host is { } h && h.GetFraction(ship) <= 0f;
+        return !World.Ships.TryGetValue((short)id, out var entity) || entity.IsDead
+            || entity.Latest is not { } pose || pose.HullFraction == 0f;
     }
 
     /// <summary>TRUE when the ship's accepted-or-current command id equals
@@ -250,7 +261,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     {
         int id = ResolveId(ship);
         if (id < 0 || Resolve(ship) is null) return true;   // getcommandcondition.cpp:53 absent ⇒ true
-        return _f.Host is { } h && (h.GetCommandId(id) == commandId);
+        return _f.Host is { } h && (h.HasCommand(id, commandId));
     }
 
     public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
@@ -270,10 +281,12 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     public int GetAmmo(TargetRef ship) => _f.Host is { } h ? h.GetAmmo(ResolveId(ship)) : 0;
 
     // ── M5/M6 command-view / escalation state (authoritative host) ──────────
-    public bool GetPicked(TargetRef model) => _f.Host is { } h ? h.IsPicked(model) : false;
-    public int GetViewSector() => _f.Host is { } h ? h.ViewSector : (Resolve(PlayerShip.Ref)?.SectorId ?? -1);
+    public bool GetPicked(TargetRef model) => _f.PickedObject is { } picked
+        ? picked() == (Resolve(model) is null ? null : model) : false;
+    public int GetViewSector() => _f.ViewSector?.Invoke() ?? World.ViewedClusterId
+        ?? (World.MyShipId is { } me && World.Ships.TryGetValue(me, out var own) ? own.SectorId : -1);
     public float GetFraction(TargetRef model) => _f.Host is { } h ? h.GetFraction(model) : (Resolve(model) is null ? 0f : 1f);
-    public int GetCommandAcknowledged() => _f.Host is { } h ? h.GetCommandAcknowledged() : TrainingMissionIds.CmdDoNothing;
+    public int GetCommandAcknowledged() => World.LastAcknowledgedCommand;
 
     // ── M3/M4 combat / equipment / UI actions ─────────────────────────────────
     /// <summary>Demonstrate shield/hull damage on the player's ship — <c>DoDamageAction</c>
@@ -299,12 +312,14 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     }
     public void ToggleWeapon(int mount)
     {
-        if (_f.Host is { } h) h.ToggleWeapon(mount);
+        if (_f.SelectWeapon is { } select) select(mount);
+        else if (_f.Host is { } h) h.ToggleWeapon(mount);
         else TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
     }
     public void SwapWeapon(int equipmentType, int mount)
     {
-        if (_f.Host is { } h) h.SwapWeapon(equipmentType, mount);
+        if (_f.SwapPart is { } swap) swap(equipmentType, mount);
+        else if (_f.Host is { } h) h.SwapWeapon(equipmentType, mount);
         else TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
     }
     public void RepairAndRearm()
@@ -372,8 +387,8 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         else TrainingHostLog.Log($"SetCargoNan({ship.Id})");
     }
 
-    private static int ResolveId(TargetRef r) =>
-        r.Type == ObjectType.Ship && r.Id == TargetRef.Na ? -1 : r.Id;
+    private int ResolveId(TargetRef r) =>
+        r.Type == ObjectType.Ship && r.Id == TargetRef.Na ? World.MyShipId ?? -1 : r.Id;
 
     // ── player events ───────────────────────────────────────────────────────
     public bool ConsumeKey(int key)
@@ -383,7 +398,8 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         _keys.RemoveAt(i);
         return true;
     }
-    public void RecordKeyPress(int key) => _keys.Add(key);
+    public event System.Action<int>? KeyPressed;
+    public void RecordKeyPress(int key) { if (!_keys.Contains(key)) _keys.Add(key); KeyPressed?.Invoke(key); }
     public bool ConsumeChat(int recipient)
     {
         int i = _chats.IndexOf(recipient);
@@ -412,10 +428,14 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
             : -1; // no ship created without the training-host universe
     public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up, TargetRef? commandTarget, int commandId)
     {
-        if (_f.Host is { } h)
-            h.PlaceDrone(shipId, sectorId, position, forward, up,
-                commandTarget is { Type: ObjectType.Ship } ? commandTarget.Value.Id : null, commandId);
-        else TrainingHostLog.Log($"PlaceDrone({shipId}) — no embedded training host");
+        if (_f.Host is not { } host)
+        {
+            TrainingHostLog.Log($"PlaceDrone({shipId}) — no embedded training host");
+            return;
+        }
+        host.PlaceDrone(shipId, sectorId, position, forward, up, null, commandId);
+        if (commandTarget is { } target && Resolve(target) is not null)
+            IssueCommand(new TargetRef(ObjectType.Ship, shipId), TrainingMissionIds.CommandAccepted, target, commandId);
     }
     public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId)
     {
@@ -430,12 +450,15 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
             _f.OwnOrder?.Invoke(command, target, commandId);
         }
         if (_f.Host is { } h)
-            h.IssueCommand(ship.Id, command,
+            h.IssueCommand(ResolveId(ship), command,
                 target is { Type: ObjectType.Ship } ? target.Value.Id : null,
                 target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
                 target is { Type: ObjectType.Station } ? target.Value.Id : null,
                 commandId, target is { Type: ObjectType.Asteroid } ? target.Value.Id : null,
-                target is { Type: ObjectType.Warp } ? target.Value.Id : null);
+                target is { Type: ObjectType.Warp } ? target.Value.Id : null,
+                target is { Type: ObjectType.Probe } ? target.Value.Id : null,
+                target is { Type: ObjectType.Mine } ? target.Value.Id : null,
+                target is { Type: ObjectType.Treasure } ? target.Value.Id : null);
         else if (!IsOwnShip(ship))
             TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — no embedded training host");
     }
@@ -447,7 +470,7 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
         // client flies its own ship, P508), and mirror the latch on the host ship so the
         // headless/no-client path and the host's own reads agree.
         if (IsOwnShip(ship)) _f.OwnAutopilot?.Invoke(_ownOrderTarget, on);
-        if (_f.Host is { } h) h.SetAutopilot(ship.Id, on);
+        if (_f.Host is { } h) h.SetAutopilot(ResolveId(ship), on);
         else if (!IsOwnShip(ship)) TrainingHostLog.Log($"SetAutopilot({ship.Id},{on}) — no embedded training host");
     }
     public void SetDisplayMode(int cameraMode)
@@ -459,8 +482,10 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
 
     public (float Yaw, float Pitch, float Roll) TurnToFace(TargetRef ship, TargetRef target)
     {
-        var me = PlayerShip;
         var tgt = Resolve(target);
+        if (!IsOwnShip(ship) && _f.Host is TrainingHost host && tgt is not null)
+            return host.TurnToFace(ResolveId(ship), tgt.Position, FrameDeltaSeconds);
+        var me = PlayerShip;
         if (tgt is null) return (0f, 0f, 0f);
         if (_f.OwnOrientation?.Invoke() is not { } ori || _f.OwnHullKinematics?.Invoke() is not { } h)
             return (0f, 0f, 0f);
@@ -472,7 +497,11 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite
     {
         Console.WriteLine($"[training] prompt: {text}");
         _messages.Add(text);
-        World.PostSystemLine(text);
+        World.ReceiveChat(new ChatMessage
+        {
+            Message = text, SidSender = (short)CommanderId,
+            ChatTarget = (int)ChatTarget.Individual, OidRecipient = World.MyShipId ?? -1,
+        });
     }
     public int PlaySound(int soundId)
     {
@@ -501,15 +530,17 @@ internal sealed class TrainingShipObject : ITrainingObject
     private readonly System.Numerics.Vector3? _posOverride;
     private readonly System.Numerics.Vector3? _fwdOverride;
     public TrainingShipObject(short id, ShipEntity ship, ServerShipUpdate up,
-        System.Numerics.Vector3? posOverride = null, System.Numerics.Vector3? fwdOverride = null)
-    { _id = id; _ship = ship; _up = up; _posOverride = posOverride; _fwdOverride = fwdOverride; }
+        System.Numerics.Vector3? posOverride = null, System.Numerics.Vector3? fwdOverride = null, float radius = 0f, Vector3? velocityOverride = null)
+    { _id = id; _ship = ship; _up = up; _posOverride = posOverride; _fwdOverride = fwdOverride; Radius = radius; _velocityOverride = velocityOverride; }
+    private readonly Vector3? _velocityOverride;
     public TargetRef Ref => new(ObjectType.Ship, _id);
-    public float Radius => 20f;
+    public float Radius { get; }
     public Vector3 Position => _posOverride ?? ToSys(_up.Position);
-    public Vector3 Velocity => ToSys(_up.Velocity);
+    public Vector3 Velocity => _velocityOverride ?? ToSys(_up.Velocity);
     public Vector3 Forward => _fwdOverride
         ?? (_up.Orientation.GetForward() is { } f ? ToSys(f) : Vector3.UnitZ);
-    public int SectorId => _ship.SectorId;
+    // Igc/stationIGC.cpp:282-284: docked ships have no live cluster.
+    public int SectorId => _ship.StationId < 0 ? _ship.SectorId : -1;
 
     private static Vector3 ToSys(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
 }

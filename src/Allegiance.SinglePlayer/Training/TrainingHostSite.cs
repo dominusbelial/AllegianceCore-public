@@ -14,8 +14,11 @@ namespace Allegiance.SinglePlayer;
 /// client uses <see cref="ClientCore.MonoGame.ClientTrainingSite"/> (ClientWorld reads) wired to the
 /// same <see cref="ITrainingHost"/> handlers.
 /// </summary>
-public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
+public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite, ITrainingDroneSite, ITrainingKeySite
 {
+    public void AddBuoyConsumer(int buoyId) => _host.AddBuoyConsumer(buoyId);
+    public void CopyDroneOrientation(int shipId, int sourceId) => _host.CopyDroneOrientation(shipId, sourceId);
+    public void ConfigureExpendable(int shipId, int typeId) => _host.ConfigureExpendable(shipId, typeId);
     public int CommanderId => _host.CommanderShipId;
     public void SetupTraining(int missionId) { }
     public void TrainingShipDied() { }
@@ -47,23 +50,24 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
             int id = r.Id == TargetRef.Na ? _host.PlayerShipId : r.Id;
             return _host.ResolveShip(id) is { } ship ? WrapShip(ship) : null;
         }
-        if (r.Type == ObjectType.Warp)
-        {
-            foreach (var sector in _host.Mission.Sectors)
-                if (sector.Warps.FirstOrDefault(w => w.Warp.WarpId == r.Id) is { } warp)
-                    return new HostObject(r, ToNum(warp.Position), Vector3.Zero,
-                        new Vector3(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2]), sector.Id, warp.Radius);
-        }
+        if (r.Type == ObjectType.Warp && _host.Mission.GetWarp((short)r.Id) is { } warp)
+            return new HostObject(r, ToNum(warp.Position), Vector3.Zero,
+                new Vector3(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2]), warp.Warp.ClusterId, warp.Radius);
         if (r.Type == ObjectType.Buoy && _host.ResolveWaypoint(r.Id) is { } wb)
             return wb;
-        if (r.Type == ObjectType.Station && _host.Stations.TryGetValue(r.Id, out var st))
-            return new HostObject(r, st.Position, Vector3.Zero, Vector3.UnitX, st.SectorId, 50f);
+        if (r.Type == ObjectType.Station && _host.Mission.GetStation((short)r.Id) is { Dead: false } st)
+            return new HostObject(r, ToNum(st.Center), Vector3.Zero, Vector3.UnitX, st.Data.ClusterId, st.Radius);
         if (r.Type == ObjectType.Asteroid)
             return _host.ResolveAsteroid(r.Id) is { } ast && ast.Data.Position is { Length: 3 } ap && ast.Sector is { } asec
                 ? new HostObject(r, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Vector3.UnitX, asec.Id, ast.Radius) : null;
+        if (r.Type == ObjectType.Mine && _host.Mission.GetMine((short)r.Id) is { Fraction: > 0 } mine)
+            return new HostObject(r, ToNum(mine.Position), Vector3.Zero, Vector3.UnitX, mine.OwnerSector.Id, mine.MineType.MineRadius);
+        if (r.Type == ObjectType.Treasure && _host.Mission.GetTreasure((short)r.Id) is { } treasure)
+            return new HostObject(r, ToNum(treasure.Position), ToNum(treasure.CollisionVelocity), Vector3.UnitX,
+                treasure.OwnerSector.Id, Treasure.PickupRadius);
         if (r.Type == ObjectType.Probe)
             return _host.ResolveProbe(r.Id) is { } pb
-                ? new HostObject(r, ToNum(pb.Position), Vector3.Zero, Vector3.UnitX, pb.OwnerSector.Id, 10f) : null;
+                ? new HostObject(r, ToNum(pb.Position), Vector3.Zero, ToNum(pb.Orientation.GetForward()), pb.OwnerSector.Id, pb.ProbeType.Radius) : null;
         return null;
     }
 
@@ -90,7 +94,7 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
     /// <summary>TRUE when the accepted-or-current command id matches, and TRUE when the ship is
     /// absent — native <c>GetCommandCondition</c> (getcommandcondition.cpp:44-53: absent ⇒ true).</summary>
     public bool HasCommand(TargetRef ship, int commandId)
-        => _host.ResolveShip(ship.Id) is null || _host.GetCommandId(ship.Id) == commandId;
+        => _host.ResolveShip(ship.Id) is null || _host.HasCommand(ship.Id, commandId);
 
     public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
 
@@ -152,7 +156,8 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
         _keys.RemoveAt(i);
         return true;
     }
-    public void RecordKeyPress(int key) => _keys.Add(key);
+    public event System.Action<int>? KeyPressed;
+    public void RecordKeyPress(int key) { if (!_keys.Contains(key)) _keys.Add(key); KeyPressed?.Invoke(key); }
     public bool ConsumeChat(int recipient)
     {
         int i = _chats.IndexOf(recipient);
@@ -176,15 +181,21 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
         => _host.CreateDrone(name, shipId, hullId, sideId, pilotType, behaviour, stationType, techLevel);
     public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         TargetRef? commandTarget, int commandId)
-        => _host.PlaceDrone(shipId, sectorId, position, forward, up,
-            commandTarget is { Type: ObjectType.Ship } ? commandTarget.Value.Id : null, commandId);
+    {
+        _host.PlaceDrone(shipId, sectorId, position, forward, up, null, commandId);
+        if (commandTarget is { } target && Resolve(target) is not null)
+            IssueCommand(new TargetRef(ObjectType.Ship, shipId), TrainingMissionIds.CommandAccepted, target, commandId);
+    }
     public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId)
         => _host.IssueCommand(ship.Id, command,
             target is { Type: ObjectType.Ship } ? target.Value.Id : null,
             target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
             target is { Type: ObjectType.Station } ? target.Value.Id : null,
             commandId, target is { Type: ObjectType.Asteroid } ? target.Value.Id : null,
-            target is { Type: ObjectType.Warp } ? target.Value.Id : null);
+            target is { Type: ObjectType.Warp } ? target.Value.Id : null,
+            target is { Type: ObjectType.Probe } ? target.Value.Id : null,
+            target is { Type: ObjectType.Mine } ? target.Value.Id : null,
+            target is { Type: ObjectType.Treasure } ? target.Value.Id : null);
 
     // ── ship / camera / HUD ───────────────────────────────────────────────────
     public void SetAutopilot(TargetRef ship, bool on) => _host.SetAutopilot(ship.Id, on);
@@ -211,7 +222,7 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite
 
     private static ITrainingObject WrapShip(Ship ship) =>
         new HostObject(new TargetRef(ObjectType.Ship, ship.Id), ToNum(ship.Position), ToNum(ship.Velocity),
-            ToNum(ship.Orientation.GetForward()), ship.Sector?.Id ?? 0, 20f);
+            ToNum(ship.Orientation.GetForward()), ship.StationId is null ? ship.Sector?.Id ?? -1 : -1, ship.Radius);
 
     private static System.Numerics.Vector3 ToNum(Allegiance.Core.Collision.Vector3 v)
         => new(v.X, v.Y, v.Z);

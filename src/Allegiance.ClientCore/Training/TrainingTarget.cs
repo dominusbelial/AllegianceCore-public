@@ -35,7 +35,9 @@ public enum ObjectType
     Ship = 0,
     Station = 1,
     Asteroid = 5,
+    Mine = 3,
     Probe = 4,
+    Treasure = 8,
     Buoy = 9,
     Warp = 7,
 }

@@ -21,6 +21,17 @@ namespace Allegiance.ClientCore.Tests;
 [Collection("LiveNetwork")]
 public sealed class TR5TrainingMissions810Tests
 {
+    private static void DestroyOutpost(TrainingHost host)
+    {
+        var station = host.Mission.GetStation((short)Mission8.EnemyOutpostStationId)!;
+        var damage = host.Mission.Core.Constants.DamageConstants;
+        byte type = (byte)Enumerable.Range(0, damage.Length).First(i =>
+            damage[i][station.Type.DefenseTypeShield] > 0 && damage[i][station.Type.DefenseTypeArmor] > 0);
+        station.ReceiveDamage(type, 1e10f, host.Mission.LastUpdate, station.Center, station.Center, null);
+        Assert.True(station.Dead);
+        host.Mission.Sectors.Single(s => s.StationRuntimes.Contains(station)).RemoveStation(station);
+    }
+
     private const int NanitePart = 190;
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -101,7 +112,7 @@ public sealed class TR5TrainingMissions810Tests
             if (seen.Contains("Defend bombers.") && !bomberDamaged)
             { host.DamageShip(mission.BomberId, 8000f); bomberDamaged = true; }
             if (bomberDamaged && !stationDestroyed)
-            { host.DamageStation(Mission8.EnemyOutpostStationId, 200000f); stationDestroyed = true; }
+            { DestroyOutpost(host); stationDestroyed = true; }
         }
 
         Assert.True(mounted, "goal 1: player never mounted the Nanite Repair System");
@@ -194,7 +205,7 @@ public sealed class TR5TrainingMissions810Tests
         Assert.False(new GetShipIsDamagedCondition(site, ObjectType.Station, Mission8.HomeStationId, 1.0f).Evaluate());
 
         // The enemy outpost's destroyed gate: a big hit drops it to 0 (mission8.cpp:600 Not(GetShipIsDamaged(…,0.0))).
-        host.DamageStation(Mission8.EnemyOutpostStationId, 200000f);
+        DestroyOutpost(host);
         Assert.Equal(0f, site.GetFraction(new TargetRef(ObjectType.Station, Mission8.EnemyOutpostStationId)));
         Assert.False(new GetShipIsDamagedCondition(site, ObjectType.Station, Mission8.EnemyOutpostStationId, 0.0f).Evaluate());
 

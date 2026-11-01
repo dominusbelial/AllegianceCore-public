@@ -13,10 +13,18 @@ namespace Allegiance.ClientCore.Training;
 /// (clears) the press so it fires once per press (lines 47-52). The key is a <c>TrekKey</c> id (e.g.
 /// <c>TK_FireBooster = 50</c>, <c>igc.h:273</c>).
 /// </summary>
+// GetKeyCondition.cpp:39-58: every registered condition owns a separate boolean latch.
+public interface ITrainingKeySite
+{
+    event System.Action<int> KeyPressed;
+}
+
 public sealed class GetKeyCondition : Condition
 {
     private readonly ITrainingSite _site;
     private readonly int _key;
+    private bool _pressed;
+    private bool _subscribed;
 
     public GetKeyCondition(ITrainingSite site, int key)
     {
@@ -30,10 +38,22 @@ public sealed class GetKeyCondition : Condition
         // happened before the goal began (a stale press must not satisfy the new goal). Drain
         // the site's key queue for this key; ConsumeKey is idempotent-per-entry.
         while (_site.ConsumeKey(_key)) { }
+        if (!_subscribed && _site is ITrainingKeySite events)
+        {
+            events.KeyPressed += key => { if (key == _key) _pressed = true; };
+            _subscribed = true;
+        }
+        _pressed = false;
         return false;
     }
 
-    public override bool Evaluate() => _site.ConsumeKey(_key);
+    public override bool Evaluate()
+    {
+        if (!_subscribed) return _site.ConsumeKey(_key);
+        bool pressed = _pressed;
+        _pressed = false;
+        return pressed;
+    }
 }
 
 /// <summary>

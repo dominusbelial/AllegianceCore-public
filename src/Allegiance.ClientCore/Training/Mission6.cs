@@ -147,9 +147,11 @@ public class Mission6 : TrainingMission
         int homeSectorBuoy = GenId(5002);
         _enemy1Action = new CreateDroneAction(Site, "Enemy Scout", Enemy1Id, 310, 1, PilotWingman);
         _enemy1Action.SetCreatedLocation(EnemySector, new Vector3(-140f, 280f, -20f));
+        _enemy1Action.SetCreatedLocationAtShipID(EnemyCarrierId, default);
         _enemy1Action.SetCreatedBehaviour(0);
         _enemy2Action = new CreateDroneAction(Site, "Enemy Fighter", Enemy2Id, 315, 1, PilotWingman);
         _enemy2Action.SetCreatedLocation(EnemySector, new Vector3(-170f, 280f, -30f));
+        _enemy2Action.SetCreatedLocationAtShipID(EnemyCarrierId, new Vector3(0f, -70f, 30f));
         _enemy2Action.SetCreatedBehaviour(0);
 
         // Start spawning enemies (mission6.cpp:510-524).
@@ -297,6 +299,7 @@ public class Mission6 : TrainingMission
         // Bomb run 1 (mission6.cpp:692-721): enemy bomber with repairing scouts.
         _enemy3Action = new CreateDroneAction(Site, "Enemy Bomber", Enemy3Id, 304, 1, PilotWingman);
         _enemy3Action.SetCreatedLocation(EnemySector, new Vector3(-170f, 280f, 0f));
+        _enemy3Action.SetCreatedLocationAtShipID(EnemyCarrierId, new Vector3(70f, 30f, 10f));
         _enemy3Action.SetCreatedCommand(StartSector, ObjectType.Station, CmdAttack);
         _enemy3Action.SetCreatedBehaviour(WingmanUseMissiles);
         {
@@ -477,6 +480,7 @@ public class Mission6 : TrainingMission
         // Bomb run 2 (mission6.cpp:903-940): heavy bomber with repairing/hvy-int escort.
         _enemy4Action = new CreateDroneAction(Site, "Enemy Hvy Bomber", Enemy4Id, 389, 1, PilotWingman);
         _enemy4Action.SetCreatedLocation(EnemySector, new Vector3(-170f, 280f, 0f));
+        _enemy4Action.SetCreatedLocationAtShipID(EnemyCarrierId, new Vector3(70f, 30f, 10f));
         _enemy4Action.SetCreatedCommand(StartSector, ObjectType.Station, CmdAttack);
         _enemy4Action.SetCreatedBehaviour(WingmanUseMissiles | WingmanStrafe);
         _enemy4Action.SetCreatedTechLevel(3);

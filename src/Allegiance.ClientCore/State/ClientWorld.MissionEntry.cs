@@ -84,6 +84,7 @@ public sealed partial class ClientWorld : IDisposable
         _scoreRosterDirty = true;   // P774 — a writer of ShipEntity.Player; the ISide = -1 stub stays out of the roster
         _roster.Clear();
         MyAcceptedCommand = null;
+        LastAcknowledgedCommand = -3;
         MyCurrentCommand = null;
         _myQueuedCommand = null;
         _moneyRequest = null;

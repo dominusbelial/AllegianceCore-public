@@ -775,6 +775,20 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastExportProbe(Probe p)
     {
+        // Native authored probes have no launcher (training/CreateProbeAction.cpp:40-48).
+        // The single local trainee shares that universe; export the model without inventing one.
+        if (LocalTraining && p.Launcher is null && p.SideId is { } trainingSide)
+        {
+            var authored = ExportProbe.FromProbe(p, (uint)TickIndex, launcherId: -1, sideId: trainingSide);
+            byte[] authoredPacket = FedPacket.Pack(new[] { authored.Encode() });
+            foreach (var peer in _peerShips)
+                if (PeerInMission(peer.Key, p.OwnerSector))
+                {
+                    SendPeer(peer.Key, authoredPacket);
+                    RememberProbeViewer(peer.Key, p);
+                }
+            return;
+        }
         if (p.Launcher is not Ship deployer)
         {
             Console.WriteLine("[probe] ProbeCreatedEvent with a non-Ship launcher — ignored");

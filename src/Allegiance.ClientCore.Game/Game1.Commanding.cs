@@ -384,7 +384,7 @@ public sealed partial class Game1
 
     private bool TryCommandBarPick(MouseState mouse)
     {
-        if (_cameraMode != CameraMode.Command) return false;
+        if (_cameraMode != CameraMode.Command || (TrainingActive && !_trainingCommandPane)) return false;
         float progress = _paneSlides.Progress(Rendering.SlidingPane.CommandPane, _nowSeconds);
         if (progress < 0.9f) return false;
         float left = Rendering.CommandBarLayout.Left(GraphicsDevice.Viewport.Width, progress);
@@ -441,7 +441,7 @@ public sealed partial class Game1
         {
             // HUD-10 — the native command bar is a separate CommandPane image,
             // visible only under ofInFlightCommand (dialog.mdl:5416).
-            if (CommandCameraActive) DrawCommandBar();
+            if (CommandCameraActive && (!TrainingActive || _trainingCommandPane)) DrawCommandBar();
             if (_cameraMode == CameraMode.Command)
             {
                 if (_camSmoothInit && ProjectToScreen(new Vector3(0, 3 * CommandGridRenderer.Radius / 4, 0),

@@ -131,6 +131,9 @@ public sealed class CreateDroneAction : Action
     private Vector3 _position;
     private Vector3 _forward = new(1f, 0f, 0f);
     private Vector3 _up = new(0f, 0f, 1f);
+    private int _expendableTypeId = -1;
+    private int _spawnAtShipId = -1;
+    private Vector3 _spawnOffset;
     private TargetRef? _commandTarget;
     private int _commandId;
 
@@ -148,8 +151,26 @@ public sealed class CreateDroneAction : Action
     {
         int id = _site.CreateDrone(_name, _shipId, _hullId, _sideId, _pilotType,
             behaviour: _wingmanBehaviour, stationType: _stationTypeId, techLevel: _techLevel);
-        _site.PlaceDrone(id, _sectorId, _position, _forward, _up, _commandTarget, _commandId);
+        if (_expendableTypeId >= 0 && _site is ITrainingDroneSite data) data.ConfigureExpendable(id, _expendableTypeId);
+        // training/CreateDroneAction.cpp:65-81: follow a live source, otherwise use the recipe.
+        var source = _spawnAtShipId >= 0 ? _site.Resolve(new TargetRef(ObjectType.Ship, _spawnAtShipId)) : null;
+        if (source is { SectorId: >= 0 })
+        {
+            // Placement on the host preserves the complete orientation, including roll.
+            _site.PlaceDrone(id, source.SectorId, source.Position + _spawnOffset, source.Forward, _up, _commandTarget, _commandId);
+            if (_site is ITrainingDroneSite drones) drones.CopyDroneOrientation(id, _spawnAtShipId);
+        }
+        else _site.PlaceDrone(id, _sectorId, _position, _forward, _up, _commandTarget, _commandId);
+        // Native never sets b_addedConsumer after adding: preserve its per-execution hold.
+        // training/CreateDroneAction.cpp:42,50-55,204-207.
+        if (_commandTarget is { Type: ObjectType.Buoy } buoy && _site.Resolve(buoy) is not null
+            && _site is ITrainingDroneSite consumers) consumers.AddBuoyConsumer(buoy.Id);
     }
+
+    public void SetExpendableType(int typeId) => _expendableTypeId = typeId;
+
+    public void SetCreatedLocationAtShipID(int shipId, Vector3 offset = default)
+    { _spawnAtShipId = shipId; _spawnOffset = offset; }
 
     public int ShipId => _shipId;
 

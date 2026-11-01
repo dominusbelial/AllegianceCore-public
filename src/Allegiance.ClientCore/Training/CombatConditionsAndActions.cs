@@ -17,6 +17,7 @@ public sealed class PlayerCurrentTarget
     private readonly ITrainingSite _site;
     private readonly bool _lock;
     private TargetRef? _fetched;
+    private bool _hasFetched;
 
     public PlayerCurrentTarget(ITrainingSite site, bool lockOnFirstFetch = false)
     {
@@ -30,11 +31,12 @@ public sealed class PlayerCurrentTarget
         var cur = _site.GetCommandTarget(_site.PlayerShip.Ref, CommandCurrent);
         if (!_lock)
             return cur;
-        if (_fetched is not { } f)
+        if (!_hasFetched)
         {
             _fetched = cur;
+            _hasFetched = true;
         }
-        else if (cur is { } c && (c.Type != f.Type || c.Id != f.Id) && _site.Resolve(f) is not null)
+        else if (_fetched is { } f && cur is { } c && (c.Type != f.Type || c.Id != f.Id) && _site.Resolve(f) is not null)
         {
             // Target changed while the fetched one is still alive — re-anchor
             // (currenttarget.cpp:39-49: `pFetched` dereferences to a live model, so an
