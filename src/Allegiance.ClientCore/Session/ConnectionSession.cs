@@ -650,6 +650,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             OidTarget = oidTarget,
             OtTarget = otTarget,
         };
+        lock (Gate)
+        {
+            // Native offline self chat is received locally, never sent to a server
+            // (clintlib.cpp:2421-2424). Its training guard must run before orders
+            // can be applied by the embedded host (trekigc.cpp:4567-4574).
+            if (World.TrainingChatRecipient is not null && msg.OidRecipient == World.MyShipId
+                && World.TrainingCommandViewEnabled?.Invoke() != true)
+            {
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+            if (World.TrainingDroneChat?.Invoke(msg) == true)
+            {
+                // Native clintlib.cpp:2463-2470 echoes only the primary group subject.
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+        }
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -705,6 +723,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             },
             Db = db,
         };
+        lock (Gate)
+        {
+            if (World.TrainingChatRecipient is not null && msg.OidRecipient == World.MyShipId
+                && World.TrainingCommandViewEnabled?.Invoke() != true)
+            {
+                if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                return;
+            }
+            if (World.TrainingDroneChat is { } trainingOrder)
+            {
+                World.TrainingImportBuoy?.Invoke(db);
+                var chat = new ChatMessage { Message = message, Cd = msg.Cd,
+                    OtTarget = (short)IgcObjectType.Buoy, OidTarget = db.BuoyId };
+                if (trainingOrder(chat))
+                {
+                    msg.Cd.CommandID = chat.CommandID;
+                    if (target != ChatTarget.GroupNoEcho) World.ReceiveChat(msg);
+                    return;
+                }
+            }
+        }
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 

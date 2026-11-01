@@ -69,7 +69,10 @@ public sealed class TrainingSession
     {
         _site = site;
         _mission = mission;
+        site.AttachClientHooks(mission);
     }
+
+    public void DetachClientHooks() => _site.DetachClientHooks();
 
     public TrainingMission Mission => _mission;
     public ClientTrainingSite Site => _site;
@@ -93,9 +96,16 @@ public sealed class TrainingSession
         if (!Started) return false;   // the mission starts once the player ship exists (Game1.UpdateTraining)
         while (_site.TryTakeLifecycleEvent(out var lifecycleEvent))
         {
-            if (lifecycleEvent.Death) _mission.ShipDied();
+            if (lifecycleEvent.Station is { } station)
+            {
+                _mission.StationDestroyed(station, lifecycleEvent.Launcher, lifecycleEvent.LastOwnRestart);
+                _site.MarkStationDispatched(station.Id);
+            }
+            else if (lifecycleEvent.ShipKill) _mission.ShipKilled(lifecycleEvent.OwnSideWingman);
+            else if (lifecycleEvent.Death) _mission.ShipDied();
             else _mission.KillStationEvent();
         }
+        _site.DispatchStationDeaths(_mission);
         // Native trekigc.cpp:4131 lets the training mission handle landing first;
         // Mission2/3/4 terminate instead of opening an ordinary loadout lesson.
         bool docked = _site.PlayerDocked;

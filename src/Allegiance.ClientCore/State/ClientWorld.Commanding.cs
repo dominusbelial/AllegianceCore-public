@@ -11,6 +11,14 @@ public sealed partial class ClientWorld
     public Vector3? ViewedClusterPosition { get; private set; }
     public long ViewClusterVersion { get; private set; }
 
+    // training/trainingmission.cpp:489: SetViewCluster(NULL) ends the remote view.
+    public void ClearTrainingViewCluster()
+    {
+        ViewedClusterId = null;
+        ViewedClusterPosition = null;
+        ViewClusterVersion++;
+    }
+
     // Native clintlib/appmsg.cpp:443-455. Viewing changes the scene, never MyShipId.
     private void Apply(ViewClusterReply message)
     {

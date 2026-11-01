@@ -122,7 +122,7 @@ public sealed partial class Game1
             case HangarAction.Team:
                 ApplyConsoleMode("TeamPane", updatePointer: false); _hangarOnly = true; break;
             case HangarAction.Help: _helpVisible = true; break;
-            case HangarAction.Exit: _hangarQuitConfirm = true; break;
+            case HangarAction.Exit: if (!RequestTrainingQuit()) _hangarQuitConfirm = true; break;
         }
     }
 
@@ -166,12 +166,15 @@ public sealed partial class Game1
 
     private void DrawHangarQuitConfirmation()
     {
-        if (!_hangarQuitConfirm || !_dockedActive || _state != ClientState.Flying) return;
+        if (!_trainingQuitConfirm && (!_hangarQuitConfirm || !_dockedActive || _state != ClientState.Flying)) return;
         var vp = GraphicsDevice.Viewport;
         var panel = new Rectangle(vp.Width / 2 - 280, vp.Height / 2 - 70, 560, 140);
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         _spriteBatch.Draw(_whitePixel, panel, new Color(12, 30, 40));
-        _spriteBatch.DrawString(_hudBig, "QUIT CURRENT MISSION?", new Vector2(panel.X + 20, panel.Y + 20), Color.LightCyan);
+        string question = _trainingQuitConfirm ? "Quit the Current Training Mission?" : "QUIT CURRENT MISSION?";
+        float scale = MathF.Min(1f, (panel.Width - 40f) / _hudBig.MeasureString(question).X);
+        _spriteBatch.DrawString(_hudBig, question, new Vector2(panel.X + 20, panel.Y + 20), Color.LightCyan,
+            0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
         _spriteBatch.DrawString(_hudSmall, $"{KeyOf("MenuConfirm").Label} confirm    {KeyOf("MainMenu").Label} cancel",
             new Vector2(panel.X + 20, panel.Y + 88), Color.White);
         _spriteBatch.End();

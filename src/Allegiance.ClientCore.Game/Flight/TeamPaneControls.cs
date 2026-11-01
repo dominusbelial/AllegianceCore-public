@@ -33,6 +33,9 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 internal sealed class TeamPaneControls
 {
     private readonly ActionPressEdges _edges = new();
+    // teampane.cpp:900-914: training skips enablement updates, retaining
+    // the last button state. A new pane starts with no eligible selection.
+    private (bool Gift, bool Auto, bool Stop) _donationButtons;
     private int _selection = -1;   // index into the roster; -1 = nothing selected
 
     /// <summary>One selectable roster row: a seated player, or (for the leader)
@@ -156,6 +159,7 @@ internal sealed class TeamPaneControls
         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), !active);
         bool next = Edge("TeamPaneNextPilot");
         bool act = Edge("TeamPaneAct");
+        bool training = world.TrainingChatRecipient is not null;
         bool small = Edge("InvestDonate");
         bool large = Edge("InvestDonateLarge");
         bool auto = Edge("InvestAutoDonate");
@@ -182,19 +186,25 @@ internal sealed class TeamPaneControls
             return default;
         var row = rows[_selection];
 
+        if (!training)
+        {
+            bool recipient = row.ShipId != world.MyShipId && !row.IsJoinRequest;
+            _donationButtons = (recipient && (world.MyMoney ?? 0) > 0, recipient, recipient && world.IsTeamLeader);
+        }
+
         // Funding verbs (native OnButtonDonate/OnRightButtonDonate/
         // OnButtonAutoDonate/OnButtonStopDonate, teampane.cpp:1141-1245):
         // no self-gifts, no gifts without money.
         int money = Math.Max(0, world.MyMoney ?? 0);
-        if ((small || large) && money > 0 && row.ShipId != world.MyShipId && !row.IsJoinRequest)
+        if ((small || large) && _donationButtons.Gift && row.ShipId != world.MyShipId && !row.IsJoinRequest)
             return new Result(Gift: new PlayerDonate
             {
                 ShipID = row.ShipId,
                 MoneyGiven = Math.Min(money, large ? 500 : 100),
             });
-        if (toggle && world.IsTeamLeader && row.ShipId != world.MyShipId && !row.IsJoinRequest)
+        if (toggle && _donationButtons.Stop && row.ShipId != world.MyShipId && !row.IsJoinRequest)
             return new Result(Auto: new AutoDonate { SidDonateTo = row.ShipId, Amount = -1 });
-        if (auto && row.ShipId != world.MyShipId && !row.IsJoinRequest)
+        if (auto && _donationButtons.Auto && row.ShipId != world.MyShipId && !row.IsJoinRequest)
             return new Result(Auto: new AutoDonate { SidDonateTo = row.ShipId, Amount = money });
 
         // The single action key: accept a join request, otherwise take me to

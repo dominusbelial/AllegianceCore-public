@@ -1280,6 +1280,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// </summary>
     public void RecordKillCredit(int launcherId, int victimId)
     {
+        if (_clientBound) return; // client session drains the simulation death hook once (trekigc.cpp:4265)
         var launcher = ResolveShip(launcherId);
         var victim = ResolveShip(victimId);
         bool playerSide = launcher is not null && launcher.SideId == PlayerShip.SideId;

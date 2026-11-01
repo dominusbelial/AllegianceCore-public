@@ -241,7 +241,7 @@ public sealed partial class Game1
                     case 2: if (!_keyBindVisible) ToggleKeyBindings(); break;
                     case 3: _creditsVisible = true; break;
                     case 4: if (_state == ClientState.Flying) ApplyConsoleMode("ConModeGameState"); break;
-                    case 5: Exit(); break;
+                    case 5: if (!RequestTrainingQuit()) Exit(); break;
                     case 6: _graphicsSettingsVisible = true; _graphicsRow = 6; _graphicsPrevious = keys; break;
                     case 7: if (_skirmish?.Options.HostLan == true) StopSkirmish(); else ToggleSkirmishPause(); break;
                     case 8: StopSkirmish(); break;

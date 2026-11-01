@@ -4961,3 +4961,49 @@ tests overran the 10 second limit: SC2 nanite, P814, P796, `MissileLock`, P777, 
 |---|---|---|
 | `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | fail / pass / fail on P909 base, Expected 5, Actual 6 at `Proxy.Attempts` | **New, not load-only, cause not established.** One extra connection attempt appears between `KillServer` and driver exit. Ruled out: recovery (`recovery: false`), reconnect grace (off by default), the worker probe (never re-dials), initial spawn (ends before `ready`). Unproven lead: showcase refill. |
 | `MusicLoading`, `Hud12bReviewFix`, `ConsoleLogNonBlocking`, `ThreePeerSeededSession`, `LiveSideSelect`, `DockDocking`, `NpcWingmanDefend`, `MissileLock`, `SC2SupportPhase`, `SC4`, `P745`, `P798` | not rerun this batch | Already ledgered above. |
+
+## P910 Codex gates — 2026-11-01
+
+The final Fast sweep ran 12,863 cases in 544.284 s: **12,852 passed,
+8 failed, 3 skipped**, plus two calibrated 10 s timing overruns. P910's
+64 new cases pass three isolated invocations, and the complete artwork
+training gate passes all three repetitions (675 passed, zero skipped).
+No unrelated test, resolver, docking, missile, NPC or timing-threshold code
+was changed to hide the failures below.
+
+Each method below ran in **three separate method-filtered invocations** with
+native ship updates, pooled transport, parallel broadcast construction,
+native GotoPlan and server GC. Evidence:
+`.scratch/p910/final-validation/fast/`,
+`.scratch/p910/final-validation/isolations/summary.json` and the adjacent
+`case-<method-index>-<run>.trx` / `.log` files. The summary records full method
+names and all theory-case outcomes.
+
+| Test / family | Three-run isolation | Finding |
+|---|---|---|
+| `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository` (Artwork), `MissingDirectoryHasNoDefault` (Artwork / NativeSource), `NativeSourceNeverGuessesAnInstallSubdirectory`, `LocalConfigWinsOverBundleWithBlankEnvironment` | Each of the five failing cases fails 3/3; the other theory cases pass | Scratch-path harness constraint, not load-only. Lane rules place `TMPDIR` below the checkout. These fixtures assume their temporary base directory is outside any repository; `ExternalPaths.FindRepoRoot` therefore finds the real ancestor repository before considering the synthetic current-directory context. Real artwork/native config shadows their expected empty/bundled results; the synthetic sky config loses to the executable bundle. Resolver and fixtures are unchanged. Original failures retained. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail; 38.356 / 38.325 / 38.335 s | Previously ledgered missile-lock test remains failing here: full lock reaches 1.000 but the partial-tip edge is absent. Also a Fast budget offender (38.308 s in the sweep). This is not classified as a load flake. P910 chat changes require local training delegates, which are null in this normal multiplayer fixture; missile lock/feedback code is unchanged. Remains open. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / fail / fail | Previously ledgered all-status assertion includes another ship (8098) docked at station 1051; it is not scoped to the trainee/player. Reproduces under the baseline settings here; docking/status source is unchanged. Not classified as load-only. Remains open. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same persistent null defend-target failure already recorded under P872/P887/P895/P902/P905/P909. Core NPC code is unchanged. Remains open. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | functional pass / pass / pass; 9.823 / 9.932 / 9.674 s | Sweep passed functionally at 10.524 s, above its calibrated 10 s limit. Existing near-boundary timing offender; no warp or timing-threshold changes. |
+
+Two unintended superseded Fast sweeps also completed after Ctrl-C failed to
+stop child scripts. This exceeded the requested ONE sweep. Shared old paths
+reliably retain only the last superseded sweep (10 failed cases, two timing
+offenders); original outer logs and that TRX remain under `.scratch/p910/`.
+All remaining task children were stopped before the final evidence run. The
+following failures occurred only in that retained superseded sweep and were
+also isolated three times:
+
+| Test | Isolation | Finding |
+|---|---|---|
+| `AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission` | pass / pass / pass | Superseded sweep missed the lethal cross-side hit and exceeded the Fast budget (17.622 s). Final sweep passes. Asteroid/collision code is unchanged. |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | pass / pass / pass | Superseded sweep missed the new joiner's expected message; final sweep passes. Rotation source is unchanged. |
+| `P907SchedulingMetricsTests.Production_server_logs_metrics_for_both_host_profiles_only_when_enabled` | all four profile/flag cases pass / pass / pass | Superseded sweep saw Address already in use; final sweep passes. This occurred while unintended test children overlapped, so no independent root cause or host-load-only claim is made. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / pass / pass | Superseded sweep observed 2 statuses against expected 3; final sweep passes. Join/status source is unchanged. |
+
+The persistent PlayerBundlePaths and NPC failures and the P777 timing issue
+also occurred in the retained superseded sweep. These outcomes do not replace
+the final Fast failures, and none of the interrupted training wrappers is
+counted as a passing training gate. Full workflow details are in
+`docs/reports/P910_REPORT.md`.

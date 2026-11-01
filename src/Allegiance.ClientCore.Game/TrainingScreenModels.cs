@@ -62,7 +62,19 @@ public sealed class TrainingScreenModel
         new(Tm8Nanite, "Nanite", "The nanite repair drone and survivability.", Playable: true),
     };
 
-    public int Index;
+    // WinTrek/trainingscreen.cpp:31,42,92-98,168-179: recommendation lives
+    // across screen instances, advances only when launching the recommended lesson.
+    public static int RecommendedMission { get; private set; } = Tm1Introduction;
+    public int Index = System.Array.FindIndex(Missions, m => m.MissionId == RecommendedMission);
+
+    public void RecommendNext(int missionId)
+    {
+        if (missionId == RecommendedMission)
+            RecommendedMission = missionId >= Tm6PracticeArena ? Tm8Nanite : missionId + 1;
+    }
+
+    public void SelectRecommendation() => Index = System.Array.FindIndex(Missions,
+        m => m.MissionId == RecommendedMission);
 
     public TrainingEntry Selected => Missions[Index];
 

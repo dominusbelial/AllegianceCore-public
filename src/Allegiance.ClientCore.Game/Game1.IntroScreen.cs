@@ -174,6 +174,12 @@ public sealed partial class Game1
     private void UpdateIntro(KeyboardState ks)
     {
         UpdateIdentity(ks);
+        if (_trainingLaunchRequested)
+        {
+            _trainingLaunchRequested = false;
+            StartTrainingMission(Tm10FreeFlight);
+            return;
+        }
         // Real-window proof hook: ALLEGIANCE_TRAINING_START=<missionId> starts that training
         // mission straight from the intro (one-shot; inert when the var is unset), so the full
         // launch → loopback join → mission script path runs in a real client.
@@ -421,6 +427,7 @@ public sealed partial class Game1
         if (down && !_iDown) _singlePlayerChooser.Move(1);
         if (enter && !_iEnter)
         {
+            if (_singlePlayerChooser.Activate()) _trainingScreen.SelectRecommendation();
             _introView = _singlePlayerChooser.Activate() ? IntroView.Training : IntroView.SkirmishSetup;
             Console.WriteLine($"[intro] Single Player -> {(_singlePlayerChooser.Activate() ? "Training" : "Skirmish")}");
         }
@@ -457,6 +464,12 @@ public sealed partial class Game1
     /// </summary>
     private void StartTrainingMission(int missionId)
     {
+        // trainingscreen.cpp:168-179: even Introduction or a cancelled prelude
+        // counts as a launch; replaying earlier lessons does not advance the recommendation.
+        _trainingScreen.RecommendNext(missionId);
+        var prefs = IntroPreferences.Load();
+        prefs.ShowStartupTrainingSuggestion = false;
+        prefs.Save();
         if (missionId == Tm1Introduction)
             BeginTrainingMission(missionId);   // routes to the tm_1_introduction (post) slideshow
         else if (missionId == Tm10FreeFlight)
@@ -692,6 +705,7 @@ public sealed partial class Game1
         {
             _spriteBatch.End();
         }
+        DrawHangarQuitConfirmation();
     }
 
     private void DrawIntroTitle(float w, string title, string sub, Color titleCol, Color dimCol)

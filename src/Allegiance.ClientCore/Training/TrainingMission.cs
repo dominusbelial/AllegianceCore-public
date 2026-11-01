@@ -239,6 +239,13 @@ public abstract class TrainingMission
 
     /// <summary><c>KillStationEvent</c> (<c>trainingmission.cpp:533-563</c>) — host responsibility for
     /// "all stations destroyed" detection; deferred to TR-2.</summary>
+    // WinTrek/trekigc.cpp:4351 passes both models, even if the base lesson's
+    // defeat policy (trainingmission.cpp:539-548) does not use the launcher.
+    public virtual void StationDestroyed(TargetRef station, TargetRef? launcher, bool lastOwnRestart)
+    {
+        if (lastOwnRestart) KillStationEvent();
+    }
+
     public virtual void KillStationEvent()
     {
         Site.ShowMessage("Your side's stations have all been destroyed!");

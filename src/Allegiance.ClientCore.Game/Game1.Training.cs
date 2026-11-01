@@ -86,6 +86,7 @@ public sealed partial class Game1
 
     // P785 — whether a key/click was down last frame (the slideshow advances on the edge).
     private bool _slideInputHeld;
+    private double _trainingSlideLastSeconds;
 
     /// <summary>P785 — native DoQuitMission skips the post slideshow
     /// (WinTrek.cpp:3559-3566 SetSkipPostSlideshow → trainingscreen); the port's
@@ -161,6 +162,7 @@ public sealed partial class Game1
         _embeddedHost.SetActiveMission(mission);
         var session = new TrainingSession(site, mission);
 
+        SaveTrainingPreferences();
         TrainingController.BeginMission();
         TrainingOwnState.Reset();
         TrainingOverlay.Current = 0;
@@ -202,7 +204,7 @@ public sealed partial class Game1
         _disconnectTransitioned = false;
         _readyConfirmedShip = null;
         _nextMatchGeneration = _session.World.MissionGeneration;
-        BeginConnect("127.0.0.1", _embeddedHost.Port);
+        BeginConnect("127.0.0.1", _embeddedHost.Port, training: true);
     }
 
     internal ClientTrainingFacilities CreateTrainingFacilities(int missionId) => new ClientTrainingFacilities
@@ -249,6 +251,7 @@ public sealed partial class Game1
             },
             RestoreCamera = () =>
             {
+                lock (_session.Gate) _session.World.ClearTrainingViewCluster();
                 _cameraMode = _trainingDeadCamera;
                 _overrideTarget = null;
                 _externalCamAlignedFor = null;
@@ -453,16 +456,7 @@ public sealed partial class Game1
         if (session.Advance())
         {
             Console.WriteLine($"[training] mission complete; final goal={session.Mission.ActiveGoalPath}; survivors={_embeddedHost?.Drones.Values.Count(d => !d.Dead && d.Fraction > 0 && d.Sector is not null)}");
-            ClearTrainingSounds();
-            TrainingOwnState.Reset();
-            TrainingController.EndMission();
-            Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
-            _trainingInputGate = null;
-            _trainingDeathCameraActive = false;
-            if (TrainingClock.IsPaused) TrainingClock.Continue();   // trainingmission.cpp:123-125
-            _embeddedHost?.Dispose();
-            _embeddedHost = null;
-            _trainingSession = null;
+            ReleaseTraining();
             _trainingError = "";
             // Leave the embedded-host match like any session exit (the skirmish path
             // disposes the session; Connect() re-establishes on the next launch).
@@ -493,8 +487,9 @@ public sealed partial class Game1
         _trainingSlideshowIsPost = isPost;
         _trainingMissionId = missionId;
         slideshow.Start();
+        _trainingSlideLastSeconds = _nowSeconds;
         _slideInputHeld = true;
-        _slideSound = _sound?.PlaySlideSound(slideshow.Current?.SoundStem);
+        _slideSound = StartTrainingSlideVoice(slideshow.Current?.SoundStem);
         _introView = IntroView.TrainingSlideshow;
         _state = ClientState.Intro;
         Console.WriteLine($"[training] slideshow {(isPost ? "post" : "pre")} for mission {missionId} ({slideshow.Count} slides)");
@@ -506,18 +501,33 @@ public sealed partial class Game1
     /// (Slideshow.cpp:123-146), any key advances immediately (:147-150,179-183), and
     /// dismissal routes per the subclass (start the mission / back to the training
     /// screen).</summary>
+    private Microsoft.Xna.Framework.Audio.SoundEffectInstance? StartTrainingSlideVoice(string? stem)
+    {
+        Console.WriteLine($"[training] slide voice {stem}");
+        return _sound?.PlaySlideSound(stem);
+    }
+
     private void UpdateTrainingSlideshow(KeyboardState ks)
     {
         if (_trainingSlideshow is not { } slide) return;
+        double delta = Math.Max(0, _nowSeconds - _trainingSlideLastSeconds);
+        _trainingSlideLastSeconds = _nowSeconds;
+        if (UpdateTrainingQuitInput(ks)) return;
+        bool quit = KeyOf("Quit").Matches(ks);
+        if (quit && !_altF4WasDown) RequestTrainingQuit();
+        _altF4WasDown = quit;
+        if (_trainingQuitConfirm) return;
         // The current clip finished → arm the 1 s advance timer (Slideshow.cpp:127-136).
         if (_slideSound is { State: Microsoft.Xna.Framework.Audio.SoundState.Stopped })
         {
             _slideSound.Dispose();
             _slideSound = null;
             slide.OnSoundFinished();
+            delta = 0; // the post-voice timer starts at this frame's finish notification
         }
-        slide.Tick(1.0 / 60.0);   // timer path
-        bool advanced = false;
+        int previousSlide = slide.Index;
+        slide.Tick(delta);   // real elapsed timer, Slideshow.cpp:123-146
+        bool advanced = slide.Index != previousSlide;
         // Native advances on a key-DOWN event or a click (Slideshow.cpp:147-150,
         // 179-183), not while a key is held: latch the edge, and start latched so the
         // Enter that opened the slideshow does not skip slide 1.
@@ -534,7 +544,7 @@ public sealed partial class Game1
         {
             _slideSound?.Stop();
             _slideSound?.Dispose();
-            _slideSound = _sound?.PlaySlideSound(slide.Current?.SoundStem);
+            _slideSound = StartTrainingSlideVoice(slide.Current?.SoundStem);
         }
         if (slide.Dismissed)
         {
@@ -569,18 +579,8 @@ public sealed partial class Game1
     private void AbortTrainingStart(string error)
     {
         Console.WriteLine($"[training] {error}");
-        ClearTrainingSounds();
-        TrainingOwnState.Reset();
-        Allegiance.ClientCore.Training.TrainingController.EndMission();
-        Rendering.KeyBindingStore.Instance.Map.ActionFilter = null;
-        _trainingInputGate = null;
-        _trainingDeathCameraActive = false;
-        if (TrainingClock.IsPaused) TrainingClock.Continue();
-        _embeddedHost?.Dispose();
-        _embeddedHost = null;
-        _trainingSession = null;
+        ReleaseTraining();
         _session.Dispose();
-        _trainingAutoJoin = false;
         _trainingError = error;
         Diagnostics.CrashLog.SetMode("training-error");
         ReturnToTrainingScreen();
@@ -588,6 +588,7 @@ public sealed partial class Game1
 
     private void ReturnToTrainingScreen()
     {
+        _trainingScreen?.SelectRecommendation();
         _introView = IntroView.Training;
         _state = ClientState.Intro;
     }

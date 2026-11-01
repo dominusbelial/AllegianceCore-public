@@ -866,6 +866,16 @@ list in **reverse**.
   `src/Allegiance.ClientCore/Training/AdditionalPrimitives.cs`.
   Both-style loopback tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P909TrainingBindingsTests.cs`.
   Exact remaining gaps and the native caller audit: `docs/reports/P909_REPORT.md`.
+- **Training client integration (P910)** — local IGC death/station events and
+  chat recipient/default-drone hooks bind through
+  `src/Allegiance.ClientCore.Game/Training/TrainingRuntime.cs` and
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Chat.cs`; mission-specific
+  queued-order timeout stays in `src/Allegiance.Server/Server.ShipCommands.cs`.
+  `src/Allegiance.ClientCore.Game/Game1.TrainingIntegration.cs` owns HUD/keymap
+  restoration, modal quit and all exit cleanup for both styles. The chooser
+  remembers its next lesson; native `-training` starts Free Flight. Real-window
+  proof: `tools/p910-training-proof/`; row audit and remaining gaps:
+  `docs/reports/P910_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
   start-to-finish through the production path: client orders/target picks use the real
   `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied

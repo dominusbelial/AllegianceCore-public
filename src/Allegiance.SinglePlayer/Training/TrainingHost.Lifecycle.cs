@@ -4,10 +4,13 @@ using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Training;
 
 namespace Allegiance.SinglePlayer;
 
-public readonly record struct TrainingLifecycleEvent(bool Death, Vector3 Focus, float Radius);
+public readonly record struct TrainingLifecycleEvent(bool Death, Vector3 Focus, float Radius,
+    bool ShipKill = false, bool OwnSideWingman = false,
+    TargetRef? Station = null, TargetRef? Launcher = null, bool LastOwnRestart = false);
 
 public sealed partial class TrainingHost
 {
@@ -26,7 +29,16 @@ public sealed partial class TrainingHost
 
     private bool HandleTraineeDeath(Ship ship, IModelIgc? launcher)
     {
-        if (!ReferenceEquals(ship, PlayerShip)) return false;
+        if (!ReferenceEquals(ship, PlayerShip))
+        {
+            // WinTrek/trekigc.cpp:4264-4265; trainingmission.cpp:515-524.
+            // Keep client lesson evaluation on its owning thread, before its next Frame.
+            if (_clientBound)
+                _lifecycleEvents.Enqueue(new(false, default, 0, ShipKill: true,
+                    OwnSideWingman: launcher is not null && TargetSide(launcher) == PlayerShip.SideId
+                        && ship.PilotType == Ship.PilotTypeWingman));
+            return false;
+        }
         if (_deadSector is not null) return true;
         _deadSector = ship.Sector;
         if (_deadSector is null) return true;
@@ -67,8 +79,36 @@ public sealed partial class TrainingHost
         }
     }
 
-    private void HandleStationDeath(Station station)
+    public bool IsLastTrainingRestartStation(short stationId, short? sideId = null, short? stationTypeId = null)
     {
+        lock (_simGate)
+        {
+            // Dead station runtimes remain addressable until the end of the tick;
+            // the static authored record retains identity after registry retirement.
+            var record = Mission.Map.Stations.FirstOrDefault(s => s.StationId == stationId);
+            if ((sideId ?? (record.StationId == stationId ? record.SideId : -1)) != PlayerShip.SideId
+                || !Mission.Core.StationTypes.TryGetValue(stationTypeId ?? record.StationTypeId, out var type)
+                || !type.HasCapability(DataStationTypeIGC.SabmRestart)) return false;
+            return !Mission.Sectors.SelectMany(s => s.StationRuntimes).Any(s =>
+                s.StationId != stationId && !s.Dead && s.SideId == PlayerShip.SideId
+                && s.Type.HasCapability(DataStationTypeIGC.SabmRestart));
+        }
+    }
+
+    private void HandleStationDeath(Station station, Model? launcher)
+    {
+        // trekigc.cpp:4351 is a local IGC-site hook: retain non-ship launchers,
+        // which STATION_DESTROYED's ship-only launcher field cannot represent.
+        if (_clientBound)
+        {
+            var launcherType = EquipmentTarget.TypeOf(launcher);
+            _lifecycleEvents.Enqueue(new(false, default, 0,
+                Station: new TargetRef(ObjectType.Station, station.StationId),
+                Launcher: launcher is not null && launcherType != (IgcObjectType)(-1)
+                    ? new TargetRef((ObjectType)launcherType, launcher.Id) : null,
+                LastOwnRestart: IsLastTrainingRestartStation(station.StationId, station.SideId, station.Type.StationTypeId)));
+            return;
+        }
         // training/trainingmission.cpp:539-548: only the last friendly restart base.
         if (station.SideId != PlayerShip.SideId || !station.Type.HasCapability(DataStationTypeIGC.SabmRestart)) return;
         bool remains = Mission.Sectors.SelectMany(s => s.StationRuntimes).Any(s =>

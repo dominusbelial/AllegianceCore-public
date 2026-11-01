@@ -63,9 +63,12 @@ public sealed partial class Game1
     /// players who stay docked until they launch.
     /// The hangar exits itself once the server undocks (StationId reverts to NA).
     /// </summary>
+    private bool TrainingAllowsHangar => _trainingSession is not { } training
+        || (training.AllowHangar && _trainingMissionId != 5);
+
     private bool HandleDockedScreen(KeyboardState ks, bool composing)
     {
-        if (_trainingSession is { } training && (!training.AllowHangar || _trainingMissionId == 5)) return false;
+        if (!TrainingAllowsHangar) return false;
         var world = _session.World;
         short me = world.MyShipId ?? -1;
         bool myDocked = world.Ships.TryGetValue(me, out _) && world.Ships[me].StationId != -1;
@@ -521,7 +524,8 @@ public sealed partial class Game1
         // The camera jump is gated exactly like native (teampane.cpp:1305-1328):
         // only when the ship-status sector is known AND (same sector OR docked).
         // PickShip below still runs regardless.
-        if (sectorId is { } targetSector && (mySector == targetSector || docked))
+        if ((!TrainingActive || _trainingSession!.Mission.CommandViewEnabled)
+            && sectorId is { } targetSector && (mySector == targetSector || docked))
         {
             if (docked)
             {
@@ -1226,6 +1230,7 @@ public sealed partial class Game1
     /// </summary>
     private void IssueStarmapGoto(short clusterId)
     {
+        if (TrainingActive && !_trainingSession!.Mission.CommandViewEnabled) return;
         short ownShip = (short)(_session.World.MyShipId ?? -1);
         var db = Rendering.StarmapClick.BuildClusterGotoBuoy(clusterId);
         _session.SendChatBuoy("goto", ChatTarget.Individual, ownShip, db);
