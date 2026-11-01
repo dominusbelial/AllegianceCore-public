@@ -5079,3 +5079,25 @@ Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`,
 Causes not established; all fail only under the full parallel sweep. `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers`
 passed this sweep after failing the previous two, so it is intermittent, cause unknown. `DockDocking`, `MissileLock`, `NpcWingmanDefend`,
 `SC2SupportPhase`, `SC4`, `P745` and `P798` also failed; not rerun here, not cleared for P910.
+
+## 2026-11-01: batch-p911 sweep on the runner
+
+Snapshot `a63dd6fc`, master at the P911 merge without media. Fast FAIL (12,872 tests), Live FAIL (273 tests), Perf PASS (73 tests).
+Compared with batch-p910, `P761b`, `P764`, `P902SoundTemplate`, `KillBonusLive` and `MissileTrackWarning` passed this sweep. Two
+failures are new, rerun 3× alone on master plus the greet fix below:
+
+| Test | Sweep failure | Alone |
+| --- | --- | --- |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | timed out at line 116 waiting for the bot's own loadout (the helper's message says "join") | pass / pass / pass |
+| `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station` | no building effect at line 212 | pass / pass / pass |
+
+Causes not established; both fail only under the full parallel sweep. `MusicLoading`, `LiveSideSelect`, `DockDocking`, `MissileLock`,
+`NpcWingmanDefend`, `SC2SupportPhase`, `SC4`, `P745` and `P798` failed again; not rerun here. The sweep logs contain no `non-greet` drop.
+
+## 2026-11-01: client data frame could overtake the TCP greeting (fixed)
+
+P912's training gate lost one window (`m8-Modern-early`) with `peer sent non-greet frame` and `timed out waiting for LOGONACK`.
+`TcpTransport.Join` set `IsConnected` and published `_clientSender` before queuing the greeting, and the session keep-alive thread runs
+before Connect, so a ping in that gap went first and the server closed the connection. `TcpClientGreetOrderTests` reproduced it on the
+unfixed code (5 of 2,000 joins with a thread sending as soon as `IsConnected` is true) and passes after the fix. That the keep-alive
+thread was the sender in the failed window is inferred: it is the only concurrent sender found, and the window log does not name it.

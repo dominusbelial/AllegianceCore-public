@@ -446,7 +446,6 @@ public sealed class TcpTransport : IServerTransport
         _clientStream = client.GetStream();
         _isHost = false;
         _running = true;
-        IsConnected = true;
         LocalId = ConnectionId.Me; // client self id 0, mirroring Messages.cpp:1603
         // Set up the per-connection send queue; the greeting travels through it
         // (first in the queue, so ordering is preserved) instead of a raw write.
@@ -458,9 +457,13 @@ public sealed class TcpTransport : IServerTransport
             Reliable = Reliable,
             ReliableOneShotPark = ReliableOneShot,
         };
-        lock (_gate) _clientSender = sender;
         sender.Start();
         sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true, coalesceKey: 0);
+        // Published only after the greeting is queued: the session keep-alive
+        // thread sends as soon as IsConnected is true, and a data frame ahead of
+        // the greeting gets this connection dropped as a protocol error.
+        lock (_gate) _clientSender = sender;
+        IsConnected = true;
         Spawn(() =>
         {
             // P320 — the client read loop ending (server closed / socket error /
