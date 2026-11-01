@@ -56,6 +56,8 @@ converted to an 80% rule.
 
 ## Proposed stack and event rulings
 
+**Ruling:** Domingo approved both on 2026-10-31; the matrix now carries them as `design-replaced`.
+
 **BOT-0016 — proposed reason:** `REPLACED: compiled named C# routines preserve
 nested overrides, retained suspended state/timers and orders, restoration and
 an unpoppable base; typed tool parameters replace ActiveScript command lines.`
