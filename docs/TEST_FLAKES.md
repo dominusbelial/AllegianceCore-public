@@ -5011,3 +5011,17 @@ counted as a passing training gate. Full workflow details are in
 Claude's review of P910: `MissileLock` is intermittent with and without P910 (alternated runs: 3 of 3 failed on the
 P909 tree, 2 of 3 failed on P910, mostly while other tests ran), and `DockDocking` also fails on the P909 tree. Neither is a P910
 regression.
+
+## Mini sweep `batch-p908-p909` — 2026-11-01
+
+Snapshot `25861102`. Perf 73 pass; Fast 12,825 FAIL; Live 237 FAIL. No failure is new to this ledger. None of the Live
+failures below was isolated this batch, so this sweep does not clear P908 or P909 of them.
+
+| Test | Result | Finding |
+|---|---|---|
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | sweep fail, pass 3/3 alone | Already ledgered intermittent. |
+| `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | sweep fail, pass 3/3 alone | Already ledgered as sweep-only. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.1 s against a 31 s limit, pass 3/3 alone | Already ledgered timing margin. |
+| `MissileLockLiveTests`, `NpcWingmanDefendLiveTests` | sweep fail | See the P910 section. |
+| `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | Expected 5, Actual 6 again | Second sweep in a row. Still open, cause not established. |
+| `SC2SupportPhase`, `SC4`, `P745`, `P798` | sweep fail, not rerun | Already ledgered showcase outcomes. |
