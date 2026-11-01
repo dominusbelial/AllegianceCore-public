@@ -915,6 +915,11 @@ list in **reverse**.
   driver is `src/Allegiance.ClientCore.Game/Game1.TrainingProof.Advanced.cs`;
   window assertions and receipts are in `tools/p912-training-proof/` and
   `tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs`.
+  Training joins require `src/Allegiance.Core/Transport/TcpTransport.cs` to
+  queue its greeting before exposing `IsConnected`, so concurrent keep-alive
+  sends cannot precede it; the merged regression is
+  `tests/Allegiance.Core.Tests/Transport/TcpClientGreetOrderTests.cs`.
+  The audit distinguishes completed window proof from the interrupted repeat gate.
   Native: `training/mission2.cpp:102-103`, `training/mission5.cpp:84-106,180-247`,
   `training/mission8.cpp:87-145,442-448`, `WinTrek/trekigc.cpp:1996-2010`. Audit: `docs/reports/P912_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run

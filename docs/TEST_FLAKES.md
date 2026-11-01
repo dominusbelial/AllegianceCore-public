@@ -5075,8 +5075,8 @@ The task-owned P708 private-field reflection reference was updated after the
 combat slot generalized from probes to static models. All 42 P708 tests then
 passed in each of three isolated repeats; this is a corrected task test, not a
 new flake. Final training idle/accepted-order, camera/chat/status and proof-pilot changes
-were checked after the sweep in targeted cohorts and the final training gate;
-the sweep was not repeated.
+were checked after the sweep in targeted cohorts and the completed first training pass;
+the repeat gate was interrupted as recorded below. The sweep was not repeated.
 
 | Non-task failure / timing check | Three isolated repeats | Disposition |
 |---|---|---|
@@ -5095,6 +5095,8 @@ the sweep was not repeated.
 P912 targeted-cohort follow-up: one `P873TrainingJoinTests.Logon_replicates_the_native_trainee_before_the_real_update_starts_script(id: 3)` execution reached `Mission3.CreateMission` without a replicated player pose (`ClientTrainingSite.PlayerShip`). All 13 join cases passed in each of three fresh isolated processes, with zero skips (`.scratch/p912/join-isolation/{1,2,3}/result.trx`). A second occurrence during the expanded P912 cohort exposed a task-relevant startup race: readiness and complete goal construction read different replicated-world snapshots. P912 now holds the session gate across both operations, with a regression that asserts guarded reads during readiness and SetupTraining. The resume reused the failed cohort result path; the original failing TRX was overwritten. Its observed stack/count are transcribed in `.scratch/p912/join-isolation/startup-race-observation.txt`; the three earlier isolation TRX files remain. Future retries archive prior directories. The final expanded cohort verifies the correction.
 
 P912 native warp-handoff follow-up: the 390-case affected warp cohort hit the existing `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` floating-boundary family (delay 7: `7.0000000000000009`). Three exact-class processes returned fail (delays 5/7 at one ULP above the integer upper bound), pass (5/5), fail (one boundary case); see `.scratch/p912/timer-isolation/{1,2,3}/result.trx`. Timer/missile scheduling code and its assertion are unchanged. The final affected warp repeats explicitly exclude this ledgered class after preserving the failing initial cohort in `.scratch/p912/warp-initial-fail/`; its separate isolation remains part of qualification.
+
+P912 stopped training gate: `.scratch/p912/training-20261101T151134-14550/` completed pass 1 (ClientCore 95/95, MonoGame 208/208, zero skips), then pass 2 ClientCore 95/95. Claude stopped pass 2 MonoGame at about 54 windows with one failure; pass 3 never ran. The failing `m8-Modern-early-656863533dc742cb8f85c4db4a7e2c02/run.log:186,191` records a non-greet first frame and LOGONACK timeout before lesson startup. The merged `TcpTransport.Join` fix queues the greeting before publishing `IsConnected` (`fb040bb5`, regression `TcpClientGreetOrderTests`). After Debug and Release rebuilds, the exact M8 Modern early window passed three isolated invocations with zero skips (`.scratch/p912/resume-final/early-{1,2,3}/result.trx`). This is a corrected transport race, not a waived lesson failure. The full three-pass gate remains incomplete; Claude runs it after handoff.
 ### Sweep batch-p910 (snapshot 1503d0f4, mini, 2026-11-01)
 
 Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`, Debug, 3 of 3 each:
