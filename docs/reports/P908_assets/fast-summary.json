@@ -1,0 +1,78 @@
+{
+  "tier": "fast",
+  "seconds": 541.700091243998,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 119,
+      "outcomes": {
+        "Passed": 119
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 28,
+      "outcomes": {
+        "Passed": 28
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 4612,
+      "outcomes": {
+        "Passed": 4608,
+        "NotExecuted": 3,
+        "Failed": 1
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2070,
+      "outcomes": {
+        "Passed": 2070
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 5983,
+      "outcomes": {
+        "Passed": 5980,
+        "Failed": 3
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.943368700265252,
+    "referenceMs": 3.5565,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 10.0732445
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 10.5123923
+    },
+    {
+      "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "outcome": "Passed",
+      "seconds": 10.7910202
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "3 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.058128303004195914,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

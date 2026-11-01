@@ -1,0 +1,14 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolProjects": 104,
+  "aotPublish": {
+    "warnings": 0,
+    "errors": 0,
+    "IL2026": 0,
+    "IL3050": 0
+  },
+  "aotProcessProof": "PASS: native AOT server + production TCP client joined text-only core v1337; 447 hulls, 10 civilizations, 13 clusters; ship=8098."
+}

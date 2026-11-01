@@ -4,6 +4,55 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P908 verification (2026-10-31 UTC)
+
+Exactly one Fast sweep: **12,805 passed / 4 failed / 3 optional private-pack
+skips**, 12,812 executions in **541.700 s**. All nine infrastructure checks
+passed. Three passing executions exceeded the calibrated ten-second limit.
+All ten P908 Fast cases passed; all eleven new cases also passed **33/33** in
+three standalone cohort runs, including the Live client join. The affected
+P870/P869/P904 cohort passed **186/186** across three runs, including all 100
+shipped static cores byte-identical each time. The Fast sweep was not rerun.
+
+Every failed or slow method was repeated three times alone, serially, after the
+sweep. Physical temporary data stays in worktree scratch; a directory-descriptor
+alias preserves the bundle-path fixtures' outside-repository lexical paths, and
+XDG configuration uses scratch. Server GC is enabled; legacy tests keep their
+explicit config choices rather than receiving a global pool-mode override.
+No unrelated production rule or assertion was changed.
+
+| Method / family | Three standalone results | Finding |
+|---|---|---|
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | **pass/pass/pass**, 1.503/1.558/1.547 s | Existing launcher receipt flake, already recorded under multiple earlier lanes. Sweep saw the empty `ExpandedPartData` default at line 252. |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **pass/pass/pass**, 1.799/1.793/1.763 s | Existing mining receipt intermittency (P903): sweep expected one event, received two. Mining and broadcast behavior unchanged. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **fail/pass/pass**, 0.360/0.308/0.313 s | Same expected flying state 3 / actual docked state 2 as P907/P896. Intermittent even alone; remains open. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.178/1.141/1.238 s | Same null `DefendTarget` at line 179 as P907/P906/P904 and earlier baseline controls. Persistent existing failure; remains open. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases **pass/pass/pass**, 2.997–4.105 s each | Sweep-only timing: civ 25 took 10.073 s. Existing P904 selection fixture sensitivity; support/selection code unchanged. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.214/3.432/3.143 s | Sweep-only timing: 10.512 s. Same P907/P904 fixture sensitivity; bot purchase code unchanged. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, 9.786/9.936/9.607 s | Sweep timing: 10.791 s. Existing near-limit native-physics fixture; no warp/physics rule changed. |
+
+The single Fast result remains **FAIL**. Standalone executions total **20 passes /
+4 failures** across seven methods (one is a two-case theory); the persistent and
+intermittent failures above are not reclassified as passing. All use the ordinary
+binary core path, whose loaded data is unchanged by P908.
+
+The five required showcase never-parks repetitions passed **5/5**, matching the
+saved P907/P906/P904 baseline pass rate. Durations: **193.123 / 203.466 / 221.938 /
+231.264 / 240.802 s**. All reached 24/30 objectives, observed real combat hits and
+asserted zero simulation-stage failures. Maximum stopped-with-target interval:
+**1.007 s**. Retained boot logs confirm server/concurrent GC, pool transport,
+parallel broadcast and native GotoPlan. One additional queued control
+also passed in **300.912 s** (6/6 total); it is recorded separately
+from the required five-run sample. No performance A/B is claimed.
+
+Evidence: [P908 report](reports/P908_REPORT.md),
+[Fast receipt](reports/P908_assets/fast-summary.json),
+[three-run controls](reports/P908_assets/isolation-summary.json),
+[targeted checks](reports/P908_assets/targeted-summary.json),
+[showcase receipts](reports/P908_assets/showcase-summary.json).
+Raw logs/TRX remain in `.scratch/p908/fast-tier/`, `.scratch/p908/isolation/`
+and `.scratch/p908/results/` in the task worktree.
+
 ## P907 verification (2026-10-31 UTC)
 
 Exactly one Fast sweep: **12,789 passed / 9 failed / 4 skipped**, 12,802

@@ -22,9 +22,10 @@ public sealed partial class Game1
         string key = name.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? name[..^4] : name;
         if (_assetMissionCores.TryGetValue(key, out var cached)) return cached;
         string file = key + ".igc";
-        if (!_assets.Exists(file)) return null;
-        var core = Allegiance.Core.Model.StaticCore.Load(IgcReader.Parse(Assets.AssetSources.ReadAllBytes(_assets, file)));
-        _assetMissionCores[key] = core;
+        var core = _assets.Exists(file)
+            ? Allegiance.Core.Model.StaticCore.Load(IgcReader.Parse(Assets.AssetSources.ReadAllBytes(_assets, file)))
+            : Assets.TextCoreAssets.TryLoad(_assets, key);
+        if (core is not null) _assetMissionCores[key] = core;
         return core;
     }
 

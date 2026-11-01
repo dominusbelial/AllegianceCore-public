@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>OT_hullType</c> codec. A record is the 540-byte
@@ -140,15 +140,18 @@ public sealed class HullCodec : ITypeCodec
 
         foreach (var cells in text.Rows(CoreFiles.TypesOfShips.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             int hullId = row.I(0);
             int maxWeapons = row.I(19);
+            // Refuse malformed counts before allocating the variable payload.
+            if (text.Runtime && (maxWeapons < 0 || maxWeapons > byte.MaxValue))
+                throw new InvalidDataException($"TypesOfShips.csv: hull {hullId}: weapon count {maxWeapons} is outside byte range.");
             var w = new PayloadBuilder(Base + HardpointStride * Math.Max(0, maxWeapons)) { Id = hullId };
 
             // ShipsSFX: native scans every row (no early break).
             foreach (var sfxCells in sfxRows)
             {
-                var s = new TextRow(sfxCells);
+                var s = text.Row(sfxCells);
                 if (s.I(0) != hullId) continue;
                 w.I16(526, unchecked((short)s.I(2)));
                 w.I16(528, unchecked((short)s.I(3)));
@@ -211,7 +214,7 @@ public sealed class HullCodec : ITypeCodec
             int hpIndex = 0;
             foreach (var hpCells in hpRows)
             {
-                var h = new TextRow(hpCells);
+                var h = text.Row(hpCells);
                 if (h.I(0) != hullId) continue;
                 if (hpIndex >= maxWeapons || Base + (hpIndex + 1) * HardpointStride > w.Bytes.Length) break;
                 int off = Base + hpIndex * HardpointStride;

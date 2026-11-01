@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>OT_projectileType</c> codec (88-byte payload, <c>igc.h:1924</c>).
@@ -44,7 +44,7 @@ public sealed class ProjectileCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.TypesOfProjectiles.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             var w = new PayloadBuilder(DataProjectileTypeIGC.Size) { Id = row.I(0) };
             w.I16(72, unchecked((short)row.I(0)));          // projectileTypeID
             w.F32(52, row.F(1));                            // power

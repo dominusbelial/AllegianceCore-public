@@ -1,0 +1,76 @@
+{
+  "requiredRepetitions": [
+    {
+      "receipt": ".scratch/p908/results/showcase-1.trx",
+      "outcome": "Passed",
+      "testSeconds": 193.1225564,
+      "observationSeconds": 189.6,
+      "summary": "P700 local 15v15: 189.6s, samples=1894, reached=24/30, longest speed<1 with target=0.000s, shots=410, hits=181, kills=1",
+      "longestStoppedWithTargetSeconds": 0.0,
+      "serverGcConfirmed": true,
+      "poolConfirmed": true,
+      "parallelConfirmed": true,
+      "nativeGotoPlanConfirmed": true
+    },
+    {
+      "receipt": ".scratch/p908/results/showcase-2.trx",
+      "outcome": "Passed",
+      "testSeconds": 203.4659443,
+      "observationSeconds": 200.0,
+      "summary": "P700 local 15v15: 200.0s, samples=1998, reached=24/30, longest speed<1 with target=0.000s, shots=190, hits=1, kills=0",
+      "longestStoppedWithTargetSeconds": 0.0,
+      "serverGcConfirmed": true,
+      "poolConfirmed": true,
+      "parallelConfirmed": true,
+      "nativeGotoPlanConfirmed": true
+    },
+    {
+      "receipt": ".scratch/p908/results/showcase-3.trx",
+      "outcome": "Passed",
+      "testSeconds": 221.9380773,
+      "observationSeconds": 217.9,
+      "summary": "P700 local 15v15: 217.9s, samples=2176, reached=24/30, longest speed<1 with target=0.000s, shots=1421, hits=122, kills=0",
+      "longestStoppedWithTargetSeconds": 0.0,
+      "serverGcConfirmed": true,
+      "poolConfirmed": true,
+      "parallelConfirmed": true,
+      "nativeGotoPlanConfirmed": true
+    },
+    {
+      "receipt": ".scratch/p908/results/showcase-4.trx",
+      "outcome": "Passed",
+      "testSeconds": 231.2641449,
+      "observationSeconds": 227.0,
+      "summary": "P700 local 15v15: 227.0s, samples=2267, reached=24/30, longest speed<1 with target=0.000s, shots=370, hits=4, kills=0",
+      "longestStoppedWithTargetSeconds": 0.0,
+      "serverGcConfirmed": true,
+      "poolConfirmed": true,
+      "parallelConfirmed": true,
+      "nativeGotoPlanConfirmed": true
+    },
+    {
+      "receipt": ".scratch/p908/results/showcase-5.trx",
+      "outcome": "Passed",
+      "testSeconds": 240.8024769,
+      "observationSeconds": 236.7,
+      "summary": "P700 local 15v15: 236.7s, samples=2364, reached=24/30, longest speed<1 with target=1.007s, shots=1285, hits=381, kills=4",
+      "longestStoppedWithTargetSeconds": 1.007,
+      "serverGcConfirmed": true,
+      "poolConfirmed": true,
+      "parallelConfirmed": true,
+      "nativeGotoPlanConfirmed": true
+    }
+  ],
+  "additionalControl": {
+    "receipt": ".scratch/p908/results/showcase-6.trx",
+    "outcome": "Passed",
+    "testSeconds": 300.9120287,
+    "observationSeconds": 296.9,
+    "summary": "P700 local 15v15: 296.9s, samples=2965, reached=24/30, longest speed<1 with target=1.311s, shots=2092, hits=656, kills=6",
+    "longestStoppedWithTargetSeconds": 1.311,
+    "serverGcConfirmed": true,
+    "poolConfirmed": true,
+    "parallelConfirmed": true,
+    "nativeGotoPlanConfirmed": true
+  }
+}

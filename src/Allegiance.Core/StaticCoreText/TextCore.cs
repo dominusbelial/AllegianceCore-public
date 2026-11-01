@@ -2,8 +2,9 @@ using Allegiance.Core;
 
 using System.Buffers.Binary;
 using System.Text;
+using System.Globalization;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>Little-endian field accessors over a raw static-core record payload.</summary>
 public static class Bin
@@ -115,22 +116,57 @@ public sealed class TextCoreFiles
 
     private readonly Dictionary<string, TextFile> _files = new(StringComparer.OrdinalIgnoreCase);
 
-    public static TextCoreFiles Load(string dir, IEnumerable<string> names)
+    private readonly Dictionary<string[], string> _locations = new(ReferenceEqualityComparer.Instance);
+    private bool _runtime;
+    internal bool Runtime => _runtime;
+
+    internal TextRow Row(string[] cells) => new(cells, _runtime ? _locations[cells] : null);
+
+    public static TextCoreFiles Load(string dir, IEnumerable<string> names, bool runtime = false)
     {
-        var t = new TextCoreFiles();
+        var t = new TextCoreFiles { _runtime = runtime };
         foreach (string name in names)
         {
             string path = Path.Combine(dir, name + ".csv");
-            if (!File.Exists(path)) continue;
+            if (!File.Exists(path))
+            {
+                if (runtime) throw new InvalidDataException($"{path}: missing core text table.");
+                continue;
+            }
             var rows = new List<string[]>();
             var raw = CoreTable.ReadCsv(path);
+            if (runtime && raw.Count == 0) throw new InvalidDataException($"{path}: missing header.");
             for (int i = 1; i < raw.Count; i++) // native skips the header row
             {
                 var r = raw[i].ToArray();
                 if (r.Length > 0) r[^1] = r[^1].TrimEnd('\r'); // CRLF terminator
+                if (runtime)
+                {
+                    // std::getline drops a final empty cell; allow that spelling.
+                    int columns = CoreFiles.Get(name).Header.Split('\t').Length;
+                    if (r.Length < columns - 1 || r.Length > columns)
+                        throw new InvalidDataException($"{path}:{i + 1}: expected {columns} tab-separated columns, got {r.Length}.");
+                    t._locations.Add(r, $"{path}:{i + 1}");
+                }
                 rows.Add(r);
             }
             t._files[name] = new TextFile(name, rows);
+        }
+        if (runtime)
+        {
+            var constants = t.Rows(CoreFiles.Constants.BaseName);
+            if (constants.Count != CoreTable.CFcidMax + CoreTable.CDmgidMax * CoreTable.CDefidMax)
+                throw new InvalidDataException($"{dir}/Constants.csv: incomplete constants table.");
+            var slots = new HashSet<(bool Global, int Id, int Column)>();
+            for (int i = 0; i < constants.Count; i++)
+            {
+                bool global = i < CoreTable.CFcidMax;
+                int id = t.Row(constants[i]).I(0);
+                int column = global ? 0 : (i - CoreTable.CFcidMax) % CoreTable.CDefidMax;
+                if (id < 0 || id >= (global ? CoreTable.CFcidMax : CoreTable.CDmgidMax)
+                    || !slots.Add((global, id, column)))
+                    throw new InvalidDataException($"{dir}/Constants.csv:{i + 2}: invalid or duplicate constant id {id}.");
+            }
         }
         return t;
     }
@@ -156,23 +192,45 @@ public readonly struct TextRow
 {
     private readonly string[] _cells;
 
-    public TextRow(string[] cells) => _cells = cells;
+    private readonly string? _location;
+    public TextRow(string[] cells, string? location = null) { _cells = cells; _location = location; }
+    private InvalidDataException Invalid(int column, string kind) =>
+        new($"{_location}: column {column + 1}: invalid {kind} '{S(column)}'.");
 
     public int Count => _cells.Length;
 
     public string S(int i) => i < _cells.Length ? _cells[i] : "";
 
     /// <summary><c>atoi(col)</c>.</summary>
-    public int I(int i) => CoreTable.ParseInt(S(i));
+    public int I(int i)
+    {
+        if (_location is not null)
+        {
+            int n = CoreTable.NumericPrefixLength(S(i));
+            if (n == 0 || !int.TryParse(S(i)[..n].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
+                throw Invalid(i, "integer");
+        }
+        return CoreTable.ParseInt(S(i));
+    }
 
     /// <summary><c>atof(col)</c>.</summary>
-    public float F(int i) => CoreTable.ParseFloat(S(i));
+    public float F(int i) => FloatToken(i, S(i));
+    internal float FloatToken(int i, string token)
+    {
+        if (_location is not null && (!float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) || !float.IsFinite(value)))
+            throw Invalid(i, "finite number");
+        return CoreTable.ParseFloat(token);
+    }
 
     /// <summary><c>atoi</c> of the first token, native <c>GetToken().GetInteger()</c>.</summary>
-    public int TokenInt(int i) => CoreTable.ParseTokenInt(S(i));
+    public int TokenInt(int i) => I(i);
 
     /// <summary>Native <c>ZString(bool)</c> output read back (<c>true</c>/<c>false</c>).</summary>
-    public bool B(int i) => CoreTable.ParseBool(S(i));
+    public bool B(int i)
+    {
+        if (_location is not null && !bool.TryParse(S(i), out _)) _ = I(i);
+        return CoreTable.ParseBool(S(i));
+    }
 
     /// <summary><c>GetToken()</c> of a whole column (defense ids are printed as
     /// <c>"5 (Heavy Ship)"</c>).</summary>
@@ -190,7 +248,7 @@ public readonly struct TextRow
         foreach (string t in CoreTable.Tokens(S(i)))
         {
             if (k >= dst.Length) break;
-            dst[k++] = CoreTable.ParseFloat(t);
+            dst[k++] = FloatToken(i, t);
         }
     }
 

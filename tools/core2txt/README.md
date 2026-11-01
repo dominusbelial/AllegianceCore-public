@@ -78,7 +78,25 @@ Fields native never takes from the text (hull `pmEquipment[ET_Weapon]`/
 text-covered: a round trip keeps the original bytes, a foreign folder gets zeros
 (native's reader zeroes the hull masks and ignores the mine column).
 
+## Game loading (P908)
+
+Export to `<artwork>/<core>` and configure the server's `staticCore` as
+`<core>.igc` (or `<core>`). A binary at `<artwork>/<core>.igc` wins; only its
+absence selects `<core>/Constants.csv` and the remaining text tables. Both the
+server and client use the shared importer in `src/Allegiance.Core/StaticCoreText/`.
+Malformed runtime tables are rejected before caching. Runtime always advertises
+native version **1337**, including when `.coremeta` preserves a binary timestamp.
+
+Clients joining a text-core server must install the same text folder and remove
+any same-name binary: native compares the local and advertised versions. The 1337
+sentinel is not a content checksum; operators must distribute matching files.
+The optional `.coremeta` preserves non-text fields, as in `Text2Core`; it cannot
+overwrite a field supplied by an edited CSV. Without it, native canonical order
+and deterministic zero defaults apply to fields native text does not encode.
+
 ## Layout
+
+The following shared files now live in `src/Allegiance.Core/StaticCoreText/`:
 
 - `CoreTable.cs` — the shared native helpers (`TechBitFromToken`,
   `TechsListToBits`, `PartMaskFromToken`, `PartsListToMask`, `BitsToTechsList`,
@@ -95,5 +113,8 @@ text-covered: a round trip keeps the original bytes, a foreign folder gets zeros
   chaff/probe, all six part files, hull + hardpoints, station, development,
   drone, civilization, treasure set).
 - `StaticCoreRoundtrip.cs` — export/import orchestration + `.coremeta`.
+The CLI and verification wrapper remain in `tools/core2txt/`:
+
+- `Program.cs` — command entry point.
 - `StaticCoreVerify.cs` — per-core byte-identity checker and the static-core
   corpus enumerator.

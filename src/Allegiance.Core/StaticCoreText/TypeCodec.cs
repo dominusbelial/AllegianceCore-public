@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>One text file a type codec writes (export) and reads (import).</summary>
 public sealed record TypeFileSpec(string BaseName, string Header);

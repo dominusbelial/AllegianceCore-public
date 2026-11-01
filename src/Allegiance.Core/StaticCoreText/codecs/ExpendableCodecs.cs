@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>Shared read helpers for the four expendable codecs.</summary>
 internal static class ExpendableRead
@@ -11,11 +11,11 @@ internal static class ExpendableRead
     /// from the top and breaks at the first row whose expendable id differs
     /// (<c>missionigc.cpp:768-786</c>), later matches winning.
     /// </summary>
-    public static void LauncherDef(CoreTable table, IReadOnlyList<string[]> rows, int expendableId, PayloadBuilder w)
+    public static void LauncherDef(TextCoreFiles text, CoreTable table, IReadOnlyList<string[]> rows, int expendableId, PayloadBuilder w)
     {
         foreach (var cells in rows)
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             if (row.I(0) != expendableId) break;
             w.I32(64, row.I(6));                    // price
             w.U32(68, unchecked((uint)row.I(7)));   // timeToBuild
@@ -32,14 +32,14 @@ internal static class ExpendableRead
     /// <summary>The 16 columns the four expendable files share. Column indexes
     /// are the per-file native positions; <paramref name="radiusCol"/> is -1 for
     /// mines, whose object radius column native writes but never reads back.</summary>
-    public static void Common(CoreTable table, PayloadBuilder w, TextRow row, IReadOnlyList<string[]> expendableRows,
+    public static void Common(TextCoreFiles text, CoreTable table, PayloadBuilder w, TextRow row, IReadOnlyList<string[]> expendableRows,
         int loadTimeCol, int lifespanCol, int signatureCol, int hitPointsCol, int defenseCol,
         int abilitiesCol, int iconCol, int colorCol, int radiusCol, int rotationCol,
         int modelCol, int textureCol, int launcherSignatureCol, int massCol,
         int partMaskCol, int partMaskEt, int expendableSizeCol)
     {
         w.I16(446, unchecked((short)row.I(0)));      // expendabletypeID
-        LauncherDef(table, expendableRows, row.I(0), w);
+        LauncherDef(text, table, expendableRows, row.I(0), w);
 
         w.F32(52, row.F(loadTimeCol));
         w.F32(56, row.F(lifespanCol));
@@ -120,9 +120,9 @@ public sealed class MissileCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.ExpendableMissiles.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             var w = new PayloadBuilder(DataMissileTypeIGC.Size) { Id = row.I(0) };
-            ExpendableRead.Common(table, w, row, expendables,
+            ExpendableRead.Common(text, table, w, row, expendables,
                 loadTimeCol: 18, lifespanCol: 19, signatureCol: 20, hitPointsCol: 21,
                 defenseCol: 22, abilitiesCol: 23, iconCol: 24, colorCol: 25, radiusCol: 26,
                 rotationCol: 27, modelCol: 28, textureCol: 29, launcherSignatureCol: 30,
@@ -196,11 +196,11 @@ public sealed class MineCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.ExpendableMines.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             var w = new PayloadBuilder(DataMineTypeIGC.Size) { Id = row.I(0) };
             // The object-radius column (13) is written by native but never read
             // back ("there can only be one radius", missionigc.cpp:1265).
-            ExpendableRead.Common(table, w, row, expendables,
+            ExpendableRead.Common(text, table, w, row, expendables,
                 loadTimeCol: 5, lifespanCol: 6, signatureCol: 7, hitPointsCol: 8,
                 defenseCol: 9, abilitiesCol: 10, iconCol: 11, colorCol: 12, radiusCol: -1,
                 rotationCol: 14, modelCol: 15, textureCol: 16, launcherSignatureCol: 17,
@@ -258,9 +258,9 @@ public sealed class ChaffCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.ExpendableChaff.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             var w = new PayloadBuilder(DataChaffTypeIGC.Size) { Id = row.I(0) };
-            ExpendableRead.Common(table, w, row, expendables,
+            ExpendableRead.Common(text, table, w, row, expendables,
                 loadTimeCol: 2, lifespanCol: 3, signatureCol: 4, hitPointsCol: 5,
                 defenseCol: 6, abilitiesCol: 7, iconCol: 8, colorCol: 9, radiusCol: 10,
                 rotationCol: 11, modelCol: 12, textureCol: 13, launcherSignatureCol: 14,
@@ -322,9 +322,9 @@ public sealed class ProbeCodec : ITypeCodec
         var result = new List<TextRecord>();
         foreach (var cells in text.Rows(CoreFiles.ExpendableProbes.BaseName))
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             var w = new PayloadBuilder(DataProbeTypeIGC.Size) { Id = row.I(0) };
-            ExpendableRead.Common(table, w, row, expendables,
+            ExpendableRead.Common(text, table, w, row, expendables,
                 loadTimeCol: 9, lifespanCol: 10, signatureCol: 11, hitPointsCol: 12,
                 defenseCol: 13, abilitiesCol: 14, iconCol: 15, colorCol: 16, radiusCol: 17,
                 rotationCol: 18, modelCol: 19, textureCol: 20, launcherSignatureCol: 21,

@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// Faithful port of the native static-core text authoring helpers in

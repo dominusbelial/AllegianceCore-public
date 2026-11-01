@@ -45,11 +45,25 @@ public sealed partial class ClientWorld : IDisposable
                 if (core is not null) lease = StaticCoreCache.Shared.Retain(core);
             }
         }
-        catch (Exception e) when (e is IOException or ArgumentException or InvalidOperationException)
-        { lease?.Dispose(); core = null; }
+        catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException or InvalidOperationException)
+        {
+            lease?.Dispose();
+            JoinError = $"Unable to load mission core '{_mission.StaticCoreFile}': {e.Message}";
+            return;
+        }
         if (core is null)
         {
             JoinError = $"Unable to load mission core '{_mission.StaticCoreFile}'.";
+            return;
+        }
+        // Native ResetStaticData compares versions before accepting local data
+        // (clintlib/clintlib.cpp:4212-4221). Text 1337 is a shared sentinel,
+        // not the source binary's timestamp: require matching text on both ends.
+        if ((core.Version == StaticCoreCache.TextVersion || _mission.StaticCoreVersion == StaticCoreCache.TextVersion)
+            && core.Version != _mission.StaticCoreVersion)
+        {
+            lease?.Dispose();
+            JoinError = $"Mission core '{_mission.StaticCoreFile}' is out of sync: server version {_mission.StaticCoreVersion}, local version {core.Version}. Install matching core text files.";
             return;
         }
         _missionCoreLease?.Dispose();

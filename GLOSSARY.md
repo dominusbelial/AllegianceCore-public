@@ -75,6 +75,19 @@ list in **reverse**.
   when the registry is read; allocation/lifetime proofs: `tests/Allegiance.Core.Tests/P869bReviewTests.cs`.
   Evidence: `tests/Allegiance.Core.Tests/P869OwnershipTests.cs` and
   `docs/parity/p869-ownership.csv`; report `docs/reports/P869_REPORT.md`.
+- **Static-core text fallback (P908)** — binary-first server/client core loading
+  falls back to `<core>/Constants.csv` and native text version 1337 through
+  `src/Allegiance.Core/Model/StaticCoreCache.cs`. The shared AOT-safe codecs in
+  `src/Allegiance.Core/StaticCoreText/StaticCoreRoundtrip.cs` also serve
+  `tools/core2txt/`; runtime validates complete tables before publishing a core.
+  `src/Allegiance.ClientCore.Game/Assets/TextCoreAssets.cs` gives the game client's
+  asset-source resolver the same fallback.
+  `src/Allegiance.ClientCore/State/ClientMissionCoreCache.cs` tracks text revisions
+  independently; `src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs`
+  refuses mismatched text/binary versions at join. Native:
+  `Igc/missionigc.cpp:2390-2431,2637-2675`, `clintlib/clintlib.cpp:4212-4221`.
+  Proof: `tests/Allegiance.Core.Tests/P908TextCoreTests.cs`,
+  `tools/p908-text-core-proof/`; report: `docs/reports/P908_REPORT.md`.
 - **File-map generation top-up (P864c / SIM-0748)** —
   `src/Allegiance.Core/Model/Mission.FileMap.cs` replaces unavailable station
   types from original local/effect plus side development techs, then fills only
@@ -1146,8 +1159,8 @@ list in **reverse**.
 - **`tools/core2txt` (P870/P870b)** — native `Core2Text`/`Text2Core` static-core
   text round trip (`FedSrv/FedSrv.CPP:10385-10480`): `.igc` → editable
   tab-delimited text (one CSV per native table, native headers/comments/columns)
-  and back. All 13 static object types are ported (`tools/core2txt/codecs/`), and
-  `tools/core2txt/CoreTable.cs` carries the shared native helpers. `.coremeta`
+  and back. All 13 static object types are ported (`src/Allegiance.Core/StaticCoreText/codecs/`), and
+  `src/Allegiance.Core/StaticCoreText/CoreTable.cs` carries the shared native helpers. `.coremeta`
   preserves the version word, the record sequence, and the sparse non-text bytes
   (struct padding and the stale bytes after a string's NUL), which native itself
   cannot reproduce; `SelfTest` certifies all 100 shipped static cores are

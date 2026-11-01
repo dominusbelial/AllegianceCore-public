@@ -1,6 +1,6 @@
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// <c>Constants</c> record codec. Payload is <c>float floatConstants[40]</c> then
@@ -44,7 +44,7 @@ public sealed class ConstantsCodec : ITypeCodec
         int iLine = 0, cnt = 0;
         foreach (var cells in rows)
         {
-            var row = new TextRow(cells);
+            var row = text.Row(cells);
             if (iLine < CoreTable.CFcidMax)
             {
                 int id = row.I(0);

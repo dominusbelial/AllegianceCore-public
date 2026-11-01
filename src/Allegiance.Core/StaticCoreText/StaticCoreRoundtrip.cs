@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using Allegiance.Core;
 
-namespace Allegiance.Tools.Core2Txt;
+namespace Allegiance.Core.StaticCoreText;
 
 /// <summary>
 /// Orchestrates the static-core text round trip: an <see cref="IgcFile"/>
@@ -180,9 +180,11 @@ public static class StaticCoreRoundtrip
     }
 
     /// <summary>Import a text folder into the record body (no wrapper).</summary>
-    public static byte[] ImportBody(string textDir, out int? version)
+    public static byte[] ImportBody(string textDir, out int? version, bool runtime = false)
     {
         RegisterCodecs();
+        // Optional round-trip residue preserves fields native text does not encode.
+        // The runtime caller always supplies native version 1337, never this stamp.
         var (v, entries) = ReadMeta(Path.Combine(textDir, MetaFileName));
         version = v;
 
@@ -190,7 +192,7 @@ public static class StaticCoreRoundtrip
         table.LoadTechBitsList(Path.Combine(textDir, "BitsOfTechs.csv"));
         table.LoadPartsBitsList(Path.Combine(textDir, "BitsOfParts.csv"));
 
-        var text = TextCoreFiles.Load(textDir, CoreFiles.Names);
+        var text = TextCoreFiles.Load(textDir, CoreFiles.Names, runtime);
         // Native Text2Core refuses a folder without Constants.csv
         // (FedSrv/FedSrv.CPP:10451-10457); say so instead of emitting zeros.
         if (!text.Has(CoreFiles.Constants.BaseName))
@@ -237,7 +239,7 @@ public static class StaticCoreRoundtrip
             consumed.Add(tr);
             var payload = (byte[])tr.Payload.Clone();
             foreach (var (off, value) in entry.Residue)
-                if (off >= 0 && off < payload.Length) payload[off] = value;
+                if (off >= 0 && off < payload.Length && tr.Covered[off] == 0) payload[off] = value;
             Emit(entry.Type, payload);
         }
 
