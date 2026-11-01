@@ -5061,3 +5061,21 @@ The superseded development training run's two arena-leak regressions were fixed
 by restricting native arena order handling to Missions 6/10, then verified three
 times in isolation and by the complete training gate. Superseded results do not
 count as final green gates. The retained Fast sweep remains **failed**.
+
+### Sweep batch-p910 (snapshot 1503d0f4, mini, 2026-11-01)
+
+Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`, Debug, 3 of 3 each:
+
+| Test | Sweep symptom | Alone |
+| --- | --- | --- |
+| `P761bCommandRelayTests.AcceptedOrder_OnOnePlayer_ReachesTheTeammate_WithItsCommandText` | `attack` instead of `attack relayB` | pass / pass / pass |
+| `P764UiSoundSeamTests.TeamPaneSelectionCycle_PlaysThePlayerListClickCue` | no `mouseclick` recorded | pass / pass / pass |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,496 bytes, expected 0 | pass / pass / pass |
+| `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` | no KILL_SHIP within budget | pass / pass / pass |
+| `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner` | gunner not warned | pass / pass / pass |
+| `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | empty load list | pass / pass / pass |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.65 s, limit 31 | pass / pass / pass |
+
+Causes not established; all fail only under the full parallel sweep. `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers`
+passed this sweep after failing the previous two, so it is intermittent, cause unknown. `DockDocking`, `MissileLock`, `NpcWingmanDefend`,
+`SC2SupportPhase`, `SC4`, `P745` and `P798` also failed; not rerun here, not cleared for P910.
