@@ -5007,3 +5007,7 @@ also occurred in the retained superseded sweep. These outcomes do not replace
 the final Fast failures, and none of the interrupted training wrappers is
 counted as a passing training gate. Full workflow details are in
 `docs/reports/P910_REPORT.md`.
+
+Claude's review of P910: `MissileLock` is intermittent with and without P910 (alternated runs: 3 of 3 failed on the
+P909 tree, 2 of 3 failed on P910, mostly while other tests ran), and `DockDocking` also fails on the P909 tree. Neither is a P910
+regression.

@@ -11,6 +11,9 @@ public sealed partial class TrainingHost
     // to both slots. Do not use the network server's different default-order policy.
     public bool HandleTrainingDroneChat(ChatMessage chat)
     {
+        // clintlib.cpp:2368: only ship-addressed channels reach the drone branch.
+        if (chat.ChatTarget is not ((int)ChatTarget.Individual or (int)ChatTarget.Group or (int)ChatTarget.GroupNoEcho))
+            return false;
         lock (_simGate)
         {
             var drone = ResolveShip(chat.OidRecipient);

@@ -236,6 +236,10 @@ public sealed class P910TrainingWireTests : IDisposable
         var other = new ChatMessage { OidRecipient = (short)enemy, CommandID = OrderChange.CidDefault,
             OtTarget = (short)IgcObjectType.Ship, OidTarget = (short)drone };
         Assert.False(c.Host.HandleTrainingDroneChat(other)); // no enemy orders
+        // A team chat's recipient is a side id; a matching ship id is not its subject.
+        Assert.False(c.Host.HandleTrainingDroneChat(new ChatMessage { ChatTarget = (int)ChatTarget.Team,
+            OidRecipient = (short)drone, CommandID = OrderChange.CidDefault,
+            OtTarget = (short)IgcObjectType.Ship, OidTarget = (short)enemy }));
     }
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData(HudStyle.Classic)] [InlineData(HudStyle.Modern)]
