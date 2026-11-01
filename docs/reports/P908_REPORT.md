@@ -42,6 +42,20 @@ and `.coremeta` file names, mtimes and sizes; an edit creates an independent
 revision while old worlds remain valid. Binary keys and binary-path I/O stay
 unchanged. Native ownership: `Igc/missionigc.cpp:3033-3053`. SIM-0789 was not edited.
 
+## Review fix: the real game client
+
+Codex's client path covered only the default on-disk resolver. `Game1.Lifecycle.cs`
+replaces that resolver with `ResolveAssetMissionCore`, which looked for the binary
+only, so a real player could not join a text core. Claude's review added
+`src/Allegiance.ClientCore.Game/Assets/TextCoreAssets.cs`, which imports through
+`IAssetSource`, so desktop and Android share the fallback. A player bundle's manifest
+still refuses files it does not list. `TextCoreAssetsTests` covers it; no real
+Game1 join was run. `ShopCatalog` and the offline asset closure still read their
+fixed binary cores: they are startup display catalogues, not mission load.
+
+A 1,500-case mutation fuzz of the importer found only `InvalidDataException` or a
+successful load, never another exception type.
+
 ## Client decision for version 1337
 
 A client must resolve local version 1337 when the server advertises 1337, normally

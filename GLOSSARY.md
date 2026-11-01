@@ -80,6 +80,8 @@ list in **reverse**.
   `src/Allegiance.Core/Model/StaticCoreCache.cs`. The shared AOT-safe codecs in
   `src/Allegiance.Core/StaticCoreText/StaticCoreRoundtrip.cs` also serve
   `tools/core2txt/`; runtime validates complete tables before publishing a core.
+  `src/Allegiance.ClientCore.Game/Assets/TextCoreAssets.cs` gives the game client's
+  asset-source resolver the same fallback.
   `src/Allegiance.ClientCore/State/ClientMissionCoreCache.cs` tracks text revisions
   independently; `src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs`
   refuses mismatched text/binary versions at join. Native:
