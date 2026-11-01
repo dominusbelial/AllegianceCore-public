@@ -4951,3 +4951,13 @@ isolation evidence is in `.scratch/p909/fast/` and `.scratch/p909/tests/`.
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Sweep included a station-bearing ShipStatus for another ship in its all-status assertion; tested docking code is unchanged. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | Sweep passed but took 10.644 s, above its calibrated 10 s Fast budget; isolation evidence is `slow-isolation-{1,2,3}.trx`. No warp sim code changed. |
 | `SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | pass / pass / pass | Quarantine sweep failed its lethal restart-station hit after 20.765 s; runner retry passed, then the three isolation runs passed. Also a Fast timing overrun. No elimination code changed. |
+
+## Mini sweep `batch-p906-p907` (snapshot of `d2d1aed5`, P906 and P907 included)
+
+Perf passed; Fast (12,799) and Live (236) failed. `Ordered_peer_mines_only_after_dispatch` did not recur. Six Fast
+tests overran the 10 second limit: SC2 nanite, P814, P796, `MissileLock`, P777, and P750 (new to the budget list).
+
+| Test | Isolation | Reading |
+|---|---|---|
+| `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | fail / pass / fail on P909 base, Expected 5, Actual 6 at `Proxy.Attempts` | **New, not load-only, cause not established.** One extra connection attempt appears between `KillServer` and driver exit. Ruled out: recovery (`recovery: false`), reconnect grace (off by default), the worker probe (never re-dials), initial spawn (ends before `ready`). Unproven lead: showcase refill. |
+| `MusicLoading`, `Hud12bReviewFix`, `ConsoleLogNonBlocking`, `ThreePeerSeededSession`, `LiveSideSelect`, `DockDocking`, `NpcWingmanDefend`, `MissileLock`, `SC2SupportPhase`, `SC4`, `P745`, `P798` | not rerun this batch | Already ledgered above. |
