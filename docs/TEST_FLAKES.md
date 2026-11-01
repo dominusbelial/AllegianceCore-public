@@ -5095,3 +5095,42 @@ the sweep was not repeated.
 P912 targeted-cohort follow-up: one `P873TrainingJoinTests.Logon_replicates_the_native_trainee_before_the_real_update_starts_script(id: 3)` execution reached `Mission3.CreateMission` without a replicated player pose (`ClientTrainingSite.PlayerShip`). All 13 join cases passed in each of three fresh isolated processes, with zero skips (`.scratch/p912/join-isolation/{1,2,3}/result.trx`). A second occurrence during the expanded P912 cohort exposed a task-relevant startup race: readiness and complete goal construction read different replicated-world snapshots. P912 now holds the session gate across both operations, with a regression that asserts guarded reads during readiness and SetupTraining. The resume reused the failed cohort result path; the original failing TRX was overwritten. Its observed stack/count are transcribed in `.scratch/p912/join-isolation/startup-race-observation.txt`; the three earlier isolation TRX files remain. Future retries archive prior directories. The final expanded cohort verifies the correction.
 
 P912 native warp-handoff follow-up: the 390-case affected warp cohort hit the existing `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` floating-boundary family (delay 7: `7.0000000000000009`). Three exact-class processes returned fail (delays 5/7 at one ULP above the integer upper bound), pass (5/5), fail (one boundary case); see `.scratch/p912/timer-isolation/{1,2,3}/result.trx`. Timer/missile scheduling code and its assertion are unchanged. The final affected warp repeats explicitly exclude this ledgered class after preserving the failing initial cohort in `.scratch/p912/warp-initial-fail/`; its separate isolation remains part of qualification.
+### Sweep batch-p910 (snapshot 1503d0f4, mini, 2026-11-01)
+
+Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`, Debug, 3 of 3 each:
+
+| Test | Sweep symptom | Alone |
+| --- | --- | --- |
+| `P761bCommandRelayTests.AcceptedOrder_OnOnePlayer_ReachesTheTeammate_WithItsCommandText` | `attack` instead of `attack relayB` | pass / pass / pass |
+| `P764UiSoundSeamTests.TeamPaneSelectionCycle_PlaysThePlayerListClickCue` | no `mouseclick` recorded | pass / pass / pass |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,496 bytes, expected 0 | pass / pass / pass |
+| `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` | no KILL_SHIP within budget | pass / pass / pass |
+| `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner` | gunner not warned | pass / pass / pass |
+| `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | empty load list | pass / pass / pass |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.65 s, limit 31 | pass / pass / pass |
+
+Causes not established; all fail only under the full parallel sweep. `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers`
+passed this sweep after failing the previous two, so it is intermittent, cause unknown. `DockDocking`, `MissileLock`, `NpcWingmanDefend`,
+`SC2SupportPhase`, `SC4`, `P745` and `P798` also failed; not rerun here, not cleared for P910.
+
+## 2026-11-01: batch-p911 sweep on the runner
+
+Snapshot `a63dd6fc`, master at the P911 merge without media. Fast FAIL (12,872 tests), Live FAIL (273 tests), Perf PASS (73 tests).
+Compared with batch-p910, `P761b`, `P764`, `P902SoundTemplate`, `KillBonusLive` and `MissileTrackWarning` passed this sweep. Two
+failures are new, rerun 3× alone on master plus the greet fix below:
+
+| Test | Sweep failure | Alone |
+| --- | --- | --- |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | timed out at line 116 waiting for the bot's own loadout (the helper's message says "join") | pass / pass / pass |
+| `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station` | no building effect at line 212 | pass / pass / pass |
+
+Causes not established; both fail only under the full parallel sweep. `MusicLoading`, `LiveSideSelect`, `DockDocking`, `MissileLock`,
+`NpcWingmanDefend`, `SC2SupportPhase`, `SC4`, `P745` and `P798` failed again; not rerun here. The sweep logs contain no `non-greet` drop.
+
+## 2026-11-01: client data frame could overtake the TCP greeting (fixed)
+
+P912's training gate lost one window (`m8-Modern-early`) with `peer sent non-greet frame` and `timed out waiting for LOGONACK`.
+`TcpTransport.Join` set `IsConnected` and published `_clientSender` before queuing the greeting, and the session keep-alive thread runs
+before Connect, so a ping in that gap went first and the server closed the connection. `TcpClientGreetOrderTests` reproduced it on the
+unfixed code (5 of 2,000 joins with a thread sending as soon as `IsConnected` is true) and passes after the fix. That the keep-alive
+thread was the sender in the failed window is inferred: it is the only concurrent sender found, and the window log does not name it.
