@@ -5290,3 +5290,22 @@ chat/profile behavior changed.
 | `SideEliminationLiveTests.Destroying_last_restart_station_eliminates_side_and_declares_winner` | pass / pass / pass; 0.504 / 0.538 / 0.540 s | Sweep's lethal-hit assertion timed out at 20.926 s, also exceeding the Fast limit. Not reproduced in isolation. |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass at 3.632 / 4.021 / 3.952 s | Sweep assertion passed but took 10.299 s, above the calibrated 10 s limit. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass at 9.724 / 9.525 / 9.705 s | Sweep assertion passed but took 10.721 s. Existing near-limit timing family; no tier or warp rule changed. |
+
+## 2026-11-01: batch-p912 sweep on the runner
+
+Snapshot `ee2d6635`, master at the P912 merge without media, before `99c2f5cf`. Fast FAIL (12,886 tests), Live FAIL (319 tests), Perf PASS (73 tests).
+All 31 `P912TrainingWindowTests` failed to start: the test looked for `dotnet` under the home directory, which the runner lacks. Fixed in `99c2f5cf`;
+whether windows run in the runner container is still unproven. Rerun 3× alone on master:
+
+| Test | Sweep failure | Alone |
+| --- | --- | --- |
+| `LiveRipcordTests.Ship_anchor_reaching_zero_relocates_near_target_and_pays_energy` | anchor distance 68.453, expected 37 | pass / pass / pass |
+| `WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands` | empty collection | pass / pass / pass |
+| `AsteroidCombatLiveTests.Cross_side_missile_hits_asteroid_with_exact_computed_damage_and_it_survives` | missile did not hit | pass / pass / pass |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | credit 0.000 | pass / pass / pass |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 24 oxygen expiries, expected 0 | fail / fail / fail |
+
+P699b is intermittent, not a P912 regression. Alternated alone over 13 runs: 10 passes before P912 (`fb040bb5`), 8 on master. Both trees show the same
+all-or-part outcome; the worst run, 43 expiries, was on the pre-P912 tree. Pods reached home and then ran out of oxygen queued near the station.
+The cause of the bimodal pile-up is not established. `SC3Cloak`, `SC2SupportPhase`, `P745`, `P798`, `MissileLock`, `NpcWingmanDefend`, `MusicLoading` and
+`LiveSideSelect` also failed; not rerun here, not cleared.
