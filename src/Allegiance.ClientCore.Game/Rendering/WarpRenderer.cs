@@ -182,10 +182,12 @@ public sealed class WarpRenderer : IDisposable
 
         // --- Funnel: textured double-horn vortex ---------------------------------
         int tier = SelectLodTier(world, projection, worldRadius);
-        UpdateFunnelVertices(tier, _time, funnelBoost, destabilize);
         var nativeTexture = FunnelTexture(textureName);
         string? stem = _funnelStems.GetValueOrDefault(textureName);
-        _effect.Texture = stem is null ? nativeTexture : _hd.EmissiveTexture(stem) ?? nativeTexture;
+        var hdTexture = stem is null ? null : _hd.EmissiveTexture(stem);
+        UpdateFunnelVertices(tier, _time, funnelBoost, destabilize,
+            hdTexture is not null && _hd.ReverseMeshV(stem!));
+        _effect.Texture = hdTexture ?? nativeTexture;
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
@@ -251,7 +253,7 @@ public sealed class WarpRenderer : IDisposable
         _batcher.Draw(items, tex, view, projection);
     }
 
-    private void UpdateFunnelVertices(int tier, float time, float funnelBoost, float destabilize = 0f)
+    private void UpdateFunnelVertices(int tier, float time, float funnelBoost, float destabilize = 0f, bool reverseV = false)
     {
         var mesh = _lodMeshes[tier];
         var pos = mesh.Positions;
@@ -284,7 +286,7 @@ public sealed class WarpRenderer : IDisposable
             v[vi] = new VertexPositionColorTexture(
                 new Vector3(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]),
                 new Color(Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), col[vi * 4 + 3]),   // colours are floats in [0,1] (WarpMesh.Colors)
-                new Vector2(uv[vi * 2], timeFlow + uv[vi * 2 + 1]));
+                new Vector2(uv[vi * 2], reverseV ? 1f - timeFlow - uv[vi * 2 + 1] : timeFlow + uv[vi * 2 + 1]));
         }
         _lodBuffers[tier].SetData(v);
     }
@@ -398,7 +400,7 @@ public sealed class WarpRenderer : IDisposable
 
             var bytes = TryReadOptional(_assets, rel);
             if (bytes is null) return null;
-            var res = NativeEffectTextures.Resolve(bytes);
+            var res = NativeEffectTextures.Resolve(bytes, flipVertical: false);
             if (res.Kind == NativeEffectTextures.NativeTextureKind.Binary)
             {
                 _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);

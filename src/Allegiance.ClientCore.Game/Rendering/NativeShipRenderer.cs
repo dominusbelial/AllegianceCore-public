@@ -152,7 +152,7 @@ public sealed class NativeShipRenderer : IDisposable
                 LogMissingTexture(textureStem, "not present");
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(_gd, _assets, textureStem);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             // P862 — upload the decoder's RGBA bytes straight (SurfaceFormat.Color IS
             // RGBA8, and the decoder already writes alpha 255 for every texel). The
@@ -323,9 +323,8 @@ public sealed class NativeShipRenderer : IDisposable
     /// </summary>
     public void Draw(NativeShipGeometry geo, Texture2D? texture, Matrix world,
         Matrix view, Matrix projection, float opacity, float nativeScale, SectorLighting? lighting,
-        string? modelStem = null, string? textureStem = null, bool? hdOverride = null, bool uprightTexture = false)
+        string? modelStem = null, string? textureStem = null, bool? hdOverride = null)
     {
-        if (uprightTexture) geo = geo.UprightTexture(_gd);
         bool translucent = opacity < 0.999f;
         var gd = _gd;
         gd.BlendState = translucent ? BlendState.AlphaBlend : BlendState.Opaque;
@@ -415,12 +414,6 @@ public sealed class NativeShipRenderer : IDisposable
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
-        private NativeShipGeometry? _uprightTexture;
-        // P915: cache one UV-only variant. Both classic HD and PBR material
-        // parts use these vertices; the depth pass keeps identical positions.
-        internal NativeShipGeometry UprightTexture(GraphicsDevice gd)
-            => _uprightTexture ??= Build(gd, _source.Select(NativeShipResolver.WithReversedTextureV).ToArray());
-
         private VertexBuffer? _pbrVertices;
         private IReadOnlyList<MdlMesh> _source = [];
         public VertexBuffer PbrVertices(GraphicsDevice gd)
@@ -499,7 +492,6 @@ public sealed class NativeShipRenderer : IDisposable
 
         public void Dispose()
         {
-            _uprightTexture?.Dispose();
             _pbrVertices?.Dispose();
             Materials.Dispose();
             Vertices.Dispose();

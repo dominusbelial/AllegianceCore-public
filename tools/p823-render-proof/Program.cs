@@ -122,7 +122,7 @@ sealed class ProofRunner : Game
 
         // P824 — numeric UV proof: sample the decoded texture the renderer
         // actually uploaded (NativeShipRenderer.TextureFor → MdlTextureDecoder
-        // flipVertical:true → Texture2D) at the given UVs. GPU pixel =
+        // flipVertical:false → Texture2D) at the given UVs. GPU pixel =
         // (round(u·w) clamped, round(v·h) clamped) — nearest sampling, the
         // same top-left-origin convention glTF uses, so a UV that points at a
         // marker in Blender must point at it here too.

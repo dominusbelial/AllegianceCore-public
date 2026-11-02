@@ -146,7 +146,10 @@ public sealed class PlanetPoster : IDisposable
             // planetName e.g. "nebplnt06bmp" — the native .mdl stem.
             if (_assets.Exists(mdlStem + ".mdl"))
             {
-                var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, mdlStem + ".mdl"));
+                // Native PosterImage draws Geo::GetSquare (effect/efimage.cpp:554),
+                // whose upper corners use V=0 (engine/geometry.cpp:568-571).
+                // This image quad follows mesh rows, unlike DrawImage3D decals.
+                var mdlTex = NativeStationTexture.Decode(_gd, _assets, mdlStem);
                 // Colour-key the near-black surround (the planet art sits on a
                 // black backing; native keys it transparent via the surface colorkey).
                 var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);

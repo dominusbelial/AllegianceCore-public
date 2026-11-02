@@ -1,0 +1,8 @@
+{
+  "exitCode": 1,
+  "failure": "Wrong uploaded rows: hull ss20/ss20bmp",
+  "comparison": "Final corpus proof executable with dispatch-base Game DLL",
+  "dispatchCommit": "9a598b58091467292dbc6798fc3efa67907a793b",
+  "dispatchGameSha256": "ab949c2b96d2dad6ddaadca39a529a2523d49259efb722018336d6942544ac27",
+  "finalProofSha256": "5ff4423c676d0f7b5cfa1340659008ef4ed9d14cf6ed28eb451e8f00d00a44b4"
+}

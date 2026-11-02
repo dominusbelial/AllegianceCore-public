@@ -36,7 +36,7 @@ internal sealed class MdlTexture2D : IDisposable
         try
         {
             if (!_assets.Exists(stem + ".mdl")) { _missing.Add(stem); return null; }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"), flipVertical: true);
             var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, _keyBelow);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
             var cols = new Color[mdlTex.Width * mdlTex.Height];

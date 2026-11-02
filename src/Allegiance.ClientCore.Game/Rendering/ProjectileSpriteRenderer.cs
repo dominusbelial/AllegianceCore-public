@@ -97,7 +97,7 @@ public sealed class ProjectileSpriteRenderer : IDisposable
                 LogMissing(stem, "not present");
                 return null;
             }
-            var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, rel));
+            var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, rel), flipVertical: true);
             var tx = Upload(tex);
             _textures[stem] = tx;
             return tx;

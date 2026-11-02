@@ -743,9 +743,7 @@ public sealed partial class Game1
                                 if (lev > 0)
                                     drawGeo = _nativeShipRenderer.LodLevel(nref.ModelStem!, lev - 1) ?? ngeo0;
                             }
-                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem,
-                                uprightTexture: ShipEffectRules.UprightHullTexture(id == me,
-                                    _cameraMode != CameraMode.Cockpit, 2f * _myRenderRadius));
+                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem);
                             _lodDrawCalls++;
                         }
                         else
@@ -5308,7 +5306,7 @@ public sealed partial class Game1
                     name => _assets.Exists(name + ".mdl"));
                 if (stem is not null)
                 {
-                    var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+                    var decoded = Rendering.NativeStationTexture.Decode(GraphicsDevice, _assets, stem);
                     texture = new Texture2D(GraphicsDevice, decoded.Width, decoded.Height);
                     texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
                 }

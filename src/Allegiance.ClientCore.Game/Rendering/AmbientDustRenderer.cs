@@ -218,7 +218,7 @@ public sealed class AmbientDustRenderer : IDisposable
         {
             if (assets.Exists(rel))
             {
-                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel), flipVertical: true);
                 byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];

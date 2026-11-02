@@ -124,7 +124,7 @@ public sealed class RockTextures : IDisposable
                     Console.WriteLine($"[monogame] rock surface '{type}' missing ({rel}) — procedural fallback");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel), flipVertical: true);
                 var colors = new Color[tex.Width * tex.Height];
                 var rgba = tex.Rgba;
                 for (int i = 0; i < colors.Length; i++)

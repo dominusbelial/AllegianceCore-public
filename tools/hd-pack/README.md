@@ -15,6 +15,16 @@ The output is `hd-pack/manifest.json`, `hd-pack/coverage.json`,
 Set `ALLEGIANCE_HD_PACK_PATH` to the unpacked directory containing the manifest.
 The client keeps reading legacy schema-1 packs.
 
+P916 row convention: the released schema 1/2/3 packs use reversed native rows
+for binary atlas sources, and file-row order for text image imports. The client
+adapts those legacy maps at mesh material binding, including normal-map tangent
+handedness, for both PNG and compressed releases. Image/decal bindings retain
+their existing row convention. Preserve this when rebuilding an existing pack;
+a future file-row-only format needs explicit orientation metadata rather than
+silently replacing maps under the same schema. Native mesh/glTF exports from
+`mdl-to-glb` now use file rows and unchanged native UVs.
+
+
 For ESRGAN outputs named by model, pass `--mapping mapping.json`, containing an
 explicit object such as `{"wc_icfig":"fig02bmp"}`. Use the HD source's
 `inputs/<model>/native.json` **Texture** field; never infer this from model names.

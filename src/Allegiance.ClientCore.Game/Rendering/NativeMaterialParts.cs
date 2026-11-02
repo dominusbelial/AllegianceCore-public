@@ -39,7 +39,8 @@ public sealed class NativeMaterialParts : IDisposable
     private readonly VertexPositionNormalTexture[] _vertices;
     private readonly uint[] _indices;
     private readonly NativeStationPart[] _parts;
-    private VertexBuffer? _pbr;
+    private VertexBuffer? _pbr, _legacyPbr, _legacyClassic;
+    private VertexPositionNormalTexture[]? _legacyVertices;
     private readonly float _radius;
 
     public NativeMaterialParts(IReadOnlyList<MdlMesh> meshes, VertexPositionNormalTexture[] vertices, uint[] indices)
@@ -82,35 +83,63 @@ public sealed class NativeMaterialParts : IDisposable
             float scale = Math.Max(world.Right.Length(), Math.Max(world.Up.Length(), world.Backward.Length()));
             projectedPixels = 2 * _radius * scale * Math.Abs(projection.M22) * gd.Viewport.Height / Math.Max(.001f, 2 * Math.Abs(center.Z));
         }
+        string? hdStem = null;
         foreach (var part in _parts)
         {
             string? stem = part.TextureStem ?? inheritedStem;
+            hdStem = stem;
             if (drawMode == HdDrawMode.Pbr && model is not null && hd.TryDraw(model, stem, Pbr, indices,
                 part.TriangleCount, world, view, projection, opacity, lighting, part.StartIndex, _radius)) continue;
             var texture = part.TextureStem is { } own &&
                 !string.Equals(own, inheritedStem, StringComparison.OrdinalIgnoreCase)
                 ? textureFor(own) : inheritedTexture;
+            bool legacyClassic = false;
             if (drawMode == HdDrawMode.Classic)
             {
                 var hdBase = hd.ClassicColor(stem, projectedPixels);
-                if (hdBase is not null) texture = hdBase;
+                if (hdBase is not null) { texture = hdBase; legacyClassic = stem is not null && hd.ReverseMeshV(stem); }
             }
             native.Texture = texture;
             native.TextureEnabled = texture is not null;
             native.CurrentTechnique.Passes[0].Apply();
-            gd.SetVertexBuffer(vertices); gd.Indices = indices;
+            gd.SetVertexBuffer(legacyClassic ? LegacyClassic() : vertices); gd.Indices = indices;
             gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, part.StartIndex, part.TriangleCount);
+        }
+
+        VertexBuffer LegacyClassic()
+        {
+            if (_legacyClassic is not null) return _legacyClassic;
+            _legacyVertices ??= ReverseTextureV(_vertices);
+            _legacyClassic = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), _vertices.Length, BufferUsage.WriteOnly);
+            _legacyClassic.SetData(_legacyVertices);
+            return _legacyClassic;
         }
 
         VertexBuffer Pbr()
         {
-            if (_pbr is not null) return _pbr;
-            var data = PbrVertex.Build(_vertices, _indices);
-            _pbr = new VertexBuffer(gd, typeof(PbrVertex), data.Length, BufferUsage.WriteOnly);
-            _pbr.SetData(data);
-            return _pbr;
+            bool reverseV = hdStem is not null && hd.ReverseMeshV(hdStem);
+            ref var buffer = ref (reverseV ? ref _legacyPbr : ref _pbr);
+            if (buffer is not null) return buffer;
+            // Rebuild tangent handedness in the map's UV convention as well:
+            // reflecting V reverses the bitangent, including normal-map green.
+            var data = PbrVertex.Build(reverseV ? _legacyVertices ??= ReverseTextureV(_vertices) : _vertices, _indices);
+            buffer = new VertexBuffer(gd, typeof(PbrVertex), data.Length, BufferUsage.WriteOnly);
+            buffer.SetData(data);
+            return buffer;
         }
     }
 
-    public void Dispose() => _pbr?.Dispose();
+    /// <summary>Adapt legacy HD map rows at the material boundary. Source mesh
+    /// positions, normals, UVs, indices and native/depth buffers stay intact.</summary>
+    public static VertexPositionNormalTexture[] ReverseTextureV(VertexPositionNormalTexture[] source)
+    {
+        var result = (VertexPositionNormalTexture[])source.Clone();
+        for (int i = 0; i < result.Length; i++) result[i].TextureCoordinate.Y = 1f - result[i].TextureCoordinate.Y;
+        return result;
+    }
+
+    public void Dispose()
+    {
+        _pbr?.Dispose(); _legacyPbr?.Dispose(); _legacyClassic?.Dispose();
+    }
 }

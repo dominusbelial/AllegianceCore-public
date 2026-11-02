@@ -61,7 +61,7 @@ public static class ChaffModelSource
     /// <paramref name="assets"/>. Throws if the asset is unavailable or the stem
     /// is not a real asset — the texture is required for rendering.</summary>
     public static MdlTexture LoadTexture(IAssetSource assets, string stem) =>
-        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, stem + ".mdl"));
+        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, stem + ".mdl"), flipVertical: true);
 
     /// <summary>Resolve the texture stem for a chaff of the given type, from the
     /// static core's <c>ChaffTypes</c> (<c>DataChaffTypeIGC.TextureName</c> +

@@ -17,15 +17,6 @@ public static class ShipEffectRules
         return Math.Min(1f, Math.Min(hullLength / 12f, cameraDistance / 24f));
     }
 
-    /// <summary>P915: compensate the flipped texture rows only for the own small
-    /// external hull. Native mesh UVs pass through unchanged (engine/geometry.cpp:311-314;
-    /// engine/device3d.cpp:2245-2246). The port's decoder flips rows, so those
-    /// UVs otherwise sample the unused black part of the pod atlas. Keep this
-    /// fix below six units (pods/observer in PCore001); ordinary hulls and stations
-    /// retain their presentation.</summary>
-    public static bool UprightHullTexture(bool ownShip, bool externalView, float hullLength)
-        => ownShip && externalView && hullLength > 0 && hullLength < 6f;
-
     /// <summary>
     /// Native WinTrek.cpp:7999-8006 requires a mounted afterburner. Only the
     /// owner's granted loadout is known on this client. Remote lifepods are

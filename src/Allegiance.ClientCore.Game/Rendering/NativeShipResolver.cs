@@ -53,20 +53,6 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public static class NativeShipResolver
 {
-    /// <summary>P915: compensate flipped texture rows for a scoped hull draw.
-    /// Geometry, normals, winding and material scopes remain identical. Pure;
-    /// the native texture and shared geometry are never modified.</summary>
-    public static MdlMesh WithReversedTextureV(MdlMesh mesh)
-    {
-        var uv = (float[])mesh.TexCoords.Clone();
-        for (int i = 1; i < uv.Length; i += 2) uv[i] = 1f - uv[i];
-        return new MdlMesh
-        {
-            Positions = mesh.Positions, Normals = mesh.Normals, Indices = mesh.Indices,
-            TexCoords = uv, TextureStem = mesh.TextureStem,
-        };
-    }
-
     /// <summary>
     /// Reverse each triangle's indices (<c>a b c</c> → <c>c b a</c>) so the
     /// DirectX clockwise-front native winding becomes MonoGame

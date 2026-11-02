@@ -78,7 +78,7 @@ public sealed class ExplosionAssets
                     Console.WriteLine($"[monogame] explosion film '{stem}' missing ({rel}) — skipped");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel), flipVertical: true);
                 result._films[stem] = SliceStrip(gd, tex);
                 Console.WriteLine($"[monogame] explosion film '{stem}' = {result._films[stem].Length} frames " +
                                   $"{tex.Width}x{tex.Height}");
@@ -94,7 +94,7 @@ public sealed class ExplosionAssets
             const string shockRel = "fx18bmp.mdl";
             if (assets.Exists(shockRel))
             {
-                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, shockRel));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, shockRel), flipVertical: true);
                 result._shockwave = ToTexture(gd, tex, 0, 0, tex.Width, tex.Height);
                 Console.WriteLine($"[monogame] explosion shockwave fx18 = {tex.Width}x{tex.Height}");
             }

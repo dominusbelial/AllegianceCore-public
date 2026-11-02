@@ -1,0 +1,212 @@
+[
+  {
+    "stem": "utl203bmp",
+    "map": "basecolor",
+    "sourceFolder": "utl203",
+    "maeSameRows": 0.3018,
+    "maeReversedRows": 32.016
+  },
+  {
+    "stem": "utl203bmp",
+    "map": "normal",
+    "sourceFolder": "utl203",
+    "maeSameRows": 0.29,
+    "maeReversedRows": 1.2432
+  },
+  {
+    "stem": "utl203bmp",
+    "map": "metallic",
+    "sourceFolder": "utl203",
+    "maeSameRows": 0.1533,
+    "maeReversedRows": 41.0166
+  },
+  {
+    "stem": "utl203bmp",
+    "map": "roughness",
+    "sourceFolder": "utl203",
+    "maeSameRows": 0.2119,
+    "maeReversedRows": 11.3975
+  },
+  {
+    "stem": "utl203bmp",
+    "map": "emission",
+    "sourceFolder": "utl203",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  },
+  {
+    "stem": "fig20bmp",
+    "map": "basecolor",
+    "sourceFolder": "wc_bifig",
+    "maeSameRows": 0.2933,
+    "maeReversedRows": 60.7646
+  },
+  {
+    "stem": "fig20bmp",
+    "map": "normal",
+    "sourceFolder": "wc_bifig",
+    "maeSameRows": 0.1631,
+    "maeReversedRows": 1.7529
+  },
+  {
+    "stem": "fig20bmp",
+    "map": "metallic",
+    "sourceFolder": "wc_bifig",
+    "maeSameRows": 0.1602,
+    "maeReversedRows": 67.0391
+  },
+  {
+    "stem": "fig20bmp",
+    "map": "roughness",
+    "sourceFolder": "wc_bifig",
+    "maeSameRows": 0.1553,
+    "maeReversedRows": 21.7314
+  },
+  {
+    "stem": "fig20bmp",
+    "map": "emission",
+    "sourceFolder": "wc_bifig",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  },
+  {
+    "stem": "cap01bmp",
+    "map": "basecolor",
+    "sourceFolder": "cap01",
+    "maeSameRows": 0.179,
+    "maeReversedRows": 36.944
+  },
+  {
+    "stem": "cap01bmp",
+    "map": "normal",
+    "sourceFolder": "cap01",
+    "maeSameRows": 0.2764,
+    "maeReversedRows": 1.625
+  },
+  {
+    "stem": "cap01bmp",
+    "map": "metallic",
+    "sourceFolder": "cap01",
+    "maeSameRows": 0.0723,
+    "maeReversedRows": 45.0293
+  },
+  {
+    "stem": "cap01bmp",
+    "map": "roughness",
+    "sourceFolder": "cap01",
+    "maeSameRows": 0.0859,
+    "maeReversedRows": 13.459
+  },
+  {
+    "stem": "cap01bmp",
+    "map": "emission",
+    "sourceFolder": "cap01",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  },
+  {
+    "stem": "ss27bmp",
+    "map": "basecolor",
+    "sourceFolder": "ss27bmp",
+    "maeSameRows": 0.1478,
+    "maeReversedRows": 49.4798
+  },
+  {
+    "stem": "ss27bmp",
+    "map": "normal",
+    "sourceFolder": "ss27bmp",
+    "maeSameRows": 0.2803,
+    "maeReversedRows": 1.3066
+  },
+  {
+    "stem": "ss27bmp",
+    "map": "metallic",
+    "sourceFolder": "ss27bmp",
+    "maeSameRows": 0.1582,
+    "maeReversedRows": 43.1035
+  },
+  {
+    "stem": "ss27bmp",
+    "map": "roughness",
+    "sourceFolder": "ss27bmp",
+    "maeSameRows": 0.166,
+    "maeReversedRows": 16.5508
+  },
+  {
+    "stem": "ss27bmp",
+    "map": "emission",
+    "sourceFolder": "ss27bmp",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  },
+  {
+    "stem": "bgrnd03bmp",
+    "map": "basecolor",
+    "sourceFolder": "bgrnd03bmp",
+    "maeSameRows": 0.1364,
+    "maeReversedRows": 8.1123
+  },
+  {
+    "stem": "bgrnd03bmp",
+    "map": "normal",
+    "sourceFolder": "bgrnd03bmp",
+    "maeSameRows": 0.2363,
+    "maeReversedRows": 0.4629
+  },
+  {
+    "stem": "bgrnd03bmp",
+    "map": "metallic",
+    "sourceFolder": "bgrnd03bmp",
+    "maeSameRows": 0.0674,
+    "maeReversedRows": 4.5225
+  },
+  {
+    "stem": "bgrnd03bmp",
+    "map": "roughness",
+    "sourceFolder": "bgrnd03bmp",
+    "maeSameRows": 0.1396,
+    "maeReversedRows": 3.0068
+  },
+  {
+    "stem": "bgrnd03bmp",
+    "map": "emission",
+    "sourceFolder": "bgrnd03bmp",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  },
+  {
+    "stem": "ss94bmp",
+    "map": "basecolor",
+    "sourceFolder": "ss94bmp",
+    "maeSameRows": 0.1263,
+    "maeReversedRows": 45.3652
+  },
+  {
+    "stem": "ss94bmp",
+    "map": "normal",
+    "sourceFolder": "ss94bmp",
+    "maeSameRows": 0.2266,
+    "maeReversedRows": 1.2949
+  },
+  {
+    "stem": "ss94bmp",
+    "map": "metallic",
+    "sourceFolder": "ss94bmp",
+    "maeSameRows": 0.0791,
+    "maeReversedRows": 27.5967
+  },
+  {
+    "stem": "ss94bmp",
+    "map": "roughness",
+    "sourceFolder": "ss94bmp",
+    "maeSameRows": 0.1074,
+    "maeReversedRows": 15.5781
+  },
+  {
+    "stem": "ss94bmp",
+    "map": "emission",
+    "sourceFolder": "ss94bmp",
+    "maeSameRows": 0.0,
+    "maeReversedRows": 0.0
+  }
+]

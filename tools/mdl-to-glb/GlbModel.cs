@@ -40,8 +40,8 @@ public sealed record GlbExportModel
     /// P824 — the base-colour images embedded in the GLB, one per texture stem
     /// (the decoded native <c>&lt;stem&gt;.bmp.mdl</c> texture as a PNG). The
     /// PNG pixels are in <b>GPU order</b> (top-left origin): exactly the RGBA
-    /// <see cref="MdlTextureDecoder.Decode"/> produces with its 3-D
-    /// <c>flipVertical:true</c> convention — which is also what glTF's
+    /// <see cref="MdlTextureDecoder.Decode"/> produces with its file-row
+    /// <c>flipVertical:false</c> convention — which is also what glTF's
     /// top-left UV origin samples, so mesh UVs map identically in Blender and
     /// in the port's renderer. Null when the export ran with
     /// <c>--no-texture</c> or no texture file was found.

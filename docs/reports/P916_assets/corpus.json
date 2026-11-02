@@ -1,0 +1,4363 @@
+{
+  "hulls": 447,
+  "models": 725,
+  "textures": 341,
+  "planets": 43,
+  "missingTextures": [
+    "utl22/ilpodbmp"
+  ],
+  "uvSamples": 745724,
+  "samplesWrongBefore": 714124,
+  "rows": [
+    {
+      "family": "hull",
+      "model": "ss20",
+      "texture": "ss20bmp",
+      "uvSamples": 430
+    },
+    {
+      "family": "hull",
+      "model": "fig05ops1",
+      "texture": "fig05ops1bmp",
+      "uvSamples": 1278
+    },
+    {
+      "family": "hull",
+      "model": "fig05",
+      "texture": "fig05bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig05",
+      "texture": "fig05bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig05",
+      "texture": "fig05bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig12",
+      "texture": "fig12bmp",
+      "uvSamples": 1139
+    },
+    {
+      "family": "hull",
+      "model": "fig12",
+      "texture": "fig12bmp",
+      "uvSamples": 1139
+    },
+    {
+      "family": "hull",
+      "model": "wc_gcfigx",
+      "texture": "fig07ops1bmp",
+      "uvSamples": 463
+    },
+    {
+      "family": "hull",
+      "model": "wc_gcfig",
+      "texture": "fig07bmp",
+      "uvSamples": 463
+    },
+    {
+      "family": "hull",
+      "model": "wc_gcfig",
+      "texture": "fig07bmp",
+      "uvSamples": 463
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "wc_gchvyx",
+      "texture": "wc_gchvyxbmp",
+      "uvSamples": 568
+    },
+    {
+      "family": "hull",
+      "model": "wc_gchvy",
+      "texture": "wc_gchvybmp",
+      "uvSamples": 568
+    },
+    {
+      "family": "hull",
+      "model": "wc_gcint",
+      "texture": "wc_gchvybmp",
+      "uvSamples": 528
+    },
+    {
+      "family": "hull",
+      "model": "bom05b",
+      "texture": "bom05bmp",
+      "uvSamples": 1583
+    },
+    {
+      "family": "hull",
+      "model": "fig07",
+      "texture": "fig07bmp",
+      "uvSamples": 1314
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "fig17",
+      "texture": "fig17bmp",
+      "uvSamples": 1619
+    },
+    {
+      "family": "hull",
+      "model": "wc_gcbmbx",
+      "texture": "wc_gcbmbxbmp",
+      "uvSamples": 647
+    },
+    {
+      "family": "hull",
+      "model": "bom05b",
+      "texture": "bom05bmp",
+      "uvSamples": 1583
+    },
+    {
+      "family": "hull",
+      "model": "bom05b",
+      "texture": "bom05bmp",
+      "uvSamples": 1583
+    },
+    {
+      "family": "hull",
+      "model": "wc_gchttx",
+      "texture": "wc_gcbmbxbmp",
+      "uvSamples": 430
+    },
+    {
+      "family": "hull",
+      "model": "utl93b",
+      "texture": "utl93bmp",
+      "uvSamples": 430
+    },
+    {
+      "family": "hull",
+      "model": "utl93b",
+      "texture": "utl93bmp",
+      "uvSamples": 430
+    },
+    {
+      "family": "hull",
+      "model": "utl18a",
+      "texture": "utl18bmp",
+      "uvSamples": 1512
+    },
+    {
+      "family": "hull",
+      "model": "cap502",
+      "texture": "cap502bmp",
+      "uvSamples": 1668
+    },
+    {
+      "family": "hull",
+      "model": "utl18a",
+      "texture": "utl18bmp",
+      "uvSamples": 1512
+    },
+    {
+      "family": "hull",
+      "model": "cap20",
+      "texture": "cap20bmp",
+      "uvSamples": 1213
+    },
+    {
+      "family": "hull",
+      "model": "utl17a",
+      "texture": "utl17bmp",
+      "uvSamples": 1672
+    },
+    {
+      "family": "hull",
+      "model": "cap01",
+      "texture": "cap01bmp",
+      "uvSamples": 2174
+    },
+    {
+      "family": "hull",
+      "model": "cap01",
+      "texture": "cap01bmp",
+      "uvSamples": 2174
+    },
+    {
+      "family": "hull",
+      "model": "cap502",
+      "texture": "cap502bmp",
+      "uvSamples": 1668
+    },
+    {
+      "family": "hull",
+      "model": "utl14a",
+      "texture": "utl14abmp",
+      "uvSamples": 604
+    },
+    {
+      "family": "hull",
+      "model": "utl14a",
+      "texture": "utl14abmp",
+      "uvSamples": 604
+    },
+    {
+      "family": "hull",
+      "model": "utl91",
+      "texture": "utl91bmp",
+      "uvSamples": 396
+    },
+    {
+      "family": "hull",
+      "model": "utl91",
+      "texture": "utl91bmp",
+      "uvSamples": 396
+    },
+    {
+      "family": "hull",
+      "model": "utl14a",
+      "texture": "utl14abmp",
+      "uvSamples": 604
+    },
+    {
+      "family": "hull",
+      "model": "utl14a",
+      "texture": "utl14abmp",
+      "uvSamples": 604
+    },
+    {
+      "family": "hull",
+      "model": "acs01",
+      "texture": "acs01bmp",
+      "uvSamples": 290
+    },
+    {
+      "family": "hull",
+      "model": "fig21",
+      "texture": "fig21bmp",
+      "uvSamples": 1412
+    },
+    {
+      "family": "hull",
+      "model": "fig21",
+      "texture": "fig21bmp",
+      "uvSamples": 1412
+    },
+    {
+      "family": "hull",
+      "model": "fig21",
+      "texture": "fig21bmp",
+      "uvSamples": 1412
+    },
+    {
+      "family": "hull",
+      "model": "wc_bifig",
+      "texture": "fig20bmp",
+      "uvSamples": 633
+    },
+    {
+      "family": "hull",
+      "model": "wc_bifig",
+      "texture": "fig20bmp",
+      "uvSamples": 633
+    },
+    {
+      "family": "hull",
+      "model": "wc_bifig",
+      "texture": "fig20bmp",
+      "uvSamples": 633
+    },
+    {
+      "family": "hull",
+      "model": "fig23",
+      "texture": "fig23bmp",
+      "uvSamples": 1043
+    },
+    {
+      "family": "hull",
+      "model": "fig23",
+      "texture": "fig23bmp",
+      "uvSamples": 1043
+    },
+    {
+      "family": "hull",
+      "model": "fig23",
+      "texture": "fig23bmp",
+      "uvSamples": 1043
+    },
+    {
+      "family": "hull",
+      "model": "fig22",
+      "texture": "fig22bmp",
+      "uvSamples": 1526
+    },
+    {
+      "family": "hull",
+      "model": "fig22",
+      "texture": "fig22bmp",
+      "uvSamples": 1526
+    },
+    {
+      "family": "hull",
+      "model": "fig22",
+      "texture": "fig22bmp",
+      "uvSamples": 1526
+    },
+    {
+      "family": "hull",
+      "model": "bom20",
+      "texture": "bom20bmp",
+      "uvSamples": 1534
+    },
+    {
+      "family": "hull",
+      "model": "wc_bifig",
+      "texture": "fig20bmp",
+      "uvSamples": 633
+    },
+    {
+      "family": "hull",
+      "model": "fig23",
+      "texture": "fig23bmp",
+      "uvSamples": 1043
+    },
+    {
+      "family": "hull",
+      "model": "fig23",
+      "texture": "fig23bmp",
+      "uvSamples": 1043
+    },
+    {
+      "family": "hull",
+      "model": "bom20",
+      "texture": "bom20bmp",
+      "uvSamples": 1534
+    },
+    {
+      "family": "hull",
+      "model": "bom20",
+      "texture": "bom20bmp",
+      "uvSamples": 1534
+    },
+    {
+      "family": "hull",
+      "model": "utl103",
+      "texture": "utl103bmp",
+      "uvSamples": 1296
+    },
+    {
+      "family": "hull",
+      "model": "utl103",
+      "texture": "utl103bmp",
+      "uvSamples": 1296
+    },
+    {
+      "family": "hull",
+      "model": "cap103",
+      "texture": "cap103bmp",
+      "uvSamples": 1557
+    },
+    {
+      "family": "hull",
+      "model": "cap503",
+      "texture": "cap503bmp",
+      "uvSamples": 996
+    },
+    {
+      "family": "hull",
+      "model": "cap103",
+      "texture": "cap103bmp",
+      "uvSamples": 1557
+    },
+    {
+      "family": "hull",
+      "model": "cap101",
+      "texture": "cap101bmp",
+      "uvSamples": 1637
+    },
+    {
+      "family": "hull",
+      "model": "cap102",
+      "texture": "cap102bmp",
+      "uvSamples": 1340
+    },
+    {
+      "family": "hull",
+      "model": "cap100",
+      "texture": "cap100bmp",
+      "uvSamples": 1566
+    },
+    {
+      "family": "hull",
+      "model": "cap102",
+      "texture": "cap102bmp",
+      "uvSamples": 1340
+    },
+    {
+      "family": "hull",
+      "model": "cap503",
+      "texture": "cap503bmp",
+      "uvSamples": 996
+    },
+    {
+      "family": "hull",
+      "model": "cap503",
+      "texture": "cap503bmp",
+      "uvSamples": 996
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl101",
+      "texture": "utl101bmp",
+      "uvSamples": 513
+    },
+    {
+      "family": "hull",
+      "model": "utl101",
+      "texture": "utl101bmp",
+      "uvSamples": 513
+    },
+    {
+      "family": "hull",
+      "model": "utl101",
+      "texture": "utl101bmp",
+      "uvSamples": 513
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl102",
+      "texture": "utl102bmp",
+      "uvSamples": 601
+    },
+    {
+      "family": "hull",
+      "model": "utl100",
+      "texture": "utl100bmp",
+      "uvSamples": 56
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "wc_icadv",
+      "texture": "fig02ops1bmp",
+      "uvSamples": 560
+    },
+    {
+      "family": "hull",
+      "model": "wc_icfig",
+      "texture": "fig02bmp",
+      "uvSamples": 498
+    },
+    {
+      "family": "hull",
+      "model": "wc_icsf",
+      "texture": "bom01abmp",
+      "uvSamples": 612
+    },
+    {
+      "family": "hull",
+      "model": "wc_icsf",
+      "texture": "bom01abmp",
+      "uvSamples": 612
+    },
+    {
+      "family": "hull",
+      "model": "wc_ichvy",
+      "texture": "fig16bmp",
+      "uvSamples": 655
+    },
+    {
+      "family": "hull",
+      "model": "wc_icint",
+      "texture": "fig16bmp",
+      "uvSamples": 556
+    },
+    {
+      "family": "hull",
+      "model": "wc_icint",
+      "texture": "fig16bmp",
+      "uvSamples": 556
+    },
+    {
+      "family": "hull",
+      "model": "wc_icbmb",
+      "texture": "bom07bmp",
+      "uvSamples": 860
+    },
+    {
+      "family": "hull",
+      "model": "fig02ops1",
+      "texture": "fig02ops1bmp",
+      "uvSamples": 1508
+    },
+    {
+      "family": "hull",
+      "model": "wc_icsf",
+      "texture": "bom01abmp",
+      "uvSamples": 612
+    },
+    {
+      "family": "hull",
+      "model": "wc_icsf",
+      "texture": "bom01abmp",
+      "uvSamples": 612
+    },
+    {
+      "family": "hull",
+      "model": "wc_icbmb",
+      "texture": "bom07bmp",
+      "uvSamples": 860
+    },
+    {
+      "family": "hull",
+      "model": "wc_icbmb",
+      "texture": "bom07bmp",
+      "uvSamples": 860
+    },
+    {
+      "family": "hull",
+      "model": "utl27b",
+      "texture": "utl27bmp",
+      "uvSamples": 1038
+    },
+    {
+      "family": "hull",
+      "model": "utl27b",
+      "texture": "utl27bmp",
+      "uvSamples": 1038
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap09",
+      "texture": "cap09bmp",
+      "uvSamples": 1427
+    },
+    {
+      "family": "hull",
+      "model": "cap02a",
+      "texture": "cap02bmp",
+      "uvSamples": 1423
+    },
+    {
+      "family": "hull",
+      "model": "cap03",
+      "texture": "cap03bmp",
+      "uvSamples": 1657
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl22",
+      "texture": null,
+      "uvSamples": 0
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "fig31",
+      "texture": "fig31bmp",
+      "uvSamples": 1402
+    },
+    {
+      "family": "hull",
+      "model": "fig31",
+      "texture": "fig31bmp",
+      "uvSamples": 1402
+    },
+    {
+      "family": "hull",
+      "model": "fig31",
+      "texture": "fig31bmp",
+      "uvSamples": 1402
+    },
+    {
+      "family": "hull",
+      "model": "fig30",
+      "texture": "fig30bmp",
+      "uvSamples": 1442
+    },
+    {
+      "family": "hull",
+      "model": "fig30",
+      "texture": "fig30bmp",
+      "uvSamples": 1442
+    },
+    {
+      "family": "hull",
+      "model": "fig30",
+      "texture": "fig30bmp",
+      "uvSamples": 1442
+    },
+    {
+      "family": "hull",
+      "model": "fig32",
+      "texture": "fig32bmp",
+      "uvSamples": 1273
+    },
+    {
+      "family": "hull",
+      "model": "fig32",
+      "texture": "fig32bmp",
+      "uvSamples": 1273
+    },
+    {
+      "family": "hull",
+      "model": "fig34",
+      "texture": "fig34bmp",
+      "uvSamples": 1487
+    },
+    {
+      "family": "hull",
+      "model": "fig34",
+      "texture": "fig34bmp",
+      "uvSamples": 1487
+    },
+    {
+      "family": "hull",
+      "model": "wc_beomni",
+      "texture": "fig30bmp",
+      "uvSamples": 657
+    },
+    {
+      "family": "hull",
+      "model": "bom30",
+      "texture": "bom30bmp",
+      "uvSamples": 1335
+    },
+    {
+      "family": "hull",
+      "model": "fig30",
+      "texture": "fig30bmp",
+      "uvSamples": 1442
+    },
+    {
+      "family": "hull",
+      "model": "fig32",
+      "texture": "fig32bmp",
+      "uvSamples": 1273
+    },
+    {
+      "family": "hull",
+      "model": "fig32",
+      "texture": "fig32bmp",
+      "uvSamples": 1273
+    },
+    {
+      "family": "hull",
+      "model": "bom30",
+      "texture": "bom30bmp",
+      "uvSamples": 1335
+    },
+    {
+      "family": "hull",
+      "model": "bom30",
+      "texture": "bom30bmp",
+      "uvSamples": 1335
+    },
+    {
+      "family": "hull",
+      "model": "utl202",
+      "texture": "utl202bmp",
+      "uvSamples": 1583
+    },
+    {
+      "family": "hull",
+      "model": "utl202",
+      "texture": "utl202bmp",
+      "uvSamples": 1583
+    },
+    {
+      "family": "hull",
+      "model": "cap303",
+      "texture": "cap303bmp",
+      "uvSamples": 1527
+    },
+    {
+      "family": "hull",
+      "model": "cap501",
+      "texture": "cap501bmp",
+      "uvSamples": 1527
+    },
+    {
+      "family": "hull",
+      "model": "cap303",
+      "texture": "cap303bmp",
+      "uvSamples": 1527
+    },
+    {
+      "family": "hull",
+      "model": "cap300",
+      "texture": "cap300bmp",
+      "uvSamples": 1460
+    },
+    {
+      "family": "hull",
+      "model": "cap301",
+      "texture": "cap301bmp",
+      "uvSamples": 1621
+    },
+    {
+      "family": "hull",
+      "model": "cap302",
+      "texture": "cap302bmp",
+      "uvSamples": 1607
+    },
+    {
+      "family": "hull",
+      "model": "cap501",
+      "texture": "cap501bmp",
+      "uvSamples": 1527
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "utl200",
+      "texture": "utl200bmp",
+      "uvSamples": 1282
+    },
+    {
+      "family": "hull",
+      "model": "utl200",
+      "texture": "utl200bmp",
+      "uvSamples": 1282
+    },
+    {
+      "family": "hull",
+      "model": "utl200",
+      "texture": "utl200bmp",
+      "uvSamples": 1282
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "utl203",
+      "texture": "utl203bmp",
+      "uvSamples": 208
+    },
+    {
+      "family": "hull",
+      "model": "utl201",
+      "texture": "utl201bmp",
+      "uvSamples": 1555
+    },
+    {
+      "family": "hull",
+      "model": "fig15",
+      "texture": "fig15bmp",
+      "uvSamples": 1314
+    },
+    {
+      "family": "hull",
+      "model": "fig15",
+      "texture": "fig15bmp",
+      "uvSamples": 1314
+    },
+    {
+      "family": "hull",
+      "model": "fig15",
+      "texture": "fig15bmp",
+      "uvSamples": 1314
+    },
+    {
+      "family": "hull",
+      "model": "fig15",
+      "texture": "fig15bmp",
+      "uvSamples": 1314
+    },
+    {
+      "family": "hull",
+      "model": "fig04",
+      "texture": "fig04bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig04",
+      "texture": "fig04bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig04",
+      "texture": "fig04bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "fig25",
+      "texture": "fig25bmp",
+      "uvSamples": 1517
+    },
+    {
+      "family": "hull",
+      "model": "fig25",
+      "texture": "fig25bmp",
+      "uvSamples": 1517
+    },
+    {
+      "family": "hull",
+      "model": "fig03",
+      "texture": "fig03bmp",
+      "uvSamples": 1573
+    },
+    {
+      "family": "hull",
+      "model": "fig03",
+      "texture": "fig03bmp",
+      "uvSamples": 1573
+    },
+    {
+      "family": "hull",
+      "model": "fig03",
+      "texture": "fig03bmp",
+      "uvSamples": 1573
+    },
+    {
+      "family": "hull",
+      "model": "bom04",
+      "texture": "bom04bmp",
+      "uvSamples": 1001
+    },
+    {
+      "family": "hull",
+      "model": "fig04",
+      "texture": "fig04bmp",
+      "uvSamples": 1045
+    },
+    {
+      "family": "hull",
+      "model": "bom03",
+      "texture": "bom03bmp",
+      "uvSamples": 1388
+    },
+    {
+      "family": "hull",
+      "model": "bom03",
+      "texture": "bom03bmp",
+      "uvSamples": 1388
+    },
+    {
+      "family": "hull",
+      "model": "bom04",
+      "texture": "bom04bmp",
+      "uvSamples": 1001
+    },
+    {
+      "family": "hull",
+      "model": "bom04",
+      "texture": "bom04bmp",
+      "uvSamples": 1001
+    },
+    {
+      "family": "hull",
+      "model": "utl92a",
+      "texture": "utl92bmp",
+      "uvSamples": 1007
+    },
+    {
+      "family": "hull",
+      "model": "utl92a",
+      "texture": "utl92bmp",
+      "uvSamples": 1007
+    },
+    {
+      "family": "hull",
+      "model": "cap21",
+      "texture": "cap21bmp",
+      "uvSamples": 1852
+    },
+    {
+      "family": "hull",
+      "model": "cap504",
+      "texture": "cap504bmp",
+      "uvSamples": 1240
+    },
+    {
+      "family": "hull",
+      "model": "cap21",
+      "texture": "cap21bmp",
+      "uvSamples": 1852
+    },
+    {
+      "family": "hull",
+      "model": "cap06a",
+      "texture": "cap06abmp",
+      "uvSamples": 1116
+    },
+    {
+      "family": "hull",
+      "model": "cap07",
+      "texture": "cap07bmp",
+      "uvSamples": 1484
+    },
+    {
+      "family": "hull",
+      "model": "cap08",
+      "texture": "cap08bmp",
+      "uvSamples": 1227
+    },
+    {
+      "family": "hull",
+      "model": "cap504",
+      "texture": "cap504bmp",
+      "uvSamples": 1240
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl90",
+      "texture": "utl90bmp",
+      "uvSamples": 568
+    },
+    {
+      "family": "hull",
+      "model": "utl90",
+      "texture": "utl90bmp",
+      "uvSamples": 568
+    },
+    {
+      "family": "hull",
+      "model": "utl90",
+      "texture": "utl90bmp",
+      "uvSamples": 568
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl95",
+      "texture": "utl95bmp",
+      "uvSamples": 2644
+    },
+    {
+      "family": "hull",
+      "model": "utl94",
+      "texture": "utl94bmp",
+      "uvSamples": 250
+    },
+    {
+      "family": "hull",
+      "model": "utl99",
+      "texture": "utl14abmp",
+      "uvSamples": 60
+    },
+    {
+      "family": "hull",
+      "model": "utl666",
+      "texture": "utl11bmp",
+      "uvSamples": 60
+    },
+    {
+      "family": "hull",
+      "model": "acs41",
+      "texture": "acs41bmp",
+      "uvSamples": 80
+    },
+    {
+      "family": "hull",
+      "model": "utl01b",
+      "texture": "utl01bbmp",
+      "uvSamples": 1029
+    },
+    {
+      "family": "hull",
+      "model": "utl105",
+      "texture": "utl105bmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "hull",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "hull",
+      "model": "utl205",
+      "texture": "utl205bmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "hull",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "hull",
+      "model": "quizscoutv2",
+      "texture": "quizscout2bmp",
+      "uvSamples": 472
+    },
+    {
+      "family": "hull",
+      "model": "quizscoutv2",
+      "texture": "quizscout2bmp",
+      "uvSamples": 472
+    },
+    {
+      "family": "hull",
+      "model": "quizscoutv2",
+      "texture": "quizscout2bmp",
+      "uvSamples": 472
+    },
+    {
+      "family": "hull",
+      "model": "quizfigv2",
+      "texture": "quizfig1bmp",
+      "uvSamples": 494
+    },
+    {
+      "family": "hull",
+      "model": "quizfigv2",
+      "texture": "quizfig1bmp",
+      "uvSamples": 494
+    },
+    {
+      "family": "hull",
+      "model": "quizsfv2",
+      "texture": "quizsf2bmp",
+      "uvSamples": 576
+    },
+    {
+      "family": "hull",
+      "model": "quizsfv2",
+      "texture": "quizsf2bmp",
+      "uvSamples": 576
+    },
+    {
+      "family": "hull",
+      "model": "quizintv2",
+      "texture": "quizint1bmp",
+      "uvSamples": 956
+    },
+    {
+      "family": "hull",
+      "model": "quizintv2",
+      "texture": "quizint1bmp",
+      "uvSamples": 956
+    },
+    {
+      "family": "hull",
+      "model": "quizintv2",
+      "texture": "quizint1bmp",
+      "uvSamples": 956
+    },
+    {
+      "family": "hull",
+      "model": "quizbbrv2",
+      "texture": "quizbbr1bmp",
+      "uvSamples": 824
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshfig",
+      "texture": "dn_fadrshfigbmp",
+      "uvSamples": 1061
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshstl",
+      "texture": "dn_fadrshstlbmp",
+      "uvSamples": 1010
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshstl",
+      "texture": "dn_fadrshstlbmp",
+      "uvSamples": 1010
+    },
+    {
+      "family": "hull",
+      "model": "quizbbrv2",
+      "texture": "quizbbr1bmp",
+      "uvSamples": 824
+    },
+    {
+      "family": "hull",
+      "model": "quizbbrv2",
+      "texture": "quizbbr1bmp",
+      "uvSamples": 824
+    },
+    {
+      "family": "hull",
+      "model": "dregtt",
+      "texture": "dregttbmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "dregtt",
+      "texture": "dregttbmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "drgas",
+      "texture": "drgasbmp",
+      "uvSamples": 151
+    },
+    {
+      "family": "hull",
+      "model": "dregcar",
+      "texture": "dregcarbmp",
+      "uvSamples": 3860
+    },
+    {
+      "family": "hull",
+      "model": "drgas",
+      "texture": "drgasbmp",
+      "uvSamples": 151
+    },
+    {
+      "family": "hull",
+      "model": "dcrus",
+      "texture": "dcrusbmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "hull",
+      "model": "tecdev",
+      "texture": "tecdevbmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "hull",
+      "model": "drgmf",
+      "texture": "drgmfbmp",
+      "uvSamples": 1647
+    },
+    {
+      "family": "hull",
+      "model": "crus2",
+      "texture": "crus2bmp",
+      "uvSamples": 1388
+    },
+    {
+      "family": "hull",
+      "model": "dregcar",
+      "texture": "dregcarbmp",
+      "uvSamples": 3860
+    },
+    {
+      "family": "hull",
+      "model": "dminr",
+      "texture": "dminrbmp",
+      "uvSamples": 232
+    },
+    {
+      "family": "hull",
+      "model": "dminr",
+      "texture": "dminrbmp",
+      "uvSamples": 232
+    },
+    {
+      "family": "hull",
+      "model": "dminr",
+      "texture": "dminrbmp",
+      "uvSamples": 232
+    },
+    {
+      "family": "hull",
+      "model": "drgtow",
+      "texture": "drgtowbmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dn_fadrshcon",
+      "texture": "dn_fadrshintbmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "hull",
+      "model": "dreghpod",
+      "texture": "dreghpodbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "hull",
+      "model": "rainscoutv2",
+      "texture": "rainscoutbmp",
+      "uvSamples": 1392
+    },
+    {
+      "family": "hull",
+      "model": "rainscoutv2",
+      "texture": "rainscoutbmp",
+      "uvSamples": 1392
+    },
+    {
+      "family": "hull",
+      "model": "rainscoutv2",
+      "texture": "rainscoutbmp",
+      "uvSamples": 1392
+    },
+    {
+      "family": "hull",
+      "model": "rainfigv2",
+      "texture": "rainfigbmp",
+      "uvSamples": 875
+    },
+    {
+      "family": "hull",
+      "model": "rainfigv2",
+      "texture": "rainfigbmp",
+      "uvSamples": 875
+    },
+    {
+      "family": "hull",
+      "model": "rainfigv2",
+      "texture": "rainfigbmp",
+      "uvSamples": 875
+    },
+    {
+      "family": "hull",
+      "model": "rainsfv2",
+      "texture": "rainsfbmp",
+      "uvSamples": 2330
+    },
+    {
+      "family": "hull",
+      "model": "rainsfv2",
+      "texture": "rainsfbmp",
+      "uvSamples": 2330
+    },
+    {
+      "family": "hull",
+      "model": "rainsfv2",
+      "texture": "rainsfbmp",
+      "uvSamples": 2330
+    },
+    {
+      "family": "hull",
+      "model": "rainintv2",
+      "texture": "rainintbmp",
+      "uvSamples": 2592
+    },
+    {
+      "family": "hull",
+      "model": "rainintv2",
+      "texture": "rainintbmp",
+      "uvSamples": 2592
+    },
+    {
+      "family": "hull",
+      "model": "rainintv2",
+      "texture": "rainintbmp",
+      "uvSamples": 2592
+    },
+    {
+      "family": "hull",
+      "model": "dn_fateshbmb",
+      "texture": "dn_fateshbmbbmp",
+      "uvSamples": 403
+    },
+    {
+      "family": "hull",
+      "model": "tffig",
+      "texture": "tfscoutbmp",
+      "uvSamples": 528
+    },
+    {
+      "family": "hull",
+      "model": "tfsb2",
+      "texture": "cannonbmp",
+      "uvSamples": 2500
+    },
+    {
+      "family": "hull",
+      "model": "tfsb2",
+      "texture": "cannonbmp",
+      "uvSamples": 2500
+    },
+    {
+      "family": "hull",
+      "model": "dn_fateshbmb",
+      "texture": "dn_fateshbmbbmp",
+      "uvSamples": 403
+    },
+    {
+      "family": "hull",
+      "model": "dn_fateshbmb",
+      "texture": "dn_fateshbmbbmp",
+      "uvSamples": 403
+    },
+    {
+      "family": "hull",
+      "model": "tftransport",
+      "texture": "tftransportbmp",
+      "uvSamples": 136
+    },
+    {
+      "family": "hull",
+      "model": "tftransport",
+      "texture": "tftransportbmp",
+      "uvSamples": 136
+    },
+    {
+      "family": "hull",
+      "model": "tfflagship",
+      "texture": "tfflagshipbmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "hull",
+      "model": "raincarr",
+      "texture": "raincarr1bmp",
+      "uvSamples": 6498
+    },
+    {
+      "family": "hull",
+      "model": "tfflagship",
+      "texture": "tfflagshipbmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "hull",
+      "model": "tfflagship",
+      "texture": "tfflagshipbmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "hull",
+      "model": "tfflagship",
+      "texture": "tfflagshipbmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "hull",
+      "model": "tfflagship",
+      "texture": "tfflagshipbmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "hull",
+      "model": "raincarr",
+      "texture": "raincarr1bmp",
+      "uvSamples": 6498
+    },
+    {
+      "family": "hull",
+      "model": "tfmnr",
+      "texture": "tfmnrbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfmnr",
+      "texture": "tfmnrbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfmnr",
+      "texture": "tfmnrbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfdron",
+      "texture": "tfdronbmp",
+      "uvSamples": 144
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfcon",
+      "texture": "tfconbmp",
+      "uvSamples": 243
+    },
+    {
+      "family": "hull",
+      "model": "tfpod",
+      "texture": "tfpodbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "hull",
+      "model": "cap502",
+      "texture": "cap502bmp",
+      "uvSamples": 1668
+    },
+    {
+      "family": "hull",
+      "model": "cap502",
+      "texture": "cap502bmp",
+      "uvSamples": 1668
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "cap501",
+      "texture": "cap501bmp",
+      "uvSamples": 1527
+    },
+    {
+      "family": "hull",
+      "model": "cap504",
+      "texture": "cap504bmp",
+      "uvSamples": 1240
+    },
+    {
+      "family": "hull",
+      "model": "dregcar",
+      "texture": "dregcarbmp",
+      "uvSamples": 3860
+    },
+    {
+      "family": "hull",
+      "model": "raincarr",
+      "texture": "raincarr1bmp",
+      "uvSamples": 6498
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtmnr",
+      "texture": "utl401bmp",
+      "uvSamples": 720
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtmnr",
+      "texture": "utl401bmp",
+      "uvSamples": 720
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtmnr",
+      "texture": "utl401bmp",
+      "uvSamples": 720
+    },
+    {
+      "family": "hull",
+      "model": "utl403",
+      "texture": "utl403bmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "hull",
+      "model": "cap401",
+      "texture": "cap401bmp",
+      "uvSamples": 490
+    },
+    {
+      "family": "hull",
+      "model": "cap401",
+      "texture": "cap401bmp",
+      "uvSamples": 490
+    },
+    {
+      "family": "hull",
+      "model": "cap401",
+      "texture": "cap401bmp",
+      "uvSamples": 490
+    },
+    {
+      "family": "hull",
+      "model": "rescuedrone",
+      "texture": "rescuedronebmp",
+      "uvSamples": 445
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtcon",
+      "texture": "utl402bmp",
+      "uvSamples": 446
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtpod",
+      "texture": "fig404bmp",
+      "uvSamples": 244
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsct",
+      "texture": "fig403bmp",
+      "uvSamples": 644
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsct",
+      "texture": "fig403bmp",
+      "uvSamples": 644
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsct",
+      "texture": "fig403bmp",
+      "uvSamples": 644
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtadv",
+      "texture": "fig405bmp",
+      "uvSamples": 814
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtadv",
+      "texture": "fig405bmp",
+      "uvSamples": 814
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtfig",
+      "texture": "fig400bmp",
+      "uvSamples": 702
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsf",
+      "texture": "fig402bmp",
+      "uvSamples": 388
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsf",
+      "texture": "fig402bmp",
+      "uvSamples": 388
+    },
+    {
+      "family": "hull",
+      "model": "wc_gthvy",
+      "texture": "fig406bmp",
+      "uvSamples": 920
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtint",
+      "texture": "fig401bmp",
+      "uvSamples": 782
+    },
+    {
+      "family": "hull",
+      "model": "utl403",
+      "texture": "utl403bmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtpt",
+      "texture": "cap402bmp",
+      "uvSamples": 288
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtstang",
+      "texture": "cap407bmp",
+      "uvSamples": 520
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtadv",
+      "texture": "fig405bmp",
+      "uvSamples": 814
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsf",
+      "texture": "fig402bmp",
+      "uvSamples": 388
+    },
+    {
+      "family": "hull",
+      "model": "wc_gtsf",
+      "texture": "fig402bmp",
+      "uvSamples": 388
+    },
+    {
+      "family": "hull",
+      "model": "bom400",
+      "texture": "bom400bmp",
+      "uvSamples": 792
+    },
+    {
+      "family": "hull",
+      "model": "bom400",
+      "texture": "bom400bmp",
+      "uvSamples": 792
+    },
+    {
+      "family": "hull",
+      "model": "utl400",
+      "texture": "utl400bmp",
+      "uvSamples": 574
+    },
+    {
+      "family": "hull",
+      "model": "utl400",
+      "texture": "utl400bmp",
+      "uvSamples": 574
+    },
+    {
+      "family": "hull",
+      "model": "utl400",
+      "texture": "utl400bmp",
+      "uvSamples": 574
+    },
+    {
+      "family": "hull",
+      "model": "cap400",
+      "texture": "cap400bmp",
+      "uvSamples": 900
+    },
+    {
+      "family": "hull",
+      "model": "cap401",
+      "texture": "cap401bmp",
+      "uvSamples": 490
+    },
+    {
+      "family": "hull",
+      "model": "cap401",
+      "texture": "cap401bmp",
+      "uvSamples": 490
+    },
+    {
+      "family": "hull",
+      "model": "cap400",
+      "texture": "cap400bmp",
+      "uvSamples": 900
+    },
+    {
+      "family": "hull",
+      "model": "cap400",
+      "texture": "cap400bmp",
+      "uvSamples": 900
+    },
+    {
+      "family": "hull",
+      "model": "cap404",
+      "texture": "cap404bmp",
+      "uvSamples": 422
+    },
+    {
+      "family": "hull",
+      "model": "cap406",
+      "texture": "cap406bmp",
+      "uvSamples": 684
+    },
+    {
+      "family": "hull",
+      "model": "cap405",
+      "texture": "cap405bmp",
+      "uvSamples": 476
+    },
+    {
+      "family": "hull",
+      "model": "cap403",
+      "texture": "cap403bmp",
+      "uvSamples": 472
+    },
+    {
+      "family": "hull",
+      "model": "cap415",
+      "texture": "cap415bmp",
+      "uvSamples": 598
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshpod",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 186
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "utl25",
+      "texture": "utl01bmp",
+      "uvSamples": 250
+    },
+    {
+      "family": "hull",
+      "model": "utl05",
+      "texture": "utl05bmp",
+      "uvSamples": 313
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshmnr",
+      "texture": "dn_faphsh001bmp",
+      "uvSamples": 3042
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshrpb",
+      "texture": "utl01bmp",
+      "uvSamples": 804
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshcar",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 623
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshcar",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 623
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshsct",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 262
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshsct",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 262
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshsct",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 262
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfig",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 682
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfig",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 682
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfig",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 682
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshstl",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 326
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshstl",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 326
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshint",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 530
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshint",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 530
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmb",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 606
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshvng",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 1302
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfig",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 682
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmbs",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 424
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmbs",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 424
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmb",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 606
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmb",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 606
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmb",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 606
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshbmb",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 606
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshdst",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 630
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshcar",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 623
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshdst",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 630
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshdst",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 630
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfrg",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 932
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshdst",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 630
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshcrs",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 1098
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshsct",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 262
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshfig",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 682
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshstl",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 326
+    },
+    {
+      "family": "hull",
+      "model": "dn_faphshint",
+      "texture": "dn_faphsh000bmp",
+      "uvSamples": 530
+    },
+    {
+      "family": "hull",
+      "model": "utl105",
+      "texture": "utl105bmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "hull",
+      "model": "faohshsctb",
+      "texture": "faohshsctbbmp",
+      "uvSamples": 1350
+    },
+    {
+      "family": "hull",
+      "model": "faohshsctb",
+      "texture": "faohshsctbbmp",
+      "uvSamples": 1350
+    },
+    {
+      "family": "hull",
+      "model": "faohshsctb",
+      "texture": "faohshsctbbmp",
+      "uvSamples": 1350
+    },
+    {
+      "family": "hull",
+      "model": "faohshafig",
+      "texture": "faohshafigbmp",
+      "uvSamples": 1210
+    },
+    {
+      "family": "hull",
+      "model": "faohshafig",
+      "texture": "faohshafigbmp",
+      "uvSamples": 1210
+    },
+    {
+      "family": "hull",
+      "model": "faohshfig",
+      "texture": "faohshfigbmp",
+      "uvSamples": 1156
+    },
+    {
+      "family": "hull",
+      "model": "faohshstl",
+      "texture": "faohshstlbmp",
+      "uvSamples": 1919
+    },
+    {
+      "family": "hull",
+      "model": "faohshstl",
+      "texture": "faohshstlbmp",
+      "uvSamples": 1919
+    },
+    {
+      "family": "hull",
+      "model": "faohshhint",
+      "texture": "faohshhintbmp",
+      "uvSamples": 1360
+    },
+    {
+      "family": "hull",
+      "model": "faohshint",
+      "texture": "faohshintbmp",
+      "uvSamples": 1306
+    },
+    {
+      "family": "hull",
+      "model": "faohshint",
+      "texture": "faohshintbmp",
+      "uvSamples": 1306
+    },
+    {
+      "family": "hull",
+      "model": "faohshbmb",
+      "texture": "faohshbmbbmp",
+      "uvSamples": 1750
+    },
+    {
+      "family": "hull",
+      "model": "faohshafig",
+      "texture": "faohshafigbmp",
+      "uvSamples": 1210
+    },
+    {
+      "family": "hull",
+      "model": "faohshstl",
+      "texture": "faohshstlbmp",
+      "uvSamples": 1919
+    },
+    {
+      "family": "hull",
+      "model": "faohshstl",
+      "texture": "faohshstlbmp",
+      "uvSamples": 1919
+    },
+    {
+      "family": "hull",
+      "model": "faohshbmb",
+      "texture": "faohshbmbbmp",
+      "uvSamples": 1750
+    },
+    {
+      "family": "hull",
+      "model": "faohshbmb",
+      "texture": "faohshbmbbmp",
+      "uvSamples": 1750
+    },
+    {
+      "family": "hull",
+      "model": "faohshbmb",
+      "texture": "faohshbmbbmp",
+      "uvSamples": 1750
+    },
+    {
+      "family": "hull",
+      "model": "faohshbmb",
+      "texture": "faohshbmbbmp",
+      "uvSamples": 1750
+    },
+    {
+      "family": "hull",
+      "model": "faohshcrv",
+      "texture": "faohshcrvbmp",
+      "uvSamples": 1442
+    },
+    {
+      "family": "hull",
+      "model": "faohshass",
+      "texture": "faohshassbmp",
+      "uvSamples": 2981
+    },
+    {
+      "family": "hull",
+      "model": "faohshcar",
+      "texture": "faohshcarbmp",
+      "uvSamples": 2943
+    },
+    {
+      "family": "hull",
+      "model": "faohshdev",
+      "texture": "faohshdevbmp",
+      "uvSamples": 2386
+    },
+    {
+      "family": "hull",
+      "model": "faohshdev",
+      "texture": "faohshdevbmp",
+      "uvSamples": 2386
+    },
+    {
+      "family": "hull",
+      "model": "faohshcrs",
+      "texture": "faohshcrsbmp",
+      "uvSamples": 7030
+    },
+    {
+      "family": "hull",
+      "model": "faohshcar",
+      "texture": "faohshcarbmp",
+      "uvSamples": 2943
+    },
+    {
+      "family": "hull",
+      "model": "faohshcar",
+      "texture": "faohshcarbmp",
+      "uvSamples": 2943
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshmnr",
+      "texture": "faohshmnrbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshmnr",
+      "texture": "faohshmnrbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshmnr",
+      "texture": "faohshmnrbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshcon",
+      "texture": "faohshconbmp",
+      "uvSamples": 886
+    },
+    {
+      "family": "hull",
+      "model": "faohshpod",
+      "texture": "faohshpodbmp",
+      "uvSamples": 410
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "fig13",
+      "texture": "fig13bmp",
+      "uvSamples": 916
+    },
+    {
+      "family": "hull",
+      "model": "fig02ops1",
+      "texture": "fig02ops1bmp",
+      "uvSamples": 1508
+    },
+    {
+      "family": "hull",
+      "model": "fig02ops1",
+      "texture": "fig02ops1bmp",
+      "uvSamples": 1508
+    },
+    {
+      "family": "hull",
+      "model": "faohshfig",
+      "texture": "faohshfigbmp",
+      "uvSamples": 1156
+    },
+    {
+      "family": "hull",
+      "model": "bom01b",
+      "texture": "bom01abmp",
+      "uvSamples": 1763
+    },
+    {
+      "family": "hull",
+      "model": "bom01b",
+      "texture": "bom01abmp",
+      "uvSamples": 1763
+    },
+    {
+      "family": "hull",
+      "model": "faohshhint",
+      "texture": "faohshhintbmp",
+      "uvSamples": 1360
+    },
+    {
+      "family": "hull",
+      "model": "faohshint",
+      "texture": "faohshintbmp",
+      "uvSamples": 1306
+    },
+    {
+      "family": "hull",
+      "model": "faohshint",
+      "texture": "faohshintbmp",
+      "uvSamples": 1306
+    },
+    {
+      "family": "hull",
+      "model": "bom07b",
+      "texture": "bom07bmp",
+      "uvSamples": 1856
+    },
+    {
+      "family": "hull",
+      "model": "fig02ops1",
+      "texture": "fig02ops1bmp",
+      "uvSamples": 1508
+    },
+    {
+      "family": "hull",
+      "model": "bom01b",
+      "texture": "bom01abmp",
+      "uvSamples": 1763
+    },
+    {
+      "family": "hull",
+      "model": "bom01b",
+      "texture": "bom01abmp",
+      "uvSamples": 1763
+    },
+    {
+      "family": "hull",
+      "model": "bom07b",
+      "texture": "bom07bmp",
+      "uvSamples": 1856
+    },
+    {
+      "family": "hull",
+      "model": "bom07b",
+      "texture": "bom07bmp",
+      "uvSamples": 1856
+    },
+    {
+      "family": "hull",
+      "model": "utl27b",
+      "texture": "utl27bmp",
+      "uvSamples": 1038
+    },
+    {
+      "family": "hull",
+      "model": "utl27b",
+      "texture": "utl27bmp",
+      "uvSamples": 1038
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap04",
+      "texture": "cap04bmp",
+      "uvSamples": 1089
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "cap500",
+      "texture": "cap500bmp",
+      "uvSamples": 1188
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "utl19",
+      "texture": "utl19bmp",
+      "uvSamples": 1180
+    },
+    {
+      "family": "hull",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl11",
+      "texture": "utl11bmp",
+      "uvSamples": 640
+    },
+    {
+      "family": "hull",
+      "model": "utl05",
+      "texture": "utl05bmp",
+      "uvSamples": 313
+    },
+    {
+      "family": "hull",
+      "model": "utl22",
+      "texture": null,
+      "uvSamples": 0
+    },
+    {
+      "family": "station",
+      "model": "ss92",
+      "texture": "ss92bmp",
+      "uvSamples": 626
+    },
+    {
+      "family": "station",
+      "model": "ss06",
+      "texture": "ss06bmp",
+      "uvSamples": 564
+    },
+    {
+      "family": "station",
+      "model": "utl06",
+      "texture": "utl6bmp",
+      "uvSamples": 1420
+    },
+    {
+      "family": "station",
+      "model": "ss08",
+      "texture": "ss08bmp",
+      "uvSamples": 329
+    },
+    {
+      "family": "station",
+      "model": "ss08",
+      "texture": "ss08bmp",
+      "uvSamples": 329
+    },
+    {
+      "family": "station",
+      "model": "ss08",
+      "texture": "ss08bmp",
+      "uvSamples": 329
+    },
+    {
+      "family": "station",
+      "model": "ss18",
+      "texture": "ss18abmp",
+      "uvSamples": 1644
+    },
+    {
+      "family": "station",
+      "model": "ss93",
+      "texture": "ss93bmp",
+      "uvSamples": 1716
+    },
+    {
+      "family": "station",
+      "model": "ss93",
+      "texture": "ss93bmp",
+      "uvSamples": 1716
+    },
+    {
+      "family": "station",
+      "model": "utl20",
+      "texture": "utl20bmp",
+      "uvSamples": 1418
+    },
+    {
+      "family": "station",
+      "model": "utl20",
+      "texture": "utl20bmp",
+      "uvSamples": 1418
+    },
+    {
+      "family": "station",
+      "model": "ss23",
+      "texture": "ss23bmp",
+      "uvSamples": 1524
+    },
+    {
+      "family": "station",
+      "model": "ss23",
+      "texture": "ss23bmp",
+      "uvSamples": 1524
+    },
+    {
+      "family": "station",
+      "model": "ss24a",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1954
+    },
+    {
+      "family": "station",
+      "model": "ss24a",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1954
+    },
+    {
+      "family": "station",
+      "model": "ss90",
+      "texture": "ss90bmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "station",
+      "model": "utl07",
+      "texture": "utl07bmp",
+      "uvSamples": 1228
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "ss21a",
+      "texture": "ss21abmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "station",
+      "model": "ss21a",
+      "texture": "ss21abmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "station",
+      "model": "ss28",
+      "texture": "ss28bmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "ss28",
+      "texture": "ss28bmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "acs08",
+      "texture": "acs08bmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "acs08",
+      "texture": "acs08bmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "ss27",
+      "texture": "ss27bmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "ss27",
+      "texture": "ss27bmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "ss101",
+      "texture": "ss101bmp",
+      "uvSamples": 1216
+    },
+    {
+      "family": "station",
+      "model": "ss107",
+      "texture": "ss107bmp",
+      "uvSamples": 880
+    },
+    {
+      "family": "station",
+      "model": "ss106",
+      "texture": "ss106bmp",
+      "uvSamples": 1208
+    },
+    {
+      "family": "station",
+      "model": "ss102",
+      "texture": "ss102bmp",
+      "uvSamples": 1200
+    },
+    {
+      "family": "station",
+      "model": "ss103",
+      "texture": "ss103bmp",
+      "uvSamples": 1280
+    },
+    {
+      "family": "station",
+      "model": "ss104",
+      "texture": "biosbaybmp",
+      "uvSamples": 968
+    },
+    {
+      "family": "station",
+      "model": "ss105",
+      "texture": "ss105bmp",
+      "uvSamples": 1458
+    },
+    {
+      "family": "station",
+      "model": "ss100",
+      "texture": "ss100bmp",
+      "uvSamples": 1408
+    },
+    {
+      "family": "station",
+      "model": "ss301",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1372
+    },
+    {
+      "family": "station",
+      "model": "ss307",
+      "texture": "ss307bmp",
+      "uvSamples": 1238
+    },
+    {
+      "family": "station",
+      "model": "ss306",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1368
+    },
+    {
+      "family": "station",
+      "model": "ss302",
+      "texture": "ss18abmp",
+      "uvSamples": 1308
+    },
+    {
+      "family": "station",
+      "model": "ss302",
+      "texture": "ss18abmp",
+      "uvSamples": 1308
+    },
+    {
+      "family": "station",
+      "model": "ss303",
+      "texture": "ss93abmp",
+      "uvSamples": 1444
+    },
+    {
+      "family": "station",
+      "model": "ss303",
+      "texture": "ss93abmp",
+      "uvSamples": 1444
+    },
+    {
+      "family": "station",
+      "model": "ss304",
+      "texture": "utl20abmp",
+      "uvSamples": 1384
+    },
+    {
+      "family": "station",
+      "model": "ss304",
+      "texture": "utl20abmp",
+      "uvSamples": 1384
+    },
+    {
+      "family": "station",
+      "model": "ss305",
+      "texture": "bgrnd53bmp",
+      "uvSamples": 1370
+    },
+    {
+      "family": "station",
+      "model": "ss305",
+      "texture": "bgrnd53bmp",
+      "uvSamples": 1370
+    },
+    {
+      "family": "station",
+      "model": "ss300",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1648
+    },
+    {
+      "family": "station",
+      "model": "ss300",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 1648
+    },
+    {
+      "family": "station",
+      "model": "ss98",
+      "texture": "rixbaybmp",
+      "uvSamples": 1608
+    },
+    {
+      "family": "station",
+      "model": "ss94",
+      "texture": "ss94bmp",
+      "uvSamples": 1204
+    },
+    {
+      "family": "station",
+      "model": "ss95",
+      "texture": "ss95bmp",
+      "uvSamples": 1446
+    },
+    {
+      "family": "station",
+      "model": "ss96",
+      "texture": "ss96bmp",
+      "uvSamples": 1690
+    },
+    {
+      "family": "station",
+      "model": "ss96",
+      "texture": "ss96bmp",
+      "uvSamples": 1690
+    },
+    {
+      "family": "station",
+      "model": "cap05",
+      "texture": "cap05bmp",
+      "uvSamples": 1212
+    },
+    {
+      "family": "station",
+      "model": "cap05",
+      "texture": "cap05bmp",
+      "uvSamples": 1212
+    },
+    {
+      "family": "station",
+      "model": "cc_faristexp",
+      "texture": "ss97bmp",
+      "uvSamples": 492
+    },
+    {
+      "family": "station",
+      "model": "cc_faristexp",
+      "texture": "ss97bmp",
+      "uvSamples": 492
+    },
+    {
+      "family": "station",
+      "model": "ss99",
+      "texture": "ss99bmp",
+      "uvSamples": 1602
+    },
+    {
+      "family": "station",
+      "model": "ss99",
+      "texture": "ss99bmp",
+      "uvSamples": 1602
+    },
+    {
+      "family": "station",
+      "model": "ss01",
+      "texture": "ss01bmp",
+      "uvSamples": 1172
+    },
+    {
+      "family": "station",
+      "model": "ss01",
+      "texture": "ss01bmp",
+      "uvSamples": 1172
+    },
+    {
+      "family": "station",
+      "model": "dgsup",
+      "texture": "dgsupbmp",
+      "uvSamples": 1458
+    },
+    {
+      "family": "station",
+      "model": "dbase",
+      "texture": "dbsebmp",
+      "uvSamples": 1454
+    },
+    {
+      "family": "station",
+      "model": "tectp",
+      "texture": "drgrockbmp",
+      "uvSamples": 1368
+    },
+    {
+      "family": "station",
+      "model": "helm",
+      "texture": "hmbmp",
+      "uvSamples": 384
+    },
+    {
+      "family": "station",
+      "model": "drgsy",
+      "texture": "dregabmp",
+      "uvSamples": 1308
+    },
+    {
+      "family": "station",
+      "model": "drgsy",
+      "texture": "dregabmp",
+      "uvSamples": 1308
+    },
+    {
+      "family": "station",
+      "model": "drgop",
+      "texture": "drgopbmp",
+      "uvSamples": 1418
+    },
+    {
+      "family": "station",
+      "model": "drgop",
+      "texture": "drgopbmp",
+      "uvSamples": 1418
+    },
+    {
+      "family": "station",
+      "model": "dgexp",
+      "texture": "drgrockbmp",
+      "uvSamples": 1954
+    },
+    {
+      "family": "station",
+      "model": "dgexp",
+      "texture": "drgrockbmp",
+      "uvSamples": 1954
+    },
+    {
+      "family": "station",
+      "model": "dtac",
+      "texture": "dtacbmp",
+      "uvSamples": 1060
+    },
+    {
+      "family": "station",
+      "model": "dtac",
+      "texture": "dtacbmp",
+      "uvSamples": 1060
+    },
+    {
+      "family": "station",
+      "model": "dgarr",
+      "texture": "dgarrbmp",
+      "uvSamples": 1216
+    },
+    {
+      "family": "station",
+      "model": "dgarr",
+      "texture": "dgarrbmp",
+      "uvSamples": 1216
+    },
+    {
+      "family": "station",
+      "model": "rainop",
+      "texture": "rainop2bmp",
+      "uvSamples": 4477
+    },
+    {
+      "family": "station",
+      "model": "tfref",
+      "texture": "tfrefbmp",
+      "uvSamples": 528
+    },
+    {
+      "family": "station",
+      "model": "tftel",
+      "texture": "tftelbmp",
+      "uvSamples": 160
+    },
+    {
+      "family": "station",
+      "model": "tecsy",
+      "texture": "tfsybmp",
+      "uvSamples": 280
+    },
+    {
+      "family": "station",
+      "model": "tecsy",
+      "texture": "tfsybmp",
+      "uvSamples": 280
+    },
+    {
+      "family": "station",
+      "model": "tfsup",
+      "texture": "tfsupbmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "station",
+      "model": "tfsup",
+      "texture": "tfsupbmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "station",
+      "model": "tfexp",
+      "texture": "tfexpbmp",
+      "uvSamples": 1278
+    },
+    {
+      "family": "station",
+      "model": "tfexp",
+      "texture": "tfexpbmp",
+      "uvSamples": 1278
+    },
+    {
+      "family": "station",
+      "model": "tftc",
+      "texture": "tftcbmp",
+      "uvSamples": 786
+    },
+    {
+      "family": "station",
+      "model": "tftc",
+      "texture": "tftcbmp",
+      "uvSamples": 786
+    },
+    {
+      "family": "station",
+      "model": "tfgrr",
+      "texture": "tfgrrbmp",
+      "uvSamples": 642
+    },
+    {
+      "family": "station",
+      "model": "tfgrr",
+      "texture": "tfgrrbmp",
+      "uvSamples": 642
+    },
+    {
+      "family": "station",
+      "model": "ss402",
+      "texture": "ss402bmp",
+      "uvSamples": 1588
+    },
+    {
+      "family": "station",
+      "model": "ss408",
+      "texture": "ss408bmp",
+      "uvSamples": 1132
+    },
+    {
+      "family": "station",
+      "model": "ss405",
+      "texture": "ss405bmp",
+      "uvSamples": 1928
+    },
+    {
+      "family": "station",
+      "model": "ss405",
+      "texture": "ss405bmp",
+      "uvSamples": 1928
+    },
+    {
+      "family": "station",
+      "model": "wc_gtsup",
+      "texture": "ss406bmp",
+      "uvSamples": 2372
+    },
+    {
+      "family": "station",
+      "model": "wc_gtsup",
+      "texture": "ss406bmp",
+      "uvSamples": 2372
+    },
+    {
+      "family": "station",
+      "model": "ss400",
+      "texture": "ss400bmp",
+      "uvSamples": 1356
+    },
+    {
+      "family": "station",
+      "model": "ss400",
+      "texture": "ss400bmp",
+      "uvSamples": 1356
+    },
+    {
+      "family": "station",
+      "model": "wc_gttac",
+      "texture": "ss407bmp",
+      "uvSamples": 2682
+    },
+    {
+      "family": "station",
+      "model": "wc_gttac",
+      "texture": "ss407bmp",
+      "uvSamples": 2682
+    },
+    {
+      "family": "station",
+      "model": "wc_gtpali",
+      "texture": "ss403bmp",
+      "uvSamples": 1382
+    },
+    {
+      "family": "station",
+      "model": "ss404",
+      "texture": "ss404bmp",
+      "uvSamples": 608
+    },
+    {
+      "family": "station",
+      "model": "ss401",
+      "texture": "ss401bmp",
+      "uvSamples": 4330
+    },
+    {
+      "family": "station",
+      "model": "ss401",
+      "texture": "ss401bmp",
+      "uvSamples": 4330
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbsop",
+      "texture": "dn_faphbsopbmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "station",
+      "model": "ss06",
+      "texture": "ss06bmp",
+      "uvSamples": 564
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbstp",
+      "texture": "dn_faphbstpbmp",
+      "uvSamples": 900
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbstrn",
+      "texture": "dn_faphbstrnbmp",
+      "uvSamples": 388
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbssup",
+      "texture": "dn_faphbssupbmp",
+      "uvSamples": 289
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbssup",
+      "texture": "dn_faphbssupbmp",
+      "uvSamples": 289
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbsexp",
+      "texture": "dn_faphbsexpbmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbsexp",
+      "texture": "dn_faphbsexpbmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbstac",
+      "texture": "dn_faphbstacbmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbstac",
+      "texture": "dn_faphbstacbmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbsgar",
+      "texture": "dn_faphbsgarbmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "dn_faphbsgar",
+      "texture": "dn_faphbsgarbmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "faohbsop",
+      "texture": "faohbsopbmp",
+      "uvSamples": 2188
+    },
+    {
+      "family": "station",
+      "model": "faohbstp",
+      "texture": "faohbstpbmp",
+      "uvSamples": 1551
+    },
+    {
+      "family": "station",
+      "model": "faohbssy",
+      "texture": "faohbssybmp",
+      "uvSamples": 4316
+    },
+    {
+      "family": "station",
+      "model": "faohbssy",
+      "texture": "faohbssybmp",
+      "uvSamples": 4316
+    },
+    {
+      "family": "station",
+      "model": "faohbssup",
+      "texture": "faohbssupbmp",
+      "uvSamples": 6908
+    },
+    {
+      "family": "station",
+      "model": "faohbssup",
+      "texture": "faohbssupbmp",
+      "uvSamples": 6908
+    },
+    {
+      "family": "station",
+      "model": "faohbsexp",
+      "texture": "faohbsexpbmp",
+      "uvSamples": 3861
+    },
+    {
+      "family": "station",
+      "model": "faohbsexp",
+      "texture": "faohbsexpbmp",
+      "uvSamples": 3861
+    },
+    {
+      "family": "station",
+      "model": "faohbstac",
+      "texture": "faohbstacbmp",
+      "uvSamples": 5366
+    },
+    {
+      "family": "station",
+      "model": "faohbstac",
+      "texture": "faohbstacbmp",
+      "uvSamples": 5366
+    },
+    {
+      "family": "station",
+      "model": "faohbsgar",
+      "texture": "faohbsgarbmp",
+      "uvSamples": 5697
+    },
+    {
+      "family": "station",
+      "model": "faohbsgar",
+      "texture": "faohbsgarbmp",
+      "uvSamples": 5697
+    },
+    {
+      "family": "station",
+      "model": "ss90",
+      "texture": "ss90bmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "station",
+      "model": "ss107",
+      "texture": "ss107bmp",
+      "uvSamples": 880
+    },
+    {
+      "family": "station",
+      "model": "utl07",
+      "texture": "utl07bmp",
+      "uvSamples": 1228
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "acs05",
+      "texture": "acs05bmp",
+      "uvSamples": 1070
+    },
+    {
+      "family": "station",
+      "model": "ss21a",
+      "texture": "ss21abmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "station",
+      "model": "ss21a",
+      "texture": "ss21abmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "station",
+      "model": "ss28",
+      "texture": "ss28bmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "ss28",
+      "texture": "ss28bmp",
+      "uvSamples": 971
+    },
+    {
+      "family": "station",
+      "model": "acs08",
+      "texture": "acs08bmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "acs08",
+      "texture": "acs08bmp",
+      "uvSamples": 963
+    },
+    {
+      "family": "station",
+      "model": "ss27",
+      "texture": "ss27bmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "ss27",
+      "texture": "ss27bmp",
+      "uvSamples": 1096
+    },
+    {
+      "family": "station",
+      "model": "ss08",
+      "texture": "ss08bmp",
+      "uvSamples": 329
+    },
+    {
+      "family": "station",
+      "model": "biosplat",
+      "texture": "ss107bmp",
+      "uvSamples": 544
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd03",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd05",
+      "texture": "bgrnd05bmp",
+      "uvSamples": 242
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd03",
+      "texture": "bgrnd03bmp",
+      "uvSamples": 602
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd05",
+      "texture": "bgrnd05bmp",
+      "uvSamples": 242
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd55",
+      "texture": "bgrnd55bmp",
+      "uvSamples": 466
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd56",
+      "texture": "bgrnd56bmp",
+      "uvSamples": 304
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd51",
+      "texture": "bgrnd51bmp",
+      "uvSamples": 258
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd52",
+      "texture": "bgrnd52bmp",
+      "uvSamples": 320
+    },
+    {
+      "family": "rock",
+      "model": "bgrnd53",
+      "texture": "bgrnd53bmp",
+      "uvSamples": 320
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis07",
+      "texture": "mis07bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis11",
+      "texture": "mis11bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis11",
+      "texture": "mis11bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis07",
+      "texture": "mis07bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis13",
+      "texture": "mis13bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis13",
+      "texture": "mis13bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis14",
+      "texture": "mis14bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis14",
+      "texture": "mis14bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis12",
+      "texture": "mis12bmp",
+      "uvSamples": 270
+    },
+    {
+      "family": "missile",
+      "model": "mis12",
+      "texture": "mis12bmp",
+      "uvSamples": 270
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis01",
+      "texture": "mis01bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis09",
+      "texture": "mis09bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis09",
+      "texture": "mis09bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis07",
+      "texture": "mis07bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis10",
+      "texture": "mis10bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis02",
+      "texture": "mis02bmp",
+      "uvSamples": 126
+    },
+    {
+      "family": "missile",
+      "model": "mis03",
+      "texture": "mis03bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis03",
+      "texture": "mis03bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis11",
+      "texture": "mis11bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis02",
+      "texture": "mis02bmp",
+      "uvSamples": 126
+    },
+    {
+      "family": "missile",
+      "model": "mis02",
+      "texture": "mis02bmp",
+      "uvSamples": 126
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis08",
+      "texture": "mis08bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis12",
+      "texture": "mis12bmp",
+      "uvSamples": 270
+    },
+    {
+      "family": "missile",
+      "model": "mis12",
+      "texture": "mis12bmp",
+      "uvSamples": 270
+    },
+    {
+      "family": "missile",
+      "model": "mis404",
+      "texture": "mis404bmp",
+      "uvSamples": 252
+    },
+    {
+      "family": "missile",
+      "model": "mis14",
+      "texture": "mis14bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis406",
+      "texture": "mis406bmp",
+      "uvSamples": 72
+    },
+    {
+      "family": "missile",
+      "model": "mis403",
+      "texture": "mis403bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis405",
+      "texture": "mis405bmp",
+      "uvSamples": 48
+    },
+    {
+      "family": "missile",
+      "model": "mis405",
+      "texture": "mis405bmp",
+      "uvSamples": 48
+    },
+    {
+      "family": "missile",
+      "model": "mis400",
+      "texture": "mis400bmp",
+      "uvSamples": 126
+    },
+    {
+      "family": "missile",
+      "model": "artifact",
+      "texture": "artifactbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "missile",
+      "model": "artifact",
+      "texture": "artifactbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "missile",
+      "model": "mis14",
+      "texture": "mis14bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis14",
+      "texture": "mis14bmp",
+      "uvSamples": 94
+    },
+    {
+      "family": "missile",
+      "model": "mis10",
+      "texture": "mis10bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "artifact",
+      "texture": "artifactbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "missile",
+      "model": "artifact",
+      "texture": "artifactbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "missile",
+      "model": "mis15",
+      "texture": "mis15bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis05",
+      "texture": "mis05bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "missile",
+      "model": "mis06",
+      "texture": "mis06bmp",
+      "uvSamples": 78
+    },
+    {
+      "family": "projectile",
+      "model": "dn_fateprplf",
+      "texture": "dn_fateprplfbmp",
+      "uvSamples": 240
+    },
+    {
+      "family": "projectile",
+      "model": "bgrnd55",
+      "texture": "bgrnd55bmp",
+      "uvSamples": 466
+    },
+    {
+      "family": "projectile",
+      "model": "dn_ptlascan1",
+      "texture": "dn_ptlascan1bmp",
+      "uvSamples": 24
+    },
+    {
+      "family": "projectile",
+      "model": "dn_ptlascan2",
+      "texture": "dn_ptlascan2bmp",
+      "uvSamples": 24
+    },
+    {
+      "family": "projectile",
+      "model": "dn_ptlascan1",
+      "texture": "dn_ptlascan1bmp",
+      "uvSamples": 24
+    },
+    {
+      "family": "projectile",
+      "model": "dn_ptlascan2",
+      "texture": "dn_ptlascan2bmp",
+      "uvSamples": 24
+    },
+    {
+      "family": "treasure",
+      "model": "acs14",
+      "texture": "acs14bmp",
+      "uvSamples": 40
+    },
+    {
+      "family": "treasure",
+      "model": "artifact",
+      "texture": "artifactbmp",
+      "uvSamples": 112
+    },
+    {
+      "family": "probe",
+      "model": "utl23",
+      "texture": "utl01bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "utl74",
+      "texture": "utl74bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "utl23",
+      "texture": "utl01bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "utl23",
+      "texture": "utl01bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "utl23",
+      "texture": "utl01bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "utl04",
+      "texture": "utl04bmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "probe",
+      "model": "utl04",
+      "texture": "utl04bmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "utl74",
+      "texture": "utl74bmp",
+      "uvSamples": 214
+    },
+    {
+      "family": "probe",
+      "model": "proxexpl",
+      "texture": "proxexplbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "probe",
+      "model": "proxexpl",
+      "texture": "proxexplbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "probe",
+      "model": "proxexpl",
+      "texture": "proxexplbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "probe",
+      "model": "heavyexp",
+      "texture": "proxexplbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "probe",
+      "model": "heavyexp",
+      "texture": "proxexplbmp",
+      "uvSamples": 120
+    },
+    {
+      "family": "probe",
+      "model": "utl04",
+      "texture": "utl04bmp",
+      "uvSamples": 705
+    },
+    {
+      "family": "probe",
+      "model": "acs40",
+      "texture": "acs40bmp",
+      "uvSamples": 64
+    },
+    {
+      "family": "probe",
+      "model": "acs40",
+      "texture": "acs40bmp",
+      "uvSamples": 64
+    },
+    {
+      "family": "probe",
+      "model": "acs40",
+      "texture": "acs40bmp",
+      "uvSamples": 64
+    },
+    {
+      "family": "probe",
+      "model": "utl105",
+      "texture": "utl105bmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "utl205",
+      "texture": "utl205bmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "drgtow",
+      "texture": "drgtowbmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "probe",
+      "model": "tfdron",
+      "texture": "tfdronbmp",
+      "uvSamples": 144
+    },
+    {
+      "family": "probe",
+      "model": "utl403",
+      "texture": "utl403bmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "probe",
+      "model": "utl01b",
+      "texture": "utl01bbmp",
+      "uvSamples": 1029
+    },
+    {
+      "family": "probe",
+      "model": "utl105",
+      "texture": "utl105bmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "utl205",
+      "texture": "utl205bmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "probe",
+      "model": "acs02",
+      "texture": "acs02bmp",
+      "uvSamples": 380
+    },
+    {
+      "family": "probe",
+      "model": "drgtow",
+      "texture": "drgtowbmp",
+      "uvSamples": 582
+    },
+    {
+      "family": "probe",
+      "model": "tfdron",
+      "texture": "tfdronbmp",
+      "uvSamples": 144
+    },
+    {
+      "family": "probe",
+      "model": "utl403",
+      "texture": "utl403bmp",
+      "uvSamples": 312
+    },
+    {
+      "family": "probe",
+      "model": "utl01b",
+      "texture": "utl01bbmp",
+      "uvSamples": 1029
+    },
+    {
+      "family": "probe",
+      "model": "dn_faphshtwr",
+      "texture": "dn_faphsh003bmp",
+      "uvSamples": 354
+    },
+    {
+      "family": "probe",
+      "model": "dn_faphshtwr",
+      "texture": "dn_faphsh003bmp",
+      "uvSamples": 354
+    },
+    {
+      "family": "probe",
+      "model": "utl105",
+      "texture": "utl105bmp",
+      "uvSamples": 721
+    },
+    {
+      "family": "probe",
+      "model": "dn_ptlasbls",
+      "texture": "dn_ptlasblsbmp",
+      "uvSamples": 786
+    },
+    {
+      "family": "probe",
+      "model": "dn_ptlasbls",
+      "texture": "dn_ptlasblsbmp",
+      "uvSamples": 786
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "acs63",
+      "texture": "acs63bmp",
+      "uvSamples": 198
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "probe",
+      "model": "utl02",
+      "texture": "utl02bmp",
+      "uvSamples": 736
+    },
+    {
+      "family": "sky",
+      "model": "globe1",
+      "texture": "environment1bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe2",
+      "texture": "environment2bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe3",
+      "texture": "environment3bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe4",
+      "texture": "environment4bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe5",
+      "texture": "environment5bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe6",
+      "texture": "environment6bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe7",
+      "texture": "environment7bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "sky",
+      "model": "globe8",
+      "texture": "environment8bmp",
+      "uvSamples": 96
+    },
+    {
+      "family": "debris-bit",
+      "model": "utl10",
+      "texture": "utl10bmp",
+      "uvSamples": 12
+    }
+  ]
+}
