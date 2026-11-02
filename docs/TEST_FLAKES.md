@@ -5309,3 +5309,19 @@ P699b is intermittent, not a P912 regression. Alternated alone over 13 runs: 10 
 all-or-part outcome; the worst run, 43 expiries, was on the pre-P912 tree. Pods reached home and then ran out of oxygen queued near the station.
 The cause of the bimodal pile-up is not established. `SC3Cloak`, `SC2SupportPhase`, `P745`, `P798`, `MissileLock`, `NpcWingmanDefend`, `MusicLoading` and
 `LiveSideSelect` also failed; not rerun here, not cleared.
+
+## 2026-11-02: batch-p916 sweep on the runner
+
+Snapshot `719fe7aa`, master at `d7c7dc45` without media. Fast FAIL (12,950 tests), Live FAIL (325 tests), Perf PASS (73 tests). Rerun 3× alone on `57190c43`:
+
+| Test | Sweep failure | Alone |
+| --- | --- | --- |
+| `P832fKillBotLiveTests.Kills_preset_wins_by_native_kill_rule_while_miners_and_research_continue` | Stale test: P914 appends the preset station tally to the reason | Fixed, first line compared; pass / pass / pass |
+| `P784ComposeTests.Typing_bang_on_a_fresh_compose_switches_to_the_shell_state` | compose state NotComposing | class pass / pass / pass |
+| `P909TrainingBindingsTests.Key_gate_commander_messages_quick_chat_ack_and_eliminated_target_use_real_client(Classic)` | 990 expected, -1 actual | class pass / pass / pass |
+| `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | empty load list | pass / pass / pass |
+| `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | Expected 5, Actual 6 at `Proxy.Attempts` | fail / fail / pass; still open, cause not established |
+
+The P784, P909 and MusicLoading failures are sweep-only, cause not established. `P832d`, `P745`, `P796`, `P798`, `SC4`, `P699b` (1 oxygen expiry, other case),
+`NpcWingmanDefend`, `DockDocking` and `ConsoleLogNonBlocking` failed too; seen in earlier sweeps, not rerun here, not cleared. Windows skip on the runner
+(no usable GL device), so it never covers training windows; only the workstation gate does.

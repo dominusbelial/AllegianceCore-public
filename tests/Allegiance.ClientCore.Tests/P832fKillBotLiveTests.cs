@@ -78,7 +78,7 @@ public sealed class P832fKillBotLiveTests(ITestOutputHelper output)
                 Assert.InRange(over.SideWinner, (short)0, (short)1);
                 var winner = mission.Sides.Single(s => s.Id == over.SideWinner);
                 Assert.Equal(3, winner.Kills);
-                Assert.Equal($"{winner.Name} won by killing enough of their opponents", over.GameoverMessage);
+                Assert.Equal($"{winner.Name} won by killing enough of their opponents", over.GameoverMessage.Split('\n')[0]);
                 Assert.All(mission.Sides, side => Assert.True(miners.GetValueOrDefault(side.Id) >= 1));
                 Assert.True(sawResearch);
                 Assert.Empty(manager.FinaleStatus());
