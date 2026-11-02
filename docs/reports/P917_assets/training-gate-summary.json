@@ -1,0 +1,36 @@
+{
+  "command": "tools/run-training-tests.sh --no-build --repeat 1 --results-dir .scratch/p917/training-gate",
+  "started_utc": "Mon Nov  2 10:53:24 UTC 2026",
+  "status": "FAILED and bounded before completion",
+  "bounded_at_utc": "2026-11-02 12:52:00 UTC",
+  "client_core": {
+    "passed": 100,
+    "failed": 0,
+    "skipped": 0,
+    "receipt": ".scratch/p917/training-gate/1/Allegiance.ClientCore.Tests/training.trx"
+  },
+  "monogame": {
+    "status": "Interrupted by deadline while running Classic early; no final TRX, no final aggregate or skip count available",
+    "observed_task_failures": [
+      {
+        "test": "Miner_is_destroyed_in_Mars_through_real_input",
+        "style": "Classic",
+        "outcome": "Failed"
+      },
+      {
+        "test": "Combined_bomber_and_outpost_loss_is_announced_through_real_input",
+        "style": "Modern",
+        "outcome": "Failed"
+      }
+    ],
+    "completed_window_passes": {
+      "existing_full_course": 10,
+      "assigned_fresh_prefix": 20,
+      "hunt_Modern": 1,
+      "sacrifice_Classic": 1
+    },
+    "interrupted_window": ".scratch/p917/windows/m8-Classic-early-ea5deeca91214cdc9563afd110ee1fc0",
+    "remaining_window": "Modern early"
+  },
+  "notes": "Two observed task-owned failures already make the sweep failed. Do not infer a complete MonoGame result from successful windows."
+}

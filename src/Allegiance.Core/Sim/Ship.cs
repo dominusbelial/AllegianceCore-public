@@ -8837,7 +8837,9 @@ public sealed partial class Ship : Model, IShipIgc
         else if (PilotType == PilotTypeWingman)
         {
             bool exempt = Weapons.Any(w => w.MountId == 0 && w.ProjectileType.Power < 0) ||
-                AcceptedTarget is not null;
+                // Native exempts every accepted station target, including an
+                // attack held in the model-typed command slot (shipIGC.cpp:1730-1737).
+                AcceptedTarget is not null || AcceptedShipTarget is EquipmentTarget { Body: Station };
             run = !exempt && (Fraction < _fractionLastOrder || IsRunningAway) &&
                 ((WingmanBehaviour & 0x20) != 0 ? Fraction < 0.6f :
                  (WingmanBehaviour & 0x10) != 0 && Fraction < 0.3f); // shipIGC.cpp:1730-1748

@@ -271,6 +271,10 @@ public sealed partial class Server
     /// <c>_peerShips</c>.</summary>
     private void OnSideLostRestartStation(Mission mission, short sideId)
     {
+        // Offline station death delegates to Training, without FedSrv side
+        // elimination (WinTrek/trekigc.cpp:4325-4362). M8's timed goals own the
+        // defenders' later idle orders (training/mission8.cpp:629-638).
+        if (mission.IsTraining) return;
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
         if (side is null || !side.Active)
             return;                                   // unknown or already-inactive side

@@ -29,9 +29,11 @@ public static class SelectedMountWeapon
         {
             if (mounted.MountId != mountId) continue;
             foreach (var part in parts)
-                if (part.PartId == mounted.PartId)
-                    return part.Type as DataPartTypeIGC.Weapon;
-            return null;   // the mount is occupied, but by a part the core lacks
+                // Mount numbers are per equipment type. A shield/dispenser
+                // at mount 0 must not hide a weapon later in the loadout.
+                // clintlib.cpp:1585-1588: GetMountedPart(ET_Weapon, selected).
+                if (part.PartId == mounted.PartId && part.Type is DataPartTypeIGC.Weapon weapon)
+                    return weapon;
         }
         return null;
     }

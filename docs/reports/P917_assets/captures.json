@@ -1,0 +1,38 @@
+[
+  {
+    "file": "m4-modern-miner-killed.png",
+    "source": ".scratch/p917/windows/m4-Modern-hunt-b2836b39874c4f47b0261207aecd42a1/m4-modern-miner-killed.png",
+    "inspected": true,
+    "sha256": "eaa7c451535be5579d6012b286f83c686209115e9f9741a0f32463c1f663cc42"
+  },
+  {
+    "file": "m4-classic-miner-killed.png",
+    "source": ".scratch/p917/windows/m4-Classic-hunt-29117c10449c49918b2b0584922d8889/m4-classic-miner-killed.png",
+    "inspected": true,
+    "sha256": "995f0e0986bd0576f03159430fec9847028d28740e613a43c6e7731faf60efa7"
+  },
+  {
+    "file": "m8-modern-nanite-lead.png",
+    "source": ".scratch/p917/windows/m8-Modern-sacrifice-6455ee273aba4670997b4279d9723f52/m8-modern-nanite-lead.png",
+    "inspected": true,
+    "sha256": "fcdc6f8de620b97d40333cde2a1a78245e52e3f76177e48e3aee10fca81dc7a7"
+  },
+  {
+    "file": "m8-modern-both-destroyed.png",
+    "source": ".scratch/p917/windows/m8-Modern-sacrifice-6455ee273aba4670997b4279d9723f52/m8-modern-both-destroyed.png",
+    "inspected": true,
+    "sha256": "4b8f72ebcdb052211a9e79d39e488c7b90cec528cac0cedf612577a095c7aeab"
+  },
+  {
+    "file": "m8-classic-nanite-lead.png",
+    "source": ".scratch/p917/windows/m8-Classic-sacrifice-21f3fdae4f1148c1951ff645d9db2ff5/m8-classic-nanite-lead.png",
+    "inspected": true,
+    "sha256": "2fd72c081b7218ce257af7b4aef823847d384e33a16bf2aebdd6f356c7b7eb96"
+  },
+  {
+    "file": "m8-classic-both-destroyed.png",
+    "source": ".scratch/p917/windows/m8-Classic-sacrifice-21f3fdae4f1148c1951ff645d9db2ff5/m8-classic-both-destroyed.png",
+    "inspected": true,
+    "sha256": "1715a7b013e4e62ea96d9e60d086e99906f575b178a2e2a2a0c58e6ea16d321b"
+  }
+]

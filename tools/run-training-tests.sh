@@ -4,11 +4,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 repeat=1
 build=1
+results=
 while (( $# )); do
   case "$1" in
     --no-build) build=0; shift ;;
     --repeat) repeat="${2:?--repeat requires a positive integer}"; shift 2 ;;
-    *) echo "Usage: tools/run-training-tests.sh [--no-build] [--repeat N]" >&2; exit 2 ;;
+    --results-dir) results="${2:?--results-dir requires a directory}"; shift 2 ;;
+    *) echo "Usage: tools/run-training-tests.sh [--no-build] [--repeat N] [--results-dir DIR]" >&2; exit 2 ;;
   esac
 done
 [[ $repeat =~ ^[1-9][0-9]*$ ]] || { echo "--repeat requires a positive integer" >&2; exit 2; }
@@ -25,7 +27,9 @@ if [[ -z ${DOTNET:-} ]]; then
     DOTNET="$(command -v dotnet)" # actions/setup-dotnet on clean CI runners
   fi
 fi
-results="$PWD/.scratch/training-$(date -u +%Y%m%dT%H%M%S)-$$"
+results="${results:-$PWD/.scratch/training-$(date -u +%Y%m%dT%H%M%S)-$$}"
+mkdir -p "$results"
+results="$(cd "$results" && pwd)"
 mkdir -p "$results/xdg"
 export XDG_CONFIG_HOME="$results/xdg"
 echo "Training evidence: $results"

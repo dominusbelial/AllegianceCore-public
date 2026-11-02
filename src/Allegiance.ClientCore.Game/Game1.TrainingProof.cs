@@ -200,12 +200,16 @@ public sealed partial class Game1
     private bool _proofM4HuntMiner = false;
     private bool _proofM4QuickOpened, _proofM4QuickSent;
     private long _proofM4MinerFightAt;
+    private long _proofM4CombatLogAt;
+    private int _proofM4Quarry;
 
     // Mission 4 uses the player's keyboard and text-input events. Scripted orders/autopilot
     // remain mission actions (mission4.cpp:333-372); the proof never calls those actions.
     private void DriveMission4(ClientTrainingSite site, List<Keys> keys)
     {
+        _proofMouse = null;
         string goal = _trainingSession!.Mission.ActiveGoalPath;
+        if (_proofM4HuntMiner && goal != "7.7" && _mouseFlightEnabled) keys.Add(Keys.M);
         long now = Environment.TickCount64;
         if (now >= _proofStateAt)
         {
@@ -259,10 +263,52 @@ public sealed partial class Game1
             && _proofM4LastActionGoal != "miner")
         { _proofM4LastActionGoal = "miner"; ProofTap(Keys.F); }
         if (_proofM4HuntMiner && goal.StartsWith("6.", StringComparison.Ordinal)
-            && _embeddedHost!.Drones.TryGetValue(1101, out var waitingMiner))
+            && _embeddedHost!.Drones.TryGetValue(1103, out var waitingMiner))
             SteerTowards(ToSys(waitingMiner.Position), keys, .01f);
         if (goal is "7.7" or "8.7")
         {
+            if (goal == "7.7" && _proofM4HuntMiner && _proofM4Quarry == 0)
+            {
+                _proofM4Quarry = Enumerable.Range(1101, 4)
+                    .Where(id => _embeddedHost!.TrainingShipExists(id) && _embeddedHost.Drones[id].Sector?.Id == 1031)
+                    .MinBy(id =>
+                    {
+                        var contact = _embeddedHost!.Drones[id];
+                        return (contact.Velocity.LengthSquared() < 1 ? 0 : 10000)
+                            + (contact.Position - _ownSim.Position).Length();
+                    });
+                Console.WriteLine($"[tproof] M4 chose local mining contact {_proofM4Quarry}");
+            }
+            if (goal == "7.7" && _proofM4HuntMiner && _autoTarget?.Id != _proofM4Quarry)
+            {
+                // F cycles the real enemy list. Choose the miner working a
+                // local asteroid, rather than racing the first miner's
+                // already-running trip through the arrival aleph.
+                _proofTapKey = null; keys.Remove(Keys.F);
+                bool visible = _session.World.Ships.TryGetValue((short)_proofM4Quarry, out var contact)
+                    && contact.Latest is not null && contact.SectorId == 1031 && CanSeeOrderTarget(_session.World, contact);
+                if (!visible)
+                {
+                    // Keep a local aleph selected while approaching the fixed
+                    // lesson's mining area. A returning miner can leave without
+                    // ending the native current-target sector condition.
+                    if (_autoTarget?.Kind != TargetKind.Warp)
+                    {
+                        if (now % 500 < 200) ProofPressAction("TargetWarp", keys);
+                    }
+                    else if (_embeddedHost!.Drones.TryGetValue(_proofM4Quarry, out var distantMiner))
+                    {
+                        var destination = ToSys(distantMiner.Position);
+                        ProofAimMouse(destination, keys);
+                        if (OwnAimDegreesTo(destination) < 10) keys.Add(Keys.W);
+                    }
+                    keys.Add(Keys.Back);
+                    return;
+                }
+                if (now % 600 < 250) keys.Add(Keys.F);
+                keys.Add(Keys.Back);
+                return;
+            }
             if (goal == "7.7")
             {
                 if (_proofM4MinerFightAt == 0) _proofM4MinerFightAt = now;
@@ -278,7 +324,7 @@ public sealed partial class Game1
                     return;
                 }
             }
-            if (_cloakToggled) keys.Add(Keys.G);
+            if (_cloakToggled && (goal != "7.7" || !_proofM4HuntMiner)) keys.Add(Keys.G);
             if (_autoTarget is { Kind: TargetKind.Ship } remoteTarget
                 && _session.World.Ships.TryGetValue(remoteTarget.Id, out var remoteShip)
                 && remoteShip.SectorId >= 0 && remoteShip.SectorId != OwnSectorIdOr(-1)
@@ -293,32 +339,63 @@ public sealed partial class Game1
             }
             if (_autoTarget is { } target && ResolveTargetPosition(target, out var aim))
             {
+                bool hunting = goal == "7.7" && _proofM4HuntMiner;
+                if (hunting && _session.World.Ships.TryGetValue(target.Id, out var contactShip) && contactShip.Latest is { } contactUpdate)
+                    aim = RemoteShipPose(_session.World, target.Id, contactUpdate, contactShip).Position;
                 var aimPoint = ToSys(aim);
                 bool leadInRange = false;
                 bool leadWillHit = false;
                 if (target.Kind == TargetKind.Ship && TryGatherLeadScene(Allegiance.Core.IgcObjectType.Ship, target.Id, out var scene))
                 {
-                    var lead = Allegiance.ClientCore.MonoGame.Rendering.ClientLead.Solve(scene.Input);
+                    // A pilot follows the moving hull and its lead marker in
+                    // the current view. Use the rendered contact and local
+                    // flight pose, rather than chasing an old packet position.
+                    var input = scene.Input;
+                    if (hunting)
+                        input = input with { MyPosition = _ownSim.Position, MyVelocity = _ownSim.Velocity,
+                            MyOrientation = _ownSim.Orientation,
+                            TargetPosition = aim };
+                    var lead = Allegiance.ClientCore.MonoGame.Rendering.ClientLead.Solve(input);
+                    if (hunting && now >= _proofM4CombatLogAt)
+                    {
+                        _proofM4CombatLogAt = now + 1000;
+                        var actual = _embeddedHost!.Drones[target.Id];
+                        Console.WriteLine($"[tproof] M4 aim range={lead.InRange} hit={lead.WillHit} angle={OwnAimDegreesTo(ToSys(_ownSim.Position + lead.Direction * 1000)):F2} time={lead.Time:F3} speed={lead.SolveSpeed:F1} life={lead.Lifespan:F2} absolute={input.AbsoluteF} radius={input.TargetRadius:F1} targetError={(input.TargetPosition - actual.Position).Length():F1} ownError={(_ownSim.Position - _embeddedHost.PlayerShip.Position).Length():F1} velocity={_ownSim.Velocity} targetVelocity={input.TargetVelocity} hostTargetVelocity={actual.Velocity}");
+                    }
                     if (lead.GatePassed) aimPoint = ToSys(_ownSim.Position + lead.Direction * 1000f);
                     leadInRange = lead.GatePassed && lead.Solved && lead.InRange;
                     leadWillHit = lead.WillHit;
                 }
-                SteerTowards(aimPoint, keys, .01f);
+                if (hunting) ProofAimMouse(aimPoint, keys);
+                else SteerTowards(aimPoint, keys, .01f);
                 float distance = (_ownSim.Position - aim).Length();
                 var gun = _embeddedHost?.PlayerShip.Weapons.FirstOrDefault();
                 float range = gun is null ? 1000 : gun.ProjectileType.Speed * gun.GetLifespan();
                 bool departing = goal == "7.7" && _proofM4WaitForDeparture;
-                bool hunting = goal == "7.7" && _proofM4HuntMiner;
-                if ((hunting ? leadInRange && (leadWillHit || OwnAimDegreesTo(aimPoint) < 1f) : distance < range * .9f && OwnAimDegreesTo(aimPoint) < 2f) && !departing) keys.Add(Keys.Space);
-                bool backpedal = hunting && distance < range * 3
-                    && _embeddedHost!.Drones.TryGetValue(target.Id, out var quarry)
-                    && System.Numerics.Vector3.Dot(ToSys(quarry.Velocity),
-                        System.Numerics.Vector3.Normalize(ToSys(aim - _ownSim.Position))) < -20;
-                if (backpedal) { keys.Add(Keys.S); keys.Add(Keys.Back); }
-                else if (distance > MathF.Max(50, range * .6f) && OwnAimDegreesTo(aimPoint) < 10)
+                if (hunting)
+                {
+                    // Ambush an incoming miner from a stopped firing platform.
+                    // The authored fighter has no booster, and charging toward
+                    // the contact shortens the available shooting window.
+                    if (_cloakToggled && distance < range * .9f) keys.Add(Keys.G);
+                    if (!_cloakToggled && leadInRange && (leadWillHit || OwnAimDegreesTo(aimPoint) < .6f)) keys.Add(Keys.Space);
+                    keys.Add(Keys.Back);
+                    if (OwnAimDegreesTo(aimPoint) < 10
+                        && _session.World.Ships[target.Id].Latest is { } quarry)
+                    {
+                        var direction = Vector3.Normalize(ToSys(aim - _ownSim.Position));
+                        float radialVelocity = Vector3.Dot(ToSys(quarry.Velocity), direction);
+                        if (radialVelocity < -20 && distance > 500 && distance < range * .75f) keys.Add(Keys.S);
+                        else if (distance > 500 && (quarry.Velocity.LengthSquared() < 1 || radialVelocity > 20))
+                            keys.Add(Keys.W);
+                    }
+                    return;
+                }
+                if (distance < range * .9f && OwnAimDegreesTo(aimPoint) < 2f && !departing) keys.Add(Keys.Space);
+                if (distance > MathF.Max(50, range * .6f) && OwnAimDegreesTo(aimPoint) < 10)
                 { keys.Add(Keys.W); keys.Add(Keys.OemBackslash); }
                 else keys.Add(Keys.Back);
-                if (distance > range * (hunting ? 3 : .8f) && OwnAimDegreesTo(aimPoint) < 10 && !departing) keys.Add(Keys.LeftShift);
+                if (distance > range * .8f && OwnAimDegreesTo(aimPoint) < 10 && !departing) keys.Add(Keys.LeftShift);
             }
         }
         if ((goal.StartsWith("8.", StringComparison.Ordinal) || goal.StartsWith("9.", StringComparison.Ordinal))

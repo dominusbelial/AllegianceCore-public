@@ -1,0 +1,49 @@
+{
+  "source_freeze_intact": true,
+  "native_audit": {
+    "rules": 241,
+    "primitives": 82,
+    "errors": 0
+  },
+  "glossary_paths": 501,
+  "changed_matrix_rows": [
+    "TRN-0111",
+    "TRN-0118",
+    "TRN-0128",
+    "TRN-0131"
+  ],
+  "gain_weight": 19,
+  "debug_build": {
+    "warnings": 0,
+    "errors": 0,
+    "receipt": ".scratch/p917/gates/build.log"
+  },
+  "tools": {
+    "projects": 110,
+    "warnings": 0,
+    "errors": 0,
+    "isolated_artifacts": true,
+    "receipt": ".scratch/p917/gates/tools-isolated-final.log"
+  },
+  "native_aot": {
+    "passed": true,
+    "receipt": ".scratch/p917/gates/aot.log"
+  },
+  "showcase": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "training_gate": {
+    "completed_projects": {
+      "Allegiance.ClientCore.Tests": {
+        "passed": 100,
+        "failed": 0,
+        "skipped": 0
+      }
+    },
+    "full_gate_credit": false
+  },
+  "capture_bytes": 928413,
+  "commits_or_pushes": false
+}

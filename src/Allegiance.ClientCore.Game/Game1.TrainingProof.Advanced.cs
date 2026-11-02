@@ -21,6 +21,40 @@ public sealed partial class Game1
             0, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released)
         : Mouse.GetState();
 
+    private void ProofPressAction(string action, List<Keys> keys)
+    {
+        var binding = KeyOf(action);
+        if (binding.Key == Keys.None) throw new InvalidOperationException($"Training proof requires a binding for {action}");
+        keys.Add(binding.Key);
+        if ((binding.Modifiers & InputModifiers.Shift) != 0) keys.Add(Keys.LeftShift);
+        if ((binding.Modifiers & InputModifiers.Control) != 0) keys.Add(Keys.LeftControl);
+        if ((binding.Modifiers & InputModifiers.Alt) != 0) keys.Add(Keys.LeftAlt);
+    }
+
+    private void ProofAimMouse(V target, List<Keys> keys)
+    {
+        if (_minimapExpanded) { keys.Add(Keys.Tab); return; }
+        if (!_mouseFlightEnabled) { keys.Add(Keys.M); return; }
+        if (!TryOwnTrainingPose(out var position, out var forward, out var up, out var right)
+            || _ownSim.TurnHull is not { } hull) return;
+        // Fine aiming is ordinary mouse flight (effect/efimage.cpp:182-209),
+        // including the shipping deadzone and response curve. Read the stick
+        // to choose cursor deltas; never write controls or the ship's pose.
+        var turn = TrainingTurnTo.Compute(position, target, forward, up, right, MathF.Max(.1f, _trainingFrameDelta), hull);
+        float Stick(float control)
+        {
+            float response = _mouseFlight.LinearControls ? MathF.Abs(control) : MathF.Sqrt(MathF.Abs(control));
+            return control == 0 ? 0 : MathF.CopySign(_mouseFlight.Deadzone + (1 - _mouseFlight.Deadzone) * response, control);
+        }
+        var current = _mouseFlight.Current;
+        float pixels = _mouseFlight.Sensitivity * _mouseFlight.MouseSensitivity;
+        int dx = (int)MathF.Round((current.Yaw - Stick(turn.Yaw)) / pixels);
+        int dy = (int)MathF.Round((current.Pitch - Stick(turn.Pitch)) / pixels);
+        if (_mouseFlight.InvertPitch) dy = -dy;
+        _proofMouse = new MouseState(GraphicsDevice.Viewport.Width / 2 + dx, GraphicsDevice.Viewport.Height / 2 + dy,
+            0, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
+    }
+
     private void ProofClickAt(string name, int x, int y, bool right = false)
     {
         long now = Environment.TickCount64;
@@ -210,6 +244,7 @@ public sealed partial class Game1
     private bool _proofNaniteWithholdRepair = false;
     private bool _proofNaniteSacrifice = false;
     private bool _proofSacrificeCeased;
+    private bool _proofSacrificeBombing;
     private long _proofRepairLogAt;
     private bool _proofEscortOrdersComplete;
     private bool _proofDefenseOrdersComplete;
@@ -224,10 +259,10 @@ public sealed partial class Game1
             _proofAdvancedStateAt = Environment.TickCount64 + 5000;
             if (host.Drones.TryGetValue(8007, out var observedBomber))
                 Console.WriteLine($"[tproof] bomber pos={observedBomber.Position} target={observedBomber.CommandTarget?.Id} targetType={observedBomber.CommandTarget?.GetType().Name} goto={observedBomber.GotoWaypoint} running={observedBomber.IsRunningAway} controls={observedBomber.Controls} state={observedBomber.StateM} outpost={host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)):F4}");
-            Console.WriteLine($"[tproof] M8 state goal={goal} sector={OwnSectorIdOr(-1)} pos={_ownSim.Position} nan={host.HasPartMounted(host.PlayerShipId, 190)} station={host.GetFraction(new(ObjectType.Station, Mission8.HomeStationId)):F4} miner={host.GetFraction(new(ObjectType.Ship, 8001)):F4} bomber={host.GetFraction(new(ObjectType.Ship, 8007)):F4} nanWingman={host.GetFraction(new(ObjectType.Ship, 8008)):F4}");
+            Console.WriteLine($"[tproof] M8 state goal={goal} sector={OwnSectorIdOr(-1)} pos={_ownSim.Position} nan={host.HasPartMounted(host.PlayerShipId, 190)} station={host.GetFraction(new(ObjectType.Station, Mission8.HomeStationId)):F4} miner={host.GetFraction(new(ObjectType.Ship, 8001)):F4} bomber={host.GetFraction(new(ObjectType.Ship, 8007)):F4} nanWingman={host.GetFraction(new(ObjectType.Ship, 8008)):F4} camera={_cameraMode} viewed={_session.World.ViewedClusterId} commandee={_commandee?.Id} verb={_commandVerb} map={_minimapExpanded}");
             foreach (int id in new[] { 8004, 8005, 8006 })
                 if (host.Drones.TryGetValue(id, out var guard))
-                    Console.WriteLine($"[tproof] guard={id} sector={guard.Sector?.Id} pos={guard.Position} defending={guard.DefendTarget?.Id} accepted={guard.AcceptedShipCommandId} target={guard.AcceptedShipTarget?.Id} dead={guard.Dead}");
+                    Console.WriteLine($"[tproof] guard={id} sector={guard.Sector?.Id} pos={guard.Position} defending={guard.DefendTarget?.Id} accepted={guard.AcceptedShipCommandId} target={guard.AcceptedShipTarget?.Id} dead={guard.Dead} state={guard.StateM} ammo={guard.Ammo} energy={guard.Energy:F1} guns={string.Join(',', guard.Parts.Where(p => p.EquipmentType == EquipmentType.Weapon).Select(p => p.PartId))}");
         }
         if (goal.StartsWith("1.", StringComparison.Ordinal) && !host.HasPartMounted(host.PlayerShipId, 190))
         {
@@ -246,8 +281,22 @@ public sealed partial class Game1
             if (Environment.TickCount64 % 800 < 300) keys.Add(Keys.L);
             return;
         }
+        if (_proofNaniteMountEarly && goal.StartsWith("2.", StringComparison.Ordinal)
+            && host.TrainingShipExists(8006) && host.TrainingShipExists(8003))
+        {
+            // Native initially sends every fighter after Solap. Split one
+            // fighter onto Toast through a real order so both miner attackers
+            // are occupied while the trainee supplies repair.
+            if (!(host.HasCommand(8006, OrderChange.CidAttack) && host.Drones[8006].AcceptedShipTarget?.Id == 8003))
+            {
+                if (_cameraMode != CameraMode.Command) { keys.Add(Keys.F3); return; }
+                ProofOrder(8006, OrderChange.CidAttack, 8003, TargetKind.Ship);
+                return;
+            }
+            if (_cameraMode == CameraMode.Command) { keys.Add(Keys.LeftAlt); keys.Add(Keys.F2); return; }
+        }
         bool defenseOrders = goal == "3.19" && !_proofDefenseOrdersComplete;
-        if (!_proofNaniteWithholdRepair && (!_proofEscortOrdersComplete || defenseOrders)
+        if (!_proofNaniteWithholdRepair && !_proofNaniteSacrifice && (!_proofEscortOrdersComplete || defenseOrders)
             && goal.StartsWith("3.", StringComparison.Ordinal) && host.TrainingShipExists(8007))
         {
             // The player can command the existing friendly defenders. Use
@@ -255,7 +304,7 @@ public sealed partial class Game1
             // passive until the bomber takes the native required hull hit;
             // perfect early defense otherwise leaves native goal 3.18 waiting.
             short verb = defenseOrders ? OrderChange.CidDefend : OrderChange.CidGoto;
-            int defender = new[] { 8004, 8005, 8006 }.Where(host.TrainingShipExists).Take(defenseOrders ? 2 : 3)
+            int defender = new[] { 8004, 8005, 8006 }.Where(host.TrainingShipExists)
                 .FirstOrDefault(id => !(host.HasCommand(id, verb) && host.Drones[id].AcceptedShipTarget?.Id == 8007));
             if (defender != 0)
             {
@@ -266,6 +315,46 @@ public sealed partial class Game1
             if (_cameraMode == CameraMode.Command) { keys.Add(Keys.LeftAlt); keys.Add(Keys.F2); return; }
             _proofEscortOrdersComplete = true;
             if (defenseOrders) _proofDefenseOrdersComplete = true;
+        }
+        if (_proofNaniteSacrifice && !_proofSacrificeCeased && goal == "3.19"
+            && host.Drones.TryGetValue(8007, out var sacrificialBomber))
+        {
+            _proofSacrificeBombing |= (sacrificialBomber.StateM & ShipControlState.AllWeapons) != 0;
+            var outpost = host.Mission.GetStation(Mission8.EnemyOutpostStationId)!;
+            // Keep a small hull reserve while enough torpedoes are in flight,
+            // then release repair before the outpost falls. Both deaths remain
+            // ordinary combat outcomes; the pilot only releases the fire key.
+            if (_proofSacrificeBombing && outpost.ShieldFraction < .05f && sacrificialBomber.Fraction < .3f)
+            {
+                _proofSacrificeCeased = true;
+                Console.WriteLine($"[tproof] SACRIFICE cease-repair hull={sacrificialBomber.Fraction:F4} outpostShield={outpost.ShieldFraction:F4} outpostArmor={outpost.ArmorFraction:F4}");
+            }
+        }
+        if (_proofNaniteSacrifice && goal == "3.19" && host.TrainingShipExists(8008)
+            && !((host.HasCommand(8008, OrderChange.CidGoto) || host.HasCommand(8008, OrderChange.CidRepair))
+                && host.Drones[8008].AcceptedShipTarget is EquipmentTarget { Body: Allegiance.Core.Sim.Station home }
+                && home.StationId == Mission8.HomeStationId))
+        {
+            // Keyboard commandee cycling avoids overlapping ship icons. Select
+            // the known friendly base (any sector) and issue its native default
+            // order: the repair wingman leaves for home while the trainee repairs.
+            if (_commandee?.Id != 8008 || _commandGroup.Count != 0)
+            {
+                if (Environment.TickCount64 % 600 < 250) ProofPressAction("CycleCommandee", keys);
+                return;
+            }
+            if (_autoTarget is not { Kind: TargetKind.Station, Id: Mission8.HomeStationId })
+            {
+                if (Environment.TickCount64 % 600 < 250) ProofPressAction("TargetFriendlyBaseNearest", keys);
+                return;
+            }
+            if (Environment.TickCount64 % 600 < 250) ProofPressAction("IssueBuild", keys);
+            return;
+        }
+        if (_proofNaniteSacrifice && _cameraMode == CameraMode.Command)
+        {
+            if (_minimapExpanded) { keys.Add(Keys.Tab); return; }
+            keys.Add(Keys.LeftAlt); keys.Add(Keys.F2); return;
         }
         V? target = null;
         bool routing = false;
@@ -293,7 +382,8 @@ public sealed partial class Game1
             else { target = site.Resolve(new(ObjectType.Ship, 8007))?.Position; repairShip = 8007; }
             float nanHealth = host.GetFraction(new(ObjectType.Ship, 8008));
             if (!_proofNaniteWithholdRepair && !_proofNaniteSacrifice && subgoal >= 14
-                && subgoal < 19 && host.GetFraction(new(ObjectType.Ship, 8007)) > .3f && nanHealth > 0
+                && subgoal < 19
+                && host.GetFraction(new(ObjectType.Ship, 8007)) > .3f && nanHealth is > 0 and < .5f
                 && host.Drones.TryGetValue(8008, out var nanWingman) && nanWingman.Sector?.Id == OwnSectorIdOr(-1))
             {
                 target = ToSys(nanWingman.Position);
@@ -302,42 +392,100 @@ public sealed partial class Game1
             }
         }
         if (target is not { } destination || !TryOwnTrainingPose(out var position, out _, out _, out _)) return;
+        if ((_proofNaniteMountEarly || _proofNaniteSacrifice) && _autoTarget?.Id != repairShip)
+        {
+            if (repairShip == 8007) keys.Add(Keys.K); // ordinary friendly-bomber targeting
+            else if (repairShip == 8001) keys.Add(Keys.H); // ordinary friendly-miner targeting
+        }
+        if ((_proofNaniteMountEarly || _proofNaniteSacrifice) && !routing && repairShip != 0
+            && _session.World.Ships.TryGetValue((short)repairShip, out var contactShip) && contactShip.Latest is { } update)
+            destination = ToSys(RemoteShipPose(_session.World, (short)repairShip, update, contactShip).Position);
         V aimPoint = destination;
+        bool repairInRange = true;
+        string leadTrace = "";
+        if ((_proofNaniteMountEarly || _proofNaniteSacrifice) && Environment.TickCount64 >= _proofRepairLogAt
+            && _session.World.MyShipId is { } mineId && _session.World.Ships.TryGetValue(mineId, out var mineShip))
+            leadTrace = $" leadScene=missing ownUpdate={mineShip.Latest is not null} catalog={_shopCatalog is not null} loadout={mineShip.Loadout is not null} mount={_selectedMount} weapon={ResolveSelectedWeapon(mineShip).Found}";
         // Aim at the same native lead marker the HUD presents for a moving
         // repair target; pointing at its old center misses a slow nanite round.
         if (!routing && repairShip != 0 && TryGatherLeadScene(IgcObjectType.Ship, (short)repairShip, out var scene))
         {
-            var lead = ClientLead.Solve(scene.Input);
+            var input = scene.Input;
+            if (_proofNaniteMountEarly || _proofNaniteSacrifice)
+                input = input with { MyPosition = _ownSim.Position, MyVelocity = _ownSim.Velocity,
+                    MyOrientation = _ownSim.Orientation, TargetPosition = new(destination.X, destination.Y, destination.Z),
+                    TargetRadius = 0 }; // aim through the hull centre rather than graze its bounding sphere
+            if (_proofNaniteSacrifice && repairShip == 8007)
+                // Observe the current simulation pose to compensate for the
+                // local prediction/correction offset when firing while strafing.
+                // This only chooses a mouse aim direction; inputs still travel
+                // through the ordinary flight and weapon handlers.
+                input = input with { MyPosition = host.PlayerShip.Position, MyVelocity = host.PlayerShip.Velocity,
+                    MyOrientation = host.PlayerShip.Orientation, TargetPosition = host.Drones[8007].Position,
+                    TargetVelocity = host.Drones[8007].Velocity };
+            var lead = ClientLead.Solve(input);
+            repairInRange = lead.GatePassed && lead.Solved && lead.InRange;
+            if ((_proofNaniteMountEarly || _proofNaniteSacrifice) && Environment.TickCount64 >= _proofRepairLogAt)
+                leadTrace = $" leadGate={lead.GatePassed} solved={lead.Solved} hit={lead.WillHit} inRange={lead.InRange} friendly={input.FriendlyOrAllied} power={input.ProjectilePower} targetError={(input.TargetPosition - host.Drones[repairShip].Position).Length():F1} ownError={(_ownSim.Position - host.PlayerShip.Position).Length():F1} velocity={input.TargetVelocity} hostVelocity={host.Drones[repairShip].Velocity}";
             if (lead.GatePassed && lead.Solved) aimPoint = ToSys(_ownSim.Position + lead.Direction * 1000);
         }
-        SteerTowards(aimPoint, keys, .015f);
+        if (_proofNaniteMountEarly || _proofNaniteSacrifice) ProofAimMouse(aimPoint, keys);
+        else SteerTowards(aimPoint, keys, .015f);
         float distance = V.Distance(position, destination);
         float aim = OwnAimDegreesTo(aimPoint);
-        if ((routing || distance > 180) && aim < 10) keys.Add(Keys.W);
+        bool strictEscort = _proofNaniteMountEarly || _proofNaniteSacrifice;
+        // Back clears persistent cruise; releasing W alone leaves that cruise
+        // engaged and carries the trainee past a slow repair target.
+        if (strictEscort) keys.Add(Keys.Back);
+        float followDistance = strictEscort ? (repairShip != 0 ? 150 : 300) : 180;
+        if (_proofNaniteSacrifice && OwnSectorIdOr(-1) == 1052 && !routing && repairShip == 8007)
+        {
+            // Repair from above the bomber, away from the enemy's line of
+            // fire through its hull. Match its motion using ordinary thrust
+            // keys while the mouse continues aiming at the repair lead.
+            var escort = host.PlayerShip;
+            var offsetError = ToSys(host.Drones[8007].Position - escort.Position) + new V(0, 0, 100);
+            var closing = offsetError * .2f;
+            if (closing.LengthSquared() > 400) closing = V.Normalize(closing) * 20;
+            var velocityError = ToSys(host.Drones[8007].Velocity - escort.Velocity) + closing;
+            float largest = 12;
+            string? thrust = null;
+            void Thrust(V axis, string positive, string negative)
+            {
+                float error = V.Dot(velocityError, axis);
+                if (MathF.Abs(error) > largest)
+                { largest = MathF.Abs(error); thrust = error > 0 ? positive : negative; }
+            }
+            Thrust(ToSys(escort.Orientation.GetForward()), "ThrustForward", "ThrustBackward");
+            Thrust(ToSys(escort.Orientation.GetRight()), "ThrustRight", "ThrustLeft");
+            Thrust(ToSys(escort.Orientation.GetUp()), "ThrustUp", "ThrustDown");
+            if (thrust is not null) ProofPressAction(thrust, keys);
+        }
+        else if ((routing || distance > followDistance) && aim < 10) keys.Add(Keys.W);
         bool repairing = !(_proofNaniteWithholdRepair && !goal.StartsWith("1.", StringComparison.Ordinal));
         // Conserve energy while a friendly hull is already full. Firing at it
         // throughout the narration otherwise spends the repair reserve before
         // the authored attackers arrive.
         bool needsRepair = repairShip != 0 ? host.GetFraction(new(ObjectType.Ship, repairShip)) < .999f
             : goal.StartsWith("1.", StringComparison.Ordinal) && host.GetFraction(new(ObjectType.Station, Mission8.HomeStationId)) < 1;
-        if (_proofNaniteSacrifice && repairShip == 8007 && goal == "3.19"
-            && host.Drones.TryGetValue(8007, out var attackingBomber))
-            _proofSacrificeCeased |= (attackingBomber.StateM & ShipControlState.WeaponsMask) != 0;
+        if (_proofNaniteSacrifice && repairShip == 8007 && goal == "3.19")
+            needsRepair = host.GetFraction(new(ObjectType.Ship, repairShip)) < (_proofSacrificeBombing ? .3f : .8f);
         if (_proofSacrificeCeased) needsRepair = false;
         float shotAngle = 3;
         if (repairShip != 0 && host.Drones.TryGetValue(repairShip, out var repairHull))
             shotAngle = MathF.Max(3, MathF.Asin(Math.Clamp(repairHull.Radius / MathF.Max(1, distance), 0, 1)) * 57.29578f * .75f);
-        if (repairing && needsRepair && !routing && distance < 600 && aim < shotAngle && (goal is not "3.18" || tendingWingman)) keys.Add(Keys.Space);
+        if (repairing && needsRepair && !routing && distance < 600 && aim < shotAngle
+            && (!strictEscort || repairInRange) && (goal is not "3.18" || tendingWingman)) keys.Add(Keys.Space);
         if (Environment.TickCount64 >= _proofRepairLogAt)
         {
             _proofRepairLogAt = Environment.TickCount64 + 5000;
-            Console.WriteLine($"[tproof] repair target={repairShip} distance={distance:F1} aim={aim:F2} cone={shotAngle:F2} firing={keys.Contains(Keys.Space)} energy={host.PlayerShip.Energy:F1}");
+            Console.WriteLine($"[tproof] repair target={repairShip} distance={distance:F1} aim={aim:F2} cone={shotAngle:F2} firing={keys.Contains(Keys.Space)} energy={host.PlayerShip.Energy:F1}{leadTrace}");
             if (host.Drones.TryGetValue(8008, out var support))
                 Console.WriteLine($"[tproof] support pos={support.Position} target={support.CommandTarget?.Id} repair={support.RepairTarget?.Id} state={support.StateM} energy={support.Energy:F1}");
         }
         // Use the carried proximity mines through the normal dispenser key.
         // The native lesson explicitly equips them for defending repair work.
-        if (!_proofNaniteWithholdRepair && host.Drones.Values.Any(s => !s.Dead && s.SideId == 1
+        if (!_proofNaniteWithholdRepair && !_proofNaniteSacrifice && host.Drones.Values.Any(s => !s.Dead && s.SideId == 1
             && s.Sector?.Id == OwnSectorIdOr(-1) && V.Distance(position, ToSys(s.Position)) < 550)
             && Environment.TickCount64 % 2500 < 500) keys.Add(Keys.N);
     }

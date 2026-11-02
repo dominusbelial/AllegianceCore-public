@@ -845,9 +845,15 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                         .FirstOrDefault(s => s.StationId == stid);
                     if (runtime is not null)
                     {
+                        // Accepted NPC orders replace the single native plan
+                        // (Igc/shipIGC.h:750-774). Clear the previous objective
+                        // through SetGoto before handing navigation to the bay
+                        // plan; merely cancelling a waypoint leaves repair active.
+                        ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId,
+                            ToCore(station.Position)));
+                        ship.SetGoto(null);
                         ship.PlanTarget = runtime.Data;
                         ship.PlanCommandId = (short)commandId;
-                        ship.SetGoto(null);
                     }
                     else
                     {

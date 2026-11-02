@@ -495,11 +495,14 @@ public class Mission8 : TrainingMission
                 new SetCommandAction(Site, new TargetRef(ObjectType.Ship, RibskiId), CommandCurrent,
                     new TargetRef(ObjectType.Ship, BomberId), CmdAttack), false, true));
             g.AddConstraintCondition(new ConditionalAction(
-                new GetShipIsDamagedCondition(Site, ObjectType.Ship, player.Id, 0.0f),
+                // Native omits the fraction here: its default is 1.0 (first
+                // hull damage), not the 0.0 alive/dead test used above.
+                // mission8.cpp:612; GetShipIsDamagedCondition.h:32-34.
+                new GetShipIsDamagedCondition(Site, ObjectType.Ship, player.Id, 1.0f),
                 new SetCommandAction(Site, new TargetRef(ObjectType.Ship, TkelaId), CommandAccepted,
                     new TargetRef(ObjectType.Ship, BomberId), CmdAttack), false, true));
             g.AddConstraintCondition(new ConditionalAction(
-                new GetShipIsDamagedCondition(Site, ObjectType.Ship, player.Id, 0.0f),
+                new GetShipIsDamagedCondition(Site, ObjectType.Ship, player.Id, 1.0f),
                 new SetCommandAction(Site, new TargetRef(ObjectType.Ship, TkelaId), CommandCurrent,
                     new TargetRef(ObjectType.Ship, BomberId), CmdAttack), false, true));
             g.AddStartAction(Msg("Stay on target.", VoStayOnTarget));

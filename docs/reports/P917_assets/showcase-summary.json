@@ -1,0 +1,52 @@
+[
+  {
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:03:53.2092150",
+    "receipt": ".scratch/p917/showcase/1/result.trx",
+    "start": [
+      "Mon Nov  2 09:59:13 UTC 2026",
+      "5.80 5.57 4.29 4/4720 6"
+    ]
+  },
+  {
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:04:12.3477320",
+    "receipt": ".scratch/p917/showcase/2/result.trx",
+    "start": [
+      "Mon Nov  2 10:03:07 UTC 2026",
+      "4.55 5.47 4.59 3/4402 380"
+    ]
+  },
+  {
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:03:50.9476805",
+    "receipt": ".scratch/p917/showcase/3/result.trx",
+    "start": [
+      "Mon Nov  2 10:07:21 UTC 2026",
+      "6.91 8.49 6.25 5/5822 761"
+    ]
+  },
+  {
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:04:07.0682357",
+    "receipt": ".scratch/p917/showcase/4/result.trx",
+    "start": [
+      "Mon Nov  2 10:11:13 UTC 2026",
+      "9.39 9.96 7.41 2/6741 1135"
+    ]
+  },
+  {
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:03:24.9957585",
+    "receipt": ".scratch/p917/showcase/5/result.trx",
+    "start": [
+      "Mon Nov  2 10:15:21 UTC 2026",
+      "7.79 9.77 7.97 5/4709 1500"
+    ]
+  }
+]

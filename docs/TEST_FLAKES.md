@@ -5310,6 +5310,38 @@ all-or-part outcome; the worst run, 43 expiries, was on the pre-P912 tree. Pods 
 The cause of the bimodal pile-up is not established. `SC3Cloak`, `SC2SupportPhase`, `P745`, `P798`, `MissileLock`, `NpcWingmanDefend`, `MusicLoading` and
 `LiveSideSelect` also failed; not rerun here, not cleared.
 
+## P917 training-branch gates — 2026-11-02
+
+One actual Fast sweep: **12,940 passed / 13 failed / 3 skipped**, nine
+infrastructure checks passed, five timing violations. The sweep remains
+**FAIL**. The optional skips are the existing private `MeshyPackTests`.
+All task-owned Fast regressions passed. Every non-task failed method/family
+and timing offender received three isolated filtered invocations.
+Raw receipts: `.scratch/p917/isolation/`; compact results:
+`docs/reports/P917_assets/isolation-summary.json` and `fast-summary.json`.
+Isolation one-minute load ranged **3.58–9.59** on the shared host; no synthetic
+load was used. Window qualifications and some showcase runs overlapped in
+separate processes. The fixed sweep timing limit was **10.3753 seconds**.
+
+| Non-task failure or timing check | Three isolated invocations | Disposition |
+| --- | --- | --- |
+| Five `PlayerBundlePathsTests` cases: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, synthetic sky precedence | Each fails 3/3; the other four class cases pass 3/3 | Existing in-checkout `TMPDIR` assumption: ancestor `local.env` is visible. Same P909–P916 obstruction; resolver and fixtures unchanged. |
+| `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot` | fail / fail / fail with forced baseline environment; pass / pass / pass with those two environment overrides unset | Harness conflict: `ALLEGIANCE_BROADCAST_PARALLEL_BUILD=1` / `ALLEGIANCE_TRANSPORT_MODE=pool` override the fixture's explicitly serial, thread-per-peer configuration. Control keeps that legacy path pinned in the existing fixture. No product configuration rule changed. |
+| `TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer` and `Boot_line_prints_the_active_transport_mode` | Both fail 3/3 under the forced pool environment; both pass 3/3 with the environment overrides unset | Same explicit legacy-config versus forced environment conflict. Assertions and transport code unchanged. |
+| `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate` | pass / pass / pass | Previously ledgered bare `goto` versus `goto Garrison` receipt intermittency. Cause not established here; relay code unchanged. |
+| `P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod` | pass / pass / pass | Existing rescue tick-budget family; sweep did not intercept within 800 ticks. Rescue/Goto code unchanged. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | fail / pass / pass across all three delay cases | Existing one-ULP integer deadline boundary; one isolation also reproduced it. Timer and missile scheduling unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing expected-charge / actual-null defend-target assertion. No defend/rescue change in this lane. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Existing all-status history assertion includes another ship docked at station 1051. Docking/status code unchanged. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass at 4.527 / 4.467 / 4.746 s | Sweep passed at 10.683 s, above the calibrated limit; isolated timings stay below it. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass at 4.214 / 4.172 / 4.220 s | Sweep passed at 12.287 s; isolated timings stay below the limit. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases pass each run; all case times 3.178–5.170 s | Sweep civ 25 passed at 11.386 s; isolated timings stay below the limit. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Assertions pass at 10.254 / 10.472 / 10.724 s | Two isolated executions still exceed 10.3753 s. Timing remains open; no tier or assertion changed. |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path` | pass at 8.099 / 8.141 / 8.184 s | Sweep passed at 10.435 s; isolated timings stay below the limit. |
+
+These isolations do not turn the original Fast sweep green. The server's
+normal multiplayer station-elimination control separately passed 3/3, and
+the five baseline showcase invocations passed 5/5, zero skips.
 ## 2026-11-02: batch-p916 sweep on the runner
 
 Snapshot `719fe7aa`, master at `d7c7dc45` without media. Fast FAIL (12,950 tests), Live FAIL (325 tests), Perf PASS (73 tests). Rerun 3× alone on `57190c43`:
