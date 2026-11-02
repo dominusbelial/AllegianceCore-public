@@ -1,0 +1,922 @@
+{
+  "task": "P914",
+  "branch": "codex/p914",
+  "base": "26a96d6c",
+  "committed": false,
+  "pushed": false,
+  "flag": "showcase.stationKillsDecideDeadline",
+  "default": false,
+  "criterion": "station-kills",
+  "validationEnvironment": {
+    "artwork": true,
+    "localEnvSourced": true,
+    "serverGc": "DOTNET_gcServer=1",
+    "baseline": "immutableSnapshot + encodeOnce + parallelBuild + pool transport + native ship updates + native GotoPlan; P863 clash budget",
+    "scratch": ".scratch/p914"
+  },
+  "build": {
+    "solution": {
+      "warnings": 0,
+      "errors": 0,
+      "log": ".scratch/p914/build-verified.log"
+    },
+    "tools": {
+      "projects": 108,
+      "warnings": 0,
+      "errors": 0,
+      "log": ".scratch/p914/build-tools.log"
+    },
+    "nativeAot": {
+      "runtime": "linux-x64",
+      "configuration": "Release",
+      "success": true,
+      "warnings": 0,
+      "IL2026": 0,
+      "IL3050": 0,
+      "log": ".scratch/p914/aot-final.log"
+    }
+  },
+  "newTests": {
+    "casesPerRepetition": 26,
+    "repetitions": 3,
+    "passedExecutions": 78,
+    "skips": 0
+  },
+  "filteredRepetitions": {
+    "final-core": [
+      {
+        "run": 1,
+        "counts": {
+          "Passed": 60,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 3.5849378
+      },
+      {
+        "run": 2,
+        "counts": {
+          "Passed": 60,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 3.4778514
+      },
+      {
+        "run": 3,
+        "counts": {
+          "Passed": 60,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 3.6892249
+      }
+    ],
+    "final-client": [
+      {
+        "run": 1,
+        "counts": {
+          "Passed": 5,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 1.6791053999999999
+      },
+      {
+        "run": 2,
+        "counts": {
+          "Passed": 5,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 1.6611365
+      },
+      {
+        "run": 3,
+        "counts": {
+          "Passed": 5,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 1.6702919
+      }
+    ],
+    "affected-hud": [
+      {
+        "run": 1,
+        "counts": {
+          "Passed": 20,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.032046
+      },
+      {
+        "run": 2,
+        "counts": {
+          "Passed": 20,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.0385097
+      },
+      {
+        "run": 3,
+        "counts": {
+          "Passed": 20,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.0360786
+      }
+    ],
+    "profile-writable": [
+      {
+        "run": 1,
+        "counts": {
+          "Passed": 1,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.0535604
+      },
+      {
+        "run": 2,
+        "counts": {
+          "Passed": 1,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.0652411
+      },
+      {
+        "run": 3,
+        "counts": {
+          "Passed": 1,
+          "Failed": 0,
+          "NotExecuted": 0
+        },
+        "seconds": 0.0656332
+      }
+    ]
+  },
+  "fast": {
+    "sweeps": 1,
+    "counts": {
+      "Passed": 12904,
+      "Failed": 8,
+      "NotExecuted": 3
+    },
+    "seconds": 532.5415504270059,
+    "passed": false,
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05878397199558094,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "p914Cases": {
+      "Passed": 26,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    "skipped": [
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+    ],
+    "note": "Final Notable feed notification/assertion added after Fast discovery; final filtered repetitions and solution/AOT build cover it. No second Fast sweep."
+  },
+  "isolations": [
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "sweep": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Failed",
+          "seconds": 0.0054166,
+          "error": "System.IO.IOException : Read-only file system : '$HOME/.config/AllegianceCore/player.json'"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 1.10392553100246,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "outcome": "Failed",
+              "seconds": 0.0493612,
+              "error": "System.IO.IOException : Read-only file system : '$HOME/.config/AllegianceCore/player.json'"
+            }
+          ],
+          "log": ".scratch/p914/isolate-1-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.1348551329865586,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "outcome": "Failed",
+              "seconds": 0.0599163,
+              "error": "System.IO.IOException : Read-only file system : '$HOME/.config/AllegianceCore/player.json'"
+            }
+          ],
+          "log": ".scratch/p914/isolate-1-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 1.1314923320023809,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+              "outcome": "Failed",
+              "seconds": 0.0601985,
+              "error": "System.IO.IOException : Read-only file system : '$HOME/.config/AllegianceCore/player.json'"
+            }
+          ],
+          "log": ".scratch/p914/isolate-1-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "sweep": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 10.3187627,
+          "error": ""
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 0,
+          "wallSeconds": 4.122986296017189,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "outcome": "Passed",
+              "seconds": 3.2094877,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-2-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 0,
+          "wallSeconds": 4.111046080011874,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "outcome": "Passed",
+              "seconds": 3.2280726,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-2-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 0,
+          "wallSeconds": 4.15788938201149,
+          "results": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "outcome": "Passed",
+              "seconds": 3.2970068,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-2-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Failed",
+          "seconds": 0.2398112,
+          "error": "Assert.All() Failure: 1 out of 4 items in the collection did not pass.\n[0]: Item:  ShipStatusMessage { Detected = False, HullId = 13, ParentId = -1, SectorId = 1053, ShipId = 8098, \u00b7\u00b7\u00b7 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: -1\n            Actual:   1051"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 0,
+          "wallSeconds": 1.9326212409941945,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "outcome": "Passed",
+              "seconds": 0.5798662,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-3-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.93673021698487,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "outcome": "Failed",
+              "seconds": 0.5804302,
+              "error": "Assert.All() Failure: 1 out of 4 items in the collection did not pass.\n[0]: Item:  ShipStatusMessage { Detected = False, HullId = 13, ParentId = -1, SectorId = 1053, ShipId = 8098, \u00b7\u00b7\u00b7 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: -1\n            Actual:   1051"
+            }
+          ],
+          "log": ".scratch/p914/isolate-3-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 0,
+          "wallSeconds": 1.9165062830143142,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+              "outcome": "Passed",
+              "seconds": 0.5705523,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-3-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "seconds": 0.8005767,
+          "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 2.522505667002406,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "outcome": "Failed",
+              "seconds": 1.1742494,
+              "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+            }
+          ],
+          "log": ".scratch/p914/isolate-4-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 2.481627353990916,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "outcome": "Failed",
+              "seconds": 1.2161804,
+              "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+            }
+          ],
+          "log": ".scratch/p914/isolate-4-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 2.411077683995245,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+              "outcome": "Failed",
+              "seconds": 1.1436062,
+              "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+            }
+          ],
+          "log": ".scratch/p914/isolate-4-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 10.4639402,
+          "error": ""
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 0,
+          "wallSeconds": 10.79721392900683,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "outcome": "Passed",
+              "seconds": 9.5388515,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-5-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 0,
+          "wallSeconds": 11.227763077011332,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "outcome": "Passed",
+              "seconds": 9.9788037,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-5-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 0,
+          "wallSeconds": 11.233181015995797,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "outcome": "Passed",
+              "seconds": 9.9183191,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-5-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "seconds": 0.0005861,
+          "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 1.3396976350049954,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "outcome": "Failed",
+              "seconds": 0.0146179,
+              "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-6-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.3602778149943333,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "outcome": "Failed",
+              "seconds": 0.0146973,
+              "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-6-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 1.3514861229923554,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+              "outcome": "Failed",
+              "seconds": 0.0146966,
+              "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-6-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0007357,
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Artwork\"\n           \u2191 (pos 0)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+          "outcome": "Failed",
+          "seconds": 0.0002988,
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 1.3375170459912624,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0011521,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Artwork\"\n           \u2191 (pos 0)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Passed",
+              "seconds": 0.0037517,
+              "error": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0002276,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-7-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.3183184600202367,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0002296,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0011743,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Artwork\"\n           \u2191 (pos 0)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Passed",
+              "seconds": 0.0037909,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-7-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 1.3382159100146964,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0001602,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Failed",
+              "seconds": 0.0008828,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Artwork\"\n           \u2191 (pos 0)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+              "outcome": "Passed",
+              "seconds": 0.0029267,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-7-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "seconds": 0.0013096,
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 1.330871690006461,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "outcome": "Failed",
+              "seconds": 0.0042306,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-8-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.2774727609939873,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "outcome": "Failed",
+              "seconds": 0.0032443,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-8-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 1.3341564860020299,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+              "outcome": "Failed",
+              "seconds": 0.0042688,
+              "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"$HOME/Development/Allegiance\"\n           \u2191 (pos 0)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-8-3.log"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+          "outcome": "Failed",
+          "seconds": 0.0406713,
+          "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\nActual:   \"$HOME/Development/Artwork\"\n                         \u2191 (pos 14)"
+        }
+      ],
+      "runs": [
+        {
+          "run": 1,
+          "exitCode": 1,
+          "wallSeconds": 1.300245807011379,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Failed",
+              "seconds": 0.0043881,
+              "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\nActual:   \"$HOME/Development/Artwork\"\n                         \u2191 (pos 14)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Passed",
+              "seconds": 0.0009314,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-9-1.log"
+        },
+        {
+          "run": 2,
+          "exitCode": 1,
+          "wallSeconds": 1.3338142250140663,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Failed",
+              "seconds": 0.0044938,
+              "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\nActual:   \"$HOME/Development/Artwork\"\n                         \u2191 (pos 14)"
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Passed",
+              "seconds": 0.0009107,
+              "error": ""
+            }
+          ],
+          "log": ".scratch/p914/isolate-9-2.log"
+        },
+        {
+          "run": 3,
+          "exitCode": 1,
+          "wallSeconds": 1.2924829460098408,
+          "results": [
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Passed",
+              "seconds": 0.0007112,
+              "error": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+              "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+              "outcome": "Failed",
+              "seconds": 0.0034393,
+              "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"$WORKTREE/.scra\"\u00b7\u00b7\u00b7\nActual:   \"$HOME/Development/Artwork\"\n                         \u2191 (pos 14)"
+            }
+          ],
+          "log": ".scratch/p914/isolate-9-3.log"
+        }
+      ]
+    }
+  ],
+  "neverParks": {
+    "runs": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 244.0625788,
+        "run": 1,
+        "observedSeconds": 240.2,
+        "samples": 2399,
+        "reached": 24,
+        "longestStoppedSeconds": 1.003,
+        "shots": 2472,
+        "hits": 656,
+        "kills": 5,
+        "startingLoadAverages": [
+          0.91,
+          1.9,
+          2.6
+        ]
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 481.9743408,
+        "run": 2,
+        "observedSeconds": 478.0,
+        "samples": 4773,
+        "reached": 24,
+        "longestStoppedSeconds": 1.905,
+        "shots": 3141,
+        "hits": 965,
+        "kills": 9,
+        "startingLoadAverages": [
+          0.36,
+          1.32,
+          2.22
+        ]
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 252.7801846,
+        "run": 3,
+        "observedSeconds": 248.4,
+        "samples": 2481,
+        "reached": 24,
+        "longestStoppedSeconds": 0.0,
+        "shots": 156,
+        "hits": 1,
+        "kills": 0,
+        "startingLoadAverages": [
+          0.38,
+          0.9,
+          1.68
+        ]
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 197.3415666,
+        "run": 4,
+        "observedSeconds": 193.5,
+        "samples": 1933,
+        "reached": 24,
+        "longestStoppedSeconds": 1.819,
+        "shots": 493,
+        "hits": 158,
+        "kills": 1,
+        "startingLoadAverages": [
+          0.23,
+          0.59,
+          1.37
+        ]
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+        "outcome": "Passed",
+        "seconds": 227.8740998,
+        "run": 5,
+        "observedSeconds": 224.0,
+        "samples": 2237,
+        "reached": 24,
+        "longestStoppedSeconds": 0.301,
+        "shots": 874,
+        "hits": 218,
+        "kills": 1,
+        "startingLoadAverages": [
+          0.25,
+          0.48,
+          1.17
+        ]
+      }
+    ],
+    "passed": 5,
+    "skips": 0,
+    "serial": true,
+    "baseline": {
+      "source": "docs/TEST_FLAKES.md, P913",
+      "passed": 5,
+      "runs": 5,
+      "maximumStoppedSeconds": 1.913
+    },
+    "maximumStoppedSeconds": 1.905,
+    "performanceABClaimed": false
+  },
+  "screenshots": [
+    {
+      "style": "classic",
+      "path": "deadline-classic.png",
+      "visuallyInspected": true
+    },
+    {
+      "style": "modern",
+      "path": "deadline-modern.png",
+      "visuallyInspected": true
+    }
+  ],
+  "parityRowsChanged": false,
+  "remoteHostsContacted": false
+}

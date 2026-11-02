@@ -35,7 +35,8 @@ public sealed partial class Server
             { _researchFinales.Remove(mission); continue; }
             if (now < finale.Deadline) continue;
             _researchFinales.Remove(mission);
-            var result = mission.EvaluateCountdown(now, deadlineReached: true);
+            var result = mission.EvaluateCountdown(now, deadlineReached: true,
+                stationKillsCriterion: _config.Showcase.StationKillsDecideDeadline);
             string criterion = result.Winner is null ? "draw" : result.Criterion;
             Console.WriteLine($"[finale] deadline winner side={result.Winner?.Id ?? GameOver.NA} by={criterion} values={mission.CountdownValues(result.Criterion)} epoch={mission.ResearchEpoch} armedBy={finale.ArmedBy}");
             string reason = result.Winner is { } winner

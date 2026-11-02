@@ -547,6 +547,15 @@ public sealed partial class Server
         }
         if (sw is not null) SwMark(sw, "declare-start", mission, winnerId, 0);
 
+        // P914: publish before rotation; CHATMESSAGE and GAME_OVER's existing reason
+        // string carry the same frozen preset summary. This never selects a winner.
+        if (mission.IsShowcasePreset)
+            foreach (string line in mission.StationKillSummary())
+            {
+                Console.WriteLine($"[finale] {line}");
+                Notify($"[finale] {line}");
+                SendPeriodicNotice(mission, line);
+            }
         mission.Skills?.Write(Console.Out, final: true);
         if (sw is not null) SwMark(sw, "skills-report", mission, winnerId);
 
@@ -1650,7 +1659,13 @@ public sealed partial class Server
     /// </summary>
     private byte[] EncodeGameOverResult(Mission mission, short winnerId, string reason)
     {
-        var messages = new List<byte[]> { GameOver.ForMission(mission, winnerId, reason).Encode() };
+        var result = GameOver.ForMission(mission, winnerId, mission.IsShowcasePreset
+            ? reason + "\n" + string.Join("\n", mission.StationKillSummary()) : reason);
+        if (mission.IsShowcasePreset)
+            foreach (var side in mission.Sides)
+                result.Sides[side.Id] = result.Sides[side.Id] with
+                { CBaseKills = (short)Math.Min(short.MaxValue, mission.StationKills(side.Id)) };
+        var messages = new List<byte[]> { result.Encode() };
         var entries = BuildGameOverPlayerEntries(mission);
         // Keep the existing empty-roster notification for connected spectators.
         if (entries.Length == 0)

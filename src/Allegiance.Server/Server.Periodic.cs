@@ -44,8 +44,10 @@ public sealed partial class Server
         // Declaring a result rotates the mission in place; use a snapshot.
         foreach (var mission in _missions.ToArray())
         {
-            var result = mission.EvaluateCountdown(now);
+            var result = mission.EvaluateCountdown(now, stationKillsCriterion: _config.Showcase.StationKillsDecideDeadline);
             if (!result.Expired) continue;
+            if (mission.IsShowcasePreset)
+                Console.WriteLine($"[finale] deadline winner side={result.Winner?.Id ?? GameOver.NA} by={(result.Winner is null ? "draw" : result.Criterion)} values={mission.CountdownValues(result.Criterion)} epoch={mission.ResearchEpoch}");
             string reason = result.Winner is { } winner
                 ? $"The clock has stopped. The winner: {winner.Name} by {result.Criterion}"
                 : "The clock has stopped. The game is a draw.";

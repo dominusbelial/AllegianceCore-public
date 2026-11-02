@@ -1365,6 +1365,10 @@ public sealed partial class Server
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
         }, goals);
+        // Research/rotating showcase and offline skirmish are authored presets.
+        // A lobby-created world or LAN host keeps ordinary native deadline policy.
+        mission.IsShowcasePreset = !playerCreated && !RequireLanListeners &&
+            (g.SkirmishPreset || _config.Showcase.TechMode == "research" || _config.Showcase.GoalRotation is not null);
         mission.Cookie = ++_nextMissionCookie; // P883: unique for this server lifetime; never NA.
         mission.Skills = new SkillTelemetry(++_skillMatchNumber, mission.Sides.Select(s => s.Id));
         foreach (var (side, selection) in researchPlans)
