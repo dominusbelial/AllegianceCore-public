@@ -82,12 +82,12 @@ sealed class StationGpuAudit : Game
             var expected = new Color[actual.Length]; source.GetData(expected);
             for (int y = 0; y < source.Height; y++)
                 for (int x = 0; x < source.Width; x++)
-                    if (actual[(source.Height - 1 - y) * source.Width + x] != expected[y * source.Width + x])
+                    if (actual[y * source.Width + x] != expected[y * source.Width + x])
                         throw new Exception($"{stem}: PNG RGBA/row orientation changed");
         }
         else
         {
-            var source = MdlTextureDecoder.Decode(data);
+            var source = MdlTextureDecoder.Decode(data, flipVertical: false);
             if (source.Width != texture.Width || source.Height != texture.Height)
                 throw new Exception($"{stem}: binary image dimensions changed");
             for (int i = 0; i < actual.Length; i++)

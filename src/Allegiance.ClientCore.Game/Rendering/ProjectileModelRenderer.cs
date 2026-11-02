@@ -159,7 +159,7 @@ public sealed class ProjectileModelRenderer : IDisposable
         }
         try
         {
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(_gd, _assets, exact);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             var cols = new Color[mdlTex.Width * mdlTex.Height];
             int n = 0;
@@ -246,7 +246,7 @@ public sealed class ProjectileModelRenderer : IDisposable
         if (!_diskStems.TryGetValue(stem, out var exact)) return null;
         try
         {
-            var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            var decoded = NativeStationTexture.Decode(_gd, _assets, exact);
             texture = new Texture2D(_gd, decoded.Width, decoded.Height);
             texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
             _textures[stem] = texture;

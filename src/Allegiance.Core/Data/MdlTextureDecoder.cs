@@ -30,17 +30,12 @@ public sealed record MdlTexture(int Width, int Height, byte[] Rgba)
 /// half (<see cref="Allegiance.Core.MdlFile"/>, <c>MeshGeo</c>/<c>FrameData</c>);
 /// this is the missing TEXTURE half (<c>BinarySurfaceInfo</c> + RGB565 rows).
 /// <para>
-/// The raw <c>.mdl</c> pixel rows are stored top-row-first in the file (file
-/// row 0 = top of the picture). By default this decoder vertically mirrors
-/// them (<c>flipVertical: true</c>) to match the native reference
-/// (<c>decode_texture.py</c>) and the convention native's 3-D textured-quad /
-/// geometry paths expect — native's <c>Context::DrawImage3D</c> reverses v
-/// (<c>yt * (sizeSource.Y() - rectSource.YMin())</c>, engine/context.cpp), so a
-/// texture uploaded file-order would render upside down on world geometry.
-/// Flat 2-D HUD art, however, is blitted screen-space by native's
-/// <c>Context::DrawImage</c> with an upper-left origin and NO flip
-/// (engine/context.cpp, <c>BitBlt</c>), so those consumers must pass
-/// <c>flipVertical: false</c> to keep file row 0 at the top of the sprite.
+/// Native supplies file rows and pitch unchanged (engine/modeler.cpp:723-733)
+/// and preserves mesh UVs (engine/device3d.cpp:2245-2246). Mesh materials and
+/// top-left-origin HUD images must explicitly pass <c>flipVertical:false</c>.
+/// The historical default <c>true</c> is retained for existing image/decal
+/// consumers: those generate their own UVs (engine/context.cpp:237-240,
+/// 659-660). It is not a general 3-D texture convention (P916).
 /// </para>
 /// </summary>
 public static class MdlTextureDecoder
@@ -50,9 +45,8 @@ public static class MdlTextureDecoder
     /// <summary>
     /// Parse a <c>.mdl</c> texture from raw bytes. With the default
     /// <paramref name="flipVertical"/> of <c>true</c> the pixel rows are
-    /// mirrored top-to-bottom (the 3-D texture convention); pass <c>false</c>
-    /// for flat 2-D HUD art that must keep file row 0 at the top (see the
-    /// class doc for the native justification).
+    /// mirrored top-to-bottom (legacy image/decal convention). Pass
+    /// <c>false</c> for native mesh materials and top-left-origin HUD images.
     /// </summary>
     public static MdlTexture Decode(byte[] data, bool flipVertical = true)
     {
@@ -119,8 +113,8 @@ public static class MdlTextureDecoder
             for (int x = 0; x < sizeX; x++)
             {
                 ushort v = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(rowBase + x * 2));
-                // flipVertical mirrors top-to-bottom for the 3-D convention; when
-                // false (2-D HUD art) file row 0 stays at output row 0.
+                // Retain the legacy row reversal only when explicitly requested
+                // (or by the historical default). Mesh/HUD callers use false.
                 int dstRow = flipVertical ? sizeY - 1 - srcRow : srcRow;
                 int di = (dstRow * sizeX + x) * 4;
                 rgba[di] = (byte)MathF.Round(((v & redMask) >> 11) / 31f * 255f);

@@ -700,8 +700,7 @@ public sealed partial class Game1
             var probeStem = Rendering.ProbeModelSource.ResolveDemoTextureStem(_assets);
             if (probeStem is not null)
             {
-                var pt = MdlTextureDecoder.Decode(
-                    AssetSources.ReadAllBytes(_assets, probeStem + ".mdl"));
+                var pt = Rendering.NativeStationTexture.Decode(GraphicsDevice, _assets, probeStem);
                 probeTex = new Texture2D(GraphicsDevice, pt.Width, pt.Height);
                 probeTex.SetData(MdlTextureDecoder.ToPremultipliedRgba(pt));
             }

@@ -46,6 +46,26 @@ public sealed class HdMaterialRenderer : IDisposable
     /// testable (HD-5).</summary>
     public static HdDrawMode ModeFor(bool hdTextures, bool hdPbr)
         => hdTextures ? (hdPbr ? HdDrawMode.Pbr : HdDrawMode.Classic) : HdDrawMode.Off;
+    private readonly Dictionary<string, bool> _reverseMeshV = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>P916: released schema 1/2/3 binary-atlas maps were generated
+    /// from vertically reversed decoder output. Bind those maps with reversed V
+    /// on meshes only. Text image imports were exported in file-row order.
+    /// This also handles compressed mip chains without decompressing/repacking
+    /// them. Decal/image consumers retain their existing convention.</summary>
+    public bool ReverseMeshV(string texture)
+    {
+        if (_reverseMeshV.TryGetValue(texture, out bool reverse)) return reverse;
+        using var source = _openNative(texture + ".mdl");
+        Span<byte> magic = stackalloc byte[4];
+        // Hash-validated custom/test packs can use a short non-MDL source.
+        // Only a complete binary MDL signature proves legacy reversed rows.
+        reverse = source.ReadAtLeast(magic, magic.Length, throwOnEndOfStream: false) == magic.Length
+            && BinaryPrimitives.ReadUInt32LittleEndian(magic) == MdlTextureDecoder.MdlMagic;
+        _reverseMeshV[texture] = reverse;
+        return reverse;
+    }
+
     public EffectLights? Flashes { get; set; }
     public long ResidentBytes { get; private set; }
     public int ResidentMaterials => _resident.Count;

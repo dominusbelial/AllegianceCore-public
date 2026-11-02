@@ -1,0 +1,167 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "built": 110,
+    "warnings": 0,
+    "errors": 0
+  },
+  "aot": "passed; no IL2026/IL3050",
+  "focusedRuns": [
+    {
+      "cohort": "mono",
+      "repeat": 1,
+      "counts": {
+        "total": "83",
+        "executed": "83",
+        "passed": "83",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "cohort": "mono",
+      "repeat": 2,
+      "counts": {
+        "total": "83",
+        "executed": "83",
+        "passed": "83",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "cohort": "mono",
+      "repeat": 3,
+      "counts": {
+        "total": "83",
+        "executed": "83",
+        "passed": "83",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "cohort": "core",
+      "repeat": 1,
+      "counts": {
+        "total": "42",
+        "executed": "42",
+        "passed": "42",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "cohort": "core",
+      "repeat": 2,
+      "counts": {
+        "total": "42",
+        "executed": "42",
+        "passed": "42",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "cohort": "core",
+      "repeat": 3,
+      "counts": {
+        "total": "42",
+        "executed": "42",
+        "passed": "42",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "stationGpuProof": {
+    "repeats": 3,
+    "models": 81,
+    "drawGroups": 207,
+    "textureReadbacks": 105,
+    "passed": true
+  },
+  "p800": "passed; 447 hulls / five views",
+  "webpBytes": 828864,
+  "fast": "FAIL; see fast-summary.json",
+  "newTestsSkipped": 0,
+  "commits": 0,
+  "pushes": 0,
+  "isolation": {
+    "methods": 12,
+    "repeats": 3,
+    "loadOneMinuteMin": 2.51416015625,
+    "loadOneMinuteMax": 4.02099609375,
+    "writableProfileControl": "3 passed / 0 failed / 0 skipped"
+  },
+  "finalFastSweepRetained": "FAIL; task HD regressions corrected afterward and verified 3x; non-task outcomes ledgered"
+}

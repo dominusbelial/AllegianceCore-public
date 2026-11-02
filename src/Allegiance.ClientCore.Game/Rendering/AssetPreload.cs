@@ -177,7 +177,7 @@ public sealed class AssetPreloader : IDisposable
         if (!_assets.Exists(file)) { _missing.Add(stem); Missing++; return; }
         try
         {
-            var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, file));
+            var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, file), flipVertical: false);
             TexturesLoaded++;
             if (_gd is null) return;
             // Native's colour-key hint is OFF inside the scope: the surface is

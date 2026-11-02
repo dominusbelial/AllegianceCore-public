@@ -177,7 +177,7 @@ public sealed class ProbeRenderer : IDisposable
         if (_assets is null) return null;
         try
         {
-            var decoded = MdlTextureDecoder.Decode(Assets.AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+            var decoded = NativeStationTexture.Decode(_effect.GraphicsDevice, _assets, stem);
             texture = new Texture2D(_effect.GraphicsDevice, decoded.Width, decoded.Height);
             texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
             _partTextures.Add(stem, texture); return texture;

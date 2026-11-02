@@ -114,9 +114,8 @@ internal static class Program
     /// <summary>P824 — decode each texture stem's native <c>&lt;stem&gt;.mdl</c>
     /// texture (the file the hull's TextureGeo imports, i.e. <c>fig30bmp</c> →
     /// <c>fig30bmp.mdl</c>) and embed it as the GLB's base-colour PNG. The
-    /// decoded RGBA is the decoder's 3-D <c>flipVertical:true</c> output — the
-    /// exact texture the port's renderer uploads — which is also glTF's
-    /// top-left-origin convention, so mesh UVs sample identically in Blender.
+    /// decoded RGBA keeps file row zero at V=0 (<c>flipVertical:false</c>),
+    /// matching native mesh UVs and glTF's top-left texture origin.
     /// Missing texture files are reported and the GLB stays untextured.</summary>
     internal static GlbExportModel EmbedTextures(GlbExportModel model, string artDir, bool noTexture)
     {
@@ -131,7 +130,7 @@ internal static class Program
                 Console.WriteLine($"  (no texture file for stem '{texStem}' at {texPath} — GLB will be untextured)");
                 continue;
             }
-            var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(texPath));   // flipVertical:true = GPU order
+            var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(texPath), flipVertical: false);
             images.Add(new GlbImage(texStem, tex.Width, tex.Height, PngCodec.Encode(tex.Width, tex.Height, tex.Rgba)));
             Console.WriteLine($"  texture {texStem}: {tex.Width}×{tex.Height} embedded as base-colour PNG");
         }
@@ -252,7 +251,7 @@ internal static class Program
             {
                 var png = PngCodec.Decode(image.Png);
                 var texPath = Path.Combine(outDir, image.Stem + ".mdl");
-                var tex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba);
+                var tex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba, new MdlTextureWriteOptions(FlipVertical: false));
                 File.WriteAllBytes(texPath, tex);
                 Console.WriteLine($"  texture {image.Stem}: {png.Width}×{png.Height} PNG → {texPath} ({tex.Length} bytes, native BinarySurfaceInfo layout)");
             }
@@ -358,7 +357,7 @@ internal static class Program
             if (!File.Exists(originalPath)) { Console.WriteLine($"  FAIL texture {image.Stem}: no original file"); ok = false; continue; }
             var originalTex = File.ReadAllBytes(originalPath);
             var png = PngCodec.Decode(image.Png);
-            var writtenTex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba);
+            var writtenTex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba, new MdlTextureWriteOptions(FlipVertical: false));
 
             // The BinarySurfaceInfo padding sits 8 bytes before the structure
             // end (alphaMask 4 + colourKey 1 + pad 3); the decode/write round
@@ -462,7 +461,7 @@ internal static class GenTextureCommand
         try
         {
             var rgba = TestTextureGenerator.BuildRgba(size);
-            var bytes = MdlTextureWriter.Write(stem, size, size, rgba);
+            var bytes = MdlTextureWriter.Write(stem, size, size, rgba, new MdlTextureWriteOptions(FlipVertical: false));
             var path = Path.Combine(outDir, stem + ".mdl");
             File.WriteAllBytes(path, bytes);
             Console.WriteLine($"wrote {path} ({bytes.Length} bytes, {size}×{size} proof texture: " +

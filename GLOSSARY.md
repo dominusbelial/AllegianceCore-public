@@ -592,13 +592,21 @@ list in **reverse**.
   `P699HumanPodHomeLiveTests`.
 - **Own small-hull effects (P915)** — `src/Allegiance.ClientCore.Game/Rendering/ShipEffectRules.cs`
   scales own external-view damage smoke from real hull length and camera distance,
-  gates afterburner trail/nozzle boost by the owner's mounted loadout (remote
-  lifepods excluded), and scopes the mesh texture-V correction to own small hulls.
-  `src/Allegiance.ClientCore.Game/Rendering/NativeShipResolver.cs` and
-  `src/Allegiance.ClientCore.Game/Rendering/NativeShipRenderer.cs` cache the UV-only
-  geometry variant for native/classic-HD/PBR draws. Native: `effect/thinggeo.cpp:699-760`,
-  `WinTrek/WinTrek.cpp:7999-8006`, `engine/device3d.cpp:2245-2246`.
-  Proof: `tools/p915-smoke-proof/`; report `docs/reports/P915_REPORT.md`.
+  and gates afterburner trail/nozzle boost by the owner's mounted loadout (remote
+  lifepods excluded). Native: `effect/thinggeo.cpp:699-760`,
+  `WinTrek/WinTrek.cpp:7999-8006`. Proof: `tools/p915-smoke-proof/`;
+  report `docs/reports/P915_REPORT.md`.
+- **Mesh texture row convention (P916)** — native mesh UVs sample file rows
+  unchanged, shared by binary and imported-image materials through
+  `src/Allegiance.ClientCore.Game/Rendering/NativeStationTexture.cs`.
+  `src/Allegiance.ClientCore.Game/Rendering/NativeMaterialParts.cs` adapts legacy
+  HD atlas rows at binding (including PBR bitangent handedness); image/decal
+  callers retain their explicit legacy reversal. P915's own-pod-only UV variant
+  is removed. Native: `engine/modeler.cpp:723-733`,
+  `engine/device3d.cpp:2245-2246`, `engine/context.cpp:237-240,659-660`.
+  Corpus/export tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P916TextureOrientationTests.cs`,
+  `tests/Allegiance.Core.Tests/P916TextureExportTests.cs`; proof:
+  `tools/p916-texture-proof/`; report `docs/reports/P916_REPORT.md`.
 - **Sector asset warm-up (P862)** — a warp must not load a sector in its transit
   frame. Per-type assets (native rock/station/hull meshes + 2048² native textures,
   the planet poster, the tier's dome) are created lazily by the renderer that

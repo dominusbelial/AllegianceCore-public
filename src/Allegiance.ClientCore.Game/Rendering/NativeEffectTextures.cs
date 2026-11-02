@@ -189,7 +189,10 @@ public sealed class NativeEffectTextures : IDisposable
     /// can assert how each native art name resolves (PNG-script vs binary RGB565
     /// strip and its frame count) headlessly.
     /// </summary>
-    public static NativeTextureResolution Resolve(byte[] bytes)
+    public static NativeTextureResolution Resolve(byte[] bytes) => Resolve(bytes, flipVertical: true);
+
+    /// <summary>Mesh consumers preserve file rows; image consumers use the legacy reversal.</summary>
+    public static NativeTextureResolution Resolve(byte[] bytes, bool flipVertical)
     {
         if (bytes is null || bytes.Length == 0) return NativeTextureResolution.Fail;
         if (IsPngScript(bytes))
@@ -201,7 +204,7 @@ public sealed class NativeEffectTextures : IDisposable
         }
         try
         {
-            var tex = MdlTextureDecoder.Decode(bytes);
+            var tex = MdlTextureDecoder.Decode(bytes, flipVertical: flipVertical);
             return new NativeTextureResolution(NativeTextureKind.Binary, null, tex, SliceFrameCount(tex.Width, tex.Height));
         }
         catch

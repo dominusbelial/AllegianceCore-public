@@ -128,7 +128,7 @@ public sealed class NativeTreasureRenderer : IDisposable
                 LogMissingTexture(textureStem, "not present");
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(_gd, _assets, exact);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
             _textures[textureStem] = surf;

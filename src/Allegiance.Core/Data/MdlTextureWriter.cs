@@ -66,13 +66,10 @@ public static class Rgb565
 
 /// <summary>Options for <see cref="MdlTextureWriter.Write"/>.</summary>
 /// <param name="FlipVertical">
-/// <c>true</c> (default) = the input RGBA is in GPU order (top-left origin —
-/// what a decoded <see cref="MdlTexture"/> under the decoder's 3-D convention
-/// holds, and what a glTF/PNG image holds), so the writer stores it
-/// bottom-row-first to match the native files' top-row-first picture order;
-/// the decoder's <c>flipVertical:true</c> then reconstructs the input exactly.
-/// <c>false</c> = flat 2-D HUD art: input row 0 is stored as file row 0 (the
-/// decoder's <c>flipVertical:false</c> convention).
+/// <c>true</c> (historical default) reverses input rows before storing them,
+/// paired with the decoder's legacy <c>flipVertical:true</c> convention.
+/// <c>false</c> stores input row zero as file row zero: use this for native
+/// mesh atlases, glTF/PNG images with unchanged native UVs, and HUD art (P916).
 /// </param>
 /// <param name="OrderedDither">Apply a 4×4 Bayer ordered dither before
 /// quantising (one quantum of spread). Default off = plain nearest-code

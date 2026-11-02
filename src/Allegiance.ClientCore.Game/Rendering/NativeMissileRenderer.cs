@@ -176,7 +176,7 @@ public sealed class NativeMissileRenderer : IDisposable
         if (exact is null) { LogMissing(stem, "not present"); return null; }
         try
         {
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(_gd, _assets, exact);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
             _textures[modelName] = surf;

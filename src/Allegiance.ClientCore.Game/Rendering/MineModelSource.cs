@@ -59,7 +59,7 @@ public static class MineModelSource
     /// <paramref name="assets"/>. Throws if the asset is unavailable — the
     /// texture is required for rendering.</summary>
     public static MdlTexture LoadTexture(IAssetSource assets) =>
-        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, SpriteStem + ".mdl"));
+        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, SpriteStem + ".mdl"), flipVertical: true);
 
     /// <summary>Resolve the mine field radius for a mine of the given type, from
     /// the static core's <c>MineTypes</c> (<c>DataMineTypeIGC.MineRadius</c>).

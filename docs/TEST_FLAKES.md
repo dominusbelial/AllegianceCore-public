@@ -5261,3 +5261,32 @@ failures were `repair escort did not destroy the outpost` (`m8-Classic-default` 
 forced to lose, the bomber died and the outpost survived. That is a native ending and the traced window reached it with the native prompt.
 The proof now accepts either ending on unforced runs; `early`, `loss` and `sacrifice` still pin their branch. All 11 M8 cases then passed
 once (not 3×). `early` is not forced to win and has won every observed run, so it may flake the same way.
+
+## P916 texture-orientation gates — 2026-11-01
+
+One actual Fast sweep: **12,933 passed / 13 failed / 3 skipped**, nine
+infrastructure checks passed, three timing violations. The sweep remains
+**FAIL**. Its two task-owned HD synthetic-source failures were fixed by accepting
+short non-MDL source streams without an orientation reflection; both complete
+HD test classes and the new guards then passed in the final **125-case cohort
+three times**, with zero skips. They are corrected regressions, not flakes.
+The three optional skips were the existing private `MeshyPackTests`.
+
+Every non-task failed method/theory family and timing offender was run through
+three isolated method filters. These results do not turn the sweep green.
+Raw evidence: `.scratch/p916/evidence/isolation/`; compact results:
+`docs/reports/P916_assets/isolation-summary.json`. The measured one-minute load
+ranged **2.51–4.02**; no synthetic load was used. No server/sim/wire logic or
+chat/profile behavior changed.
+
+| Non-task failure or timing check | Three isolated invocations | Disposition |
+|---|---|---|
+| Five `PlayerBundlePathsTests` executions: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, and sky config precedence | Each failing case fails 3/3; companion SkyPack cases pass 3/3 | Existing in-checkout `TMPDIR` obstruction: ancestor `local.env` is visible to the simulated bundle. Same fixture assumption as P909–P912. |
+| `P761StartChatComposeTests.HeldEnter_DoesNotReFire` | pass / pass / pass | Sweep-only chat-state assertion; cause not established. Chat source unchanged. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail with default profile; pass / pass / pass with writable task `XDG_CONFIG_HOME` | Existing sandbox obstruction: the fixture's `finally` restoration at line 237 attempts to write the read-only default player profile. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / pass | Existing intermittent timeout boundary: sweep measured 31.10 s against the 31 s maximum; first isolation measured 32.15 s. Remains intermittent. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent expected-charge / actual-null defend-target assertion, already ledgered before P916. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | fail / fail / pass | Intermittent join-burst state: sweep expected 3, got 2. First two isolated invocations also fail; no transport or join logic changed. |
+| `SideEliminationLiveTests.Destroying_last_restart_station_eliminates_side_and_declares_winner` | pass / pass / pass; 0.504 / 0.538 / 0.540 s | Sweep's lethal-hit assertion timed out at 20.926 s, also exceeding the Fast limit. Not reproduced in isolation. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass at 3.632 / 4.021 / 3.952 s | Sweep assertion passed but took 10.299 s, above the calibrated 10 s limit. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass at 9.724 / 9.525 / 9.705 s | Sweep assertion passed but took 10.721 s. Existing near-limit timing family; no tier or warp rule changed. |

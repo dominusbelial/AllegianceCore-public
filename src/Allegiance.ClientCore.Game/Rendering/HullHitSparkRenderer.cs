@@ -274,7 +274,7 @@ public sealed class HullHitSparkRenderer : IDisposable
         if (!BitsTextured(s => assets.Exists(s + ".mdl"))) return null;
         try
         {
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, BitTextureStem + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(gd, assets, BitTextureStem);
             var surf = new Texture2D(gd, mdlTex.Width, mdlTex.Height);
             surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
             return surf;

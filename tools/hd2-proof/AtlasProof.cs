@@ -121,7 +121,7 @@ sealed class AtlasProof : Game
                     renderer.Draw(renderer.MeshFor(_model)!, renderer.TextureFor(_model), Vector3.Zero, Vector3.UnitZ, .3f, view, proj, scale, _model, light);
                 break;
             case "probe":
-                var decoded = MdlTextureDecoder.Decode(File.ReadAllBytes(Path.Combine(_art, _stem + ".mdl")));
+                var decoded = MdlTextureDecoder.Decode(File.ReadAllBytes(Path.Combine(_art, _stem + ".mdl")), flipVertical: false);
                 var tex = new Texture2D(GraphicsDevice, decoded.Width, decoded.Height); tex.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
                 using (var renderer = new ProbeRenderer(GraphicsDevice, _mdl!.Meshes, tex, hd, assets, _model, _stem))
                     renderer.Draw(world, view, proj, Color.White, light);

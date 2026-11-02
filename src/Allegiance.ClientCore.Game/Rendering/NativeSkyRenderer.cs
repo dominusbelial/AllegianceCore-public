@@ -326,7 +326,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
                 Missing(stem);
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"), flipVertical: false);
             // Colour-key the near-black surround (the nebula art sits on a
             // black backing; native keys it transparent via the surface colorkey).
             var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);

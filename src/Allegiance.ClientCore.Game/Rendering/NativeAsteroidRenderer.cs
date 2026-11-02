@@ -129,7 +129,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
                 LogMissingTexture(textureStem, "not present");
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
+            var mdlTex = NativeStationTexture.Decode(_gd, _assets, textureStem);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             // P862 — upload the decoder's RGBA bytes straight (SurfaceFormat.Color IS
             // RGBA8, and the decoder already writes alpha 255 for every texel). The
