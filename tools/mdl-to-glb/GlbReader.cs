@@ -1,27 +1,26 @@
 using System.Buffers.Binary;
 using System.Text;
+using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 
 namespace Allegiance.Tools.MdlToGlb;
 
 /// <summary>
-/// P812 — the reverse loader STUB: reads a tool-exported .glb (plus the
-/// collision sidecar when present) back into <see cref="GlbExportModel"/>
-/// shaped data — the shape a future runtime loader would fold into the port's
-/// <see cref="Allegiance.Core.Data"/> / <see cref="Allegiance.Core.Collision"/>
-/// model structures. Deliberately minimal: it understands exactly what
-/// <see cref="GlbWriter"/> emits (one root node, mesh children, HP_* empty
-/// nodes with translation+rotation, Light_* nodes).
+/// Reads the offline GLB authoring format plus optional collision/frame/light
+/// sidecar. Geometry follows node hierarchy, including authored LOD parents.
+/// Accepts editor-emitted accessor offsets/strides, triangle primitives and
+/// node transforms; native output remains a binary MDL, not a runtime GLB.
 /// </summary>
 public static class GlbReader
 {
-    public static GlbExportModel Read(Stream glb, Stream? sidecar)
+    public static GlbExportModel Read(Stream glb, Stream? sidecar, Action<string>? warning = null)
     {
         var (json, bin) = ParseChunks(glb);
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        var meshes = ReadMeshes(root, bin);
+        var (meshes, levels) = ReadGeometry(root, bin);
         var (mounts, lights) = ReadNodes(root, bin);
 
         // P824 — base-colour images embedded by the exporter (one PNG per
@@ -33,16 +32,19 @@ public static class GlbReader
         // --no-texture).
         var images = ReadImages(root, bin);
 
-        // The sidecar is a full SidecarDocument; the reader stub takes the
+        // The sidecar is a full SidecarDocument; the reader takes the
         // embedded "collision" record, (P823) the raw mdl FrameData and the
         // full light records (GLB light nodes carry position only — the RGBA
         // colour and blink timing ride the sidecar, as in P812).
         CollisionSidecar? collision = null;
         List<MdlFrameRecord>? mdlFrames = null;
         List<GlbLight>? sidecarLights = null;
+        int oldLevelCount = 0;
         if (sidecar is not null)
         {
             using var sdoc = JsonDocument.Parse(sidecar);
+            if (sdoc.RootElement.TryGetProperty("lodPixelRadii", out var oldRadii))
+                oldLevelCount = oldRadii.GetArrayLength();
             if (sdoc.RootElement.TryGetProperty("collision", out var c)
                 && c.ValueKind == JsonValueKind.Object)
                 collision = c.Deserialize<CollisionSidecar>(SidecarJson.Options);
@@ -54,14 +56,18 @@ public static class GlbReader
                 sidecarLights = li.Deserialize<List<GlbLight>>(SidecarJson.Options);
         }
 
+        if (levels.Count == 0 && oldLevelCount > 0)
+            (warning ?? Console.Error.WriteLine)($"warning: model '{RootName(root)}' lost {oldLevelCount} LOD levels: sidecar lists radii but GLB has no level geometry (older export or deleted levels)");
+
         return new GlbExportModel
         {
             Name = RootName(root),
             Meshes = meshes,
             Mounts = mounts,
             Lights = sidecarLights ?? lights,
-            LodPixelRadii = [],                     // LOD thresholds live only in the sidecar/mdl
-            TextureStems = meshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
+            LodLevels = levels,
+            LodPixelRadii = levels.Select(l => l.PixelRadius).ToArray(),
+            TextureStems = meshes.Concat(levels.SelectMany(l => l.Meshes)).Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
             Collision = collision,
             SourceMdlFrames = mdlFrames,
             Images = images.Count > 0 ? images : null,
@@ -89,7 +95,7 @@ public static class GlbReader
             if (img.TryGetProperty("bufferView", out var bvi) && bufferViews.ValueKind == JsonValueKind.Array)
             {
                 var view = bufferViews[bvi.GetInt32()];
-                int off = view.GetProperty("byteOffset").GetInt32();
+                int off = view.TryGetProperty("byteOffset", out var bo) ? bo.GetInt32() : 0;
                 int len = view.GetProperty("byteLength").GetInt32();
                 png = bin.AsSpan(off, len).ToArray();
             }
@@ -98,7 +104,7 @@ public static class GlbReader
 
         // The exporter writes one image per texture stem and names the image
         // (and its material) after the stem, so the stem → image mapping needs
-        // no material/texture indirection here; ReadMeshes resolves each mesh's
+        // no material/texture indirection here; ReadGeometry resolves each mesh's
         // stem from its material name (or the mesh-name convention) and the
         // import step looks the image up by stem.
         foreach (var (_, (stem, png)) in imageByIndex)
@@ -140,47 +146,123 @@ public static class GlbReader
 
     private static string RootName(JsonElement root)
     {
-        var scene = root.GetProperty("scenes")[root.GetProperty("scene").GetInt32()];
-        int rootNode = scene.GetProperty("nodes")[0].GetInt32();
-        return root.GetProperty("nodes")[rootNode].GetProperty("name").GetString() ?? "model";
+        // Blender may reorder scenes and nodes. Prefer the common parent of
+        // geometry, then any scene root (including editors with no default scene).
+        var nodes = root.GetProperty("nodes");
+        foreach (var node in nodes.EnumerateArray())
+            if (node.TryGetProperty("children", out _) && !TryLod(node, out _, out _))
+                return node.TryGetProperty("name", out var n) ? n.GetString() ?? "model" : "model";
+        return "model";
     }
 
-    private static List<GlbMesh> ReadMeshes(JsonElement root, byte[] bin)
+    private static bool TryLod(JsonElement node, out int index, out float radius)
+    {
+        index = -1; radius = 0;
+        if (node.TryGetProperty("extras", out var e)
+            && e.TryGetProperty("allegianceLodIndex", out var i)
+            && e.TryGetProperty("allegiancePixelRadius", out var r))
+        {
+            index = i.GetInt32(); radius = r.GetSingle();
+            return true;
+        }
+        if (!node.TryGetProperty("name", out var n)) return false;
+        var name = n.GetString() ?? "";
+        if (!name.StartsWith("LOD_", StringComparison.Ordinal)) return false;
+        var parts = name.Split('_');
+        if (parts.Length != 4 || parts[2] != "px"
+            || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out index)
+            || !float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out radius))
+            throw new InvalidDataException($"malformed LOD parent '{name}'; expected LOD_<index>_px_<radius>");
+        return true;
+    }
+
+    private static (List<GlbMesh> meshes, List<GlbLodLevel> levels) ReadGeometry(JsonElement root, byte[] bin)
     {
         var accessors = root.GetProperty("accessors");
-        var bufferViews = root.GetProperty("bufferViews");
-
+        var views = root.GetProperty("bufferViews");
+        var nodes = root.GetProperty("nodes");
+        var meshDefs = root.GetProperty("meshes");
         var meshes = new List<GlbMesh>();
-        foreach (var mesh in root.GetProperty("meshes").EnumerateArray())
+        var levels = new SortedDictionary<int, (float radius, List<GlbMesh> meshes)>();
+        var children = nodes.EnumerateArray().Where(n => n.TryGetProperty("children", out _))
+            .SelectMany(n => n.GetProperty("children").EnumerateArray().Select(c => c.GetInt32())).ToHashSet();
+        var visited = new HashSet<int>();
+        // Walk roots from all scenes, including the former non-default LOD scene.
+        for (int i = 0; i < nodes.GetArrayLength(); i++)
+            if (!children.Contains(i)) Walk(i, meshes, Matrix4x4.Identity);
+        if (visited.Count != nodes.GetArrayLength())
+            throw new InvalidDataException("GLB nodes contain a cycle or shared hierarchy");
+        if (levels.Keys.Where((k, i) => k != i).Any())
+            throw new InvalidDataException("LOD indices must be consecutive starting at zero");
+        return (meshes, levels.Values.Select(l => new GlbLodLevel(l.radius, l.meshes)).ToList());
+
+        void Walk(int ni, List<GlbMesh> sink, Matrix4x4 parent)
         {
-            var prim = mesh.GetProperty("primitives")[0];
-            var pos = ReadAccessorVec3(bin, accessors[prim.GetProperty("attributes").GetProperty("POSITION").GetInt32()], bufferViews);
-            var uv = ReadAccessorVec2(bin, accessors[prim.GetProperty("attributes").GetProperty("TEXCOORD_0").GetInt32()], bufferViews);
-            var nrm = ReadAccessorVec3(bin, accessors[prim.GetProperty("attributes").GetProperty("NORMAL").GetInt32()], bufferViews);
-            var idx = ReadAccessorU16(bin, accessors[prim.GetProperty("indices").GetInt32()], bufferViews);
-            string name = mesh.GetProperty("name").GetString() ?? "mesh";
-            // Texture stem: the exporter names the mesh's material after the
-            // stem (P824); fall back to the writer's
-            // "<stem>_<texstem>_<i>" mesh-name convention (P812).
-            string? tex = null;
-            if (prim.TryGetProperty("material", out var matEl)
-                && root.TryGetProperty("materials", out var mats)
-                && matEl.GetInt32() < mats.GetArrayLength())
+            if (!visited.Add(ni)) throw new InvalidDataException("GLB nodes contain a cycle or shared hierarchy");
+            var node = nodes[ni];
+            var transform = NodeTransform(node) * parent;
+            if (TryLod(node, out int li, out float radius))
             {
-                var mat = mats[matEl.GetInt32()];
-                if (mat.TryGetProperty("name", out var matName)
-                    && matName.GetString() is { } mn && mn.EndsWith("bmp", StringComparison.Ordinal))
-                    tex = mn;
+                if (li < 0 || !levels.TryAdd(li, (radius, new List<GlbMesh>())))
+                    throw new InvalidDataException($"duplicate or negative LOD index {li}");
+                sink = levels[li].meshes;
             }
-            if (tex is null)
+            if (node.TryGetProperty("mesh", out var m))
             {
-                var parts = name.Split('_');
-                if (parts.Length >= 3 && parts[^2].EndsWith("bmp", StringComparison.Ordinal))
-                    tex = parts[^2];
+                var mesh = meshDefs[m.GetInt32()];
+                string name = node.TryGetProperty("name", out var nn) ? nn.GetString() ?? "mesh" : "mesh";
+                foreach (var prim in mesh.GetProperty("primitives").EnumerateArray())
+                {
+                    if (prim.TryGetProperty("mode", out var mode) && mode.GetInt32() != 4)
+                        throw new InvalidDataException($"mesh '{name}' must use triangle primitives");
+                    var attrs = prim.GetProperty("attributes");
+                    var pos = ReadFloats(bin, accessors[attrs.GetProperty("POSITION").GetInt32()], views, 3);
+                    var uv = ReadFloats(bin, accessors[attrs.GetProperty("TEXCOORD_0").GetInt32()], views, 2);
+                    var nrm = ReadFloats(bin, accessors[attrs.GetProperty("NORMAL").GetInt32()], views, 3);
+                    var idx = ReadIndices(bin, accessors[prim.GetProperty("indices").GetInt32()], views);
+                    string? tex = null;
+                    if (prim.TryGetProperty("material", out var mat))
+                        tex = root.GetProperty("materials")[mat.GetInt32()].GetProperty("name").GetString();
+                    if (tex is null)
+                    {
+                        var parts = name.Split('_');
+                        if (parts.Length >= 3 && parts[^2].EndsWith("bmp", StringComparison.Ordinal)) tex = parts[^2];
+                    }
+                    if (transform != Matrix4x4.Identity)
+                    {
+                        if (!Matrix4x4.Invert(transform, out var inverse))
+                            throw new InvalidDataException($"mesh '{name}' has a singular transform");
+                        var normalMatrix = Matrix4x4.Transpose(inverse);
+                        for (int v = 0; v < pos.Length; v += 3)
+                        {
+                            var p = Vector3.Transform(new Vector3(pos[v], pos[v+1], pos[v+2]), transform);
+                            var n = Vector3.Normalize(Vector3.TransformNormal(new Vector3(nrm[v], nrm[v+1], nrm[v+2]), normalMatrix));
+                            pos[v] = p.X; pos[v+1] = p.Y; pos[v+2] = p.Z;
+                            nrm[v] = n.X; nrm[v+1] = n.Y; nrm[v+2] = n.Z;
+                        }
+                        if (transform.GetDeterminant() < 0)
+                            for (int v = 0; v < idx.Length; v += 3) (idx[v+1], idx[v+2]) = (idx[v+2], idx[v+1]);
+                    }
+                    sink.Add(new GlbMesh(name, tex, pos, uv, nrm, idx));
+                }
             }
-            meshes.Add(new GlbMesh(name, tex, pos, uv, nrm, idx));
+            if (node.TryGetProperty("children", out var cs))
+                foreach (var child in cs.EnumerateArray()) Walk(child.GetInt32(), sink, transform);
         }
-        return meshes;
+    }
+
+    private static Matrix4x4 NodeTransform(JsonElement node)
+    {
+        if (node.TryGetProperty("matrix", out var mat))
+        {
+            var f = mat.EnumerateArray().Select(x => x.GetSingle()).ToArray();
+            return new Matrix4x4(f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7],f[8],f[9],f[10],f[11],f[12],f[13],f[14],f[15]);
+        }
+        var scale = node.TryGetProperty("scale", out _) ? ReadFloat3(node, "scale") : [1f,1f,1f];
+        var q = node.TryGetProperty("rotation", out var r) ? ReadFloat4(r) : [0f,0f,0f,1f];
+        var t = node.TryGetProperty("translation", out _) ? ReadFloat3(node, "translation") : [0f,0f,0f];
+        return Matrix4x4.CreateScale(scale[0],scale[1],scale[2]) * Matrix4x4.CreateFromQuaternion(new Quaternion(q[0],q[1],q[2],q[3]))
+            * Matrix4x4.CreateTranslation(t[0],t[1],t[2]);
     }
 
     private static (List<MountPoint> mounts, List<GlbLight> lights) ReadNodes(JsonElement root, byte[] bin)
@@ -191,7 +273,7 @@ public static class GlbReader
 
         foreach (var node in nodes.EnumerateArray())
         {
-            string name = node.GetProperty("name").GetString() ?? "";
+            string name = node.TryGetProperty("name", out var nn) ? nn.GetString() ?? "" : "";
             if (name.StartsWith("HP_", StringComparison.Ordinal))
             {
                 var translation = ReadFloat3(node, "translation");
@@ -246,41 +328,45 @@ public static class GlbReader
     private static float[] ReadFloat4(JsonElement a) =>
         [a[0].GetSingle(), a[1].GetSingle(), a[2].GetSingle(), a[3].GetSingle()];
 
-    private static (int view, int offset, int stride) ViewOf(JsonElement accessor, JsonElement bufferViews)
+    private static (int offset, int stride) AccessorLayout(JsonElement accessor, JsonElement views, int elementSize)
     {
-        var v = bufferViews[accessor.GetProperty("bufferView").GetInt32()];
-        return (v.GetProperty("byteOffset").GetInt32(), 0, v.GetProperty("byteLength").GetInt32());
+        if (accessor.TryGetProperty("sparse", out _)) throw new InvalidDataException("sparse GLB accessors are unsupported; export without sparse accessors");
+        var view = views[accessor.GetProperty("bufferView").GetInt32()];
+        return ((view.TryGetProperty("byteOffset", out var vo) ? vo.GetInt32() : 0)
+            + (accessor.TryGetProperty("byteOffset", out var ao) ? ao.GetInt32() : 0),
+            view.TryGetProperty("byteStride", out var stride) ? stride.GetInt32() : elementSize);
     }
 
-    private static float[] ReadAccessorVec3(byte[] bin, JsonElement accessor, JsonElement bufferViews)
+    private static float[] ReadFloats(byte[] bin, JsonElement accessor, JsonElement views, int components)
     {
-        var (off, _, _) = ViewOf(accessor, bufferViews);
+        if (accessor.GetProperty("componentType").GetInt32() != 5126
+            || accessor.GetProperty("type").GetString() != $"VEC{components}")
+            throw new InvalidDataException("geometry attributes must be float32 vectors");
+        var (offset, stride) = AccessorLayout(accessor, views, components * 4);
         int count = accessor.GetProperty("count").GetInt32();
-        var result = new float[count * 3];
-        for (int i = 0; i < result.Length; i++)
-            result[i] = BinaryPrimitives.ReadSingleLittleEndian(bin.AsSpan(off + i * 4));
-        return result;
-    }
-
-    private static float[] ReadAccessorVec2(byte[] bin, JsonElement accessor, JsonElement bufferViews)
-    {
-        var (off, _, _) = ViewOf(accessor, bufferViews);
-        int count = accessor.GetProperty("count").GetInt32();
-        var result = new float[count * 2];
-        for (int i = 0; i < result.Length; i++)
-            result[i] = BinaryPrimitives.ReadSingleLittleEndian(bin.AsSpan(off + i * 4));
-        return result;
-    }
-
-    private static ushort[] ReadAccessorU16(byte[] bin, JsonElement accessor, JsonElement bufferViews)
-    {
-        var (off, _, _) = ViewOf(accessor, bufferViews);
-        int count = accessor.GetProperty("count").GetInt32();
-        var result = new ushort[count];
+        var result = new float[count * components];
         for (int i = 0; i < count; i++)
-            result[i] = BinaryPrimitives.ReadUInt16LittleEndian(bin.AsSpan(off + i * 2));
+            for (int c = 0; c < components; c++)
+                result[i * components + c] = BinaryPrimitives.ReadSingleLittleEndian(bin.AsSpan(offset + i * stride + c * 4));
         return result;
     }
+
+    private static ushort[] ReadIndices(byte[] bin, JsonElement accessor, JsonElement views)
+    {
+        int type = accessor.GetProperty("componentType").GetInt32();
+        int size = type switch { 5121 => 1, 5123 => 2, 5125 => 4, _ => throw new InvalidDataException("unsupported index component type") };
+        var (offset, stride) = AccessorLayout(accessor, views, size);
+        var result = new ushort[accessor.GetProperty("count").GetInt32()];
+        for (int i = 0; i < result.Length; i++)
+        {
+            var bytes = bin.AsSpan(offset + i * stride);
+            uint index = size == 1 ? bytes[0] : size == 2 ? BinaryPrimitives.ReadUInt16LittleEndian(bytes) : BinaryPrimitives.ReadUInt32LittleEndian(bytes);
+            if (index > ushort.MaxValue) throw new InvalidDataException("mesh index exceeds native 16-bit limit; split the mesh before import");
+            result[i] = (ushort)index;
+        }
+        return result;
+    }
+
 }
 
 internal static class SidecarJson

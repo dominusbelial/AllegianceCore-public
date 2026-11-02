@@ -28,7 +28,16 @@ public static class GlbImporter
         if (model.Meshes.Count == 0)
             throw new InvalidDataException("model has no meshes — a .mdl must carry geometry");
 
-        foreach (var (mesh, mi) in model.Meshes.Select((m, i) => (m, i)))
+        var radii = new HashSet<float>();
+        foreach (var level in model.LodLevels)
+        {
+            if (!IsFinite(level.PixelRadius) || level.PixelRadius <= 0 || !radii.Add(level.PixelRadius))
+                throw new InvalidDataException("LOD pixel radii must be finite, positive and distinct");
+            if (level.Meshes.Count == 0)
+                throw new InvalidDataException("LOD level has no meshes");
+        }
+
+        foreach (var (mesh, mi) in model.AllMeshes.Select((m, i) => (m, i)))
         {
             if (mesh.Positions.Length == 0 || mesh.Positions.Length % 3 != 0)
                 throw new InvalidDataException($"mesh {mi} ('{mesh.Name}'): positions must be a non-empty multiple of 3 floats");
@@ -81,7 +90,7 @@ public static class GlbImporter
     /// </summary>
     public static void ValidateTextureImages(GlbExportModel model)
     {
-        foreach (var texStem in model.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var texStem in model.AllMeshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
             if (model.Images?.Any(i => string.Equals(i.Stem, texStem, StringComparison.OrdinalIgnoreCase)) != true)
                 throw new InvalidDataException(
                     $"the GLB's textured mesh references stem '{texStem}' but carries no base-colour image for it " +

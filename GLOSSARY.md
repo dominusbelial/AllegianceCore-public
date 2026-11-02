@@ -1268,6 +1268,15 @@ list in **reverse**.
   `mdlc/mdlc.cpp:109-152`. Tests:
   `tests/Allegiance.Core.Tests/P919ModelToolsTests.cs`; workflow:
   `docs/GUIDE.md`; verdicts and limitations: `docs/reports/P919_REPORT.md`.
+- **GLB LOD bridge (P921)** — `tools/mdl-to-glb/GlbModel.cs` carries authored
+  reduced levels; `tools/mdl-to-glb/GlbWriter.cs` writes named LOD parents
+  with radius/order extras, `tools/mdl-to-glb/GlbReader.cs` restores them and
+  warns on older geometry-free exports, and `tools/mdl-to-glb/MdlWriter.cs`
+  emits native LODGeo pairs. Blender evidence/workflow and byte deltas:
+  `docs/reports/P921_REPORT.md`; exact corpus proof:
+  `tests/Allegiance.Core.Tests/P921LodBridgeTests.cs`; production renderer
+  selection and pixel comparison: `tools/p921-lod-proof/Program.cs`.
+  Native: `engine/geometry.cpp:1937-1953,1761-1773`.
 - **TextureCraft material pilot (P920, evaluation only)** —
   `tools/p920-texturecraft.py` preserves native geometry/UVs and atlas texels,
   bakes four mesh maps, adds restrained procedural wear and builds a private

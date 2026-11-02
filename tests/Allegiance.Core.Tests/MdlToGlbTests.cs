@@ -64,6 +64,7 @@ public class MdlToGlbTests
             Mounts = mounts,
             Lights = lights,
             LodPixelRadii = [64f, 32f, 16f],
+            LodLevels = [new(64, [mesh]), new(32, [mesh]), new(16, [mesh])],
             TextureStems = ["hullbmp"],
             Collision = collision,
         };

@@ -5325,3 +5325,31 @@ Snapshot `719fe7aa`, master at `d7c7dc45` without media. Fast FAIL (12,950 tests
 The P784, P909 and MusicLoading failures are sweep-only, cause not established. `P832d`, `P745`, `P796`, `P798`, `SC4`, `P699b` (1 oxygen expiry, other case),
 `NpcWingmanDefend`, `DockDocking` and `ConsoleLogNonBlocking` failed too; seen in earlier sweeps, not rerun here, not cleared. Windows skip on the runner
 (no usable GL device), so it never covers training windows; only the workstation gate does.
+
+## P921 offline LOD bridge gates — 2026-11-02
+
+One Fast-tier run completed: **12,964 passed / 12 failed / 3 skipped**,
+**9 infrastructure checks passed**, **2 timing violations**. The Fast sweep
+remains **FAIL**. All 105 affected offline model-tool tests passed in each of
+three isolated cohorts with zero skips; the production-renderer LOD/pixel test
+passed 3/3 with zero skips. The three Fast skips are the existing optional
+private `MeshyPackTests`, not artwork skips.
+
+Every non-task failure method/theory family and timing offender was run three
+times through an exact method filter. Raw local evidence is under
+`.scratch/p921/isolation/`; compact public results are in
+`docs/reports/P921_assets/validation-summary.json`. Isolation's one-minute
+load ranged **0.93–2.79**. No synthetic load was generated. P921 changes only
+the offline model bridge, its tests/docs and a local rendering proof; none of
+the paths below were changed.
+
+| Non-task failure / timing check | Three isolated invocations | Disposition |
+|---|---|---|
+| Five failing `PlayerBundlePathsTests` cases: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, local config precedence | Each failing case fails 3/3; companion cases pass | Existing in-worktree `TMPDIR` fixture obstruction: ancestor `local.env` becomes visible to the simulated bundle. Same family as P916. |
+| `P761StartChatComposeTests.HeldEnter_DoesNotReFire` | pass / pass / pass | Sweep-only chat-state assertion; cause not established. Also observed in P916. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail with default profile; pass / pass / pass with writable task `XDG_CONFIG_HOME` | Existing sandbox obstruction: fixture cleanup tries to restore a read-only default player profile. |
+| `LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire` | pass at 1.510 / 1.466 / 1.487 s | Sweep timed out waiting for the shooter's decoded kill credit at 33.197 s, also above the Fast limit. Cause not established; not reproduced in isolation. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / pass | Existing intermittent timeout boundary: sweep observed 32.15 s against a 31 s maximum. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent expected-charge / actual-null defend-target assertion, ledgered before P921. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/3 pass, 3/3 pass, 2/3 pass | Sweep delays 5 and 7 exceeded the integer upper bound by one float step (`5.0000000000000009`, `7.0000000000000009`). Existing P912 floating-boundary family; intermittent in isolation. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass at 9.584 / 9.506 / 9.511 s | Sweep assertion passed at 11.192 s, above the calibrated 10 s limit. Existing near-limit timing family; no tier change. |

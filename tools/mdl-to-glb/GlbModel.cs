@@ -17,13 +17,18 @@ public sealed record GlbExportModel
     /// <summary>Geometry in <b>raw native .mdl space</b> (see <see cref="ModelSpace"/>).</summary>
     public required IReadOnlyList<GlbMesh> Meshes { get; init; }
 
+    /// <summary>Authored reduced-detail geometry in native file order. Empty for new art without LODs.</summary>
+    public IReadOnlyList<GlbLodLevel> LodLevels { get; init; } = [];
+
+    public IEnumerable<GlbMesh> AllMeshes => Meshes.Concat(LodLevels.SelectMany(l => l.Meshes));
+
     /// <summary>Mount points, in the same raw .mdl space as <see cref="Meshes"/>.</summary>
     public required IReadOnlyList<MountPoint> Mounts { get; init; }
 
     public required IReadOnlyList<GlbLight> Lights { get; init; }
 
-    /// <summary>The .mdl's LODGeo baked pixel-radius thresholds, finest→coarsest
-    /// (<c>engine/geometry.cpp</c> <c>LODGeoImpl::m_radii</c>).</summary>
+    /// <summary>The .mdl's LODGeo baked pixel-radius thresholds in serialized
+    /// file order (native geometry.cpp:1943-1948 writes the coarsest first).</summary>
     public required IReadOnlyList<float> LodPixelRadii { get; init; }
 
     /// <summary>Texture unit stems the model imports (e.g. <c>fig30bmp</c>) —
@@ -64,6 +69,9 @@ public sealed record GlbExportModel
         "raw native .mdl space: DirectX-style left-handed, +Z nose, +Y up, y-up 2-D images; " +
         "native renders the mesh with an RY(pi) flip (thinggeo.cpp:1501-1503) so the game-facing nose is -Z";
 }
+
+/// <summary>One reduced-detail level; radius and geometry travel together through editors.</summary>
+public sealed record GlbLodLevel(float PixelRadius, IReadOnlyList<GlbMesh> Meshes);
 
 /// <summary>One drawable mesh (a native MeshGeo resolved under the "object" export).</summary>
 public sealed record GlbMesh(

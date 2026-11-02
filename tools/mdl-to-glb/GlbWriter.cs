@@ -110,7 +110,15 @@ public static class GlbWriter
             materialIndexByStem[image.Stem] = materialsLocal.Count - 1;
         }
 
-        foreach (var mesh in model.Meshes)
+        // Retain bindings even for --no-texture exports (no embedded images).
+        foreach (var stem in model.AllMeshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
+            if (!materialIndexByStem.ContainsKey(stem))
+            {
+                materialIndexByStem[stem] = materialsLocal.Count;
+                materialsLocal.Add(new { name = stem, doubleSided = true });
+            }
+
+        foreach (var mesh in model.AllMeshes)
         {
             // positions
             int posView = AddView(mesh.Positions.Length * sizeof(float));
@@ -214,6 +222,28 @@ public static class GlbWriter
         {
             children.Add(nodes.Count);
             nodes.Add(new { name = model.Meshes[i].Name, mesh = i });
+        }
+
+        // Core glTF nodes + custom properties survive Blender with export_extras.
+        // Keep all levels in the same scene: separate scenes are merged/rearranged
+        // on editor round trips, and MSFT_lod is dropped (P921 editor probe).
+        int meshIndex = model.Meshes.Count;
+        for (int li = 0; li < model.LodLevels.Count; li++)
+        {
+            var level = model.LodLevels[li];
+            var levelChildren = new List<int>();
+            children.Add(nodes.Count);
+            nodes.Add(new
+            {
+                name = FormattableString.Invariant($"LOD_{li}_px_{level.PixelRadius:R}"),
+                extras = new { allegianceLodIndex = li, allegiancePixelRadius = level.PixelRadius },
+                children = levelChildren,
+            });
+            foreach (var mesh in level.Meshes)
+            {
+                levelChildren.Add(nodes.Count);
+                nodes.Add(new { name = mesh.Name, mesh = meshIndex++ });
+            }
         }
 
         // mount empty nodes: HP_<Kind>_<Index>, local +Z aimed along forward

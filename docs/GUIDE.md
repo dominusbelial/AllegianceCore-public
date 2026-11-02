@@ -406,7 +406,9 @@ dotnet run --no-build --project tools/mdl-to-glb -- inspect .scratch/models/opti
 ```
 
 Export writes a `.glb` with embedded PNG textures plus a `.glbside.json`
-sidecar for collision hulls, native frame vectors, lights and LOD thresholds.
+sidecar for collision hulls, native frame vectors and lights. Each authored
+LOD also travels in the GLB with its own geometry, UVs, normals, material
+and pixel radius.
 Import writes the hull `.mdl`, `.cvh` and each referenced texture's `.mdl`.
 It also accepts new GLB art without a sidecar, generating collision hulls
 and native frames from `HP_<Kind>_<Index>` nodes. Retain material names to
@@ -426,9 +428,30 @@ copy the generated files into a separate artwork directory with the other
 required assets and launch with `--assets` pointing there. Keep the model
 stem referenced by the static core, or update the core's model name.
 
-The GLB bridge exports base geometry only: importing it produces one detail
-level even when the sidecar lists coarser LOD thresholds. Raw native frame
-and collision records in the sidecar remain authoritative; editing an
+LOD meshes sit under `LOD_<index>_px_<radius>` parents in the same scene as
+base meshes. The parent custom properties `allegianceLodIndex` and
+`allegiancePixelRadius` are authoritative; the name is a fallback when an
+editor drops custom properties. Indices preserve authored file order (start
+at zero with no gaps); radii must be finite, positive and distinct. Edit the
+base and each reduced level deliberately. To change a radius, update both
+the property and parent name. To add a level, create its parent and child
+meshes; to remove one, renumber the remaining parents and properties.
+
+Blender 5.2.2 was checked with an actual import/re-export: names, hierarchy
+and custom properties survive; `MSFT_lod` does not. All levels share one
+scene because Blender rearranges separate scenes. Hide other levels while
+editing, then unhide **all** geometry before exporting. Export GLB with
+**Custom Properties**, UVs and normals enabled; disable **Selected Objects**
+and **Visible Objects** filters so no level is omitted. Keep parent names,
+properties and material names intact. Transforms on geometry nodes are baked
+on import; indices must fit native's 16-bit range. No levels are generated
+automatically. A GLB with no LOD parents remains legal single-level new art.
+Older exports with sidecar radii but no level geometry import with a warning
+naming the model and number of lost levels; re-export the original MDL to
+recover them. Mesh counts cannot reliably detect stale levels: legitimate
+coarse meshes often have different counts. Review all levels after editing.
+
+Raw native frame and collision records in the sidecar remain authoritative; editing an
 existing hardpoint also requires updating those records. Textual MDL
 programs, direct `.x` import, native animation controls and `mdledit`'s
 image/test-scene viewer are outside this workflow. External glTF editors

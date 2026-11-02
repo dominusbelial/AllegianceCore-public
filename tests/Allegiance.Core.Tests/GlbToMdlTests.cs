@@ -161,7 +161,8 @@ public class GlbToMdlTests
     [Fact]
     public void Written_mdl_parses_with_bit_exact_geometry_frames_and_lights()
     {
-        var model = SidecarModel();
+        var fixture = SidecarModel();
+        var model = fixture with { LodLevels = [new GlbLodLevel(64, fixture.Meshes)], LodPixelRadii = [64] };
         var (mdl, _) = Convert(model);
 
         var parsed = MdlFile.Parse(mdl);
@@ -184,7 +185,10 @@ public class GlbToMdlTests
         Assert.Equal([1f, 0.5f, 0.25f, 1f], light.Color);
         Assert.Equal(2f, light.Period);
         Assert.Equal(0.2f, light.RampDown);
-        Assert.Empty(parsed.LodLevels);                          // single detail level (documented fallback)
+        var level = Assert.Single(parsed.LodLevels);
+        Assert.Equal(64, level.PixelRadius);
+        Assert.Equal(source.Positions, Assert.Single(level.Meshes).Positions);
+        Assert.Equal(source.TextureStem, level.Meshes[0].TextureStem);
         Assert.Empty(parsed.UnsupportedGeometryNodes);
     }
 
