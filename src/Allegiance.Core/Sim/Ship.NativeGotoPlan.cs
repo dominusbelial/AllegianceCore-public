@@ -30,7 +30,9 @@ public sealed partial class Ship
     {
         if (!IsNpc || Mission?.NativeGotoPlanEnabled != true || Sector is not { } sector) return false;
         _nativeLayerPlanFinished = false;
-        if (AttackTarget is not null && PlanTarget is null && GotoWaypoint is null && !IsRunningAway && !HasRepairOrder && !_isGettingAmmo)
+        // Native combat precedes GotoPlan for every model type, including stations
+        // (shipIGC.cpp:2350-2679); the planner must not reset its steering.
+        if (ActiveWingmanTarget is not null && PlanTarget is null && GotoWaypoint is null && !IsRunningAway && !HasRepairOrder && !_isGettingAmmo)
             return false;
         IntendedNextWarpId = -1;
         // Native's busy builder block precedes GotoPlan (shipIGC.cpp:2262-2300).

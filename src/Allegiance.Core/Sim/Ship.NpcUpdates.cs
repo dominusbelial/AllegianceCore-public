@@ -13,16 +13,19 @@ public sealed partial class Ship
     private bool _wingmanDodgedThisTick;
     private ControlData _wingmanControlsBeforePlot;
     private int _wingmanDodgeState;
-    private Probe? _attackProbeTarget;
+    private Model? _attackStaticTarget;
     private Model? _acceptedWingmanAttackTarget;
     private GotoOrder? _wingmanInterruptedGoto;
-    private Model? ActiveWingmanTarget => (Model?)AttackTarget ?? _attackProbeTarget;
+    private Model? ActiveWingmanTarget => (Model?)AttackTarget ?? _attackStaticTarget;
 
     /// <summary>The accepted attack survives a temporary goto used to find it
     /// (Igc/shipIGC.cpp:2707-2758). Direct AttackTarget writes remain plan writes.</summary>
     public void SetWingmanAttackOrder(Model target)
     {
-        if (target is not Ship && target is not Probe) throw new ArgumentException("Expected ship or probe", nameof(target));
+        // Native PlotShipMove attacks model targets, including M8's outpost
+        // (training/mission8.cpp:525-530; Igc/shipIGC.cpp:2463-2678).
+        if (target is not (Ship or Probe or EquipmentTarget { Body: Station }))
+            throw new ArgumentException("Expected ship, probe or station", nameof(target));
         SetGoto(null);
         RepairTarget = null; RepairStationTarget = null;
         PlanTarget = null; PlanCommandId = OrderChange.CidNone;
@@ -43,13 +46,13 @@ public sealed partial class Ship
         AttackTarget = null;
         _acceptedWingmanAttackTarget = null;
         _wingmanInterruptedGoto = null;
-        _attackProbeTarget = null;
+        _attackStaticTarget = null;
     }
 
     private void SetWingmanPlanAttack(Model? target)
     {
         AttackTarget = target as Ship;
-        _attackProbeTarget = target as Probe;
+        _attackStaticTarget = target is Ship ? null : target;
         CommandTarget = target;
         DronePlanChanged();
     }
@@ -59,11 +62,13 @@ public sealed partial class Ship
     {
         if (Sector is not { } sector || SideId is not { } side) return false;
         bool local = target is Ship ship ? ship.Sector == sector && ship.StationId is null
-            : sector.Models.Contains(target);
+            : EquipmentTarget.IsPresent(target, sector);
         if (!local) return false;
-        if (EquipmentTarget.SideOf(target) == side || target.SeenBySide(side)) return true;
+        if (EquipmentTarget.SideOf(target) == side
+            || (target is EquipmentTarget ? EquipmentTarget.CanSee(target, side, sector) : target.SeenBySide(side))) return true;
         if (target is Ship { Flag: not null }) return true;
-        float signature = target is Ship s ? s.EffectiveSignature : ((Probe)target).ProbeType.Signature;
+        float signature = target switch { Ship s => s.EffectiveSignature, Probe p => p.ProbeType.Signature,
+            EquipmentTarget { Body: Station station } => station.Type.Signature, _ => 0 };
         float scale = Mission?.Sides.FirstOrDefault(s => s.Id == EquipmentTarget.SideOf(target))?
             .GlobalAttributes.Get(GlobalAttributeSet.Signature) ?? 1;
         if (scale > 0) signature /= scale;
@@ -80,7 +85,8 @@ public sealed partial class Ship
         return true;
     }
 
-    private static float TargetRadius(Model target) => target is Ship s ? 0.5f * s.HullType.Length : ((Probe)target).ProbeType.Radius;
+    private static float TargetRadius(Model target) => target switch { Ship s => 0.5f * s.HullType.Length, Probe p => p.ProbeType.Radius,
+        EquipmentTarget { Body: Station station } => station.Radius, _ => 0 };
     private static Vector3 TargetVelocity(Model target) => target is Ship s ? s.Velocity : Vector3.Zero;
 
     private bool IsWingmanEnemy(Model target) => SideId is not null && EquipmentTarget.SideOf(target) is { } side &&
@@ -143,6 +149,15 @@ public sealed partial class Ship
                 if (ReferenceEquals(_acceptedWingmanAttackTarget, target)) _acceptedWingmanAttackTarget = null;
                 SetWingmanPlanAttack(null);
             }
+        }
+        if (ActiveWingmanTarget is EquipmentTarget { Body: Station station } stationTarget
+            && station.ClusterId != Sector?.Id && ReferenceEquals(_acceptedWingmanAttackTarget, stationTarget) && !station.Dead)
+        {
+            // Recover the accepted static attack after a native retreat, just
+            // as PreplotShipMove restores c_cmdAccepted (shipIGC.cpp:1934-1943).
+            var heldStationOrder = _acceptedWingmanAttackTarget;
+            SetGoto(new(GotoKind.Cluster, station.ClusterId, Vector3.Zero));
+            _acceptedWingmanAttackTarget = heldStationOrder;
         }
         if (GotoWaypoint is null) return;
         if (_wingmanCheckCooldown > 0) { _wingmanCheckCooldown--; return; }
@@ -223,7 +238,7 @@ public sealed partial class Ship
         // P699c: an idle combat plot must preserve the native docking/travel
         // controls computed by ApplyNpcAutopilot (common.cpp:1287-1540).
         StateM &= ~(ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton);
-        bool local = target is Ship s ? s.Sector == Sector : Sector?.Models.Contains(target) == true;
+        bool local = target is Ship s ? s.Sector == Sector : Sector is { } sector && EquipmentTarget.IsPresent(target, sector);
         if (!local || !IsWingmanEnemy(target)) { ReleaseWingmanTarget(target); return; }
         var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
         if (weapon is null) return;

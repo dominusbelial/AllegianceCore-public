@@ -3068,6 +3068,12 @@ public sealed partial class ClientWorld
         short ownSector = 0;
         if (MyShipId is { } meOwn && _ships.TryGetValue(meOwn, out var ownEnt))
             ownSector = ownEnt.SectorId;
+        // training/mission5.cpp:95-105: native's docked local IGC viewer owns
+        // the displayed cluster. Training's loopback HEAVY stream follows its
+        // confirmed view; it must never relocate the trainee's own ship.
+        if (TrainingCommandViewEnabled?.Invoke() == true && ViewedClusterId is { } viewed
+            && MyShipId is { } viewerId && _ships.TryGetValue(viewerId, out var viewer) && viewer.StationId >= 0)
+            ownSector = viewed;
         ownSector = TelemetrySectorOverride ?? ownSector;
 
         foreach (var entry in heavy.HeavyShipEntries)

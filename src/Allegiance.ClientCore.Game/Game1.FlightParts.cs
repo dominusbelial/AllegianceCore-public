@@ -277,7 +277,7 @@ public sealed partial class Game1
 
     private void UpdateFlightParts(KeyboardState keys, bool composing)
     {
-        var swapAction = _equipmentSwapInput.Step(keys, KeyBindingStore.Instance.Map, composing);
+        var swapAction = _equipmentSwapInput.Step(keys, KeyBindingStore.Instance.Map, composing, TrainingActive);
         if (swapAction is not null) SwapFlightEquipment(swapAction);
         foreach (string action in FlightPartActions)
         {

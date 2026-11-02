@@ -53,6 +53,10 @@ public sealed partial class Game1
             Team = _teamPaneVisible ? (_consolePanes.Team == TeamConsoleSize.Mini ? TeamConsoleSize.Mini : TeamConsoleSize.Expanded) : TeamConsoleSize.Hidden }, action);
         _minimapExpanded = _consolePanes.Nav;
         _teamPaneVisible = _consolePanes.Team != TeamConsoleSize.Hidden;
+        // WinTrek.cpp:9894-9932 clears banishable panes when F3 changes
+        // view; UpdateOverlayFlags (:6833-6843) then exposes CommandPane.
+        // A scripted cockpit/ShowPane mask must not survive that user action.
+        if (action == "ViewCommand") _trainingCommandPane = true;
         if (action is "ConModeGameState" or "TeamPane" or "ConModeMiniTeam" or "ConModeCombat" or "ViewCommand" or "ViewExternal")
         { _investActive = _teleportActive = _scoreboardVisible = _pilotInfoVisible = false; }
         if (action is "ConModeCombat" or "ViewExternal")

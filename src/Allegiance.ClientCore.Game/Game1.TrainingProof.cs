@@ -38,6 +38,7 @@ public sealed partial class Game1
     private long _proofTapStartMs;
     private Keys? _proofTapKey;
     private string _proofTapTriggerGoal = "";
+    private bool _proofTapAcrossGoals;
     private bool _proofM3Killing;       // M3: in the shooting/targeting phase
     private bool _proofM3Docking;       // M3: final manual fly-home leg engaged
     private int _proofM3NextDerelict;   // M3: target cursor over 1000..1009
@@ -87,8 +88,8 @@ public sealed partial class Game1
         if (_proofTapKey is { } tk)
         {
             bool slideshowShowing = _trainingSlideshow is not null;
-            bool advanced = slideshowShowing ? _trainingSlideshow!.Dismissed
-                : (goalNow != _proofTapTriggerGoal && goalNow != "");
+            bool advanced = !_proofTapAcrossGoals && (slideshowShowing ? _trainingSlideshow!.Dismissed
+                : (goalNow != _proofTapTriggerGoal && goalNow != ""));
             bool timedOut = now - _proofTapStartMs > 8000;
             if (advanced || timedOut) _proofTapKey = null;
             else keys.Add(tk);
@@ -136,6 +137,15 @@ public sealed partial class Game1
 
         if (site is null) { _proofKeys = null; return; }
 
+        // The ordinary briefing is modal. Dismiss it with player input before
+        // attempting lesson picks (in particular M5 starts already docked).
+        if (IsBriefingVisible(out _))
+        {
+            if (now % 600 < 250) keys.Add(Keys.Enter);
+            _proofKeys = keys.ToArray();
+            return;
+        }
+        _proofNeedsZoom = false;
         switch (mission)
         {
             case Mission2:
@@ -147,17 +157,25 @@ public sealed partial class Game1
             case Mission4:
                 DriveMission4(site, keys);
                 break;
+            case Mission5:
+                DriveMission5(site, keys);
+                break;
+            case Mission8:
+                DriveMission8(site, keys);
+                break;
         }
 
+        if (_proofNeedsZoom) keys.Add(Keys.Subtract);
         _proofKeys = keys.ToArray();
     }
 
     private int ProofCount(ClientTrainingSite site, string fragment)
         => site.Messages.Count(m => m.Contains(fragment, StringComparison.Ordinal));
 
-    private void ProofTap(Keys key)
+    private void ProofTap(Keys key, bool acrossGoals = false)
     {
         _proofTapKey = key;
+        _proofTapAcrossGoals = acrossGoals;
         _proofTapTriggerGoal = _trainingSession?.Mission.ActiveGoalPath ?? "";
         _proofTapStartMs = Environment.TickCount64;
     }
@@ -178,6 +196,10 @@ public sealed partial class Game1
     private long _proofChatAt;
     private string _proofM4LastActionGoal = "";
     private long _proofStateAt;
+    private bool _proofM4WaitForDeparture = false;
+    private bool _proofM4HuntMiner = false;
+    private bool _proofM4QuickOpened, _proofM4QuickSent;
+    private long _proofM4MinerFightAt;
 
     // Mission 4 uses the player's keyboard and text-input events. Scripted orders/autopilot
     // remain mission actions (mission4.cpp:333-372); the proof never calls those actions.
@@ -189,6 +211,8 @@ public sealed partial class Game1
         {
             _proofStateAt = now + 5000;
             Console.WriteLine($"[tproof] M4 state goal={goal} sector={OwnSectorIdOr(-1)} pos={_ownSim.Position} target={_autoTarget} queued={_session.World.MyQueuedCommand} autopilot={_autoPilotEngaged} cloak={_cloakToggled} hostCloaking={_embeddedHost?.PlayerShip.Cloaking:F3}");
+            if (_autoTarget is { Kind: TargetKind.Ship } selected && _embeddedHost!.Drones.TryGetValue(selected.Id, out var observed))
+                Console.WriteLine($"[tproof] M4 target={selected.Id} sector={observed.Sector?.Id} position={observed.Position} hull={observed.Fraction:F3} shield={observed.ShieldFraction:F3} distance={(_ownSim.Position - observed.Position).Length():F1} aim={OwnAimDegreesTo(ToSys(observed.Position)):F2}");
         }
         if (goal == "2.3" && now >= _proofChatAt)
         {
@@ -198,6 +222,24 @@ public sealed partial class Game1
             else if (_chatBuffer.Length == 0)
                 OnTextInput(this, new Microsoft.Xna.Framework.TextInputEventArgs('x', Keys.X));
             else keys.Add(Keys.Enter);
+        }
+        if (ProofCount(site, "Press the TILDE") > 0 && !_proofM4QuickSent)
+        {
+            if (_qcMenuOpen) _proofM4QuickOpened = true;
+            else if (_proofM4QuickOpened) _proofM4QuickSent = true;
+            if (!_proofM4QuickSent)
+            {
+                // Quickcomm may reuse one shortcut in successive submenus;
+                // release between presses so each selection is a real edge.
+                _proofTapKey = null; keys.Clear();
+                if (now % 800 < 300)
+                {
+                    if (_qcMenuOpen && _qcMenuNode?.Choices.FirstOrDefault() is { } choice && CharToXnaKey(choice.Key) is { } key)
+                        keys.Add(key);
+                    else keys.Add(Keys.OemTilde);
+                }
+                return;
+            }
         }
         int space = ProofCount(site, "Press the SPACEBAR");
         if (space > _proofM4SpaceSeen) { _proofM4SpaceSeen = space; ProofTap(Keys.Space); }
@@ -216,44 +258,108 @@ public sealed partial class Game1
         if (goal.StartsWith("7.", StringComparison.Ordinal) && ProofCount(site, "Target an enemy miner") > 0
             && _proofM4LastActionGoal != "miner")
         { _proofM4LastActionGoal = "miner"; ProofTap(Keys.F); }
+        if (_proofM4HuntMiner && goal.StartsWith("6.", StringComparison.Ordinal)
+            && _embeddedHost!.Drones.TryGetValue(1101, out var waitingMiner))
+            SteerTowards(ToSys(waitingMiner.Position), keys, .01f);
         if (goal is "7.7" or "8.7")
         {
-            keys.Add(Keys.Back); // kill the previous cruise setting while using held approach thrust
+            if (goal == "7.7")
+            {
+                if (_proofM4MinerFightAt == 0) _proofM4MinerFightAt = now;
+                if (_proofM4WaitForDeparture || !_proofM4HuntMiner && now - _proofM4MinerFightAt > 10000)
+                {
+                    // A departing miner is a native lesson ending. Return to
+                    // the sector center while it leaves, ready to intercept
+                    // the next scout before the constructor finishes building.
+                    SteerTowards(Vector3.Zero, keys);
+                    if (_ownSim.Position.LengthSquared() > 500f * 500f && OwnAimDegreesTo(Vector3.Zero) < 15)
+                    { keys.Add(Keys.W); keys.Add(Keys.OemBackslash); keys.Add(Keys.LeftShift); }
+                    else keys.Add(Keys.Back);
+                    return;
+                }
+            }
             if (_cloakToggled) keys.Add(Keys.G);
+            if (_autoTarget is { Kind: TargetKind.Ship } remoteTarget
+                && _session.World.Ships.TryGetValue(remoteTarget.Id, out var remoteShip)
+                && remoteShip.SectorId >= 0 && remoteShip.SectorId != OwnSectorIdOr(-1)
+                && ResolveTargetPosition(new AutopilotTarget(TargetKind.Cluster, remoteShip.SectorId, "Pursuit"), out var route))
+            {
+                var mouth = ToSys(route);
+                SteerTowards(mouth, keys);
+                if (OwnAimDegreesTo(mouth) < 15)
+                { keys.Add(Keys.W); keys.Add(Keys.OemBackslash); keys.Add(Keys.LeftShift); }
+                else keys.Add(Keys.Back);
+                return;
+            }
             if (_autoTarget is { } target && ResolveTargetPosition(target, out var aim))
             {
                 var aimPoint = ToSys(aim);
+                bool leadInRange = false;
+                bool leadWillHit = false;
                 if (target.Kind == TargetKind.Ship && TryGatherLeadScene(Allegiance.Core.IgcObjectType.Ship, target.Id, out var scene))
                 {
                     var lead = Allegiance.ClientCore.MonoGame.Rendering.ClientLead.Solve(scene.Input);
                     if (lead.GatePassed) aimPoint = ToSys(_ownSim.Position + lead.Direction * 1000f);
+                    leadInRange = lead.GatePassed && lead.Solved && lead.InRange;
+                    leadWillHit = lead.WillHit;
                 }
                 SteerTowards(aimPoint, keys, .01f);
-                if (OwnAimDegreesTo(aimPoint) < 2f) keys.Add(Keys.Space);
-                if ((_ownSim.Position - aim).LengthSquared() > 700f * 700f) keys.Add(Keys.W);
+                float distance = (_ownSim.Position - aim).Length();
+                var gun = _embeddedHost?.PlayerShip.Weapons.FirstOrDefault();
+                float range = gun is null ? 1000 : gun.ProjectileType.Speed * gun.GetLifespan();
+                bool departing = goal == "7.7" && _proofM4WaitForDeparture;
+                bool hunting = goal == "7.7" && _proofM4HuntMiner;
+                if ((hunting ? leadInRange && (leadWillHit || OwnAimDegreesTo(aimPoint) < 1f) : distance < range * .9f && OwnAimDegreesTo(aimPoint) < 2f) && !departing) keys.Add(Keys.Space);
+                bool backpedal = hunting && distance < range * 3
+                    && _embeddedHost!.Drones.TryGetValue(target.Id, out var quarry)
+                    && System.Numerics.Vector3.Dot(ToSys(quarry.Velocity),
+                        System.Numerics.Vector3.Normalize(ToSys(aim - _ownSim.Position))) < -20;
+                if (backpedal) { keys.Add(Keys.S); keys.Add(Keys.Back); }
+                else if (distance > MathF.Max(50, range * .6f) && OwnAimDegreesTo(aimPoint) < 10)
+                { keys.Add(Keys.W); keys.Add(Keys.OemBackslash); }
+                else keys.Add(Keys.Back);
+                if (distance > range * (hunting ? 3 : .8f) && OwnAimDegreesTo(aimPoint) < 10 && !departing) keys.Add(Keys.LeftShift);
             }
         }
-        if (goal.StartsWith("8.", StringComparison.Ordinal)
+        if ((goal.StartsWith("8.", StringComparison.Ordinal) || goal.StartsWith("9.", StringComparison.Ordinal))
+            && goal != "8.7" // combat steering owns this step; escort keys would oppose its turn
             && _session.World.MyAcceptedCommand is { TargetType: IgcObjectType.Ship, TargetId: 1105 })
         {
             // A miner may carry us through its aleph just before the constructor order arrives.
             // Return to the lesson's Mars sector even while the remote constructor has no pose.
-            keys.Add(Keys.Back);
             Vector3? escortTarget = null;
             bool routing = OwnSectorIdOr(-1) != 1031;
             if (routing && ResolveTargetPosition(new AutopilotTarget(TargetKind.Cluster, 1031, "Mars"), out var route))
                 escortTarget = ToSys(route);
+            else if (!routing && goal == "8.4" && _embeddedHost!.Drones.TryGetValue(1100, out var incoming)
+                && incoming.Sector?.Id == OwnSectorIdOr(-1))
+                escortTarget = ToSys(incoming.Position);
             else if (!routing && _session.World.Ships.TryGetValue(1105, out var builder) && builder.Latest is { } bp)
                 escortTarget = ToSys(bp.Position);
             if (escortTarget is { } destination)
             {
                 SteerTowards(destination, keys);
                 if (OwnAimDegreesTo(destination) < 15f && TryOwnTrainingPose(out var escortPosition, out _, out _, out _)
-                    && (routing || (destination - escortPosition).LengthSquared() > 600f * 600f)) keys.Add(Keys.W);
+                    && (routing || (destination - escortPosition).LengthSquared() > 600f * 600f))
+                {
+                    keys.Add(Keys.W); keys.Add(Keys.OemBackslash);
+                    if ((destination - escortPosition).LengthSquared() > 1500f * 1500f) keys.Add(Keys.LeftShift);
+                }
+                else keys.Add(Keys.Back);
             }
         }
         if (goal.StartsWith("10.", StringComparison.Ordinal))
         {
+            if (OwnSectorIdOr(-1) != 1031
+                && ResolveTargetPosition(new AutopilotTarget(TargetKind.Cluster, 1031, "Expansion sector"), out var expansionRoute))
+            {
+                var mouth = ToSys(expansionRoute);
+                SteerTowards(mouth, keys);
+                if (OwnAimDegreesTo(mouth) < 15)
+                { keys.Add(Keys.W); keys.Add(Keys.OemBackslash); keys.Add(Keys.LeftShift); }
+                else keys.Add(Keys.Back);
+                return;
+            }
             if (_proofM4LastActionGoal != "land")
             {
                 _proofM4LastActionGoal = "land";
@@ -262,6 +368,7 @@ public sealed partial class Game1
                     .Select(st => (int)st.StationId).FirstOrDefault();
                 _proofThrottleSetFull = false; _proofSlowDone = false; _proofBrakeDone = false;
                 ProofTap(Keys.B);
+                return;
             }
             // Native permits manual landing; use the same key-only bay approach as M3.
             DriveManualLanding(keys);
@@ -378,11 +485,11 @@ public sealed partial class Game1
         // Track kill derelicts with the same local pose the player sees. P890
         // restores that pose's authority at the host, including training's origin.
         // Keep a small deadband and burst discipline for the low-frame-rate proof.
-        bool pointing7_8 = goal is "7.9" or "8.7";
+        bool pointing7_8 = goal is "7.9" or "8.7" or "8.11";
         int kmajor = int.TryParse(goal.Split('.')[0], out var km) ? km : 0;
         bool killPhase = _proofM3Killing && (kmajor is 6 or 8 or 9);
         if (pointing7_8 && TryGetM3AimTarget(out var aimPt))
-            SteerTowards(aimPt, keys);
+            SteerTowards(aimPt, keys, .004f); // comfortably inside native's one-degree gate
         else if (killPhase && TryGetKillDerelictPosition(out var kpos))
         {
             if (OwnAimDegreesTo(kpos) > _proofKillDeadband)
@@ -423,7 +530,7 @@ public sealed partial class Game1
             // P886b — fire through REAL key input: hold Space (FireWeapon → WeaponsMask) and Left
             // Ctrl (FireMissile → missileFireIGC bit AND the wire FIRE_MISSILE launch request), both
             // folded by the flight input's own key reading. No injected WeaponsMask/MissileFire.
-            keys.Add(Keys.Space);         // FireWeapon → WeaponsMask (the M3 main-gun fire gate)
+            keys.Add(Keys.Space); // native full-cargo bug leaves lesson 9 without a magazine (P912)
             keys.Add(Keys.LeftControl);   // FireMissile → MissileFire bit + wire launch (M3 goal 09)
         }
     }
@@ -480,13 +587,14 @@ public sealed partial class Game1
         if (!_proofThrottleSetFull)
         {
             _proofThrottleSetFull = true;
-            ProofTap(Keys.OemBackslash);   // ThrottleFull
+            ProofTap(Keys.OemBackslash, acrossGoals: true);   // ThrottleFull
             Console.WriteLine($"[tproof] M3 landing: cruise throttle FULL at {dist:F0}m");
+            return; // consume this key before a nearby-bay throttle-down preset
         }
         if (!_proofSlowDone && dist < 320f)
         {
             _proofSlowDone = true;
-            ProofTap(Keys.OemMinus);       // ThrottleDown (−20%)
+            ProofTap(Keys.OemMinus, acrossGoals: true);       // ThrottleDown (−20%)
             Console.WriteLine($"[tproof] M3 landing: easing throttle at {dist:F0}m");
         }
         // If the dock latch hasn't caught us inside the radius, brake to a crawl and keep the nose on.
@@ -530,14 +638,43 @@ public sealed partial class Game1
         float cosTurn = Math.Clamp(System.Numerics.Vector3.Dot(fwd, dn), -1f, 1f);
         if (cosTurn > -0.999f)
         {
-            var backward = -fwd;
-            var twist = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(backward, delta));
-            float yawSign = -System.Numerics.Vector3.Dot(twist, up);
-            float pitchSign = System.Numerics.Vector3.Dot(twist, right);
-            if (yawSign > deadband) keys.Add(Keys.Left);
-            else if (yawSign < -deadband) keys.Add(Keys.Right);
-            if (pitchSign > deadband) keys.Add(Keys.Up);
-            else if (pitchSign < -deadband) keys.Add(Keys.Down);
+            // Keyboard corrections stop inside a true angular deadband.
+            // Normalizing the cross product discarded the error magnitude
+            // and kept full steering even arbitrarily close to alignment.
+            float yawError, pitchError;
+            if (cosTurn < .98f)
+            {
+                // Native common.cpp:182-190 uses one great-circle twist.
+                // Two separate atan2 angles near the rear each approach pi,
+                // producing an unnecessary pitch loop during a large yaw.
+                var twist = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(-fwd, delta));
+                float angle = MathF.Acos(cosTurn);
+                yawError = -System.Numerics.Vector3.Dot(twist, up) * angle;
+                pitchError = System.Numerics.Vector3.Dot(twist, right) * angle;
+            }
+            else
+            {
+                yawError = MathF.Acos(Math.Clamp(System.Numerics.Vector3.Dot(right, dn), -1, 1)) - MathF.PI / 2;
+                pitchError = MathF.Acos(Math.Clamp(System.Numerics.Vector3.Dot(up, dn), -1, 1)) - MathF.PI / 2;
+            }
+            if (_ownSim.TurnHull is { } hull)
+            {
+                // Release a turn key before the nose reaches the target: the
+                // flight model takes time to shed its existing angular rate.
+                // This only chooses keys; the ordinary flight model owns motion.
+                static float Brake(float error, float rate, float mass, float torque, float multiplier)
+                {
+                    if (torque <= 0 || multiplier <= 0) return error;
+                    float drift = rate * MathF.Abs(rate) * mass / (2 * torque * multiplier);
+                    return error * drift > 0 ? MathF.CopySign(MathF.Max(0, MathF.Abs(error) - MathF.Abs(drift)), error) : error;
+                }
+                yawError = Brake(yawError, hull.CurrentTurnRateYaw, hull.Mass, hull.TurnTorqueYaw, hull.TorqueMultiplier);
+                pitchError = Brake(pitchError, hull.CurrentTurnRatePitch, hull.Mass, hull.TurnTorquePitch, hull.TorqueMultiplier);
+            }
+            if (yawError > deadband) keys.Add(Keys.Left);
+            else if (yawError < -deadband) keys.Add(Keys.Right);
+            if (pitchError > deadband) keys.Add(Keys.Up);
+            else if (pitchError < -deadband) keys.Add(Keys.Down);
         }
         else
         {

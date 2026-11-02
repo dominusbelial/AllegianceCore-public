@@ -793,6 +793,12 @@ public sealed partial class Game1
         Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
     }
 
+    // training/mission4.cpp:279-292 names the native tilde shortcut even
+    // when the ordinary flight map binds quick chat to R.
+    internal static bool QuickChatKeyDown(KeyboardState keys, Rendering.ActionMap map, bool training) =>
+        map.IsDown(keys, "QuickChat") || training && map.ActionFilter?.Invoke("QuickChat") != false
+            && TrainingInputGate.NativeDefaultKeyDown(keys, "QuickChat");
+
     /// <summary>
     /// P523 — the pre-flight→flight edge-latch guard. The side-select and
     /// ready-check screens maintain their OWN edge latches (<c>_ssEnterWasDown</c>,
@@ -1275,11 +1281,15 @@ public sealed partial class Game1
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.
-        bool qcKey = ActionDown(ks, "QuickChat");
+        bool qcKey = QuickChatKeyDown(ks, Rendering.KeyBindingStore.Instance.Map, TrainingActive);
         if (!_chatActive && qcKey && !_qcRWasDown && !_qcMenuOpen)
             OpenQuickChat();
         _qcRWasDown = qcKey;
 
+        // Native quickcomm consumes its selection even when SendQuickChat
+        // closes the menu (console.cpp:1592-1598,2335-2418). Keep that frame
+        // modal so a numeric selection cannot also change the firing weapon.
+        bool quickChatConsumedFrame = _qcMenuOpen;
         if (_qcMenuOpen)
             NavigateQuickChat(ks);
 
@@ -1354,7 +1364,7 @@ public sealed partial class Game1
         // help overlay joins them while open (the native help pane owns the
         // keyboard, effect/help.cpp). P761 — the character-sheet profile editor
         // is a composing surface too (typing the description must not fly).
-        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible || _helpVisible || _pilotProfile.Editing;
+        bool composing = _chatActive || _qcMenuOpen || quickChatConsumedFrame || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible || _helpVisible || _pilotProfile.Editing;
         // Investment is modal in flight and command view; ordinary docked
         // command acceptance below must still run when this overlay is closed.
         if ((_investActive || ActionDown(ks, "ToggleInvestmentPane")) && HandleInvestmentScreen(ks, composing)) return;
@@ -1595,7 +1605,7 @@ public sealed partial class Game1
         // over several ships (console.cpp:2078-2193). Typing can't trip it — the
         // flight-view buttons below stay composing-gated.
         if (_cameraMode == CameraMode.Command && LiveComposeState != NativeComposeState.Shell)
-            HandleFlightMouseButtons(Mouse.GetState());
+            HandleFlightMouseButtons(ReadProofMouse());
 
         // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above
         // (press once per key-down, never per-frame while held). Gated behind the
@@ -1838,7 +1848,7 @@ public sealed partial class Game1
         // preference of 2, WinTrek.cpp:3052, 8178) so fast scrolling can't
         // blast the whole queue in a single frame. Composing (chat) yields the
         // wheel to nothing else, but we keep it inert there to match the keys.
-        // Mouse.GetState() is read every frame so the wheel base stays current
+        // ReadProofMouse() is read every frame so the wheel base stays current
         // even while composing; the delta is only QUEUED/APPLIED when not
         // composing (chat/game menus never spin the throttle).
         //
@@ -1849,7 +1859,7 @@ public sealed partial class Game1
         // delta is also logged (rate-limited to ~4 Hz while scrolling) so the
         // next live run captures exactly what the platform delivers for each
         // scroll direction — the evidence the P504 brief's step 1 requires.
-        int wheelValue = Mouse.GetState().ScrollWheelValue;
+        int wheelValue = ReadProofMouse().ScrollWheelValue;
         if (_lastWheelValue is { } last)
         {
             int rawDelta = wheelValue - last;
@@ -1973,7 +1983,7 @@ public sealed partial class Game1
             {
                 // The click landed on the expand button; still refresh the
                 // button-edge latch so it is not reprocessed next frame.
-                var m = Mouse.GetState();
+                var m = ReadProofMouse();
                 _mapLeftButtonWasDown = m.LeftButton == ButtonState.Pressed;
                 _mapRightButtonWasDown = m.RightButton == ButtonState.Pressed;
             }
@@ -2060,7 +2070,7 @@ public sealed partial class Game1
         // mini-map be clicked when the steering axis is not enabled).
         if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive && !CommandCameraActive)
         {
-            var ms = Mouse.GetState();
+            var ms = ReadProofMouse();
             int centerX = GraphicsDevice.Viewport.Width / 2;
             int centerY = GraphicsDevice.Viewport.Height / 2;
             mouseDx = ms.X - centerX;
@@ -2165,7 +2175,7 @@ public sealed partial class Game1
         // buttons above. Disabled while composing so typing never trips a click.
         if (!composing && !SpectatorCameraActive && !CommandCameraActive)
         {
-            int mouseFire = HandleFlightMouseButtons(Mouse.GetState());
+            int mouseFire = HandleFlightMouseButtons(ReadProofMouse());
             if (mouseFire != 0)
                 cmd = cmd with { StateM = cmd.StateM | mouseFire };
         }

@@ -58,6 +58,10 @@ public sealed partial class Server
             ClusterId = req.ClusterId,
             BUsePosition = bUsePosition,
         };
+        // Native training owns the entire local IGC universe (trainingmission.cpp:799-806).
+        // Its loopback adaptation must stream the sector selected by a docked
+        // command viewer as well as acknowledge it. Normal multiplayer is unchanged.
+        if (LocalTraining && pcluster is not null) RecordSpectateSector(from, req.ClusterId);
         SendPeer(from, FedPacket.Pack(new[] { reply.Encode() }));
         Console.WriteLine($"[viewcluster] {from} ship {live.Ship.Id} docked -> cluster {req.ClusterId}" +
             $"{(req.OtTarget != -1 ? $" otarget={(IgcObjectType)req.OtTarget}:{req.OidTarget}" : "")}" +

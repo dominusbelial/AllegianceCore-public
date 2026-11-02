@@ -68,6 +68,7 @@ public sealed class P873TrainingJoinTests : IDisposable
         void Set(string name, object value) => typeof(Game1).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, value);
         void Update() => typeof(Game1).GetMethod("UpdateTraining", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(game, [0.001]);
         Set("_trainingSession", session);
+        Set("_session", connection);
         Set("_trainingStartDeadline", 20.0);
         Set("_trainingMissionId", id);
         Update();
@@ -105,7 +106,9 @@ public sealed class P873TrainingJoinTests : IDisposable
         Assert.Equal(variant.StartSector, replicated.SectorId);
         Assert.DoesNotContain(host.Mission.Sectors.SelectMany(s => s.Models), m => m is Allegiance.Core.Sim.Ship { Id: 0 });
         Assert.Equal(host.StartSectorId, host.Stations[host.HomeStationId].SectorId);
-        Assert.Equal(0, host.PlayerShip.Position.Length(), 3);
+        // training/mission8.cpp:106 overrides the ordinary origin before join.
+        Assert.Equal(id == 8 ? new Allegiance.Core.Collision.Vector3(-1500, 1500, 0)
+            : Allegiance.Core.Collision.Vector3.Zero, host.PlayerShip.Position);
         Assert.Equal(1, host.PlayerShip.Orientation.GetForward().X, 3);
         Update(); // actual Game1 pump, the order which used to crash or start docked
         Assert.True(session.Started);

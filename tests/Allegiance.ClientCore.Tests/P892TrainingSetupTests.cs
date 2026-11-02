@@ -51,8 +51,10 @@ public sealed class P892TrainingSetupTests
         Require.Artwork();
         using var host = TrainingHost.Start(TrainingHost.EnemyEngagement);
 
-        // mission4.cpp:126 — group fire ON (all starting weapons active).
-        Assert.NotEqual(0, host.PlayerShip.StateM & ShipControlState.AllWeapons);
+        // mission4.cpp:127-128 changes the client's fGroupFire UI mode.
+        // The native ship starts with its trigger released (shipIGC.cpp:30).
+        // P912's both-style setup tests separately verify the group-fire UI.
+        Assert.Equal(0, host.PlayerShip.StateM & ShipControlState.WeaponsMask);
 
         // mission4.cpp:131-136 — missile magazine removed.
         Assert.DoesNotContain(host.PlayerShip.Parts, p => p.EquipmentType == EquipmentType.Magazine);

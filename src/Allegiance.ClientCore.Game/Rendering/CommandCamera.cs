@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.State;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -24,11 +25,32 @@ public sealed class CommandCamera
     public (Matrix View, Matrix Projection, Vector3 Eye) Matrices(float aspect) =>
         (View(), Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(50), aspect, 10, 80000), Eye);
 
-    public void Center(Vector3 position, float radius, bool explicitPosition = false)
+    // WinTrek/console.cpp:1705-1735,2048-2058. The press anchors XY
+    // on the sector plane; the release ray chooses height on that vertical.
+    public bool TryPickPosition(Vector2 start, Vector2 stop, Viewport viewport, out Vector3 position)
+    {
+        position = default;
+        var (view, projection, eye) = Matrices(viewport.AspectRatio);
+        Vector3 Ray(Vector2 p) => viewport.Unproject(new Vector3(p, 1), projection, view, Matrix.Identity)
+            - viewport.Unproject(new Vector3(p, 0), projection, view, Matrix.Identity);
+        var first = Ray(start);
+        if (MathF.Abs(first.Z) < 1e-6f) return false;
+        position = eye - first * (eye.Z / first.Z);
+        if (MathF.Abs(Backward.Z) > .9f) { position.Z = 0; return true; }
+        var last = Ray(stop);
+        float horizontal = last.X * last.X + last.Y * last.Y;
+        if (horizontal < 1e-12f) return false;
+        position.Z = ((position.X - eye.X) * last.X * last.Z
+            + (position.Y - eye.Y) * last.Y * last.Z) / horizontal + eye.Z;
+        return float.IsFinite(position.Z);
+    }
+
+    public void Center(Vector3 position, float radius, bool explicitPosition = false, bool stationAnchor = false)
     {
         Focus = position;
         Displacement = Vector3.Zero;
-        Distance = explicitPosition ? MaxDistance / 2 : MathF.Max(Distance, 5 + 2 * radius);
+        // WinTrek.cpp:7445-7459: stations use 2*r; ships use 5+2*r.
+        Distance = explicitPosition ? MaxDistance / 2 : MathF.Max(Distance, (stationAnchor ? 0 : 5) + 2 * radius);
         ClampFocus();
     }
     public void Follow(Vector3 position, float radius)

@@ -32,7 +32,9 @@ public sealed class P882aTrainingIntegrationTests : IDisposable
     [InlineData(HudStyle.Modern, 5, CameraMode.Command)]
     public void Real_setup_selects_native_camera_radar_and_closes_panes(HudStyle style, int id, CameraMode camera)
     {
+        using var connection = new ConnectionSession();
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1));
+        Set(game, "_session", connection);
         Set(game, "_hudSettings", new HudSettings { Style = style });
         Set(game, "_throttle", 1f);
         Set(game, "_minimapExpanded", true);

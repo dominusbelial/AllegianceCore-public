@@ -51,12 +51,17 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite, IT
             return _host.ResolveShip(id) is { } ship ? WrapShip(ship) : null;
         }
         if (r.Type == ObjectType.Warp && _host.Mission.GetWarp((short)r.Id) is { } warp)
+        {
+            // Igc/warpIGC.cpp:45-46 constructs orientation from forward alone.
+            var orientation = Orientation.Identity;
+            orientation.Set(new(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2]));
             return new HostObject(r, ToNum(warp.Position), Vector3.Zero,
-                new Vector3(warp.Warp.Forward[0], warp.Warp.Forward[1], warp.Warp.Forward[2]), warp.Warp.ClusterId, warp.Radius);
+                ToNum(orientation.GetForward()), warp.Warp.ClusterId, warp.Radius, right: ToNum(orientation.GetRight()));
+        }
         if (r.Type == ObjectType.Buoy && _host.ResolveWaypoint(r.Id) is { } wb)
             return wb;
         if (r.Type == ObjectType.Station && _host.Mission.GetStation((short)r.Id) is { Dead: false } st)
-            return new HostObject(r, ToNum(st.Center), Vector3.Zero, Vector3.UnitX, st.Data.ClusterId, st.Radius);
+            return new HostObject(r, ToNum(st.Center), Vector3.Zero, Vector3.UnitX, st.Data.ClusterId, st.Radius, st.Data.Name);
         if (r.Type == ObjectType.Asteroid)
             return _host.ResolveAsteroid(r.Id) is { } ast && ast.Data.Position is { Length: 3 } ap && ast.Sector is { } asec
                 ? new HostObject(r, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Vector3.UnitX, asec.Id, ast.Radius) : null;
@@ -222,7 +227,7 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite, IT
 
     private static ITrainingObject WrapShip(Ship ship) =>
         new HostObject(new TargetRef(ObjectType.Ship, ship.Id), ToNum(ship.Position), ToNum(ship.Velocity),
-            ToNum(ship.Orientation.GetForward()), ship.StationId is null ? ship.Sector?.Id ?? -1 : -1, ship.Radius);
+            ToNum(ship.Orientation.GetForward()), ship.StationId is null ? ship.Sector?.Id ?? -1 : -1, ship.Radius, ship.Name);
 
     private static System.Numerics.Vector3 ToNum(Allegiance.Core.Collision.Vector3 v)
         => new(v.X, v.Y, v.Z);
@@ -232,10 +237,12 @@ public sealed class TrainingHostSite : ITrainingSite, ITrainingLifecycleSite, IT
     {
         private readonly Vector3 _pos, _vel, _fwd;
         public TargetRef Ref { get; }
+        public string Name { get; }
+        public Vector3 Right { get; }
         public float Radius { get; }
         public int SectorId { get; }
-        public HostObject(TargetRef r, Vector3 pos, Vector3 vel, Vector3 fwd, int sectorId, float radius)
-        { Ref = r; _pos = pos; _vel = vel; _fwd = fwd; SectorId = sectorId; Radius = radius; }
+        public HostObject(TargetRef r, Vector3 pos, Vector3 vel, Vector3 fwd, int sectorId, float radius, string name = "target", Vector3? right = null)
+        { Right = right ?? Vector3.Cross(fwd, Vector3.UnitZ); Name = name; Ref = r; _pos = pos; _vel = vel; _fwd = fwd; SectorId = sectorId; Radius = radius; }
         public Vector3 Position => _pos;
         public Vector3 Velocity => _vel;
         public Vector3 Forward => _fwd;

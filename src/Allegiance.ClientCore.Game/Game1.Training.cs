@@ -437,13 +437,20 @@ public sealed partial class Game1
         if (_trainingSession is not { } session) return;
         if (!session.Started)
         {
-            if (session.Site.HasPlayerShip)
+            // Native Start builds the complete goal tree against one local
+            // world (trainingmission.cpp:153-164). The loopback receiver must
+            // not replace the replicated trainee between readiness and Start.
+            lock (_session.Gate)
             {
-                session.Start();
-                Console.WriteLine($"[training] mission {_trainingMissionId} script started (player ship replicated)");
+                if (session.Site.HasPlayerShip)
+                {
+                    session.Start();
+                    Console.WriteLine($"[training] mission {_trainingMissionId} script started (player ship replicated)");
+                }
             }
-            else
+            if (!session.Started)
             {
+                // Teardown can join the receiver; release its gate first.
                 _trainingStartDeadline -= dt;
                 if (_trainingStartDeadline <= 0)
                     AbortTrainingStart("The training mission could not start: your ship never arrived from the training host. See the log.");
@@ -659,7 +666,34 @@ public sealed partial class Game1
         _consolePanes = default;
         _minimapExpanded = _teamPaneVisible = _investActive = _teleportActive = false;
         _throttle = -1;
+        // Native restores this UI mode even after a previous lesson selected
+        // one gun (training/mission4.cpp:127-128; mission8.cpp:90).
+        if (missionId is 4 or 8) _groupFire = true;
+        else if (missionId == 3)
+        {
+            // training/mission3.cpp:184-186: only the starting weapon.
+            _selectedMount = 0;
+            _groupFire = false;
+        }
         _trainingCommandPane = true;
+        if (missionId == 5)
+        {
+            // mission5.cpp:95-105 / WinTrek.cpp:7445-7485: PositionCommandView(NULL)
+            // uses the docked station and clears a previous session's displacement.
+            lock (_session.Gate)
+            {
+                var world = _session.World;
+                if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+                    && world.Stations.TryGetValue(own.StationId, out var station))
+                {
+                    _commandCamera.Center(new Microsoft.Xna.Framework.Vector3(station.Position[0], station.Position[1], station.Position[2]),
+                        ResolveStationRadius(station), stationAnchor: true);
+                    _commandCentered = true;
+                }
+                else _commandCentered = false;
+                _commandViewVersion = world.ViewClusterVersion;
+            }
+        }
     }
 
     /// <summary>

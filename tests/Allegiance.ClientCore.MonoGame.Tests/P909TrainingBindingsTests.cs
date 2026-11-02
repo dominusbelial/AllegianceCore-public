@@ -216,12 +216,22 @@ public sealed class P909TrainingBindingsTests : IDisposable
         Assert.Equal((short)c.Host.CommanderShipId, line.SidSender);
         Assert.Equal((int)ChatTarget.Individual, line.ChatTarget);
         Assert.Equal(c.Connection.World.MyShipId, line.OidRecipient);
+        var recipient = new ChatSubjects(); recipient.SetChannel(ChatTarget.Everyone);
+        Set(c.Game, "_chatRecipient", recipient);
         Set(c.Game, "_qcMenuPath", new List<QuickChatMenu>());
         Set(c.Game, "_qcKeysPrev", new HashSet<Keys>());
+        c.Host.Paused = false; // let the real server pump and relay this sonic chat
         typeof(Game1).GetMethod("SendQuickChatLeaf", BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(c.Game, [new QuickChatSendAction { CommandId = 5, Target = ChatTarget.Team,
                 Entry = new QuickChatEntry { Index = 0, Caption = "Goto" } }]);
         Assert.True(new CommandAcknowledgedCondition(c.Site, 5).Evaluate());
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            lock (c.Connection.Gate)
+                return c.Connection.World.Events.Chats.Any(m => m.SidSender == c.Host.PlayerShipId
+                    && m.VoiceOver == 0 && m.ChatTarget == (int)ChatTarget.Everyone);
+        }, 3000), "Sonic chat did not retain the current All recipient on its real loopback echo.");
+        c.Host.Paused = true;
         var a = new TargetRef(ObjectType.Ship, 4910);
         var b = new TargetRef(ObjectType.Ship, 4911);
         c.Site.CreateDrone("a", a.Id, 310, 1, Ship.PilotTypePlayer);

@@ -290,7 +290,16 @@ public abstract class TrainingMission
         var moving = new ObjectMovingTowardsCondition(Site, ship, place);
         var and = new AndCondition(within, moving);
         var msg = new MessageAction(Site);
-        msg.AddMessage($"Don't get too close to the target!");
+        // training/trainingmission.cpp:911-920: rotate all six warnings,
+        // including native's unusual 50 * floor(radius * .02) display rounding.
+        string name = Site.Resolve(place)?.Name ?? "target";
+        msg.AddMessage($"Don't get too close to {name}!");
+        float displayRadius = MathF.Floor(within.GetRadarRadius() * .02f) * 50;
+        msg.AddMessage(FormattableString.Invariant($"Stay at least {displayRadius:g} meters from {name}!"));
+        msg.AddMessage("A little close, don't ya think?");
+        msg.AddMessage("Watch your range!");
+        msg.AddMessage("Whoa! where are the parachutes?");
+        msg.AddMessage("You scratch my ship, I scratch your hide!");
         var periodic = new PeriodicCondition(and, 2.0f, Site);
         return new ConditionalAction(periodic, msg, ConditionalAction.DelayedExecution);
     }

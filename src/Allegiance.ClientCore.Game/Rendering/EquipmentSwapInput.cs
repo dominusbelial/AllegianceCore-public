@@ -19,12 +19,14 @@ public sealed class EquipmentSwapInput
         foreach (string action in Actions) if (map.IsDownMostSpecific(keys, action)) _held.Add(action);
     }
 
-    public string? Step(KeyboardState keys, ActionMap map, bool suppressed)
+    public string? Step(KeyboardState keys, ActionMap map, bool suppressed, bool training = false)
     {
         string? pressed = null;
         foreach (string action in Actions)
         {
-            bool down = map.IsDownMostSpecific(keys, action);
+            bool down = map.IsDownMostSpecific(keys, action)
+                || (training && map.ActionFilter?.Invoke(action) != false
+                    && TrainingInputGate.NativeDefaultKeyDown(keys, action));
             bool edge = down && _held.Add(action);
             if (!down) _held.Remove(action);
             if (edge && !suppressed) pressed ??= action;

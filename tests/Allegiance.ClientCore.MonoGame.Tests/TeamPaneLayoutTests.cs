@@ -93,11 +93,13 @@ public class TeamPaneLayoutTests
         {
             ["Fighter"] = Fly("3"),
             ["Docker"] = Dock(),
+            ["HiddenDocker"] = Dock() with { Gone = true },
+            ["HiddenFighter"] = Fly("3") with { Gone = true },
             ["KIA"] = Dead,
             // "NoShip" deliberately absent: a roster pilot with no ship entity.
         };
         var lines = TeamPaneLayout.Build(
-            new[] { E("Fighter", 0), E("Docker", 0), E("KIA", 0), E("NoShip", 0) },
+            new[] { E("Fighter", 0), E("Docker", 0), E("HiddenDocker", 0), E("HiddenFighter", 0), E("KIA", 0), E("NoShip", 0) },
             Ranks, ships, null, null, null, false, null);
 
         var byName = lines.Where(l => l.Kind == TeamPaneLayout.LineKind.Pilot)
@@ -105,6 +107,8 @@ public class TeamPaneLayoutTests
 
         Assert.Contains("Ceto", byName["Fighter"]);   // P761c — sector NAME, not its id
         Assert.Contains("DOCKED", byName["Docker"]);
+        Assert.Contains("DOCKED", byName["HiddenDocker"]);
+        Assert.Contains("Ceto", byName["HiddenFighter"]);
         Assert.Contains("DEAD", byName["KIA"]);
         Assert.Contains("?", byName["NoShip"]);
     }

@@ -5062,6 +5062,41 @@ by restricting native arena order handling to Missions 6/10, then verified three
 times in isolation and by the complete training gate. Superseded results do not
 count as final green gates. The retained Fast sweep remains **failed**.
 
+
+## P912 qualification (2026-11-01)
+
+The single baseline Fast sweep recorded 12,863 passed, 13 failed, 3 skipped
+(the optional Meshy pack cases), plus four calibrated timing violations.
+Artwork-dependent P912 tests did not skip. Raw sweep: `.scratch/p912/fast-tier/`;
+three-run isolation: `.scratch/p912/fast-isolation/summary.json`. Isolation
+load average (one minute) ranged 2.39–3.91; no synthetic load was used.
+
+The task-owned P708 private-field reflection reference was updated after the
+combat slot generalized from probes to static models. All 42 P708 tests then
+passed in each of three isolated repeats; this is a corrected task test, not a
+new flake. Final training idle/accepted-order, camera/chat/status and proof-pilot changes
+were checked after the sweep in targeted cohorts and the completed first training pass;
+the repeat gate was interrupted as recorded below. The sweep was not repeated.
+
+| Non-task failure / timing check | Three isolated repeats | Disposition |
+|---|---|---|
+| Five `PlayerBundlePathsTests` executions: Artwork executable-directory fallback, Artwork/NativeSource missing-directory defaults, native-source subdirectory guessing, and synthetic sky config precedence | Each fails 3/3; the other four class cases pass each run | Existing fixture assumption: mandated in-checkout `TMPDIR` makes ancestor `local.env` visible. Same P909/P910 obstruction; resolver and assertions unchanged. |
+| `TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer` and `Boot_line_prints_the_active_transport_mode` | Both fail 3/3 with the mandated pool override; both pass 3/3 when the explicit compatibility test runs with transport/build overrides unset | Baseline environment overrides the test's requested legacy transport. Only these isolation controls remove the two overrides; ordinary qualification keeps pool/parallel/native settings. |
+| `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot` | Fails 3/3 with baseline overrides; passes 3/3 with the explicit compatibility overrides unset | Same explicit-config/environment conflict; no sizing code or assertion changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Fails 3/3 with expected charge / actual null | Existing persistent defend-target failure, already reproduced before P912 under P872/P887/P895/P902/P905/P909/P910/P911. P912's new station-target branch does not execute this ship-only defend case. Remains open. |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Pass / pass / pass | Sweep-only queued ore update; original sweep received one `AsteroidMined` packet after capacity. |
+| `BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)` | Both method data cases pass in each of three repeats | Sweep-only empty selection during the pod lifecycle. |
+| `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | Pass / pass / pass | Existing allocation timing family: sweep measured 2,480 B over 10,000 frames. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | Pass at 5.38 / 5.45 / 5.16 s process wall time | Sweep passed but exceeded the calibrated ten-second limit at 10.045 s. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | Both civ cases pass each repeat; process wall time 8.36 / 8.51 / 8.48 s | Sweep passed but took 10.549 s. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Pass at 4.43 / 4.36 / 4.43 s process wall time | Sweep passed but took 11.198 s. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Assertion passes each repeat; process wall time 11.68 / 11.42 / 11.54 s | Still above the Fast limit in isolation. Existing test duration/tier limitation remains; no timing assertion, tier, or warp rule was changed. |
+
+P912 targeted-cohort follow-up: one `P873TrainingJoinTests.Logon_replicates_the_native_trainee_before_the_real_update_starts_script(id: 3)` execution reached `Mission3.CreateMission` without a replicated player pose (`ClientTrainingSite.PlayerShip`). All 13 join cases passed in each of three fresh isolated processes, with zero skips (`.scratch/p912/join-isolation/{1,2,3}/result.trx`). A second occurrence during the expanded P912 cohort exposed a task-relevant startup race: readiness and complete goal construction read different replicated-world snapshots. P912 now holds the session gate across both operations, with a regression that asserts guarded reads during readiness and SetupTraining. The resume reused the failed cohort result path; the original failing TRX was overwritten. Its observed stack/count are transcribed in `.scratch/p912/join-isolation/startup-race-observation.txt`; the three earlier isolation TRX files remain. Future retries archive prior directories. The final expanded cohort verifies the correction.
+
+P912 native warp-handoff follow-up: the 390-case affected warp cohort hit the existing `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` floating-boundary family (delay 7: `7.0000000000000009`). Three exact-class processes returned fail (delays 5/7 at one ULP above the integer upper bound), pass (5/5), fail (one boundary case); see `.scratch/p912/timer-isolation/{1,2,3}/result.trx`. Timer/missile scheduling code and its assertion are unchanged. The final affected warp repeats explicitly exclude this ledgered class after preserving the failing initial cohort in `.scratch/p912/warp-initial-fail/`; its separate isolation remains part of qualification.
+
+P912 stopped training gate: `.scratch/p912/training-20261101T151134-14550/` completed pass 1 (ClientCore 95/95, MonoGame 208/208, zero skips), then pass 2 ClientCore 95/95. Claude stopped pass 2 MonoGame at about 54 windows with one failure; pass 3 never ran. The failing `m8-Modern-early-656863533dc742cb8f85c4db4a7e2c02/run.log:186,191` records a non-greet first frame and LOGONACK timeout before lesson startup. The merged `TcpTransport.Join` fix queues the greeting before publishing `IsConnected` (`fb040bb5`, regression `TcpClientGreetOrderTests`). After Debug and Release rebuilds, the exact M8 Modern early window passed three isolated invocations with zero skips (`.scratch/p912/resume-final/early-{1,2,3}/result.trx`). This is a corrected transport race, not a waived lesson failure. The full three-pass gate remains incomplete; Claude runs it after handoff.
 ### Sweep batch-p910 (snapshot 1503d0f4, mini, 2026-11-01)
 
 Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`, Debug, 3 of 3 each:
@@ -5101,3 +5136,11 @@ P912's training gate lost one window (`m8-Modern-early`) with `peer sent non-gre
 before Connect, so a ping in that gap went first and the server closed the connection. `TcpClientGreetOrderTests` reproduced it on the
 unfixed code (5 of 2,000 joins with a thread sending as soon as `IsConnected` is true) and passes after the fix. That the keep-alive
 thread was the sender in the failed window is inferred: it is the only concurrent sender found, and the window log does not name it.
+
+## 2026-11-01: P912 M8 unforced windows can lose the bomber (proof check corrected)
+
+Claude's `tools/run-training-tests.sh --repeat 3` after P912: ClientCore 95/95 three times; MonoGame 206, 208 and 207 of 208. All three
+failures were `repair escort did not destroy the outpost` (`m8-Classic-default` once, M8 Modern lesson 3 twice). In 3 of 12 windows not
+forced to lose, the bomber died and the outpost survived. That is a native ending and the traced window reached it with the native prompt.
+The proof now accepts either ending on unforced runs; `early`, `loss` and `sacrifice` still pin their branch. All 11 M8 cases then passed
+once (not 3×). `early` is not forced to win and has won every observed run, so it may flake the same way.

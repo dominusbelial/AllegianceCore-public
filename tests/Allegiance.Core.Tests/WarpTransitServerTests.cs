@@ -231,6 +231,7 @@ public class WarpTransitServerTests
 
         Sector? spawnSector = null;
         float? hullMaxSpeed = null;
+        float? capturedExitSpeed = null;
 
         server.ShipSpawner = (core, mission, shipId) =>
         {
@@ -268,6 +269,10 @@ public class WarpTransitServerTests
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
 
+        // Native cluster transfer can continue movement in the arrival sector
+        // during this tick (shipIGC.h:235-239). Observe the exit event itself.
+        server.Host.ShipWarped += (ship, _, _) =>
+        { if (!ship.IsNpc) capturedExitSpeed = ship.Velocity.Length(); };
         // A bot joins so the spawner places the ship.
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "warp_exit_speed");
@@ -296,7 +301,8 @@ public class WarpTransitServerTests
             $"ship never transited (stayed in sector {sectorA} after {pumped} ticks)");
 
         float entrySpeed = hullMaxSpeed!.Value;
-        float exitSpeed = liveLookup().Ship.Velocity.Length();
+        Assert.NotNull(capturedExitSpeed);
+        float exitSpeed = capturedExitSpeed!.Value;
         Console.WriteLine($"P246-LIVE: steady-cruise entry speed {entrySpeed:F1} -> measured exit speed {exitSpeed:F1} (native bonus 15 gives {entrySpeed + 15:F1}; old stand-in 5 would give {entrySpeed + 5:F1})");
         Assert.Equal(entrySpeed + 15f, exitSpeed, 3);
     }
@@ -312,8 +318,8 @@ public class WarpTransitServerTests
     /// <c>shipRadius + 5</c> (± the up/right rand(2,5) lateral jitter), not the old
     /// visually-scaled ~10× figure. Mirror of the P246 cruise harness but with a
     /// just-inside spawn so the transit fires on the very first tick and the exit
-    /// position is captured with no coasting drift (transit is the last pass of the
-    /// tick, Sector.Update: models → combat → warp).
+    /// position is captured at the transit event before the arrival sector's
+    /// native continuation of movement (shipIGC.h:235-239).
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -325,6 +331,7 @@ public class WarpTransitServerTests
         Sector? spawnSector = null;
         Vector3? destWarpPos = null;
         float? shipRadius = null;
+        Vector3? exitPos = null;
 
         server.ShipSpawner = (core, mission, shipId) =>
         {
@@ -342,9 +349,8 @@ public class WarpTransitServerTests
             var dir = new Vector3(f[0], f[1], f[2]).Normalize();
 
             // Just inside the collision volume -> the native trigger fires on the
-            // FIRST tick (it does not require approaching from outside, fsship.cpp:74 ff.),
-            // and the transit is the last pass of that tick, so the position captured
-            // when we observe the sector change is exactly the post-transit position.
+            // FIRST tick (it does not require approaching from outside, fsship.cpp:74 ff.).
+            // Capture the position at ShipWarped before destination movement.
             // Entry at a REALISTIC cruise speed (hull.Speed): the exit then launches
             // at hull.Speed+15 straight backward, clearing the destination warp's raw
             // ~100 u collision sphere well inside the 2 s debounce — so no re-trigger.
@@ -358,6 +364,8 @@ public class WarpTransitServerTests
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
 
+        server.Host.ShipWarped += (ship, _, _) =>
+        { if (!ship.IsNpc) exitPos = ship.Position; };
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "warp_exit_dist");
         bot.SendLogonRequest(Request("warp_exit_dist"));
@@ -370,13 +378,11 @@ public class WarpTransitServerTests
         short sectorA = spawnSector!.Id;
         var live = () => server.Ships.First(l => l.Ship.Id == shipId);
 
-        // Pump until the transit fires (server-side sector change), capturing the
-        // post-transit position on that exact tick.
+        // Pump until the transit event captures the native exit position.
         int pumped = 0;
-        Vector3? exitPos = null;
         while (pumped < 4000)
         {
-            if (live().Ship.Sector?.Id != sectorA) { exitPos = live().Ship.Position; break; }
+            if (live().Ship.Sector?.Id != sectorA) break;
             server.TickSim();
             pumped++;
             Thread.Sleep(1);

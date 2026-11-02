@@ -579,6 +579,7 @@ internal sealed class TrainingShipObject : ITrainingObject
         System.Numerics.Vector3? posOverride = null, System.Numerics.Vector3? fwdOverride = null, float radius = 0f, Vector3? velocityOverride = null)
     { _id = id; _ship = ship; _up = up; _posOverride = posOverride; _fwdOverride = fwdOverride; Radius = radius; _velocityOverride = velocityOverride; }
     private readonly Vector3? _velocityOverride;
+    public string Name => _ship.CharacterName;
     public TargetRef Ref => new(ObjectType.Ship, _id);
     public float Radius { get; }
     public Vector3 Position => _posOverride ?? ToSys(_up.Position);

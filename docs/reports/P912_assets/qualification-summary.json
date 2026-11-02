@@ -1,0 +1,529 @@
+{
+  "delivery": "Working tree only; no commits or pushes.",
+  "training_evidence": ".scratch/p912/training-20261101T151134-14550",
+  "qualification": {
+    "warp-handoff-1": {
+      "exit": 0,
+      "seconds": 74.06,
+      "outcomes": {
+        "Passed": 387
+      },
+      "receipt": ".scratch/p912/qualification/warp-handoff-1/"
+    },
+    "warp-handoff-2": {
+      "exit": 0,
+      "seconds": 75.023,
+      "outcomes": {
+        "Passed": 387
+      },
+      "receipt": ".scratch/p912/qualification/warp-handoff-2/"
+    },
+    "warp-handoff-3": {
+      "exit": 0,
+      "seconds": 74.036,
+      "outcomes": {
+        "Passed": 387
+      },
+      "receipt": ".scratch/p912/qualification/warp-handoff-3/"
+    },
+    "warp-extra-1": {
+      "exit": 0,
+      "seconds": 9.002,
+      "outcomes": {
+        "Passed": 5
+      },
+      "receipt": ".scratch/p912/qualification/warp-extra-1/"
+    },
+    "warp-extra-2": {
+      "exit": 0,
+      "seconds": 9.002,
+      "outcomes": {
+        "Passed": 5
+      },
+      "receipt": ".scratch/p912/qualification/warp-extra-2/"
+    },
+    "warp-extra-3": {
+      "exit": 0,
+      "seconds": 9.002,
+      "outcomes": {
+        "Passed": 5
+      },
+      "receipt": ".scratch/p912/qualification/warp-extra-3/"
+    },
+    "camera-chat-1": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 121
+      },
+      "receipt": ".scratch/p912/qualification/camera-chat-1/"
+    },
+    "camera-chat-2": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 121
+      },
+      "receipt": ".scratch/p912/qualification/camera-chat-2/"
+    },
+    "camera-chat-3": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 121
+      },
+      "receipt": ".scratch/p912/qualification/camera-chat-3/"
+    },
+    "showcase-1": {
+      "exit": 0,
+      "seconds": 207.035,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/showcase-1/"
+    },
+    "showcase-2": {
+      "exit": 0,
+      "seconds": 228.034,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/showcase-2/"
+    },
+    "showcase-3": {
+      "exit": 0,
+      "seconds": 373.057,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/showcase-3/"
+    },
+    "showcase-4": {
+      "exit": 0,
+      "seconds": 213.034,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/showcase-4/"
+    },
+    "showcase-5": {
+      "exit": 0,
+      "seconds": 376.057,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/showcase-5/"
+    },
+    "window-1-m8-Modern-default": {
+      "exit": 0,
+      "seconds": 314.045,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/window-1-m8-Modern-default/"
+    },
+    "aot": {
+      "exit": 0,
+      "seconds": 23.016,
+      "receipt": ".scratch/p912/qualification/aot/"
+    },
+    "bindings-1": {
+      "exit": 0,
+      "seconds": 19.005,
+      "outcomes": {
+        "Passed": 149
+      },
+      "receipt": ".scratch/p912/qualification/bindings-1/"
+    },
+    "bindings-2": {
+      "exit": 0,
+      "seconds": 19.004,
+      "outcomes": {
+        "Passed": 149
+      },
+      "receipt": ".scratch/p912/qualification/bindings-2/"
+    },
+    "bindings-3": {
+      "exit": 0,
+      "seconds": 20.004,
+      "outcomes": {
+        "Passed": 149
+      },
+      "receipt": ".scratch/p912/qualification/bindings-3/"
+    },
+    "native-setup-1": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 3
+      },
+      "receipt": ".scratch/p912/qualification/native-setup-1/"
+    },
+    "native-setup-2": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 3
+      },
+      "receipt": ".scratch/p912/qualification/native-setup-2/"
+    },
+    "native-setup-3": {
+      "exit": 0,
+      "seconds": 2.001,
+      "outcomes": {
+        "Passed": 3
+      },
+      "receipt": ".scratch/p912/qualification/native-setup-3/"
+    },
+    "window-1-m3-Modern-default": {
+      "exit": 0,
+      "seconds": 150.022,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/window-1-m3-Modern-default/"
+    },
+    "build": {
+      "exit": 0,
+      "seconds": 12.007,
+      "receipt": ".scratch/p912/qualification/build/"
+    },
+    "tools": {
+      "exit": 0,
+      "seconds": 146.027,
+      "receipt": ".scratch/p912/qualification/tools/"
+    },
+    "window-m5-Modern-map-1": {
+      "exit": 0,
+      "seconds": 116.021,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/window-m5-Modern-map-1/"
+    },
+    "window-m5-Modern-map-2": {
+      "exit": 0,
+      "seconds": 139.023,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/window-m5-Modern-map-2/"
+    },
+    "window-m5-Modern-map-3": {
+      "exit": 0,
+      "seconds": 145.022,
+      "outcomes": {
+        "Passed": 1
+      },
+      "receipt": ".scratch/p912/qualification/window-m5-Modern-map-3/"
+    }
+  },
+  "training": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "outcomes": {
+        "Passed": 95
+      },
+      "p912_windows": [],
+      "receipt": ".scratch/p912/training-20261101T151134-14550/1/Allegiance.ClientCore.Tests/training.trx"
+    },
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "outcomes": {
+        "Passed": 208
+      },
+      "p912_windows": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 5)",
+          "outcome": "Passed",
+          "duration": "00:02:28.3232146"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Classic\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:05:13.8586970"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 1)",
+          "outcome": "Passed",
+          "duration": "00:01:16.2961327"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Classic\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:02:04.0175245"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: \"departure\")",
+          "outcome": "Passed",
+          "duration": "00:07:02.3830023"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 2)",
+          "outcome": "Passed",
+          "duration": "00:02:26.2299498"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:42.7998138"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 9)",
+          "outcome": "Passed",
+          "duration": "00:06:16.3633005"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:05:19.3640906"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 10)",
+          "outcome": "Passed",
+          "duration": "00:01:36.2246229"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:18.0490777"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"early\")",
+          "outcome": "Passed",
+          "duration": "00:05:19.0253657"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 3)",
+          "outcome": "Passed",
+          "duration": "00:05:17.7137211"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:32.3369146"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Modern\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:02:28.1705602"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Classic\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:02:27.5063128"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Modern\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:01:52.2042399"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 7)",
+          "outcome": "Passed",
+          "duration": "00:02:37.5503359"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 9)",
+          "outcome": "Passed",
+          "duration": "00:01:35.3715347"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:06:37.0656324"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:45.3428191"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Classic\", policy: null)",
+          "outcome": "Passed",
+          "duration": "00:07:52.1186607"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:40.8109097"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 11)",
+          "outcome": "Passed",
+          "duration": "00:01:36.8170322"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:22.4641284"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:56.1460977"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 5)",
+          "outcome": "Passed",
+          "duration": "00:01:24.8610498"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 10)",
+          "outcome": "Passed",
+          "duration": "00:06:34.2611000"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"loss\")",
+          "outcome": "Passed",
+          "duration": "00:04:32.0733508"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 8)",
+          "outcome": "Passed",
+          "duration": "00:03:42.4569162"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:27.0613724"
+        }
+      ],
+      "receipt": ".scratch/p912/training-20261101T151134-14550/1/Allegiance.ClientCore.MonoGame.Tests/training.trx"
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "outcomes": {
+        "Passed": 95
+      },
+      "p912_windows": [],
+      "receipt": ".scratch/p912/training-20261101T151134-14550/2/Allegiance.ClientCore.Tests/training.trx"
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "status": "Stopped by Claude at about 54 windows, with one M8 Modern early failure; no final TRX.",
+      "receipt": ".scratch/p912/training-20261101T151134-14550/2/Allegiance.ClientCore.MonoGame.Tests/output.log"
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "status": "Never ran."
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "status": "Never ran."
+    }
+  ],
+  "fast": {
+    "invocations": 1,
+    "passed": 12863,
+    "failed": 13,
+    "skipped": 3,
+    "timing_violations": 4,
+    "receipt": ".scratch/p912/fast-tier/",
+    "isolation": ".scratch/p912/fast-isolation/summary.json"
+  },
+  "hygiene": {
+    "files": 53,
+    "findings": [],
+    "scope": "Full P912 and merged TCP source files; added documentation text and qualification summary. Personal home paths, private network addresses, personal hostnames, personal email and secret patterns."
+  },
+  "capture_bytes": 1598450,
+  "training_gate": {
+    "status": "Interrupted; --repeat 3 did not pass.",
+    "completed_passes": 1,
+    "pass_2": "ClientCore 95/95; MonoGame stopped by Claude at about 54 windows with one failure.",
+    "pass_3": "Never ran.",
+    "next_full_gate": "Claude runs the full training gate after handoff; this lane did not restart qualify.py or rerun it."
+  },
+  "tcp_failure": {
+    "window": "m8-Modern-early-656863533dc742cb8f85c4db4a7e2c02",
+    "symptom": "peer sent non-greet frame; LOGONACK timeout",
+    "merged_fix": "TcpTransport.Join queues Greet before exposing IsConnected; TcpClientGreetOrderTests.",
+    "merge": "49bfce6f",
+    "source_fix": "fb040bb5"
+  },
+  "post_merge": {
+    "builds": [
+      {
+        "name": "build-debug",
+        "warnings": 0,
+        "errors": 0,
+        "receipt": ".scratch/p912/resume-final/build-debug.log"
+      },
+      {
+        "name": "build-release",
+        "warnings": 0,
+        "errors": 0,
+        "receipt": ".scratch/p912/resume-final/build-release.log"
+      },
+      {
+        "name": "proof-build-debug",
+        "warnings": 0,
+        "errors": 0,
+        "receipt": ".scratch/p912/resume-final/proof-build-debug.log"
+      },
+      {
+        "name": "proof-build-release",
+        "warnings": 0,
+        "errors": 0,
+        "receipt": ".scratch/p912/resume-final/proof-build-release.log"
+      }
+    ],
+    "early_reruns": [
+      {
+        "repeat": 1,
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"early\")",
+        "outcome": "Passed",
+        "skipped": 0,
+        "duration": "00:05:14.1431396",
+        "receipt": ".scratch/p912/resume-final/early-1/result.trx"
+      },
+      {
+        "repeat": 2,
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"early\")",
+        "outcome": "Passed",
+        "skipped": 0,
+        "duration": "00:05:17.3023417",
+        "receipt": ".scratch/p912/resume-final/early-2/result.trx"
+      },
+      {
+        "repeat": 3,
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"early\")",
+        "outcome": "Passed",
+        "skipped": 0,
+        "duration": "00:05:08.6715972",
+        "receipt": ".scratch/p912/resume-final/early-3/result.trx"
+      }
+    ]
+  },
+  "qualification_scope": "Historical pre-merge checks; only post_merge entries were rerun after the TCP merge.",
+  "matrix_changes": {
+    "assigned": 29,
+    "changed_since_merge": 29,
+    "implemented_production": 23,
+    "partial": 5,
+    "test_only_helper": 1,
+    "unassigned_changed": 0
+  },
+  "final_audit": {
+    "glossary_paths": 477,
+    "matrix_changed_rows": 29,
+    "unassigned_changed": 0,
+    "lf": true,
+    "report_rows": 29,
+    "asset_bytes": 1616671,
+    "row_citation_anchors": 58
+  },
+  "process_cleanup": {
+    "visible_owned_processes_before": [],
+    "visible_owned_processes_after": [],
+    "qualify_restarted": false,
+    "full_gate_rerun": false
+  }
+}

@@ -1393,6 +1393,32 @@ public sealed partial class Game1
         // the current chat cluster. The port's server routes Individual on
         // OidRecipient (ship id), Wing on the wing id and FriendlySector on the
         // sector id, so the compose fills all three from the world.
+        var plan = CurrentChatSendPlan();
+        // P818 — the send loop (native console.cpp:1448-1507): a Group recipient
+        // goes out as ONE message per subject (first CHAT_GROUP, the rest
+        // CHAT_GROUP_NOECHO — the server rewrites each to CHAT_INDIVIDUAL on its
+        // oidRecipient, FedSrv.CPP:3531-3536); an Individual to yourself is never
+        // put on the wire (clintlib.cpp:2422-2426). The sender's chat history
+        // gains exactly one copy: the server's relay when the line is addressed
+        // to the player's own ship, otherwise the local echo that native's
+        // ReceiveChat performs for every send except CHAT_GROUP_NOECHO.
+        foreach (var send in plan)
+        {
+            if (!send.LocalOnly)
+                _session.SendChat(text, send.Target, oidRecipient: send.OidRecipient,
+                    commandId: OrderChange.CidNone);
+            if (send.EchoLocally)
+                lock (_session.Gate)
+                    _session.World.PostOwnChatLine(text, send.Target, send.OidRecipient);
+            // ReceiveChat (or PostOwnChatLine for a private/local-only echo)
+            // owns the training recipient latch. Do not record this send twice.
+        }
+    }
+
+    // Native typed and sonic chats share SendChatInternal's current subject
+    // plan (console.cpp:1448-1507,1592-1596).
+    private IReadOnlyList<Rendering.ChatSendPlan.Send> CurrentChatSendPlan()
+    {
         short oidRecipient = 0;
         short selfId = -1;
         IReadOnlyList<Rendering.ChatSendPlan.Send> plan = [];
@@ -1440,25 +1466,7 @@ public sealed partial class Game1
         // the channel target, exactly as before P818.
         if (plan.Count == 0)
             plan = [new Rendering.ChatSendPlan.Send(_chatTarget, oidRecipient, LocalOnly: false, EchoLocally: false)];
-        // P818 — the send loop (native console.cpp:1448-1507): a Group recipient
-        // goes out as ONE message per subject (first CHAT_GROUP, the rest
-        // CHAT_GROUP_NOECHO — the server rewrites each to CHAT_INDIVIDUAL on its
-        // oidRecipient, FedSrv.CPP:3531-3536); an Individual to yourself is never
-        // put on the wire (clintlib.cpp:2422-2426). The sender's chat history
-        // gains exactly one copy: the server's relay when the line is addressed
-        // to the player's own ship, otherwise the local echo that native's
-        // ReceiveChat performs for every send except CHAT_GROUP_NOECHO.
-        foreach (var send in plan)
-        {
-            if (!send.LocalOnly)
-                _session.SendChat(text, send.Target, oidRecipient: send.OidRecipient,
-                    commandId: OrderChange.CidNone);
-            if (send.EchoLocally)
-                lock (_session.Gate)
-                    _session.World.PostOwnChatLine(text, send.Target, send.OidRecipient);
-            // ReceiveChat (or PostOwnChatLine for a private/local-only echo)
-            // owns the training recipient latch. Do not record this send twice.
-        }
+        return plan;
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):
@@ -1814,13 +1822,34 @@ public sealed partial class Game1
         _session.World.AcknowledgeTrainingCommand(send.CommandId);
         CloseQuickChat();
         var order = ResolveQuickChatOrder(send);
-        _session.SendChat("", send.Target,
-            voiceOver: (short)send.Entry.Index,
-            commandId: order.CommandId,
-            oidTarget: order.OidTarget,
-            otTarget: (short)order.OtTarget,
-            absentMessage: true); // console.cpp:1593 sends NULL text + sonic index
-        Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({send.Target}) " +
+        var channel = send.Target;
+        if (TrainingActive)
+        {
+            // M4 teaches that quickcomm retains the last chat recipient
+            // (mission4.cpp:279-282; console.cpp:1592-1596).
+            foreach (var recipient in CurrentChatSendPlan())
+            {
+                if (!recipient.LocalOnly)
+                    _session.SendChat("", recipient.Target, oidRecipient: recipient.OidRecipient,
+                        voiceOver: (short)send.Entry.Index, commandId: order.CommandId,
+                        oidTarget: order.OidTarget, otTarget: (short)order.OtTarget, absentMessage: true);
+                if (recipient.EchoLocally)
+                    lock (_session.Gate)
+                        _session.World.ReceiveChat(new ChatMessage { Message = "", MessageIsAbsent = true,
+                            SidSender = _session.World.MyShipId ?? -1, ChatTarget = (int)recipient.Target,
+                            OidRecipient = recipient.OidRecipient, VoiceOver = (short)send.Entry.Index,
+                            CommandID = order.CommandId, OidTarget = order.OidTarget, OtTarget = (short)order.OtTarget });
+            }
+            channel = _chatTarget;
+        }
+        else
+            _session.SendChat("", send.Target,
+                voiceOver: (short)send.Entry.Index,
+                commandId: order.CommandId,
+                oidTarget: order.OidTarget,
+                otTarget: (short)order.OtTarget,
+                absentMessage: true);
+        Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({channel}) " +
                           $"cmd={(order.CarriesOrder ? order.CommandId : (short)OrderChange.CidNone)} target=({order.OtTarget}, {order.OidTarget})");
     }
 
