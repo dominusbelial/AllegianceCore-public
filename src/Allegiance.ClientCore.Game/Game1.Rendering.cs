@@ -102,15 +102,13 @@ public sealed partial class Game1
     /// is fed the ship's RENDER pose (dead-reckoned for remote ships) so the trail
     /// never detaches from the drawn hull; <paramref name="thrusting"/> is the wire
     /// afterburner-bit and <paramref name="velocity"/> the last-known wire velocity.</summary>
-    private void UpdateEngineTrail(short id, bool thrusting,
+    private void UpdateEngineTrail(short id, bool hasAfterburner, bool thrusting,
         Allegiance.Core.Collision.Vector3 position,
         Allegiance.Core.Collision.Vector3 velocity, Allegiance.Core.Sim.Orientation orientation,
         float radius, float dtSec, bool visible)
     {
         float power = _shipThrustPower.GetValueOrDefault(id);
-        power = thrusting
-            ? Math.Min(1f, power + ThrustPowerOnRate * dtSec)
-            : Math.Max(0f, power - ThrustPowerOffRate * dtSec);
+        power = ShipEffectRules.ThrustPower(hasAfterburner, thrusting, power, dtSec, ThrustPowerOnRate, ThrustPowerOffRate);
         _shipThrustPower[id] = power;
         if (visible && power > 0f)
             _engineTrailEmitters[id] = new EngineTrailEmitter(position, velocity, orientation, radius);
@@ -128,16 +126,6 @@ public sealed partial class Game1
         float Radius,
         float Value);
 
-    /// <summary>P365 — native UpdateGlow's <c>value</c> for one ship: the real
-    /// throttle axis mapped by <c>SetThrust(0.5·(jsValues[3]+1))</c>
-    /// (thinggeo.cpp:8008), forced to 1.0 whenever the afterburner is engaged
-    /// (<c>m_fThrustPower ≠ 0</c>, thinggeo.cpp:452-455). Clamped to [0,1].</summary>
-    private static float NozzleGlowValue(int stateM, float throttle)
-    {
-        if ((stateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0) return 1f;
-        return Math.Clamp(0.5f * (throttle + 1f), 0f, 1f);
-    }
-
     /// <summary>P365 — gather one visible ship's nozzle-glow emitter for this frame
     /// (native RenderGlow's per-ship scope: every thrusting ship the client
     /// renders, not just the local hull). Runs under the Gate lock in the
@@ -147,7 +135,7 @@ public sealed partial class Game1
     /// there), matching P358/P297. P448b — the emitter is fed the ship's RENDER
     /// pose (dead-reckoned for remote ships) so the glow never detaches; the glow
     /// VALUE stays wire-driven (<paramref name="stateM"/>/<paramref name="throttle"/>).</summary>
-    private void UpdateNozzleGlow(short id, int stateM, float throttle,
+    private void UpdateNozzleGlow(short id, bool hasAfterburner, int stateM, float throttle,
         Allegiance.Core.Collision.Vector3 position, Allegiance.Core.Sim.Orientation orientation,
         float radius, bool visible)
     {
@@ -156,7 +144,8 @@ public sealed partial class Game1
             _nozzleGlowEmitters.Remove(id);
             return;
         }
-        float value = NozzleGlowValue(stateM, throttle);
+        float value = ShipEffectRules.NozzleGlow(hasAfterburner,
+            (stateM & ShipControlState.AfterburnerButton) != 0, throttle);
         if (value > 0f)
             _nozzleGlowEmitters[id] = new EngineNozzleGlowEmitter(position, orientation, radius, value);
         else
@@ -268,6 +257,7 @@ public sealed partial class Game1
     private bool OwnShipLoadoutHasAfterburner(Allegiance.ClientCore.State.ShipEntity mine)
     {
         var cat = _shopCatalog;
+        if ((ShipRoleBits(mine.HullId) & DataHullTypeIGC.HabmLifepod) != 0) return false;
         if (cat is null || mine.Loadout is not { Count: > 0 } lo) return false;
         foreach (var p in lo)
         {
@@ -753,7 +743,9 @@ public sealed partial class Game1
                                 if (lev > 0)
                                     drawGeo = _nativeShipRenderer.LodLevel(nref.ModelStem!, lev - 1) ?? ngeo0;
                             }
-                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem);
+                            _nativeShipRenderer.Draw(drawGeo, ntex0, worldMat, view, proj, modelOp, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem,
+                                uprightTexture: ShipEffectRules.UprightHullTexture(id == me,
+                                    _cameraMode != CameraMode.Cockpit, 2f * _myRenderRadius));
                             _lodDrawCalls++;
                         }
                         else
@@ -1531,7 +1523,9 @@ public sealed partial class Game1
                     float emRadius = em.Radius > 0f ? em.Radius : Rendering.DamageDebrisParticles.ShipRadiusDefault;
                     _damageDebris.Emit(em.Position, em.Velocity, em.Orientation,
                         emRadius,
-                        kv.Key, em.VentCount, (float)dt, _trailRandom);
+                        kv.Key, em.VentCount, (float)dt, _trailRandom,
+                        ShipEffectRules.DamageSmokeScale(kv.Key == me, _cameraMode != CameraMode.Cockpit,
+                            2f * em.Radius, Vector3.Distance(PoseConverter.ToXna(em.Position), cameraEye)));
                 }
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());

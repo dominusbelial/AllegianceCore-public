@@ -4,6 +4,41 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P915 verification
+
+Exactly one Fast sweep: **12,935 passed / 12 failed / 3 optional-pack skips**,
+**12,950 executions in 542.831 s**. All **nine infrastructure checks** passed.
+Six executions exceeded the ten-second limit (one was also a failed missile
+receipt test). All **35 new P915 cases passed**. The tier remains **FAIL**;
+it was not rerun.
+
+Failures and timing methods were isolated three times with artwork and
+worktree-local temporary/configuration directories. No Core, Server, transport,
+bot policy, binding or shop implementation changed in this task.
+
+| Method / family | Isolation result | Classification |
+|---|---|---|
+| `PlayerBundlePathsTests` (four failed methods, five failed theory cases) | **5 failed / 4 passed** in each of three family runs | Existing repository-ancestry fixture conflict: worktree-local `TMPDIR` makes supposedly external fixtures discover this checkout's `local.env`. Same five failures as P914/P913; not a resolver change. |
+| `HelpOverlayTests.Table_ContainsCoreBindings` | All 13 theory cases **pass/pass/pass** | Sweep-only Space / "Fire weapons" binding failure. No help or keybinding change. |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | **pass/pass/pass** | Known launcher-receipt intermittency; same historical signature. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/fail**, 356/359/391 ms | Known expected flying=3 / actual docked=2 join-burst history; intermittent even alone, remains open. |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | **pass/pass/pass**, 86/86/76 ms | Sweep allocation value 3827.1 outside 0.8–16; process-level allocation/load sensitivity. Profiler unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail** | Existing null `DefendTarget` / reference assertion at line 179, already persistent under P914 and earlier base controls. Remains open. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **pass/fail/pass**, 627/600/584 ms | Known stale dock-status history (station 1051 vs -1); intermittent even alone, remains open. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/fail/pass** | Known missing partial-tip receipt despite lock reaching 1.000; failed isolation is also ~38 s. Not solely a sweep/load flake; remains open. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, approximately 3/3/4 s | Timing only: sweep 15.108 s; all-hull GPU proof passes alone. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases **pass/pass/pass** (6/6) | Timing only: civ 25 sweep 11.569 s; each complete two-case isolation took ~7 s. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | All three civ cases **pass/pass/pass** (9/9) | Timing only: civ 35 sweep 10.532 s; complete three-case isolation runs took ~12 s. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, ~3 s each | Timing only: sweep 12.318 s; same earlier fixture sensitivity. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, CLI-rounded ~10 s each | Timing only: sweep 10.790 s; remains a near-limit native-physics fixture. |
+
+Raw results: `.scratch/p915/evidence/fast/` and
+`.scratch/p915/evidence/isolation-*.log` in the P915 worktree. Summary and visual
+proof: [P915_REPORT.md](reports/P915_REPORT.md). The final UV-scope narrowing,
+which excludes every ordinary core hull, was subsequently checked by the
+solution/tool builds, three focused runs and the visual comparison; no second
+Fast sweep was run.
+
 ## P914 verification (2026-11-02 UTC)
 
 Exactly one Fast sweep: **12,904 passed / 8 failed / 3 optional private-pack

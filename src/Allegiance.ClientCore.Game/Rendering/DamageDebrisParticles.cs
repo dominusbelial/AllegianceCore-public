@@ -156,10 +156,12 @@ public sealed class DamageDebrisParticles
     /// (<see cref="DamageDebrisTracker.DamageFrameCount"/>).</param>
     /// <param name="dtSec">Frame delta used to pace inter-particle start-time
     /// jitter (native <c>fDeltaTime</c>).</param>
+    /// <param name="sizeScale">P915 own-ship external-view visual scale. Also scales
+    /// ejection and start variance; lifetime and vent count stay native.</param>
     /// <param name="rng">The randomness seam (native <c>random(a,b)</c> /
     /// <c>Vector::RandomDirection()</c>).</param>
     public void Emit(Vector3 position, Vector3 velocity, Orientation orientation,
-        float radius, short shipId, int damageFrameCount, float dtSec, ITrailRandom rng)
+        float radius, short shipId, int damageFrameCount, float dtSec, ITrailRandom rng, float sizeScale = 1f)
     {
         for (int vent = 0; vent < damageFrameCount; vent++)
         {
@@ -179,7 +181,7 @@ public sealed class DamageDebrisParticles
 
             for (int p = 0; p < perFrame; p++)
             {
-                float effectSize = rng.Range(EffectSizeMin, EffectSizeMax);  // thinggeo.cpp:739
+                float effectSize = rng.Range(EffectSizeMin, EffectSizeMax) * sizeScale;  // thinggeo.cpp:739
                 float jitterT = uniformDt * (p + rng.Range(0f, 1f));         // thinggeo.cpp:742
 
                 // ComputeFireParticleParameters (thinggeo.cpp:537-579) with the

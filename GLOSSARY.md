@@ -590,6 +590,15 @@ list in **reverse**.
   `clintlib/appmsg.cpp:230-238` `FindTarget(… c_ttAnyCluster …, c_sabmRescue…)`),
   oxygen budget and docking. Reports P699/P699c; live test
   `P699HumanPodHomeLiveTests`.
+- **Own small-hull effects (P915)** — `src/Allegiance.ClientCore.Game/Rendering/ShipEffectRules.cs`
+  scales own external-view damage smoke from real hull length and camera distance,
+  gates afterburner trail/nozzle boost by the owner's mounted loadout (remote
+  lifepods excluded), and scopes the mesh texture-V correction to own small hulls.
+  `src/Allegiance.ClientCore.Game/Rendering/NativeShipResolver.cs` and
+  `src/Allegiance.ClientCore.Game/Rendering/NativeShipRenderer.cs` cache the UV-only
+  geometry variant for native/classic-HD/PBR draws. Native: `effect/thinggeo.cpp:699-760`,
+  `WinTrek/WinTrek.cpp:7999-8006`, `engine/device3d.cpp:2245-2246`.
+  Proof: `tools/p915-smoke-proof/`; report `docs/reports/P915_REPORT.md`.
 - **Sector asset warm-up (P862)** — a warp must not load a sector in its transit
   frame. Per-type assets (native rock/station/hull meshes + 2048² native textures,
   the planet poster, the tier's dome) are created lazily by the renderer that
