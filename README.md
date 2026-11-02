@@ -12,7 +12,7 @@ Today it ships a **playable MonoGame client** (Windows, Linux, macOS Apple
 silicon and Android), **offline single player** (Skirmish, the native training
 missions, spectating), a **dedicated TCP server**, a **lobby**, **autonomous
 bots** and an **MCP bot driver**. Everything is cross-checked against the
-445k-line native C++ source (`src/`) for byte-exact fidelity.
+445k-line native C++ source (`src/`), with wire messages byte-exact.
 
 ## What works today
 
@@ -25,7 +25,7 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   drop in. Pause with Ctrl+P.
 - **Training**: the native training set runs offline on an embedded host:
   Basic Flight, Basic Weaponry, Enemy Engagement, Command View, Practice Arena,
-  Nanite and the Free Flight dev mission. Mission 1's slideshow isn't ported yet.
+  Nanite and the Free Flight dev mission, with the Introduction and its slideshows.
 - **Multiplayer**: lobby server discovery (sort/find), ready check and
   briefing, scoreboard and pilot info. After game over a scoreboard
   intermission runs, then the next match starts automatically.
@@ -92,7 +92,7 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 
 - Every ported rule cites the original C++ `file:line`. The corpus-backed
   suite parses 210 real `.igc` maps exactly. The fast test tier alone runs
-  ~10,000 tests, and CI builds every tool project and the player bundles.
+  about 13,000 tests, and CI builds every tool project and the player bundles.
 
 See **[`docs/GUIDE.md`](docs/GUIDE.md)** for the full guide: prerequisites,
 getting the original art, building/running everything, client flags, testing,
@@ -100,7 +100,7 @@ architecture, and troubleshooting.
 
 ## Parity status
 
-How much of the original game's behaviour the port reproduces, as of 2026-10-31. Each row of the
+How much of the original game's behaviour the port reproduces, as of 2026-11-02. Each row of the
 [matrices](docs/parity/) cites the native source, and a row only earns credit with production code and
 a test. [`scripts/parity-scorecard.py`](scripts/parity-scorecard.py) validates them and produces these
 numbers, weighting rows by importance.
@@ -109,12 +109,12 @@ numbers, weighting rows by importance.
 |---|---:|---:|
 | Core game systems (`parity-matrix.csv`) | 100.00 % | 659 / 659 |
 | Lobby | 98.72 % | 29 / 30 |
-| Simulation rules | 97.57 % | 780 / 805 |
+| Simulation rules | 98.51 % | 790 / 805 |
 | Effects | 100.00 % | 8 / 8 |
 | Sound engine | 100.00 % | 22 / 22 |
-| Bots | 92.73 % | 19 / 21 |
-| AllSrv admin UI | 68.18 % | 10 / 16 |
-| Training missions | 42.48 % | 102 / 237 |
+| Bots | 100.00 % | 21 / 21 |
+| AllSrv admin UI | 100.00 % | 16 / 16 |
+| Training missions | 85.90 % | 199 / 235 |
 | Model tools | 100.00 % | 7 / 7 |
 
 Work is ongoing, so these are not final. Three simulation rows (tick order, collision order and
