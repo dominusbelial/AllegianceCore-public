@@ -391,6 +391,51 @@ recorded LAN/live-test configs (the 221 host). Treat every config that enables
 
 ---
 
+### Model modding
+
+`tools/mdl-to-glb` is an offline authoring CLI. Build it with
+`dotnet build tools/mdl-to-glb/mdl-to-glb.csproj`, then run these commands
+from the repository root, using your configured artwork directory for `$ART`:
+
+```bash
+dotnet run --no-build --project tools/mdl-to-glb -- export "$ART" fig30 --out .scratch/models/edit
+# Edit fig30.glb in a glTF editor; retain fig30.glbside.json next to it.
+dotnet run --no-build --project tools/mdl-to-glb -- import .scratch/models/edit fig30 --out .scratch/models/native
+dotnet run --no-build --project tools/mdl-to-glb -- optimize .scratch/models/native fig30 --out .scratch/models/optimized
+dotnet run --no-build --project tools/mdl-to-glb -- inspect .scratch/models/optimized fig30
+```
+
+Export writes a `.glb` with embedded PNG textures plus a `.glbside.json`
+sidecar for collision hulls, native frame vectors, lights and LOD thresholds.
+Import writes the hull `.mdl`, `.cvh` and each referenced texture's `.mdl`.
+It also accepts new GLB art without a sidecar, generating collision hulls
+and native frames from `HP_<Kind>_<Index>` nodes. Retain material names to
+preserve texture stems. Use `--texture-stem NAME` to rename a texture or
+`--no-texture` for an untextured import.
+
+Optimize reads compiled binary MDL, strips material wrappers, folds shared
+textures and groups, combines meshes, and reloads its result through the
+game's MDL loader. It preserves all LOD geometry, lights and frame records
+and copies the `.cvh` and available referenced texture files unchanged to
+the output directory. Choose a separate output directory. `inspect` prints
+mesh, triangle, vertex, mount, light, LOD and collision counts.
+
+The game loads native `.mdl` hulls and textures and `.cvh` collision files
+from the configured artwork source; it does not load GLB. To try your art,
+copy the generated files into a separate artwork directory with the other
+required assets and launch with `--assets` pointing there. Keep the model
+stem referenced by the static core, or update the core's model name.
+
+The GLB bridge exports base geometry only: importing it produces one detail
+level even when the sidecar lists coarser LOD thresholds. Raw native frame
+and collision records in the sidecar remain authoritative; editing an
+existing hardpoint also requires updating those records. Textual MDL
+programs, direct `.x` import, native animation controls and `mdledit`'s
+image/test-scene viewer are outside this workflow. External glTF editors
+provide interactive model viewing and editing.
+
+---
+
 ## 6. Project layout and architecture
 
 ```
