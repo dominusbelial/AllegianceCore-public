@@ -2808,7 +2808,8 @@ public sealed partial class Game1
                     // ramp updates every frame, but the trail is emitted only
                     // outside the cockpit (the hull/afterburner aren't drawn in
                     // the internal cockpit view), matching the P297 gate.
-                    UpdateEngineTrail(me, (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                    bool ownAfterburner = OwnShipLoadoutHasAfterburner(mine);
+                    UpdateEngineTrail(me, ownAfterburner, (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                         ownPos, mineUp.Velocity, ownOri, _myRenderRadius, updateDt,
                         _cameraMode != CameraMode.Cockpit);
                     // P365 — the local ship's engine-nozzle glow: gathered only
@@ -2816,7 +2817,7 @@ public sealed partial class Game1
                     // the P358 trail's gate. Driven by the real throttle +
                     // afterburner bit, so the glow appears and colour-shifts as
                     // the ship thrusts.
-                    UpdateNozzleGlow(me, mineUp.StateM, mineUp.Controls.Throttle, ownPos, ownOri,
+                    UpdateNozzleGlow(me, ownAfterburner, mineUp.StateM, mineUp.Controls.Throttle, ownPos, ownOri,
                         _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P367 — the local ship's navigation strobe lights: gathered
                     // only outside the cockpit (its hull isn't drawn there),
@@ -2973,9 +2974,11 @@ public sealed partial class Game1
                 // RENDER pose so nothing detaches from the drawn hull. Wire-driven
                 // inputs (velocity, hull fraction, stateM, throttle) stay wire values.
                 GatherDamageEmitter(id, up.HullFraction, pose.Position, up.Velocity, pose.Orientation, radius);
-                UpdateEngineTrail(id, (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                bool remoteAfterburner = ShipEffectRules.HasAfterburner(false, false,
+                    (ShipRoleBits(ship.HullId) & DataHullTypeIGC.HabmLifepod) != 0);
+                UpdateEngineTrail(id, remoteAfterburner, (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                     pose.Position, up.Velocity, pose.Orientation, radius, updateDt, visible: true);
-                UpdateNozzleGlow(id, up.StateM, up.Controls.Throttle, pose.Position, pose.Orientation, radius, visible: true);
+                UpdateNozzleGlow(id, remoteAfterburner, up.StateM, up.Controls.Throttle, pose.Position, pose.Orientation, radius, visible: true);
                 UpdateNavStrobes(id, pose.Position, pose.Orientation, radius, visible: true);
                 UpdateMotionTrail(id, pose.Position, pose.Orientation, radius, ship.SideId, visible: true);
                 // P270 — remember which of these render poses is a cloaked ship

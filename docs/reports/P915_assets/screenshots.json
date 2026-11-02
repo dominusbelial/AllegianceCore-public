@@ -1,0 +1,98 @@
+[
+  {
+    "file": "after-fighter-classic.webp",
+    "bytes": 99764,
+    "sha256": "d1bfe6d1b1767511b33bfa09ec97d8005d2b90a52b942ce98189e6552ed05102",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "after-fighter-modern.webp",
+    "bytes": 114336,
+    "sha256": "018598aa3a6328e99b7694b2a26a410aa952a28c4e7edb1ee5284fe16d25c7f1",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "after-pbr-pod-modern.webp",
+    "bytes": 62242,
+    "sha256": "30f442452372f5bc858206cc72c8ae14489f4f54b482e97cc636f442c16015bf",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "after-pod-classic.webp",
+    "bytes": 48896,
+    "sha256": "4f1b798c282b6aa8ea9262b69f5e211847b4be4160f2ef1516bb417d7de60e32",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "after-pod-modern.webp",
+    "bytes": 64336,
+    "sha256": "b9d928bc766a022f73a6e5ee06641802dcb11759a2beab88eea4b893dc514f31",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "before-fighter-classic.webp",
+    "bytes": 102568,
+    "sha256": "5f82885dc169b29b51a700bf80bc803279083403ec59d0e2c1a5199b0706308b",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "before-fighter-modern.webp",
+    "bytes": 113704,
+    "sha256": "73c36c36eab47cb496c9238da0d664d58ba40ec41ba863e94d270b3a532c560a",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "before-pod-classic.webp",
+    "bytes": 67936,
+    "sha256": "35bca54273c2c6c2b5018717ec49047b1d7f114b9d4ff5e902fae787dce1c914",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "before-pod-modern.webp",
+    "bytes": 84914,
+    "sha256": "721325912f9b3fd5f42bbdff9a9a99ac12c9d50296e4a66861d49b771b7cab06",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "diagnostic-no-soft-pod-modern.webp",
+    "bytes": 85282,
+    "sha256": "429d5e1c2069c9fd56aee8aa9742733806dc822eae59a61da1d00e9c24519ab5",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "diagnostic-unflip-pod-modern.webp",
+    "bytes": 71482,
+    "sha256": "0f318a5bbbd72a62fd8d8331f40ef4870e0025b593d50e24d95decfa9b845dd7",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  },
+  {
+    "file": "diagnostic-white-pod-modern.webp",
+    "bytes": 54026,
+    "sha256": "4c0957ba0c2be5520a63c3b55ed5c589212bcea5dc59a22a36c877ac7312ad23",
+    "width": 1280,
+    "height": 720,
+    "lossless_verified": true
+  }
+]
