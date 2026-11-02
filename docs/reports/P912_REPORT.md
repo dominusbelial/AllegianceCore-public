@@ -93,6 +93,10 @@ Before: training **677/901 (75.14%)**, completed eligible rows **176/235 (74.89%
 
 After: training **774/901 (85.90%)**, completed eligible rows **199/235 (84.68%)**. Framework 227/298; integration 301/326; missions 243/274; tools 3/3. Gain: **97 weighted points and 23 production rows**. Of the 29 assigned rows, 23 are implemented in production, five remain partial as detailed above, and TRN-0233 is implemented with test-only reachability and no headline credit. Source: `.scratch/p912/scorecard-after.txt`. Every unassigned matrix row remains byte-for-byte unchanged relative to the merged checkout. These row verdicts describe demonstrated behavior; the interrupted three-pass gate remains open.
 
+## Claude's gate
+
+`tools/run-training-tests.sh --no-build --repeat 3` after this report: ClientCore 95/95 three times, MonoGame 206, 208 and 207 of 208. The three failures came from the proof requiring an outpost win on unforced M8 runs, where bomber loss is a legitimate native ending; 3 of 12 such windows ended that way. The proof now accepts either ending there, and forced policies still pin their branch. All 11 M8 cases then passed once. See `docs/TEST_FLAKES.md`.
+
 ## Native intent
 
 - **Design:** the lessons deliberately constrain controls, use real command slots, require actual repairs/combat/docking, and carry state between lessons. A modern implementation would retain these rules while sharing typed objectives and explicit capability checks with the live UI.

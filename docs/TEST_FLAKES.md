@@ -5136,3 +5136,11 @@ P912's training gate lost one window (`m8-Modern-early`) with `peer sent non-gre
 before Connect, so a ping in that gap went first and the server closed the connection. `TcpClientGreetOrderTests` reproduced it on the
 unfixed code (5 of 2,000 joins with a thread sending as soon as `IsConnected` is true) and passes after the fix. That the keep-alive
 thread was the sender in the failed window is inferred: it is the only concurrent sender found, and the window log does not name it.
+
+## 2026-11-01: P912 M8 unforced windows can lose the bomber (proof check corrected)
+
+Claude's `tools/run-training-tests.sh --repeat 3` after P912: ClientCore 95/95 three times; MonoGame 206, 208 and 207 of 208. All three
+failures were `repair escort did not destroy the outpost` (`m8-Classic-default` once, M8 Modern lesson 3 twice). In 3 of 12 windows not
+forced to lose, the bomber died and the outpost survived. That is a native ending and the traced window reached it with the native prompt.
+The proof now accepts either ending on unforced runs; `early`, `loss` and `sacrifice` still pin their branch. All 11 M8 cases then passed
+once (not 3×). `early` is not forced to win and has won every observed run, so it may flake the same way.

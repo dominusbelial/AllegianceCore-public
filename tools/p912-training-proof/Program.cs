@@ -129,7 +129,9 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 if (!_outcomeChecked)
                     Console.WriteLine($"[p912] OUTCOME minerSurvived={_minerSurvived} outpostDestroyed={outpostDead} bomberDestroyed={bomberDead}");
                 if (policy == "loss") Check(bomberDead && !outpostDead, "withheld repair did not exercise bomber-loss/outpost-survives branch");
-                else Check(outpostDead, "repair escort did not destroy the outpost");
+                // Combat decides the unforced runs: both endings are native (mission8.cpp:600-654)
+                // and the message check below holds either way. Forced policies still pin a branch.
+                else if (policy is not null && _stopAfterLesson == 0) Check(outpostDead, "repair escort did not destroy the outpost");
                 if (policy == "sacrifice") Check(bomberDead, "did not exercise the combined bomber/outpost loss branch");
                 var finalMessages = ((ClientTrainingSite)session.Site).Messages;
                 Check(finalMessages.Any(m => m.Contains(outpostDead ? "Enemy outpost destroyed." : "The bomber got destroyed, better luck next time.", StringComparison.Ordinal)), "missing native ending announcement");
