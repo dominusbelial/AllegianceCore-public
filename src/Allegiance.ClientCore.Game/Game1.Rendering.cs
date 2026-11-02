@@ -2730,11 +2730,13 @@ public sealed partial class Game1
                 return false;
             case TargetModelPreview.PreviewDrawPath.Station:
                 _targetModelPreviewRenderer.RenderStation(art.StationGeo!, art.Texture,
-                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo,
+                    art.ModelStem, art.TextureStem);
                 break;
             case TargetModelPreview.PreviewDrawPath.Asteroid:
                 _targetModelPreviewRenderer.RenderAsteroid(art.ShipGeo!, art.Texture,
-                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo,
+                    art.ModelStem, art.TextureStem);
                 break;
             case TargetModelPreview.PreviewDrawPath.WarpFunnel:
                 // P805b — native's LoadAleph vortex at the radius-1 framing
@@ -2760,7 +2762,8 @@ public sealed partial class Game1
                 break;
             default:
                 _targetModelPreviewRenderer.RenderShip(art.ShipGeo!, art.Texture,
-                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo,
+                    art.ModelStem, art.TextureStem);
                 break;
         }
         return true;
@@ -2773,6 +2776,9 @@ public sealed partial class Game1
         public NativeShipRenderer.NativeShipGeometry? ShipGeo;
         public NativeStationRenderer.NativeStationGeometry? StationGeo;
         public Texture2D? Texture;
+        // Material identity is cached with the art; the shared HD mode is read at draw time.
+        public string? ModelStem;
+        public string? TextureStem;
         public float NativeScale = 1f;
         /// <summary>P805 (row 409) — the resolved treasure/aleph-surface visual
         /// (drawn through the native treasure renderer).</summary>
@@ -2815,6 +2821,8 @@ public sealed partial class Game1
                 return new PreviewArt
                 {
                     ShipGeo = geo,
+                    ModelStem = nref!.ModelStem,
+                    TextureStem = nref.TextureStem,
                     Texture = nref!.TextureStem is null ? null : _nativeShipRenderer.TextureFor(nref.TextureStem),
                     NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
                 };
@@ -2828,6 +2836,8 @@ public sealed partial class Game1
                 return new PreviewArt
                 {
                     StationGeo = geo,
+                    ModelStem = key.ModelStem,
+                    TextureStem = tStem,
                     Texture = tStem is null ? null : _nativeStationRenderer.TextureFor(tStem),
                     NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
                 };
@@ -2841,6 +2851,8 @@ public sealed partial class Game1
                 return new PreviewArt
                 {
                     ShipGeo = geo,
+                    ModelStem = key.ModelStem,
+                    TextureStem = tStem,
                     Texture = tStem is null ? null : _nativeAsteroidRenderer.TextureFor(tStem),
                     NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
                 };

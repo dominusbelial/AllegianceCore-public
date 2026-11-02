@@ -1,0 +1,269 @@
+{
+  "importedAtlasCount": 16,
+  "rows": [
+    {
+      "kind": "ship",
+      "model": "cap501",
+      "importedAtlases": [
+        "beltersbaybmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 1,
+      "inheritedTriangles": 7,
+      "totalTriangles": 805,
+      "ownStems": [
+        "cap501bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig15",
+      "importedAtlases": [
+        "fig15bmp"
+      ],
+      "parts": 2,
+      "inheritedParts": 1,
+      "inheritedTriangles": 4,
+      "totalTriangles": 452,
+      "ownStems": [
+        "fig15bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "biosplat",
+      "importedAtlases": [
+        "ss107bmp"
+      ],
+      "parts": 1,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 544,
+      "ownStems": [
+        "ss107bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss102",
+      "importedAtlases": [
+        "ss102bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 1,
+      "inheritedTriangles": 44,
+      "totalTriangles": 622,
+      "ownStems": [
+        "ss102bmp",
+        "biosbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss103",
+      "importedAtlases": [
+        "ss103bmp"
+      ],
+      "parts": 2,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 662,
+      "ownStems": [
+        "ss103bmp",
+        "biosbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss104",
+      "importedAtlases": [
+        "ss104bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 1,
+      "inheritedTriangles": 24,
+      "totalTriangles": 496,
+      "ownStems": [
+        "biosbaybmp",
+        "ss104bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss105",
+      "importedAtlases": [
+        "ss105bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 1,
+      "inheritedTriangles": 48,
+      "totalTriangles": 763,
+      "ownStems": [
+        "ss105bmp",
+        "biosbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss107",
+      "importedAtlases": [
+        "ss107bmp"
+      ],
+      "parts": 1,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 416,
+      "ownStems": [
+        "ss107bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss300",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss300bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 848,
+      "ownStems": [
+        "bgrnd03bmp",
+        "ss300bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss301",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss301bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 698,
+      "ownStems": [
+        "bgrnd03bmp",
+        "ss301bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss302",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss302bmp"
+      ],
+      "parts": 5,
+      "inheritedParts": 1,
+      "inheritedTriangles": 48,
+      "totalTriangles": 676,
+      "ownStems": [
+        "ss18abmp",
+        "ss302bmp",
+        "bgrnd03bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss303",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss303bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 734,
+      "ownStems": [
+        "ss93abmp",
+        "ss303bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss304",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss304bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 732,
+      "ownStems": [
+        "utl20abmp",
+        "ss304bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss305",
+      "importedAtlases": [
+        "beltersbaybmp",
+        "ss305bmp"
+      ],
+      "parts": 3,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 697,
+      "ownStems": [
+        "bgrnd53bmp",
+        "ss305bmp",
+        "beltersbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss306",
+      "importedAtlases": [
+        "ss306bmp"
+      ],
+      "parts": 2,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 698,
+      "ownStems": [
+        "bgrnd03bmp",
+        "ss306bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss307",
+      "importedAtlases": [
+        "ss307bmp"
+      ],
+      "parts": 2,
+      "inheritedParts": 0,
+      "inheritedTriangles": 0,
+      "totalTriangles": 698,
+      "ownStems": [
+        "ss307bmp",
+        "bgrnd03bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss94",
+      "importedAtlases": [
+        "ss94bmp"
+      ],
+      "parts": 2,
+      "inheritedParts": 1,
+      "inheritedTriangles": 20,
+      "totalTriangles": 612,
+      "ownStems": [
+        "ss94bmp"
+      ]
+    }
+  ]
+}
