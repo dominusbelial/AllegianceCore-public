@@ -6,9 +6,7 @@ namespace Allegiance.Tools.MdlToGlb;
 /// P823 — bit-exact comparison of the two PARSED .mdl structures the GLB-layer
 /// comparison cannot see: the FrameData records (name/position/forward/up) and
 /// the LightsGeo records. Mesh geometry is covered by <see cref="Compare"/>.
-/// The one intentional difference is <see cref="Allegiance.Core.MdlFile.LodLevels"/>:
-/// the P812 GLB export does not carry the per-level geometry, so the writer
-/// emits a single detail level (asserted here, not compared).
+/// LOD geometry/radii are compared in authored file order.
 /// </summary>
 public static class MdlFileCompare
 {
@@ -41,12 +39,23 @@ public static class MdlFileCompare
                           && a.RampUp.Equals(b.RampUp) && a.Hold.Equals(b.Hold) && a.RampDown.Equals(b.RampDown);
         results.Add(new("mdl.lights", lightBits, lightBits ? "bit-exact (colour/pos/timing)" : "MISMATCH"));
 
-        results.Add(new("mdl.lodLevels",
-            written.LodLevels.Count == 0,
-            $"written has {written.LodLevels.Count} (original {original.LodLevels.Count}; the GLB carries no per-level geometry — documented delta)"));
+        bool lods = original.LodLevels.Count == written.LodLevels.Count;
+        foreach (var (a, b) in original.LodLevels.Zip(written.LodLevels))
+            lods &= BitConverter.SingleToInt32Bits(a.PixelRadius) == BitConverter.SingleToInt32Bits(b.PixelRadius)
+                && GeometryEqual(a.Meshes, b.Meshes);
+        results.Add(new("mdl.lodLevels", lods,
+            $"{original.LodLevels.Count} vs {written.LodLevels.Count}; geometry, textures and radii in file order"));
 
         return (results, results.All(r => r.Pass));
     }
+    private static bool GeometryEqual(IReadOnlyList<Allegiance.Core.MdlMesh> a, IReadOnlyList<Allegiance.Core.MdlMesh> b) =>
+        a.Count == b.Count && a.Zip(b).All(p => p.First.TextureStem == p.Second.TextureStem
+            && p.First.Indices.SequenceEqual(p.Second.Indices)
+            && Bits(p.First.Positions, p.Second.Positions) && Bits(p.First.TexCoords, p.Second.TexCoords)
+            && Bits(p.First.Normals, p.Second.Normals));
+
+    private static bool Bits(float[] a, float[] b) => a.Select(BitConverter.SingleToInt32Bits).SequenceEqual(b.Select(BitConverter.SingleToInt32Bits));
+
 }
 
 /// <summary>
@@ -176,13 +185,17 @@ public static class Compare
         var (colPass, colDetail) = CompareCollision(original.Collision, reimported.Collision);
         results.Add(new("collision", colPass, colDetail));
 
-        // -- LOD radii (sidecar) ---------------------------------------------
-        if (reimported.LodPixelRadii.Count == 0)
-            results.Add(new("lod.radii", true, "not carried by glb alone (sidecar/mdl authoritative)"));
-        else
-            results.Add(new("lod.radii",
-                original.LodPixelRadii.SequenceEqual(reimported.LodPixelRadii),
-                $"{original.LodPixelRadii.Count} vs {reimported.LodPixelRadii.Count}"));
+        results.Add(new("lod.radii", original.LodPixelRadii.SequenceEqual(reimported.LodPixelRadii),
+            $"{original.LodPixelRadii.Count} vs {reimported.LodPixelRadii.Count}"));
+        bool lods = original.LodLevels.Count == reimported.LodLevels.Count;
+        foreach (var (a, b) in original.LodLevels.Zip(reimported.LodLevels))
+            lods &= a.PixelRadius == b.PixelRadius && a.Meshes.Count == b.Meshes.Count
+                && a.Meshes.Zip(b.Meshes).All(p => p.First.TextureStem == p.Second.TextureStem
+                    && p.First.Indices.SequenceEqual(p.Second.Indices)
+                    && p.First.Positions.Select(BitConverter.SingleToInt32Bits).SequenceEqual(p.Second.Positions.Select(BitConverter.SingleToInt32Bits))
+                    && p.First.TexCoords.Select(BitConverter.SingleToInt32Bits).SequenceEqual(p.Second.TexCoords.Select(BitConverter.SingleToInt32Bits))
+                    && p.First.Normals.Select(BitConverter.SingleToInt32Bits).SequenceEqual(p.Second.Normals.Select(BitConverter.SingleToInt32Bits)));
+        results.Add(new("lod.geometry", lods, lods ? "bit-exact geometry and texture bindings" : "MISMATCH"));
 
         return (results, results.All(r => r.Pass));
     }

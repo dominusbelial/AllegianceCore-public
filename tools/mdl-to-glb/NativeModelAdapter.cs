@@ -28,10 +28,13 @@ public static class NativeModelAdapter
         {
             Name = stem,
             Meshes = meshes,
+            LodLevels = mdl.LodLevels.Select((l, li) => new GlbLodLevel(l.PixelRadius,
+                l.Meshes.Select((m, mi) => new GlbMesh($"{stem}_lod{li}_{m.TextureStem}_{mi}",
+                    m.TextureStem, m.Positions, m.TexCoords, m.Normals, m.Indices)).ToArray())).ToArray(),
             Mounts = BuildMounts(mdl, cvh),
             Lights = BuildLights(mdl),
             LodPixelRadii = mdl.LodLevels.Select(l => l.PixelRadius).ToArray(),
-            TextureStems = mdl.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            TextureStems = mdl.Meshes.Concat(mdl.LodLevels.SelectMany(l => l.Meshes)).Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
             Collision = cvh is null ? null : BuildCollision(cvh),
 
             // P823 — carry the raw FrameData (incl. up vectors, file order) so

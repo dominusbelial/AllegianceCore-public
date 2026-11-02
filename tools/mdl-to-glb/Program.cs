@@ -216,12 +216,13 @@ internal static class Program
                 model = model with
                 {
                     Meshes = model.Meshes.Select(m => m.TextureStem is null ? m : m with { TextureStem = textureStem }).ToArray(),
+                    LodLevels = model.LodLevels.Select(l => l with { Meshes = l.Meshes.Select(m => m.TextureStem is null ? m : m with { TextureStem = textureStem }).ToArray() }).ToArray(),
                     TextureStems = model.TextureStems,
                     Images = model.Images?.Select(img => img with { Stem = textureStem }).ToArray(),
                 };
                 model = model with
                 {
-                    TextureStems = model.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
+                    TextureStems = model.AllMeshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
                 };
             }
             if (noTexture)
@@ -229,11 +230,12 @@ internal static class Program
                 model = model with
                 {
                     Meshes = model.Meshes.Select(m => m with { TextureStem = null }).ToArray(),
+                    LodLevels = model.LodLevels.Select(l => l with { Meshes = l.Meshes.Select(m => m with { TextureStem = null }).ToArray() }).ToArray(),
                     TextureStems = [],
                     Images = null,
                 };
             }
-            else if (model.Meshes.Any(m => m.TextureStem is not null))
+            else if (model.AllMeshes.Any(m => m.TextureStem is not null))
             {
                 // A textured mesh must have a base-colour image behind every stem.
                 GlbImporter.ValidateTextureImages(model);

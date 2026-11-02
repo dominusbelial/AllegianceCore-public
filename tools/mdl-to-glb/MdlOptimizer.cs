@@ -7,8 +7,8 @@ namespace Allegiance.Tools.MdlToGlb;
 /// <summary>
 /// Offline binary ThingGeo optimizer. Native: effect/efapp.cpp:713-818,
 /// engine/geometry.cpp:1009-1012,1037-1068,1187-1399,1789-1900.
-/// Keeps the namespace graph (including every LOD), rather than going through
-/// the GLB adapter, which intentionally exports only the finest geometry.
+/// Keeps the native namespace graph (including every LOD) while folding
+/// geometry directly, without an intermediate authoring-format conversion.
 /// </summary>
 public static class MdlOptimizer
 {

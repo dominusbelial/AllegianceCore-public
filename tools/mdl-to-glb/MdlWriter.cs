@@ -29,10 +29,9 @@ namespace Allegiance.Tools.MdlToGlb;
 /// <c>TextureGeo(&lt;stem&gt;, MeshGeo)</c>.</item>
 /// </list>
 ///
-/// <para><b>LOD:</b> the GLB does not carry per-level geometry (the P812 export
-/// ships the base meshes + the sidecar's baked pixel radii only), so the writer
-/// emits the single detail level — the brief's "else one level" fallback. The
-/// report records this as the known, explained delta of the native round trip.</para>
+/// <para>LODGeo writes the native postfix list of (geo, radius, Pair, End),
+/// then base geo, LODGeo import and Apply (engine/geometry.cpp:1937-1953).
+/// Authored list order is preserved; each level inherits its TextureGeo binding.</para>
 /// </summary>
 public static class MdlWriter
 {
@@ -138,16 +137,39 @@ public static class MdlWriter
         }
         w.UInt(ObjectEnd);
 
-        // idx 3: object = GroupGeo([mesh…]); textured meshes wrapped
-        // TextureGeo(<stem import>, MeshGeo). Args-first token order: the mesh
-        // list precedes the GroupGeo import (native convention, see above).
+        // Native fig30 layout: List(count), [geo, Float(px), Pair, End]..., base,
+        // Import(LODGeo), Apply, End. See engine/geometry.cpp:1937-1953.
         w.UInt(3);
-        w.UInt(ObjectList); w.UInt((uint)model.Meshes.Count);
-        foreach (var mesh in model.Meshes)
-            WriteMesh(w, mesh, impMesh, impTexture, impStem);
-        w.UInt(ObjectImport); w.UInt((uint)impGroup);
-        w.UInt(ObjectApply);
+        if (model.LodLevels.Count > 0)
+        {
+            w.UInt(ObjectList); w.UInt((uint)model.LodLevels.Count);
+            foreach (var level in model.LodLevels)
+            {
+                WriteGeometry(level.Meshes);
+                w.UInt(ObjectFloat); w.Float(level.PixelRadius);
+                w.UInt(10); // ObjectPair (mdlbin.cpp:140-145)
+                w.UInt(ObjectEnd);
+            }
+        }
+        WriteGeometry(model.Meshes);
+        if (model.LodLevels.Count > 0)
+        {
+            w.UInt(ObjectImport); w.UInt((uint)impLod);
+            w.UInt(ObjectApply);
+        }
         w.UInt(ObjectEnd);
+
+        void WriteGeometry(IReadOnlyList<GlbMesh> meshes)
+        {
+            w.UInt(ObjectList); w.UInt((uint)meshes.Count);
+            foreach (var mesh in meshes)
+            {
+                WriteMesh(w, mesh, impMesh, impTexture, impStem);
+                w.UInt(ObjectEnd);
+            }
+            w.UInt(ObjectImport); w.UInt((uint)impGroup);
+            w.UInt(ObjectApply);
+        }
 
         return w.ToArray();
     }
@@ -156,7 +178,7 @@ public static class MdlWriter
     /// meshes (this is also the namespace order, matching the native files'
     /// convention of one namespace per texture unit).</summary>
     internal static string[] DistinctStems(GlbExportModel model) =>
-        model.Meshes.Select(m => m.TextureStem).OfType<string>()
+        model.AllMeshes.Select(m => m.TextureStem).OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -166,7 +188,7 @@ public static class MdlWriter
         // The MeshGeo tokens; when nested inside TextureGeo there is NO End —
         // the geo is an argument on the same stack machine (native encodes
         // TextureGeo as [image][geo][fn][Apply], one object).
-        void MeshGeoTokens(bool end)
+        void MeshGeoTokens()
         {
             w.UInt(ObjectImport); w.UInt((uint)impMesh);
             w.UInt(ObjectBinary);
@@ -183,8 +205,6 @@ public static class MdlWriter
             }
             foreach (var idx in mesh.Indices)
                 w.UShort(idx);
-            if (end)
-                w.UInt(ObjectEnd);
         }
 
         if (mesh.TextureStem is { } stem)
@@ -196,14 +216,13 @@ public static class MdlWriter
             // the TextureGeo import, then Apply (the parser pops geo first,
             // then the image — so the image is pushed first).
             w.UInt(ObjectImport); w.UInt((uint)stemImport);
-            MeshGeoTokens(end: false);
+            MeshGeoTokens();
             w.UInt(ObjectImport); w.UInt((uint)impTexture);
             w.UInt(ObjectApply);
-            w.UInt(ObjectEnd);
         }
         else
         {
-            MeshGeoTokens(end: true);
+            MeshGeoTokens();
         }
     }
 
