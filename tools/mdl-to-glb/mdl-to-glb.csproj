@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- P812 — prototype: native .mdl (+ .cvh) → glTF .glb export / re-import.
-       Proof tool, NOT a deployable app: built by tools/build-tools.sh, never
-       shipped. Tests: tests/Allegiance.Core.Tests/MdlToGlbTests.cs. -->
+  <!-- Offline modding CLI: native .mdl (+ .cvh) ↔ glTF .glb, inspect,
+       optimize. Built by tools/build-tools.sh. Its output loads in the game.
+       Tests: MdlToGlbTests, GlbToMdlTests, P824TexturePipelineTests,
+       P919ModelToolsTests in tests/Allegiance.Core.Tests/. -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
