@@ -1,0 +1,118 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolBuild": {
+    "projects": 111,
+    "warnings": 0,
+    "errors": 0
+  },
+  "newTests": {
+    "cases": 2,
+    "repetitionsPerCase": 3,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "fast": {
+    "executions": 12964,
+    "passed": 12956,
+    "failed": 5,
+    "skipped": 3,
+    "seconds": 558.9,
+    "durationLimitExceedances": 6,
+    "outcome": "FAIL"
+  },
+  "slowFastIsolation": {
+    "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path": [
+      {
+        "outcome": "Passed",
+        "seconds": 8.65
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.703
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.654
+      }
+    ],
+    "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_a_same_side_ship_on_its_path_and_resumes": [
+      {
+        "outcome": "Passed",
+        "seconds": 8.636
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.595
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.469
+      }
+    ],
+    "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal": [
+      {
+        "outcome": "Passed",
+        "seconds": 8.526
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.3
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.449
+      }
+    ],
+    "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes": [
+      {
+        "outcome": "Passed",
+        "seconds": 8.427
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.427
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 8.402
+      }
+    ],
+    "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names": [
+      {
+        "outcome": "Passed",
+        "seconds": 1.915
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 1.805
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 1.85
+      }
+    ],
+    "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured": [
+      {
+        "outcome": "Passed",
+        "seconds": 9.686
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 9.53
+      },
+      {
+        "outcome": "Passed",
+        "seconds": 9.562
+      }
+    ]
+  },
+  "parity": "unchanged",
+  "glossaryPaths": 504,
+  "mediaFiles": 8,
+  "mediaBytes": 229654,
+  "graphicsRenderer": "llvmpipe (LLVM 21.1.8, 256 bits)"
+}

@@ -730,6 +730,12 @@ list in **reverse**.
   (ship/station/asteroid mesh, aleph vortex via `Rendering/WarpRenderer.cs`,
   treasure model/decal and probe mesh via `Rendering/NativeTreasureRenderer.cs`).
   Reports `docs/reports/HUD21_TARGET_MODEL_PREVIEW.md`, `P805B_HUD_PROOF.md`.
+  P922 preserves cached model/texture stems for ships, stations and asteroids,
+  so both HUD styles follow the shared live HD material mode; treasure already
+  carries them in its visual. GPU regression proof (including inherited file-level
+  texture bindings): `tools/p922-target-proof/`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P922TargetMaterialTests.cs`;
+  report `docs/reports/P922_REPORT.md`.
 - **Live-proof automation** — the real-window proof harness: the flag grammar and
   sequencing in `src/Allegiance.ClientCore.Game/LiveProof/` (`AutoProofPlan`,
   `AutoProofMachine`), the client actions in `Game1.AutoProof.cs`, and the

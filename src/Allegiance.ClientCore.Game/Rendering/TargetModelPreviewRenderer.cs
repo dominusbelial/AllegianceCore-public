@@ -98,28 +98,28 @@ public sealed class TargetModelPreviewRenderer : IDisposable
 
     public void RenderShip(NativeShipRenderer.NativeShipGeometry geo, Texture2D? texture,
         in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
-        RenderTarget2D? restoreTo)
+        RenderTarget2D? restoreTo, string? modelStem = null, string? textureStem = null)
     {
         Begin();
-        _ship.Draw(geo, texture, world, view, proj, 1f, nativeScale, lighting);
+        _ship.Draw(geo, texture, world, view, proj, 1f, nativeScale, lighting, modelStem, textureStem);
         End(restoreTo);
     }
 
     public void RenderStation(NativeStationRenderer.NativeStationGeometry geo, Texture2D? texture,
         in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
-        RenderTarget2D? restoreTo)
+        RenderTarget2D? restoreTo, string? modelStem = null, string? textureStem = null)
     {
         Begin();
-        _station.Draw(geo, texture, world, view, proj, nativeScale, lighting);
+        _station.Draw(geo, texture, world, view, proj, nativeScale, lighting, modelStem, textureStem);
         End(restoreTo);
     }
 
     public void RenderAsteroid(NativeShipRenderer.NativeShipGeometry geo, Texture2D? texture,
         in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
-        RenderTarget2D? restoreTo)
+        RenderTarget2D? restoreTo, string? modelStem = null, string? textureStem = null)
     {
         Begin();
-        _asteroid.Draw(geo, texture, world, view, proj, nativeScale, lighting);
+        _asteroid.Draw(geo, texture, world, view, proj, nativeScale, lighting, modelStem, textureStem);
         End(restoreTo);
     }
 

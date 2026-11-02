@@ -5325,3 +5325,28 @@ Snapshot `719fe7aa`, master at `d7c7dc45` without media. Fast FAIL (12,950 tests
 The P784, P909 and MusicLoading failures are sweep-only, cause not established. `P832d`, `P745`, `P796`, `P798`, `SC4`, `P699b` (1 oxygen expiry, other case),
 `NpcWingmanDefend`, `DockDocking` and `ConsoleLogNonBlocking` failed too; seen in earlier sweeps, not rerun here, not cleared. Windows skip on the runner
 (no usable GL device), so it never covers training windows; only the workstation gate does.
+
+## 2026-11-02: P922 target-material lane
+
+Exactly one Fast-tier run; rendering-only production changes. Isolated filters were rerun three times each with artwork. Raw evidence is retained in the lane's ignored `.scratch/p922/` (sandbox cannot write the usual external evidence store).
+
+| Test | Fast failure | Three isolated runs |
+| --- | --- | --- |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Writes the default user `player.json` outside the writable sandbox | fail / fail / fail under the original environment; pass / pass / pass with `XDG_CONFIG_HOME` set to task-local scratch. Environment restriction, not a rendering regression. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | Floating-point boundary: `7.0000000000000009` exceeds upper bound `7` | pass / pass / pass (all three delay cases in each isolated filter). Cause of sweep-only boundary exposure not established. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Phase-one `AttackTarget` is null at line 179 | fail / fail / fail, same assertion. Previously seen in runner sweeps; remains open, not cleared as a load flake. P922 changes no simulation/server code. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | Observed 31.45 simulated seconds, allowed 28–31 | pass / pass / pass. Sweep-only; cause not established. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Observer never latches victim death after 2,500 ticks | pass / pass / pass. Sweep-only; cause not established. |
+
+P922's two new Live GPU cases (pack present and absent, each covering 24 kind/style/mode combinations) pass 3/3 each with 0 skipped. The optional Meshy pack is unconfigured; the Fast skip count and final cohort totals are in `docs/reports/P922_REPORT.md`.
+
+The six passing Fast cases that exceeded the calibrated duration limit were also rerun 3× individually. All passed and all isolated durations were below 10 seconds; the sweep-only overruns remain ledgered rather than changing unrelated tier metadata.
+
+| Test | Fast seconds | Isolated seconds (three passes) |
+| --- | ---: | --- |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path` | 10.065 | 8.650 / 8.703 / 8.654 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_same_side_ship_on_its_path_and_resumes` | 10.252 | 8.636 / 8.595 / 8.469 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | 10.232 | 8.526 / 8.300 / 8.449 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | 10.078 | 8.427 / 8.427 / 8.402 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 11.063 | 1.915 / 1.805 / 1.850 |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 11.342 | 9.686 / 9.530 / 9.562 |
