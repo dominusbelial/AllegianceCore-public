@@ -1268,6 +1268,11 @@ list in **reverse**.
   `mdlc/mdlc.cpp:109-152`. Tests:
   `tests/Allegiance.Core.Tests/P919ModelToolsTests.cs`; workflow:
   `docs/GUIDE.md`; verdicts and limitations: `docs/reports/P919_REPORT.md`.
+- **TextureCraft material pilot (P920, evaluation only)** —
+  `tools/p920-texturecraft.py` preserves native geometry/UVs and atlas texels,
+  bakes four mesh maps, adds restrained procedural wear and builds a private
+  one-atlas schema-3 pack. Game1 captures use `tools/p916-texture-proof/`;
+  repeat commands, orientation/UV limits and verdict: `docs/reports/P920_REPORT.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
   Training's complete Fast + Live cohort: `tools/run-training-tests.sh` (P882b).
