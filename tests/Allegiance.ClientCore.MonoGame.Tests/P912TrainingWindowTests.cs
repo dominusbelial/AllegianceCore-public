@@ -47,6 +47,7 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         string directory = Path.Combine(root, ".scratch", "p912", "windows", $"m{mission}-{style}-{policy ?? "default"}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         string dotnet = Environment.GetEnvironmentVariable("DOTNET")
+            ?? Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dotnet", "dotnet");
         var start = new ProcessStartInfo(dotnet) { WorkingDirectory = root, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (string argument in new[] { proof, "window", content, directory, mission.ToString(), style }) start.ArgumentList.Add(argument);
