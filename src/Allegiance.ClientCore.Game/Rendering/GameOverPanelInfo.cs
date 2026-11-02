@@ -81,8 +81,11 @@ public readonly record struct GameOverPanelInfo(
             outcome,
             AsciiSafe(title),
             AsciiSafe(winnerLine),
-            AsciiSafe(go.GameoverMessage));
+            string.Join("\n", go.GameoverMessage.Split('\n').Select(AsciiSafe)));
     }
+
+    /// <summary>Preset summaries use the existing GAME_OVER reason string.</summary>
+    public string[] ReasonLines => Reason.Split('\n');
 
     public static string NextMatchTimer(int seconds) => $"NEXT MATCH IN {Math.Max(0, seconds)}s";
 

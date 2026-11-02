@@ -131,11 +131,15 @@ public sealed class GameOverScreenRenderer
                 cursorY += _small.MeasureString("Mg").Y * 1.2f + 8f;
             }
 
-            // Reason text, single centred line (clipped to the panel width).
-            string reason = Clip(info.Reason, panelW - 2f * pad);
-            var rsz = _small.MeasureString(reason);
-            DrawSmall(reason, new Vector2(panelX + (panelW - rsz.X) / 2f, cursorY), ReasonColor, 1f);
-            cursorY += rsz.Y + 6f;
+            // Preset detail lines arrive in the existing GAME_OVER reason string.
+            // Shared by Classic and Modern; each line retains the native reason.
+            foreach (string line in info.ReasonLines)
+            {
+                string reason = Clip(line, panelW - 2f * pad);
+                var rsz = _small.MeasureString(reason);
+                DrawSmall(reason, new Vector2(panelX + (panelW - rsz.X) / 2f, cursorY), ReasonColor, 1f);
+                cursorY += rsz.Y + 6f;
+            }
 
             if (nextMatchSeconds is { } seconds)
             {

@@ -23,7 +23,8 @@ public sealed partial class Mission
     /// (FedSrv/fsmission.cpp:2348-2504). The next criterion compares all sides,
     /// rather than restricting the field to the previous criterion's tied leaders.</summary>
     /// deadlineReached reuses the ranking for the port finale without changing the match clock.
-    public (bool Expired, Side? Winner, string Criterion) EvaluateCountdown(double now, bool deadlineReached = false)
+    public (bool Expired, Side? Winner, string Criterion) EvaluateCountdown(double now, bool deadlineReached = false,
+        bool stationKillsCriterion = false)
     {
         if (Stage != MissionStage.Started || (!deadlineReached && !HasCountdownExpired(now)))
             return (false, null, "");
@@ -56,6 +57,11 @@ public sealed partial class Mission
         if (FlagsEnabled && (selected = UniqueMaximum(s => s.Flags)) is not null)
             return (true, selected, "flags");
 
+        // P914 preset design extension; the native default and goal precedence stay intact.
+        if (IsShowcasePreset && !IsTraining && stationKillsCriterion &&
+            (selected = UniqueMaximum(s => StationKills(s.Id))) is not null)
+            return (true, selected, "station-kills");
+
         int kills = -1, deaths = int.MaxValue;
         selected = null;
         foreach (var side in Sides)
@@ -78,6 +84,7 @@ public sealed partial class Mission
                 ?.InvestedMilliseconds ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
             "artifacts" => side.Artifacts.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "flags" => side.Flags.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "station-kills" => StationKills(side.Id).ToString(System.Globalization.CultureInfo.InvariantCulture),
             _ => $"kills={side.Kills}/deaths={side.Deaths}",
         })));
 }

@@ -41,6 +41,8 @@ public sealed record SkirmishOptions
     public Allegiance.Core.Model.MissionGoals Goals { get; init; } = new();
     /// <summary>Optional unattended goal coverage preset. Omitted preserves fixed goals.</summary>
     public GoalRotationConfig? GoalRotation { get; init; }
+    /// <summary>Opt-in preset deadline rule; native ranking remains the default.</summary>
+    public bool StationKillsDecideDeadline { get; init; }
     /// <summary>P856 — native <c>MissionParams::bAllowFriendlyFire</c>
     /// (igc.h:1149), the create-game option: same-side and allied damage when
     /// on. Default off, exactly native <c>MissionParams::Reset</c>
@@ -182,7 +184,7 @@ public sealed record SkirmishOptions
             Port = HostLan ? HostPort : 0, BindAddress = HostLan ? "0.0.0.0" : "127.0.0.1",
             Discovery = new() { Enabled = HostLan },
             SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
-            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation },
+            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation, StationKillsDecideDeadline = StationKillsDecideDeadline },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = !HostLan && TechMode == "unlocked", Money = 1_000_000 },
@@ -192,6 +194,7 @@ public sealed record SkirmishOptions
             },
             Games = [new()
             {
+                SkirmishPreset = !HostLan,
                 Name = HostLan ? GameName.Trim() : "Skirmish", Password = HostLan ? Password : "", Map = Map, Teams = 2, CivIds = [PlayerCiv, EnemyCiv],
                 SideNames = [Civilizations.First(c => c.Id == PlayerCiv).Name, Civilizations.First(c => c.Id == EnemyCiv).Name],
                 // Worker probes and the research commander may occupy additional seats.

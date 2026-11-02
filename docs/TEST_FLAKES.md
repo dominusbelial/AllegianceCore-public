@@ -4,6 +4,45 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P914 verification (2026-11-02 UTC)
+
+Exactly one Fast sweep: **12,904 passed / 8 failed / 3 optional private-pack
+skips**, **12,915 executions in 532.542 s**. All **nine infrastructure checks**
+passed. Two other executions exceeded the ten-second timing limit. All **26
+new P914 cases passed**; the tier remains **FAIL** and was not rerun.
+
+All nine failed/slow methods ran **three times alone** in fresh processes with
+artwork, server GC, and the lane's required worktree-local temporary directory:
+**36 case executions: 14 passed / 22 failed / 0 skipped**.
+
+| Method / family | Isolation result | Classification |
+|---|---|---|
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository` | Artwork **fail/fail/fail**; SkyPack **pass/pass/pass** | Environment/fixture ancestry: `Path.GetTempPath()` is inside this checkout under the lane scratch rule, so the resolver sees the real repository configuration. Resolver unchanged. |
+| `PlayerBundlePathsTests.MissingDirectoryHasNoDefault` | Artwork and NativeSource each **fail/fail/fail**; SkyPack **pass/pass/pass** | Same worktree-local temp ancestry conflict. |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | **fail/fail/fail** | Same ancestry conflict: the executable-side lookup reaches the real checkout before the fixture's working-directory config. |
+| `PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory` | **fail/fail/fail** | Same ancestry conflict; the configured native source is found. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **fail/fail/fail**, 0.049/0.060/0.060 s; then **pass/pass/pass** with scratch `XDG_CONFIG_HOME` | Existing user profile is read-only in the sandbox; the fixture's restore write fails. Profile implementation unchanged. Writable scratch configuration resolves it. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.174/1.216/1.144 s | Existing null `DefendTarget` at line 179, same P913/P908/P907/P906/P904 failure. Remains open. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **pass/fail/pass**, 0.580/0.580/0.571 s | Existing stale dock-status history, station 1051 versus -1. Still intermittent alone; remains open. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.209/3.228/3.297 s | Timing only: sweep 10.319 s; same P913 family. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, 9.539/9.979/9.918 s | Timing only: sweep 10.464 s; near-limit fixture, same P913 family. |
+
+The final affected Core cohort passed **180/180** (60 ×3), including the new
+station accounting/deadline/feed assertions; new client cases passed **15/15**
+(5 ×3), and existing HUD result models passed **60/60** (20 ×3), all with zero
+skips. A final spectator-feed notification/assertion added after Fast discovery
+was covered by those final filtered runs and the clean solution/AOT builds.
+
+The serial showcase never-parks cohort passed **5/5**, matching P913's saved
+**5/5** baseline: **244.063 / 481.974 / 252.780 / 197.342 / 227.874 s**.
+All reached 24/30, recorded real combat hits and passed the fixture's zero
+simulation-stage-failure assertion. Maximum stopped-with-target interval:
+**1.905 s**, versus the saved baseline's **1.913 s**. No performance A/B claim.
+
+Evidence: [P914 report](reports/P914_REPORT.md),
+[compact gate and isolation receipts](reports/P914_assets/validation.json).
+Raw logs/TRX remain under the worktree's `.scratch/p914/`.
+
 ## P913 verification (2026-11-02 UTC)
 
 Exactly one Fast sweep: **12,878 passed / 8 failed / 3 optional private-pack

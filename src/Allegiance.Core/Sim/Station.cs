@@ -588,6 +588,14 @@ public sealed class Station : IStationIgc, ISideVisible
                 dr = DamageResult.NoDamage;                         // stationIGC.cpp:203-204 (no shield → NO damage at all, confirmed)
         }
 
+        // Count the lethal transition independently of optional skill telemetry and host
+        // callbacks (direct hits, collisions and blasts all converge here). A dead base
+        // repaired by a caller cannot earn another destruction for the same instance.
+        if (dr == DamageResult.Killed && !_destructionRecorded)
+        {
+            _destructionRecorded = true;
+            Mission?.RecordStationDestruction(this, launcher);
+        }
         if (launcher is Ship attacker)
         {
             if (amount < 0 && ArmorFraction > skillHullBefore)
@@ -602,6 +610,8 @@ public sealed class Station : IStationIgc, ISideVisible
         }
         return dr;
     }
+
+    private bool _destructionRecorded;
 
     private double _nextDamageTrace = double.NegativeInfinity;
 

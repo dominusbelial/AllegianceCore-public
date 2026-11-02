@@ -535,6 +535,18 @@ list in **reverse**.
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,
   `Server.SideIntegrity.cs`.
+- **Preset station-kill deadlines (P914)** — default-off
+  `showcase.stationKillsDecideDeadline` adds hostile station destructions after
+  native goal criteria and before ship kills. Research/rotating showcase and
+  offline `GameConfig.SkirmishPreset` missions opt into preset scope at assembly;
+  player-created and LAN worlds retain native ranking. Mission-owned counts and
+  uncredited destruction accounting live in
+  `src/Allegiance.Core/Model/Mission.StationKills.cs`, populated once per lethal
+  station instance in `src/Allegiance.Core/Sim/Station.cs`. Presets always publish
+  the tally through existing chat and game-over fields, shared by both HUD styles.
+  Proof: `tests/Allegiance.Core.Tests/P914StationDeadlineTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P914PresetPresentationTests.cs`,
+  `tools/p914-ui-proof/`; report: `docs/reports/P914_REPORT.md`.
 - **Seed pinning** — `ServerConfig.BenchmarkSeed` (sim RNG) vs the P811
   `MapGenConfig.Seed` / `--map-seed` (reproducible generated maps).
 - **Reconnect Grace** (EXPERIMENTAL, `reconnect.enabled`, default **off**) —

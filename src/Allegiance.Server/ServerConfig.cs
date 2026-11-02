@@ -15,6 +15,8 @@ public sealed class ShowcaseConfig
     public double ResearchTimeScale { get; set; } = 1;
     /// <summary>Hard simulation-time bound after a research showcase finale fires. Port orchestration.</summary>
     public double FinaleTimeoutSeconds { get; set; } = 300;
+    /// <summary>Preset policy: rank enemy station destructions before ship kills at a deadline.</summary>
+    public bool StationKillsDecideDeadline { get; set; }
     public bool LoopResearchPlans { get; set; }
     /// <summary>Opt-in preset orchestration; native has creator-selected goals, no rotation.</summary>
     public GoalRotationConfig? GoalRotation { get; set; }
@@ -41,6 +43,9 @@ public sealed class ShowcaseConfig
 /// </summary>
 public sealed class GameConfig
 {
+    /// <summary>Set by the offline skirmish preset, including unlocked-tech games.</summary>
+    public bool SkirmishPreset { get; set; }
+
     /// <summary>Native MissionParams goal fields. Absent/empty = existing
     /// dedicated-server policy (no event goal; optional legacy countdown).</summary>
     public Allegiance.Core.Model.MissionGoals Goals { get; set; } = new();
