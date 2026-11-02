@@ -33,6 +33,14 @@ evidence, not a simulated combat scenario. Effects run through production;
 no server/sim/wire code is changed. Use isolated copies of the entire output
 folder for before/after DLLs; do not build over running proof binaries.
 
+P920 adds optional final `hangar` or `target` for the fighter. `hangar` also
+writes `NAME-fighter-STYLE-preview.png`: the actual Game1 hangar draw in a
+640×640 render target before opaque shop panels cover it, with spin fixed at
+0.9 radians. `target` inserts a frozen client-only fighter at (0,5000,-1000)
+and selects it in the actual HUD target pane. Use `hd` for that pane's HD
+comparison: its existing draw omits the model key needed for PBR, so `pbr`
+falls back to native. See `docs/reports/P920_REPORT.md` for the evaluation.
+
 Read-only HD provenance audit (Pillow only; never calls a generation service):
 
 ```sh

@@ -21,7 +21,7 @@ using SimVec = Allegiance.Core.Collision.Vector3;
 if (args[0] == "--audit") { AtlasAudit.Run(Path.GetFullPath(args[1])); return; }
 string output = Path.GetFullPath(args[0]), style = args[1], hull = args[2], tag = args[3];
 string diagnostic = args.Length > 4 ? args[4] : "off";
-bool preview = args.Length > 5 && args[5] == "preview";
+string preview = args.Length > 5 ? args[5] : "";
 Directory.CreateDirectory(output);
 string content = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
 string localContent = Path.Combine(AppContext.BaseDirectory, "Content");
@@ -48,15 +48,32 @@ ticker.Start();
 game.Components.Add(new Proof(game, server.Missions[0].Core, output, style, hull, tag, diagnostic, preview, () => { stop.Cancel(); ticker.Join(); }));
 try { game.Run(); } finally { stop.Cancel(); ticker.Join(); }
 
-sealed class Proof(Game1 game, StaticCore core, string output, string style, string hull, string tag, string diagnostic, bool preview, Action freeze) : GameComponent(game)
+sealed class Proof(Game1 game, StaticCore core, string output, string style, string hull, string tag, string diagnostic, string preview, Action freeze) : DrawableGameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch _watch = Stopwatch.StartNew();
     private int _frames;
     private bool _shot, _frozen;
+    private bool _previewShot;
     private T Get<T>(string name) => (T)typeof(Game1).GetField(name, Hidden)!.GetValue(game)!;
     private void Set(string name, object value) => typeof(Game1).GetField(name, Hidden)!.SetValue(game, value);
     private static void Property(object target, string name, object value) => target.GetType().GetProperty(name)!.SetValue(target, value);
+    public override void Draw(GameTime time)
+    {
+        if (!_shot || _previewShot || preview != "hangar") return;
+        _previewShot = true;
+        // Capture the actual production hangar draw before its opaque shop
+        // panels hide it. This runs in Game1's graphics context after its frame.
+        var gd = game.GraphicsDevice;
+        using var rt = new RenderTarget2D(gd, 640, 640, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        Set("_hullPreviewSpin", .9f);
+        typeof(Game1).GetMethod("DrawDockedHullPreview", Hidden)!.Invoke(game,
+            [new GameTime(time.TotalGameTime, TimeSpan.Zero), Get<ShopModel>("_shopModel")]);
+        gd.SetRenderTarget(null);
+        using var stream = File.Create(Path.Combine(output, $"{tag}-fighter-{style}-preview.png"));
+        rt.SaveAsPng(stream, rt.Width, rt.Height);
+    }
     public override void Update(GameTime time)
     {
         if (_watch.Elapsed.TotalSeconds > 90) throw new TimeoutException("P916 flight proof timed out");
@@ -66,7 +83,8 @@ sealed class Proof(Game1 game, StaticCore core, string output, string style, str
         lock (session.Gate)
         {
             var world = session.World;
-            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own) || own.Latest is null || own.StationId >= 0) return;
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own) || own.Latest is null
+                || (own.StationId >= 0 && (preview != "hangar" || !_frozen))) return;
             if (!_frozen) { freeze(); _frozen = true; }
             var type = hull is "pod" or "station" or "rock" ? core.HullTypes.Values.First(h => h.ModelName == "utl203")
                 : hull == "capital" ? core.HullTypes.Values.First(h => h.Name == "Destroyer")
@@ -98,7 +116,7 @@ sealed class Proof(Game1 game, StaticCore core, string output, string style, str
                 var st = core.StationTypes.Values.First(t => t.ModelName == "ss27");
                 stations[(short)900] = new DataStationIGC([0,5000,0], [0,1,0], [0,0,-1], [0,0,0,0], sector, 0, 900, st.StationTypeId, 100, 100, "P916 station");
                 Get<ChaseCamera>("_chaseCamera").DistanceOverride = st.Radius * 3.4f;
-                if (preview)
+                if (preview == "preview")
                 {
                     var kind = Enum.ToObject(typeof(Game1).GetNestedType("TargetKind", BindingFlags.NonPublic)!, 1);
                     var target = Activator.CreateInstance(typeof(Game1).GetNestedType("AutopilotTarget", BindingFlags.NonPublic)!, [kind, (short)900, "P916 station", OrderChange.CidNone, false])!;
@@ -118,6 +136,28 @@ sealed class Proof(Game1 game, StaticCore core, string output, string style, str
             // Remove unrelated loopback ships so each frame diagnoses this hull.
             var poses = Get<IDictionary>("_poses");
             foreach (object id in poses.Keys.Cast<object>().ToArray()) if (!id.Equals(me)) poses.Remove(id);
+            // P920 material evaluation: exercise the actual docked screen and
+            // target pane after the same loopback flight/frozen-pose setup.
+            if (preview == "hangar")
+            {
+                Property(own, "StationId", (short)1051);
+                Set("_shopModel", new ShopModel(Get<ShopCatalog>("_shopCatalog"), type.HullId, []));
+                Set("_dockedActive", true); Set("_hangarOnly", false); Set("_teleportActive", false);
+                Set("_hullPreviewSpin", .9f - (float)time.ElapsedGameTime.TotalSeconds);
+            }
+            if (preview == "target")
+            {
+                const short targetId = 902;
+                var targetShip = new ShipEntity { ShipId = targetId };
+                Property(targetShip, "HullId", type.HullId); Property(targetShip, "SideId", own.SideId);
+                Property(targetShip, "SectorId", own.SectorId); Property(targetShip, "StationId", (short)-1);
+                var targetFixture = new Ship(targetId, type, new SimVec(0, 5000, -1000), SimVec.Zero, Orientation.Identity);
+                Property(targetShip, "Latest", ServerShipUpdate.FromModel(targetId, targetFixture, own.Latest.Time));
+                ((IDictionary)world.Ships)[targetId] = targetShip;
+                var kind = Enum.ToObject(typeof(Game1).GetNestedType("TargetKind", BindingFlags.NonPublic)!, 0);
+                var target = Activator.CreateInstance(typeof(Game1).GetNestedType("AutopilotTarget", BindingFlags.NonPublic)!, [kind, targetId, "P920 fighter", OrderChange.CidNone, false])!;
+                Set("_autoTarget", target);
+            }
             if (++_frames == 1) Console.WriteLine($"[p916] hull={type.HullId} model={type.ModelName} length={type.Length} fraction={fixture.Fraction} style={style} diagnostic={diagnostic} hd={up.HdTextures} effects={up.Effects}");
             if (_frames < 45) return;
             Console.WriteLine($"[p916] engineEmitters={Get<IDictionary>("_engineTrailEmitters").Count} damageEmitters={Get<IDictionary>("_damageEmitters").Count}");
