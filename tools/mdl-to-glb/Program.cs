@@ -6,7 +6,7 @@ using Allegiance.Core.Collision;
 namespace Allegiance.Tools.MdlToGlb;
 
 /// <summary>
-/// P812/P823 — prototype: export a native hull (compiled <c>.mdl</c> mesh +
+/// Offline modding tool: export a native hull (compiled <c>.mdl</c> mesh +
 /// <c>.cvh</c> collision) to a glTF 2.0 <c>.glb</c> with hardpoints as
 /// <c>HP_&lt;Kind&gt;_&lt;Index&gt;</c> empty nodes and a collision sidecar,
 /// then re-import it and compare numerically. P823 adds the writer direction:
@@ -16,6 +16,7 @@ namespace Allegiance.Tools.MdlToGlb;
 ///   mdl-to-glb export   &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;] [--no-texture]
 ///   mdl-to-glb roundtrip &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]
 ///   mdl-to-glb inspect  &lt;artDir&gt; &lt;stem&gt;
+///   mdl-to-glb optimize &lt;artDir&gt; &lt;stem&gt; --out &lt;dir&gt;
 ///   mdl-to-glb import    &lt;glbDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]      (P823: glb+sidecar → .mdl + .cvh)
 ///                        [--texture-stem &lt;stem&gt;] [--no-texture]   (P824: + &lt;stem&gt;.mdl texture)
 ///   mdl-to-glb verifyimport &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]   (P823: native → glb → mdl/cvh → compare)
@@ -23,8 +24,8 @@ namespace Allegiance.Tools.MdlToGlb;
 ///   mdl-to-glb gentesthull &lt;outDir&gt; &lt;stem&gt; [--size 128]     (P824: proof hull + proof texture → glb+sidecar)
 /// </code>
 ///
-/// Writes <c>&lt;stem&gt;.glb</c> + <c>&lt;stem&gt;.glbside.json</c>. This is a
-/// proof tool (investigation tasks P812/P823/P824): nothing here runs in the game.
+/// Export writes <c>&lt;stem&gt;.glb</c> + <c>&lt;stem&gt;.glbside.json</c>.
+/// Import writes the native assets the game loads; the game does not load GLB.
 /// </summary>
 internal static class Program
 {
@@ -37,6 +38,7 @@ internal static class Program
                   mdl-to-glb export       <artDir> <stem> [--out <dir>] [--no-texture]
                   mdl-to-glb roundtrip    <artDir> <stem> [--out <dir>]
                   mdl-to-glb inspect      <artDir> <stem>
+                  mdl-to-glb optimize     <artDir> <stem> --out <dir>
                   mdl-to-glb import       <glbDir> <stem> [--out <dir>] [--texture-stem <stem>] [--no-texture]
                   mdl-to-glb verifyimport <artDir> <stem> [--out <dir>]
                   mdl-to-glb gentexture   <outDir> <stem> [--size 128]
@@ -55,6 +57,7 @@ internal static class Program
             "export" => Export(artDir, stem, outDir, noTexture: HasFlag(args, "--no-texture")),
             "roundtrip" => Roundtrip(artDir, stem, outDir),
             "inspect" => Inspect(artDir, stem),
+            "optimize" => Optimize(artDir, stem, outDir),
             "import" => Import(glbDir(args[1]), stem, outDir,
                 textureStem: GetOption(args, "--texture-stem"),
                 noTexture: HasFlag(args, "--no-texture")),
@@ -370,7 +373,7 @@ internal static class Program
                 if (originalTex[i] != writtenTex[i])
                 {
                     diffCount++;
-                    if (i < padStart) allDiffsInPad = false;
+                    if (i < padStart || i >= structEnd) allDiffsInPad = false;
                 }
             if (originalTex.Length != writtenTex.Length || diffCount > 3 || !allDiffsInPad)
             {
@@ -423,6 +426,37 @@ internal static class Program
         => DiffBytes(label, Encoding.UTF8.GetBytes(a), Encoding.UTF8.GetBytes(b));
 
     // -- inspect -------------------------------------------------------------
+
+    private static int Optimize(string artDir, string stem, string outDir)
+    {
+        try
+        {
+            var source = Path.Combine(artDir, stem + ".mdl");
+            var destination = Path.Combine(outDir, stem + ".mdl");
+            if (Path.GetFullPath(source) == Path.GetFullPath(destination))
+                throw new InvalidDataException("choose a separate --out directory to preserve the source");
+            var result = MdlOptimizer.Optimize(File.ReadAllBytes(source));
+            File.WriteAllBytes(destination, result.Bytes);
+            // Reload the file on disk too, matching mdlc/mdlc.cpp:145-150.
+            var parsed = MdlFile.Parse(destination);
+            var cvhSource = Path.Combine(artDir, stem + ".cvh");
+            if (File.Exists(cvhSource)) File.Copy(cvhSource, Path.Combine(outDir, stem + ".cvh"), overwrite: true);
+            foreach (var texture in parsed.Meshes.Concat(parsed.LodLevels.SelectMany(l => l.Meshes))
+                         .Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var textureSource = Path.Combine(artDir, texture + ".mdl");
+                if (File.Exists(textureSource)) File.Copy(textureSource, Path.Combine(outDir, texture + ".mdl"), overwrite: true);
+            }
+            Console.WriteLine($"optimized {stem}: nodes={result.NodesBefore}->{result.NodesAfter} passes={result.Passes} bytes={result.Bytes.Length}; game loader reload OK");
+            PrintSummary(NativeModelAdapter.FromNative(stem, parsed, null));
+            return 0;
+        }
+        catch (InvalidDataException ex)
+        {
+            Console.Error.WriteLine($"optimize failed: {ex.Message}");
+            return 1;
+        }
+    }
 
     private static int Inspect(string artDir, string stem)
     {

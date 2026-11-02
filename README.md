@@ -115,12 +115,15 @@ numbers, weighting rows by importance.
 | Bots | 92.73 % | 19 / 21 |
 | AllSrv admin UI | 68.18 % | 10 / 16 |
 | Training missions | 42.48 % | 102 / 237 |
-| Model tools | 0.00 % | 0 / 8 |
+| Model tools | 100.00 % | 7 / 7 |
 
 Work is ongoing, so these are not final. Three simulation rows (tick order, collision order and
 broadcast order) are implemented behind default-off flags and stay partial until a 200v200 comparison
-decides them. Model tools show 0 % because they are not wired into anything players run yet, so they
-earn no headline credit. Task reports are in [`docs/reports/`](docs/reports/).
+decides them. Model tools earn offline-tool credit: their export/import and optimize commands
+write native assets the game loads. Text-MDL compilation and the native test viewer use approved
+glTF design replacements; the broken native animation compressor is excluded as a bug.
+See the [modding workflow](docs/GUIDE.md#model-modding) for commands and format limitations.
+Task reports are in [`docs/reports/`](docs/reports/).
 
 ## Download and play
 

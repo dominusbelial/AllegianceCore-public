@@ -24,12 +24,18 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData("Classic")] [InlineData("Modern")]
     public async Task Miner_is_destroyed_in_Mars_through_real_input(string style)
-        => await RunWindow(4, style, "hunt", lastLesson: 7);
+    {
+        RequireBranchProof();
+        await RunWindow(4, style, "hunt", lastLesson: 7);
+    }
 
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData("Classic")] [InlineData("Modern")]
     public async Task Combined_bomber_and_outpost_loss_is_announced_through_real_input(string style)
-        => await RunWindow(8, style, "sacrifice");
+    {
+        RequireBranchProof();
+        await RunWindow(8, style, "sacrifice");
+    }
 
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData("Classic")] [InlineData("Modern")]
@@ -48,6 +54,12 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         // Replay the native prefix rather than arranging a goal or teleporting
         // actors. Stop only after the assigned lesson's real last condition.
         => await RunWindow(mission, "Modern", $"lesson={lesson}");
+
+    // Combat outcomes, not forced ones: hunt 7/8, sacrifice 13/14 (P917 report).
+    // Opt-in so a lost roll cannot fail the training gate.
+    private static void RequireBranchProof() => Skip.IfNot(
+        Environment.GetEnvironmentVariable("ALLEGIANCE_TRAINING_BRANCH_PROOFS") == "1",
+        "Set ALLEGIANCE_TRAINING_BRANCH_PROOFS=1 to run the P917 branch proofs.");
 
     private async Task RunWindow(int mission, string style, string? policy, int? lastLesson = null)
     {

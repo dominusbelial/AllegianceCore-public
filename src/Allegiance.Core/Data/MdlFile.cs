@@ -345,8 +345,7 @@ internal sealed class MdlParser
             {
                 var geo = stack.Pop();
                 var lodList = stack.Pop();
-                CaptureLodLevels(lodList);
-                return geo;
+                return new MdlLodGeo(geo, lodList);
             }
             default:
                 // Unknown Apply target (texture import object itself, or
@@ -435,6 +434,13 @@ internal sealed class MdlParser
             case MdlTextureGeo t:
                 CollectMeshes(t.Geo, sink, t.Image is MdlImport image ? image.Namespace : texture);
                 break;
+            case MdlLodGeo lod:
+                // TextureGeo can enclose the entire LOD after FoldTexture
+                // (native engine/geometry.cpp:1812-1869). Resolve levels here
+                // so their meshes inherit the same texture as the base.
+                CollectMeshes(lod.Geo, sink, texture);
+                CaptureLodLevels(lod.Levels, texture);
+                break;
             case MdlList l:
                 foreach (var item in l.Items) CollectMeshes(item, sink, texture);
                 break;
@@ -451,7 +457,7 @@ internal sealed class MdlParser
     /// and <c>pair.B</c> the baked pixel-radius <c>MdlFloat</c> threshold. The
     /// geo is resolved to meshes here so the renderer can build a GPU level per
     /// LOD. Malformed entries are skipped defensively.</summary>
-    private void CaptureLodLevels(MdlNode? lodList)
+    private void CaptureLodLevels(MdlNode? lodList, string? texture)
     {
         if (lodList is not MdlList list) return;
         foreach (var item in list.Items)
@@ -461,7 +467,7 @@ internal sealed class MdlParser
                 || pair.A is not { } geoNode)
                 continue;
             var levelMeshes = new List<MdlMesh>();
-            CollectMeshes(geoNode, levelMeshes);
+            CollectMeshes(geoNode, levelMeshes, texture);
             if (levelMeshes.Count == 0) continue;
             _lodLevels.Add(new MdlLodLevel { PixelRadius = px.Value, Meshes = levelMeshes });
         }
@@ -593,6 +599,12 @@ internal sealed class MdlTextureGeo(MdlNode image, MdlNode geo) : MdlNode
 internal sealed class MdlModifiableNumber(MdlNode value) : MdlNode
 {
     public MdlNode Value { get; } = value;
+}
+
+internal sealed class MdlLodGeo(MdlNode geo, MdlNode levels) : MdlNode
+{
+    public MdlNode Geo { get; } = geo;
+    public MdlNode Levels { get; } = levels;
 }
 
 internal sealed class MdlMeshGeo(float[] verts, ushort[] indices) : MdlNode

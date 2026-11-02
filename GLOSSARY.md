@@ -1260,8 +1260,8 @@ list in **reverse**.
   `render-check.py` renders evidence headless in Blender). Tests
   `MdlToGlbTests`. Key finding: the `.cvh` file space is the `.mdl` space
   mirrored in z (position AND forward). Report
-  `docs/reports/P812_GLB_PIPELINE.md`. Prototype only — the game still ships
-  `.mdl`.
+  `docs/reports/P812_GLB_PIPELINE.md`. Offline modding bridge — the game loads
+  the imported native `.mdl`/`.cvh`, not GLB.
 - **GLB → native writer (P823)** — the other half of the pipeline: a `.glb`
   (+ optional sidecar) converts to native's shipping `.mdl` + `.cvh` at pack
   time — `tools/mdl-to-glb/` commands `import` (glb+sidecar → files) and
@@ -1284,6 +1284,20 @@ list in **reverse**.
   texture/hull in code); `tools/p823-render-proof --uv-check` asserts the UV
   mapping numerically. Tests `P824TexturePipelineTests`. Report
   `docs/reports/P824_TEXTURE_PIPELINE.md`.
+- **Binary model optimization (P919)** — `tools/mdl-to-glb/MdlOptimizer.cs`
+  retains the native namespace graph, lights, frames and every LOD; removes
+  materials, folds textures/groups and combines meshes to a fixed point.
+  `optimize` writes and reloads through `src/Allegiance.Core/Data/MdlFile.cs`,
+  whose LOD traversal inherits enclosing texture bindings. Native:
+  `effect/efapp.cpp:713-815`, `engine/geometry.cpp:327-377,1009-1399,1789-1900`,
+  `mdlc/mdlc.cpp:109-152`. Tests:
+  `tests/Allegiance.Core.Tests/P919ModelToolsTests.cs`; workflow:
+  `docs/GUIDE.md`; verdicts and limitations: `docs/reports/P919_REPORT.md`.
+- **TextureCraft material pilot (P920, evaluation only)** —
+  `tools/p920-texturecraft.py` preserves native geometry/UVs and atlas texels,
+  bakes four mesh maps, adds restrained procedural wear and builds a private
+  one-atlas schema-3 pack. Game1 captures use `tools/p916-texture-proof/`;
+  repeat commands, orientation/UV limits and verdict: `docs/reports/P920_REPORT.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
   Training's complete Fast + Live cohort: `tools/run-training-tests.sh` (P882b).

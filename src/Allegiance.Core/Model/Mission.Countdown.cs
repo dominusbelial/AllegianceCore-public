@@ -84,7 +84,8 @@ public sealed partial class Mission
                 ?.InvestedMilliseconds ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
             "artifacts" => side.Artifacts.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "flags" => side.Flags.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            "station-kills" => StationKills(side.Id).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            // Ship kills stay on the line: scripts/allegiance-index.py scores them.
+            "station-kills" => $"stations={StationKills(side.Id)}/kills={side.Kills}/deaths={side.Deaths}",
             _ => $"kills={side.Kills}/deaths={side.Deaths}",
         })));
 }

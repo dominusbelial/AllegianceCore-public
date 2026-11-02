@@ -1,0 +1,147 @@
+{
+  "tool": "TextureCraft 0.2.0 (e01dac2 2026-11-01)",
+  "hull": "wc_bifig",
+  "atlas": "fig20bmp",
+  "nativeSha256": "9b525915144195d4b19c062a6623218e8077cb1e93d06e6aa8b81e51528cbf3b",
+  "runsSeconds": [
+    2.827,
+    2.675
+  ],
+  "identicalDds": true,
+  "ddsSha256": {
+    "basecolor.dds": "250e5d3663afef13ef3a61cdf63ab38bd55d244cbf3f4f2c0137a92a9ba16159",
+    "basecolor.fallback.dds": "6c3f15ddc5f7257eb0163019f56d74d1a2312cab6717a90e9fd12d3f162d5a0c",
+    "emission.dds": "f37fd2265981446c1e26d2592c1f52d35e4ac59652d52358656a55dd089d84b4",
+    "emission.fallback.dds": "634040423d7a928a23c1e51bf5d85ef8ac3b5f47500a983dcec3c6eee6b0a727",
+    "metallic.dds": "4e3c6b2f407a2e2565f59fc8bc249eba8f538e4865eda1df575f3a02bf324c47",
+    "normal.dds": "915aec9cf4d058a3d75a496b0b6efc26ff7ec91c8fe692467b5d46038f19e4fd",
+    "roughness.dds": "7a20b690dc0bd6ce4b328f77a1a8967537f08f5a0c3011039ec598ca2d579c67"
+  },
+  "cpuBakeSeconds": 0.1834,
+  "uv": {
+    "materials": 1,
+    "overlapRatio": 1.5236382484436035,
+    "triangles": 633,
+    "uvOutOfRange": 0,
+    "uvsGenerated": false,
+    "vertices": 497,
+    "warnings": [
+      "152.4% of the UV layout overlaps; painting there affects several places at once",
+      "50 triangles have zero UV area and cannot be painted"
+    ],
+    "zeroAreaUvTriangles": 50
+  },
+  "normalConventionDiagnostic": {
+    "fullyCoveredPixels": 147285,
+    "redBlueMaxDelta": 0,
+    "greenSum255MaxError": 0,
+    "greenDifferentPixels": 147285,
+    "openGlRgb": [
+      153,
+      179,
+      241
+    ],
+    "directXRgb": [
+      153,
+      76,
+      241
+    ]
+  },
+  "schema": 3,
+  "maps": {
+    "basecolor": {
+      "width": 1024,
+      "height": 1024,
+      "format": "BC7",
+      "mipCount": 11,
+      "residentBytes": 1398128,
+      "fallbackSha256": "6c3f15ddc5f7257eb0163019f56d74d1a2312cab6717a90e9fd12d3f162d5a0c",
+      "colorSpace": "sRGB",
+      "sha256": "250e5d3663afef13ef3a61cdf63ab38bd55d244cbf3f4f2c0137a92a9ba16159"
+    },
+    "normal": {
+      "width": 512,
+      "height": 512,
+      "format": "BC5",
+      "mipCount": 10,
+      "residentBytes": 349552,
+      "colorSpace": "linear",
+      "sha256": "915aec9cf4d058a3d75a496b0b6efc26ff7ec91c8fe692467b5d46038f19e4fd"
+    },
+    "metallic": {
+      "width": 512,
+      "height": 512,
+      "format": "BC4",
+      "mipCount": 10,
+      "residentBytes": 174776,
+      "colorSpace": "linear",
+      "sha256": "4e3c6b2f407a2e2565f59fc8bc249eba8f538e4865eda1df575f3a02bf324c47"
+    },
+    "roughness": {
+      "width": 512,
+      "height": 512,
+      "format": "BC4",
+      "mipCount": 10,
+      "residentBytes": 174776,
+      "colorSpace": "linear",
+      "sha256": "7a20b690dc0bd6ce4b328f77a1a8967537f08f5a0c3011039ec598ca2d579c67"
+    },
+    "emission": {
+      "width": 512,
+      "height": 512,
+      "format": "BC7",
+      "mipCount": 10,
+      "residentBytes": 349552,
+      "fallbackSha256": "634040423d7a928a23c1e51bf5d85ef8ac3b5f47500a983dcec3c6eee6b0a727",
+      "colorSpace": "sRGB",
+      "sha256": "f37fd2265981446c1e26d2592c1f52d35e4ac59652d52358656a55dd089d84b4"
+    }
+  },
+  "geometry": {
+    "triangles": 633,
+    "vertices": 497,
+    "nativeGlbRoundtripMeshFloatDelta": 0,
+    "nativeGlbRoundtripIndicesIdentical": true,
+    "texturecraftPositionUvTrianglesIdentical": true,
+    "texturecraftChangedZeroNormalTriangleCorners": 4
+  },
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "webpBytes": 281626,
+  "screenshots": {
+    "atlases.webp": {
+      "bytes": 57162,
+      "sha256": "2ef65228f7518ffd549ec1873ec75a7b61feea709ee45451b2e4f0a5343174c7"
+    },
+    "bakes.webp": {
+      "bytes": 23402,
+      "sha256": "5509d055482f93b20d172f327f2982e8f6c3de9ebc5469d6e998b21fff61a962"
+    },
+    "chase-classic.webp": {
+      "bytes": 19810,
+      "sha256": "38dd9ac6cecf7634c89786f5ed97c9009d93e2ca8f8d5a7bb3b57968003b23cd"
+    },
+    "chase-modern.webp": {
+      "bytes": 26272,
+      "sha256": "4ebe58bf18e7f6afc13636272c98796bb9a8379f11d2a1dcce747c8f16b94d3c"
+    },
+    "hangar-classic.webp": {
+      "bytes": 25364,
+      "sha256": "8e509ce20cf1574b1348fc643263d3396be526c1e7a84fb535f7b9c01992cddf"
+    },
+    "hangar-modern.webp": {
+      "bytes": 25342,
+      "sha256": "5bf6b5ba8e7acdd1f2ddc5f40256730f1cbf398790c4c53d2292220a47979905"
+    },
+    "target-classic.webp": {
+      "bytes": 49200,
+      "sha256": "7e9f729098fcd0ad1be25625c0959dd8f1e06d6983c1284b1f069a2a59779f02"
+    },
+    "target-modern.webp": {
+      "bytes": 55074,
+      "sha256": "ae5a234f67dc9ec9c948d05acd2753d10c331365c213cd9039ac9f8874c202b2"
+    }
+  }
+}
