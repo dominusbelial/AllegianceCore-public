@@ -147,7 +147,9 @@ public sealed class P914StationDeadlineTests
         Assert.NotSame(mission, server.Missions[0]);
         Assert.Equal(0, server.Missions[0].StationKills(0));
         Assert.Equal(0, server.Missions[0].UncreditedStationDestructions);
-        Assert.Equal(shape == 2 ? "0:2,1:0" : shape is 1 or 4 or 5 ? "0:1,1:1" : "0:0,1:0", stationValues);
+        (int a, int b) stations = shape == 2 ? (2, 0) : shape is 1 or 4 or 5 ? (1, 1) : (0, 0);
+        string[] ships = values.Split(',');
+        Assert.Equal($"0:stations={stations.a}/{ships[0][2..]},1:stations={stations.b}/{ships[1][2..]}", stationValues);
     }
 
     [SkippableFact]
