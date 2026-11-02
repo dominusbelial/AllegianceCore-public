@@ -61,6 +61,7 @@ public sealed partial class Server
     {
         _shutdown = false;
         _config = config;
+        InitializeConsole();
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
@@ -1978,10 +1979,12 @@ public sealed partial class Server
         switch (evt)
         {
             case PeerJoinedEvt j:
-                Console.WriteLine($"[conn] peer {j.Id} '{j.Name}' joined");
+                _consoleConnections.Add(j.Id);
+                Console.WriteLine($"[conn] peer {j.Id} '{ConsoleText(j.Name)}' joined");
                 lock (_statsLock) _connectionsJoined++;
                 break;
             case PeerLeftEvt l:
+                _consoleConnections.Remove(l.Id);
                 // A disconnected peer can no longer command its ship, so it is
                 // released from the broadcast set. P128: its ship is then
                 // retired from the sector (SDR_LOGGEDOFF + removed) so it no
@@ -2126,7 +2129,7 @@ public sealed partial class Server
         if (!requested)
         {
             Counters.RecordTimeout();
-            Console.WriteLine($"[conn] peer {id} ({_peerNames.GetValueOrDefault(id) ?? "?"}) dropped without a logoff → cTimeouts={Counters.CTimeouts} (FedSrv.CPP:4558-4562)");
+            Console.WriteLine($"[conn] peer {id} ({ConsoleText(_peerNames.GetValueOrDefault(id) ?? "?")}) dropped without a logoff → cTimeouts={Counters.CTimeouts} (FedSrv.CPP:4558-4562)");
         }
 
         // M1 — the departing connection also keys the teammate-scoped caches
@@ -2568,11 +2571,7 @@ public sealed partial class Server
     {
         Boot(configPath, cliOverrides);
         using var cts = new CancellationTokenSource();
-        _ = Task.Run(() =>
-        {
-            while (!cts.IsCancellationRequested && Console.ReadLine() is { } line)
-                if (line.Trim().Equals("skills", StringComparison.OrdinalIgnoreCase)) RequestSkills();
-        });
+        _ = Task.Run(() => ReadConsoleInput(Console.In, cts.Token));
 
         // On Linux use PosixSignalRegistration to intercept SIGINT (Ctrl-C) and
         // SIGTERM and cancel the loop, letting the loop break and teardown run.

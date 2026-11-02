@@ -71,6 +71,7 @@ public sealed partial class Server
                 return;
             default: return;
         }
+        ObserveConsoleChat(mission, sender?.Name, message);
         byte[] packet = FedPacket.Pack(new[] { message.Encode() });
         foreach (var peer in peers) SendPeer(peer.Key, packet);
     }

@@ -34,15 +34,8 @@ public sealed partial class Server
         // ── moderator/administrator branch (native Steam group) ────────────
         if (IsModerator(from))
         {
-            SendPeer(target.Key, FedPacket.Pack([new QuitMission
-            {
-                ShipId = request.ShipId,
-                Reason = request.Reason,
-                Message = request.Message,
-            }.Encode()]));
-            Console.WriteLine($"[moderation] moderator {from} removed ship {target.Value.Ship.Id} " +
-                              $"reason {request.Reason} message '{ConsoleLog.Sanitize(request.Message, 128)}'");
-            ReleasePeerWithReason(target.Key, request.Reason);
+            BootAdminPlayer(target.Key, request.ShipId, request.Reason, request.Message);
+            Console.WriteLine($"[moderation] moderator {from} removed ship {request.ShipId} reason {request.Reason}");
             return;
         }
 
@@ -70,6 +63,14 @@ public sealed partial class Server
         SendPeer(target.Key, FedPacket.Pack([new QuitMission
         { ShipId = request.ShipId, Reason = request.Reason, Message = request.Message }.Encode()]));
         ReleasePeerWithReason(target.Key, request.Reason);
+    }
+
+    // Shared local-console and authenticated moderator departure path (ADM-0001).
+    private void BootAdminPlayer(ConnectionId peer, short shipId, QuitSideReason reason, string message)
+    {
+        SendPeer(peer, FedPacket.Pack([new QuitMission
+        { ShipId = shipId, Reason = reason, Message = message }.Encode()]));
+        ReleasePeerWithReason(peer, reason);
     }
 
     /// <summary>

@@ -97,6 +97,7 @@ public sealed partial class Server
     private void SimPass()
     {
         _threadPoolTelemetry?.Sample();
+        ProcessConsoleCommands();
         PrintRequestedSkills();
         if (SinglePlayerPaused)
         {
