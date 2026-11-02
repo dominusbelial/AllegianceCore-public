@@ -1,0 +1,14 @@
+{
+  "src/Allegiance.Server/Server.Lobby.cs": "a7c477aa3df877d9d0a19bdd787cb7c490721902d3fa19ffb884022245c75160",
+  "src/Allegiance.SinglePlayer/Training/TrainingHost.cs": "3b6cbfb934b03acc7558a0fef1b096cd080885c799a089772c8c95e277eb6007",
+  "src/Allegiance.ClientCore.Game/Rendering/SelectedMountWeapon.cs": "f012ae27402d1ebc494fd3eef21736b7891a846e7deeb326df11f12ae1f037c9",
+  "tests/Allegiance.ClientCore.MonoGame.Tests/Hud18TargetPaneTests.cs": "19687b036b45d95db05de03d4ddbc0c93fbd36bbae155edf3f03d5d900f8ded7",
+  "tests/Allegiance.ClientCore.Tests/FakeTrainingSite.cs": "0cc24fe0e71707244f5b788d63b76a96063826fe7e065d21e09ca808e655d12e",
+  "src/Allegiance.Core/Sim/Ship.cs": "60fa72069bc2785e35acf9c47e73a3a25ff897d553940e5ca4dda2c98b6ae962",
+  "src/Allegiance.ClientCore/Training/Mission8.cs": "edfb28eb50b361d9ed044616f53b7a5011bc6365fbb698fcdf47fc2b6038a48d",
+  "src/Allegiance.ClientCore.Game/Game1.TrainingProof.cs": "4795302e11eec18ccd9673aa33fee5f9ec1fd96fee8abd0ce4fb6df3a637f1ff",
+  "src/Allegiance.ClientCore.Game/Game1.TrainingProof.Advanced.cs": "ea87f3b41b7545b6465d607b1d54f37ff0931f75112e940268cc5f86c3d05e2c",
+  "tools/p912-training-proof/Program.cs": "0367f2f5b5f157c83b8ddda5427b9a7b20777e25825ef073377821066d4ffbad",
+  "tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs": "a39fa95a1738b7f338557ccadc97fa51f417eab783d6a869ac0f166122e95914",
+  "tests/Allegiance.ClientCore.Tests/P917TrainingBranchTests.cs": "422f2299d8303e95ded3ebc8a71220187af27a64fa1f7015450adfe77ce6457f"
+}

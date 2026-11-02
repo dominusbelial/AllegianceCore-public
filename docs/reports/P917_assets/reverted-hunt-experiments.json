@@ -1,0 +1,76 @@
+{
+  "hunt-close": {
+    "status": "Reverted; excluded from retained-policy rates",
+    "completed": [
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-close/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      }
+    ],
+    "passed": 0,
+    "failed": 6
+  },
+  "hunt-wall": {
+    "status": "Reverted; excluded from retained-policy rates",
+    "completed": [
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Failed"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/hunt-wall/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Failed"
+      }
+    ],
+    "passed": 0,
+    "failed": 6
+  }
+}

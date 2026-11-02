@@ -234,6 +234,22 @@ public class Hud18TargetPaneTests
     // ── TargetTti golden cases ──────────────────────────────────────────────
 
     [Fact]
+    public void Selected_mount_ignores_other_equipment_types_sharing_mount_zero()
+    {
+        // Native GetMountedPart(ET_Weapon, selected) includes the equipment type
+        // (clintlib/clintlib.cpp:1585-1588). SWAP_PART can put the gun after the shield.
+        DataPartTypeIGC Part(short id, DataPartTypeIGC.Subtype type) => new(
+            0, 0, "", "", $"part {id}", "", 0, [], [], 0, 0, id, -1, 0, "", type);
+        var nanite = new DataPartTypeIGC.Weapon(0, 0, 1, 0, 0, 59, -1, -1, -1);
+        var parts = new[] { Part(22, new DataPartTypeIGC.Shield(1, 100, 8, -1, -1)), Part(190, nanite) };
+        ExpandedPartData[] shieldFirst = [new(22, 1, 0, 1), new(190, 1, 0, 1)];
+        Assert.Same(nanite, SelectedMountWeapon.Resolve(shieldFirst, parts, 0));
+        Assert.Same(nanite, SelectedMountWeapon.Resolve(shieldFirst.Reverse().ToArray(), parts, 0));
+        Assert.Null(SelectedMountWeapon.Resolve(shieldFirst, parts, 1));
+        Assert.Null(SelectedMountWeapon.Resolve(shieldFirst[..1], parts, 0));
+    }
+
+    [Fact]
     public void Tti_golden_cases_from_the_mdl_arithmetic()
     {
         // diff 0 → outer SwitchString(0) → "infinite" (dialog.mdl:1319,1325).

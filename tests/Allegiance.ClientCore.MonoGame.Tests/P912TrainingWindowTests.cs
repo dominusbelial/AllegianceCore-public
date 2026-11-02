@@ -6,7 +6,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 
 // Uses tools/p912-training-proof/bin (retained by build-tools.sh --drop-bins).
 // Every case opens the shipping Game1, joins its real embedded host, and
-// traverses every lesson in one session. The observer checks every boundary;
+// traverses the full course or its explicitly requested native prefix. The observer checks every boundary;
 // the input driver supplies keys, pointer presses/releases and text only.
 [Collection("Training")]
 public sealed class P912TrainingWindowTests(ITestOutputHelper output)
@@ -17,9 +17,24 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
     [InlineData(5, "Classic")] [InlineData(5, "Modern")]
     [InlineData(8, "Classic")] [InlineData(8, "Modern")]
     [InlineData(4, "Modern", "departure")]
-    [InlineData(8, "Modern", "early")] [InlineData(8, "Modern", "loss")]
+    [InlineData(8, "Modern", "loss")]
     public async Task Every_lesson_completes_in_one_real_window_session(int mission, string style, string? policy = null)
         => await RunWindow(mission, style, policy);
+
+    [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
+    [InlineData("Classic")] [InlineData("Modern")]
+    public async Task Miner_is_destroyed_in_Mars_through_real_input(string style)
+        => await RunWindow(4, style, "hunt", lastLesson: 7);
+
+    [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
+    [InlineData("Classic")] [InlineData("Modern")]
+    public async Task Combined_bomber_and_outpost_loss_is_announced_through_real_input(string style)
+        => await RunWindow(8, style, "sacrifice");
+
+    [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
+    [InlineData("Classic")] [InlineData("Modern")]
+    public async Task Early_nanite_mounting_wins_through_real_input(string style)
+        => await RunWindow(8, style, "early");
 
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData(3, 9)] [InlineData(3, 10)] [InlineData(3, 11)]
@@ -34,7 +49,7 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         // actors. Stop only after the assigned lesson's real last condition.
         => await RunWindow(mission, "Modern", $"lesson={lesson}");
 
-    private async Task RunWindow(int mission, string style, string? policy)
+    private async Task RunWindow(int mission, string style, string? policy, int? lastLesson = null)
     {
         Require.Artwork();
         string root = AppContext.BaseDirectory;
@@ -44,7 +59,8 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         string proof = Path.Combine(root, "tools", "p912-training-proof", "bin", configuration, "net10.0", "p912-training-proof.dll");
         string content = Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame", "bin", configuration, "net10.0", "Content");
         Assert.True(File.Exists(proof), "Build tools/p912-training-proof before running the window tests.");
-        string directory = Path.Combine(root, ".scratch", "p912", "windows", $"m{mission}-{style}-{policy ?? "default"}-{Guid.NewGuid():N}");
+        string directory = Path.Combine(root, ".scratch", "p917", "windows",
+            $"m{mission}-{style}-{policy ?? "default"}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         string dotnet = Environment.GetEnvironmentVariable("DOTNET")
             ?? Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")
@@ -52,6 +68,7 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         var start = new ProcessStartInfo(dotnet) { WorkingDirectory = root, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (string argument in new[] { proof, "window", content, directory, mission.ToString(), style }) start.ArgumentList.Add(argument);
         if (policy is not null) start.ArgumentList.Add(policy);
+        if (lastLesson is { } last) start.ArgumentList.Add(last.ToString(System.Globalization.CultureInfo.InvariantCulture));
         // Use the shipping variable-frame mode with software rendering. This
         // keeps elapsed time coupled to the live host when draws miss 60 Hz.
         start.Environment["ALLEGIANCE_NOVSYNC"] = "1";
@@ -87,8 +104,21 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         Require.GraphicsDevice(log);
         output.WriteLine($"Evidence: {Path.GetRelativePath(root, directory)}");
         Assert.True(process.ExitCode == 0, $"Window failed: {directory}\n{log[^Math.Min(log.Length, 7000)..]}");
-        Assert.Contains($"P912_{(policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? "LESSON" : "WINDOW")}_PASS M{mission} {style}", log);
+        Assert.Contains($"P912_{(lastLesson.HasValue || policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? "LESSON" : "WINDOW")}_PASS M{mission} {style}", log);
         if (mission == 4 && policy != "lesson=1") Assert.Matches(@"quick-chat >> .* \(Everyone\)", log);
+        if (policy == "hunt")
+        {
+            Assert.Contains("M4_BRANCH minerKilled=True targetDeparted=False killedInMars=", log);
+            Assert.Contains("[training] prompt: Target an enemy miner with the F key, and destroy it if you can.", log);
+            Assert.Contains("[training] voice tm_4_29 (mission 4)", log);
+            Assert.Contains("[training] voice tm_4_31 (mission 4)", log);
+        }
+        if (policy == "sacrifice")
+        {
+            Assert.Contains("outpostDestroyed=True bomberDestroyed=True", log);
+            Assert.Contains("[training] prompt: Yee-haaaaaw!", log);
+            Assert.Contains("[training] prompt: Our bomber got destroyed too, but that is an acceptable price to pay.", log);
+        }
         Assert.True(File.Exists(Path.Combine(directory, "complete.txt")));
     }
 }

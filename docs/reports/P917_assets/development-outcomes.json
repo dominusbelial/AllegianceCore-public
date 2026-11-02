@@ -1,0 +1,774 @@
+{
+  "scope": "Completed and interrupted development attempts before the frozen final driver revision; final qualification windows excluded. Mixed pilot revisions are not a reliability estimate.",
+  "final_driver_utc": "2026-11-02T10:53:06.636533+00:00",
+  "counts": {
+    "hunt": {
+      "pass": 2,
+      "cancelled": 1,
+      "fail": 11
+    },
+    "early": {
+      "pass": 2
+    },
+    "sacrifice": {
+      "fail": 31,
+      "cancelled": 6,
+      "pass": 10
+    }
+  },
+  "runs": [
+    {
+      "run": "m4-Classic-hunt-9fb88ab4c89b4b01a6b1ea9180589402",
+      "status": "pass",
+      "outcomes": [],
+      "branches": [
+        "minerKilled=True targetDeparted=False killedInMars=1101"
+      ],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m4-Classic-hunt-9fb88ab4c89b4b01a6b1ea9180589402",
+      "elapsed_goals": "4,Classic,10.2,407.540"
+    },
+    {
+      "run": "m4-Modern-hunt-ambush1",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-ambush1",
+      "elapsed_goals": "4,Modern,1.1,12.580"
+    },
+    {
+      "run": "m4-Modern-hunt-ambush2",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-ambush2",
+      "elapsed_goals": "4,Modern,8.1,221.702"
+    },
+    {
+      "run": "m4-Modern-hunt-approach1",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-approach1",
+      "elapsed_goals": "4,Modern,8.1,201.164"
+    },
+    {
+      "run": "m4-Modern-hunt-approach2",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-approach2",
+      "elapsed_goals": "4,Modern,8.1,227.962"
+    },
+    {
+      "run": "m4-Modern-hunt-baseline",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not exercise the miner-kill branch"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-baseline",
+      "elapsed_goals": "4,Modern,8.1,159.559"
+    },
+    {
+      "run": "m4-Modern-hunt-e76e9ca3bba9426fb47b86b07624d071",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-e76e9ca3bba9426fb47b86b07624d071",
+      "elapsed_goals": "4,Modern,8.1,176.698"
+    },
+    {
+      "run": "m4-Modern-hunt-intercept1",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-intercept1",
+      "elapsed_goals": "4,Modern,8.1,240.780"
+    },
+    {
+      "run": "m4-Modern-hunt-mouse1",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-mouse1",
+      "elapsed_goals": "4,Modern,8.1,286.018"
+    },
+    {
+      "run": "m4-Modern-hunt-mouse2",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-mouse2",
+      "elapsed_goals": "4,Modern,8.1,240.219"
+    },
+    {
+      "run": "m4-Modern-hunt-mouse3",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-mouse3",
+      "elapsed_goals": "4,Modern,8.1,232.461"
+    },
+    {
+      "run": "m4-Modern-hunt-native1",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-native1",
+      "elapsed_goals": "4,Modern,8.1,236.001"
+    },
+    {
+      "run": "m4-Modern-hunt-pursuit1",
+      "status": "pass",
+      "outcomes": [],
+      "branches": [
+        "minerKilled=True targetDeparted=False killedInMars=1101"
+      ],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-pursuit1",
+      "elapsed_goals": "4,Modern,10.2,398.470"
+    },
+    {
+      "run": "m4-Modern-hunt-quarry3",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars"
+      ],
+      "evidence": ".scratch/p917/windows/m4-Modern-hunt-quarry3",
+      "elapsed_goals": "4,Modern,8.1,364.563"
+    },
+    {
+      "run": "m8-Classic-early-diagnostics1",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-early-diagnostics1",
+      "elapsed_goals": "8,Classic,3.22,276.867"
+    },
+    {
+      "run": "m8-Classic-early-pilot1",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-early-pilot1",
+      "elapsed_goals": "8,Classic,3.22,309.229"
+    },
+    {
+      "run": "m8-Classic-sacrifice-18b7f1c0b1b644ffb81497a30f8b8278",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-18b7f1c0b1b644ffb81497a30f8b8278",
+      "elapsed_goals": "8,Classic,3.22,275.323"
+    },
+    {
+      "run": "m8-Classic-sacrifice-2ab31e85b1184243a9ea36c8a59c84d7",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-2ab31e85b1184243a9ea36c8a59c84d7",
+      "elapsed_goals": "8,Classic,2.12,98.042"
+    },
+    {
+      "run": "m8-Classic-sacrifice-3b57df854c794f6caafd3b8ca00834ba",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-3b57df854c794f6caafd3b8ca00834ba",
+      "elapsed_goals": "8,Classic,3.22,277.783"
+    },
+    {
+      "run": "m8-Classic-sacrifice-48bcda71842a4fd9a2c16c6a3ae7ea86",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-48bcda71842a4fd9a2c16c6a3ae7ea86",
+      "elapsed_goals": "8,Classic,3.22,293.768"
+    },
+    {
+      "run": "m8-Classic-sacrifice-5b2b45079ff040729ef4980d1bffbc7d",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-5b2b45079ff040729ef4980d1bffbc7d",
+      "elapsed_goals": "8,Classic,3.22,285.247"
+    },
+    {
+      "run": "m8-Classic-sacrifice-5f99ece49fc944d6a0114bf6acb2c8fc",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-5f99ece49fc944d6a0114bf6acb2c8fc",
+      "elapsed_goals": "8,Classic,3.22,276.578"
+    },
+    {
+      "run": "m8-Classic-sacrifice-6d17e9e0fdb84fcabed97aec84d49401",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-6d17e9e0fdb84fcabed97aec84d49401",
+      "elapsed_goals": "8,Classic,3.22,277.645"
+    },
+    {
+      "run": "m8-Classic-sacrifice-7fe6745d04e14dc79acda1b35f166e89",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-7fe6745d04e14dc79acda1b35f166e89",
+      "elapsed_goals": "8,Classic,3.22,274.952"
+    },
+    {
+      "run": "m8-Classic-sacrifice-902a5bdede324c83ae339945a326cf69",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-902a5bdede324c83ae339945a326cf69",
+      "elapsed_goals": "8,Classic,3.22,277.568"
+    },
+    {
+      "run": "m8-Classic-sacrifice-afc52ba3b38e4c0bbf183044d7905419",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-afc52ba3b38e4c0bbf183044d7905419",
+      "elapsed_goals": "8,Classic,3.21,273.768"
+    },
+    {
+      "run": "m8-Classic-sacrifice-b31a4513d2a74c989bef8b45540702b3",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-b31a4513d2a74c989bef8b45540702b3",
+      "elapsed_goals": "8,Classic,3.22,265.687"
+    },
+    {
+      "run": "m8-Classic-sacrifice-b77d54952204479eab8636631e536300",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-b77d54952204479eab8636631e536300",
+      "elapsed_goals": "8,Classic,3.22,260.500"
+    },
+    {
+      "run": "m8-Classic-sacrifice-d7b3132370bd42d3b2f0ac713cd4697e",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-d7b3132370bd42d3b2f0ac713cd4697e",
+      "elapsed_goals": "8,Classic,3.21,269.167"
+    },
+    {
+      "run": "m8-Classic-sacrifice-ddf938dfb9364cda8d26c47d1808fbb8",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-ddf938dfb9364cda8d26c47d1808fbb8",
+      "elapsed_goals": "8,Classic,3.22,276.541"
+    },
+    {
+      "run": "m8-Classic-sacrifice-ef86b9584bf0452fb9d29cf0b11d9fd7",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Classic-sacrifice-ef86b9584bf0452fb9d29cf0b11d9fd7",
+      "elapsed_goals": "8,Classic,3.22,266.905"
+    },
+    {
+      "run": "m8-Modern-sacrifice-1e3c1daa47f14238959386700b3276b7",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-1e3c1daa47f14238959386700b3276b7",
+      "elapsed_goals": "8,Modern,3.18,232.038"
+    },
+    {
+      "run": "m8-Modern-sacrifice-4c5f9eca880e48bbad2c8aac4413c694",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-4c5f9eca880e48bbad2c8aac4413c694",
+      "elapsed_goals": "8,Modern,3.22,278.142"
+    },
+    {
+      "run": "m8-Modern-sacrifice-5064609e572144d688c6a8e00064faa1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-5064609e572144d688c6a8e00064faa1",
+      "elapsed_goals": "8,Modern,3.22,266.261"
+    },
+    {
+      "run": "m8-Modern-sacrifice-662fdfc3d6044961b8d4a6a8b639be2e",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-662fdfc3d6044961b8d4a6a8b639be2e",
+      "elapsed_goals": "8,Modern,3.22,278.053"
+    },
+    {
+      "run": "m8-Modern-sacrifice-7c143846a96b46baaf59c43fb035db6f",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-7c143846a96b46baaf59c43fb035db6f",
+      "elapsed_goals": "8,Modern,3.22,278.381"
+    },
+    {
+      "run": "m8-Modern-sacrifice-92762133216a4327bba7ca35ff0befc1",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-92762133216a4327bba7ca35ff0befc1",
+      "elapsed_goals": "8,Modern,3.22,280.009"
+    },
+    {
+      "run": "m8-Modern-sacrifice-b32def7410f4465aa8c4042b6495fdd0",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-b32def7410f4465aa8c4042b6495fdd0",
+      "elapsed_goals": "8,Modern,3.22,277.049"
+    },
+    {
+      "run": "m8-Modern-sacrifice-baseline",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-baseline",
+      "elapsed_goals": "8,Modern,3.21,308.107"
+    },
+    {
+      "run": "m8-Modern-sacrifice-c5cafd13d02d4615b4077b0e841f1ef9",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-c5cafd13d02d4615b4077b0e841f1ef9",
+      "elapsed_goals": "8,Modern,3.22,275.177"
+    },
+    {
+      "run": "m8-Modern-sacrifice-cb0fb0388cfc46efa6ba9ff04460c532",
+      "status": "fail",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "Window process ended without a pass marker; the TRX records failure. Cause is not established by the retained log."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-cb0fb0388cfc46efa6ba9ff04460c532",
+      "elapsed_goals": "8,Modern,3.3,142.438"
+    },
+    {
+      "run": "m8-Modern-sacrifice-deadline1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-deadline1",
+      "elapsed_goals": "8,Modern,3.22,277.091"
+    },
+    {
+      "run": "m8-Modern-sacrifice-df37db5721e14b30b7f6c3b3fa08dbb1",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-df37db5721e14b30b7f6c3b3fa08dbb1",
+      "elapsed_goals": "8,Modern,3.6,155.280"
+    },
+    {
+      "run": "m8-Modern-sacrifice-df950e613d4d4ab694eb7d661afd6039",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-df950e613d4d4ab694eb7d661afd6039",
+      "elapsed_goals": "8,Modern,3.22,270.202"
+    },
+    {
+      "run": "m8-Modern-sacrifice-e1dd417b176745a1b7efaa97b8539fa8",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-e1dd417b176745a1b7efaa97b8539fa8",
+      "elapsed_goals": null
+    },
+    {
+      "run": "m8-Modern-sacrifice-f3fca2ca4e304bc5a83f913bca7c7ea7",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-f3fca2ca4e304bc5a83f913bca7c7ea7",
+      "elapsed_goals": "8,Modern,3.22,268.957"
+    },
+    {
+      "run": "m8-Modern-sacrifice-f47bf3e5d876459c8b593874723f9d3d",
+      "status": "pass",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-f47bf3e5d876459c8b593874723f9d3d",
+      "elapsed_goals": "8,Modern,3.22,275.067"
+    },
+    {
+      "run": "m8-Modern-sacrifice-f4c3a92876964de5bb152c88c8dbb71b",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-f4c3a92876964de5bb152c88c8dbb71b",
+      "elapsed_goals": "8,Modern,3.21,281.316"
+    },
+    {
+      "run": "m8-Modern-sacrifice-guards-native1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-guards-native1",
+      "elapsed_goals": "8,Modern,3.22,280.378"
+    },
+    {
+      "run": "m8-Modern-sacrifice-guards1",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-guards1",
+      "elapsed_goals": null
+    },
+    {
+      "run": "m8-Modern-sacrifice-guards2",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-guards2",
+      "elapsed_goals": "8,Modern,3.22,293.992"
+    },
+    {
+      "run": "m8-Modern-sacrifice-hullgate1",
+      "status": "cancelled",
+      "outcomes": [],
+      "branches": [],
+      "failure": [
+        "System.OperationCanceledException: Window proof cancelled by its owner."
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-hullgate1",
+      "elapsed_goals": "8,Modern,3.6,163.149"
+    },
+    {
+      "run": "m8-Modern-sacrifice-nan-support1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=False outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: repair escort did not destroy the outpost"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-nan-support1",
+      "elapsed_goals": "8,Modern,3.21,270.681"
+    },
+    {
+      "run": "m8-Modern-sacrifice-nan-support2",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: repair escort did not destroy the outpost"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-nan-support2",
+      "elapsed_goals": "8,Modern,3.21,285.317"
+    },
+    {
+      "run": "m8-Modern-sacrifice-nan-support3",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: repair escort did not destroy the outpost"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-nan-support3",
+      "elapsed_goals": "8,Modern,3.21,283.510"
+    },
+    {
+      "run": "m8-Modern-sacrifice-repairchain1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-repairchain1",
+      "elapsed_goals": "8,Modern,3.22,286.984"
+    },
+    {
+      "run": "m8-Modern-sacrifice-resolvednanite1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=True bomberDestroyed=False"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-resolvednanite1",
+      "elapsed_goals": "8,Modern,3.22,287.078"
+    },
+    {
+      "run": "m8-Modern-sacrifice-ribski1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=False outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-ribski1",
+      "elapsed_goals": "8,Modern,3.22,290.025"
+    },
+    {
+      "run": "m8-Modern-sacrifice-stationexempt1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-stationexempt1",
+      "elapsed_goals": "8,Modern,3.22,280.573"
+    },
+    {
+      "run": "m8-Modern-sacrifice-stopthrottle1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=False outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-stopthrottle1",
+      "elapsed_goals": "8,Modern,3.22,274.795"
+    },
+    {
+      "run": "m8-Modern-sacrifice-withdraw1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: repair escort did not destroy the outpost"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-withdraw1",
+      "elapsed_goals": "8,Modern,3.21,264.281"
+    },
+    {
+      "run": "m8-Modern-sacrifice-withdraw2",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.21: repair escort did not destroy the outpost"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-withdraw2",
+      "elapsed_goals": "8,Modern,3.21,274.723"
+    },
+    {
+      "run": "m8-Modern-sacrifice-withdrawfirst1",
+      "status": "fail",
+      "outcomes": [
+        "minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ],
+      "branches": [],
+      "failure": [
+        "System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch"
+      ],
+      "evidence": ".scratch/p917/windows/m8-Modern-sacrifice-withdrawfirst1",
+      "elapsed_goals": "8,Modern,3.22,286.328"
+    }
+  ]
+}

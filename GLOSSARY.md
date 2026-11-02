@@ -960,6 +960,31 @@ list in **reverse**.
   The audit distinguishes completed window proof from the interrupted repeat gate.
   Native: `training/mission2.cpp:102-103`, `training/mission5.cpp:84-106,180-247`,
   `training/mission8.cpp:87-145,442-448`, `WinTrek/trekigc.cpp:1996-2010`. Audit: `docs/reports/P912_REPORT.md`.
+- **Training combat branches (P917)** — the opt-in pilot in
+  `src/Allegiance.ClientCore.Game/Game1.TrainingProof.cs` hunts a Mars miner with
+  ordinary targeting, cloak, mouse flight and sniper fire; the escort policies in
+  `src/Allegiance.ClientCore.Game/Game1.TrainingProof.Advanced.cs` time real repair
+  and wingman orders. `tools/p912-training-proof/Program.cs` observes actual deaths,
+  last live sectors and the exact native ending messages through the final five-second
+  announcement goal. Both HUD styles run in
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs`.
+  `src/Allegiance.ClientCore/Training/Mission8.cs` switches Tkela only after trainee
+  hull damage; `src/Allegiance.Core/Sim/Ship.cs` exempts accepted station attack
+  targets from wingman retreat. Weapon mount numbers are per equipment type:
+  `src/Allegiance.ClientCore.Game/Rendering/SelectedMountWeapon.cs` skips a shield
+  or dispenser sharing mount zero when resolving the swapped Nanite gun
+  (`clintlib/clintlib.cpp:1585-1588`). Regressions:
+  `tests/Allegiance.ClientCore.Tests/P917TrainingBranchTests.cs`.
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Hud18TargetPaneTests.cs`.
+  `src/Allegiance.Server/Server.Lobby.cs` leaves training station losses to the
+  lesson graph rather than eliminating the losing side's remaining ships
+  (`WinTrek/trekigc.cpp:4325-4362`, `training/mission8.cpp:629-638`).
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.cs` replaces a repair
+  objective when a station Goto is accepted, preserving native single-plan
+  ownership (`Igc/shipIGC.h:750-774`).
+  Native: `training/mission4.cpp:777-844`, `training/mission8.cpp:595-650`,
+  `training/GetShipIsDamagedCondition.h:32-34`, `Igc/shipIGC.cpp:1730-1747`.
+  Audit: `docs/reports/P917_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
   start-to-finish through the production path: client orders/target picks use the real
   `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied

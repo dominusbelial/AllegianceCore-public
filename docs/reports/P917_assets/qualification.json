@@ -1,0 +1,212 @@
+{
+  "hunt": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "total": 6,
+    "runs": [
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:03:32.8028360",
+        "window": ".scratch/p917/windows/m4-Modern-hunt-b2836b39874c4f47b0261207aecd42a1"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:03:17.0993468",
+        "window": ".scratch/p917/windows/m4-Classic-hunt-29117c10449c49918b2b0584922d8889"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:03:17.1129160",
+        "window": ".scratch/p917/windows/m4-Classic-hunt-4c35358954fa4b99a36b19aa17f01a70"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:03:12.9207034",
+        "window": ".scratch/p917/windows/m4-Modern-hunt-79825d8f1562415681990c06cee6144b"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:03:15.1827881",
+        "window": ".scratch/p917/windows/m4-Classic-hunt-31320ab47da940ff90494647d1c499b2"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/hunt-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:03:13.9035572",
+        "window": ".scratch/p917/windows/m4-Modern-hunt-d5b08e6b1f4b4fbeb57111411b4f8926"
+      }
+    ],
+    "scope": "Isolated qualification only; excludes full training sweep and reverted experiments",
+    "including_completed_sweep": {
+      "passed": 7,
+      "failed": 1,
+      "skipped": 0,
+      "total": 8,
+      "rate": "87.5%"
+    }
+  },
+  "sacrifice": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "total": 12,
+    "runs": [
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:45.5896959",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-6455ee273aba4670997b4279d9723f52"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:53.7924350",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-21f3fdae4f1148c1951ff645d9db2ff5"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:56.1416836",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-a4aeefba2c1749778ca29d81f83a74cb"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:45.8438337",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-88de6f42b1ac43f388d9fa2046463470"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:55.8962868",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-d09c7c12e0ce4eeeba9594b8737ed2f8"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/sacrifice-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:59.2799353",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-8d88890482f342748124677b5ff48355"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:41.9604555",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-bcad6faf4db84356bb116af3e005ba36"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:44.5290983",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-f6554b32270d46a8bd921d46da30576c"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:43.2654329",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-9909f6165cb14984b7c6fd8722355fb9"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:49.2447459",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-0411cd4551584efeb5c7712de539313f"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:43.1295305",
+        "window": ".scratch/p917/windows/m8-Modern-sacrifice-09afce36f9f44fe5ab037aaa55f62fd7"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/serial-controls/sacrifice-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:44.2354377",
+        "window": ".scratch/p917/windows/m8-Classic-sacrifice-cbe5f24c2eb544e496db11d2a68c5b7b"
+      }
+    ],
+    "scope": "Isolated qualification only; excludes full training sweep and reverted experiments",
+    "including_completed_sweep": {
+      "passed": 13,
+      "failed": 1,
+      "skipped": 0,
+      "total": 14,
+      "rate": "92.86%"
+    }
+  },
+  "early": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "total": 6,
+    "runs": [
+      {
+        "receipt": ".scratch/p917/qualification/final/early-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:53.0601775",
+        "window": ".scratch/p917/windows/m8-Classic-early-d4ccc625f46747a483d6a664104b307f"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/early-1/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:58.8669820",
+        "window": ".scratch/p917/windows/m8-Modern-early-949f45d22bc4408484cf40f8692652b0"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/early-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:53.5333426",
+        "window": ".scratch/p917/windows/m8-Modern-early-6a5b41882bf64af5913d608be264f924"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/early-2/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:54.3850371",
+        "window": ".scratch/p917/windows/m8-Classic-early-d36d52e3b3f049d0be17f780e33485f9"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/early-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+        "outcome": "Passed",
+        "duration": "00:04:57.1737006",
+        "window": ".scratch/p917/windows/m8-Classic-early-eb7e281548244fcc91942efb63609b49"
+      },
+      {
+        "receipt": ".scratch/p917/qualification/final/early-3/result.trx",
+        "test": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+        "outcome": "Passed",
+        "duration": "00:04:58.5399796",
+        "window": ".scratch/p917/windows/m8-Modern-early-0ad4922005e24d4288282cec0eed0702"
+      }
+    ],
+    "scope": "Isolated qualification only; excludes full training sweep and reverted experiments",
+    "sweep_status": "Classic interrupted by deadline; Modern not run. Six isolated passes remain the completed qualification rate."
+  }
+}

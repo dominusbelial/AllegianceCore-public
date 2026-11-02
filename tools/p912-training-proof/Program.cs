@@ -33,41 +33,52 @@ if (args is ["universe"])
 if (args is not ["window", ..])
     throw new ArgumentException("usage: p912-training-proof window <content> <output> <mission> <Classic|Modern> [early|loss|departure|hunt|sacrifice|lesson=N]");
 args = args[1..];
-if (args.Length is < 4 or > 5) throw new ArgumentException("window expects content, output, mission, style and an optional policy");
+if (args.Length is < 4 or > 6) throw new ArgumentException("window expects content, output, mission, style, optional policy and optional last lesson");
 int mission = int.Parse(args[2]);
 var style = Enum.Parse<HudStyle>(args[3]);
 Directory.CreateDirectory(args[1]);
 Environment.SetEnvironmentVariable("ALLEGIANCE_TRAINING_START", mission.ToString());
 Environment.SetEnvironmentVariable("ALLEGIANCE_TRAIN_PROOF", "1");
-using var game = new Game1(new Game1.LaunchOptions { Intro = true, PlayerName = "Training Pilot", WindowWidth = 800, WindowHeight = 480 });
+using var game = new Game1(new Game1.LaunchOptions
+{
+    Intro = true, PlayerName = "Training Pilot", WindowWidth = 800, WindowHeight = 480,
+    // The shipping --fx native tier keeps software-rendered input responsive.
+    // It changes presentation only; host time and combat remain real-time.
+    EffectsRequested = args.Length >= 5 && args[4] is "hunt" or "sacrifice" or "early"
+        ? Allegiance.ClientCore.State.EffectsQuality.Native : null,
+});
 game.Content.RootDirectory = Path.GetFullPath(args[0]);
-var proof = new LessonObserver(game, Path.GetFullPath(args[1]), mission, style, args.Length == 5 ? args[4] : null);
+int lastLesson = args.Length == 6 ? int.Parse(args[5]) : 0;
+if (lastLesson < 0 || lastLesson > (mission switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
+    throw new ArgumentException("Invalid last lesson.");
+var proof = new LessonObserver(game, Path.GetFullPath(args[1]), mission, style, args.Length >= 5 ? args[4] : null, lastLesson);
 game.Components.Add(proof);
-if (args.Length == 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
+if (args.Length >= 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
 {
     if (!int.TryParse(args[4][7..], out int lesson) || lesson < 1
         || lesson > (mission switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
         throw new ArgumentException("Invalid lesson checkpoint.");
 }
-else if (args.Length == 5)
+else if (args.Length >= 5)
 {
     string field = args[4] switch { "early" => "_proofNaniteMountEarly", "loss" => "_proofNaniteWithholdRepair", "departure" => "_proofM4WaitForDeparture", "hunt" => "_proofM4HuntMiner", "sacrifice" => "_proofNaniteSacrifice", _ => throw new ArgumentException("unknown policy") };
     typeof(Game1).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, true);
 }
 game.Run();
-if (!proof.Completed) throw new InvalidOperationException("The lesson window exited before full completion.");
-if (args.Length == 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
+if (!proof.Completed) throw new InvalidOperationException("The lesson window exited before the requested proof completed.");
+if (lastLesson > 0 || args.Length >= 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
     Console.WriteLine($"P912_LESSON_PASS M{mission} {style} {args[4]}");
 else Console.WriteLine($"P912_WINDOW_PASS M{mission} {style} lessons={string.Join(',', proof.Lessons.Order())}");
 
-sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle style, string? policy) : GameComponent(game)
+sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle style, string? policy, int lastLesson = 0) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch _watch = Stopwatch.StartNew();
     public readonly HashSet<int> Lessons = new();
     public bool Completed { get; private set; }
     private bool _seeded, _started;
-    private readonly int _stopAfterLesson = policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? int.Parse(policy[7..]) : 0;
+    private readonly int _stopAfterLesson = lastLesson > 0 ? lastLesson
+        : policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? int.Parse(policy[7..]) : 0;
     private bool _prefixStopped;
     private bool _quickShot;
     private bool _commandShot;
@@ -78,6 +89,18 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
     private bool _minerSurvived;
     private bool _outcomeChecked;
     private int _minerTarget = -1;
+    private readonly Dictionary<int, int> _minerLastSector = new();
+    private readonly HashSet<int> _minersKilledInMars = new();
+    private bool _minerKillShot;
+    private bool _combinedAnnouncementSeen;
+    private bool _bothDestroyed;
+    private bool _outpostDestroyed;
+    private bool _bomberDestroyed;
+    private int _endingMessageStart = -1;
+    private string[] _endingMessages = [];
+    private bool _combatRecipeWritten;
+    private bool _naniteLeadShot;
+    private double _nextCombatTrace;
     private string _lastGoal = "";
 
     private T Get<T>(string field) => (T)typeof(Game1).GetField(field, Hidden)!.GetValue(game)!;
@@ -108,6 +131,67 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 _heightOrderSeen = true;
             }
             string goal = session.Mission.ActiveGoalPath;
+            var messages = ((ClientTrainingSite)session.Site).Messages;
+            if (missionId == 8)
+            {
+                if (goal is "3.19" or "3.20" && _endingMessageStart < 0) _endingMessageStart = messages.Count;
+                if (_endingMessageStart >= 0) _endingMessages = messages.Skip(_endingMessageStart).ToArray();
+                if (goal == "3.19" && !_combatRecipeWritten)
+                {
+                    _combatRecipeWritten = true;
+                    var station = host.Mission.GetStation(Mission8.EnemyOutpostStationId)!;
+                    var lines = new List<string> { FormattableString.Invariant($"station armor={station.EffectiveMaxArmor()} shield={station.EffectiveMaxShield()} armorRegen={station.EffectiveArmorRegen()} shieldRegen={station.EffectiveShieldRegen()}") };
+                    foreach (int id in Enumerable.Range(8004, 8))
+                        if (host.Drones.TryGetValue(id, out var actor))
+                            lines.Add(FormattableString.Invariant($"ship={id} hull={actor.HullType.HullId} hp={actor.HullType.HitPoints} damageGA={actor.GlobalAttributeFactor(Allegiance.Core.Model.GlobalAttributeSet.DamageGuns)} guns={string.Join(';', actor.Weapons.Select(w => $"{w.ProjectileType.ProjectileTypeId}:power={w.ProjectileType.Power}:burst={w.Type.DtimeBurst}:range={w.ProjectileType.Speed * w.GetLifespan()}:damageType={w.ProjectileType.DamageType}"))}"));
+                    File.WriteAllLines(Path.Combine(output, "combat-recipe.txt"), lines);
+                }
+            }
+            if ((missionId == 4 && goal.StartsWith("7.", StringComparison.Ordinal)
+                || missionId == 8 && goal.StartsWith("3.", StringComparison.Ordinal))
+                && _watch.Elapsed.TotalSeconds >= _nextCombatTrace)
+            {
+                _nextCombatTrace = _watch.Elapsed.TotalSeconds + .2;
+                int[] ids = missionId == 4 ? [1101, 1102, 1103, 1104] : [8007, 8008, 8009, 8010, 8011];
+                foreach (int id in ids)
+                    if (host.Drones.TryGetValue(id, out var drone))
+                        File.AppendAllText(Path.Combine(output, "combat.csv"),
+                            FormattableString.Invariant($"{_watch.Elapsed.TotalSeconds:F3},{goal},{id},{drone.Dead},{drone.Sector?.Id},{drone.Fraction:F5},{drone.ShieldFraction:F5},{drone.Position.X:F2},{drone.Position.Y:F2},{drone.Position.Z:F2},{drone.AcceptedShipCommandId},{drone.AcceptedShipTarget?.Id}\n"));
+                if (missionId == 8)
+                    File.AppendAllText(Path.Combine(output, "combat.csv"),
+                        FormattableString.Invariant($"{_watch.Elapsed.TotalSeconds:F3},{goal},1051,{host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)) <= 0},1052,{host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)):F5},{host.Mission.GetStation(Mission8.EnemyOutpostStationId)?.ShieldFraction ?? 0:F5}\n"));
+            }
+            if (missionId == 4)
+            {
+                // Native mission4.cpp:821-824: destruction of ANY miner ends
+                // this goal, independently of the currently selected target.
+                foreach (int id in Enumerable.Range(1101, 4))
+                    if (host.TrainingShipExists(id) && host.Drones.TryGetValue(id, out var liveMiner))
+                        _minerLastSector[id] = liveMiner.Sector?.Id ?? -1;
+                    else if (_minerLastSector.GetValueOrDefault(id) == 1031
+                        && host.Drones.TryGetValue(id, out var deadMiner) && deadMiner.Dead && deadMiner.Fraction <= 0)
+                        _minersKilledInMars.Add(id);
+                if (policy == "hunt" && !_minerKillShot && _minersKilledInMars.Count > 0)
+                {
+                    _minerKillShot = true;
+                    Shot($"m4-{style.ToString().ToLowerInvariant()}-miner-killed");
+                }
+            }
+            if (missionId == 8 && !_combinedAnnouncementSeen
+                && messages.Contains("Our bomber got destroyed too, but that is an acceptable price to pay."))
+            {
+                _combinedAnnouncementSeen = true;
+                Shot($"m8-{style.ToString().ToLowerInvariant()}-both-destroyed");
+                Console.WriteLine("[p917] COMBINED_ANNOUNCEMENT exact native message observed");
+            }
+            if (missionId == 8 && !_naniteLeadShot && goal == "3.19"
+                && policy is "early" or "sacrifice"
+                && host.GetCommandTarget(host.PlayerShipId) is { Type: ObjectType.Ship, Id: 8007 }
+                && (host.PlayerShip.StateM & Allegiance.Core.Sim.ShipControlState.WeaponsMask) != 0)
+            {
+                _naniteLeadShot = true;
+                Shot($"m8-{style.ToString().ToLowerInvariant()}-nanite-lead");
+            }
             if (missionId == 8 && goal == "3.19" && host.Drones.TryGetValue(8007, out var commander))
                 Check(commander.AcceptedShipCommandId == TrainingMissionIds.CmdAttack
                     && commander.AcceptedShipTarget?.Id == Mission8.EnemyOutpostStationId,
@@ -124,17 +208,26 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
             if (missionId == 8 && goal == "3.22")
             {
                 bool outpostDead = host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)) <= 0;
-                bool bomberDead = !host.TrainingShipExists(8007);
+                bool bomberDead = !host.TrainingShipExists(8007)
+                    && host.GetFraction(new(ObjectType.Ship, 8007)) <= 0;
+                _outpostDestroyed = outpostDead;
+                _bomberDestroyed = bomberDead;
                 Check(outpostDead || bomberDead, "ending without a real destroyed bomber or outpost");
-                if (!_outcomeChecked)
+                if (!_outcomeChecked || outpostDead && bomberDead && !_bothDestroyed)
                     Console.WriteLine($"[p912] OUTCOME minerSurvived={_minerSurvived} outpostDestroyed={outpostDead} bomberDestroyed={bomberDead}");
+                _bothDestroyed |= outpostDead && bomberDead;
                 if (policy == "loss") Check(bomberDead && !outpostDead, "withheld repair did not exercise bomber-loss/outpost-survives branch");
                 // Combat decides the unforced runs: both endings are native (mission8.cpp:600-654)
                 // and the message check below holds either way. Forced policies still pin a branch.
-                else if (policy is not null && _stopAfterLesson == 0) Check(outpostDead, "repair escort did not destroy the outpost");
-                if (policy == "sacrifice") Check(bomberDead, "did not exercise the combined bomber/outpost loss branch");
-                var finalMessages = ((ClientTrainingSite)session.Site).Messages;
-                Check(finalMessages.Any(m => m.Contains(outpostDead ? "Enemy outpost destroyed." : "The bomber got destroyed, better luck next time.", StringComparison.Ordinal)), "missing native ending announcement");
+                else if (policy is not null && policy != "sacrifice" && _stopAfterLesson == 0) Check(outpostDead, "repair escort did not destroy the outpost");
+                if (policy != "sacrifice" && !_outcomeChecked)
+                    Check(messages.Contains("Enemy outpost destroyed.") || messages.Contains("The bomber got destroyed, better luck next time."), "missing exact native ending announcement");
+                if (_bothDestroyed)
+                {
+                    foreach (int defender in new[] { 8009, 8010, 8011 })
+                        if (host.TrainingShipExists(defender))
+                            Check(host.HasCommand(defender, TrainingMissionIds.CmdDoNothing), "native ending did not stop a surviving enemy defender");
+                }
                 _outcomeChecked = true;
             }
             if (!int.TryParse(goal.Split('.')[0], out int major)) return;
@@ -169,11 +262,17 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 if (missionId == 4 && major == 8)
                 {
                     bool killed = Enumerable.Range(1101, 4).Any(id => !host.TrainingShipExists(id));
-                    bool departed = _minerTarget >= 0 && host.Drones.TryGetValue(_minerTarget, out var miner) && miner.Sector?.Id != 1031;
+                    bool departed = _minerTarget >= 0 && host.TrainingShipExists(_minerTarget)
+                        && host.Drones.TryGetValue(_minerTarget, out var miner) && miner.Sector?.Id != 1031;
                     Check(killed || departed, "lesson 7 ended without a miner kill or target sector departure");
                     if (policy == "departure") Check(!killed && departed, "did not exercise the non-kill departure branch");
-                    if (policy == "hunt") Check(killed, "did not exercise the miner-kill branch");
-                    Console.WriteLine($"[p912] M4_BRANCH minerKilled={killed} targetDeparted={departed}");
+                    if (policy == "hunt")
+                    {
+                        Check(_minersKilledInMars.Count > 0, "did not kill a miner before it left Mars");
+                        Check(messages.Contains("Target an enemy miner with the F key, and destroy it if you can."), "missing exact native miner prompt");
+                        Check(!departed, "selected miner departed before the kill branch");
+                    }
+                    Console.WriteLine($"[p912] M4_BRANCH minerKilled={killed} targetDeparted={departed} killedInMars={string.Join(',', _minersKilledInMars.Order())}");
                 }
                 if (missionId == 4 && major == 9)
                     Check(!host.TrainingShipExists(1100), "constructor defense ended without a real scout kill");
@@ -189,7 +288,6 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 if (missionId == 8 && _lastMajor == 2)
                 {
                     _minerSurvived = host.TrainingShipExists(8001);
-                    var messages = ((ClientTrainingSite)session.Site).Messages;
                     Check(messages.Any(m => m.Contains(_minerSurvived ? "Yee-haaaaaw!" : "Our miners are dead!", StringComparison.Ordinal)), "missing miner branch announcement");
                     if (policy == "loss") Check(!_minerSurvived, "withheld repair did not exercise miner loss");
                     if (policy == "early") Check(_minerSurvived, "early mounting and conserved repair energy did not exercise miner survival");
@@ -234,7 +332,30 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 Check(_probesSeen >= 3, "three tower orders never produced three real probes");
                 Check(_heightOrderSeen, "height drag never produced a real elevated buoy order");
             }
-            if (missionId == 8) Check(_outcomeChecked, "final native outcome was not observed");
+            if (missionId == 8)
+            {
+                Check(_outcomeChecked, "final native outcome was not observed");
+                if (policy == "sacrifice")
+                    Check(_bothDestroyed, "did not exercise the combined bomber/outpost loss branch");
+                if (_bothDestroyed)
+                {
+                    // Native mission8.cpp:646-650 checks throughout the final
+                    // five seconds, including a late projectile's bomber kill.
+                    Check(_combinedAnnouncementSeen, "missing exact native combined-loss announcement (mission8.cpp:650)");
+                    const string win = "Enemy outpost destroyed.", loss = "The bomber got destroyed, better luck next time.",
+                        cheer = "Yee-haaaaaw!", combined = "Our bomber got destroyed too, but that is an acceptable price to pay.";
+                    // mission8.cpp:633,641,648,650 are independent, once-only
+                    // conditions. A bomber-first loss can be followed by an
+                    // outpost kill during either announcement goal.
+                    Check(new[] { new[] { win, cheer, combined }, new[] { loss, win, cheer, combined },
+                        new[] { loss, cheer, combined } }.Any(_endingMessages.SequenceEqual),
+                        "combined ending messages differ from native order/text (mission8.cpp:633,648,650)");
+                }
+                else if (_outpostDestroyed)
+                    Check(_endingMessages.SequenceEqual(new[] { "Enemy outpost destroyed.", "Yee-haaaaaw!" }), "outpost-win ending differs from native");
+                else
+                    Check(_bomberDestroyed && _endingMessages.SequenceEqual(new[] { "The bomber got destroyed, better luck next time." }), "bomber-loss ending differs from native");
+            }
             Check(Lessons.Count == missionId switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }, "did not observe every lesson");
             if (!Completed)
             {

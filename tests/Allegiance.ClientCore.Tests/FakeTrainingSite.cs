@@ -165,11 +165,13 @@ public sealed class FakeTrainingSite : ITrainingSite
     public int ViewSector { get; set; } = 0;
     public int GetViewSector() => ViewSector;
     public int CommandAcknowledged { get; set; } = TrainingMissionIds.CmdDoNothing;
+    public Dictionary<int, float> ShipFractions { get; } = new();
     public float GetFraction(TargetRef model)
     {
         if (model.Type == ObjectType.Station)
             return StationFraction(model.Id);
-        return (_destroyedShips.Contains(model.Id) || Resolve(model) is null) ? 0f : 1f;
+        return (_destroyedShips.Contains(model.Id) || Resolve(model) is null) ? 0f
+            : ShipFractions.GetValueOrDefault(model.Id, 1f);
     }
     public int GetCommandAcknowledged() => CommandAcknowledged;
 
