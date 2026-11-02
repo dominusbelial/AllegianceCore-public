@@ -189,6 +189,56 @@ debugMode), `compose.server.debugmode.json` (the 221 live-test config:
 `m2xspiderw.igc`, 60 ups, debugMode on), and
 `compose.server.debugmode.mapgen.json` (P402 generated-arena variant).
 
+### Local server console
+
+Type commands into the running server's stdin (the same console that accepts
+`skills`). Commands execute on the next simulation tick. `help` prints the
+syntax; malformed input prints one usage line without repeating the input.
+
+| Command | Result |
+|---|---|
+| `players` | Current players across all games: ship/user ID, connection ID, name, game, team, sector, and state; includes players still choosing a side. |
+| `boot <id>` | Remove that ship/user ID from its game with the native administrator boot reason; uses the moderator departure path. |
+| `say <text>` | System chat to every player in every hosted game, including side selection. |
+| `whisper <id> <text>` | System chat to that ship/user ID alone. |
+| `status` | Live connection/player/mission counts, uptime, ticks, overruns, cumulative output/timeout counters, and each game's stage. |
+| `chat [n]` | Show the newest `n` captured chat entries in chronological order (default 20; allowed 1–200). |
+| `chat on` / `chat off` | Enable/disable live console chat and history capture; initially off. Previously captured history remains readable. |
+| `alerts on` / `alerts off` | Enable/disable standalone admin alerts; initially on. A player's chat addressed to ADMIN triggers an alert. Chat capture can still retain/display ADMIN messages when alerts are off. |
+| `skills` | Existing per-match skill telemetry. |
+
+The history is an in-memory 200-entry ring shared across games, including
+sender/target/message and UTC timestamp; it resets when the server boots.
+History/status/roster commands send no client messages. Native message-box and
+Event Viewer/shortcut actions become console lines, readable in the attached
+terminal or existing server logs. Configured moderator, bot, harness and cheat
+credentials are redacted, and control/format characters are removed before
+printing names or chat. Credential fields and tickets are never listed.
+The stdin backlog is bounded to 64 commands of at most 1024 characters, with
+at most eight executed per tick; a full backlog rejects further submissions
+without waiting. Long input produces usage. Output uses the existing bounded
+nonblocking console logger (a stalled/full log sink can drop output).
+
+For Docker, stdin must be attached **when the server container starts**.
+`docker compose up -d` with the shipped configuration has no interactive stdin;
+EOF only ends the input reader and the server continues running. Starting a
+shell with `docker exec -it` does not connect that shell to the server's stdin.
+For an interactive foreground server, stop the existing server first to free
+its service ports, then run a replacement with attached stdin:
+
+```bash
+docker compose stop server
+docker compose run --rm --service-ports -i server
+```
+
+Run this from a terminal (Compose allocates its TTY there). This changes how
+you launch the existing service; no admin network listener or credential is
+added. For a long-running detached container, set `stdin_open: true` and
+`tty: true` on `server` in your local Compose override, recreate the container,
+then use `docker attach --sig-proxy=false <container>`; detach with Ctrl-P,
+Ctrl-Q. `docker logs` only reads output. Container/host access controls who can
+reach this console.
+
 ### Bots and the MCP driver
 
 - **Simple bot demo** — `dotnet run --project src/Allegiance.Bot -- 6073 DemoBot`

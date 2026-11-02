@@ -4,6 +4,49 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P913 verification (2026-11-02 UTC)
+
+Exactly one Fast sweep: **12,878 passed / 8 failed / 3 optional private-pack
+skips**, **12,889 executions in 600.132 s**. All **nine infrastructure checks**
+passed. Eight executions exceeded the calibrated ten-second limit. The whole
+Fast tier was not rerun and its result remains **FAIL**.
+
+Every failed or slow method was repeated **three times alone**, serially, with
+artwork and server GC. Thirteen methods produced **48 case executions: 42
+passed / 6 failed / 0 skipped** (the loadout and support methods are theories).
+No failed assertion or unrelated production rule was changed. Physical temp
+files and XDG settings stayed in task scratch; a directory-descriptor alias
+preserved the existing bundle fixtures' outside-repository lexical temp path.
+
+| Method / family | Three standalone results | Finding |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/pass/pass**, 1.808/1.820/1.767 s | Sweep missed the partial tip despite lock 1.000 (38.225 s); known wire-receipt intermittency. Below 2 s alone. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **pass/fail/pass**, 0.621/0.600/0.620 s | Known stale dock-status history (station 1051 versus -1); still intermittent alone, remains open. |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | **pass/pass/pass**, 0.599/0.612/0.621 s | Sweep saw no enemy damage and took 40.018 s; same load/receipt family already ledgered under P887. Passes alone. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.266/1.232/1.176 s | Same null DefendTarget at line 179 as P908/P907/P906/P904; persistent existing failure, remains open. |
+| `NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by` | **pass/pass/pass**, 2.272/2.385/2.263 s | Sweep-only standby displacement 252.377; this exact method is newly itemized here. All three fresh processes pass. NPC/flight/collision rules unchanged. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/fail**, 0.989/1.002/1.047 s | Known receipt/simulation-clock boundary; sweep 31.85 against [28,31]. Still intermittent alone, remains open. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/pass**, 0.327/0.328/0.310 s | Known join-burst flying=3 versus docked=2 receipt signature; passes alone. |
+| `AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission` | **pass/pass/pass**, 0.429/0.436/0.428 s | Sweep-only lethal-hit receipt failure (18.953 s); all three fresh processes pass. Damage/collision rules unchanged. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, 3.819/4.343/4.041 s | Timing only: sweep 10.955 s; renderer unchanged. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | **pass/pass/pass**, 3.271–5.314 s/case | Timing only: civ 35 sweep 10.126 s. All three civ cases repeated per method run (9/9 pass). |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.276/3.198/3.267 s | Timing only: sweep 11.292 s; turret/hull selection unchanged. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | **pass/pass/pass**, 2.991–4.068 s/case | Timing only: civ 25 sweep 11.614 s. Both civ cases repeated per method run (6/6 pass). |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, 9.800/9.894/9.921 s | Timing only: sweep 10.018 s; near-limit native-physics fixture unchanged. |
+
+The five P913 console tests passed **15/15** as three isolated repetitions of
+each method, with **zero skips**. The affected moderation/callback cohort
+passed **81/81** (27 ×3), also with zero skips. The required serial showcase
+never-parks cohort passed **5/5**, matching the saved P908/P907 baseline pass
+rate: **387.934 / 436.559 / 221.535 / 237.196 / 420.422 s**, all 24/30 reached,
+real combat hits, zero sim-stage failures, and maximum stopped-with-target
+interval **1.913 s**. Boot logs confirm the required snapshot/encode-once,
+parallel native broadcast, pool transport, native GotoPlan and server GC.
+No end-to-end performance A/B is claimed.
+
+Evidence: [P913 report](reports/P913_REPORT.md),
+[gate and three-run receipts](reports/P913_assets/validation.json).
+
 ## P908 verification (2026-10-31 UTC)
 
 Exactly one Fast sweep: **12,805 passed / 4 failed / 3 optional private-pack

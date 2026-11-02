@@ -4418,7 +4418,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (!autoSelection)
         {
             TryJoinSide(live.Ship, requestedSideId);
-            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' chose side {requestedSideId} (ship {pend.ShipId})");
+            Console.WriteLine($"[sideselect] {from} '{ConsoleText(pend.Request.CharacterName)}' chose side {requestedSideId} (ship {pend.ShipId})");
         }
         else
         {
@@ -4435,11 +4435,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (live.Ship.SideId is { } autoSide)
             {
                 TryJoinSide(live.Ship, autoSide);
-                Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side {autoSide} (ship {pend.ShipId}); leader election via TryJoinSide");
+                Console.WriteLine($"[sideselect] {from} '{ConsoleText(pend.Request.CharacterName)}' AUTO-assigned to side {autoSide} (ship {pend.ShipId}); leader election via TryJoinSide");
             }
             else
             {
-                Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side (none) (ship {pend.ShipId})");
+                Console.WriteLine($"[sideselect] {from} '{ConsoleText(pend.Request.CharacterName)}' AUTO-assigned to side (none) (ship {pend.ShipId})");
             }
         }
 
@@ -4582,11 +4582,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (!resumed)
             {
                 live.Wallet.Money = harness.Money;
-                Console.WriteLine($"[testharness] {from} '{req.CharacterName}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
+                Console.WriteLine($"[testharness] {from} '{ConsoleText(req.CharacterName)}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
             }
             else
             {
-                Console.WriteLine($"[testharness] {from} '{req.CharacterName}' resumed seat — wallet grant skipped (native re-grants nothing on a resume)");
+                Console.WriteLine($"[testharness] {from} '{ConsoleText(req.CharacterName)}' resumed seat — wallet grant skipped (native re-grants nothing on a resume)");
             }
         }
 
@@ -4600,11 +4600,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (!resumed)
             {
                 live.Wallet.Money = tu.Money;
-                Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' wallet SET to ${tu.Money} at seat (testUnlock enabled)");
+                Console.WriteLine($"[testunlock] {from} '{ConsoleText(req.CharacterName)}' wallet SET to ${tu.Money} at seat (testUnlock enabled)");
             }
             else
             {
-                Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' resumed seat — wallet SET skipped (keeps the live wallet)");
+                Console.WriteLine($"[testunlock] {from} '{ConsoleText(req.CharacterName)}' resumed seat — wallet SET skipped (keeps the live wallet)");
             }
         }
 
@@ -4688,7 +4688,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 DwCookie = goalMission.Cookie,
             }.Encode(),
         }));
-        Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{goalMission.Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
+        Console.WriteLine($"[join] peer {from} '{ConsoleText(req.CharacterName)}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{goalMission.Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
 
         // FM_S_EXPORT(26)/OT_cluster(13) cluster exports used to
         // live here (right after JOINED_MISSION). Moved to AFTER
@@ -4772,7 +4772,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 Params = ParamsOf(goalMission),
             }.Encode(),
         }));
-        Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
+        Console.WriteLine($"[sides] peer {from} '{ConsoleText(req.CharacterName)}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
         // P642: native seeds groups through MISSIONDEF.rgfAllies
         // (appmsg.cpp:2424; fsmission.cpp:5288-5291). The port uses its
         // existing CHANGE_ALLIANCES codec for the same initial state.
@@ -4863,7 +4863,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 PilotType = ExportShip.PilotTypePlayer,
             };
             SendPeer(from, FedPacket.Pack(new[] { exportMsg.Encode() }));
-            Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship NA(real={shipId}) side {sideId}");
+            Console.WriteLine($"[create] peer {from} '{ConsoleText(req.CharacterName)}' -> EXPORT hull {exportMsg.HullId} ship NA(real={shipId}) side {sideId}");
         }
         else
         {
@@ -4876,7 +4876,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             // the client wrapper stays null-backed, matching the
             // T14 state, but that is the honest consequence of an
             // unseated side.
-            Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
+            Console.WriteLine($"[create] {from} '{ConsoleText(req.CharacterName)}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
         }
 
         // FM_S_PLAYERINFO(10): the missing side-carrier (T17 →
@@ -4949,7 +4949,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             live.PlayerScore.Kills, live.PlayerScore.Deaths,
             live.PlayerScore.Ejections, live.PlayerScore.Rank).Encode());
         SendPeer(from, FedPacket.Pack(joinInfos));
-        Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
+        Console.WriteLine($"[playerinfo] peer {from} '{ConsoleText(req.CharacterName)}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
         // FM_S_SET_MONEY(115): tell the joining/syncing player THEIR OWN money
         // (P442; native fires this inside CFSMission::SendMissionInfo,
@@ -4974,7 +4974,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 {
                     new SetMoney { Money = live.Wallet.Money, ShipId = shipId }.Encode(),
                 }));
-                Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={live.Wallet.Money} shipID={shipId}");
+                Console.WriteLine($"[setmoney] peer {from} '{ConsoleText(req.CharacterName)}' -> SET_MONEY(115) money={live.Wallet.Money} shipID={shipId}");
 
                 // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
                 // per bucket (P119/P468): the bucket-catalog preface of the
@@ -5019,7 +5019,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                         {
                             new SetBriefingText { Text = clusterName, FGenerateCivBriefing = true }.Encode(),
                         }));
-                        Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='{clusterName}' (friendly station {briefStation.StationId} side {briefStation.SideId})");
+                        Console.WriteLine($"[briefing] peer {from} '{ConsoleText(req.CharacterName)}' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='{clusterName}' (friendly station {briefStation.StationId} side {briefStation.SideId})");
                     }
                 }
                 else
@@ -5031,7 +5031,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                     // this does not arise in a real mission; here it is
                     // logged and the message skipped rather than
                     // fabricating text.
-                    Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
+                    Console.WriteLine($"[briefing] peer {from} '{ConsoleText(req.CharacterName)}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
                 }
 
                 // P759 — send the client-side civ-briefing inputs (native
@@ -5053,7 +5053,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // The table is the real ranks.txt payload (loaded at boot,
         // every entry civ=-1 / requiredRanking=0 — standalone).
         SendPeer(from, FedPacket.Pack(new[] { _rankTable.Encode() }));
-        Console.WriteLine($"[rankinfo] peer {from} '{req.CharacterName}' -> RANK_INFO(13) {_rankTable.Ranks.Length} rank(s) (civ=-1, requiredRanking=0, standalone)");
+        Console.WriteLine($"[rankinfo] peer {from} '{ConsoleText(req.CharacterName)}' -> RANK_INFO(13) {_rankTable.Ranks.Length} rank(s) (civ=-1, requiredRanking=0, standalone)");
 
         // FM_S_TREASURE_SETS(89): tell the joining player the
         // mission's treasure-set catalog (P123). Native defines the
@@ -5072,11 +5072,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             var tsMsg = TreasureSets.FromCatalog(treasureSets.Values);
             SendPeer(from, FedPacket.Pack(new[] { tsMsg.Encode() }));
-            Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> TREASURE_SETS(89) {tsMsg.Sets.Length} set(s)");
+            Console.WriteLine($"[treasuresets] peer {from} '{ConsoleText(req.CharacterName)}' -> TREASURE_SETS(89) {tsMsg.Sets.Length} set(s)");
         }
         else
         {
-            Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> core has no treasure sets — TREASURE_SETS(89) skipped");
+            Console.WriteLine($"[treasuresets] peer {from} '{ConsoleText(req.CharacterName)}' -> core has no treasure sets — TREASURE_SETS(89) skipped");
         }
 
         // FM_S_CLUSTERINFO(200): the map-overview message the
@@ -5110,7 +5110,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             _clusterInfoBytes[goalMission.Cookie] = clusterInfoBytes = clusterInfo.Encode();
         SendPeer(from, FedPacket.Pack(new[] { clusterInfoBytes }));
         _lastClusterInfoTick[from] = TickIndex;
-        Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
+        Console.WriteLine($"[clusterinfo] peer {from} '{ConsoleText(req.CharacterName)}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
 
         // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
         // to the client. Placement (P33, moved here from right
@@ -5150,7 +5150,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             .Select(s => ExportCluster.FromSector(s).Encode())
             .ToArray();
         SendPeer(from, FedPacket.Pack(clusterExports));
-        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
+        Console.WriteLine($"[export] peer {from} '{ConsoleText(req.CharacterName)}' -> {clusterExports.Length} cluster(s): " +
                           string.Join(", ", goalMission.Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
 
         // Same peer/session, immediately after the cluster exports,
@@ -5245,7 +5245,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 }
             }
         }
-        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' side {live.Ship.SideId?.ToString() ?? "(none)"} -> " +
+        Console.WriteLine($"[export] peer {from} '{ConsoleText(req.CharacterName)}' side {live.Ship.SideId?.ToString() ?? "(none)"} -> " +
                           $"{sentWarps}/{joinMission.Warps.Count} warp(s), {sentStations}/{joinMission.Sectors.Sum(s => s.Stations.Count)} station(s), " +
                           $"{sentAsteroids}/{joinMission.Sectors.Sum(s => s.Asteroids.Count)} asteroid(s), {sentEffects} building effect(s), " +
                           $"{sentProbes} probe(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5; seen/total); " +
@@ -5382,7 +5382,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             new MissionStageMessage { Stage = realStage }.Encode(),
         }));
-        Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) {(MissionStage)realStage}");
+        Console.WriteLine($"[stage] peer {from} '{ConsoleText(req.CharacterName)}' -> MISSION_STAGE(37) {(MissionStage)realStage}");
         // Late joiners receive the remaining intermission/briefing deadline too.
         if (live.Ship.Mission is { } timerMission &&
             (_autoRestartDeadline.TryGetValue(timerMission, out var timerTarget)
@@ -5414,7 +5414,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             MakeOwnShipStatus(shipId, live).Encode(),
         }));
-        ConsoleLog.Write($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
+        ConsoleLog.Write($"[shipstatus] peer {from} '{ConsoleText(req.CharacterName)}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
         _lastStatusSector[from] = live.Sector.Id;
         _lastStatusTick[from] = TickIndex;
 
@@ -5445,7 +5445,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             nFlagSync++;
         }
         if (nFlagSync > 0)
-            Console.WriteLine($"[gainflag] peer {from} '{req.CharacterName}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
+            Console.WriteLine($"[gainflag] peer {from} '{ConsoleText(req.CharacterName)}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
 
         // Native SendMissionInfo ends with all victory rankings, including
         // before the first capture/kill (FedSrv/fsmission.cpp:4324-4339).
@@ -5473,11 +5473,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (live.Ship.Mission is { Stage: MissionStage.Started })
         {
             SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
-            Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
+            Console.WriteLine($"[entergame] peer {from} '{ConsoleText(req.CharacterName)}' -> ENTER_GAME(128) (join-sync complete — player ready)");
         }
         else
         {
-            Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
+            Console.WriteLine($"[entergame] peer {from} '{ConsoleText(req.CharacterName)}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
         }
     }
 
@@ -5652,14 +5652,14 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             if (pend.RequestedSide is { } side && side != -1)
             {
-                Console.WriteLine($"[sideselect] draining peer {key} '{pend.Request.CharacterName}' -> chosen side {side}");
+                Console.WriteLine($"[sideselect] draining peer {key} '{ConsoleText(pend.Request.CharacterName)}' -> chosen side {side}");
                 CompleteSideSelection(key, side);
             }
             else
             {
                 Console.WriteLine(pend.RequestedSide is null
-                    ? $"[sideselect] peer {key} '{pend.Request.CharacterName}' never chose a side within {autoSeatSeconds}s — auto-assigning"
-                    : $"[sideselect] draining peer {key} '{pend.Request.CharacterName}' -> auto-pick (NA)");
+                    ? $"[sideselect] peer {key} '{ConsoleText(pend.Request.CharacterName)}' never chose a side within {autoSeatSeconds}s — auto-assigning"
+                    : $"[sideselect] draining peer {key} '{ConsoleText(pend.Request.CharacterName)}' -> auto-pick (NA)");
                 CompleteSideSelection(key, -1);   // NA = auto-pick (arrival order / spawner default)
             }
         }

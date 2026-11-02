@@ -128,7 +128,7 @@ public sealed partial class Server
                 {
                     var nl = _duplicateLogonLog.Ticket(from.Value);
                     if (nl.Emit)
-                        Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(rn)}': CharacterName rejected (length {rn.Length} > 24 or illegal chars; native c_cbName=25, H-28)");
+                        Console.WriteLine($"[logon] {from} '{ConsoleText(rn)}': CharacterName rejected (length {rn.Length} > 24 or illegal chars; native c_cbName=25, H-28)");
                     else if (nl.Summarize)
                         Console.WriteLine($"[logon] {from}: {nl.Suppressed} more illegal CharacterNames refused (rate-limited)");
                     continue;
@@ -160,7 +160,7 @@ public sealed partial class Server
                     // id, no pending entry.
                     var dl = _duplicateLogonLog.Ticket(from.Value);
                     if (dl.Emit)
-                        Console.WriteLine($"[logon] {from} '{req.CharacterName}' DUPLICATE LOGONREQ from a seated peer — rejected (one logon per connection, FedSrv.CPP:4832)");
+                        Console.WriteLine($"[logon] {from} '{ConsoleText(req.CharacterName)}' DUPLICATE LOGONREQ from a seated peer — rejected (one logon per connection, FedSrv.CPP:4832)");
                     else if (dl.Summarize)
                         Console.WriteLine($"[logon] {from}: {dl.Suppressed} more duplicate LOGONREQs from a seated peer suppressed (rate-limited)");
                     continue;
@@ -170,7 +170,7 @@ public sealed partial class Server
                     // Still awaiting side selection: the LOGONREQ is idempotent —
                     // re-send the SAME LogonAck (same reserved ship id, same
                     // validated/cookie), allocate nothing, register nothing new.
-                    Console.WriteLine($"[logon] {from} '{pendingLogon.Request.CharacterName}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
+                    Console.WriteLine($"[logon] {from} '{ConsoleText(pendingLogon.Request.CharacterName)}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
                     var reack = new LogonAck
                     {
                         CharNameOrFailureReason = pendingLogon.Request.VersionMatches ? IdentityWelcome(from, pendingLogon.Request.CharacterName) : "wrong client version",
@@ -194,7 +194,7 @@ public sealed partial class Server
                 // (LOGONREQ.crcFileList, Inc/Messages.h:44; lobby/client.cpp:272-281).
                 bool fileListAccepted = CheckFileList(req, out var fileListFailure);
                 if (!fileListAccepted)
-                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': file-set CRC 0x{req.CrcFileList:X8} refused — {fileListFailure}");
+                    Console.WriteLine($"[logon] {from} '{ConsoleText(req.CharacterName)}': file-set CRC 0x{req.CrcFileList:X8} refused — {fileListFailure}");
 
                 // P894 / LOB-0020, LOB-0026 — the advertised minimum client version,
                 // enforced at the logon the port's client actually performs (native
@@ -202,8 +202,8 @@ public sealed partial class Server
                 // lobby/client.cpp:272-288, and the verLobby NACK at :290-309).
                 bool clientVersionAccepted = CheckClientVersion(req, out var clientVersionFailure);
                 if (!clientVersionAccepted)
-                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': client version "
-                        + $"'{ConsoleLog.Sanitize(req.ClientVersion)}' refused — {clientVersionFailure}");
+                    Console.WriteLine($"[logon] {from} '{ConsoleText(req.CharacterName)}': client version "
+                        + $"'{ConsoleText(req.ClientVersion)}' refused — {ConsoleText(clientVersionFailure, 512)}");
 
                 // P808c — RESERVED CALLSIGN protection (P808a follow-up): on a
                 // server with identity configured, an ANONYMOUS logon (no lobby
@@ -223,7 +223,7 @@ public sealed partial class Server
                 {
                     reservedConflict = true;
                     reservedFailure = "that callsign is registered — sign in to use it";
-                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': anonymous logon refused — registered callsign (reserved-name protection)");
+                    Console.WriteLine($"[logon] {from} '{ConsoleText(req.CharacterName)}': anonymous logon refused — registered callsign (reserved-name protection)");
                 }
 
                 // Native private standalone joins refuse duplicate names, case
@@ -292,7 +292,7 @@ public sealed partial class Server
                     // side (POSITIONREQ → CompleteSideSelection) or the
                     // side-select timeout seats it.
                     _pendingSideSelect[from] = new PendingSideSelect(shipId, req, _simNow, _nextJoinSeq++, joinMission);
-                    Console.WriteLine($"[launch] peer {from} '{req.CharacterName}' pending side-select (ship id {shipId} reserved; launch deferred to side choice)");
+                    Console.WriteLine($"[launch] peer {from} '{ConsoleText(req.CharacterName)}' pending side-select (ship id {shipId} reserved; launch deferred to side choice)");
                 }
 
                 var ack = new LogonAck
@@ -305,8 +305,8 @@ public sealed partial class Server
                     Cookie = 0,
                 };
                 SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
-                Console.WriteLine($"[logon] {from} '{req.CharacterName}' validated={validated} -> " +
-                                  $"'{ack.CharNameOrFailureReason}' (server time {ack.TimeServer}, ship {ack.ShipID})");
+                Console.WriteLine($"[logon] {from} '{ConsoleText(req.CharacterName)}' validated={validated} -> " +
+                                  $"'{ConsoleText(ack.CharNameOrFailureReason)}' (server time {ack.TimeServer}, ship {ack.ShipID})");
 
                 // Push the side roster AFTER the logon ack so a packet-order-
                 // fixed harness sees LOGONACK as its first frame (the roster is
@@ -561,7 +561,8 @@ public sealed partial class Server
                             else
                             {
                                 var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
-                                Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{ConsoleLog.Sanitize(chat.Message, 128)}' " +
+                                ObserveConsoleChat(senderLive.Ship.Mission, _peerNames.GetValueOrDefault(from), chat);
+                                Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{ConsoleText(chat.Message)}' " +
                                                   $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
                                 if (targets.Length > 0)
                                 {
@@ -693,8 +694,9 @@ public sealed partial class Server
                         else
                         {
                             var targets = SelectChatTargets(from, buoy, senderLive.Ship.SideId);
+                            ObserveConsoleChat(senderLive.Ship.Mission!, _peerNames.GetValueOrDefault(from), buoy.Cd, buoy.Message);
                             Console.WriteLine($"[chatbuoy] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
-                                              $"'{ConsoleLog.Sanitize(buoy.Message, 128)}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
+                                              $"'{ConsoleText(buoy.Message)}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
 
                             // P403 — receiving-side execution. Native's c_buoyCluster buoy is
                             // a "go to this OTHER sector" order (deleted on arrival in the

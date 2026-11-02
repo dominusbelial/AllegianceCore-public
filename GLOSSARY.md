@@ -522,6 +522,15 @@ list in **reverse**.
   / env `ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS` opts into always refusing
   (default off). Native: `FedSrv/fsmission.cpp:1248-1273`, `FedSrv/FedSrv.CPP:629`.
   Report: `docs/reports/P864c_REPORT.md`.
+- **Local admin console (P913)** — existing stdin enqueues bounded commands for
+  the tick thread in `src/Allegiance.Server/Server.Console.cs`: live player
+  roster, moderator-path boot, all-games system chat/private whisper, status,
+  200-entry chat history and independent ADMIN-chat alerts. No listener or new
+  credentials. Native: `AllSrvUI/PagePlayers.cpp:77-120,354-418,776-829`,
+  `AllSrvUI/PageChat.cpp:91-183,485-528`, `FedSrv/FedSrv.CPP:3129-3130`.
+  Operator/Docker usage: `docs/GUIDE.md`; proof:
+  `tests/Allegiance.ClientCore.Tests/P913ServerConsoleTests.cs`; report:
+  `docs/reports/P913_REPORT.md`.
 - **Cheats / debug** — `Server.AdminCheats.cs`, `Server.Privileges.cs`;
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,

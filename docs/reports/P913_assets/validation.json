@@ -1,0 +1,1453 @@
+{
+  "task": "P913",
+  "verifiedAtUtc": "2026-11-02T01:52:28.296993+00:00",
+  "baseCommit": "0cda44f5c9487652c83ecbd7c9d39841f2ad8244",
+  "scorecard": {
+    "before": {
+      "credit": 30,
+      "weight": 44,
+      "complete": 10,
+      "eligible": 16
+    },
+    "after": {
+      "credit": 44,
+      "weight": 44,
+      "complete": 16,
+      "eligible": 16,
+      "designReplacedWeight": 6
+    },
+    "otherTotalsUnchanged": true
+  },
+  "build": {
+    "solutionWarnings": 0,
+    "solutionErrors": 0,
+    "toolsProjects": 107,
+    "toolsWarnings": 0,
+    "aot": "linux-x64 self-contained clean; no IL2026/IL3050"
+  },
+  "aotProcessSmoke": "passed: stdin commands; EOF keeps server alive; clean SIGTERM",
+  "newTests": [
+    {
+      "file": "new-Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster",
+          "outcome": "Passed",
+          "seconds": 0.2934734
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster",
+          "outcome": "Passed",
+          "seconds": 0.3195258
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Disabled_observation_at_394_peers_allocates_nothing_and_never_enumerates_roster",
+          "outcome": "Passed",
+          "seconds": 0.3219335
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server",
+          "outcome": "Passed",
+          "seconds": 0.3542669
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server",
+          "outcome": "Passed",
+          "seconds": 0.3483099
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Ring_wraps_preferences_gate_capture_and_native_admin_chat_triggers_alert_only_on_server",
+          "outcome": "Passed",
+          "seconds": 0.3616062
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients",
+          "outcome": "Passed",
+          "seconds": 0.4014178
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients",
+          "outcome": "Passed",
+          "seconds": 0.3976498
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Say_reaches_all_games_whisper_only_selected_user_and_history_never_sends_to_clients",
+          "outcome": "Passed",
+          "seconds": 0.3970611
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe",
+          "outcome": "Passed",
+          "seconds": 0.3429371
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe",
+          "outcome": "Passed",
+          "seconds": 0.3490121
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Secrets_controls_malformed_input_EOF_and_queue_bounds_are_safe",
+          "outcome": "Passed",
+          "seconds": 0.3425945
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Stdin_roster_status_and_boot_follow_live_membership_including_side_select-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Stdin_roster_status_and_boot_follow_live_membership_including_side_select",
+          "outcome": "Passed",
+          "seconds": 0.8528158
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Stdin_roster_status_and_boot_follow_live_membership_including_side_select-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Stdin_roster_status_and_boot_follow_live_membership_including_side_select",
+          "outcome": "Passed",
+          "seconds": 0.8571693
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "new-Stdin_roster_status_and_boot_follow_live_membership_including_side_select-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P913ServerConsoleTests.Stdin_roster_status_and_boot_follow_live_membership_including_side_select",
+          "outcome": "Passed",
+          "seconds": 0.8292272
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      }
+    }
+  ],
+  "affectedTests": [
+    {
+      "file": "affected-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SetCommand_fires_CommandChangedEvent_only_on_change",
+          "outcome": "Passed",
+          "seconds": 0.011585
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.CommandChangedEvent_routes_accepted_and_aoe_current",
+          "outcome": "Passed",
+          "seconds": 0.0105404
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Only_a_side_leader_can_boot_a_teammate_and_only_the_leader_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.0105627
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Non_moderator_cannot_use_the_administrator_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.0066548
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Leader_boot_is_refused_when_team_settings_are_locked",
+          "outcome": "Passed",
+          "seconds": 0.0065151
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.GetRankThreshold_divides_by_the_whole_mission_ship_list_including_docked_ships",
+          "outcome": "Passed",
+          "seconds": 0.0059369
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.AutoStart_gate_starts_countdown_only_when_bAutoStart_is_set",
+          "outcome": "Passed",
+          "seconds": 0.0195645
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Ordinary_self_quit_is_accepted",
+          "outcome": "Passed",
+          "seconds": 0.0069407
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.Warp_state_handshake_follows_native_update_cycle",
+          "outcome": "Passed",
+          "seconds": 0.0459648
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Spoofed_character_name_and_steam_id_do_not_grant_moderator_rights",
+          "outcome": "Passed",
+          "seconds": 0.0348952
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+          "outcome": "Passed",
+          "seconds": 0.0571206
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_hull_upgrade_buys_the_preferred_loadout",
+          "outcome": "Passed",
+          "seconds": 0.0117226
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeCluster_announces_left_sector_only_for_real_moves",
+          "outcome": "Passed",
+          "seconds": 0.0096936
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ShipChatRecipients_never_include_the_sender",
+          "outcome": "Passed",
+          "seconds": 0.0252903
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Configured_moderator_may_remove_any_player_with_reason_and_message",
+          "outcome": "Passed",
+          "seconds": 0.0092485
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_allow_empty_teams_skips_inactive_empty_teams",
+          "outcome": "Passed",
+          "seconds": 0.0066585
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.LoadoutChangeEvent_aoe_resend_uses_the_real_current_cid",
+          "outcome": "Passed",
+          "seconds": 0.0144744
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.MoveShipToSector_announces_the_sector_exit_like_a_ripcord_move",
+          "outcome": "Passed",
+          "seconds": 0.0279553
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.HitWarpEvent_mass_limit_gate_matches_native",
+          "outcome": "Passed",
+          "seconds": 0.0152721
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_launch_repair_and_first_dock_tech_recovery",
+          "outcome": "Passed",
+          "seconds": 0.0153916
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Loopback_moderator_ban_removes_the_target_and_delivers_the_admin_notice",
+          "outcome": "Passed",
+          "seconds": 0.3162043
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_is_the_native_balance_check_only_and_ignores_side_ready_flags",
+          "outcome": "Passed",
+          "seconds": 0.0054579
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SendChat_groups_allies_ship_admin",
+          "outcome": "Passed",
+          "seconds": 0.0013844
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_player_count_imbalance",
+          "outcome": "Passed",
+          "seconds": 0.0057361
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+          "outcome": "Passed",
+          "seconds": 0.0074456
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_min_and_max_player_counts",
+          "outcome": "Passed",
+          "seconds": 0.0066894
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_rank_spread_only_when_rank_balancing_is_enabled",
+          "outcome": "Passed",
+          "seconds": 0.0064139
+        }
+      ],
+      "outcomes": {
+        "Passed": 27
+      }
+    },
+    {
+      "file": "affected-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_min_and_max_player_counts",
+          "outcome": "Passed",
+          "seconds": 0.006038
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Leader_boot_is_refused_when_team_settings_are_locked",
+          "outcome": "Passed",
+          "seconds": 0.0065141
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Ordinary_self_quit_is_accepted",
+          "outcome": "Passed",
+          "seconds": 0.0067359
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_is_the_native_balance_check_only_and_ignores_side_ready_flags",
+          "outcome": "Passed",
+          "seconds": 0.0056063
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.MoveShipToSector_announces_the_sector_exit_like_a_ripcord_move",
+          "outcome": "Passed",
+          "seconds": 0.012904
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.Warp_state_handshake_follows_native_update_cycle",
+          "outcome": "Passed",
+          "seconds": 0.0606738
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.GetRankThreshold_divides_by_the_whole_mission_ship_list_including_docked_ships",
+          "outcome": "Passed",
+          "seconds": 0.006957
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_allow_empty_teams_skips_inactive_empty_teams",
+          "outcome": "Passed",
+          "seconds": 0.0063773
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Spoofed_character_name_and_steam_id_do_not_grant_moderator_rights",
+          "outcome": "Passed",
+          "seconds": 0.034739
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Only_a_side_leader_can_boot_a_teammate_and_only_the_leader_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.0068441
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.CommandChangedEvent_routes_accepted_and_aoe_current",
+          "outcome": "Passed",
+          "seconds": 0.0116392
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_hull_upgrade_buys_the_preferred_loadout",
+          "outcome": "Passed",
+          "seconds": 0.0125124
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_player_count_imbalance",
+          "outcome": "Passed",
+          "seconds": 0.0057973
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+          "outcome": "Passed",
+          "seconds": 0.056852
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Configured_moderator_may_remove_any_player_with_reason_and_message",
+          "outcome": "Passed",
+          "seconds": 0.0071427
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_launch_repair_and_first_dock_tech_recovery",
+          "outcome": "Passed",
+          "seconds": 0.0207562
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.LoadoutChangeEvent_aoe_resend_uses_the_real_current_cid",
+          "outcome": "Passed",
+          "seconds": 0.014309
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Non_moderator_cannot_use_the_administrator_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.0062724
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeCluster_announces_left_sector_only_for_real_moves",
+          "outcome": "Passed",
+          "seconds": 0.0239319
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_rank_spread_only_when_rank_balancing_is_enabled",
+          "outcome": "Passed",
+          "seconds": 0.0064668
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Loopback_moderator_ban_removes_the_target_and_delivers_the_admin_notice",
+          "outcome": "Passed",
+          "seconds": 0.2761523
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.AutoStart_gate_starts_countdown_only_when_bAutoStart_is_set",
+          "outcome": "Passed",
+          "seconds": 0.0087235
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.HitWarpEvent_mass_limit_gate_matches_native",
+          "outcome": "Passed",
+          "seconds": 0.0107696
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ShipChatRecipients_never_include_the_sender",
+          "outcome": "Passed",
+          "seconds": 0.0111942
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SetCommand_fires_CommandChangedEvent_only_on_change",
+          "outcome": "Passed",
+          "seconds": 0.0158559
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SendChat_groups_allies_ship_admin",
+          "outcome": "Passed",
+          "seconds": 0.001239
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+          "outcome": "Passed",
+          "seconds": 0.0115628
+        }
+      ],
+      "outcomes": {
+        "Passed": 27
+      }
+    },
+    {
+      "file": "affected-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SendChat_groups_allies_ship_admin",
+          "outcome": "Passed",
+          "seconds": 0.0013787
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_rank_spread_only_when_rank_balancing_is_enabled",
+          "outcome": "Passed",
+          "seconds": 0.0054201
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Spoofed_character_name_and_steam_id_do_not_grant_moderator_rights",
+          "outcome": "Passed",
+          "seconds": 0.0469541
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_min_and_max_player_counts",
+          "outcome": "Passed",
+          "seconds": 0.0062566
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+          "outcome": "Passed",
+          "seconds": 0.0571119
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.HitWarpEvent_mass_limit_gate_matches_native",
+          "outcome": "Passed",
+          "seconds": 0.0104488
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.MoveShipToSector_announces_the_sector_exit_like_a_ripcord_move",
+          "outcome": "Passed",
+          "seconds": 0.0268611
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.CommandChangedEvent_routes_accepted_and_aoe_current",
+          "outcome": "Passed",
+          "seconds": 0.0108495
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.AutoStart_gate_starts_countdown_only_when_bAutoStart_is_set",
+          "outcome": "Passed",
+          "seconds": 0.0085046
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_allow_empty_teams_skips_inactive_empty_teams",
+          "outcome": "Passed",
+          "seconds": 0.0056126
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.SetCommand_fires_CommandChangedEvent_only_on_change",
+          "outcome": "Passed",
+          "seconds": 0.0109651
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Loopback_moderator_ban_removes_the_target_and_delivers_the_admin_notice",
+          "outcome": "Passed",
+          "seconds": 0.3073453
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Non_moderator_cannot_use_the_administrator_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.0057593
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeCluster_announces_left_sector_only_for_real_moves",
+          "outcome": "Passed",
+          "seconds": 0.0096782
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Ordinary_self_quit_is_accepted",
+          "outcome": "Passed",
+          "seconds": 0.0064917
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ShipChatRecipients_never_include_the_sender",
+          "outcome": "Passed",
+          "seconds": 0.0260092
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Configured_moderator_may_remove_any_player_with_reason_and_message",
+          "outcome": "Passed",
+          "seconds": 0.007139
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.Warp_state_handshake_follows_native_update_cycle",
+          "outcome": "Passed",
+          "seconds": 0.0432576
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_player_count_imbalance",
+          "outcome": "Passed",
+          "seconds": 0.0052065
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.FAllReady_is_the_native_balance_check_only_and_ignores_side_ready_flags",
+          "outcome": "Passed",
+          "seconds": 0.0050668
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Only_a_side_leader_can_boot_a_teammate_and_only_the_leader_boot_reason",
+          "outcome": "Passed",
+          "seconds": 0.006574
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_hull_upgrade_buys_the_preferred_loadout",
+          "outcome": "Passed",
+          "seconds": 0.0120763
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.Leader_boot_is_refused_when_team_settings_are_locked",
+          "outcome": "Passed",
+          "seconds": 0.00538
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_launch_repair_and_first_dock_tech_recovery",
+          "outcome": "Passed",
+          "seconds": 0.014594
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+          "outcome": "Passed",
+          "seconds": 0.0074888
+        },
+        {
+          "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.LoadoutChangeEvent_aoe_resend_uses_the_real_current_cid",
+          "outcome": "Passed",
+          "seconds": 0.013976
+        },
+        {
+          "name": "Allegiance.Core.Tests.P762LobbyModerationTests.GetRankThreshold_divides_by_the_whole_mission_ship_list_including_docked_ships",
+          "outcome": "Passed",
+          "seconds": 0.0062168
+        }
+      ],
+      "outcomes": {
+        "Passed": 27
+      }
+    }
+  ],
+  "showcase": [
+    {
+      "file": "showcase-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 387.9337646
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      },
+      "loadAverageAtStart": [
+        "1.31",
+        "2.25",
+        "2.89"
+      ],
+      "combatSummary": "P700 local 15v15: 384.0s, samples=3834, reached=24/30, longest speed<1 with target=1.007s, shots=2139, hits=982, kills=7"
+    },
+    {
+      "file": "showcase-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 436.559289
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      },
+      "loadAverageAtStart": [
+        "2.60",
+        "1.96",
+        "2.44"
+      ],
+      "combatSummary": "P700 local 15v15: 433.1s, samples=4324, reached=24/30, longest speed<1 with target=1.913s, shots=2503, hits=692, kills=6"
+    },
+    {
+      "file": "showcase-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 221.5351681
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      },
+      "loadAverageAtStart": [
+        "0.76",
+        "1.21",
+        "1.91"
+      ],
+      "combatSummary": "P700 local 15v15: 217.3s, samples=2171, reached=24/30, longest speed<1 with target=0.000s, shots=387, hits=2, kills=0"
+    },
+    {
+      "file": "showcase-4.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 237.19616969999998
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      },
+      "loadAverageAtStart": [
+        "1.25",
+        "1.06",
+        "1.68"
+      ],
+      "combatSummary": "P700 local 15v15: 233.0s, samples=2327, reached=24/30, longest speed<1 with target=0.000s, shots=635, hits=13, kills=0"
+    },
+    {
+      "file": "showcase-5.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 420.4218983
+        }
+      ],
+      "outcomes": {
+        "Passed": 1
+      },
+      "loadAverageAtStart": [
+        "1.09",
+        "0.91",
+        "1.46"
+      ],
+      "combatSummary": "P700 local 15v15: 416.1s, samples=4155, reached=24/30, longest speed<1 with target=1.210s, shots=1706, hits=436, kills=2"
+    }
+  ],
+  "disabledObserver": [
+    "394 peers / 394 disabled observations: 0 bytes, 4.5 ns/call",
+    "394 peers / 394 disabled observations: 0 bytes, 4.2 ns/call",
+    "394 peers / 394 disabled observations: 0 bytes, 4.6 ns/call"
+  ],
+  "fast": {
+    "seconds": 600.1322262379981,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4676,
+        "outcomes": {
+          "Passed": 4673,
+          "NotExecuted": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2082,
+        "outcomes": {
+          "Passed": 2081,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5984,
+        "outcomes": {
+          "Passed": 5977,
+          "Failed": 7
+        }
+      }
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 10.9545516
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 10.1260058
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 11.2918036
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 11.6135444
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.2254213
+      },
+      {
+        "name": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+        "method": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+        "outcome": "Failed",
+        "seconds": 40.0179844
+      },
+      {
+        "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+        "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+        "outcome": "Failed",
+        "seconds": 18.9528751
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.0176281
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "8 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.058721509005408734,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "fastIssueIsolations": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "duration": "00:00:01.8077479"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "duration": "00:00:01.8200811"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "duration": "00:00:01.7672745"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Passed",
+          "duration": "00:00:00.6213831"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Failed",
+          "duration": "00:00:00.5995935"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.DockDockingTests.Ship_nowhere_near_a_station_is_unaffected",
+          "outcome": "Passed",
+          "duration": "00:00:00.6203617"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+          "outcome": "Passed",
+          "duration": "00:00:00.5992951"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+          "outcome": "Passed",
+          "duration": "00:00:00.6122237"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live",
+          "outcome": "Passed",
+          "duration": "00:00:00.6208093"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.2662452"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.2318387"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.1756294"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+          "outcome": "Passed",
+          "duration": "00:00:02.2724700"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+          "outcome": "Passed",
+          "duration": "00:00:02.3845589"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by",
+          "outcome": "Passed",
+          "duration": "00:00:02.2630498"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "duration": "00:00:00.9891714"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:01.0015234"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "duration": "00:00:01.0473379"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3266703"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3282637"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3101703"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "kind": "failed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4294665"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "kind": "failed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4362952"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+      "kind": "failed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4275508"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "kind": "timing",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+          "outcome": "Passed",
+          "duration": "00:00:03.8193354"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "kind": "timing",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+          "outcome": "Passed",
+          "duration": "00:00:04.3432461"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+      "kind": "timing",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+          "outcome": "Passed",
+          "duration": "00:00:04.0405424"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "kind": "timing",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:04.3189636"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:05.2938162"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:03.3328332"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "kind": "timing",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:03.2711704"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:05.2809981"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:04.2498110"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "kind": "timing",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:05.3136846"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:04.3151553"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:03.2821121"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "kind": "timing",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "duration": "00:00:03.2758643"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "kind": "timing",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "duration": "00:00:03.1984845"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "kind": "timing",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "duration": "00:00:03.2665848"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "kind": "timing",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:03.0789388"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.0469606"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "kind": "timing",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.0678051"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:03.0730086"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "kind": "timing",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.0270084"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:02.9913311"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "kind": "timing",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.7995131"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "kind": "timing",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.8942961"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "kind": "timing",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.9211648"
+        }
+      ]
+    }
+  ]
+}
