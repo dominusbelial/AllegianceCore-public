@@ -40,6 +40,7 @@
     <ProjectReference Include="../../tools/p922-target-proof/p922-target-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p916-texture-proof/p916-texture-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p912-training-proof/p912-training-proof.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../tools/p918-training-proof/p918-training-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/hud2-proof/hud2-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/hd2-proof/hd2-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/fsr-proof/fsr-proof.csproj" ReferenceOutputAssembly="false" />

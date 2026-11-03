@@ -5478,3 +5478,19 @@ so the process died outside managed code. The likely layer is software GL or SDL
 third Mission 4 window incident in P918 runs (Modern goal 5.6 exit and Modern goal 8.7 timeout above); none appear in
 earlier ledgers. If it recurs on master, capture the child's exit code and a core dump before changing pilots or sim
 rules. Receipts: `.scratch/claude-gate/` in the P918 worktree.
+
+### 2026-11-03 — batch-p918-final mini sweep (`7d60eb11`, media-free snapshot of `3b51b7c1`)
+
+Fast 12,988, Live 354, Perf 73 (pass). 13 failures. Two were a real P918 defect, fixed in the next commit:
+`P918TrainingWindowTests.Buoy_decal_visibility_and_retirement_use_the_actual_training_window` (both styles) failed in
+3 ms with "Build tools/p918-training-proof before running the window tests." The test project did not reference the
+new proof tool, so a clean checkout never built it; the P918 lane passed only with a hand-built tool. With the
+`ProjectReference` added, a clean build produces the tool and both cases pass 3/3 (34 s each run).
+
+`P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` ("proactively-assigned diverter
+did not rescue the pod", 8 s) passes 3/3 alone (883 / 912 / 940 ms), as in its earlier entries.
+
+The rest were not rerun. Each also failed in the 2026-11-03 nightly on origin `4c25346f`, which predates this batch,
+or in earlier ledgered sweeps: `MusicLoading`, `ConsoleLogNonBlocking`, `NpcWingmanDefend`, `LiveSideSelect`,
+`SC4Showcase`, `SC5Cloak`, `P832dArtifactBot` (Brawl), `P798ScoutOpening` (m2xspiderw), `P796Coverage` and
+`P745FinaleSiege`.
