@@ -5463,3 +5463,18 @@ Cause remains unestablished; no Mission4 pilot or native rule was changed for
 this timeout. Receipts: `.scratch/p918/m4-departure-isolation/summary.json`;
 failed window `.scratch/p918/legacy-p917/windows/m4-Modern-departure-f7d16923b69e412aa43c1d19239c18a9/`;
 failed gate `.scratch/p918/training-final-v4/`.
+
+### 2026-11-03 — P918 review gate (Claude)
+
+`tools/run-training-tests.sh --no-build --repeat 3` on `17302b89`: repeats 1 and 2 passed in full (headless 100/100,
+MonoGame 227 passed / 4 opt-in skips). Repeat 3 failed one case:
+
+| Test | Gate result | Three isolated invocations |
+| --- | --- | --- |
+| `P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: "Classic", policy: null)` | Window child exited non-zero after 4 m 22 s at goal 8.7, chasing the Enemy Scout | pass / pass / pass, 637 / 627 / 506 s, load 0.31–0.67 |
+
+The window log ends mid-frame with no managed exception and no "exited before the requested proof completed" message,
+so the process died outside managed code. The likely layer is software GL or SDL; that is not established. This is the
+third Mission 4 window incident in P918 runs (Modern goal 5.6 exit and Modern goal 8.7 timeout above); none appear in
+earlier ledgers. If it recurs on master, capture the child's exit code and a core dump before changing pilots or sim
+rules. Receipts: `.scratch/claude-gate/` in the P918 worktree.
