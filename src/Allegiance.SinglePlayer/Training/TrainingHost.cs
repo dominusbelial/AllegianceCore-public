@@ -126,9 +126,9 @@ public interface ITrainingHost
 /// <b>Port boundaries (honest).</b> The universe object graph (sides, stations, sectors, hull) is
 /// the real <see cref="Mission"/> assembled from the real core+map; the player and commander are
 /// real <see cref="Ship"/> models placed in the real sector 1010. A training waypoint is a
-/// lightweight position record in the host that <see cref="TrainingHostSite"/> resolves for the
-/// geometric conditions — the sim has no <c>OT_buoy</c> model, so full client replication of a buoy
-/// object is deferred (see the report). Command targets (Goto), drone placement and the autopilot
+/// mission-owned buoy model that <see cref="TrainingHostSite"/> resolves for geometric
+/// conditions; the client imports its command geometry and both HUDs share its live visibility.
+/// Command targets (Goto), drone placement and the autopilot
 /// flag operate on the real <see cref="Ship"/> objects; the host-side autopilot pass flies any ship
 /// under a Goto order so the mission's scripted objectives resolve against the real sim.
 /// </remarks>
@@ -151,8 +151,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<short, bool> _autopilot = new();
     private readonly Dictionary<int, Ship> _drones = new();
     private readonly HashSet<int> _destroyed = new();
-    private readonly Dictionary<int, TargetRef?> _commandTargets = new();
-    private readonly Dictionary<int, int> _commands = new();
     private readonly Dictionary<int, int> _droneBehaviours = new();    // c_wbbm* mask
     private readonly Dictionary<int, int> _droneStationTypes = new();  // constructor station type
     private readonly Dictionary<int, int> _droneTechLevels = new();    // negative tech-level loadout
@@ -161,7 +159,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<int, HostStation> _stations = new();   // station id -> map record
     private readonly Dictionary<int, float> _shipFractions = new();    // ship armour fraction (1 = full)
     private readonly HashSet<(int ShipId, int PartId)> _mountedParts = new(); // mounted part ids
-    private readonly HashSet<int> _releasedConsumers = new();                 // released waypoint-buoy consumers
 
     // M5/M6 command-view + escalation state (native trekClient view/console + TrainingMission::ShipKilled).
     private TargetRef? _pickedRef;                                     // console's picked object
@@ -286,8 +283,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         playerOri.Set(new Coll.Vector3(1f, 0f, 0f), new Coll.Vector3(0f, 0f, 1f));
         var player = new Ship((short)0, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri) { SideId = 0, Name = "Cadet" };
         mission.PlaceShip(player, sector);
+        mission.TrainingPlayerShipId = player.Id;
         EquipDefaultTrainingLoadout(player);
-        ApplyMissionShipSetup(variant, player);   // mission3.cpp:168-186 / mission4.cpp:110-137
         if (variant == Nanite) ApplyNaniteTech(mission, player.HullType);
         if (variant == CommandView) player.StationId = 1050; // training/mission5.cpp:95-96
 
@@ -300,13 +297,15 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         cmdOri.Set(new Coll.Vector3(-1f, 0f, 0f), new Coll.Vector3(0f, 0f, 1f));
         var commander = new Ship((short)990, core.HullTypes[412], new Coll.Vector3(500f, 0f, 0f), Coll.Vector3.Zero, cmdOri)
         {
-            SideId = 0, IsNpc = true, PilotType = Ship.PilotTypeWingman, Name = "Commander",
+            SideId = 0, IsNpc = true, PilotType = Ship.PilotTypeWingman, Name = "Commander", Autopilot = true,
         };
         mission.PlaceShip(commander, sector);
         EquipDefaultTrainingLoadout(commander);
 
         server.AnnounceNewShip(commander); // training/trainingmission.cpp:796-797: real named commander, with hull metadata
         var host = new TrainingHost(server, mission, player, commander, variant.StartSector);
+        host.SaveTrainingLoadout(player); // training/trainingmission.cpp:787-788, before lesson-specific removals
+        ApplyMissionShipSetup(variant, player);   // mission3.cpp:168-186 / mission4.cpp:110-137
         if (variant != BasicFlight)
         {
             // Keep the instructor out of the exercise: mission3.cpp:194-199,
@@ -329,6 +328,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 throw new InvalidOperationException("A training host accepts only one trainee.");
             var old = host.PlayerShip;
             old.Sector?.Remove(old);
+            m.DeleteShip(old);
             var trainee = new Ship(id, old.HullType, Coll.Vector3.Zero, Coll.Vector3.Zero, playerOri)
             {
                 SideId = old.SideId, Name = "Cadet", StationId = old.StationId,
@@ -337,6 +337,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             EquipDefaultTrainingLoadout(trainee);
             ApplyMissionShipSetup(variant, trainee);   // mission3.cpp:168-186 / mission4.cpp:110-137
             host.PlayerShip = trainee;
+            m.TrainingPlayerShipId = trainee.Id;
             host._clientBound = true;
             Console.WriteLine($"[training] trainee bound to logon ship {id}, sector {sector.Id}, hull {variant.PlayerHull}, station {trainee.StationId?.ToString() ?? "none"}");
             return (trainee, sector);
@@ -348,6 +349,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 warp.SideVisibility.SetSideVisibility(1, true);
         server.TrainingShipDeath = host.HandleTraineeDeath;
         server.TrainingStationDeath = host.HandleStationDeath;
+        server.TrainingCarrierLoadout = host.RestoreTrainingLoadoutOnCarrier;
         return host;
     }
 
@@ -586,7 +588,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             float dist = dir.Length();
             if (dist <= ArrivalRadius)
             {
-                ship.SetGoto(null);
+                ship.CompleteGotoOrder();
                 continue;
             }
             float step = Math.Min(dist, CruiseSpeed * 0.05f);
@@ -624,7 +626,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     private sealed class WaypointObject(Buoy buoy) : Allegiance.ClientCore.Training.ITrainingObject
     {
         public Allegiance.ClientCore.Training.TargetRef Ref => new(Allegiance.ClientCore.Training.ObjectType.Buoy, buoy.Id);
-        public float Radius => buoy.Data.Visible ? 20f : 2f; // Igc/buoyigc.cpp:45-48
+        public float Radius => buoy.Radius; // Igc/buoyigc.cpp:45-48
         public System.Numerics.Vector3 Position => ToNum(buoy.Position);
         public System.Numerics.Vector3 Velocity => System.Numerics.Vector3.Zero;
         public System.Numerics.Vector3 Forward => System.Numerics.Vector3.UnitX;
@@ -636,7 +638,6 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     {
         lock (_simGate)
         {
-            _releasedConsumers.Remove(buoyId);
             _waypoints[buoyId] = new Waypoint(position, sectorId, buoyType, visible);
             Mission.AddBuoy(new Buoy(new DataBuoyIGC([position.X, position.Y, position.Z],
                 (short)sectorId, (byte)buoyType, (short)buoyId, visible)));
@@ -666,6 +667,11 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         lock (_simGate)
         {
             int id = shipId == -1 ? NextId() : shipId;
+            if (_drones.TryGetValue(id, out var previous))
+            {
+                previous.Sector?.Terminate(previous);
+                Mission.DeleteShip(previous);
+            }
             var hull = Mission.Core.HullTypes.TryGetValue((short)hullId, out var h) ? h
                 : Mission.Core.HullTypes.Values.OrderBy(x => x.HullId).First();
             var ship = new Ship((short)id, hull, Coll.Vector3.Zero, Coll.Vector3.Zero, Orientation.Identity)
@@ -675,7 +681,7 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
                 // this way). Treating them as NPCs let the damage-retreat / default-order AI
                 // fly the target hulls out of the lesson. Wingman/other pilot types stay NPCs.
                 SideId = (short)sideId, IsNpc = pilotType < Ship.PilotTypePlayer,
-                PilotType = (byte)pilotType, Name = name,
+                PilotType = (byte)pilotType, Name = name, Autopilot = true,
             };
             Mission.PlaceShip(ship, Mission.Sectors[0]);
             // P775 — native training creates the drone's player info when it
@@ -737,17 +743,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         {
             Ship? ship = ResolveShip(shipId);
             if (ship is null) return;
-            // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
-            // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
-            // A queued Goto is presented to the real client and waits for acceptance.
-            if (command != TrainingMissionIds.CommandQueued)
-                _commands[shipId] = commandId;
-
-            // Mirror the write onto the real ship slots (native SetCommandAction calls
-            // pShip->SetCommand, setcommandaction.cpp:69-84) so a later read of the ship's
-            // own c_cmdCurrent/c_cmdAccepted target sees it — the same state native's
-            // GetTargetCondition/GetCommandCondition read. A buoy has no runtime Model in
-            // the training arc, so its target stays on the host's waypoint table.
+            // Resolve the live native model before writing the ordinary ship slot.
+            // training/setcommandaction.cpp:71-95.
             Model? model = null;
             if (targetShipId is { } tsid) model = ResolveShip(tsid);
             else if (targetStationId is { } stid)
@@ -763,109 +760,109 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             if (command == TrainingMissionIds.CommandQueued && _clientBound && ReferenceEquals(ship, PlayerShip))
             {
                 var ot = targetBuoyId.HasValue ? IgcObjectType.Buoy : EquipmentTarget.TypeOf(model);
-                _server.QueueCommandForPlayer(ship, (short)commandId, model is Buoy ? null : model, ot,
+                _server.QueueCommandForPlayer(ship, (short)commandId, model, ot,
                     model?.Id ?? -1, CommanderShip.Id);
                 return;
             }
-            if (command is TrainingMissionIds.CommandCurrent or TrainingMissionIds.CommandAccepted)
-            {
-                var key = (shipId, command);
-                _buoySlots.TryGetValue(key, out int? oldBuoy);
-                int? newBuoy = model is Buoy buoy ? buoy.Id : null;
-                if (newBuoy != oldBuoy)
-                {
-                    if (newBuoy is { } add) AddBuoyConsumer(add);
-                    if (oldBuoy is { } release) ReleaseConsumer(release);
-                    _buoySlots[key] = newBuoy;
-                }
-                ship.SetCommand((short)command, model, (short)commandId);
-                // Connected combat/command lessons use real simulation plans.
-                // M2 and detached legacy script tests retain their movement owner.
-                if (ship.IsNpc && (StartSectorId == PracticeArena.StartSector
-                    || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
-                        || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))))
-                {
-                    ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;
-                    ship.BuilderAsteroidTarget = commandId == TrainingMissionIds.CmdBuild && targetAsteroidId is { } rock ? ResolveAsteroid(rock) : null;
-                    ship.PlanTarget = model is EquipmentTarget { Body: Station st } ? st.Data : null;
-                    if (commandId == TrainingMissionIds.CmdBuild && ship.BuilderAsteroidTarget is { } buildRock)
-                        ship.SetBuilderBuild(buildRock);
-                    // training/mission5.cpp:319-346 -> shipIGC.cpp:4050-4110:
-                    // a layer's Build on a real waypoint deploys its base expendable.
-                    if (commandId == TrainingMissionIds.CmdBuild && ship.PilotType == Ship.PilotTypeLayer && model is not null)
-                        ArmTrainingLayer(ship, model);
-                    if (commandId == TrainingMissionIds.CmdMine && targetAsteroidId is { } mineRock)
-                        ship.MiningAsteroidTarget = ResolveAsteroid(mineRock);
-                    ship.PlanCommandId = (short)commandId;
-                    if (commandId == TrainingMissionIds.CmdRepair)
-                        ship.SetRepairOrder(model as Ship, (model as EquipmentTarget)?.Body as Station);
-                    else if (commandId == TrainingMissionIds.CmdDefend && model is Ship charge)
-                    {
-                        // Offline friendly orders set current + accepted slots
-                        // (clintlib.cpp:2374-2417); native accepted autopilot
-                        // orders replace the plan (shipIGC.h:766-772).
-                        ship.SetGoto(null);
-                        ship.DefendTarget = charge;
-                    }
-                    else if (commandId == TrainingMissionIds.CmdAttack && model is Ship or Probe or EquipmentTarget { Body: Station })
-                        // The accepted target owns native sight-loss investigation
-                        // in M4 as well (shipIGC.cpp:2410-2460,2707-2758).
-                        ship.SetWingmanAttackOrder(model);
-                }
-            }
+            // Only accepted autopiloted NPC orders replace the execution
+            // plan. A current selection, queued order or player-pilot accepted
+            // command remains an independent native slot (shipIGC.h:766-773).
+            if (command == TrainingMissionIds.CommandAccepted && ship.IsNpc && ship.Autopilot)
+                ConfigureTrainingPlan(ship, model, commandId);
+            ship.SetCommand((short)command, model, (short)commandId);
+        }
+    }
 
-            if (commandId == TrainingMissionIds.CmdGoto)
+    // Execution plans are separate from selected/queued/accepted storage.
+    // Igc/shipIGC.h:766-773; shipIGC.cpp:3974-3981.
+    private void ConfigureTrainingPlan(Ship ship, Model? model, int commandId)
+    {
+        var type = EquipmentTarget.TypeOf(model);
+        int? Id(IgcObjectType kind) => type == kind ? model?.Id : null;
+        int? targetShipId = Id(IgcObjectType.Ship), targetBuoyId = Id(IgcObjectType.Buoy),
+            targetStationId = Id(IgcObjectType.Station), targetAsteroidId = Id(IgcObjectType.Asteroid);
+        // Connected combat/command lessons use real simulation plans.
+        // M2 and detached legacy script tests retain their movement owner.
+        if (ship.IsNpc && (StartSectorId == PracticeArena.StartSector
+            || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
+                || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))))
+        {
+            ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;
+            ship.BuilderAsteroidTarget = commandId == TrainingMissionIds.CmdBuild && targetAsteroidId is { } rock ? ResolveAsteroid(rock) : null;
+            ship.PlanTarget = model is EquipmentTarget { Body: Station st } ? st.Data : null;
+            if (commandId == TrainingMissionIds.CmdBuild && ship.BuilderAsteroidTarget is { } buildRock)
+                ship.SetBuilderBuild(buildRock);
+            // training/mission5.cpp:319-346 -> shipIGC.cpp:4050-4110:
+            // a layer's Build on a real waypoint deploys its base expendable.
+            if (commandId == TrainingMissionIds.CmdBuild && ship.PilotType == Ship.PilotTypeLayer && model is not null)
+                ArmTrainingLayer(ship, model);
+            if (commandId == TrainingMissionIds.CmdMine && targetAsteroidId is { } mineRock)
+                ship.MiningAsteroidTarget = ResolveAsteroid(mineRock);
+            ship.PlanCommandId = (short)commandId;
+            if (commandId == TrainingMissionIds.CmdRepair)
+                ship.SetRepairOrder(model as Ship, (model as EquipmentTarget)?.Body as Station);
+            else if (commandId == TrainingMissionIds.CmdDefend && model is Ship charge)
             {
-                if (targetBuoyId is { } bid && ResolveWaypoint(bid) is { } wp)
+                // Offline friendly orders set current + accepted slots
+                // (clintlib.cpp:2374-2417); native accepted autopilot
+                // orders replace the plan (shipIGC.h:766-772).
+                ship.SetGoto(null);
+                ship.DefendTarget = charge;
+            }
+            else if (commandId == TrainingMissionIds.CmdAttack && model is Ship or Probe or EquipmentTarget { Body: Station })
+                // The accepted target owns native sight-loss investigation
+                // in M4 as well (shipIGC.cpp:2410-2460,2707-2758).
+                ship.SetWingmanAttackOrder(model);
+        }
+
+        if (commandId == TrainingMissionIds.CmdGoto)
+        {
+            if (targetBuoyId is { } bid && ResolveWaypoint(bid) is { } wp)
+            {
+                ship.SetGoto(StartSectorId == PracticeArena.StartSector
+                    ? new GotoOrder(Mission.GetBuoy((short)bid)?.Data.Type == DataBuoyIGC.CBuoyCluster ? GotoKind.Cluster : GotoKind.Waypoint,
+                        (short)wp.SectorId, ToCore(wp.Position), TargetType: IgcObjectType.Buoy, TargetId: (short)bid)
+                    : new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position),
+                        TargetType: IgcObjectType.Buoy, TargetId: (short)bid));
+            }
+            else if (targetShipId is { } tsid2 && ResolveShip(tsid2) is { } target)
+            {
+                // Native ResetWaypoint retains the model target, so a moving
+                // escort is followed across alephs (shipIGC.cpp:3990-4003).
+                ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position,
+                    TargetType: IgcObjectType.Ship, TargetId: target.Id));
+            }
+            else if (targetStationId is { } stid && _stations.TryGetValue(stid, out var station))
+            {
+                // Native flies a station goto through the bay approach and docks on
+                // arrival (Waypoint::c_oDock, common.cpp:1505-1545). The real ship's
+                // plan slot drives that native approach (Ship.ApplyNpcAutopilot →
+                // TryDockApproach); a plain waypoint goto would stop at the centre
+                // instead and never enter a bay. Set the real station plan and clear
+                // the waypoint goto so the plan branch owns the tick.
+                var runtime = Mission.Sectors.SelectMany(s => s.StationRuntimes)
+                    .FirstOrDefault(s => s.StationId == stid);
+                if (runtime is not null)
                 {
-                    _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
-                    ship.SetGoto(StartSectorId == PracticeArena.StartSector
-                        ? new GotoOrder(Mission.GetBuoy((short)bid)?.Data.Type == DataBuoyIGC.CBuoyCluster ? GotoKind.Cluster : GotoKind.Waypoint,
-                            (short)wp.SectorId, ToCore(wp.Position), TargetType: IgcObjectType.Buoy, TargetId: (short)bid)
-                        : new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
+                    // Accepted NPC orders replace the single native plan
+                    // (Igc/shipIGC.h:750-774). Clear the previous objective
+                    // through SetGoto before handing navigation to the bay
+                    // plan; merely cancelling a waypoint leaves repair active.
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId,
+                        ToCore(station.Position)));
+                    ship.SetGoto(null);
+                    ship.PlanTarget = runtime.Data;
+                    ship.PlanCommandId = (short)commandId;
                 }
-                else if (targetShipId is { } tsid2 && ResolveShip(tsid2) is { } target)
+                else
                 {
-                    _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid2);
-                    // Native ResetWaypoint retains the model target, so a moving
-                    // escort is followed across alephs (shipIGC.cpp:3990-4003).
-                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position,
-                        TargetType: IgcObjectType.Ship, TargetId: target.Id));
-                }
-                else if (targetStationId is { } stid && _stations.TryGetValue(stid, out var station))
-                {
-                    _commandTargets[shipId] = new TargetRef(ObjectType.Station, stid);
-                    // Native flies a station goto through the bay approach and docks on
-                    // arrival (Waypoint::c_oDock, common.cpp:1505-1545). The real ship's
-                    // plan slot drives that native approach (Ship.ApplyNpcAutopilot →
-                    // TryDockApproach); a plain waypoint goto would stop at the centre
-                    // instead and never enter a bay. Set the real station plan and clear
-                    // the waypoint goto so the plan branch owns the tick.
-                    var runtime = Mission.Sectors.SelectMany(s => s.StationRuntimes)
-                        .FirstOrDefault(s => s.StationId == stid);
-                    if (runtime is not null)
-                    {
-                        // Accepted NPC orders replace the single native plan
-                        // (Igc/shipIGC.h:750-774). Clear the previous objective
-                        // through SetGoto before handing navigation to the bay
-                        // plan; merely cancelling a waypoint leaves repair active.
-                        ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId,
-                            ToCore(station.Position)));
-                        ship.SetGoto(null);
-                        ship.PlanTarget = runtime.Data;
-                        ship.PlanCommandId = (short)commandId;
-                    }
-                    else
-                    {
-                        ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId, ToCore(station.Position)));
-                    }
+                    ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)station.SectorId, ToCore(station.Position)));
                 }
             }
-            else
-            {
-                _commandTargets[shipId] = null;
-                ship.SetGoto(null);   // c_cidDoNothing / None clear the current target (setcommandaction.cpp:77-84)
-            }
+        }
+        else
+        {
+            ship.GotoWaypoint = null; // preserve the newly configured attack/repair/layer goal
         }
     }
 
@@ -879,7 +876,14 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             // the navigation pass reads it so a player under a station plan keeps flying.
             ship.Autopilot = on;
             _autopilot[ship.Id] = on;
-            if (!on) ship.SetGoto(null);
+            if (on && ReferenceEquals(ship, PlayerShip))
+            {
+                var target = ship.CommandTarget;
+                short cid = ship.CurrentCommandId;
+                ConfigureTrainingPlan(ship, target, cid);
+                ship.SetCommand(OrderChange.CmdPlan, target, cid);
+            }
+            else if (!on) ship.SetGoto(null);
         }
     }
 
@@ -1008,10 +1012,9 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             || ship.CurrentCommandId == commandId;
 
     public int GetCommandId(int shipId)
-        => _clientBound && shipId == PlayerShipId ? (PlayerShip.AcceptedShipCommandId != TrainingMissionIds.CmdNone
-            ? PlayerShip.AcceptedShipCommandId : PlayerShip.CurrentCommandId)
-            : _commands.TryGetValue(shipId, out var c) ? c
-            : ResolveShip(shipId) is { } ship ? ship.CurrentCommandId : TrainingMissionIds.CmdNone;
+        => ResolveShip(shipId) is { } ship
+            ? ship.AcceptedShipCommandId != TrainingMissionIds.CmdNone ? ship.AcceptedShipCommandId : ship.CurrentCommandId
+            : TrainingMissionIds.CmdNone;
 
     // ── M5/M6 command-view + kill-credit state ──────────────────────────────────
     /// <summary>Set which model the player has picked/selected in the command view (native
@@ -1280,14 +1283,8 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     {
         lock (_simGate)
         {
-            int count = BuoyConsumerCount(buoyId);
-            if (count > 1) _buoyConsumers[buoyId] = count - 1;
-            else
-            {
-                _buoyConsumers.Remove(buoyId);
-                _releasedConsumers.Add(buoyId);
-                if (Mission.GetBuoy((short)buoyId) is { } buoy) Mission.DeleteBuoy(buoy);
-            }
+            if (Mission.GetBuoy((short)buoyId) is { } buoy)
+                buoy.ReleaseConsumer();
         }
     }
 
@@ -1411,7 +1408,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop.Cancel();
         _ticker?.Join(2000);
+        _activeMission?.ReleaseRespawnActions();
         _server.Dispose();
+        Mission.Dispose();
+        _savedTrainingLoadouts.Clear();
         _stop.Dispose();
     }
 }

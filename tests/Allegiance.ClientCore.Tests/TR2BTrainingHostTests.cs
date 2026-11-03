@@ -161,8 +161,11 @@ public sealed class TrainingHostMission2Tests
         Assert.NotNull(resolved);
         Assert.Equal(new Vector3(-200f, -200f, 400f), resolved!.Position);
 
-        // IssueCommand(Goto buoy) — the commander now carries a real Goto order toward the waypoint.
+        // Selection is independent; native accepted NPC autopilot installs the plan
+        // (Igc/shipIGC.h:766-773), as the actual Mission2 action pair does.
         host.IssueCommand(host.CommanderShipId, CommandCurrent, null, 7, null, CmdGoto);
+        Assert.Null(host.CommanderShip.GotoWaypoint);
+        host.IssueCommand(host.CommanderShipId, CommandAccepted, null, 7, null, CmdGoto);
         Assert.NotNull(host.CommanderShip.GotoWaypoint);
         Assert.Equal(GotoKind.Waypoint, host.CommanderShip.GotoWaypoint!.Value.Kind);
 

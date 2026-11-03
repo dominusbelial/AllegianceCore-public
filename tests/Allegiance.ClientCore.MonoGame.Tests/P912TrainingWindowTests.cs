@@ -118,6 +118,8 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         Assert.True(process.ExitCode == 0, $"Window failed: {directory}\n{log[^Math.Min(log.Length, 7000)..]}");
         Assert.Contains($"P912_{(lastLesson.HasValue || policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? "LESSON" : "WINDOW")}_PASS M{mission} {style}", log);
         if (mission == 4 && policy != "lesson=1") Assert.Matches(@"quick-chat >> .* \(Everyone\)", log);
+        if (mission == 8 && policy == "loss")
+            Assert.Contains("[training] voice tm_8_15 (mission 8)", log); // native verdict, mission8.cpp:394-401
         if (policy == "hunt")
         {
             Assert.Contains("M4_BRANCH minerKilled=True targetDeparted=False killedInMars=", log);

@@ -792,6 +792,7 @@ public sealed partial class Server : IDisposable
     // pod / scoring. Native WinTrek/trekigc.cpp:4254-4267.
     internal Func<Ship, IModelIgc?, bool>? TrainingShipDeath;
     internal Action<Station, Model?>? TrainingStationDeath;
+    internal Action<Ship>? TrainingCarrierLoadout;
     internal bool LocalTraining { get; set; }
 
     internal void ReplicateTrainingRestore(Ship ship, Sector sector) => OnShipWarped(ship, sector, sector);

@@ -140,6 +140,9 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>Native local training owns completion, outside FedSrv match rules
     /// (training/trainingmission.cpp:744-779).</summary>
     public bool IsTraining { get; set; }
+    /// <summary>The local trainee's GetShip identity, for client-only training
+    /// cluster callbacks (WinTrek/trekigc.cpp:2746-2749,2773-2785).</summary>
+    public short? TrainingPlayerShipId { get; set; }
 
     /// <summary>The raw map this mission is assembled from.</summary>
     public MissionMap Map { get; }

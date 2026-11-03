@@ -20,6 +20,7 @@ public sealed partial class Mission : IDisposable
         // (missionigc.cpp:3085-3095), before retiring clusters and sides.
         foreach (var ship in GetShips())
         {
+            ship.RetireTrainingCommands();
             ship.ReleaseGotoBuoy();
             DetachThingSite(ship);
             if (ReferenceEquals(ship.Mission, this))

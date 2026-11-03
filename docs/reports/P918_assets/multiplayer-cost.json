@@ -1,0 +1,48 @@
+{
+  "before": {
+    "scenario": "32 multiplayer wingmen with point and typed ship goals, 250 native GotoPlan ticks, current/accepted replacements every ten ticks",
+    "samples": 36,
+    "medianMs": 97.10815,
+    "minimumMs": 92.6701,
+    "maximumMs": 112.7256,
+    "allocatedBytes": [
+      11310952
+    ],
+    "fingerprints": [
+      "A76D6C74200891693399EA51D5F819C564E138E5BBEFA97C17F8560230BFE6F7"
+    ],
+    "batchMediansMs": [
+      95.6834,
+      96.2222,
+      97.3974,
+      98.6819
+    ],
+    "allocatedByteFrequency": {
+      "11310952": 36
+    }
+  },
+  "after": {
+    "scenario": "32 multiplayer wingmen with point and typed ship goals, 250 native GotoPlan ticks, current/accepted replacements every ten ticks",
+    "samples": 36,
+    "medianMs": 96.22775,
+    "minimumMs": 91.9336,
+    "maximumMs": 111.7341,
+    "allocatedBytes": [
+      11310952,
+      11317144
+    ],
+    "fingerprints": [
+      "A76D6C74200891693399EA51D5F819C564E138E5BBEFA97C17F8560230BFE6F7"
+    ],
+    "batchMediansMs": [
+      95.7957,
+      95.4284,
+      105.1298,
+      96.7815
+    ],
+    "allocatedByteFrequency": {
+      "11310952": 34,
+      "11317144": 2
+    }
+  }
+}

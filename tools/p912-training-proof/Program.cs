@@ -192,7 +192,11 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 _naniteLeadShot = true;
                 Shot($"m8-{style.ToString().ToLowerInvariant()}-nanite-lead");
             }
-            if (missionId == 8 && goal == "3.19" && host.Drones.TryGetValue(8007, out var commander))
+            // Native model retirement may clear this order one update before
+            // the lesson graph observes the death. Pin only live combatants.
+            if (missionId == 8 && goal == "3.19" && host.TrainingShipExists(8007)
+                && host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)) > 0
+                && host.Drones.TryGetValue(8007, out var commander))
                 Check(commander.AcceptedShipCommandId == TrainingMissionIds.CmdAttack
                     && commander.AcceptedShipTarget?.Id == Mission8.EnemyOutpostStationId,
                     "input replay replaced the authored bomber attack order");
@@ -217,9 +221,10 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                     Console.WriteLine($"[p912] OUTCOME minerSurvived={_minerSurvived} outpostDestroyed={outpostDead} bomberDestroyed={bomberDead}");
                 _bothDestroyed |= outpostDead && bomberDead;
                 if (policy == "loss") Check(bomberDead && !outpostDead, "withheld repair did not exercise bomber-loss/outpost-survives branch");
-                // Combat decides the unforced runs: both endings are native (mission8.cpp:600-654)
-                // and the message check below holds either way. Forced policies still pin a branch.
-                else if (policy is not null && policy != "sacrifice" && _stopAfterLesson == 0) Check(outpostDead, "repair escort did not destroy the outpost");
+                // Early mounting pins miner survival in lesson 2, not an
+                // outpost win in lesson 3. Either final combat ending is native
+                // (mission8.cpp:600-654); exact ending messages are checked below.
+                else if (policy == "early") Check(_minerSurvived, "early mounting did not preserve the miner");
                 if (policy != "sacrifice" && !_outcomeChecked)
                     Check(messages.Contains("Enemy outpost destroyed.") || messages.Contains("The bomber got destroyed, better luck next time."), "missing exact native ending announcement");
                 if (_bothDestroyed)
@@ -288,8 +293,19 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 if (missionId == 8 && _lastMajor == 2)
                 {
                     _minerSurvived = host.TrainingShipExists(8001);
-                    Check(messages.Any(m => m.Contains(_minerSurvived ? "Yee-haaaaaw!" : "Our miners are dead!", StringComparison.Ordinal)), "missing miner branch announcement");
-                    if (policy == "loss") Check(!_minerSurvived, "withheld repair did not exercise miner loss");
+                    // The death message belongs only to the preceding combat
+                    // goal. A projectile can kill the miner after that goal,
+                    // when native explicitly has no death-message action
+                    // (training/mission8.cpp:385-392). Its verdict voice still
+                    // follows at :394-401; the loss window asserts tm_8_15.
+                    if (_minerSurvived)
+                        Check(messages.Any(m => m.Contains("Yee-haaaaaw!", StringComparison.Ordinal)), "missing miner survival announcement");
+                    Console.WriteLine($"[p912] M8_MINER_OUTCOME survived={_minerSurvived} deathMessage={messages.Any(m => m.Contains("Our miners are dead!", StringComparison.Ordinal))}");
+                    if (policy == "loss")
+                    {
+                        Check(!_minerSurvived, "withheld repair did not exercise miner loss");
+                        Check(Get<int>("_proofLossDiversionMask") == 7, "loss pilot did not divert all three defenders through real orders");
+                    }
                     if (policy == "early") Check(_minerSurvived, "early mounting and conserved repair energy did not exercise miner survival");
                     Console.WriteLine($"[p912] miners-survived={_minerSurvived}");
                 }

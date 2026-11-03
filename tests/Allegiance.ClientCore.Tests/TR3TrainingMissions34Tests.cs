@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
 using Allegiance.SinglePlayer;
 using Allegiance.TestInfra;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
@@ -191,7 +192,16 @@ public sealed class TR3TrainingMissions34Tests
             while (totalInsertBracket > insertBracketPrompts)
             {
                 insertBracketPrompts++;                    // goals 3 & 4: accept the Goto
-                host.SetCommandTarget(host.PlayerShipId, new TargetRef(ObjectType.Ship, 1030), CmdGoto);
+                // Native acceptance promotes the actual queued model; the old
+                // fake Ship/1030 marker only worked while queued commands flew.
+                // WinTrek/WinTrek.cpp:10682-10690.
+                var queued = host.PlayerShip;
+                Assert.NotNull(queued.QueuedShipTarget);
+                var target = new TargetRef((ObjectType)EquipmentTarget.TypeOf(queued.QueuedShipTarget), queued.QueuedShipTarget.Id);
+                int cid = queued.QueuedCommandId;
+                site.IssueCommand(site.PlayerShip.Ref, CommandCurrent, target, cid);
+                site.IssueCommand(site.PlayerShip.Ref, CommandAccepted, target, cid);
+                queued.SetCommand(OrderChange.CmdQueued, null, OrderChange.CidNone);
             }
             int totalInsert = site.Messages.Count(m => m.Contains("Press the INSERT key to accept the command.", StringComparison.Ordinal));
             while (totalInsert > acceptPrompts)

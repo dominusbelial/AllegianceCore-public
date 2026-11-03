@@ -7,13 +7,27 @@ namespace Allegiance.SinglePlayer;
 
 public sealed partial class TrainingHost
 {
-    private readonly Dictionary<int, int> _buoyConsumers = new();
-    private readonly Dictionary<(int Ship, int Command), int?> _buoySlots = new();
-    public int BuoyConsumerCount(int buoyId) => _buoyConsumers.GetValueOrDefault(buoyId);
+    public int BuoyConsumerCount(int buoyId)
+    {
+        lock (_simGate) return Mission.GetBuoy((short)buoyId)?.ConsumerCount ?? 0;
+    }
     // Igc/buoyigc.h:76-88; training/CreateDroneAction.cpp:204-207.
     public void AddBuoyConsumer(int buoyId)
     {
-        lock (_simGate) _buoyConsumers[buoyId] = BuoyConsumerCount(buoyId) + 1;
+        lock (_simGate) Mission.GetBuoy((short)buoyId)?.AddConsumer();
+    }
+
+    /// <summary>Native GetVisibleF snapshot for either HUD, under the simulation
+    /// lock (Igc/buoyigc.h:67-69; buoyigc.cpp:39-53).</summary>
+    public void CopyVisibleBuoys(short sectorId, List<Buoy.Visual> destination)
+    {
+        lock (_simGate)
+        {
+            destination.Clear();
+            foreach (var buoy in Mission.GetBuoys())
+                if (buoy.Visible && buoy.Data.ClusterId == sectorId)
+                    destination.Add(new(buoy.Id, sectorId, buoy.Position, buoy.Radius));
+        }
     }
 
     // training/TurnToAction.cpp:57-65; Igc/common.cpp:152-252, using the requested source ship.
@@ -132,5 +146,6 @@ public sealed partial class TrainingHost
                 ship.MountPart(prox, 127, slot, ExpandedPartData.FullyMounted);
             }
         }
+        SaveTrainingLoadout(ship); // training/CreateDroneAction.cpp:192
     }
 }

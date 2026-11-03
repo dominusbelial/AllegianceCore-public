@@ -1328,6 +1328,15 @@ public sealed partial class Game1
                     renderer.Draw(Matrix.CreateScale(scale) * pbWorld, view, proj, pbTint, _sectorLighting);
                 }
 
+                if (_embeddedHost is not null)
+                {
+                    short? buoySector = null;
+                    lock (_session.Gate)
+                        if (TrySceneSector(world, me, out short sector)) buoySector = sector;
+                    if (buoySector is { } visibleSector)
+                        DrawTrainingBuoys(visibleSector, cameraEye, view, proj);
+                }
+
                 // P291 — mines. Like probes/missiles, ClientWorld.Mines is keyed
                 // by MineId from the deploy EXPORT(26)/OT_mine regardless of
                 // sector, so the draw loop filters to the local player's OWN

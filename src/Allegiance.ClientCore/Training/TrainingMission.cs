@@ -410,6 +410,15 @@ public abstract class TrainingMission
         _respawns.RemoveAll(rd => rd.SpawnAction?.ShipId == shipId);
     }
 
+    /// <summary>Retire the registered recipe holds when the lesson owner exits.
+    /// Native deletes every respawn action in its destructor
+    /// (training/trainingmission.cpp:97-103; CreateDroneAction.cpp:48-55).</summary>
+    public void ReleaseRespawnActions()
+    {
+        foreach (var rd in _respawns) rd.SpawnAction?.ReleaseAddedConsumer();
+        _respawns.Clear();
+    }
+
     private bool ShipExists(int id) => Site is ITrainingLifecycleSite lifecycle
         ? lifecycle.TrainingShipExists(id) : Site.Resolve(new TargetRef(ObjectType.Ship, id)) is not null;
 }

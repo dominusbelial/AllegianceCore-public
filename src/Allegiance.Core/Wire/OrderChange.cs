@@ -206,6 +206,9 @@ public sealed class OrderChange : IFedMessage
     /// <see cref="Ship.CommandTarget"/>.</summary>
     public const short CmdCurrent = 2;
 
+    /// <summary>Native simulation plan slot (Igc/igc.h:851).</summary>
+    public const short CmdPlan = 3;
+
     /// <summary>The id of the ship being commanded. The handler resolves it on
     /// the commanding player's own side (<c>FedSrv.CPP:7275-7278</c>); an
     /// unresolvable id leaves the target as the sender's own ship.</summary>

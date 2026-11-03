@@ -242,6 +242,7 @@ public sealed partial class Game1
     private bool _proofNanSwapPressed;
     private bool _proofNaniteMountEarly = false;
     private bool _proofNaniteWithholdRepair = false;
+    private int _proofLossDiversionMask;
     private bool _proofNaniteSacrifice = false;
     private bool _proofSacrificeCeased;
     private bool _proofSacrificeBombing;
@@ -281,6 +282,61 @@ public sealed partial class Game1
             if (Environment.TickCount64 % 800 < 300) keys.Add(Keys.L);
             return;
         }
+        if (_proofNaniteWithholdRepair && goal.StartsWith("2.", StringComparison.Ordinal))
+        {
+            // Native permits commanding the friendly fighters. Withholding
+            // repair alone can still leave a surviving miner. Divert the
+            // defenders through real command-view picks, then send them back
+            // to finish the encounter after the attackers kill the miner.
+            bool minerAlive = host.TrainingShipExists(8001);
+            short enemy = new short[] { 8002, 8003 }.FirstOrDefault(id => host.TrainingShipExists(id));
+            var battle = host.Drones.TryGetValue(8001, out var miner) ? ToSys(miner.Position) : V.Zero;
+            bool Away(Ship ship) => ship.AcceptedShipCommandId == OrderChange.CidGoto
+                && ship.AcceptedShipTarget is Buoy point && V.Distance(ToSys(point.Position), battle) > 4000;
+            if (minerAlive)
+                foreach (short id in new short[] { 8004, 8005, 8006 })
+                    if (host.Drones.TryGetValue(id, out var ordered) && Away(ordered))
+                    {
+                        var point = (Buoy)ordered.AcceptedShipTarget!;
+                        int bit = 1 << (id - 8004);
+                        if ((_proofLossDiversionMask & bit) == 0)
+                            Console.WriteLine($"[tproof] LOSS_DIVERSION accepted defender={id} target={point.Id} position={point.Position}");
+                        _proofLossDiversionMask |= bit;
+                    }
+            short defender = new short[] { 8004, 8005, 8006 }.FirstOrDefault(id =>
+            {
+                if (!host.TrainingShipExists(id) || !host.Drones.TryGetValue(id, out var ship)) return false;
+                if (minerAlive)
+                    return !Away(ship);
+                return enemy != 0 && !(ship.AcceptedShipCommandId == OrderChange.CidAttack
+                    && ship.AcceptedShipTarget is Ship foe && foe.Id is 8002 or 8003 && !foe.Dead);
+            });
+            if (defender != 0)
+            {
+                if (_cameraMode != CameraMode.Command) { keys.Add(Keys.F3); return; }
+                // Cycling avoids overlapping defender and station pick icons.
+                if (_commandee?.Id != defender || _commandGroup.Count != 0)
+                {
+                    if (Environment.TickCount64 % 600 < 250) ProofPressAction("CycleCommandee", keys);
+                    return;
+                }
+                // Choose empty world space above the starmap and outside the
+                // command bar. Read the same camera ray as the real input
+                // handler, zooming normally until that pick is far away.
+                int pickX = (int)(GraphicsDevice.Viewport.Width * .9f), pickY = (int)(GraphicsDevice.Viewport.Height * .46f);
+                var cursor = new Microsoft.Xna.Framework.Vector2(pickX, pickY);
+                if (minerAlive && (!_commandCamera.TryPickPosition(cursor, cursor, GraphicsDevice.Viewport, out var picked)
+                    || V.Distance(new V(picked.X, picked.Y, picked.Z), battle) < 5000))
+                { _proofNeedsZoom = true; return; }
+                short verb = minerAlive ? OrderChange.CidGoto : OrderChange.CidAttack;
+                if (_commandVerb != verb || LiveComposeState != NativeComposeState.Command)
+                { ProofClickVerb(verb); return; }
+                if (minerAlive) ProofClickAt("loss-diversion", pickX, pickY, right: true);
+                else ProofClickModel(enemy, right: true);
+                return;
+            }
+            if (_cameraMode == CameraMode.Command) { keys.Add(Keys.LeftAlt); keys.Add(Keys.F2); return; }
+        }
         if (_proofNaniteMountEarly && goal.StartsWith("2.", StringComparison.Ordinal)
             && host.TrainingShipExists(8006) && host.TrainingShipExists(8003))
         {
@@ -309,6 +365,14 @@ public sealed partial class Game1
             if (defender != 0)
             {
                 if (_cameraMode != CameraMode.Command) { keys.Add(Keys.F3); return; }
+                // The three fighter icons can overlap after the miner fight.
+                // Select the actual recipient through native cycling before
+                // picking the order target, as the loss pilot does above.
+                if (_commandee?.Id != defender || _commandGroup.Count != 0)
+                {
+                    if (Environment.TickCount64 % 600 < 250) ProofPressAction("CycleCommandee", keys);
+                    return;
+                }
                 ProofOrder((short)defender, verb, 8007, TargetKind.Ship);
                 return;
             }
@@ -330,7 +394,7 @@ public sealed partial class Game1
                 Console.WriteLine($"[tproof] SACRIFICE cease-repair hull={sacrificialBomber.Fraction:F4} outpostShield={outpost.ShieldFraction:F4} outpostArmor={outpost.ArmorFraction:F4}");
             }
         }
-        if (_proofNaniteSacrifice && goal == "3.19" && host.TrainingShipExists(8008)
+        if ((_proofNaniteSacrifice || _proofNaniteWithholdRepair) && goal == "3.19" && host.TrainingShipExists(8008)
             && !((host.HasCommand(8008, OrderChange.CidGoto) || host.HasCommand(8008, OrderChange.CidRepair))
                 && host.Drones[8008].AcceptedShipTarget is EquipmentTarget { Body: Allegiance.Core.Sim.Station home }
                 && home.StationId == Mission8.HomeStationId))
@@ -460,6 +524,15 @@ public sealed partial class Game1
             Thrust(ToSys(escort.Orientation.GetRight()), "ThrustRight", "ThrustLeft");
             Thrust(ToSys(escort.Orientation.GetUp()), "ThrustUp", "ThrustDown");
             if (thrust is not null) ProofPressAction(thrust, keys);
+        }
+        else if (_proofNaniteWithholdRepair && (goal.StartsWith("2.", StringComparison.Ordinal) || goal == "3.19"))
+        {
+            // Withholding repair must also keep our hull out of the incoming
+            // fire. Following at repair range can shield the miner or bomber
+            // and select survival instead. Back away through ordinary flight controls;
+            // the native combat, timers and branch observer remain untouched.
+            keys.Add(Keys.Back);
+            if (distance < 1500 && aim < 10) keys.Add(Keys.S);
         }
         else if ((routing || distance > followDistance) && aim < 10) keys.Add(Keys.W);
         bool repairing = !(_proofNaniteWithholdRepair && !goal.StartsWith("1.", StringComparison.Ordinal));

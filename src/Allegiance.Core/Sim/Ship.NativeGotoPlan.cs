@@ -50,6 +50,7 @@ public sealed partial class Ship
         // (common.cpp:1850-1862), before any route back to the original cluster.
         if (active && _nativeWaypoints.Mask == 0 && target.Kind == G.Kind.Warp)
         {
+            CompleteTrainingGoto();
             GotoWaypoint = null; Controls = ControlData.Neutral;
             StateM &= ~(ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton | ShipControlState.CoastButton | ShipControlState.WeaponsMask);
             if (WantBoost) StateM |= ShipControlState.AfterburnerButton; // Execute applies a pending boost even on completion (:1813-1821)
@@ -107,6 +108,7 @@ public sealed partial class Ship
             {
                 if (gw.TargetStationId is { } id && AcceptedCommandId == OrderChange.CidGoto && AcceptedTarget?.StationId == id)
                 { AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone; }
+                CompleteTrainingGoto();
                 GotoWaypoint = null; // shipIGC.cpp:2802-2810
             }
         }
@@ -145,7 +147,10 @@ public sealed partial class Ship
         if (GotoWaypoint is { } gw)
         {
             if (Sector!.Id == gw.ClusterId && gw.Kind == GotoKind.Cluster)
-            { GotoWaypoint = null; return false; } // FedSrv.CPP:3302
+            {
+                CompleteTrainingGoto(); // native completion clears matching slots, shipIGC.cpp:2795-2807
+                GotoWaypoint = null; return false;
+            } // FedSrv.CPP:3302
             if (gw.TargetId is { } objectId && gw.TargetType is { } objectType)
                 return NativeOrderTarget(objectType, objectId, gw, out target, out station, out carrier);
             if (gw.TargetStationId is { } stationId)
@@ -206,6 +211,23 @@ public sealed partial class Ship
             target = new(NativeKey(G.Kind.Point, id), buoy.Data.ClusterId, G.Kind.Point,
                 G.Objective.Goto, buoy.Position, buoy.Data.Visible ? 20 : 2);
             return true;
+        }
+        // ResetWaypoint's other model kinds use their live point geometry
+        // (shipIGC.cpp:4147-4151). Training actions may name all eight native
+        // command target kinds without synthesizing an extra waypoint buoy.
+        if (Mission!.IsTraining && Mission.GetModel(type, id) is Model model)
+        {
+            (short Cluster, float Radius)? point = model switch
+            {
+                Probe p => (p.OwnerSector.Id, p.ProbeType.Radius),
+                Mine m => (m.OwnerSector.Id, m.MineType.MineRadius),
+                Treasure t => (t.OwnerSector.Id, Treasure.PickupRadius), _ => null,
+            };
+            if (point is { } location)
+            {
+                target = new(NativeKey(G.Kind.Point, id), location.Cluster, G.Kind.Point, G.Objective.Goto, model.Position, location.Radius);
+                return true;
+            }
         }
         for (int i = 0; i < Mission!.Sectors.Count; i++)
         {

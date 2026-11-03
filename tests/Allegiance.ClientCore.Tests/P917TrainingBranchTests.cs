@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Reflection;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
 using Allegiance.SinglePlayer;
 using Allegiance.TestInfra;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
@@ -113,7 +114,20 @@ public sealed class P917TrainingBranchTests : IDisposable
         host.IssueCommand(id, CommandAccepted, host.PlayerShipId, null, null, CmdAttack);
         typeof(Ship).GetMethod("UpdateDamageRetreat", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(bomber, [100d]);
+        Assert.False(bomber.IsRunningAway); // new plan anchors fractionLastOrder (shipIGC.h:758)
+        host.DamageShip(id, 100);
+        bomber.SetCommand(OrderChange.CmdPlan, bomber.PlanCommandTarget, bomber.PlanCommandId);
+        typeof(Ship).GetMethod("UpdateDamageRetreat", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(bomber, [100d]);
+        Assert.False(bomber.IsRunningAway); // even an identical direct plan write resets the anchor
+        host.DamageShip(id, 100); // fresh damage after that order still permits ordinary retreat
+        typeof(Ship).GetMethod("UpdateDamageRetreat", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(bomber, [100d]);
         Assert.True(bomber.IsRunningAway); // a ship target still obeys the ordinary retreat rule
+        host.IssueCommand(id, CommandAccepted, host.PlayerShipId, null, null, CmdAttack);
+        typeof(Ship).GetMethod("UpdateDamageRetreat", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(bomber, [100d]);
+        Assert.False(bomber.IsRunningAway); // identical reissue resets it too (shipIGC.h:749-763)
     }
 
     [Fact]

@@ -5409,3 +5409,57 @@ The six passing Fast cases that exceeded the calibrated duration limit were also
 | `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | 10.078 | 8.427 / 8.427 / 8.402 |
 | `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 11.063 | 1.915 / 1.805 / 1.850 |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 11.342 | 9.686 / 9.530 / 9.562 |
+
+## P918 (2026-11-02) — sole Fast sweep and isolated controls
+
+The one required Fast sweep collected 12,989 cases: 12,984 passed, two failed,
+three optional artwork-pack cases skipped. Nine infrastructure cases passed.
+The sweep took 572.691 seconds and returned failure; it is not recorded as a
+clean gate. Raw receipts: `.scratch/p918/fast/summary.json`,
+`.scratch/p918/fast-isolation/summary.json`.
+
+| Test | Fast result | Three isolated invocations on final P918 source |
+| --- | --- | --- |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Expected charge / actual null, line 179 | fail / fail / fail, same assertion. A control using the saved dispatch Core assembly also fails 3/3 at the same line (`.scratch/p918/baseline-defend/summary.json`). Persistent baseline failure already recorded under P872 through P922; remains open. |
+| `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage` | Enemy fraction remains 1 after 20,000 ticks; 36.888 s, also a duration offender | pass / pass / pass, 0.715 / 0.654 / 0.663 s. Sweep-only failure, consistent with prior ledger entries; cause not established. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Pass, 10.643 s, above calibrated Fast duration limit | pass / pass / pass, 10.231 / 10.296 / 10.146 s. Functional pass with a persistent borderline timing overrun in these invocations; not cleared as a load flake. |
+
+All isolated cases executed with zero skips, one method per test invocation.
+Recorded shared-host load averages were 2.48–10.05 (one-minute average).
+Training-window and showcase qualification were also active; no synthetic load
+was added. No unrelated NPC behavior, fixture expectations or tier metadata
+were changed. The sweep preceded P918's final training-only execution-plan
+correction; final training and affected-test receipts cover that correction.
+
+P918's earlier qualification snapshot also had one window-child exit in
+`P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session`
+(Mission 4, Modern, default policy), at goal 5.6 around the first warp. The
+captured log ends without a managed exception. The exact parameter case passes
+**3/3 isolated invocations**, zero skips (wall times 712.735 / 662.156 / 655.495 s).
+Cause is not established; no M4 pilot or graphics change was made for this exit.
+Raw receipts: `.scratch/p918/m4-isolation/summary.json` and the failed window
+under `.scratch/p918/final-source/.scratch/p917/windows/m4-Modern-default-f75769e67cc140b58a7ce8354b70d528/`.
+One-minute load during isolation ranged 1.04–1.89. The final training pass uses
+the later frozen snapshot; this isolated result does not make the earlier
+failed gate green.
+
+An intermediate P918 window gate also stalled in Mission 3, Classic, at goal
+9.7 after 99.1 simulation seconds; its 21-minute wrapper timeout ends the case.
+The same case passes **3/3 isolated invocations**, zero skips, on the final
+feature source (174.149 / 195.932 / 188.547 s wall). The fresh final gate also
+passes this course. Cause remains unestablished; no Mission3 pilot or sim rule
+was changed for the stall. One-minute load during isolation ranged 0.72–1.97.
+Receipts: `.scratch/p918/m3-isolation/summary.json`; stalled window
+`.scratch/p918/legacy-p917/windows/m3-Classic-default-a0f869cbf6a44a158228ecbd9cfc90b5/`.
+
+A separate intermediate P918 gate timed out in Mission 4, Modern,
+`Every_lesson_completes_in_one_real_window_session`, policy `departure`, at
+goal 8.7 after 226.1 simulation seconds. The exact parameter case passes
+**3/3 fresh filtered invocations**, zero skips, on the final source:
+658.793 / 671.724 / 668.911 s wall. These three separate test processes ran
+concurrently, one parameter case per invocation; one-minute host load ranged
+0.55–0.76. The full v2 and final v5 training gates also pass this case.
+Cause remains unestablished; no Mission4 pilot or native rule was changed for
+this timeout. Receipts: `.scratch/p918/m4-departure-isolation/summary.json`;
+failed window `.scratch/p918/legacy-p917/windows/m4-Modern-departure-f7d16923b69e412aa43c1d19239c18a9/`;
+failed gate `.scratch/p918/training-final-v4/`.

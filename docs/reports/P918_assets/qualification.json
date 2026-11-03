@@ -1,0 +1,548 @@
+{
+  "scorecard": {
+    "before": {
+      "training": 774,
+      "framework": 227,
+      "completedRows": 199
+    },
+    "after": {
+      "training": 797,
+      "framework": 250,
+      "completedRows": 204
+    },
+    "trainingMaximum": 901,
+    "frameworkMaximum": 298,
+    "eligibleRows": 235,
+    "changedRows": [
+      "TRN-0010",
+      "TRN-0013",
+      "TRN-0063",
+      "TRN-0084",
+      "TRN-0085"
+    ]
+  },
+  "sourceCohorts": {
+    "v2": ".scratch/p918/final-source-v2-manifest.json",
+    "v5": ".scratch/p918/final-source-v5-manifest.json",
+    "onlyDifferences": "Game1.TrainingProof.Advanced.cs opt-in Mission8 proof recipient selection and tools/p912-training-proof/Program.cs early policy observer scope and live-combat guard, plus real-input loss-policy repair-wingman diversion; feature and regression-test sources unchanged"
+  },
+  "snapshot": {
+    "sourceFiles": 3736,
+    "sourceDigest": "3bbef20ede59776e8d39f8fbd721d3924dd2f4e5457be8229514c34b48a8cc4c",
+    "manifest": ".scratch/p918/final-source-v5-manifest.json"
+  },
+  "build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p918/build-handoff.log"
+  },
+  "tools": {
+    "projects": 113,
+    "log": ".scratch/p918/build-tools-handoff.log"
+  },
+  "aot": {
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p918/aot-handoff.log"
+  },
+  "isolated": {
+    "invocations": 102,
+    "cases": 165,
+    "passed": 165,
+    "failed": 0,
+    "skipped": 0,
+    "summary": ".scratch/p918/isolated-final-v5/summary.json"
+  },
+  "training": {
+    "repeat": 1,
+    "exit": 0,
+    "sourceManifest": ".scratch/p918/final-source-v5-manifest.json",
+    "projects": {
+      "Allegiance.ClientCore.Tests": {
+        "total": 100,
+        "passed": 100,
+        "failed": 0,
+        "skipped": 0,
+        "skippedTests": []
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "total": 231,
+        "passed": 227,
+        "failed": 0,
+        "skipped": 4,
+        "skippedTests": [
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")"
+        ]
+      }
+    }
+  },
+  "showcase": {
+    "runs": [
+      {
+        "run": 1,
+        "returncode": 0,
+        "seconds": 237.3966301800101,
+        "loadBefore": [
+          1.14306640625,
+          2.32421875,
+          2.7451171875
+        ],
+        "loadAfter": [
+          2.59716796875,
+          2.83740234375,
+          2.9052734375
+        ]
+      },
+      {
+        "run": 2,
+        "returncode": 0,
+        "seconds": 255.6432802209747,
+        "loadBefore": [
+          2.59716796875,
+          2.83740234375,
+          2.9052734375
+        ],
+        "loadAfter": [
+          2.47265625,
+          2.53076171875,
+          2.7412109375
+        ]
+      },
+      {
+        "run": 3,
+        "returncode": 0,
+        "seconds": 214.16887348599266,
+        "loadBefore": [
+          2.47265625,
+          2.53076171875,
+          2.7412109375
+        ],
+        "loadAfter": [
+          1.3896484375,
+          2.0419921875,
+          2.501953125
+        ]
+      },
+      {
+        "run": 4,
+        "returncode": 0,
+        "seconds": 224.64981721300865,
+        "loadBefore": [
+          1.3896484375,
+          2.0419921875,
+          2.501953125
+        ],
+        "loadAfter": [
+          8.01123046875,
+          3.58154296875,
+          2.9169921875
+        ]
+      },
+      {
+        "run": 5,
+        "returncode": 0,
+        "seconds": 231.5503973479499,
+        "loadBefore": [
+          8.01123046875,
+          3.58154296875,
+          2.9169921875
+        ],
+        "loadAfter": [
+          1.57763671875,
+          2.93017578125,
+          2.83154296875
+        ]
+      }
+    ],
+    "baselineRate": "5/5 in P912"
+  },
+  "fast": {
+    "cases": 12989,
+    "passed": 12984,
+    "failed": 2,
+    "skipped": 3,
+    "infrastructurePassed": 9,
+    "exit": 1,
+    "summary": ".scratch/p918/fast/summary.json",
+    "ledger": "docs/TEST_FLAKES.md"
+  },
+  "nativeAudit": {
+    "rules": 241,
+    "typesAndMacros": 82,
+    "errors": 0
+  },
+  "captures": [
+    {
+      "style": "Classic",
+      "state": "visible",
+      "source": ".scratch/p918/final-source-v2/.scratch/p918/windows/Classic-ddcd3b36d51a46858a063ed9a0d4e6cb/p918-classic-visible.png",
+      "sha256": "f474f2f3157583036699abc8b7f2d770d57f7ee278a6417d266f5e154317b599",
+      "bytes": 157189
+    },
+    {
+      "style": "Classic",
+      "state": "retired",
+      "source": ".scratch/p918/final-source-v2/.scratch/p918/windows/Classic-ddcd3b36d51a46858a063ed9a0d4e6cb/p918-classic-retired.png",
+      "sha256": "25c8a728d84f70bbed5ceacec971ff1913b2c02667d9a01db1bbe8140448018a",
+      "bytes": 157080
+    },
+    {
+      "style": "Modern",
+      "state": "visible",
+      "source": ".scratch/p918/final-source-v2/.scratch/p918/windows/Modern-f8975d5d5c6d46dd991ad20ad3c2101b/p918-modern-visible.png",
+      "sha256": "cd717d2396e7b6d21ae4e0a62e340652f075f412f0dcd2ddcd45a5deec545287",
+      "bytes": 171211
+    },
+    {
+      "style": "Modern",
+      "state": "retired",
+      "source": ".scratch/p918/final-source-v2/.scratch/p918/windows/Modern-f8975d5d5c6d46dd991ad20ad3c2101b/p918-modern-retired.png",
+      "sha256": "f035e6f7b133ec11ef2316e60e1e27d326b8108d0ae7ce0fea38b7f7ed3f5d32",
+      "bytes": 170966
+    }
+  ],
+  "multiplayerCost": "multiplayer-cost.json",
+  "frozenFeatureTraining": {
+    "repeat": 1,
+    "exit": 0,
+    "sourceManifest": ".scratch/p918/final-source-v2-manifest.json",
+    "projects": {
+      "Allegiance.ClientCore.Tests": {
+        "total": 100,
+        "passed": 100,
+        "failed": 0,
+        "skipped": 0,
+        "skippedTests": []
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "total": 231,
+        "passed": 227,
+        "failed": 0,
+        "skipped": 4,
+        "skippedTests": [
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+          "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")"
+        ]
+      }
+    }
+  },
+  "nonTaskWindowChecks": {
+    "M4Default": [
+      {
+        "run": 1,
+        "exit": 0,
+        "seconds": 712.7354873180157,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          1.03515625,
+          1.8779296875,
+          2.76806640625
+        ],
+        "loadAfter": [
+          1.53857421875,
+          1.6484375,
+          2.11767578125
+        ]
+      },
+      {
+        "run": 2,
+        "exit": 0,
+        "seconds": 662.1555176649708,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          1.53857421875,
+          1.6484375,
+          2.11767578125
+        ],
+        "loadAfter": [
+          1.8876953125,
+          3.77734375,
+          3.462890625
+        ]
+      },
+      {
+        "run": 3,
+        "exit": 0,
+        "seconds": 655.4946283859899,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          1.8876953125,
+          3.77734375,
+          3.462890625
+        ],
+        "loadAfter": [
+          1.19775390625,
+          1.84619140625,
+          2.58349609375
+        ]
+      }
+    ],
+    "M3Classic": [
+      {
+        "run": 1,
+        "exit": 0,
+        "seconds": 174.1486973760184,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          0.7197265625,
+          0.939453125,
+          1.087890625
+        ],
+        "loadAfter": [
+          1.3837890625,
+          1.09716796875,
+          1.1220703125
+        ]
+      },
+      {
+        "run": 2,
+        "exit": 0,
+        "seconds": 195.93161024997244,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          1.3837890625,
+          1.09716796875,
+          1.1220703125
+        ],
+        "loadAfter": [
+          1.9697265625,
+          1.61669921875,
+          1.3359375
+        ]
+      },
+      {
+        "run": 3,
+        "exit": 0,
+        "seconds": 188.54739138198784,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          1.9697265625,
+          1.61669921875,
+          1.3359375
+        ],
+        "loadAfter": [
+          0.7646484375,
+          1.2470703125,
+          1.2490234375
+        ]
+      }
+    ],
+    "M4Departure": [
+      {
+        "run": 1,
+        "exit": 0,
+        "seconds": 658.7926245350391,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          0.55078125,
+          0.58984375,
+          0.78271484375
+        ],
+        "loadAfter": [
+          0.759765625,
+          0.830078125,
+          0.79296875
+        ],
+        "sourceManifest": ".scratch/p918/final-source-v5-manifest.json",
+        "concurrency": 3,
+        "evidence": ".scratch/p918/m4-departure-isolation/1"
+      },
+      {
+        "run": 2,
+        "exit": 0,
+        "seconds": 671.7236828330206,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          0.55078125,
+          0.58984375,
+          0.78271484375
+        ],
+        "loadAfter": [
+          0.72314453125,
+          0.8193359375,
+          0.7900390625
+        ],
+        "sourceManifest": ".scratch/p918/final-source-v5-manifest.json",
+        "concurrency": 3,
+        "evidence": ".scratch/p918/m4-departure-isolation/2"
+      },
+      {
+        "run": 3,
+        "exit": 0,
+        "seconds": 668.9107496899669,
+        "counts": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "loadBefore": [
+          0.55078125,
+          0.58984375,
+          0.78271484375
+        ],
+        "loadAfter": [
+          0.72314453125,
+          0.8193359375,
+          0.7900390625
+        ],
+        "sourceManifest": ".scratch/p918/final-source-v5-manifest.json",
+        "concurrency": 3,
+        "evidence": ".scratch/p918/m4-departure-isolation/3"
+      }
+    ]
+  }
+}
