@@ -157,6 +157,8 @@ public sealed partial class Game1
     {
         _autoTarget = at;
         _autoPilotEngaged = true;
+        // A new order starts its own P862 hold window (see AutopilotHoldClock).
+        _autoPilotHold.Reset();
         // M-1 — capture the virtual-joystick baseline at engage (native's
         // trekJoyStick snapshot, WinTrek.cpp:8283-8289) so only a deflection
         // *past 2× deadzone from here* counts as manual input (P501).

@@ -39,3 +39,32 @@ public static class AutopilotHold
         => engaged && !steered
            && (!targetKnown || (holdSinceMs > 0 && nowMs - holdSinceMs >= HoldLimitMs));
 }
+
+/// <summary>
+/// The per-frame hold timer behind <see cref="AutopilotHold.ShouldDisengage"/>.
+/// A hold window belongs to one engagement: it restarts on every frame that steers,
+/// every frame the autopilot is off, and on <see cref="Reset"/> (engage/disengage).
+/// Before this, the timestamp was cleared only by a steered frame, so a hold left by
+/// the eject-home flight (its last frames before docking cannot steer) survived the
+/// dock, and every later goto read as two seconds overdue and logged
+/// <c>autopilot ON … autopilot OFF (TargetLost)</c> on its first frame.
+/// </summary>
+public struct AutopilotHoldClock
+{
+    /// <summary>When the current run of unsteerable frames began, or 0.</summary>
+    public long SinceMs { get; private set; }
+
+    public void Reset() => SinceMs = 0;
+
+    /// <summary>Advance one frame; true when this frame ends the engagement.</summary>
+    public bool Frame(bool engaged, bool steered, bool targetKnown, long nowMs)
+    {
+        if (!engaged || steered)
+        {
+            SinceMs = 0;
+            return false;
+        }
+        if (SinceMs == 0) SinceMs = nowMs;
+        return AutopilotHold.ShouldDisengage(engaged, steered, targetKnown, nowMs, SinceMs);
+    }
+}

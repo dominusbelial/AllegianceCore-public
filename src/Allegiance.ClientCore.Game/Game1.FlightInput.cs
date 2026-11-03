@@ -2439,7 +2439,7 @@ public sealed partial class Game1
                 sentControls = apControls;
                 sentStateM = _autopilotMovementButtons;
                 sentFireM = 0;   // autopilot drives with neutral fire
-                _autoPilotHoldSinceMs = 0;
+                _autoPilotHold.Reset();
             }
             else
             {
@@ -2450,14 +2450,9 @@ public sealed partial class Game1
                 // unsteerable for longer than AutopilotHold.HoldLimitMs — the
                 // pre-P862 code dropped the order on that one frame, so a
                 // launch-time --auto-goto never flew (measured: no warp at all).
-                if (_autoPilotEngaged)
-                {
-                    long nowMs = Environment.TickCount64;
-                    if (_autoPilotHoldSinceMs == 0) _autoPilotHoldSinceMs = nowMs;
-                    if (Flight.AutopilotHold.ShouldDisengage(_autoPilotEngaged, steered: false,
-                            AutoPilotTargetStillKnown(), nowMs, _autoPilotHoldSinceMs))
-                        DisengageAutopilot(AutopilotDisengageReason.TargetLost);
-                }
+                if (_autoPilotHold.Frame(_autoPilotEngaged, steered: false,
+                        _autoPilotEngaged && AutoPilotTargetStillKnown(), Environment.TickCount64))
+                    DisengageAutopilot(AutopilotDisengageReason.TargetLost);
                 sentControls = cmd.Controls;
                 sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
@@ -4141,6 +4136,7 @@ public sealed partial class Game1
         _autoPilotEngaged = false;
         _autoTarget = null;
         _autoTargetAtEngage = null;
+        _autoPilotHold.Reset();
         Console.WriteLine($"[monogame] autopilot OFF ({reason})");
         if (ShouldPlayAutopilotDisengageCue(wasEngaged, reason)) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();

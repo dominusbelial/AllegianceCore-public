@@ -1153,10 +1153,9 @@ public sealed partial class Game1 : Game
     /// disengage check in <see cref="TryGetAutopilotControls"/>.</summary>
     private SimVec? _autoTargetAtEngage;
     private bool _autoPilotEngaged;
-    /// <summary>P862 — when the current run of unsteerable autopilot frames began
-    /// (0 = the autopilot steered last frame). Bounds the "hold a transient" rule in
-    /// <see cref="Flight.AutopilotHold"/>.</summary>
-    private long _autoPilotHoldSinceMs;
+    /// <summary>P862 — the hold timer for the current engagement's run of unsteerable
+    /// frames; bounds the "hold a transient" rule in <see cref="Flight.AutopilotHold"/>.</summary>
+    private Flight.AutopilotHoldClock _autoPilotHold;
     // M-1 — the mouse-joystick deflection captured the moment the autopilot
     // engaged (native's trekJoyStick baseline, WinTrek.cpp:8283-8289). Manual-
     // input disengage only fires when the live deflection leaves this baseline

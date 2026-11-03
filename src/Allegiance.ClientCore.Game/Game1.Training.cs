@@ -308,7 +308,7 @@ public sealed partial class Game1
             if (_autoPilotEngaged) DisengageAutopilot(AutopilotDisengageReason.ToggleOff);
             return;
         }
-        if (target is not { } t) { _autoPilotEngaged = true; return; }
+        if (target is not { } t) { _autoPilotEngaged = true; _autoPilotHold.Reset(); return; }
         TargetKind? kind = t.Type switch
         {
             ObjectType.Ship => TargetKind.Ship,

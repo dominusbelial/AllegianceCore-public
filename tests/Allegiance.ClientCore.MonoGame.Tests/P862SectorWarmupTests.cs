@@ -296,3 +296,61 @@ public sealed class P862AutopilotHoldTests
         Assert.True(Disengage(true, steered: false, targetKnown: true, nowMs: holdStart + limit, holdSinceMs: holdStart));
     }
 }
+
+/// <summary>
+/// The hold timer must belong to one engagement. Reproduced live on 2026-11-03: the
+/// eject-home autopilot's last frames before docking could not steer, so a hold
+/// started and was never cleared; after the dock every starmap goto logged
+/// <c>autopilot ON → … autopilot OFF (TargetLost)</c> on its first frame.
+/// </summary>
+public sealed class AutopilotHoldClockTests
+{
+    private const long Limit = (long)Allegiance.ClientCore.MonoGame.Flight.AutopilotHold.HoldLimitMs;
+
+    [Fact]
+    public void A_hold_left_by_a_docked_flight_does_not_drop_a_later_goto()
+    {
+        var clock = new Allegiance.ClientCore.MonoGame.Flight.AutopilotHoldClock();
+        // Eject home: the frozen frames before the dock cannot steer.
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 1_000));
+        // Docked (the dock disengages the autopilot without a Frame call).
+        clock.Reset();
+        // A day of flying later, a starmap goto whose first frame has no route yet.
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 86_400_000));
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 86_400_000 + Limit - 1));
+    }
+
+    [Fact]
+    public void Frames_with_the_autopilot_off_clear_a_hold_even_without_a_reset()
+    {
+        var clock = new Allegiance.ClientCore.MonoGame.Flight.AutopilotHoldClock();
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 1_000));
+        Assert.False(clock.Frame(engaged: false, steered: false, targetKnown: false, nowMs: 2_000));
+        Assert.Equal(0, clock.SinceMs);
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 1_000 + 10 * Limit));
+    }
+
+    [Fact]
+    public void A_steered_frame_restarts_the_hold()
+    {
+        var clock = new Allegiance.ClientCore.MonoGame.Flight.AutopilotHoldClock();
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 1_000));
+        Assert.False(clock.Frame(engaged: true, steered: true, targetKnown: true, nowMs: 1_000 + Limit - 1));
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 1_000 + Limit + 5));
+    }
+
+    [Fact]
+    public void An_order_unsteerable_for_the_whole_limit_still_disengages()
+    {
+        var clock = new Allegiance.ClientCore.MonoGame.Flight.AutopilotHoldClock();
+        Assert.False(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 5_000));
+        Assert.True(clock.Frame(engaged: true, steered: false, targetKnown: true, nowMs: 5_000 + Limit));
+    }
+
+    [Fact]
+    public void A_vanished_target_disengages_on_its_first_frame()
+    {
+        var clock = new Allegiance.ClientCore.MonoGame.Flight.AutopilotHoldClock();
+        Assert.True(clock.Frame(engaged: true, steered: false, targetKnown: false, nowMs: 5_000));
+    }
+}
