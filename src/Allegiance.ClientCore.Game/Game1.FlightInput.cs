@@ -3250,7 +3250,9 @@ public sealed partial class Game1
                                      out var goal, out var routed))
         {
             NoteAutopilotHold($"no route own={ownSector} target={targetSector?.ToString() ?? "?"} "
-                + $"warps={warpSource.Count} kind={tgt.Kind}");
+                + $"warps={warpSource.Count} kind={tgt.Kind} "
+                + $"[{string.Join(" ", warpSource.Select(w => $"{w.SourceSector}->{w.DestSector}"))}] "
+                + $"known={_session.World.Warps.Count}");
             return false;
         }
 
