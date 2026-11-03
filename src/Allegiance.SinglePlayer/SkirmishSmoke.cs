@@ -90,7 +90,9 @@ public static class SkirmishSmoke
                     }
                 }
                 if (launched) break;
-                if (battleWait.Elapsed.TotalSeconds > 90 || !host.BotsAlive) throw new TimeoutException("Benchmark battle did not launch");
+                if (battleWait.Elapsed.TotalSeconds > 90 || !host.BotsAlive)
+                    throw new TimeoutException($"Benchmark battle did not launch after {battleWait.Elapsed.TotalSeconds:0.0}s"
+                        + (host.Failure is { } why ? $": {why}" : host.BotsAlive ? "" : ": bot host stopped"));
                 await Task.Delay(50, ct);
             }
             onBattleStarted();
