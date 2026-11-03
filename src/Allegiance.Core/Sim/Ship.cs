@@ -5904,8 +5904,11 @@ public sealed partial class Ship : Model, IShipIgc
     // the ripcord half: downstream RequestRipcord re-validates the anchor, and a
     // stale miss merely forfeits a ripcord shortcut (the caller falls through to
     // the warp leg), so reaching the real destination is preserved.
+    // P923 extends ONLY the warp-goal cache with the ship's visibility view;
+    // discovery invalidation is shared with native travel in Ship.WarpNavigation.cs.
     private long _npcNavKey = long.MinValue;         // (shipSector.Id, targetClusterId) → warp-goal
     private bool _npcNavCached;                      // whether _npcCachedWarpGoal is a valid cached entry (incl. null = unreachable)
+    private long _npcNavViewVersion;
     private Vector3? _npcCachedWarpGoal;             // cached steering goal world position (null when unreachable)
     private int _npcCachedWarpGoalWarpId = -1;       // P591c: the warp id behind _npcCachedWarpGoal (for IntendedNextWarpId on the cached path)
     private long _npcRipcordKey = long.MinValue;     // (shipSector.Id, target.Id) → ripcord anchor
@@ -7445,8 +7448,8 @@ public sealed partial class Ship : Model, IShipIgc
     /// the goal is re-resolved every tick, a ship that warps mid-journey
     /// naturally re-paths from its new sector on the next tick; once it reaches
     /// the target's sector the same-cluster branch in the caller takes over and
-    /// steers directly at the target. P157/P158 scope: the per-tick re-evaluation
-    /// <em>is</em> the replan, no separate cache is built.
+    /// steers directly at the target. P324 caches each leg; P923 adds discovery
+    /// invalidation under the seen-routing opt-in.
     /// <para><b>Generalized in P158.</b> P157 built this hardcoded to
     /// <see cref="DataStationIGC"/> (though it only ever read
     /// <c>st.ClusterId</c> — the station's own position is irrelevant here, the
@@ -7464,9 +7467,9 @@ public sealed partial class Ship : Model, IShipIgc
     /// <para><b>Fallbacks are silent stand-bys, never guesses.</b> If the
     /// mission is unbound, the target sector is absent from it, or no warp path
     /// exists, the method returns <c>null</c> — the caller then leaves the ship
-    /// with no goal and does nothing this tick, exactly the pre-P157 no-goal
-    /// behavior; the next tick simply tries again (a permanently-unreachable
-    /// target yields one logged line, not a thrash).</para>
+    /// with no goal and leaves the existing controls alone, exactly the pre-P157
+    /// no-goal behavior. P324 caches a miss; P923 retries after discovery or a
+    /// personal scanner-view change (one logged line, not a per-tick thrash).</para>
     /// </remarks>
     private Vector3? CrossClusterWarpGoal(short targetClusterId, string what)
     {
@@ -7492,15 +7495,11 @@ public sealed partial class Ship : Model, IShipIgc
             return null;
         }
 
-        // P324 (M8): the warp-graph BFS result depends only on (this ship's
-        // current sector, the target cluster) — both stable between the ship's
-        // warps, with the warp graph static per mission — so it is cached and
-        // re-resolved only when that nav context changes (a new target, or the
-        // ship warping to a new sector). A cached null (unreachable target) is
-        // also honoured, so a permanently-unreachable target stops paying the BFS
-        // every tick.
+        // P324/P923: retain hits AND misses until the navigation context changes.
+        // With seen routing, discovery or a changed personal view also invalidates.
         long key = NavKey(sector.Id, targetClusterId);
-        if (_npcNavCached && _npcNavKey == key)
+        long viewVersion = WarpNavigationViewVersion();
+        if (_npcNavCached && _npcNavKey == key && _npcNavViewVersion == viewVersion)
         {
             if (_npcCachedWarpGoal is { } cachedGoal)
             {
@@ -7511,7 +7510,8 @@ public sealed partial class Ship : Model, IShipIgc
             return null;
         }
 
-        if (sector.FindPathToward(target) is not { } warp)
+        _npcNavViewVersion = viewVersion;
+        if (sector.FindPathToward(target, this) is not { } warp)
         {
             _npcNavKey = key;
             _npcNavCached = true;

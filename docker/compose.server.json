@@ -28,7 +28,8 @@
     "enrollmentFile": "/server-identity/enrollment.json"
   },
   "liveSettings": {
-    "timeDilation": "auto"
+    "timeDilation": "auto",
+    "seenWarpRouting": false
   },
   "identity": {
     "issuer": "http://localhost:8080",

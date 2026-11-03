@@ -159,6 +159,19 @@ list in **reverse**.
   rows remain partial pending the rig decision; limitations and the local
   200-client proof (`tools/p906-tick-order-proof/`) are recorded in
   `docs/reports/P906_REPORT.md`.
+- **Discovery-aware server routing (P923)** — default-off server JSON
+  `liveSettings.seenWarpRouting` binds `Mission.SeenWarpRoutingEnabled`.
+  `src/Allegiance.Core/Model/Sector.cs` gates every legacy BFS edge through the
+  ship's native personal/side visibility. `src/Allegiance.Core/Sim/Ship.WarpNavigation.cs`
+  refreshes legacy and native NPC route caches on per-side warp discovery
+  revisions or changed local scanner eligibility. Revisions include partner
+  reveal and retain predictable visibility. Native GotoPlan already gates
+  visibility with this flag off; only its cache refresh changes when enabled.
+  Native: `Igc/common.cpp:920,987`, `Igc/shipIGC.h:341-389`,
+  `FedSrv/FedSrv.CPP:10783-10799,11124-11126`. Tests:
+  `tests/Allegiance.Core.Tests/P923SeenWarpRoutingTests.cs`,
+  `tests/Allegiance.Core.Tests/P923SeenWarpRoutingLiveTests.cs`; measurements:
+  `tools/p923-routing-proof/Program.cs`; report: `docs/reports/P923_REPORT.md`.
 - **Mission replay identity (P903)** — first generation and rotation bookkeeping
   in `src/Allegiance.Server/Server.Lifecycle.cs` and
   `src/Allegiance.Server/Server.Lobby.cs` feeds `Mission.ReplayCount` and cached

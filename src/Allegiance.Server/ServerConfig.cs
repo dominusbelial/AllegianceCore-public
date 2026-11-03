@@ -432,6 +432,11 @@ public sealed class AutoNextMatchConfig
 /// uses defaults: debug off, automatic next match on, automatic dilation on.</summary>
 public sealed class LiveSettingsConfig
 {
+    /// <summary>P923: discovery-aware legacy BFS and discovery-invalidated NPC
+    /// route caches. Default off. Native GotoPlan already gates CanSee;
+    /// this also refreshes its cached route when discovery changes.</summary>
+    public bool SeenWarpRouting { get; set; }
+
     /// <summary>P660: keep connected players seated and start the next match after
     /// an intermission. Enabled by default for this dedicated server. Disable to
     /// retain the ready-up flow. Legacy GameConfig.AutoRestart remains independent.</summary>

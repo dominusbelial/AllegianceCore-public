@@ -794,33 +794,26 @@ public sealed partial class Sector : IClusterIgc
     /// find a shortest path by hop count; the only loss is native's tie-break
     /// that prefers the nearer warp among equal-hop alternatives. Documented,
     /// accepted simplification.</para>
-    /// <para><b>No <c>bCowardly</c>/friendly-territory filter.</b> Native's
-    /// cowardly mode (common.cpp:924-926, 991-993) prunes warps that neither
-    /// lead toward the target nor into a friendly cluster
-    /// (<c>IsFriendlyCluster</c>). Investigated directly this session: this
-    /// port's sector model has no ownership/territory notion to filter on — no
-    /// <c>Sector.SideId</c> or analogous field exists (a sector is a neutral
-    /// <c>OT_cluster</c>; its <see cref="Id"/> is a layout id, not an owner) —
-    /// so all warps are traversed unconditionally, the non-cowardly native
-    /// behavior, stated as the applied default.</para>
-    /// <para><b>No visibility gate.</b> Native also skips warps the ship
-    /// cannot <c>CanSee</c> (common.cpp:920, 987). An autonomous NPC pathfinder
-    /// in this pure-sim port navigates the full static graph regardless of
-    /// scan-state; combined with the cowardly filter dropping above, this is
-    /// the unconditional-traversal simplification.</para>
+    /// <para><b>No <c>bCowardly</c>/friendly-territory filter.</b> This helper
+    /// retains its existing unfiltered BFS policy. The separate native GotoPlan
+    /// planner applies common.cpp:924-926,991-993's friendly-territory filter;
+    /// P923 does not change either planner's ordering or cowardly policy.</para>
+    /// <para>P923: with a ship and Mission.SeenWarpRoutingEnabled, admit only
+    /// warps that ship CanSee (common.cpp:920,987; shipIGC.h:341-389). Without
+    /// the opt-in, preserve full-graph traversal and existing BFS ordering.</para>
     /// <para><b>Cost / re-evaluation.</b> Each sector is visited at most once
     /// (<see cref="HashSet{T}"/> by reference identity) and each warp examined
     /// at most twice (once from each endpoint sector), so the search is O(E)
     /// and trivially cheap on the small per-sector warp lists of the real
-    /// corpus. The autopilot re-resolves its goal every tick, so no caching is
-    /// built here — a ship that warps mid-journey simply re-paths from its new
-    /// sector on the next tick (P157 scope), which this method supports for
-    /// free.</para>
+    /// corpus. The caller caches the result (P324); discovery invalidates that
+    /// cache under the P923 opt-in without rerunning BFS every tick.</para>
     /// </remarks>
-    public ResolvedWarp? FindPathToward(Sector targetSector)
+    public ResolvedWarp? FindPathToward(Sector targetSector, Ship? ship = null)
     {
         ArgumentNullException.ThrowIfNull(targetSector);
         if (ReferenceEquals(this, targetSector)) return null;      // already there (common.cpp:904-905)
+        bool seenOnly = ship?.Mission?.SeenWarpRoutingEnabled == true;
+        if (seenOnly) ship!.PrepareWarpNavigationSight();
 
         // Frontier of (warp, firstWarpOnPath). Seeded with every warp of THIS
         // sector, each carrying itself as the first warp of its own path; when
@@ -831,7 +824,7 @@ public sealed partial class Sector : IClusterIgc
         var visited = new HashSet<Sector> { this };
         var frontier = new Queue<(ResolvedWarp warp, ResolvedWarp first)>();
         foreach (var w in Warps)
-            if (w.Destination is { } seedDest && visited.Add(seedDest))
+            if (w.Destination is { } seedDest && (!seenOnly || ship!.CanSeeNavigationWarp(w)) && visited.Add(seedDest))
                 frontier.Enqueue((w, w));
 
         while (frontier.TryDequeue(out var cur))
@@ -839,7 +832,7 @@ public sealed partial class Sector : IClusterIgc
             if (cur.warp.Destination is not { } dest) continue;          // dangling edge: never transit (Sector.cs:1668)
             if (ReferenceEquals(dest, targetSector)) return cur.first;   // found a path (common.cpp:972-977)
             foreach (var w in dest.Warps)
-                if (w.Destination is { } d2 && visited.Add(d2))
+                if (w.Destination is { } d2 && (!seenOnly || ship!.CanSeeNavigationWarp(w)) && visited.Add(d2))
                     frontier.Enqueue((w, cur.first));
         }
         return null;                                                     // unreachable (common.cpp:966-968)

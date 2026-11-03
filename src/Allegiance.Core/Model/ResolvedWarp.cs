@@ -39,6 +39,7 @@ public sealed class ResolvedWarp : IWarpIgc, IModelIgc, ISideVisible
     {
         Warp = warp;
         Destination = destination;
+        SideVisibility = new(side => ThingSiteMission?.RecordWarpDiscovery(side)) { Predictable = true };
     }
 
     /// <summary>
@@ -53,7 +54,7 @@ public sealed class ResolvedWarp : IWarpIgc, IModelIgc, ISideVisible
     /// Written by <see cref="Sector.ResolveCrossSideVisibility"/>; read by the
     /// join export (<c>fsmission.cpp:4175-4186</c>) and the discovery sweep.
     /// </summary>
-    public SideVisibilityState SideVisibility { get; } = new() { Predictable = true };
+    public SideVisibilityState SideVisibility { get; }
 
     /// <summary>Whether <paramref name="sideId"/> has seen this aleph — the port of
     /// <c>ImodelIGC::SeenBySide</c> (<c>Igc/modelIGC.h:110-114</c>).</summary>

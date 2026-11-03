@@ -63,8 +63,13 @@ public sealed partial class Ship
             // Native PreplotShipMove's ripcord intent remains ahead of travel.
             // The descriptor is constant: no interpolation/allocation each tick.
             if (TryRipcordOrDefer(target.Cluster, now, "native goto")) return true;
-            if (replan || _nativeWaypoints.WarpId < 0)
+            long viewVersion = WarpNavigationViewVersion();
+            bool seenRouting = Mission!.SeenWarpRoutingEnabled;
+            if (replan || (seenRouting ? _nativeWarpNavViewVersion != viewVersion : _nativeWaypoints.WarpId < 0))
+            {
                 _nativeWaypoints.SetWarp(FindNativeWarp(target.Cluster));
+                _nativeWarpNavViewVersion = viewVersion;
+            }
             ResolvedWarp? warp = null;
             for (int i = 0; i < sector.Warps.Count; i++)
                 if (sector.Warps[i].Warp.WarpId == _nativeWaypoints.WarpId) { warp = sector.Warps[i]; break; }

@@ -5501,3 +5501,59 @@ CI fast tier failed on a real-socket UDP case in 3 of 4 runs today: `Logon_Hands
 (30 s timeout, `3ef860cd`) and `ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)` (`456c071b`). The class passes 7/7 locally.
 The class now carries `Lane=LiveTiming`: it runs serially in the P647 quarantine lane with one isolated retry instead of blocking the fast gate.
 Cause not established; same CI-only pattern as the earlier entry at the top of this file.
+
+## P923 validation — one Fast sweep, 2026-11-03
+
+The single Fast invocation recorded **12,998 passed, 13 failed, three skipped**
+(optional private Meshy-pack cases), plus six timing offenders against a calibrated
+10.1698 s limit. P923's 20 new cases and the 63-case affected cohort passed three
+filtered repetitions with no skips. No full-tier rerun was made.
+
+Eleven failures came from the invocation's inherited rig-baseline environment
+forcing settings over tests that explicitly pin older behavior. Removing the
+parallel-build, transport-mode, ship-update-model and native-GotoPlan overrides
+for those filtered tests gives **3/3 passes per case**. Defaults and each test's
+explicit config then apply. These are environment conflicts, not load flakes;
+no production setting or test assertion was changed:
+
+- `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot`
+  (serial/thread-per-peer config).
+- `Transport.TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer`
+  and `Boot_line_prints_the_active_transport_mode`.
+- Both `TeammatePositionBroadcastTests` cases (port SINGLE_SHIP_UPDATE stream).
+- All three `ShipUpdateBudgetLiveTests` cases (port folded four-entry budget).
+- Both `OwnShipCoalesceKeyTests` cases (port position batch).
+- `LiveTurretGunnerBindingTests.Board_binds_gunner_and_active_turret_update_roundtrips_live`
+  (port orientation position batch).
+
+| Other sweep failure | Three filtered repetitions | Qualification |
+|---|---|---|
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | pass / pass / fail; all other delay cases pass each time | Same previously ledgered one-ULP deadline (`7.0000000000000009 > 7`). The unchanged dispatch-base sources pass all delay cases in three separate runs. Boundary remains intermittent; not claimed cleared. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail at line 179, expected AttackTarget but null | **Dispatch-base reproduction: fail / fail / fail at the same assertion**, using isolated HEAD Core/Server sources (`21747c7b`). Confirmed pre-existing behavior, not classified as a load flake. |
+
+The five functionally passing sweep timing offenders were also repeated three
+times in filtered processes with baseline settings. The sixth timing offender,
+`TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once`,
+was the environment-conflict failure above and passes all three corrected-env
+isolations.
+
+| Timing case | Sweep seconds | Isolation seconds (all assertions pass) |
+|---|---:|---|
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | 11.692 | 4.228 / 4.285 / 4.278 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 13.626 | 4.729 / 4.473 / 4.137 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 16.099 | 4.259 / 4.052 / 3.711 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 16.274 | 4.558 / 4.367 / 4.065 |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 11.039 | 10.194 / 10.253 / 10.267 |
+
+The first four are sweep-only timing overruns in these invocations. P777 remains
+slightly above this sweep's calibrated limit even in isolation; its existing
+borderline timing/tier issue remains open. No tier, limit, timer, turret, budget
+or wingman logic was changed. The forced-baseline sweep qualification is
+preserved rather than presented as a green Fast gate. Host load sampled during
+verification ranged from about 5.9 to 10.3 (one/five-minute averages), without
+synthetic load.
+
+See [P923 report](reports/P923_REPORT.md) and
+[verification receipt](reports/P923_assets/verification.json). Raw Fast and
+three-run isolation TRX/logs remain in `.scratch/p923/` in the task worktree;
+the base-source reproduction is under `.scratch/p923/base-failure/`.

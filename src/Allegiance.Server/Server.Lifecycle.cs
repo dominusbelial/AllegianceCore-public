@@ -1427,6 +1427,8 @@ public sealed partial class Server
         mission.NativeCollisionQueueEnabled = _config.Sim.NativeCollisionQueue;
         Console.WriteLine($"[boot] sim.nativeShipPhases={mission.NativeShipPhasesEnabled} sim.nativeCollisionQueue={mission.NativeCollisionQueueEnabled} (P906 experimental; default off)");
         mission.NativeGotoPlanEnabled = _config.Sim.ResolveNativeGotoPlan();
+        mission.SeenWarpRoutingEnabled = _config.LiveSettings?.SeenWarpRouting == true;
+        Console.WriteLine($"[boot] liveSettings.seenWarpRouting = {mission.SeenWarpRoutingEnabled.ToString().ToLowerInvariant()} (P923; default off)");
         Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (native NPC travel; false = legacy port steering)");
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;

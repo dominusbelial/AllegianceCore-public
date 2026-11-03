@@ -39,6 +39,15 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>P817 experimental native NPC travel, default off. Player and MCP controls are excluded.</summary>
     public bool NativeGotoPlanEnabled { get; set; }
 
+    /// <summary>P923 opt-in discovery-aware legacy BFS and route-cache refresh.
+    /// Native CanSee: Igc/shipIGC.h:380-389; FindPath: Igc/common.cpp:920,987.</summary>
+    public bool SeenWarpRoutingEnabled { get; set; }
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<short, long> _warpDiscoveryRevisions = new();
+    internal void RecordWarpDiscovery(short side) =>
+        _warpDiscoveryRevisions.AddOrUpdate(side, 1, static (_, revision) => revision + 1);
+    internal long WarpDiscoveryRevision(short side) => _warpDiscoveryRevisions.GetValueOrDefault(side);
+
     /// <summary>P906 experimental all-ship phases (clusterIGC.cpp:170-253), default off.</summary>
     public bool NativeShipPhasesEnabled { get; set; }
 

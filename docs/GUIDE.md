@@ -316,6 +316,13 @@ Top-level fields: `artPath`, `staticCore`, `port`, `updatesPerSecond`,
 
 - `debugMode` — compact P379 test topology (fast travel, auto-launching NPCs,
   initial miners). Off by default.
+- `seenWarpRouting` — P923 discovery-aware server routing, **false by default**.
+  Set `"liveSettings": { "seenWarpRouting": true }` and restart the server.
+  Legacy NPC BFS admits only side-seen alephs or alephs in that ship's personal
+  scanner view; discovery refreshes cached routes and cached misses. Native
+  GotoPlan already checks visibility regardless of this flag; enabling it also
+  refreshes that planner's cache on discovery. No unknown-route fallback is
+  added. See [P923](reports/P923_REPORT.md) for no-route behavior and measurements.
 - `testHarness` — economy grant by character-name prefix (port extension).
   Off by default.
 - `testUnlock` — grant all required-tech + money (port extension). Off by

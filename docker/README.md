@@ -1,5 +1,12 @@
 # docker/ — deploy configs
 
+P923's experimental `liveSettings.seenWarpRouting` is explicitly `false` in
+`compose.server.json`. Set it to `true` in the mounted server JSON and restart
+the server to gate legacy NPC BFS by ship visibility and refresh NPC route
+caches on discovery. Native GotoPlan already gates visibility with it off.
+No environment variable or additional service is required. See
+[the routing report](../docs/reports/P923_REPORT.md).
+
 For an encrypted native static core, set `"staticCoreEncrypted": true` next to
 `"staticCore"` in the server JSON. It defaults to false: a file named
 `zone_core.igc` may already be decrypted. This selects native's cumulative DWORD

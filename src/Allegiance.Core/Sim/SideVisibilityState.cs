@@ -52,6 +52,10 @@ public interface ISideVisible
 /// </remarks>
 public sealed class SideVisibilityState
 {
+    private readonly Action<short>? _onDiscovery;
+
+    public SideVisibilityState() { }
+    internal SideVisibilityState(Action<short> onDiscovery) => _onDiscovery = onDiscovery;
     private readonly Dictionary<short, bool> _visible = [];
     private readonly Dictionary<short, bool> _currentEye = [];
     private readonly HashSet<short> _revealedPredictable = [];
@@ -116,7 +120,12 @@ public sealed class SideVisibilityState
     /// the forced true (the latch above), so the partner stays known exactly as
     /// natively.
     /// </summary>
-    public void RevealToSide(short sideId) => _visible[sideId] = true;
+    public void RevealToSide(short sideId)
+    {
+        bool discovered = _onDiscovery is not null && !SeenBySide(sideId);
+        _visible[sideId] = true;
+        if (discovered) _onDiscovery!(sideId);
+    }
 
     // Probe firing explicitly reveals a predictable static object. Native
     // FedSrv/FedSrv.CPP:11120-11126 retains its known position after scanners
@@ -158,11 +167,13 @@ public sealed class SideVisibilityState
     /// </summary>
     public void SetSideVisibility(short sideId, bool visible)
     {
+        bool discovered = visible && _onDiscovery is not null && !SeenBySide(sideId);
         // The predictable latch (native FedSrv.CPP:11124-11126): a static object
         // that was ever seen stays visible to that side; only the current-eye
         // flag drops. Non-predictable models (ships) keep the plain assignment.
         _visible[sideId] = visible || _revealedPredictable.Contains(sideId)
             || (Predictable && SeenBySide(sideId));
         _currentEye[sideId] = visible;
+        if (discovered) _onDiscovery!(sideId);
     }
 }
