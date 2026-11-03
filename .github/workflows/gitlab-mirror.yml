@@ -1,0 +1,31 @@
+name: gitlab-mirror
+# Backup copy of this repository on GitLab: every branch and tag push here is
+# mirrored there. Inert until the repository variable GITLAB_REPO (e.g.
+# "group/project") and the secret GITLAB_TOKEN (a GitLab project access token
+# with write_repository) are set. Release downloads are not mirrored.
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  delete:
+  workflow_dispatch:
+concurrency:
+  group: gitlab-mirror
+  cancel-in-progress: false
+jobs:
+  mirror:
+    if: github.repository == 'dominusbelial/AllegianceCore-public' && vars.GITLAB_REPO != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push all branches and tags to GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_REPO: ${{ vars.GITLAB_REPO }}
+        run: |
+          git fetch --tags --force origin '+refs/heads/*:refs/remotes/origin/*'
+          git push --prune "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git" \
+            '+refs/remotes/origin/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>&1 | sed "s/${GITLAB_TOKEN}/***/g"
+          exit "${PIPESTATUS[0]}"
