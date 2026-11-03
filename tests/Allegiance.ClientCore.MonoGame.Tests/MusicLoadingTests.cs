@@ -10,7 +10,10 @@ public class MusicLoadingTests
     public void Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks()
     {
         using var content = new MissingMusicContent();
-        using var music = new Music(content);
+        // A device that always initialises: this test is about missing beds, and
+        // the host's real audio engine (absent or already torn down on CI and the
+        // runner) made Load return before requesting anything.
+        using var music = new Music(content, new AudioDevice(initialize: () => { }));
         music.Load();
         Assert.Equal(new[] { Music.FlightAsset, Music.StationAsset }, content.Requested);
         music.Toggle();
