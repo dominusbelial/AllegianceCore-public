@@ -72,7 +72,11 @@ public sealed class TrainingSession
         site.AttachClientHooks(mission);
     }
 
-    public void DetachClientHooks() => _site.DetachClientHooks();
+    public void DetachClientHooks()
+    {
+        _mission.ReleaseRespawnActions();
+        _site.DetachClientHooks();
+    }
 
     public TrainingMission Mission => _mission;
     public ClientTrainingSite Site => _site;

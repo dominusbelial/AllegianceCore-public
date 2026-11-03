@@ -138,8 +138,8 @@ public sealed class P911TrainingArenaTests : IDisposable
         for (int i = 0; i < 60; i++) { host.StepLight(); registry.Frame(); }
         var spawned = host.Drones[7201]; Assert.Equal(315, spawned.HullType.HullId);
         Assert.NotEmpty(spawned.Weapons); Assert.Contains(spawned.Parts, p => p.PartId == 71);
-        Assert.Equal(2, host.BuoyConsumerCount(7200)); // recipe hold + accepted slot
-        registry.RemoveRespawn(7201); Assert.Equal(1, host.BuoyConsumerCount(7200));
+        Assert.Equal(4, host.BuoyConsumerCount(7200)); // recipe + accepted/current/plan (shipIGC.h:766-773)
+        registry.RemoveRespawn(7201); Assert.Equal(3, host.BuoyConsumerCount(7200));
         host.DestroyDrone(7201);
         for (int i = 0; i < 60; i++) { host.StepLight(); registry.Frame(); }
         Assert.False(host.TrainingShipExists(7201));

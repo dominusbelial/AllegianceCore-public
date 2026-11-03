@@ -2389,6 +2389,10 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ? Math.Max(0, live.Wallet.Money) : 0;
             live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068
         }
+        // Native quitter Reset(false) clears all command slots before SetSide
+        // (FedSrv/fsmission.cpp:1139-1143; Igc/shipIGC.h:503-506).
+        // The helper is inert for ordinary multiplayer missions.
+        ship.RetireTrainingCommands();
         ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
         // P864d — a peer still on the side-select screen reads the SIDE_ROSTER

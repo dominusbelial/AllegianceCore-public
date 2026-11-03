@@ -22,7 +22,7 @@ public sealed class P909TrainingBindingsTests : IDisposable
     public P909TrainingBindingsTests() => TrainingClock.ResetForTests();
     public void Dispose() { TrainingClock.ResetForTests(); TrainingController.EndMission(); }
 
-    private sealed class Client : IDisposable
+    internal sealed class Client : IDisposable
     {
         public readonly TrainingHost Host;
         public readonly ConnectionSession Connection = new();
@@ -41,7 +41,7 @@ public sealed class P909TrainingBindingsTests : IDisposable
                 BindingFlags.NonPublic | BindingFlags.Instance)!.CreateDelegate<Func<short, DataPartTypeIGC?>>(Game);
             var state = typeof(Game1).GetField("_state", BindingFlags.NonPublic | BindingFlags.Instance)!;
             state.SetValue(Game, Enum.Parse(state.FieldType, "Flying"));
-            Site = new(Game.CreateTrainingFacilities(6));
+            Site = new(Game.CreateTrainingFacilities(variant == TrainingHost.BasicFlight ? 2 : 6));
             Set(Game, "_trainingSession", new TrainingSession(Site, new ProbeMission(Site)));
             Host.StartBackgroundTicker();
             Connection.Connect(Host.Port, "p909");

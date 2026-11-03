@@ -910,6 +910,24 @@ list in **reverse**.
   `src/Allegiance.ClientCore/Training/AdditionalPrimitives.cs`.
   Both-style loopback tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P909TrainingBindingsTests.cs`.
   Exact remaining gaps and the native caller audit: `docs/reports/P909_REPORT.md`.
+- **Training command ownership and saved loadouts (P918)** — all four training
+  command slots acquire/release native buoy consumers and rebuild typed execution
+  goals while preserving the other slots in
+  `src/Allegiance.Core/Sim/Ship.CommandSlots.cs`; `src/Allegiance.Core/Sim/Buoy.cs`
+  owns the visible flag, 20/2 radii and last-consumer retirement. Death,
+  replacement, NPC cluster completion, trainee arrived-cluster orders,
+  side-quit Reset and mission exit share this path. Legacy training arrival
+  also calls the ship's shared completion API. Ordinary server command chat
+  also finalizes through it (`src/Allegiance.Server/Server.ShipCommands.cs`). Ordinary multiplayer retains its existing lazy Goto ownership.
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Loadouts.cs` caches native
+  base-hull loadouts for local carrier resupply; cargo mounts come from hold
+  indices. Both HUDs draw the same native decal through
+  `src/Allegiance.ClientCore.Game/Game1.TrainingRendering.cs`.
+  Native: `Igc/shipIGC.h:731-782`, `Igc/buoyigc.h:67-88`,
+  `clintlib/clintlib.h:1437-1477,1640-1724`. Proof:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P918TrainingOrderTests.cs`,
+  `tests/Allegiance.Core.Tests/P918CommandSlotsTests.cs`,
+  `tools/p918-training-proof/`; report: `docs/reports/P918_REPORT.md`.
 - **Arena order policy and combat waves (P911)** — shared native Practice Arena /
   Free Flight targeting, assistance, pursuit and hidden patrol buoys in
   `src/Allegiance.SinglePlayer/Training/TrainingHost.Arena.cs`, reached through

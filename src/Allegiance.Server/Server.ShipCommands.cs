@@ -1720,6 +1720,12 @@ public sealed partial class Server
             return;
         }
 
+        // The legacy helpers above configure movement/build details; training
+        // still writes the native accepted slot (which cascades current/plan).
+        // FedSrv/FedSrv.CPP:3281-3283; Igc/shipIGC.h:766-773.
+        if (drone.Mission?.IsTraining == true)
+            drone.SetCommand(OrderChange.CmdAccepted, model, cid);
+
         RecordCommanderOrder(sender, cid);
         drone.ResetRunawayForNewOrder(); // SetCommand resets even an identical order (shipIGC.h:725-764)
 
@@ -2411,6 +2417,12 @@ public sealed partial class Server
     /// </summary>
     private static void ApplyCommandSlot(Ship target, short commandSlot, DataStationIGC station, short commandId)
     {
+        if (target.Mission is { IsTraining: true } training)
+        {
+            var sector = training.Sectors.First(s => s.Id == station.ClusterId);
+            target.SetCommand(commandSlot, EquipmentTarget.Resolve(sector, IgcObjectType.Station, station.StationId), commandId);
+            return;
+        }
         switch (commandSlot)
         {
             case OrderChange.CmdAccepted:

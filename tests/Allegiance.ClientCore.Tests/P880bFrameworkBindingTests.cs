@@ -151,6 +151,8 @@ public sealed class P880bFrameworkBindingTests
         using var host = TrainingHost.Start();
         var site = new TrainingHostSite(host);
         host.CreateWaypoint(11, new Vector3(0f, 0f, 50f), 1010, 0, true);
+        host.AddBuoyConsumer(11); // buoyigc.h:76-88: release requires an actual consumer
+        Assert.Equal(1, host.BuoyConsumerCount(11));
         Assert.NotNull(site.Resolve(new TargetRef(ObjectType.Buoy, 11)));
         new ReleaseConsumerAction(site, 11).Execute();
         Assert.Null(site.Resolve(new TargetRef(ObjectType.Buoy, 11)));

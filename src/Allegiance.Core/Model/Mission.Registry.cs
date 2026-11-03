@@ -207,6 +207,7 @@ public sealed partial class Mission
     public void AddShip(Ship value) { AttachThingSite(value); _shipRegistry.Add(value); }
     public void DeleteShip(Ship value)
     {
+        if (IsTraining && _shipRegistry.Contains(value)) value.RetireTrainingCommands();
         _shipRegistry.Delete(value);
     }
     public Ship? GetShip(short id) => _shipRegistry.Get(id);

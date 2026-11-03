@@ -702,7 +702,17 @@ public sealed partial class Ship : Model, IShipIgc
     public void SetShieldFraction(float value) => _shieldFraction = value;
 
     /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement. The warp-transit slice reassigns this (<c>cfsship.cpp::SetCluster</c> route) so a ship that crosses an aleph genuinely changes sector.</summary>
-    public Sector? Sector { get; set; }
+    private Sector? _sector;
+    public Sector? Sector
+    {
+        get => _sector;
+        set
+        {
+            if (ReferenceEquals(_sector, value)) return;
+            _sector = value;
+            ArriveTrainingSector(value);
+        }
+    }
 
     /// <summary>
     /// P762b — native <c>CmodelIGC::GetRadius()</c> for a ship: the hit-test
@@ -988,7 +998,17 @@ public sealed partial class Ship : Model, IShipIgc
     /// (weapons/projectiles/receive-damage) reads it to reach the mission's
     /// static core and host site.
     /// </summary>
-    public Mission? Mission { get; set; }
+    private Mission? _mission;
+    public Mission? Mission
+    {
+        get => _mission;
+        set
+        {
+            if (ReferenceEquals(_mission, value)) return;
+            ClearTrainingCommands();
+            _mission = value;
+        }
+    }
 
     /// <summary>
     /// The side this ship belongs to, if any — the analogue of the C++
@@ -1421,7 +1441,19 @@ public sealed partial class Ship : Model, IShipIgc
     /// (see <see cref="ApplyNpcAutopilot"/>). NPC autopilot is implicit in
     /// their goal slots and does not read this flag.
     /// </summary>
-    public bool Autopilot { get; set; }
+    private bool _autopilot;
+    public bool Autopilot
+    {
+        get => _autopilot;
+        set
+        {
+            _autopilot = value;
+            // Igc/shipIGC.cpp:3974-3981. This is a plan-slot replacement,
+            // including repeated calls with the same autopilot value.
+            if (Mission?.IsTraining == true)
+                SetCommand(OrderChange.CmdPlan, value ? CommandTarget : null, value ? CurrentCommandId : OrderChange.CidNone);
+        }
+    }
 
     /// <summary>
     /// P751 — the server-side throttle stamp for ship under-attack / friendly-
@@ -1664,13 +1696,14 @@ public sealed partial class Ship : Model, IShipIgc
         get => _commandTarget;
         set
         {
+            if (_updatingTrainingPlan) return;
             // Native shipIGC.h:743-746 clears magazine lock on target change.
             bool changed = !SameCommandTarget(_commandTarget, value);
             if (changed)
                 MissileLock = 0f;
             if (value is not null && changed)
                 Mission?.Skills?.Record(SideId, ShowcaseSkill.Targeting);
-            _commandTarget = value;
+            ReplaceCommandTarget(ref _commandTarget, value, OrderChange.CmdCurrent);
         }
     }
 
@@ -1718,14 +1751,44 @@ public sealed partial class Ship : Model, IShipIgc
             var oldCid = AcceptedShipCommandId;
             AcceptedShipTarget = target;
             AcceptedShipCommandId = cid;
+            if (Mission?.IsTraining == true)
+            {
+                _acceptedTarget = null;
+                AcceptedCommandId = cid;
+            }
             // P761c — keep the wire triple native's SetCommand receives. A Model
             // target's type comes from EquipmentTarget.TypeOf (a Ship, a Probe or
             // an EquipmentTarget wrapping a station/asteroid/warp); null clears
             // it, exactly like OT_invalid + NA.
             AcceptedShipWireType = EquipmentTarget.TypeOf(target);
             AcceptedShipWireId = target?.Id ?? -1;
+            // Native accepted autopilot commands cascade only for NPC pilots.
+            // Igc/shipIGC.h:766-773. Keep multiplayer's existing typed plans.
+            if (Mission?.IsTraining == true && Autopilot && PilotType < PilotTypePlayer)
+            {
+                SetCommand(OrderChange.CmdCurrent, target, cid);
+                SetCommand(OrderChange.CmdPlan, target, cid);
+            }
             if (oldCid != cid || !SameCommandTarget(oldTarget, target))
                 Mission?.Site.CommandChangedEvent(command, this, target, cid);
+        }
+        else if (Mission?.IsTraining == true && command == OrderChange.CmdQueued)
+        {
+            QueuedShipTarget = target;
+            _queuedTarget = null;
+            QueuedCommandId = cid;
+            QueuedShipWireType = EquipmentTarget.TypeOf(target);
+            QueuedShipWireId = target?.Id ?? -1;
+        }
+        else if (Mission?.IsTraining == true && command == OrderChange.CmdPlan)
+        {
+            PlanCommandTarget = target;
+            _planTarget = target is EquipmentTarget { Body: Station station } ? station.Data : null;
+            _planCommandId = cid;
+            ResetTrainingExecutionPlan(target, cid);
+            // Native resets the order/retreat latches on EVERY plan write,
+            // even an identical target/cid (Igc/shipIGC.h:749-763).
+            DronePlanChanged();
         }
     }
 
@@ -1764,7 +1827,16 @@ public sealed partial class Ship : Model, IShipIgc
     /// producer in this branch is <see cref="FindNearestFriendlyStation"/>.
     /// <c>null</c> = slot unset (native's <c>NULL</c> target).
     /// </summary>
-    public DataStationIGC? AcceptedTarget { get; set; }
+    private DataStationIGC? _acceptedTarget;
+    public DataStationIGC? AcceptedTarget
+    {
+        get => _acceptedTarget;
+        set
+        {
+            if (Mission?.IsTraining == true) AcceptedShipTarget = null;
+            _acceptedTarget = value;
+        }
+    }
 
     /// <summary>The command id paired with <see cref="AcceptedTarget"/>
     /// (<c>m_commandIDs[c_cmdAccepted]</c>). Defaults to <see cref="OrderChange.CidNone"/>
@@ -1791,7 +1863,11 @@ public sealed partial class Ship : Model, IShipIgc
     /// (WinTrek.cpp:8884-8895) and out of scope — only the state storage is
     /// modeled here.
     /// </summary>
-    public Model? AcceptedShipTarget { get; set; }
+    public Model? AcceptedShipTarget
+    {
+        get => _acceptedShipTarget;
+        set => ReplaceCommandTarget(ref _acceptedShipTarget, value, OrderChange.CmdAccepted);
+    }
 
     /// <summary>The command id paired with <see cref="AcceptedShipTarget"/>
     /// (<c>m_commandIDs[c_cmdAccepted]</c> for the real-player case, written by
@@ -1824,7 +1900,16 @@ public sealed partial class Ship : Model, IShipIgc
     /// <c>PickDefaultOrder</c> task will. Same <see cref="DataStationIGC"/>
     /// typing rationale as <see cref="AcceptedTarget"/>.
     /// </summary>
-    public DataStationIGC? QueuedTarget { get; set; }
+    private DataStationIGC? _queuedTarget;
+    public DataStationIGC? QueuedTarget
+    {
+        get => _queuedTarget;
+        set
+        {
+            if (Mission?.IsTraining == true) QueuedShipTarget = null;
+            _queuedTarget = value;
+        }
+    }
 
     /// <summary>The command id paired with <see cref="QueuedTarget"/>
     /// (<c>m_commandIDs[c_cmdQueued]</c>). Defaults to <see cref="OrderChange.CidNone"/>.</summary>
@@ -1844,7 +1929,11 @@ public sealed partial class Ship : Model, IShipIgc
     /// hold different target kinds for different consumers. Defaults to null
     /// (an order need not carry a target — promotion then sets
     /// <see cref="AcceptedShipCommandId"/> with a null accepted target).</summary>
-    public Model? QueuedShipTarget { get; set; }
+    public Model? QueuedShipTarget
+    {
+        get => _queuedShipTarget;
+        set => ReplaceCommandTarget(ref _queuedShipTarget, value, OrderChange.CmdQueued);
+    }
 
     /// <summary>P761c — the queued order's ORIGINAL wire target type/ID
     /// (<code>pfmOC->objectType/objectID</code>), stored beside
@@ -1893,6 +1982,7 @@ public sealed partial class Ship : Model, IShipIgc
         get => _planTarget;
         set
         {
+            if (Mission?.IsTraining == true) PlanCommandTarget = null;
             if (EqualityComparer<DataStationIGC?>.Default.Equals(_planTarget, value)) return;
             _planTarget = value;
             if (value is not null && !_changingRetreatPlan) ForgetAcceptedWingmanAttack();
@@ -1951,12 +2041,18 @@ public sealed partial class Ship : Model, IShipIgc
         get => _gotoWaypoint;
         set
         {
+            if (Mission is { IsTraining: true } training)
+            {
+                var target = value is { TargetType: { } type, TargetId: { } id } ? training.GetModel(type, id) : null;
+                PlanCommandTarget = target as Model;
+            }
             if (EqualityComparer<GotoOrder?>.Default.Equals(_gotoWaypoint, value)) return;
             // Native command target ownership: shipIGC.h:736,782;
             // last buoy consumer retires the mission registry entry (buoyigc.h:76-88).
             ReleaseGotoBuoy();
             _gotoWaypoint = value;
-            if (value is { TargetStationId: null, TargetType: null or IgcObjectType.Buoy } && Mission is { } mission)
+            if (value is { TargetStationId: null, TargetType: null or IgcObjectType.Buoy } && Mission is { } mission
+                && !(mission.IsTraining && value.Value.TargetType == IgcObjectType.Buoy && value.Value.TargetId is { } buoyId && mission.GetBuoy(buoyId) is not null))
             {
                 _gotoBuoyId = mission.GenerateNewBuoyID();
                 _gotoBuoyMission = mission;
@@ -5944,6 +6040,8 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     public void SetGoto(GotoOrder? order)
     {
+        if (order is null && !_updatingTrainingPlan && Mission?.IsTraining == true)
+            SetCommand(OrderChange.CmdPlan, null, OrderChange.CidNone);
         if (order is { } g)
         {
             if (StationId is not null)
@@ -8142,7 +8240,7 @@ public sealed partial class Ship : Model, IShipIgc
 
     private void DronePlanChanged()
     {
-        if (_changingRetreatPlan || !IsNpc) return;
+        if (_updatingTrainingPlan || _changingRetreatPlan || !IsNpc) return;
         _wingmanCheckCooldown = 0;
         _targetFirstNotSeen = null;
         _fractionLastOrder = Fraction;

@@ -1404,7 +1404,10 @@ public sealed partial class Server
         //    the shared core (SIM-0663); a player lander passes its LiveShip so
         //    the desired-loadout re-buy leg runs (native's IsPlayer gate), an NPC
         //    lander gets the RefillPart walk only.
-        RefillAndRestock(lander, LiveOf(lander));
+        if (LocalTraining && TrainingCarrierLoadout is { } restoreTraining)
+            restoreTraining(lander); // WinTrek/trekigc.cpp:4174-4189
+        else
+            RefillAndRestock(lander, LiveOf(lander));
 
         // 2) The carrier's real launch slots, resolved through the sector's
         //    landing-bay cache (the same production cache ResolveCarrierLandings
