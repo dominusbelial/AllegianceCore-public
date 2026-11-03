@@ -276,14 +276,10 @@ jobs:
           pattern: player-*
           path: dist
           merge-multiple: true
-      # P810 — the auto-update feeds, downloaded UNMERGED (each feed has its
-      # own latest.json) and attached whole: the release then IS a flat-asset
-      # feed root per RID (latest.json + manifest + every application file,
-      # names prefixed feed-<rid>-).
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: feed-*
-          path: dist/feeds
+      # P810 auto-update feeds are built by the feed job but NOT attached: each
+      # RID is ~4,700 files, over GitHub's 1,000-asset limit per release, and
+      # with no RELEASE_UPDATE_SIGNING_KEY_PEM secret they are unsigned, which
+      # every verifier refuses. They need their own hosting before they ship.
       - name: Verify and combine checksums
         working-directory: dist
         run: |
@@ -298,4 +294,3 @@ jobs:
           --notes-file packaging/RELEASE-NOTES.md
           dist/Allegiance-*.tar.gz dist/Allegiance-*.zip dist/Allegiance-*.AppImage dist/Allegiance-*-setup.exe
           dist/SHA256SUMS.txt dist/Allegiance-*.json
-          dist/feeds/feed-*/latest.json dist/feeds/feed-*/manifest-*.json dist/feeds/feed-*/feed-*-__*
