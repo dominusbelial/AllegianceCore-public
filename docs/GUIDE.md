@@ -145,8 +145,9 @@ native views (cockpit → chase → …). Smooth camera transitions ease
 eye/target/FOV over ~0.7 s on any framing change instead of cutting
 (`ALLEGIANCE_INSTANT_CAMERA=1` restores the native cut).
 
-### Run the Android head
+### Run the Android head (experimental)
 
+**Experimental and not complete**: there is no Android release download yet.
 The Android head is **not** in `AllegianceCore.slnx` (so the DesktopGL build
 and test runner never need the Android toolchain). It requires the Android
 dotnet workload, a JDK and the Android SDK (see

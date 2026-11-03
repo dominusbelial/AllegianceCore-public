@@ -8,8 +8,9 @@ open source (MIT, July 2017). It reproduces the game's simulation, wire
 protocol and data formats in modern C#, with no Windows/DirectX/COM machinery
 to lean on.
 
-Today it ships a **playable MonoGame client** (Windows, Linux, macOS Apple
-silicon and Android), **offline single player** (Skirmish, the native training
+Today it ships a **playable MonoGame client** (Windows, Linux and macOS Apple
+silicon; an **experimental** Android build is not complete and has no release
+download), **offline single player** (Skirmish, the native training
 missions, spectating), a **dedicated TCP server**, a **lobby**, **autonomous
 bots** and an **MCP bot driver**. Everything is cross-checked against the
 445k-line native C++ source (`src/`), with wire messages byte-exact.
@@ -362,8 +363,8 @@ and left off are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 - **[Sky pack](https://github.com/dominusbelial/AllegianceCore-sky)** — optional HD sky art (star field,
   nebulae, deep-field galaxies, distant and giant sky objects; NASA/ESA/Hubble/Webb imagery,
   credited). Clone it and set `ALLEGIANCE_SKY_PACK_PATH` (see Quick start).
-- **[Full guide](docs/GUIDE.md)** — everything: art paths, Docker, the Android
-  head, client flags, testing, architecture, troubleshooting.
+- **[Full guide](docs/GUIDE.md)** — everything: art paths, Docker, the experimental
+  Android head, client flags, testing, architecture, troubleshooting.
 - **[Contributing](CONTRIBUTING.md)** — build/test steps, the native-reference
   rule, coding conventions, PR checklist.
 - **[Security](SECURITY.md)** — reporting and the server's known non-hardened
