@@ -1,6 +1,7 @@
 name: publish-guard
 on:
   push:
+    branches: ['**']   # a new tag has no "before" commit and would rescan all history; its commits were scanned on the branch push
   pull_request:
 jobs:
   guard:

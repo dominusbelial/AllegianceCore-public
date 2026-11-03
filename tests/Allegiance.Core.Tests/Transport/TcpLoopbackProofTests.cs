@@ -18,6 +18,7 @@ namespace Allegiance.Core.Tests.Transport;
 /// is dead. Runs the client and host in the SAME process (the two-process
 /// boundary is covered by <c>tools/loopback</c>).
 /// </summary>
+[Trait("Lane", "LiveTiming")]   // P647 quarantine: real-socket UDP cases time out under CI load (3 of 4 runs, 2026-11-03)
 public class TcpLoopbackProofTests
 {
     private static LogonRequest SampleRequest() => new()

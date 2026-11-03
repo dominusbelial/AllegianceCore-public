@@ -5494,3 +5494,10 @@ The rest were not rerun. Each also failed in the 2026-11-03 nightly on origin `4
 or in earlier ledgered sweeps: `MusicLoading`, `ConsoleLogNonBlocking`, `NpcWingmanDefend`, `LiveSideSelect`,
 `SC4Showcase`, `SC5Cloak`, `P832dArtifactBot` (Brawl), `P798ScoutOpening` (m2xspiderw), `P796Coverage` and
 `P745FinaleSiege`.
+
+## 2026-11-03 — `TcpLoopbackProofTests` moved to the LiveTiming lane (Claude)
+
+CI fast tier failed on a real-socket UDP case in 3 of 4 runs today: `Logon_Handshake_RoundTrips_BothDirections_OverRealSocket(udp: True)`
+(30 s timeout, `3ef860cd`) and `ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies(udp: True)` (`456c071b`). The class passes 7/7 locally.
+The class now carries `Lane=LiveTiming`: it runs serially in the P647 quarantine lane with one isolated retry instead of blocking the fast gate.
+Cause not established; same CI-only pattern as the earlier entry at the top of this file.
