@@ -1,8 +1,9 @@
 name: gitlab-mirror
-# Backup copy of this repository on GitLab: every branch and tag push here is
-# mirrored there. Inert until the repository variable GITLAB_REPO (e.g.
-# "group/project") and the secret GITLAB_TOKEN (a GitLab project access token
-# with write_repository) are set. Release downloads are not mirrored.
+# Off-site backup copy of this repository on GitLab: every branch and tag push
+# here is mirrored there over SSH with a write-enabled GitLab deploy key (free
+# plan, scoped to the one project). Inert until the repository variable
+# GITLAB_REPO (e.g. "group/project") and the secret GITLAB_DEPLOY_KEY (the
+# private half of that deploy key) are set. Release downloads are not mirrored.
 on:
   push:
     branches: ['**']
@@ -22,10 +23,14 @@ jobs:
           fetch-depth: 0
       - name: Push all branches and tags to GitLab
         env:
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_DEPLOY_KEY: ${{ secrets.GITLAB_DEPLOY_KEY }}
           GITLAB_REPO: ${{ vars.GITLAB_REPO }}
         run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$GITLAB_DEPLOY_KEY" > ~/.ssh/gitlab_mirror && chmod 600 ~/.ssh/gitlab_mirror
+          # Pinned gitlab.com host key (SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8, as GitLab publishes).
+          echo 'gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf' > ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/gitlab_mirror -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
           git fetch --tags --force origin '+refs/heads/*:refs/remotes/origin/*'
-          git push --prune "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git" \
-            '+refs/remotes/origin/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>&1 | sed "s/${GITLAB_TOKEN}/***/g"
-          exit "${PIPESTATUS[0]}"
+          git push --prune "git@gitlab.com:${GITLAB_REPO}.git" \
+            '+refs/remotes/origin/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
