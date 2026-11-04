@@ -5690,3 +5690,13 @@ These qualifications retain the original failed Fast gate. Raw sweep and
 filtered TRX/logs remain under `.scratch/p926/fast/` and
 `.scratch/p926/*-isolation-*` in the task worktree. Small counters and per-case
 outcomes: [P926 verification](reports/P926_assets/verification.json).
+
+## P925+P926 merge — swapped showcase arrival deadline, 2026-11-04
+
+On merged master (P925 + P926 on `0ebb5c76`),
+`P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds`
+failed "Most showcase ships must reach their objectives" in both runs of a 30-test
+focused cohort (8 min each), then went **2/3** in serial isolation (pass 2 m 46 s, pass
+6 m 14 s, fail 8 m 4 s). The P925-only worktree passed 1/1 (6 m 17 s). Same arrival-limit
+class as P817/P822/P841/P926 above; whether P926's per-generation scout reset makes the
+swapped layout slower to arrive is not established. Watch the b64 rig run's arrival times.
