@@ -17,7 +17,7 @@ internal static class ShowcaseFinale
         internal void Validate()
         {
             if (!double.IsFinite(AfterMinutes) || AfterMinutes < 0
-                || Side is not ("leader" or "0" or "1" or "both")
+                || (Side is not ("leader" or "both" or "all") && (!short.TryParse(Side, out short id) || id is < 0 or > 5))
                 || !double.IsFinite(MinRelaunchShare) || MinRelaunchShare < 0 || MinRelaunchShare > 1
                 || MinKillsLastFiveMinutes < 1 || Bombers < 1 || Bombers > 200
                 || !double.IsFinite(EscortShare) || EscortShare < 0 || EscortShare > 1
@@ -26,7 +26,7 @@ internal static class ShowcaseFinale
                 // P896 — 0 keeps the P801/AIX-comparable wave (bare kill + one
                 // spare); above 0 also carries expected run-in losses / defenders.
                 || !double.IsFinite(SurvivalMargin) || SurvivalMargin < 0 || SurvivalMargin > 2)
-                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0/1/both, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2)");
+                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0..5/both/all, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2)");
         }
         internal int EscortBudget(int fighters) => Math.Min(EscortCap, (int)Math.Floor(fighters * EscortShare));
     }
@@ -39,14 +39,14 @@ internal static class ShowcaseFinale
     internal static short[] TriggerSides(Settings settings, double elapsedSeconds,
         IReadOnlyList<Maturity> sides, int recentKills)
     {
-        if (!settings.Enabled || elapsedSeconds < settings.AfterMinutes * 60 || sides.Count != 2
+        if (!settings.Enabled || elapsedSeconds < settings.AfterMinutes * 60 || sides.Count < 2
             || sides.Any(s => s.CombatBots == 0 || s.RelaunchShare < settings.MinRelaunchShare)
             || recentKills < settings.MinKillsLastFiveMinutes) return [];
         return settings.Side switch
         {
-            "both" => sides.Select(s => s.Side).Order().ToArray(),
-            "0" => sides.Where(s => s.Side == 0).Select(s => s.Side).ToArray(),
-            "1" => sides.Where(s => s.Side == 1).Select(s => s.Side).ToArray(),
+            "all" => sides.Select(s => s.Side).Order().ToArray(),
+            "both" => sides.Count == 2 ? sides.Select(s => s.Side).Order().ToArray() : [],
+            var token when short.TryParse(token, out short id) => sides.Where(s => s.Side == id).Select(s => s.Side).ToArray(),
             _ => [sides.OrderByDescending(s => s.Kills).ThenBy(s => s.Side).First().Side],
         };
     }

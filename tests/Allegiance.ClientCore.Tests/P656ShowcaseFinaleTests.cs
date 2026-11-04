@@ -55,9 +55,10 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
         Assert.Equal(30, McpTools.ReadFinaleSettings(Parse("{}"), true).AfterMinutes);
         Assert.False(McpTools.ReadFinaleSettings(Parse("{}"), false).Enabled);
         Assert.Equal("1", McpTools.ReadFinaleSettings(Parse("{\"finale_side\":1}"), true).Side);
+        Assert.Equal("2", McpTools.ReadFinaleSettings(Parse("{\"finale_side\":2}"), true).Side);
         Assert.False(McpTools.ReadFinaleSettings(Parse("{\"finale_after_minutes\":0}"), true).Enabled);
         foreach (string json in new[] { "{\"finale_after_minutes\":-1}", "{\"finale_after_minutes\":\"30\"}",
-            "{\"finale_side\":2}", "{\"finale_bombers\":1.5}", "{\"finale_escort_leash\":100}" })
+            "{\"finale_side\":6}", "{\"finale_bombers\":1.5}", "{\"finale_escort_leash\":100}" })
             Assert.Throws<ArgumentException>(() => McpTools.ReadFinaleSettings(Parse(json), true));
     }
 

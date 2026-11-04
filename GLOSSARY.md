@@ -95,6 +95,14 @@ list in **reverse**.
   in `src/Allegiance.Core/MapGen/MissionMapGenerator.cs`; file-map resource
   defaults come from native Reset. Native: `Igc/missionigc.cpp:3977-4055`.
   Report: `docs/reports/P864c_REPORT.md`.
+- **N-side showcase fleets (P927, opt-in bot policy)** — `spawn_scenario.sides`
+  validates 2–6 actual mission sides in `tools/allegiance-mcp/ScenarioSideSpec.cs`;
+  `tools/allegiance-mcp/MultiSideEnemy.cs` ranks reachable living observed enemies
+  for waves, finale and aleph duties. Scout intel keeps all living threats;
+  targetless fogged finales can arm a deadline. Worker plans/results and recovery
+  retain every side; legacy two-side shapes stay pinned. Native server victory
+  and deadline loops were already N-side. Operator reference: `docs/GUIDE.md`;
+  report: `docs/reports/P927_REPORT.md`.
 - **Per-match showcase map rotation (P926, preset policy)** — default-off
   `showcase.mapRotation` chooses file or generated entries before every configured
   world's assembly. `src/Allegiance.Server/MapRotationConfig.cs` preflights all

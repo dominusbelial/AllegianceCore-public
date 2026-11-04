@@ -54,12 +54,19 @@ internal sealed partial class BotManager
         // line and MaybeUseDispensers keeps laying (escape mining protects it).
         short? enemy = VisibleEnemyInSector(bot, cs, cur);
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var _)) return false;
+        var observed = HasMultipleEnemies ? cs.World : Probe.World;
         if (bot.AlephFieldWarpId >= 0
-            && Probe.World.Warps.TryGetValue(bot.AlephFieldWarpId, out var warp)
+            && observed.Warps.TryGetValue(bot.AlephFieldWarpId, out var warp)
             && warp.Position is { Length: 3 } wp)
         {
             Vector3 alephPos = Vec3(wp);
-            Vector3 fieldPoint = Showcase.PlaceInFrontOfArrivalAleph(alephPos, AlephFieldSectorCenter(bot.AlephFieldSector), Showcase.AlephFieldOffset);
+            Vector3 center = AlephFieldSectorCenter(bot.AlephFieldSector);
+            if (HasMultipleEnemies)
+            {
+                var points = observed.Warps.Values.Where(w => w.ClusterId == bot.AlephFieldSector && w.Position is { Length: 3 }).Select(w => Vec3(w.Position)).ToArray();
+                center = points.Length == 0 ? Vector3.Zero : points.Aggregate(Vector3.Zero, (sum, p) => sum + p) / points.Length;
+            }
+            Vector3 fieldPoint = Showcase.PlaceInFrontOfArrivalAleph(alephPos, center, Showcase.AlephFieldOffset);
             float dist = (fieldPoint - pos).Length();
             if (enemy is not null && dist > AlephFieldDropRange) return false;
             if (dist <= AlephFieldHoldDistance)
@@ -80,9 +87,13 @@ internal sealed partial class BotManager
     /// Returns true when <c>bot.AlephFieldWarpId</c> is set.</summary>
     private bool ResolveAlephFieldTarget(ActiveBot bot, double now)
     {
+        if (HasMultipleEnemies && now - bot.AlephFieldResolvedAt >= AlephFieldResolveInterval)
+            bot.AlephFieldWarpId = -1; // New duty commitment, never every flight tick.
         if (bot.AlephFieldWarpId >= 0) return true;
         if (now - bot.AlephFieldResolvedAt < AlephFieldResolveInterval) return false;
         bot.AlephFieldResolvedAt = now;
+
+        if (HasMultipleEnemies) return ResolveMultiSideAlephField(bot);
 
         short ownSide = bot.Side;
         short? enemySide = FirstEnemySide(ownSide);
@@ -110,6 +121,27 @@ internal sealed partial class BotManager
             return true;
         }
         return false;
+    }
+
+    private bool ResolveMultiSideAlephField(ActiveBot bot)
+    {
+        if (bot.Cs is not { } cs) return false;
+        lock (cs.Gate)
+        {
+            var world = cs.World;
+            if (MultiSideEnemy.Choose(world, bot.Side) is not { } enemy) return false;
+            var ownHome = world.Stations.Values.Where(s => s.SideId == bot.Side).OrderBy(s => s.StationId).Select(s => (short?)s.ClusterId).FirstOrDefault();
+            var enemyHome = world.Stations.Values.Where(s => s.SideId == enemy).OrderBy(s => s.StationId).Select(s => (short?)s.ClusterId).FirstOrDefault();
+            if (ownHome is not { } home || enemyHome is not { } from) return false;
+            short target = bot.TargetSector ?? home;
+            if (bot.TargetSector is null && !world.Ships.Values.Any(s => s.SideId >= 0 && s.SideId != bot.Side
+                && world.IsSideActive(s.SideId) && !world.AreAllied(bot.Side, s.SideId) && !s.IsDead && !s.IsNotVisible
+                && (s.SectorId == home || (world.Graph is { } graph && ExplorationPlanner.Hops(graph, home, s.SectorId) == 1)))) return false;
+            if (EnemyArrivalWarp(world.Warps, target, enemy, from) is not { } arrival) return false;
+            bot.AlephFieldWarpId = arrival.WarpId; bot.AlephFieldSector = target;
+            Console.WriteLine($"[p877] aleph-field duty bot {bot.Name} side={bot.Side} enemySide={enemy} warp={arrival.WarpId} sector={target}");
+            return true;
+        }
     }
 
     /// <summary>The observed position of a probe-world warp, or null.</summary>
@@ -168,6 +200,12 @@ internal sealed partial class BotManager
     /// is observed yet.</summary>
     private short? FirstEnemySide(short ownSide)
     {
+        if (HasMultipleEnemies)
+        {
+            var peer = SideObservationPeer(ownSide);
+            if (peer is null) return null;
+            lock (peer.Gate) return MultiSideEnemy.Choose(peer.World, ownSide);
+        }
         lock (Probe.Gate)
         {
             foreach (var st in Probe.World.Stations.Values)

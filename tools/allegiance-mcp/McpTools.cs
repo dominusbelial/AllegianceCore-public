@@ -15,7 +15,7 @@ namespace Allegiance.Tools.McpSpawner;
 /// <c>list_parts</c>, <c>list_active_bots</c>. Errors are real, specific
 /// <c>isError</c> results — never silent no-ops.
 /// </summary>
-internal static class McpTools
+internal static partial class McpTools
 {
     public static IReadOnlyList<Tool> Definitions(bool supervisor = false)
     {
@@ -81,6 +81,7 @@ internal static class McpTools
                     properties = new
                     {
                         refill = new { type = "boolean", @default = true, description = "Retry each failed or disconnected slot once at the end of spawning. Summary counts only bots still connected at completion; failures lists every failed attempt." },
+                        sides = new { type = "array", minItems = 2, maxItems = 6, items = new { type = "object", required = new[] { "count" }, properties = new { count = new { type = "integer", minimum = 1, maximum = 200 }, fleet = new { type = "array", items = new { type = "object" } }, tech = new { type = "integer", minimum = 0 } } }, description = "Opt-in per-side fleets in mission roster order; length must equal actual team count. count is required; optional fleet counts must sum to count. Legacy tech is validated but ignored." },
                         size = new { type = "integer", description = "Homogeneous mode: bots PER SIDE to spawn (total = 2×size). Used when no `fleet`/`fleet_a`/`fleet_b`/`preset` is given. 5 / 10 / 15 are the intended presets." },
                         hull = new { type = "string", description = "Homogeneous mode: hull name/substring used for every bot. Defaults to the same real fighter spawn_bot / vizfight use." },
                         fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry requests `count` bots of the hull's capability-based role; actual purchases use side techs and the dock. Legacy tech is ignored." },
@@ -96,7 +97,7 @@ internal static class McpTools
                         mode = new { type = "string", @enum = new[] { "march" }, @default = "march", description = "Battle start mode. `march` (DEFAULT and now the ONLY mode, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. History: the `arena` mode (both fleets spawned directly in `target_sector`, formerly also reachable as the legacy `arena: true` flag) was removed in P795 because it collapsed into a home-sector death loop; an arena request returns a removal error instead of silently marching." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
                         finale_after_minutes = new { type = "number", minimum = 0, description = "Finale minimum battle age in minutes (showcase default 30; other scenarios default 0; 0 disables). Also requires both sides' pod relaunch share and sustained kills." },
-                        finale_side = new { description = "both (showcase default), leader (ahead on kills; ties side 0), or integer 0 or 1", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both" } }, new { type = "integer", minimum = 0, maximum = 1 } } },
+                        finale_side = new { description = "all (N-side default), both (two-side alias/default), leader (ahead on kills; ties lowest id), or integer 0..N-1", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both", "all" } }, new { type = "integer", minimum = 0, maximum = 5 } } },
                         finale_min_relaunch_share = new { type = "number", @default = .5, minimum = 0, maximum = 1 },
                         finale_min_kills_last_5_minutes = new { type = "integer", @default = 5, minimum = 1 },
                         finale_bombers = new { type = "integer", @default = 12, minimum = 1, maximum = 200 },
@@ -445,12 +446,14 @@ internal static class McpTools
         // P795 — arena was removed. Reject it explicitly instead of silently
         // treating it as march (the old alias would otherwise hide the removal).
         if (ArenaRequested(args)) return Err(ArenaRemovedError);
+        if (args.ContainsKey("finale_side"))
+            ValidateFinaleSides(ReadFinaleSettings(args, OptStr(args, "preset") == "showcase"), mgr.ValidSides());
         // P837 — the SKIRMISH's small-fleet meeting engagement: the single-player
         // host asks for it when the whole battle is a handful of bots (see
         // BotManager.ConfigureMeetingEngagement). Every other scenario keeps the
         // P539d staging/transit discipline untouched.
         mgr.ConfigureMeetingEngagement(OptBool(args, "meeting_engagement", def: false));
-        bool mixed = args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
+        bool mixed = args.ContainsKey("sides") || args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
                      || (OptStr(args, "preset") is { Length: > 0 })
                      || args.ContainsKey("minefields") || args.ContainsKey("wingman");
         return mixed
@@ -626,6 +629,8 @@ internal static class McpTools
         var finaleSettings = preset is "flags" or "artifacts" or "conquest" or "kills" ? new ShowcaseFinale.Settings(AfterMinutes: 0)
             : ReadFinaleSettings(args, preset == "showcase");
         var finaleNames = new List<string>();
+        var sideSpecs = ScenarioSideSpec.Read(args, mgr.ValidSides().Count);
+        if (sideSpecs is not null) ValidateFinaleSides(finaleSettings, mgr.ValidSides());
 
         // P796 — loadout variety is the showcase default (every legal weapon gets
         // used); every other mode keeps the best selector unless the caller opts
@@ -655,7 +660,12 @@ internal static class McpTools
         // Fleet composition per side.
         bool showcase = preset is "showcase" or "flags" or "artifacts" or "conquest" or "kills";
         List<Showcase.FleetEntry> fleetA, fleetB;
-        if (showcase)
+        if (sideSpecs is not null)
+        {
+            fleetA = ResolveSideFleet(sideSpecs[0], args, core, showcase, "0");
+            fleetB = ResolveSideFleet(sideSpecs[1], args, core, showcase, "1");
+        }
+        else if (showcase)
         {
             int sizeScale = OptInt(args, "size_scale") ?? 1;
             int countA = OptInt(args, "count_a") ?? 15 * Math.Max(1, sizeScale);
@@ -694,6 +704,10 @@ internal static class McpTools
         if (sides.Count < 2)
             return Err($"spawn_scenario: staging a fight needs at least two sides; this server has: {string.Join(", ", sides)}");
         short sideA = sides[0], sideB = sides[1];
+        var participatingSides = sideSpecs is null ? new[] { sideA, sideB } : sides.ToArray();
+        var fleets = new Dictionary<short, List<Showcase.FleetEntry>> { [sideA] = fleetA, [sideB] = fleetB };
+        for (int i = 2; i < participatingSides.Length; i++)
+            fleets[sides[i]] = ResolveSideFleet(sideSpecs![i], args, core, showcase, i.ToString());
 
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
@@ -707,11 +721,12 @@ internal static class McpTools
         var slots = new List<ShowcaseSpawnSlot>();
         AddSideFleet(slots, fleetA, sideA, wingman, core);
         AddSideFleet(slots, fleetB, sideB, wingman, core);
+        foreach (short side in participatingSides.Skip(2)) AddSideFleet(slots, fleets[side], side, wingman, core);
 
         // Lay minefields (native layer drones) BEFORE the fleets meet.
         var minefieldReports = new List<object>();
         if (!mgr.PlanOnly && (mgr.Partition is null || mgr.Partition.Index == 0) && args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
-            minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core);
+            minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core, participatingSides);
 
         var spawnSlots = new List<SpawnBatch.Slot>();
         bool refill = OptBool(args, "refill", def: true);
@@ -735,7 +750,7 @@ internal static class McpTools
             : "deferred until the scouts reveal the aleph graph (per-bot shortest path + sweep-on-stall)";
         if (multiRoute)
         {
-            foreach (var side in new[] { sideA, sideB })
+            foreach (var side in participatingSides)
             {
                 var routes = mgr.FindRoutes(rz2, mgr.FindSideHomeSector(side), 3);
                 if (routes.Count >= 2)
@@ -758,9 +773,9 @@ internal static class McpTools
         // rendezvous like everyone else).
         var bomberPlans = new Dictionary<short, List<List<short>>>();
         var bomberCounts = new Dictionary<short, int[]>();
-        foreach (var side in new[] { sideA, sideB })
+        foreach (var side in participatingSides)
         {
-            short enemyHome = mgr.FindSideHomeSector(side == sideA ? sideB : sideA) ?? -1;
+            short enemyHome = mgr.ScenarioEnemyHome(side, sideA, sideB) ?? -1;
             if (enemyHome < 0) continue;
             var bRoutes = mgr.FindRoutes(enemyHome, mgr.FindSideHomeSector(side), 3);
             if (bRoutes.Count > 0) { bomberPlans[side] = bRoutes; bomberCounts[side] = new int[bRoutes.Count]; }
@@ -781,7 +796,7 @@ internal static class McpTools
             // other role converges on the rendezvous.
             short? botTarget = BotManager.ResolveScenarioTarget(
                 mgr.Probe.World.Mission?.Goals is { IsDeathMatchGame: true, IsConquestGame: false } ? Showcase.HullRole.Fighter : slot.Role, targetSector,
-                mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
+                mgr.ScenarioEnemyHome(slot.Side, sideA, sideB) ?? -1);
 
             // P635/P637 — assign this bot to the least-loaded wing of its
             // side. A bomber goes on its OWN (home → enemy-home) route wing,
@@ -816,7 +831,18 @@ internal static class McpTools
             .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
             .Select(item => item.slot).ToList();
         var batch = mgr.CreateScenarioBatch(mgr.Partition?.Select(balancedSlots) ?? balancedSlots, args, sideA, sideB);
-        if (mgr.PlanOnly) return Ok(JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), slots = mgr.ScenarioSlots(), totals = new[] { new { side = sideA, requested = totalA }, new { side = sideB, requested = totalB } } }));
+        if (mgr.PlanOnly)
+        {
+            string plan = JsonSerializer.Serialize(new { sideA = batch.Counts(sideA), sideB = batch.Counts(sideB), slots = mgr.ScenarioSlots(), totals = participatingSides.Select(side => new { side, requested = fleets[side].Sum(e => e.Count) }) });
+            if (sideSpecs is not null)
+            {
+                var report = System.Text.Json.Nodes.JsonNode.Parse(plan)!.AsObject();
+                report["sides"] = JsonSerializer.SerializeToNode(participatingSides.Select(batch.Counts));
+                if (participatingSides.Length > 2) { report.Remove("sideA"); report.Remove("sideB"); }
+                plan = report.ToJsonString();
+            }
+            return Ok(plan);
+        }
         batch.Run(refill, mgr.IsSpawnActive);
         var grants = GrantReports(batch, mgr.Partition is not null);
         int warnings = batch.Results.Count(r => r.Warning is not null);
@@ -845,9 +871,17 @@ internal static class McpTools
             failures = batch.Failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet and grants list actual accepted purchases selected from side techs and dock stations. Requested roles persist through later upgrades; legacy synthetic tech fields are ignored. Wingman flags are in `wingman`.",
         };
-        if (batch.Results.Count == 0 && (batch.Counts(sideA).requested + batch.Counts(sideB).requested > 0 || mgr.Partition is null))
-            return Err(JsonSerializer.Serialize(summary));
-        return Ok(JsonSerializer.Serialize(summary));
+        string serialized = JsonSerializer.Serialize(summary);
+        if (sideSpecs is not null)
+        {
+            var report = System.Text.Json.Nodes.JsonNode.Parse(serialized)!.AsObject();
+            report["sides"] = JsonSerializer.SerializeToNode(participatingSides.Select(side => batch.Counts(side)));
+            if (participatingSides.Length > 2) { report.Remove("sideA"); report.Remove("sideB"); }
+            serialized = report.ToJsonString();
+        }
+        if (batch.Results.Count == 0 && (participatingSides.Sum(side => batch.Counts(side).requested) > 0 || mgr.Partition is null))
+            return Err(serialized);
+        return Ok(serialized);
     }
 
     private static object[] GrantReports(SpawnBatch batch, bool worker) => batch.Results.Select(r => worker ? (object)new
@@ -903,7 +937,7 @@ internal static class McpTools
     /// arrival aleph in the rendezvous sector), and order the drone to BUILD
     /// there. Returns a report row per field.</summary>
     private static List<object> LayMinefields(JsonElement mfj, BotManager mgr, short? rendezvous,
-        short sideA, short sideB, StaticCore core)
+        short sideA, short sideB, StaticCore core, IReadOnlyList<short>? participants = null)
     {
         var rows = new List<object>();
         string sideToken = Str(GetProp(mfj, "side"));
@@ -914,6 +948,12 @@ internal static class McpTools
         var sides = new List<short>();
         if (sideToken == "a") sides.Add(sideA);
         else if (sideToken == "b") sides.Add(sideB);
+        else if (participants is { Count: > 2 })
+        {
+            if (short.TryParse(sideToken, out short selected) && participants.Contains(selected)) sides.Add(selected);
+            else if (sideToken is "all" or "both") sides.AddRange(participants);
+            else throw new ArgumentException("spawn_scenario: minefields.side must be all or an actual side id");
+        }
         else { sides.Add(sideA); sides.Add(sideB); }
 
         foreach (var side in sides)
@@ -937,7 +977,9 @@ internal static class McpTools
                 string? err = null;
                 try
                 {
-                    short enemySide = (side == sideA) ? sideB : sideA;
+                    short enemySide = participants is { Count: > 2 } ? mgr.SelectScenarioEnemy(side)
+                        ?? throw new InvalidOperationException("no reachable living enemy observed for minefield placement")
+                        : (side == sideA) ? sideB : sideA;
                     // Recovery re-runs layer orders on the fresh map. If scouts
                     // have not resolved a clash yet, defend the freshly observed
                     // home rather than carrying old coordinates/warp ids.
@@ -1437,7 +1479,7 @@ internal static class McpTools
         }
         // P819: give both showcase sides the same finale opportunity instead
         // of reinforcing the current kill lead (and side 0 on a tie).
-        string side = showcase ? "both" : "leader";
+        string side = showcase ? (args.TryGetValue("sides", out var sideArray) && sideArray.ValueKind == JsonValueKind.Array && sideArray.GetArrayLength() > 2 ? "all" : "both") : "leader";
         if (args.TryGetValue("finale_side", out var selection))
             side = selection.ValueKind == JsonValueKind.String ? selection.GetString()!
                 : selection.ValueKind == JsonValueKind.Number && selection.TryGetInt32(out int id) ? id.ToString(System.Globalization.CultureInfo.InvariantCulture) : "invalid";

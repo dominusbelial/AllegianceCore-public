@@ -1,0 +1,3755 @@
+{
+  "rawEvidence": ".scratch/p927/",
+  "localEnvPresent": true,
+  "build": {
+    "solution": "PASS: 0 warnings, 0 errors",
+    "tools": "PASS: 115 projects",
+    "aot": "not required: no Server/Core runtime source changes"
+  },
+  "focused63Cases": {
+    "client58": [
+      {
+        "counters": {
+          "total": "58",
+          "executed": "58",
+          "passed": "58",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}]}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":1.5},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Opt_in_has_exact_counts_legacy_absence_and_six_side_limit",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech",
+            "outcome": "Passed",
+            "seconds": 2.351
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "outcome": "Passed",
+            "seconds": 0.037
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":{}},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Finale_all_and_numeric_selection_validate_actual_mission_and_living_roster",
+            "outcome": "Passed",
+            "seconds": 0.006
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P927_Three_blind_sides_register_targetless_finales_without_sharing_enemy_stations",
+            "outcome": "Passed",
+            "seconds": 0.01
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Three_side_merge_counts_live_slots_and_dead_worker_failures_per_side",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10}]}\", teams: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "outcome": "Passed",
+            "seconds": 0.135
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Strike_enemy_is_latched_between_commits_and_dropped_when_eliminated",
+            "outcome": "Passed",
+            "seconds": 0.004
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Enemy_selection_nearest_then_kills_stations_id_drops_inactive_allied_unreachable",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "outcome": "Passed",
+            "seconds": 0.043
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Two_side_enemy_and_finale_choices_are_pinned",
+            "outcome": "Passed",
+            "seconds": 0.007
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927GeneratorTests.All_fourteen_supported_three_team_generators_have_every_side_and_a_reachable_rendezvous",
+            "outcome": "Passed",
+            "seconds": 0.108
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":201},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.014
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}],\\\"count\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "outcome": "Passed",
+            "seconds": 0.011
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "outcome": "Passed",
+            "seconds": 0.096
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":[]},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "outcome": "Passed",
+            "seconds": 0.035
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"tech\\\":-1},{\\\"count\\\":\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "outcome": "Passed",
+            "seconds": 0.036
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Legacy_merged_results_are_byte_pinned_and_have_no_new_keys",
+            "outcome": "Passed",
+            "seconds": 0.052
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "outcome": "Passed",
+            "seconds": 0.003
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":0},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "outcome": "Passed",
+            "seconds": 0.018
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":\\\"10\\\"},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_default_off_and_validate_their_range",
+            "outcome": "Passed",
+            "seconds": 0.049
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":null}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "58",
+          "executed": "58",
+          "passed": "58",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":{}},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "outcome": "Passed",
+            "seconds": 0.038
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Two_side_enemy_and_finale_choices_are_pinned",
+            "outcome": "Passed",
+            "seconds": 0.008
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":\\\"10\\\"},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "outcome": "Passed",
+            "seconds": 0.018
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Three_side_merge_counts_live_slots_and_dead_worker_failures_per_side",
+            "outcome": "Passed",
+            "seconds": 0.003
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "outcome": "Passed",
+            "seconds": 0.003
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927GeneratorTests.All_fourteen_supported_three_team_generators_have_every_side_and_a_reachable_rendezvous",
+            "outcome": "Passed",
+            "seconds": 0.108
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10}]}\", teams: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"tech\\\":-1},{\\\"count\\\":\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}]}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":[]},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_default_off_and_validate_their_range",
+            "outcome": "Passed",
+            "seconds": 0.057
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P927_Three_blind_sides_register_targetless_finales_without_sharing_enemy_stations",
+            "outcome": "Passed",
+            "seconds": 0.009
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech",
+            "outcome": "Passed",
+            "seconds": 2.345
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":null}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Opt_in_has_exact_counts_legacy_absence_and_six_side_limit",
+            "outcome": "Passed",
+            "seconds": 0.003
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "outcome": "Passed",
+            "seconds": 0.043
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}],\\\"count\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":201},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.016
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "outcome": "Passed",
+            "seconds": 0.145
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Enemy_selection_nearest_then_kills_stations_id_drops_inactive_allied_unreachable",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":0},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "outcome": "Passed",
+            "seconds": 0.099
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":1.5},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Finale_all_and_numeric_selection_validate_actual_mission_and_living_roster",
+            "outcome": "Passed",
+            "seconds": 0.008
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "outcome": "Passed",
+            "seconds": 0.011
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Legacy_merged_results_are_byte_pinned_and_have_no_new_keys",
+            "outcome": "Passed",
+            "seconds": 0.055
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "outcome": "Passed",
+            "seconds": 0.036
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Strike_enemy_is_latched_between_commits_and_dropped_when_eliminated",
+            "outcome": "Passed",
+            "seconds": 0.005
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "58",
+          "executed": "58",
+          "passed": "58",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":\\\"10\\\"},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "outcome": "Passed",
+            "seconds": 0.031
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "outcome": "Passed",
+            "seconds": 0.016
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "outcome": "Passed",
+            "seconds": 0.036
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "outcome": "Passed",
+            "seconds": 0.035
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Two_side_enemy_and_finale_choices_are_pinned",
+            "outcome": "Passed",
+            "seconds": 0.006
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Strike_enemy_is_latched_between_commits_and_dropped_when_eliminated",
+            "outcome": "Passed",
+            "seconds": 0.004
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10}]}\", teams: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Enemy_selection_nearest_then_kills_stations_id_drops_inactive_allied_unreachable",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Legacy_merged_results_are_byte_pinned_and_have_no_new_keys",
+            "outcome": "Passed",
+            "seconds": 0.048
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}]}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "outcome": "Passed",
+            "seconds": 0.004
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":[]},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "outcome": "Passed",
+            "seconds": 0.034
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"tech\\\":-1},{\\\"count\\\":\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P927_Three_blind_sides_register_targetless_finales_without_sharing_enemy_stations",
+            "outcome": "Passed",
+            "seconds": 0.011
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Three_side_merge_counts_live_slots_and_dead_worker_failures_per_side",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":1.5},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "outcome": "Passed",
+            "seconds": 0.094
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "outcome": "Passed",
+            "seconds": 0.038
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "outcome": "Passed",
+            "seconds": 0.046
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech",
+            "outcome": "Passed",
+            "seconds": 2.396
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":null}\", teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10,\\\"fleet\\\":{}},{\\\"count\\\"\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "outcome": "Passed",
+            "seconds": 0.003
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927GeneratorTests.All_fourteen_supported_three_team_generators_have_every_side_and_a_reachable_rendezvous",
+            "outcome": "Passed",
+            "seconds": 0.101
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":0},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Finale_all_and_numeric_selection_validate_actual_mission_and_living_roster",
+            "outcome": "Passed",
+            "seconds": 0.008
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":201},{\\\"count\\\":10}]}\", teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.017
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Rejects_invalid_and_ambiguous_side_arguments(json: \"{\\\"sides\\\":[{\\\"count\\\":10},{\\\"count\\\":10}],\\\"count\"\u00b7\u00b7\u00b7, teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "outcome": "Passed",
+            "seconds": 0.135
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927MultiSideTests.Opt_in_has_exact_counts_legacy_absence_and_six_side_limit",
+            "outcome": "Passed",
+            "seconds": 0.002
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "outcome": "Passed",
+            "seconds": 0.02
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_default_off_and_validate_their_range",
+            "outcome": "Passed",
+            "seconds": 0.05
+          }
+        ]
+      }
+    ],
+    "plansAndRealWorkers4": [
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.135
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 6)",
+            "outcome": "Passed",
+            "seconds": 0.56
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.096
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Two_real_workers_spawn_and_merge_all_three_factions",
+            "outcome": "Passed",
+            "seconds": 0.89
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.094
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 6)",
+            "outcome": "Passed",
+            "seconds": 0.489
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.116
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Two_real_workers_spawn_and_merge_all_three_factions",
+            "outcome": "Passed",
+            "seconds": 0.864
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 3)",
+            "outcome": "Passed",
+            "seconds": 0.098
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 6)",
+            "outcome": "Passed",
+            "seconds": 0.476
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Two_real_workers_spawn_and_merge_all_three_factions",
+            "outcome": "Passed",
+            "seconds": 0.815
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P927SpawnPlanLiveTests.Plans_validate_real_roster_partition_every_side_and_pin_legacy_two_side_bytes(teams: 2)",
+            "outcome": "Passed",
+            "seconds": 0.099
+          }
+        ]
+      }
+    ],
+    "deadline1": [
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "seconds": 0.115
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "seconds": 0.123
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "seconds": 0.109
+          }
+        ]
+      }
+    ]
+  },
+  "pythonTally": "5/5 x3, zero skips",
+  "fast": {
+    "outcomes": {
+      "Passed": 13055,
+      "NotExecuted": 3,
+      "Failed": 8
+    },
+    "seconds": 588.4151826329762,
+    "passed": false,
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 10.7719077
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 11.4894331
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 11.0113612
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.665387
+      },
+      {
+        "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+        "method": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+        "outcome": "Failed",
+        "seconds": 54.354662
+      }
+    ],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.061706806998699903,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "isolations": {
+    "bundle": [
+      {
+        "counters": {
+          "total": "9",
+          "executed": "9",
+          "passed": "4",
+          "failed": "5",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "seconds": 0.005
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "seconds": 0.032
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "9",
+          "executed": "9",
+          "passed": "4",
+          "failed": "5",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "seconds": 0.014
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "seconds": 0.005
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "9",
+          "executed": "9",
+          "passed": "4",
+          "failed": "5",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "seconds": 0.015
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "seconds": 0.004
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "seconds": 0.001
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "seconds": 0.0
+          },
+          {
+            "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ],
+    "wingman": [
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "0",
+          "failed": "1",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.252
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "0",
+          "failed": "1",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.285
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "0",
+          "failed": "1",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "seconds": 1.182
+          }
+        ]
+      }
+    ],
+    "core": [
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over",
+            "outcome": "Passed",
+            "seconds": 0.239
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 11.006
+          },
+          {
+            "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 5.594
+          },
+          {
+            "name": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 3.614
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 6.63
+          },
+          {
+            "name": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 3.541
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.591
+          },
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over",
+            "outcome": "Passed",
+            "seconds": 0.236
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "4",
+          "executed": "4",
+          "passed": "4",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 3.515
+          },
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over",
+            "outcome": "Passed",
+            "seconds": 0.257
+          },
+          {
+            "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+            "outcome": "Passed",
+            "seconds": 5.455
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.372
+          }
+        ]
+      }
+    ],
+    "client": [
+      {
+        "counters": {
+          "total": "3",
+          "executed": "3",
+          "passed": "3",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 3.726
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 4.117
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.596
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "3",
+          "executed": "3",
+          "passed": "3",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 4.253
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.492
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 3.89
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "3",
+          "executed": "3",
+          "passed": "3",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "seconds": 3.72
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 4.123
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "seconds": 4.531
+          }
+        ]
+      }
+    ],
+    "game": [
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "seconds": 4.764
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "seconds": 4.39
+          }
+        ]
+      },
+      {
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "cases": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "seconds": 4.559
+          }
+        ]
+      }
+    ]
+  },
+  "proofs": [
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P927MultiSideLiveTests.Three_factions_research_fight_and_finish_three_rotations",
+          "outcome": "Passed",
+          "seconds": 296.219
+        }
+      ],
+      "matches": [
+        {
+          "match": 1,
+          "battleSector": 1,
+          "battleName": "Denom",
+          "wallSeconds": 93.2,
+          "reachedSides": [
+            0,
+            1,
+            2
+          ],
+          "allInBattleSamples": 1030,
+          "battleHits": 2788,
+          "shipHits": 2910,
+          "longestIdleSeconds": 2.05,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211038.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 9,
+              "deaths": 10,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 6,
+              "deaths": 4,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 11,
+              "deaths": 0,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "2->0": 1077,
+            "0->1": 420,
+            "2->1": 452,
+            "0->2": 154,
+            "1->0": 736,
+            "1->2": 85
+          },
+          "winner": 2,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=2, 34 peer(s), result packet 2565 bytes; match=1 seed=927 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=1 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=31158964 rotation=cycle#0 rotationMatch=1 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 31158964
+        },
+        {
+          "match": 2,
+          "battleSector": 1,
+          "battleName": "Leighton",
+          "wallSeconds": 85.0,
+          "reachedSides": [
+            0,
+            1
+          ],
+          "allInBattleSamples": 0,
+          "battleHits": 2583,
+          "shipHits": 4054,
+          "longestIdleSeconds": 2.01,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211038.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 9,
+              "deaths": 8,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 14,
+              "deaths": 7,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 5,
+              "deaths": 1,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "2->0": 118,
+            "1->0": 1746,
+            "0->2": 111,
+            "2->1": 1075,
+            "1->2": 171,
+            "0->1": 837
+          },
+          "winner": 1,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 34 peer(s), result packet 2565 bytes; match=2 seed=31158964 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=2 homes=0,1,2 home0=0 home1=2 home2=4 map=gen:SingleRing mapSeed=1753171001 rotation=cycle#1 rotationMatch=2 rotationSeed=927",
+          "map": "gen:SingleRing",
+          "mapSeed": 1753171001
+        },
+        {
+          "match": 3,
+          "battleSector": 1,
+          "battleName": "Okanagon",
+          "wallSeconds": 94.4,
+          "reachedSides": [
+            0,
+            2,
+            1
+          ],
+          "allInBattleSamples": 829,
+          "battleHits": 3457,
+          "shipHits": 3767,
+          "longestIdleSeconds": 2.16,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211038.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 4,
+              "deaths": 11,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 9,
+              "deaths": 4,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 13,
+              "deaths": 1,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "0->2": 207,
+            "2->0": 943,
+            "0->1": 510,
+            "2->1": 889,
+            "1->0": 1013,
+            "1->2": 222
+          },
+          "winner": 2,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=2, 34 peer(s), result packet 2565 bytes; match=3 seed=1753171001 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=3 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=1567426543 rotation=cycle#0 rotationMatch=3 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 1567426543
+        }
+      ]
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P927MultiSideLiveTests.Three_factions_research_fight_and_finish_three_rotations",
+          "outcome": "Passed",
+          "seconds": 297.842
+        }
+      ],
+      "matches": [
+        {
+          "match": 1,
+          "battleSector": 1,
+          "battleName": "Denom",
+          "wallSeconds": 92.9,
+          "reachedSides": [
+            0,
+            1,
+            2
+          ],
+          "allInBattleSamples": 1116,
+          "battleHits": 3356,
+          "shipHits": 3419,
+          "longestIdleSeconds": 2.16,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211535.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 10,
+              "deaths": 6,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 11,
+              "deaths": 2,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 6,
+              "deaths": 3,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "1->2": 566,
+            "2->0": 380,
+            "1->0": 811,
+            "2->1": 669,
+            "0->2": 248,
+            "0->1": 746
+          },
+          "winner": 1,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 34 peer(s), result packet 2565 bytes; match=1 seed=927 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=1 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=31158964 rotation=cycle#0 rotationMatch=1 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 31158964
+        },
+        {
+          "match": 2,
+          "battleSector": 1,
+          "battleName": "Leighton",
+          "wallSeconds": 84.7,
+          "reachedSides": [
+            0,
+            1
+          ],
+          "allInBattleSamples": 0,
+          "battleHits": 2409,
+          "shipHits": 3645,
+          "longestIdleSeconds": 2.01,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211535.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 5,
+              "deaths": 9,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 15,
+              "deaths": 3,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 2,
+              "deaths": 1,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "0->2": 55,
+            "2->0": 35,
+            "1->0": 2058,
+            "2->1": 950,
+            "0->1": 559
+          },
+          "winner": 1,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 34 peer(s), result packet 2565 bytes; match=2 seed=31158964 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=2 homes=0,1,2 home0=0 home1=2 home2=4 map=gen:SingleRing mapSeed=1753171001 rotation=cycle#1 rotationMatch=2 rotationSeed=927",
+          "map": "gen:SingleRing",
+          "mapSeed": 1753171001
+        },
+        {
+          "match": 3,
+          "battleSector": 1,
+          "battleName": "Okanagon",
+          "wallSeconds": 96.2,
+          "reachedSides": [
+            0,
+            2,
+            1
+          ],
+          "allInBattleSamples": 1254,
+          "battleHits": 4178,
+          "shipHits": 4170,
+          "longestIdleSeconds": 2.06,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T211535.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 6,
+              "deaths": 2,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 8,
+              "deaths": 7,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 14,
+              "deaths": 1,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "0->1": 295,
+            "0->2": 491,
+            "2->0": 1093,
+            "1->2": 638,
+            "1->0": 499,
+            "2->1": 1162
+          },
+          "winner": 2,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=2, 34 peer(s), result packet 2565 bytes; match=3 seed=1753171001 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=3 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=1567426543 rotation=cycle#0 rotationMatch=3 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 1567426543
+        }
+      ]
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P927MultiSideLiveTests.Three_factions_research_fight_and_finish_three_rotations",
+          "outcome": "Passed",
+          "seconds": 291.093
+        }
+      ],
+      "matches": [
+        {
+          "match": 1,
+          "battleSector": 1,
+          "battleName": "Denom",
+          "wallSeconds": 91.7,
+          "reachedSides": [
+            0,
+            2,
+            1
+          ],
+          "allInBattleSamples": 1075,
+          "battleHits": 3749,
+          "shipHits": 3889,
+          "longestIdleSeconds": 2.06,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T212034.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 5,
+              "deaths": 7,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 11,
+              "deaths": 3,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 9,
+              "deaths": 3,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "1->0": 696,
+            "2->1": 783,
+            "0->2": 473,
+            "1->2": 898,
+            "2->0": 771,
+            "0->1": 279
+          },
+          "winner": 1,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 34 peer(s), result packet 2565 bytes; match=1 seed=927 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=1 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=31158964 rotation=cycle#0 rotationMatch=1 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 31158964
+        },
+        {
+          "match": 2,
+          "battleSector": 1,
+          "battleName": "Leighton",
+          "wallSeconds": 84.6,
+          "reachedSides": [
+            0,
+            1
+          ],
+          "allInBattleSamples": 0,
+          "battleHits": 3332,
+          "shipHits": 4412,
+          "longestIdleSeconds": 2.06,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T212034.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 7,
+              "deaths": 14,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 20,
+              "deaths": 9,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 5,
+              "deaths": 0,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "2->0": 26,
+            "1->2": 239,
+            "1->0": 2368,
+            "2->1": 826,
+            "0->2": 24,
+            "0->1": 964
+          },
+          "winner": 1,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 34 peer(s), result packet 2565 bytes; match=2 seed=31158964 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=2 homes=0,1,2 home0=0 home1=2 home2=4 map=gen:SingleRing mapSeed=1753171001 rotation=cycle#1 rotationMatch=2 rotationSeed=927",
+          "map": "gen:SingleRing",
+          "mapSeed": 1753171001
+        },
+        {
+          "match": 3,
+          "battleSector": 1,
+          "battleName": "Okanagon",
+          "wallSeconds": 90.9,
+          "reachedSides": [
+            0,
+            1,
+            2
+          ],
+          "allInBattleSamples": 823,
+          "battleHits": 3979,
+          "shipHits": 3956,
+          "longestIdleSeconds": 2.06,
+          "stage": "Over",
+          "rawLog": ".scratch/p927/loopback-20261104T212034.log",
+          "sides": [
+            {
+              "side": 0,
+              "civ": "Gigacorp",
+              "kills": 5,
+              "deaths": 5,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 1
+            },
+            {
+              "side": 1,
+              "civ": "Phoenix",
+              "kills": 10,
+              "deaths": 4,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            },
+            {
+              "side": 2,
+              "civ": "Omicron",
+              "kills": 11,
+              "deaths": 1,
+              "stationKills": 0,
+              "active": true,
+              "completedDevelopments": 7
+            }
+          ],
+          "fights": {
+            "1->0": 980,
+            "0->2": 209,
+            "2->0": 884,
+            "0->1": 627,
+            "1->2": 470,
+            "2->1": 809
+          },
+          "winner": 2,
+          "deadline": true,
+          "receipt": "[gameover] mission #0 -> Stage Over, iSideWinner=2, 34 peer(s), result packet 2565 bytes; match=3 seed=1753171001 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) side2=5:Omicron(generated) homeSwap=off homeMatch=3 homes=0,1,2 home0=0 home1=3 home2=6 map=gen:DiamondRing mapSeed=1567426543 rotation=cycle#0 rotationMatch=3 rotationSeed=927",
+          "map": "gen:DiamondRing",
+          "mapSeed": 1567426543
+        }
+      ]
+    }
+  ],
+  "neverParks": [
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 215.956
+        }
+      ],
+      "observation": {
+        "wallSeconds": 212.1,
+        "samples": 2117,
+        "reached": 24,
+        "longestIdleSeconds": 2.005,
+        "shots": 5236,
+        "hits": 3017,
+        "kills": 20
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 243.17
+        }
+      ],
+      "observation": {
+        "wallSeconds": 239.4,
+        "samples": 2391,
+        "reached": 24,
+        "longestIdleSeconds": 1.905,
+        "shots": 9043,
+        "hits": 4180,
+        "kills": 25
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 376.525
+        }
+      ],
+      "observation": {
+        "wallSeconds": 372.3,
+        "samples": 3718,
+        "reached": 24,
+        "longestIdleSeconds": 0.801,
+        "shots": 5616,
+        "hits": 2164,
+        "kills": 19
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 253.298
+        }
+      ],
+      "observation": {
+        "wallSeconds": 249.8,
+        "samples": 2495,
+        "reached": 25,
+        "longestIdleSeconds": 0.0,
+        "shots": 166,
+        "hits": 1,
+        "kills": 0
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Failed",
+          "seconds": 377.782,
+          "failure": "Parked >5s: {\"Name\":\"mcp-b028-9447\",\"ShipId\":8124,\"Side\":0,\"Hull\":\"Lt Interceptor\",\"Sector\":1051,\"Behavior\":\"combat\",\"Position\":[-1766.6265869140625,-377.70806884765625,-129.3614959716797],\"Target\":8117,\"OrderedTarget\":null,\"Engagers\":2,\"WorldReady\":true,\"WorldReadyDelaySec\":0.047362000000000126,\"WorldNotReadyAttempts\":0,\"RouteIndex\":-1,\"RouteName\":\"single\",\"Role\":\"Bomber\",\"AiDecisions\":7483,\"State\":\"active\",\"DefenseSector\":null,\"TargetSector\":1051,\"StagingSector\":-1,\"StagePhase\":0,\"Velocity\":[0,0,0],\"Speed\":0,\"Idle\":false}"
+        }
+      ],
+      "observation": {
+        "wallSeconds": null,
+        "reached": null,
+        "longestIdleSeconds": 5.01
+      }
+    }
+  ],
+  "neverParkIsolations": [
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 265.867
+        }
+      ],
+      "observation": {
+        "wallSeconds": 262.1,
+        "samples": 2618,
+        "reached": 24,
+        "longestIdleSeconds": 0.0,
+        "shots": 1268,
+        "hits": 225,
+        "kills": 0
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 247.043
+        }
+      ],
+      "observation": {
+        "wallSeconds": 242.9,
+        "samples": 2426,
+        "reached": 24,
+        "longestIdleSeconds": 1.914,
+        "shots": 1705,
+        "hits": 722,
+        "kills": 2
+      }
+    },
+    {
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "seconds": 475.545
+        }
+      ],
+      "observation": {
+        "wallSeconds": 471.3,
+        "samples": 4706,
+        "reached": 24,
+        "longestIdleSeconds": 1.904,
+        "shots": 3766,
+        "hits": 1139,
+        "kills": 10
+      }
+    }
+  ],
+  "otherChecks": {
+    "glossary": "544 valid paths",
+    "parity": "before/after scorecard output byte-identical",
+    "compose": "docker compose config --quiet passed",
+    "hygiene": "no private home paths in changed code, no new media, LF parity CSV, git diff --check passed"
+  },
+  "proofTally": {
+    "assembled": [
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 4,
+        "seed": 1567426543,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 901423106,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 4,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 4,
+        "seed": 1567426543,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 901423106,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 4,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        }
+      },
+      {
+        "mission": 0,
+        "match": 4,
+        "seed": 1567426543,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 901423106,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 4,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        }
+      }
+    ],
+    "completed": [
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 2,
+        "placementOrder": [
+          2
+        ],
+        "unrankedSides": [
+          0,
+          1
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        },
+        "winner": 1,
+        "placementOrder": [
+          1
+        ],
+        "unrankedSides": [
+          0,
+          2
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 2,
+        "placementOrder": [
+          2
+        ],
+        "unrankedSides": [
+          0,
+          1
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 1,
+        "placementOrder": [
+          1
+        ],
+        "unrankedSides": [
+          0,
+          2
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        },
+        "winner": 1,
+        "placementOrder": [
+          1
+        ],
+        "unrankedSides": [
+          0,
+          2
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 2,
+        "placementOrder": [
+          2
+        ],
+        "unrankedSides": [
+          0,
+          1
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 1,
+        "seed": 927,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 31158964,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 1,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 1,
+        "placementOrder": [
+          1
+        ],
+        "unrankedSides": [
+          0,
+          2
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 2,
+        "seed": 31158964,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:SingleRing",
+        "mapSeed": 1753171001,
+        "rotation": "cycle",
+        "mapIndex": 1,
+        "rotationSeed": 927,
+        "rotationMatch": 2,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "2",
+          "2": "4"
+        },
+        "winner": 1,
+        "placementOrder": [
+          1
+        ],
+        "unrankedSides": [
+          0,
+          2
+        ]
+      },
+      {
+        "mission": 0,
+        "match": 3,
+        "seed": 1753171001,
+        "sides": [
+          {
+            "side": 0,
+            "civ": 18,
+            "name": "Gigacorp",
+            "plan": "generated"
+          },
+          {
+            "side": 1,
+            "civ": 4,
+            "name": "Phoenix",
+            "plan": "generated"
+          },
+          {
+            "side": 2,
+            "civ": 5,
+            "name": "Omicron",
+            "plan": "generated"
+          }
+        ],
+        "map": "gen:DiamondRing",
+        "mapSeed": 1567426543,
+        "rotation": "cycle",
+        "mapIndex": 0,
+        "rotationSeed": 927,
+        "rotationMatch": 3,
+        "homes": [
+          0,
+          1,
+          2
+        ],
+        "homeSectors": {
+          "0": "0",
+          "1": "3",
+          "2": "6"
+        },
+        "winner": 2,
+        "placementOrder": [
+          2
+        ],
+        "unrankedSides": [
+          0,
+          1
+        ]
+      }
+    ],
+    "byCiv": {
+      "18": {
+        "name": "Gigacorp",
+        "appearances": 9,
+        "wins": 0,
+        "losses": 9,
+        "draws": 0
+      },
+      "4": {
+        "name": "Phoenix",
+        "appearances": 9,
+        "wins": 5,
+        "losses": 4,
+        "draws": 0
+      },
+      "5": {
+        "name": "Omicron",
+        "appearances": 9,
+        "wins": 4,
+        "losses": 5,
+        "draws": 0
+      }
+    },
+    "byPosition": {
+      "0": {
+        "appearances": 9,
+        "wins": 0,
+        "losses": 9,
+        "draws": 0
+      },
+      "1": {
+        "appearances": 9,
+        "wins": 5,
+        "losses": 4,
+        "draws": 0
+      },
+      "2": {
+        "appearances": 9,
+        "wins": 4,
+        "losses": 5,
+        "draws": 0
+      }
+    },
+    "byAuthoredHome": {
+      "0": {
+        "appearances": 9,
+        "wins": 0,
+        "losses": 9,
+        "draws": 0
+      },
+      "1": {
+        "appearances": 9,
+        "wins": 5,
+        "losses": 4,
+        "draws": 0
+      },
+      "2": {
+        "appearances": 9,
+        "wins": 4,
+        "losses": 5,
+        "draws": 0
+      }
+    },
+    "byMap": {
+      "gen:DiamondRing": {
+        "matches": 6,
+        "draws": 0,
+        "winsBySide": {
+          "2": 4,
+          "1": 2
+        }
+      },
+      "gen:SingleRing": {
+        "matches": 3,
+        "draws": 0,
+        "winsBySide": {
+          "1": 3
+        }
+      }
+    },
+    "completedMatchups": {
+      "18,4,5": 9
+    },
+    "completedMatches": 9
+  }
+}

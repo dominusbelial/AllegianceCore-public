@@ -405,6 +405,86 @@ the resolved name. Normal per-role objectives (bombers, scouts, support and
 mission goals) still apply. See [P926](reports/P926_REPORT.md) for coverage and
 local proof receipts.
 
+### Three-faction showcase
+
+Set the actual game team count and give MCP an explicit `sides` list. Without
+`sides`, the existing `count_a`/`count_b` and fleet arguments keep their two-side
+plans, results and receipts. This is an operator opt-in; do not overlay it on a
+running two-team trial. Example server configuration (merge with the existing
+artwork, transport, broadcast and simulation settings):
+
+```json
+{
+  "staticCore": "PCore001.igc",
+  "games": [{
+    "name": "Three factions", "teams": 3,
+    "civIds": [18, 4, 5], "sideNames": ["Gigacorp", "Phoenix", "Omicron"],
+    "maxPlayersPerTeam": 160, "homeSwap": "off",
+    "showMap": false, "showHomeSector": true
+  }],
+  "showcase": {
+    "techMode": "research", "stationKillsDecideDeadline": true,
+    "mapRotation": {
+      "mode": "cycle", "seed": 927,
+      "entries": [
+        { "mapGen": { "type": "DiamondRing" } },
+        { "mapGen": { "type": "SingleRing" } }
+      ]
+    }
+  },
+  "liveSettings": { "autoNextMatch": { "enabled": true, "intermissionSeconds": 5 } }
+}
+```
+
+MCP `spawn_scenario` arguments for a local 30-bot run:
+
+```json
+{
+  "preset": "showcase",
+  "sides": [{ "count": 10 }, { "count": 10 }, { "count": 10 }],
+  "staging": true, "finale_side": "all"
+}
+```
+
+`sides` has 2–6 entries in the mission roster order and must match its actual
+team count. Each `count` is an integer 1–200. An optional `fleet` uses the usual
+`[{"hull":"...","count":N,"tech":0}]` entries and its counts must sum to that
+side's `count`. A side-level `tech` is a validated, ignored compatibility field;
+all purchases still use real researched tech and dock availability. Do not mix
+`sides` with legacy size/count/fleet/tech fields. Per-side results and worker
+plans use `sides:[{side,requested,spawned,failed,refilled},...]`; two-side requests
+also retain `sideA`/`sideB`. The internal owned driver accepts
+`--skirmish 10/10/10`; the single-player chooser is unchanged.
+
+`finale_side` accepts `all` (the N-side showcase default), `leader`, or an actual
+integer side id 0–N−1. `both` remains the two-side alias. Every living faction
+must meet the existing maturity gates before the finale triggers. A blind side
+can arm its deadline with no strike target; only stations that side has seen
+can become targets. For three or more sides, each new strike wave chooses the
+nearest reachable living hostile faction from its home over public topology,
+then observed player kills, observed station count and side id. Committed waves
+keep their choice; elimination drops it. Scout threat intel retains every
+living opponent. Unknown home ownership is not guessed from faction order;
+scouts may recon a nearest anonymous home flag until they observe its owner.
+The shared rendezvous retains P926's minimax rule over all home flags.
+
+Deadline scoring already handles all teams: enabled native goal criteria first,
+then the opted-in unique station-kill leader, then native ship kills and fewer
+deaths; an unresolved tie is a draw. Each criterion considers all sides.
+`[matchup]`/`[gameover]` name every side, and finale `values` includes every side
+id. Tally with `python3 tools/p819-side-bias-proof/matchups.py --server server.log
+--output tally.json`: `byPosition`, `byCiv`, `byAuthoredHome` and `byMap` cover all
+factions. Three-plus-side `placementOrder` records the known winner;
+`unrankedSides` explicitly leaves the other places unknown.
+
+Every current generator except EastWest accepts three teams; DiamondRing
+requires at least three. Keep homeSwap off. A suggested first rig pilot is
+128/128/128 with `maxPlayersPerTeam:160`: 384 fleet clients plus four worker
+probes and three research commanders is 391, below 512. Retain server GC,
+immutableSnapshot/encodeOnce/parallelBuild, pool transport, native ship updates,
+nativeGotoPlan and the existing clash tick budget. No rig settings are changed
+by the MCP request. See [P927](reports/P927_REPORT.md) for local evidence and limits.
+
 ### Admin cheats — LAN-only, documented safety
 
 `liveSettings.adminCheats` is an **off-by-default** port of native's

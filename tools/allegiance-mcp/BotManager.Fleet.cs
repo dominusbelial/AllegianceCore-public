@@ -21,7 +21,7 @@ internal sealed partial class BotManager
         {
             int ordinal = ordinals.GetValueOrDefault(slot.Side);
             ordinals[slot.Side] = ordinal + 1;
-            string key = $"{(slot.Side == sideA ? "a" : "b")}:{ordinal}";
+            string key = $"{(slot.Side == sideA ? "a" : slot.Side == sideB ? "b" : $"s{slot.Side}")}:{ordinal}";
             if (allowed is not null && !allowed.Contains(key)) continue;
             if (scenario != 0)
                 lock (_gate) _fleetSlots[(scenario, key)] = new(scenario, key, slot.Side, null, "failed");

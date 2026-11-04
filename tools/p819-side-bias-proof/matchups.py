@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 
-SIDES = re.compile(r"side(\d+)=(-?\d+):(.*?)\(([^()]*)\)(?=\s+(?:side\d+=|homeSwap=)|$)")
+SIDES = re.compile(r"side(\d+)=(-?\d+):(.*?)\(([^()]*)\)(?=\s+(?:side\d+=|homeSwap=|map=|placement=)|$)")
 
 
 def tally(lines):
@@ -45,6 +45,12 @@ def tally(lines):
         if not winner:
             continue
         record["winner"] = None if winner[1] == "NA(draw)" else int(winner[1])
+        if len(sides) > 2:
+            # A winner establishes first place only. Defeated teams are not a
+            # tied second place: their relative elimination order is unavailable
+            # in historical receipts, so never manufacture a full ranking.
+            record["placementOrder"] = [] if record["winner"] is None else [record["winner"]]
+            record["unrankedSides"] = [s["side"] for s in sides if s["side"] != record["winner"]]
         completed.append(record)
         if "map" in record:
             counter = maps.setdefault(record["map"], {"matches": 0, "draws": 0, "winsBySide": {}})

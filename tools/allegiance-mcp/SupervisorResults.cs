@@ -12,9 +12,12 @@ internal static class SupervisorResults
         .SelectMany(d => d.GetProperty(key).EnumerateArray()).Select(d => JsonNode.Parse(d.GetRawText())).ToArray());
     private static int Int(JsonElement data, string key) => data.TryGetProperty(key, out var value) ? value.GetInt32() : 0;
 
+    internal static JsonElement[] SideRows(JsonElement data) => data.TryGetProperty("sides", out var sides)
+        ? sides.EnumerateArray().ToArray() : [data.GetProperty("sideA"), data.GetProperty("sideB")];
+
     internal static JsonElement MergeScenario(WorkerReply[] plans, WorkerReply[] replies, WorkerReply[] states, object[] workers)
     {
-        var first = replies.FirstOrDefault(r => r.Data.TryGetProperty("sideA", out _));
+        var first = replies.FirstOrDefault(r => r.Data.TryGetProperty("sideA", out _) || r.Data.TryGetProperty("sides", out _));
         var merged = first is null ? new JsonObject() : Object(first.Data);
         var failures = Rows(replies.Select(r => r.Data), "failures");
         var grants = new JsonArray();
@@ -26,13 +29,14 @@ internal static class SupervisorResults
                 .Where(b => b.TryGetProperty("status", out var s) && s.GetString() == "active").ToArray();
             var liveNames = active.Select(b => b.GetProperty("name").GetString()).ToHashSet();
             var workerGrants = reply.Data.TryGetProperty("grants", out var g) ? g.EnumerateArray().ToArray() : [];
-            foreach (string sideKey in new[] { "sideA", "sideB" })
+            foreach (var plan in SideRows(plans[i].Data))
             {
-                var plan = plans[i].Data.GetProperty(sideKey);
                 short side = plan.GetProperty("side").GetInt16();
                 int requested = Int(plan, "requested");
                 int spawned = 0, refilled = 0;
-                if (reply.Data.TryGetProperty(sideKey, out var report) && !states[i].IsError)
+                var report = reply.Data.ValueKind == JsonValueKind.Object && (reply.Data.TryGetProperty("sides", out _) || reply.Data.TryGetProperty("sideA", out _))
+                    ? SideRows(reply.Data).FirstOrDefault(r => r.GetProperty("side").GetInt16() == side) : default;
+                if (report.ValueKind == JsonValueKind.Object && !states[i].IsError)
                 {
                     spawned = workerGrants.Count(bot => Int(bot, "side") == side && liveNames.Contains(bot.GetProperty("name").GetString()));
                     // Refill totals are only trustworthy up to final connected slots.
@@ -49,15 +53,20 @@ internal static class SupervisorResults
                 else failures.Add(JsonSerializer.SerializeToNode(new { worker = i + 1, name = bot.GetProperty("name").GetString(), side = Int(bot, "side"), error = states[i].IsError ? "worker lost or unresponsive at spawn completion" : "bot disconnected during parallel spawning" }));
             if (reply.IsError && !reply.Data.TryGetProperty("failures", out _)) failures.Add(JsonSerializer.SerializeToNode(new { worker = i + 1, error = reply.Data }));
         }
-        foreach (string key in new[] { "sideA", "sideB" })
+        var sideReports = new JsonArray();
+        var rows = SideRows(plans[0].Data);
+        for (int index = 0; index < rows.Length; index++)
         {
-            short side = plans[0].Data.GetProperty(key).GetProperty("side").GetInt16();
+            short side = rows[index].GetProperty("side").GetInt16();
             var count = counts[side];
-            var row = merged[key] as JsonObject ?? new JsonObject();
+            string key = index == 0 ? "sideA" : "sideB";
+            var row = rows.Length == 2 ? merged[key] as JsonObject ?? new JsonObject() : new JsonObject();
             row["side"] = side; row["requested"] = count.Requested; row["spawned"] = count.Spawned;
             row["failed"] = count.Requested - count.Spawned; row["refilled"] = count.Refilled;
-            merged[key] = row;
+            if (rows.Length == 2) merged[key] = row;
+            sideReports.Add(row.DeepClone());
         }
+        if (plans[0].Data.TryGetProperty("sides", out _)) merged["sides"] = sideReports;
         merged["grants"] = grants;
         merged["failures"] = failures;
         merged["warnings"] = replies.Sum(r => r.Data.TryGetProperty("warnings", out var w) ? w.GetInt32() : 0);

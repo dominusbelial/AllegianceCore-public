@@ -72,9 +72,10 @@ internal sealed partial class WorkerSupervisor
                 else if (!plans[i].IsError)
                 {
                     var missing = new Dictionary<string, FleetSlot>();
-                    foreach (var (sideKey, prefix) in new[] { ("sideA", "a"), ("sideB", "b") })
+                    foreach (var side in SupervisorResults.SideRows(plans[i].Data))
                     {
-                        var side = plans[i].Data.GetProperty(sideKey);
+                        short id = side.GetProperty("side").GetInt16();
+                        string prefix = id == 0 ? "a" : id == 1 ? "b" : $"s{id}";
                         for (int n = 0; n < side.GetProperty("requested").GetInt32(); n++)
                             missing[$"{prefix}:{n}"] = new(scenario.Id, $"{prefix}:{n}", side.GetProperty("side").GetInt16(), null, "failed");
                     }

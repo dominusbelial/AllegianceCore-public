@@ -107,6 +107,12 @@ internal sealed partial class BotManager
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
         var stations = StationsSeenByAnEnemy(names);
+        if (stations is null && HasMultipleEnemies)
+        {
+            // Fog must not keep an N-side match from ever arming its deadline.
+            // Each plan starts targetless and still requires its own sightings.
+            return RegisterFinale(settings, names, []);
+        }
         if (stations is null)
         {
             lock (_gate) (_pendingFinales ??= []).Add((settings, names.ToArray()));
@@ -210,7 +216,7 @@ internal sealed partial class BotManager
             // give side A a station only side B's world held — which the strike-end
             // check then read as "destroyed" (false station-killed).
             var observed = ObservedFinaleStations(side, sideBots, stations);
-            var target = PickFinaleTarget(core, side, observed);
+            var target = PickSideFinaleTarget(core, side, observed, sideBots);
             if (target is not { } home)
             {
                 // The grace can still arm a side that has seen nothing: that is a
@@ -270,6 +276,19 @@ internal sealed partial class BotManager
             .Select(s => (DataStationIGC?)s)
             .FirstOrDefault();
 
+    private DataStationIGC? PickSideFinaleTarget(StaticCore core, short side,
+        IReadOnlyList<DataStationIGC> observed, ActiveBot[] bots)
+    {
+        if (!HasMultipleEnemies) return PickFinaleTarget(core, side, observed);
+        var cs = bots.FirstOrDefault(b => b.Cs is not null)?.Cs;
+        if (cs is null) return null;
+        lock (cs.Gate)
+        {
+            var enemy = MultiSideEnemy.Choose(cs.World, side, observed);
+            return enemy is { } selected ? PickFinaleTarget(core, side, observed.Where(s => s.SideId == selected).ToArray()) : null;
+        }
+    }
+
     /// <summary>P896 — resolve a side's "no target yet" state once one of its OWN
     /// worlds reports an enemy station, and record that the side really observed
     /// the target it holds (the only way that target's later disappearance is
@@ -279,17 +298,26 @@ internal sealed partial class BotManager
     private void ResolveFinaleTargets(FinaleRun run, ActiveBot[] bots)
     {
         var core = Catalog.RepresentativeCore();
-        foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
+        foreach (var (side, initialPlan) in run.Plans.OrderBy(kv => kv.Key).ToArray())
         {
+            var plan = initialPlan;
+            if (HasMultipleEnemies && !MultiSideActive(side)) continue;
             var sideBots = run.Bots.Where(b => b.Side == side).ToArray();
             var observed = ObservedFinaleStations(side, sideBots, []);
+            if (HasMultipleEnemies && plan.TargetId != FinalePlan.NoTarget
+                && (!MultiSideActive(plan.TargetSide) || plan.KilledAt is not null))
+            {
+                run.Plans[side] = plan = new(FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, null);
+                foreach (var bot in sideBots) { bot.TargetId = null; bot.OrderedTargetId = null; }
+                Console.WriteLine($"[finale] side={side} target side eliminated or station lost; selecting next living enemy");
+            }
             if (plan.TargetId != FinalePlan.NoTarget)
             {
                 plan.TargetHeldBySide = observed.Any(s => s.StationId == plan.TargetId);
                 if (plan.TargetHeldBySide) plan.ObservedTarget = true;
                 continue;
             }
-            if (PickFinaleTarget(core, side, observed) is not { } home)
+            if (PickSideFinaleTarget(core, side, observed, sideBots) is not { } home)
             {
                 if (!plan.NoTargetLogged)
                 {
@@ -429,7 +457,7 @@ internal sealed partial class BotManager
                     : run.TriggeredAt is not null ? "strike" : "armed",
                 elapsedSeconds = now - run.Created,
                 minimumTimeMet = now - run.Created >= config.AfterMinutes * 60,
-                relaunchMature = run.Maturity.Length == 2 && run.Maturity.All(m => m.RelaunchShare >= config.MinRelaunchShare),
+                relaunchMature = run.Maturity.Length >= 2 && run.Maturity.All(m => m.RelaunchShare >= config.MinRelaunchShare),
                 killsLastFiveMinutes = run.Kills.Count(k => now - k.At < 300),
                 killsRequired = config.MinKillsLastFiveMinutes,
                 combatSustained = run.Kills.Count(k => now - k.At < 300) >= config.MinKillsLastFiveMinutes,
@@ -554,8 +582,10 @@ internal sealed partial class BotManager
                     foreach (var station in cs.World.Stations.Values) stations[station.StationId] = station;
                 }
             }
-            if (gate is null)
+            if (gate is null && !HasMultipleEnemies)
             {
+                // N-side matches use the same targetless registration on rotation
+                // as at initial spawn. Two-side fog/grace behavior is unchanged.
                 // P797 honesty: a side may only receive a target IT has observed, so
                 // every side must have seen an enemy station in one of its own worlds.
                 var blind = bots.GroupBy(b => b.Side).Where(g => !SideObservedEnemyStation(g.ToArray()))
@@ -697,7 +727,7 @@ internal sealed partial class BotManager
             if (run.Rotated) continue;
             while (run.Kills.TryPeek(out var kill) && now - kill.At >= 300) run.Kills.Dequeue();
             var bots = run.Bots.Where(b => IsParticipating(b) && !b.SpawnPending).ToArray();
-            run.Maturity = run.Plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
+            run.Maturity = run.Plans.Keys.Where(side => !HasMultipleEnemies || MultiSideActive(side)).Order().Select(side => new ShowcaseFinale.Maturity(side,
                 bots.Count(b => b.Side == side), bots.Count(b => b.Side == side && b.CompletedPodCycles > 0),
                 run.Bots.Where(b => b.Side == side).Sum(b => b.Kills - run.InitialKills[b]))).ToArray();
             // P896 — a side armed with no target (P831 fog grace) picks one up from its
@@ -780,6 +810,15 @@ internal sealed partial class BotManager
                         + $" recentKills={run.Kills.Count} need age>={run.Settings.AfterMinutes * 60:F0}s share>={run.Settings.MinRelaunchShare:F2} kills>={run.Settings.MinKillsLastFiveMinutes}");
                 }
                 continue;
+            }
+            if (HasMultipleEnemies)
+            {
+                foreach (short side in sides)
+                {
+                    run.Plans[side].TargetId = FinalePlan.NoTarget;
+                    run.Plans[side].ObservedTarget = false;
+                }
+                ResolveFinaleTargets(run, bots); // Refresh exactly at the finale commitment.
             }
             run.Sides = sides;
             run.TriggeredAt = now;

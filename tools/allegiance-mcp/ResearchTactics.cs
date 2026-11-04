@@ -21,7 +21,7 @@ internal sealed class ResearchTactics
         float Hull = -1, float Shield = -1,
         // P801 — the real station type + its native durability profile. Null keeps
         // the legacy SC7 quorum/timeout behaviour (tests without a core profile).
-        short StationTypeId = -1, StrikeVolley.StationProfile? Profile = null, bool Miner = false);
+        short StationTypeId = -1, StrikeVolley.StationProfile? Profile = null, bool Miner = false, short Side = -1);
     internal sealed record Order(short Recipient, short Command, IgcObjectType Type, short Target);
 
     /// <summary>SC8 — one summary line per strike-wave edge (commit/end) for the rig.
@@ -139,6 +139,7 @@ internal sealed class ResearchTactics
     // whole group, kept stable across ticks (a human commander commits, doesn't flick).
     // SC8 adds the wave itself: the ids that committed together, kept until the
     // station dies or no member is left alive and undocked in its sector.
+    private short? _selectedEnemy;
     private short? _strikeTarget;
     private short _strikeSector = -1;
 
@@ -188,7 +189,7 @@ internal sealed class ResearchTactics
 
     internal bool EconomicRaidActive { get; private set; }
 
-    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1, double enemyProsperityProgress = 0)
+    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1, double enemyProsperityProgress = 0, Func<short?>? selectEnemy = null)
     {
         EconomicRaidActive = started && enemyProsperityProgress >= .1;
         if (!started) return [];
@@ -196,6 +197,16 @@ internal sealed class ResearchTactics
         var result = new List<Order>();
         var friendlyStations = targets.Where(t => t.Friendly && t.Type == IgcObjectType.Station).ToArray();
         var enemyStations = targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Station).ToArray();
+        if (selectEnemy is not null)
+        {
+            if (_selectedEnemy is { } held && enemyStations.All(t => t.Side != held))
+            {
+                EndWave(time, "enemy-eliminated-or-unobserved");
+                _selectedEnemy = null; _strikeTarget = null; _rally = null; ResetStage();
+            }
+            _selectedEnemy ??= selectEnemy();
+            enemyStations = enemyStations.Where(t => t.Side == _selectedEnemy).ToArray();
+        }
         // Strike pilots: pure anti-base-capable hulls (never support). Support/bombers keep their repair duty.
         var strikePilots = pilots.Where(p => p.Strike && !p.Support).ToArray();
         // SC9 — the quorum is stated against the side's whole strike roster (docked
@@ -577,6 +588,7 @@ internal sealed class ResearchTactics
     /// escort count and observed station health (unknown = -1) to the end line.</summary>
     private void EndWave(double time, string reason, Target? station = null)
     {
+        if (_waveMembers.Count > 0) _selectedEnemy = null;
         ResetStage();
         if (_waveMembers.Count == 0) return;
         _events.Add(new(StrikeEventKind.End, _waveNumber, _waveMembers.Count, 0, _strikeTarget ?? -1, _strikeSector, reason,

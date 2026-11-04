@@ -10,7 +10,7 @@ internal static class SkirmishDriver
     {
         if (await Console.In.ReadLineAsync(ct) != "start") throw new IOException("Game ownership handshake missing");
         var counts = options.Skirmish!.Split('/').Select(int.Parse).ToArray();
-        if (counts.Length != 2 || counts.Any(n => n is < 1 or > 200)) throw new ArgumentException("--skirmish requires countA/countB");
+        if (counts.Length is < 2 or > 6 || counts.Any(n => n is < 1 or > 200)) throw new ArgumentException("--skirmish requires 2..6 slash-separated counts (1..200)");
         using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, ct, recovery: false);
         using var output = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
         using var writes = new SemaphoreSlim(1);
@@ -34,11 +34,17 @@ internal static class SkirmishDriver
             // (Large/Epic/Grand) keep the rig's staging/transit discipline.
             meeting_engagement = counts[0] + counts[1] <= 12
         }))!;
+        if (counts.Length > 2)
+        {
+            args.Remove("count_a"); args.Remove("count_b");
+            args["sides"] = JsonSerializer.SerializeToElement(counts.Select(count => new { count }));
+            args["meeting_engagement"] = JsonSerializer.SerializeToElement(counts.Sum() <= 12);
+        }
         var result = WorkerReply.FromTool(await supervisor.HandleAsync("spawn_scenario", args, ct));
         if (result.IsError) throw new IOException(result.Data.ToString());
         // Partial spawns must be visible as startup failures too.
-        foreach (var side in new[] { "sideA", "sideB" })
-            if (result.Data.GetProperty(side).GetProperty("failed").GetInt32() != 0)
+        foreach (var side in SupervisorResults.SideRows(result.Data))
+            if (side.GetProperty("failed").GetInt32() != 0)
                 throw new IOException("Skirmish fleet incomplete: " + result.Data);
         await Send(new { type = "ready", pids = supervisor.ProcessIds, scenario = result.Data });
         short? playerSide = counts[0] == counts[1] ? null : (short)0;

@@ -472,6 +472,7 @@ internal sealed class SideIntel(short side, uint cookie)
     internal short Side { get; } = side;
     internal uint Cookie { get; } = cookie;
     internal short OwnHome = -1, EnemyHome = -1;
+    internal short SelectedEnemySide = -1;
     internal readonly HashSet<short> KnownSectors = [];
     /// <summary>Sectors a scout actually flew a full sweep of (P798 completion
     /// criterion: contents seen is not enough — the frontier's alephs/rocks must

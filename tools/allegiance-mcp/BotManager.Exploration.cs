@@ -122,10 +122,14 @@ internal sealed partial class BotManager
     /// mission start (the map preview), it just does not know what is inside.
     /// The first enemy station actually observed is the strongest anchor;
     /// otherwise the single home flag that is not our own. -1 when ambiguous.</summary>
-    private static short ResolveEnemyHome(SideIntel intel, ClusterGraph? graph, short ownHome)
+    private static short ResolveEnemyHome(SideIntel intel, ClusterGraph? graph, short ownHome, bool multipleEnemies = false)
     {
         if (intel.EnemyHome >= 0) return intel.EnemyHome;
         if (graph is null) return -1;
+        if (multipleEnemies)
+            return graph.Clusters.Where(c => c.HomeSector && c.Id != ownHome)
+                .Select(c => (c.Id, Hops: ExplorationPlanner.Hops(graph, ownHome, c.Id)))
+                .Where(c => c.Hops >= 0).OrderBy(c => c.Hops).ThenBy(c => c.Id).Select(c => c.Id).DefaultIfEmpty((short)-1).First();
         var homes = graph.Clusters.Where(c => c.HomeSector && c.Id != ownHome)
             .Select(c => c.Id).Order().Distinct().ToArray();
         return homes.Length == 1 ? homes[0] : (short)-1;
@@ -245,6 +249,21 @@ internal sealed partial class BotManager
                         var homes = graph.Clusters.Where(c => c.HomeSector && c.Id != intel.OwnHome).Select(c => c.Id).ToArray();
                         if (homes.Length == 1) intel.EnemyHome = homes[0];
                     }
+            }
+            lock (cs.Gate)
+            if (cs.World.SideRoster?.Sides.Length > 2)
+            {
+                // Keep the full living threat picture; strategic home selection
+                // is latched until that enemy is eliminated or a clash commits.
+                foreach (var id in intel.EnemyStations.Where(kv => !cs.World.IsSideActive(kv.Value.SideId)).Select(kv => kv.Key).ToArray()) intel.EnemyStations.Remove(id);
+                foreach (var id in intel.EnemyShips.Where(kv => !cs.World.IsSideActive(kv.Value.SideId)).Select(kv => kv.Key).ToArray()) intel.EnemyShips.Remove(id);
+                foreach (var id in intel.EnemyMiners.Where(kv => !cs.World.IsSideActive(kv.Value.SideId)).Select(kv => kv.Key).ToArray()) intel.EnemyMiners.Remove(id);
+                if (intel.SelectedEnemySide < 0 || !cs.World.IsSideActive(intel.SelectedEnemySide))
+                {
+                    intel.SelectedEnemySide = MultiSideEnemy.Choose(cs.World, side) ?? -1;
+                    intel.EnemyHome = intel.EnemyStations.Values.Where(s => s.SideId == intel.SelectedEnemySide)
+                        .OrderBy(s => s.StationId).Select(s => s.Sector).DefaultIfEmpty((short)-1).First();
+                }
             }
             intel.Prune(now);
             }
@@ -390,7 +409,7 @@ internal sealed partial class BotManager
                 // a sector are not, so it sweeps each sector on the way until
                 // the next mouth is seen. Everything it reports (rocks, the
                 // station, miners) is still only what its own scanners saw.
-                short enemyHome = ResolveEnemyHome(intel, graph, ownHome);
+                short enemyHome = ResolveEnemyHome(intel, graph, ownHome, HasMultipleEnemies);
                 double elapsed = now - (_openingStartedAt < 0 ? 0 : _openingStartedAt);
                 bool reconNeeded = enemyHome >= 0 && enemyHome != ownHome
                     && intel.FirstEnemyStationAt < 0 && elapsed <= ScoutOpening.ReconDeadlineSeconds;
@@ -644,7 +663,7 @@ internal sealed partial class BotManager
                         // before its station has been seen; the strike itself still
                         // only targets stations this side has observed
                         // (ResearchTactics reads seen stations).
-                        if (ResolveEnemyHome(intel, graph, ownHome) is var home && home >= 0) bot.TargetSector = home;
+                        if (ResolveEnemyHome(intel, graph, ownHome, HasMultipleEnemies) is var home && home >= 0) bot.TargetSector = home;
                         else bot.TargetSector ??= chosen.Sector;
                     }
                     else
@@ -677,7 +696,7 @@ internal sealed partial class BotManager
             var bot = _bots.FirstOrDefault(b => b.Cs is not null && b.Side == snap.Side && CookieOf(b.Cs) == snap.Cookie);
             if (bot?.Cs is { } cs) lock (cs.Gate) graph = cs.World.Graph;
             short ownHome = ResolveOwnHome(_intel.Get(snap.Cookie, snap.Side), graph, snap.Side);
-            short enemyHome = ResolveEnemyHome(_intel.Get(snap.Cookie, snap.Side), graph, ownHome);
+            short enemyHome = ResolveEnemyHome(_intel.Get(snap.Cookie, snap.Side), graph, ownHome, HasMultipleEnemies);
             var reachable = ExplorationPlanner.Reachable(graph, ownHome >= 0 ? ownHome : (short)0);
             int seen = reachable.Count(snap.KnownSectors.Contains);
             var miners = snap.EnemyMiners.Values.GroupBy(m => m.Sector)

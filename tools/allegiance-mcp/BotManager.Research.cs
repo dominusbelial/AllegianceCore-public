@@ -65,7 +65,7 @@ internal sealed partial class BotManager
                 if (probeBriefing is not null)
                 {
                     ReadyResearchPeer(Probe);
-                    foreach (var side in ValidSides().Where(s => !HumanCommands(s)).OrderBy(s => s == ProbeSide ? 1 : 0))
+                    foreach (var side in ValidSides().Where(s => !HumanCommands(s) && (!HasMultipleEnemies || MultiSideActive(s))).OrderBy(s => s == ProbeSide ? 1 : 0))
                     {
                         if (_loopCts.IsCancellationRequested) break;
                         var peer = EnsureCommander(side);
@@ -118,7 +118,8 @@ internal sealed partial class BotManager
                                     .DistinctBy(t => (t.Type, t.Id)).ToArray();
                                 foreach (var order in tactics.Policy.Tick(peer.World.SimulationTimeSeconds,
                                     peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets,
-                                    tactical.StrikeRoster, ObserveEnemyProsperity(peer.World, side, core)))
+                                    tactical.StrikeRoster, ObserveEnemyProsperity(peer.World, side, core),
+                                    peer.World.SideRoster?.Sides.Length > 2 ? () => MultiSideEnemy.Choose(peer.World, side) : null))
                                 {
                                     peer.SendChat("", ChatTarget.Individual, oidRecipient: order.Recipient,
                                         commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);

@@ -291,7 +291,9 @@ internal sealed partial class WorkerSupervisor : IDisposable
                 var totals = template.GetProperty("totals").EnumerateArray().ToArray();
                 object Side(int sideIndex) => new { side = totals[sideIndex].GetProperty("side").GetInt16(),
                     requested = WorkerPartition.Split(totals[sideIndex].GetProperty("requested").GetInt32(), _workers.Length)[_workers[i].Index] };
-                plans[i] = new(false, JsonSerializer.SerializeToElement(new { sideA = Side(0), sideB = Side(1) }));
+                plans[i] = new(false, template.TryGetProperty("sides", out _)
+                    ? JsonSerializer.SerializeToElement(new { sides = Enumerable.Range(0, totals.Length).Select(Side) })
+                    : JsonSerializer.SerializeToElement(new { sideA = Side(0), sideB = Side(1) }));
             }
         if (!RegisterDesired(scenario, plans))
             return Result(JsonSerializer.SerializeToElement(new { canceled = true, fleet = FleetStatus() }));
@@ -330,8 +332,7 @@ internal sealed partial class WorkerSupervisor : IDisposable
                 }
             }
             var merged = SupervisorResults.MergeScenario(plans, replies, states, WorkerStatus());
-            return Result(merged, merged.GetProperty("sideA").GetProperty("spawned").GetInt32()
-                + merged.GetProperty("sideB").GetProperty("spawned").GetInt32() == 0);
+            return Result(merged, SupervisorResults.SideRows(merged).Sum(s => s.GetProperty("spawned").GetInt32()) == 0);
         }
         finally
         {

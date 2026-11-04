@@ -92,7 +92,7 @@ internal sealed partial class BotManager
     {
         var targets = new List<ResearchTactics.Target>();
         var core = Catalog.RepresentativeCore();
-        foreach (var station in world.Stations.Values.Where(s => s.SideId >= 0 && s.Position is { Length: 3 }))
+        foreach (var station in world.Stations.Values.Where(s => s.SideId >= 0 && (world.SideRoster?.Sides.Length is not > 2 || world.IsSideActive(s.SideId)) && s.Position is { Length: 3 }))
         {
             bool friendly = station.SideId == side || world.AreAllied(side, station.SideId);
             // SC7 — the Garrison (toughest hull) is the station-type CLASS 0
@@ -116,15 +116,15 @@ internal sealed partial class BotManager
             targets.Add(new(station.StationId, IgcObjectType.Station, station.ClusterId, Vec3(station.Position), friendly,
                 damaged, Garrison: garrison, Hull: hullFraction, Shield: shieldFraction,
                 StationTypeId: station.StationTypeId,
-                Profile: StrikeVolley.Profile(core, station.StationTypeId)));
+                Profile: StrikeVolley.Profile(core, station.StationTypeId), Side: station.SideId));
         }
-        foreach (var ship in world.Ships.Values.Where(s => s.SideId >= 0 && !s.IsDead && !s.Unknown && !s.IsNotVisible
+        foreach (var ship in world.Ships.Values.Where(s => s.SideId >= 0 && (world.SideRoster?.Sides.Length is not > 2 || world.IsSideActive(s.SideId)) && !s.IsDead && !s.Unknown && !s.IsNotVisible
             && s.StationId < 0 && s.ParentId < 0 && s.SectorId >= 0 && s.Latest is { HullFraction: > 0 }
             && !Catalog.IsLifepodHull(s.HullId)))
             targets.Add(new(ship.ShipId, IgcObjectType.Ship, ship.SectorId, ship.Latest!.Position,
                 ship.SideId == side || world.AreAllied(side, ship.SideId), ship.Latest.HullFraction < 1,
                 CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.Bomber,
-                Miner: core.HullTypes.TryGetValue(ship.HullId, out var hull) && hull.HasCapability(DataHullTypeIGC.HabmMiner)));
+                Miner: core.HullTypes.TryGetValue(ship.HullId, out var hull) && hull.HasCapability(DataHullTypeIGC.HabmMiner), Side: ship.SideId));
         // SC7 — warps (alephs) as rally points. DestinationSector = the FAR side
         // (the partner warp's cluster), so the strike policy can pick the aleph
         // that LEADS INTO the target sector. Warps are neutral/shared -> Friendly.

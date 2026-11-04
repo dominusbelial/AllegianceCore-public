@@ -5700,3 +5700,68 @@ focused cohort (8 min each), then went **2/3** in serial isolation (pass 2 m 46 
 6 m 14 s, fail 8 m 4 s). The P925-only worktree passed 1/1 (6 m 17 s). Same arrival-limit
 class as P817/P822/P841/P926 above; whether P926's per-generation scout reset makes the
 swapped layout slower to arrive is not established. Watch the b64 rig run's arrival times.
+
+## P927 validation — one Fast sweep and filtered isolations, 2026-11-04
+
+Exactly one Fast sweep ran: **13,055 passed, eight failed, three skipped**;
+all nine infrastructure checks passed. The calibrated limit was **10.000 s**
+and five executions exceeded it. No server/Core runtime source, unrelated test,
+timeout, tier or calibration threshold was changed, and no full-tier retry ran.
+The three skips are the existing optional private Meshy-pack cases; the native
+artwork and `local.env` were available. A writable task-local `XDG_CONFIG_HOME`
+was used throughout this sweep and the isolations.
+
+| Sweep failure / timing case | Three filtered repetitions | Qualification |
+|---|---|---|
+| Five `PlayerBundlePathsTests`: Artwork executable fallback; Artwork/NativeSource missing defaults; native-source install-subdirectory guessing; local sky config precedence | Each fails 3/3; four companion class cases pass each run | Existing mandated in-worktree TMPDIR permits ancestor `local.env` discovery, as ledgered in P926 and earlier. Resolver and fixtures unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail (expected AttackTarget, actual null) | Existing failure already reproduced on dispatch-base sources in P923; still open. |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | pass / pass / pass (5.594 / 6.630 / 5.455 s) | Sweep missed the first mining transition at 54.355 s (cycle 1; zero sells). No native miner/sim code changed; isolated cause not established. The similarly named legacy-path companion also passes 3/3. |
+| `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over` | pass / pass / pass (0.239 / 0.236 / 0.257 s) | Sweep-only empty offer/accept collection assertion at BallotVotingLiveTests.cs:602; no ballot or server code changed. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` (passed at 10.772 s) | pass / pass / pass (4.764 / 4.390 / 4.559 s) | Sweep timing overrun only; no renderer/HUD changes or new media. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (passed at 11.489 s) | pass / pass / pass (4.117 / 4.253 / 4.123 s) | Sweep timing overrun only. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ:25)` (passed at 11.011 s) | pass / pass / pass (3.726 / 3.890 / 3.720 s); civ 3 companion also passes 3/3 | Sweep timing overrun only. No training code changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed at 10.665 s) | functionally passes 3/3 (11.006 / 10.591 / 10.372 s) | The timing guard remains exceeded in isolation; no clearance threshold, tier, flight law or time limit changed. |
+
+Other real local proof processes shared the host; sampled load averages were
+about 3.9–7.8 on 24 cores, with no synthetic load. These qualifications retain
+the failed Fast gate. Raw logs/TRX are in task-worktree `.scratch/p927/fast/`
+and `.scratch/p927/*-isolation-*`; compact outcomes are in
+[P927 verification](reports/P927_assets/verification.json). The
+[P927 report](reports/P927_REPORT.md) separates these results from the new
+focused tests and N-side showcase proof.
+
+
+## P927 validation — two-side parking gate, 2026-11-04
+
+The required five unchanged P700 invocations finished **4/5 full passes**.
+Attempt 5 hit the actual `Parked >5s` assertion at P700ShowcaseLiveTests.cs:78,
+after 377 s of test execution. Side-0 bot `mcp-b028-9447`, role Bomber but
+currently on a light interceptor, stopped in sector 1051 while holding live
+ship target 8117. The trace reaches **5.01 s** below the idle threshold; the
+server has zero velocity, throttle −1 and continuing AI decisions. This was
+**not** an arrival-limit failure. The exact cause in this run is not established.
+
+Three subsequent serial invocations of the same exact-method filter (attempts
+6–8), with the same source, assertions and GC/transport/simulation settings,
+passed **3/3**:
+
+| Isolation | Observation seconds | Arrivals | Longest idle with target |
+|---|---:|---:|---:|
+| 6 | 262.1 | 24/30 | 0.000 s |
+| 7 | 242.9 | 24/30 | 1.914 s |
+| 8 | 471.3 | 24/30 | 1.904 s |
+
+The P706/P708/P709/P830 entries already record this stopped-combat-target
+parking signature, including failures on older unchanged-base controls. P927
+adds no fresh dispatch-base five-run A/B; it does not establish a new cause or
+claim that three successful repetitions fix the issue. The required five-run
+gate remains **qualified/failed**, rather than being relabeled 5/5 green.
+No P700 source, timeout, movement law, combat distance or two-side policy was
+changed. No synthetic load was introduced. The later isolated run window had
+sampled host load about 1.0–1.6 on 24 cores.
+
+Raw TRX/logs: task-worktree `.scratch/p927/p927-never-parks-{1..8}.trx` and
+`.scratch/p927/never-parks-{1..8}.log`. Counters, the failed bot snapshot and
+successful timing samples are retained in
+[P927 verification](reports/P927_assets/verification.json) and the
+[P927 report](reports/P927_REPORT.md).

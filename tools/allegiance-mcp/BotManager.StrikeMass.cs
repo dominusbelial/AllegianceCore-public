@@ -129,7 +129,8 @@ internal sealed partial class BotManager
     {
         foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
         {
-            if (!run.Sides.Contains(side) || run.Rotated || run.GameOverAt is not null) continue;
+            if (!run.Sides.Contains(side) || run.Rotated || run.GameOverAt is not null
+                || (HasMultipleEnemies && !MultiSideActive(side))) continue;
             // P896 — a plan armed with no target (blind side after the P831 grace) has
             // nothing to strike; ResolveFinaleTargets fills it in once the side sees one.
             if (plan.TargetId == FinalePlan.NoTarget) continue;
@@ -228,6 +229,13 @@ internal sealed partial class BotManager
                     plan.StagingSince = null;
                     plan.HitsInWindow = 0;
                     plan.HullAtGo = plan.ShieldAtGo = -1;
+                    if (HasMultipleEnemies)
+                    {
+                        // A new wave is a new strategic commitment. Re-resolve on
+                        // the next coordinator pass, never while a wave is in flight.
+                        plan.TargetId = FinalePlan.NoTarget;
+                        plan.ObservedTarget = false;
+                    }
                 }
             }
 
