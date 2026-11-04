@@ -1,0 +1,1618 @@
+{
+  "input": "rig-105v105.log.gz",
+  "sha256": "455b1fe4940c2ebdc77e6a83b65b8f42e4ea7eab4100f03f10175f0affdd6a8c",
+  "matches": [
+    {
+      "match": 1,
+      "openingUtc": null,
+      "openingCensored": true,
+      "sides": [
+        {
+          "kills": 475,
+          "deaths": 623,
+          "finalKills": 475,
+          "finalDeaths": 621,
+          "finalPlayers": 107,
+          "preKills": 352,
+          "preDeaths": 515,
+          "finaleKills": 123,
+          "finaleDeaths": 108,
+          "firstUndockUtc": "2026-11-03T18:22:06.930273+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T18:41:26.309580+00:00",
+          "ejectionSectors": {
+            "1052": 488,
+            "1055": 21,
+            "1051": 68,
+            "1050": 68,
+            "1054": 36,
+            "1061": 5,
+            "1058": 5,
+            "1057": 1,
+            "1062": 1
+          },
+          "podOutcomes": {
+            "removed": 11,
+            "death": 439,
+            "rescued": 30,
+            "docked": 25,
+            "oxygen": 171
+          },
+          "oxygenEndSectors": {
+            "1050": 141,
+            "1054": 21,
+            "1057": 4,
+            "1053": 5
+          },
+          "money": {
+            "events": 181,
+            "netDelta": -182750,
+            "negativeDelta": -182750
+          },
+          "timeline": {
+            "3": {
+              "kills": 111,
+              "deaths": 97
+            },
+            "4": {
+              "deaths": 59,
+              "kills": 72
+            },
+            "5": {
+              "deaths": 117,
+              "kills": 39
+            },
+            "6": {
+              "deaths": 91,
+              "kills": 25
+            },
+            "7": {
+              "kills": 33,
+              "deaths": 53
+            },
+            "8": {
+              "deaths": 62,
+              "kills": 37
+            },
+            "9": {
+              "kills": 42,
+              "deaths": 48
+            },
+            "10": {
+              "deaths": 34,
+              "kills": 56
+            },
+            "11": {
+              "kills": 36,
+              "deaths": 42
+            },
+            "12": {
+              "deaths": 20,
+              "kills": 24
+            }
+          }
+        },
+        {
+          "kills": 634,
+          "deaths": 321,
+          "finalKills": 634,
+          "finalDeaths": 321,
+          "finalPlayers": 107,
+          "preKills": 535,
+          "preDeaths": 226,
+          "finaleKills": 99,
+          "finaleDeaths": 95,
+          "firstUndockUtc": "2026-11-03T18:23:15.008415+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T18:49:21.358179+00:00",
+          "ejectionSectors": {
+            "1052": 372,
+            "1055": 4,
+            "1054": 26,
+            "1051": 66,
+            "1057": 8,
+            "1050": 53,
+            "1058": 3
+          },
+          "podOutcomes": {
+            "death": 263,
+            "rescued": 68,
+            "docked": 136,
+            "oxygen": 54
+          },
+          "oxygenEndSectors": {
+            "1051": 38,
+            "1058": 10,
+            "1052": 1,
+            "1055": 3,
+            "1062": 1,
+            "1061": 1
+          },
+          "money": {
+            "events": 185,
+            "netDelta": -468300,
+            "negativeDelta": -468300
+          },
+          "timeline": {
+            "3": {
+              "deaths": 60,
+              "kills": 138
+            },
+            "4": {
+              "kills": 43,
+              "deaths": 41
+            },
+            "5": {
+              "kills": 121,
+              "deaths": 24
+            },
+            "6": {
+              "kills": 85,
+              "deaths": 22
+            },
+            "7": {
+              "deaths": 23,
+              "kills": 73
+            },
+            "8": {
+              "kills": 37,
+              "deaths": 29
+            },
+            "9": {
+              "kills": 52,
+              "deaths": 34
+            },
+            "10": {
+              "deaths": 51,
+              "kills": 34
+            },
+            "11": {
+              "kills": 29,
+              "deaths": 18
+            },
+            "12": {
+              "kills": 22,
+              "deaths": 19
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T18:10:12.929148+00:00",
+      "lastObservedUtc": "2026-11-03T19:14:12.503350+00:00",
+      "finaleUtc": "2026-11-03T18:59:16.846554+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T18:41:58.557745+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost in Ganymede under attack by mcp-w2-b100-7679' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:46:51.927184+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost in Ganymede under attack by mcp-w2-b094-4640' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:50:12.154486+00:00",
+          "defender": 1,
+          "receipt": "[station] 'TeleRefinery in Organia under attack by mcp-w2-b093-7257' (voice 823, target TEAM) -> side 1 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:51:28.891973+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison in Ganymede under attack by mcp-w1-b099-2109' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:52:58.398703+00:00",
+          "defender": 1,
+          "receipt": "[station] 'Outpost in Organia under attack by mcp-w1-b098-7457' (voice 821, target TEAM) -> side 1 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:53:08.410841+00:00",
+          "defender": 1,
+          "receipt": "[station] 'Outpost in Organia critically damaged and under attack by mcp-w1-b098-7457' (voice 841, target TEAM) -> side 1 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:55:39.178409+00:00",
+          "defender": 1,
+          "receipt": "[station] 'Garrison (Str) in Organia under attack by mcp-w2-b069-8602' (voice 820, target TEAM) -> side 1 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:57:06.656328+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy (Adv) in Ganymede under attack by mcp-w1-b105-1326' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T18:58:35.700481+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison in Ganymede under attack by mcp-w2-b104-5834' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T18:46:56.250363+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9194 destroyed (launcher 8301) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        },
+        {
+          "utc": "2026-11-03T18:53:12.190365+00:00",
+          "attacker": 0,
+          "receipt": "[station] station 9188 destroyed (launcher 8302) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "armedBy": 1,
+      "deadline": "[finale] deadline winner side=1 by=kills values=0:kills=475/deaths=625,1:kills=634/deaths=322 epoch=dc8f3f4529494f26858205c76f5abb71 armedBy=1",
+      "stationKills": "[finale] Station kills: Alpha=1, Bravo=1",
+      "winner": 1,
+      "endUtc": "2026-11-03T19:14:12.503350+00:00",
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13455 bytes; match=1 seed=1299087484 side0=35:Bios(generated) side1=5:Omicron(generated)"
+    },
+    {
+      "match": 2,
+      "openingUtc": "2026-11-03T19:14:12.505005+00:00",
+      "openingCensored": false,
+      "sides": [
+        {
+          "kills": 517,
+          "deaths": 508,
+          "finalKills": 517,
+          "finalDeaths": 508,
+          "finalPlayers": 107,
+          "preKills": 372,
+          "preDeaths": 363,
+          "finaleKills": 145,
+          "finaleDeaths": 145,
+          "firstUndockUtc": "2026-11-03T19:14:57.283460+00:00",
+          "firstStrikeOrderUtc": null,
+          "ejectionSectors": {
+            "1052": 390,
+            "1050": 104,
+            "1061": 25,
+            "1054": 11,
+            "1057": 2,
+            "1051": 42,
+            "1059": 4,
+            "1055": 5
+          },
+          "podOutcomes": {
+            "removed": 26,
+            "death": 318,
+            "rescued": 37,
+            "oxygen": 189,
+            "docked": 6
+          },
+          "oxygenEndSectors": {
+            "1050": 188,
+            "1054": 1
+          },
+          "money": {
+            "events": 118,
+            "netDelta": -286810,
+            "negativeDelta": -286810
+          },
+          "timeline": {
+            "0": {
+              "kills": 51,
+              "deaths": 7
+            },
+            "1": {
+              "kills": 95,
+              "deaths": 33
+            },
+            "2": {
+              "kills": 44,
+              "deaths": 39
+            },
+            "3": {
+              "deaths": 53,
+              "kills": 36
+            },
+            "4": {
+              "deaths": 64,
+              "kills": 20
+            },
+            "5": {
+              "kills": 67,
+              "deaths": 92
+            },
+            "6": {
+              "deaths": 72,
+              "kills": 58
+            },
+            "7": {
+              "kills": 56,
+              "deaths": 59
+            },
+            "8": {
+              "deaths": 44,
+              "kills": 49
+            },
+            "9": {
+              "deaths": 45,
+              "kills": 41
+            }
+          }
+        },
+        {
+          "kills": 476,
+          "deaths": 455,
+          "finalKills": 476,
+          "finalDeaths": 455,
+          "finalPlayers": 107,
+          "preKills": 341,
+          "preDeaths": 331,
+          "finaleKills": 135,
+          "finaleDeaths": 124,
+          "firstUndockUtc": "2026-11-03T19:14:57.283535+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T19:31:19.228465+00:00",
+          "ejectionSectors": {
+            "1051": 105,
+            "1061": 11,
+            "1052": 410,
+            "1054": 11,
+            "1050": 48,
+            "1059": 10,
+            "1055": 8
+          },
+          "podOutcomes": {
+            "removed": 16,
+            "death": 375,
+            "rescued": 68,
+            "docked": 73,
+            "oxygen": 65
+          },
+          "oxygenEndSectors": {
+            "1051": 61,
+            "1055": 3,
+            "1053": 1
+          },
+          "money": {
+            "events": 249,
+            "netDelta": -783410,
+            "negativeDelta": -783410
+          },
+          "timeline": {
+            "0": {
+              "deaths": 54,
+              "kills": 14
+            },
+            "1": {
+              "deaths": 60,
+              "kills": 39
+            },
+            "2": {
+              "kills": 17,
+              "deaths": 45
+            },
+            "3": {
+              "kills": 62,
+              "deaths": 29
+            },
+            "4": {
+              "kills": 74,
+              "deaths": 24
+            },
+            "5": {
+              "deaths": 63,
+              "kills": 78
+            },
+            "6": {
+              "kills": 57,
+              "deaths": 55
+            },
+            "7": {
+              "deaths": 44,
+              "kills": 40
+            },
+            "8": {
+              "kills": 38,
+              "deaths": 44
+            },
+            "9": {
+              "kills": 57,
+              "deaths": 37
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T19:14:12.505005+00:00",
+      "lastObservedUtc": "2026-11-03T20:04:12.012836+00:00",
+      "finaleUtc": "2026-11-03T19:49:16.323790+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T19:31:57.031669+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Shipyard in Ganymede under attack by mcp-w1-b107-4635' (voice 822, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T19:50:13.477277+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b107-4635' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T19:55:05.697786+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T19:56:25.046075+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy in Ganymede under attack by mcp-w2-b008-7296' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T19:56:42.584501+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b005-2209' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T19:57:35.842492+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b009-9077' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:00:09.413558+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b107-4635' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:00:19.775615+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:02:41.423321+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost in Ganymede under attack by mcp-w2-b100-7679' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T19:32:01.716245+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9193 destroyed (launcher 8532) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "matchup": "[matchup] mission #0 match=2 seed=1533546953 side0=5:Omicron(generated) side1=25:Iron Coalition(plan_a)",
+      "armedBy": 0,
+      "deadline": "[finale] deadline winner side=1 by=station-kills values=0:0,1:1 epoch=5c6d85f2e57c49ae8438dbb0cd21f009 armedBy=0",
+      "stationKills": "[finale] Station kills: Alpha=0, Bravo=1",
+      "winner": 1,
+      "endUtc": "2026-11-03T20:04:12.012836+00:00",
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13392 bytes; match=2 seed=1533546953 side0=5:Omicron(generated) side1=25:Iron Coalition(plan_a)"
+    },
+    {
+      "match": 3,
+      "openingUtc": "2026-11-03T20:04:12.014407+00:00",
+      "openingCensored": false,
+      "sides": [
+        {
+          "kills": 514,
+          "deaths": 497,
+          "finalKills": 514,
+          "finalDeaths": 497,
+          "finalPlayers": 107,
+          "preKills": 382,
+          "preDeaths": 396,
+          "finaleKills": 132,
+          "finaleDeaths": 101,
+          "firstUndockUtc": "2026-11-03T20:04:56.818773+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T20:21:19.981596+00:00",
+          "ejectionSectors": {
+            "1052": 446,
+            "1055": 26,
+            "1051": 62,
+            "1050": 119,
+            "1061": 23,
+            "1054": 9,
+            "1053": 4,
+            "1059": 1
+          },
+          "podOutcomes": {
+            "removed": 40,
+            "death": 445,
+            "rescued": 76,
+            "docked": 95,
+            "oxygen": 48
+          },
+          "oxygenEndSectors": {
+            "1050": 47,
+            "1054": 1
+          },
+          "money": {
+            "events": 252,
+            "netDelta": -728260,
+            "negativeDelta": -728260
+          },
+          "timeline": {
+            "0": {
+              "deaths": 50,
+              "kills": 39
+            },
+            "1": {
+              "deaths": 102,
+              "kills": 30
+            },
+            "2": {
+              "deaths": 75,
+              "kills": 71
+            },
+            "3": {
+              "kills": 86,
+              "deaths": 24
+            },
+            "4": {
+              "deaths": 44,
+              "kills": 32
+            },
+            "5": {
+              "kills": 61,
+              "deaths": 50
+            },
+            "6": {
+              "deaths": 50,
+              "kills": 63
+            },
+            "7": {
+              "deaths": 42,
+              "kills": 34
+            },
+            "8": {
+              "kills": 57,
+              "deaths": 29
+            },
+            "9": {
+              "kills": 41,
+              "deaths": 31
+            }
+          }
+        },
+        {
+          "kills": 541,
+          "deaths": 429,
+          "finalKills": 541,
+          "finalDeaths": 429,
+          "finalPlayers": 107,
+          "preKills": 433,
+          "preDeaths": 327,
+          "finaleKills": 108,
+          "finaleDeaths": 102,
+          "firstUndockUtc": "2026-11-03T20:04:56.818982+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T20:29:24.652622+00:00",
+          "ejectionSectors": {
+            "1051": 81,
+            "1055": 12,
+            "1052": 414,
+            "1061": 26,
+            "1050": 38,
+            "1054": 10
+          },
+          "podOutcomes": {
+            "removed": 19,
+            "death": 314,
+            "rescued": 70,
+            "docked": 59,
+            "oxygen": 114,
+            "station-rescued": 11
+          },
+          "oxygenEndSectors": {
+            "1051": 111,
+            "1054": 2,
+            "1050": 1
+          },
+          "money": {
+            "events": 160,
+            "netDelta": -488010,
+            "negativeDelta": -488010
+          },
+          "timeline": {
+            "0": {
+              "kills": 71,
+              "deaths": 13
+            },
+            "1": {
+              "kills": 117,
+              "deaths": 35
+            },
+            "2": {
+              "kills": 76,
+              "deaths": 57
+            },
+            "3": {
+              "deaths": 68,
+              "kills": 21
+            },
+            "4": {
+              "kills": 43,
+              "deaths": 49
+            },
+            "5": {
+              "deaths": 41,
+              "kills": 59
+            },
+            "6": {
+              "kills": 46,
+              "deaths": 64
+            },
+            "7": {
+              "kills": 41,
+              "deaths": 30
+            },
+            "8": {
+              "deaths": 35,
+              "kills": 39
+            },
+            "9": {
+              "deaths": 37,
+              "kills": 28
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T20:04:12.014407+00:00",
+      "lastObservedUtc": "2026-11-03T20:54:10.879025+00:00",
+      "finaleUtc": "2026-11-03T20:39:15.430808+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T20:32:05.848351+00:00",
+          "defender": 0,
+          "receipt": "[station] 'SpecMine (Si) in Ganymede under attack by mcp-w2-b098-4949' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:32:15.863504+00:00",
+          "defender": 0,
+          "receipt": "[station] 'SpecMine (Si) in Ganymede under attack by mcp-w2-b098-4949' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:36:52.694789+00:00",
+          "defender": 0,
+          "receipt": "[station] 'SpecMine (Si) in Ganymede under attack by mcp-w2-b104-5834' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:37:11.566780+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost (Lt) in Ganymede under attack by mcp-w1-b107-4635' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:37:39.653686+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy in Ganymede under attack by mcp-w2-b100-7679' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:37:49.701847+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy in Ganymede under attack by mcp-w2-b100-7679' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:44:27.657661+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy (Adv) in Ganymede under attack by mcp-w2-b092-3269' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:44:37.715321+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Supremacy (Adv) in Ganymede under attack by mcp-w2-b092-3269' (voice 826, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:46:32.597743+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Expansion in Ganymede under attack by mcp-w1-b015-7209' (voice 825, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:46:58.615691+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Expansion in Ganymede under attack by mcp-w1-b007-9778' (voice 825, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T20:50:04.979336+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Expansion in Ganymede under attack by mcp-w1-b101-6486' (voice 825, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T20:37:01.060824+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9196 destroyed (launcher 8787) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        },
+        {
+          "utc": "2026-11-03T20:37:16.739812+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9191 destroyed (launcher 8786) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        },
+        {
+          "utc": "2026-11-03T20:44:45.915218+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9197 destroyed (launcher 8779) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "matchup": "[matchup] mission #0 match=3 seed=1076220678 side0=18:Gigacorp(generated) side1=4:Phoenix(generated)",
+      "armedBy": 0,
+      "deadline": "[finale] deadline winner side=1 by=station-kills values=0:0,1:3 epoch=bade39fcf4074adda83a11ae1fca4da3 armedBy=0",
+      "stationKills": "[finale] Station kills: Alpha=0, Bravo=3",
+      "winner": 1,
+      "endUtc": "2026-11-03T20:54:10.879025+00:00",
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13392 bytes; match=3 seed=1076220678 side0=18:Gigacorp(generated) side1=4:Phoenix(generated)"
+    },
+    {
+      "match": 4,
+      "openingUtc": "2026-11-03T20:54:10.888251+00:00",
+      "openingCensored": false,
+      "sides": [
+        {
+          "kills": 469,
+          "deaths": 503,
+          "finalKills": 469,
+          "finalDeaths": 503,
+          "finalPlayers": 107,
+          "preKills": 373,
+          "preDeaths": 374,
+          "finaleKills": 96,
+          "finaleDeaths": 129,
+          "firstUndockUtc": "2026-11-03T20:54:55.764235+00:00",
+          "firstStrikeOrderUtc": null,
+          "ejectionSectors": {
+            "1052": 396,
+            "1057": 1,
+            "1050": 99,
+            "1061": 7,
+            "1054": 15,
+            "1059": 10,
+            "1051": 42,
+            "1055": 4
+          },
+          "podOutcomes": {
+            "removed": 16,
+            "death": 302,
+            "rescued": 36,
+            "oxygen": 199,
+            "docked": 4
+          },
+          "oxygenEndSectors": {
+            "1050": 197,
+            "1059": 1,
+            "1054": 1
+          },
+          "money": {
+            "events": 122,
+            "netDelta": -293010,
+            "negativeDelta": -293010
+          },
+          "timeline": {
+            "0": {
+              "kills": 64,
+              "deaths": 14
+            },
+            "1": {
+              "kills": 80,
+              "deaths": 38
+            },
+            "2": {
+              "deaths": 58,
+              "kills": 58
+            },
+            "3": {
+              "kills": 78,
+              "deaths": 102
+            },
+            "4": {
+              "deaths": 66,
+              "kills": 38
+            },
+            "5": {
+              "deaths": 56,
+              "kills": 16
+            },
+            "6": {
+              "deaths": 40,
+              "kills": 39
+            },
+            "7": {
+              "kills": 29,
+              "deaths": 45
+            },
+            "8": {
+              "kills": 27,
+              "deaths": 53
+            },
+            "9": {
+              "deaths": 31,
+              "kills": 40
+            }
+          }
+        },
+        {
+          "kills": 488,
+          "deaths": 409,
+          "finalKills": 488,
+          "finalDeaths": 409,
+          "finalPlayers": 107,
+          "preKills": 366,
+          "preDeaths": 344,
+          "finaleKills": 122,
+          "finaleDeaths": 65,
+          "firstUndockUtc": "2026-11-03T20:54:55.764300+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T21:15:30.386915+00:00",
+          "ejectionSectors": {
+            "1051": 110,
+            "1052": 351,
+            "1058": 2,
+            "1054": 13,
+            "1050": 69,
+            "1059": 6,
+            "1055": 12
+          },
+          "podOutcomes": {
+            "removed": 15,
+            "death": 310,
+            "rescued": 83,
+            "oxygen": 93,
+            "docked": 55
+          },
+          "oxygenEndSectors": {
+            "1051": 93
+          },
+          "money": {
+            "events": 256,
+            "netDelta": -1046887,
+            "negativeDelta": -1049887,
+            "positiveDelta": 3000
+          },
+          "timeline": {
+            "0": {
+              "deaths": 51,
+              "kills": 27
+            },
+            "1": {
+              "deaths": 53,
+              "kills": 54
+            },
+            "2": {
+              "kills": 19,
+              "deaths": 75
+            },
+            "3": {
+              "kills": 119,
+              "deaths": 55
+            },
+            "4": {
+              "deaths": 35,
+              "kills": 56
+            },
+            "5": {
+              "kills": 39,
+              "deaths": 29
+            },
+            "6": {
+              "deaths": 46,
+              "kills": 52
+            },
+            "7": {
+              "deaths": 31,
+              "kills": 40
+            },
+            "8": {
+              "deaths": 15,
+              "kills": 35
+            },
+            "9": {
+              "deaths": 19,
+              "kills": 47
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T20:54:10.888251+00:00",
+      "lastObservedUtc": "2026-11-03T21:44:10.065559+00:00",
+      "finaleUtc": "2026-11-03T21:29:14.376093+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T21:14:58.980000+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Shipyard in Ganymede under attack by mcp-w2-b096-8731' (voice 822, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:16:01.101642+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Shipyard in Ganymede under attack by mcp-w1-b101-6486' (voice 822, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:16:36.716504+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost in Ganymede under attack by mcp-w1-b049-6173' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:16:46.718911+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Outpost in Ganymede under attack by mcp-w1-b071-4060' (voice 821, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:18:31.908747+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Shipyard in Ganymede under attack by mcp-w1-b095-4297' (voice 822, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:21:21.791740+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b096-8731' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T21:28:08.243711+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b092-3269' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T21:18:35.242593+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9195 destroyed (launcher 9016) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "matchup": "[matchup] mission #0 match=4 seed=1425416358 side0=5:Omicron(generated) side1=1:Dreghklar(generated)",
+      "armedBy": 0,
+      "deadline": "[finale] deadline winner side=1 by=station-kills values=0:0,1:1 epoch=913f2851d1714201bf92b7538defb454 armedBy=0",
+      "stationKills": "[finale] Station kills: Alpha=0, Bravo=1",
+      "winner": 1,
+      "endUtc": "2026-11-03T21:44:10.065559+00:00",
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13392 bytes; match=4 seed=1425416358 side0=5:Omicron(generated) side1=1:Dreghklar(generated)"
+    },
+    {
+      "match": 5,
+      "openingUtc": "2026-11-03T21:44:10.066907+00:00",
+      "openingCensored": false,
+      "sides": [
+        {
+          "kills": 440,
+          "deaths": 401,
+          "finalKills": 440,
+          "finalDeaths": 401,
+          "finalPlayers": 107,
+          "preKills": 374,
+          "preDeaths": 335,
+          "finaleKills": 66,
+          "finaleDeaths": 66,
+          "firstUndockUtc": "2026-11-03T21:44:54.945940+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T22:08:24.276966+00:00",
+          "ejectionSectors": {
+            "1050": 117,
+            "1052": 358,
+            "1054": 20,
+            "1059": 17,
+            "1051": 46,
+            "1055": 5
+          },
+          "podOutcomes": {
+            "removed": 35,
+            "death": 251,
+            "rescued": 119,
+            "oxygen": 144,
+            "docked": 27
+          },
+          "oxygenEndSectors": {
+            "1050": 143,
+            "1054": 1
+          },
+          "money": {
+            "events": 153,
+            "netDelta": -470510,
+            "negativeDelta": -470510
+          },
+          "timeline": {
+            "0": {
+              "kills": 80,
+              "deaths": 21
+            },
+            "1": {
+              "kills": 71,
+              "deaths": 24
+            },
+            "2": {
+              "kills": 70,
+              "deaths": 54
+            },
+            "3": {
+              "deaths": 95,
+              "kills": 45
+            },
+            "4": {
+              "kills": 32,
+              "deaths": 43
+            },
+            "5": {
+              "kills": 39,
+              "deaths": 51
+            },
+            "6": {
+              "kills": 37,
+              "deaths": 47
+            },
+            "7": {
+              "kills": 33,
+              "deaths": 33
+            },
+            "8": {
+              "deaths": 18,
+              "kills": 24
+            },
+            "9": {
+              "kills": 9,
+              "deaths": 15
+            }
+          }
+        },
+        {
+          "kills": 457,
+          "deaths": 374,
+          "finalKills": 457,
+          "finalDeaths": 374,
+          "finalPlayers": 107,
+          "preKills": 362,
+          "preDeaths": 319,
+          "finaleKills": 95,
+          "finaleDeaths": 55,
+          "firstUndockUtc": "2026-11-03T21:44:54.994782+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T22:01:45.543793+00:00",
+          "ejectionSectors": {
+            "1052": 343,
+            "1054": 37,
+            "1050": 54,
+            "1051": 95,
+            "1061": 2,
+            "1059": 20
+          },
+          "podOutcomes": {
+            "removed": 34,
+            "death": 298,
+            "rescued": 48,
+            "oxygen": 73,
+            "docked": 106
+          },
+          "oxygenEndSectors": {
+            "1051": 68,
+            "1054": 2,
+            "1050": 1,
+            "1061": 1,
+            "1052": 1
+          },
+          "money": {
+            "events": 258,
+            "netDelta": -761010,
+            "negativeDelta": -761010
+          },
+          "timeline": {
+            "0": {
+              "kills": 38,
+              "deaths": 40
+            },
+            "1": {
+              "kills": 30,
+              "deaths": 59
+            },
+            "2": {
+              "kills": 68,
+              "deaths": 65
+            },
+            "3": {
+              "kills": 82,
+              "deaths": 42
+            },
+            "4": {
+              "deaths": 30,
+              "kills": 57
+            },
+            "5": {
+              "deaths": 38,
+              "kills": 41
+            },
+            "6": {
+              "deaths": 44,
+              "kills": 46
+            },
+            "7": {
+              "deaths": 27,
+              "kills": 36
+            },
+            "8": {
+              "kills": 38,
+              "deaths": 14
+            },
+            "9": {
+              "kills": 21,
+              "deaths": 15
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T21:44:10.066907+00:00",
+      "lastObservedUtc": "2026-11-03T22:34:09.270879+00:00",
+      "finaleUtc": "2026-11-03T22:19:13.485672+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T22:03:10.726296+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w1-b105-1326' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:03:20.784377+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w1-b105-1326' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:03:30.836714+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w1-b105-1326' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:04:40.561025+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w1-b107-4635' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:04:50.562533+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w1-b107-4635' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:10:10.985767+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w2-b092-3269' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:12:26.216619+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w2-b102-8592' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:12:36.270216+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w2-b102-8592' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:17:21.388562+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Refinery in Ganymede under attack by mcp-w2-b094-4640' (voice 824, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T22:12:43.289410+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9189 destroyed (launcher 9274) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        },
+        {
+          "utc": "2026-11-03T22:17:23.531616+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 9201 destroyed (launcher 9261) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "matchup": "[matchup] mission #0 match=5 seed=493908403 side0=4:Phoenix(generated) side1=18:Gigacorp(generated)",
+      "armedBy": 1,
+      "deadline": "[finale] deadline winner side=1 by=station-kills values=0:0,1:2 epoch=772ee23826644230854be88e7486f9d7 armedBy=1",
+      "stationKills": "[finale] Station kills: Alpha=0, Bravo=2",
+      "winner": 1,
+      "endUtc": "2026-11-03T22:34:09.270879+00:00",
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13392 bytes; match=5 seed=493908403 side0=4:Phoenix(generated) side1=18:Gigacorp(generated)"
+    },
+    {
+      "match": 6,
+      "openingUtc": "2026-11-03T22:34:09.272214+00:00",
+      "openingCensored": false,
+      "sides": [
+        {
+          "kills": 378,
+          "deaths": 385,
+          "finalKills": 0,
+          "finalDeaths": 0,
+          "finalPlayers": 0,
+          "preKills": 277,
+          "preDeaths": 299,
+          "finaleKills": 101,
+          "finaleDeaths": 86,
+          "firstUndockUtc": "2026-11-03T22:34:54.212154+00:00",
+          "firstStrikeOrderUtc": null,
+          "ejectionSectors": {
+            "1050": 84,
+            "1052": 331,
+            "1054": 10,
+            "1059": 14,
+            "1055": 10,
+            "1051": 49
+          },
+          "podOutcomes": {
+            "removed": 19,
+            "death": 234,
+            "rescued": 52,
+            "oxygen": 150,
+            "docked": 43
+          },
+          "oxygenEndSectors": {
+            "1050": 148,
+            "1059": 2
+          },
+          "money": {
+            "events": 228,
+            "netDelta": -757110,
+            "negativeDelta": -757110
+          },
+          "timeline": {
+            "0": {
+              "kills": 30,
+              "deaths": 15
+            },
+            "1": {
+              "kills": 53,
+              "deaths": 38
+            },
+            "2": {
+              "kills": 59,
+              "deaths": 67
+            },
+            "3": {
+              "deaths": 43,
+              "kills": 31
+            },
+            "4": {
+              "kills": 26,
+              "deaths": 53
+            },
+            "5": {
+              "deaths": 41,
+              "kills": 35
+            },
+            "6": {
+              "deaths": 41,
+              "kills": 42
+            },
+            "7": {
+              "deaths": 42,
+              "kills": 41
+            },
+            "8": {
+              "kills": 32,
+              "deaths": 23
+            },
+            "9": {
+              "deaths": 22,
+              "kills": 29
+            }
+          }
+        },
+        {
+          "kills": 426,
+          "deaths": 359,
+          "finalKills": 0,
+          "finalDeaths": 0,
+          "finalPlayers": 0,
+          "preKills": 336,
+          "preDeaths": 262,
+          "finaleKills": 90,
+          "finaleDeaths": 97,
+          "firstUndockUtc": "2026-11-03T22:34:54.162422+00:00",
+          "firstStrikeOrderUtc": "2026-11-03T22:52:41.974768+00:00",
+          "ejectionSectors": {
+            "1054": 14,
+            "1052": 205,
+            "1050": 109,
+            "1051": 87,
+            "1061": 4,
+            "1059": 45,
+            "1055": 17
+          },
+          "podOutcomes": {
+            "removed": 33,
+            "death": 287,
+            "rescued": 36,
+            "oxygen": 70,
+            "docked": 50
+          },
+          "oxygenEndSectors": {
+            "1051": 62,
+            "1054": 3,
+            "1055": 1,
+            "1061": 2,
+            "1050": 1,
+            "1059": 1
+          },
+          "money": {
+            "events": 250,
+            "netDelta": -729010,
+            "negativeDelta": -729010
+          },
+          "timeline": {
+            "0": {
+              "deaths": 14,
+              "kills": 25
+            },
+            "1": {
+              "deaths": 45,
+              "kills": 61
+            },
+            "2": {
+              "kills": 55,
+              "deaths": 70
+            },
+            "3": {
+              "kills": 65,
+              "deaths": 31
+            },
+            "4": {
+              "deaths": 30,
+              "kills": 38
+            },
+            "5": {
+              "deaths": 24,
+              "kills": 43
+            },
+            "6": {
+              "kills": 48,
+              "deaths": 47
+            },
+            "7": {
+              "kills": 37,
+              "deaths": 43
+            },
+            "8": {
+              "kills": 30,
+              "deaths": 39
+            },
+            "9": {
+              "kills": 24,
+              "deaths": 16
+            }
+          }
+        }
+      ],
+      "firstObservedUtc": "2026-11-03T22:34:09.272214+00:00",
+      "lastObservedUtc": "2026-11-03T23:22:52.018618+00:00",
+      "finaleUtc": "2026-11-03T23:09:12.735293+00:00",
+      "stationAttacks": [
+        {
+          "utc": "2026-11-03T22:54:54.811193+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison in Ganymede under attack by mcp-w2-b100-7679' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:55:04.975065+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T22:57:42.108618+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison in Ganymede under attack by mcp-w2-b094-4640' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:02:56.455127+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b096-8731' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:04:34.445306+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b094-4640' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:04:44.496637+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b094-4640' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:07:32.101210+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:07:42.102828+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:07:52.154850+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b100-7679' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:08:02.162450+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b100-7679' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:08:12.164671+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:08:22.166581+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b100-7679' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:08:32.209421+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b100-7679' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:09:39.235221+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b105-1326' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:09:49.241245+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b105-1326' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:11:24.818094+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:11:34.793502+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:11:44.814111+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:12:16.296547+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b104-5834' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:02.311969+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b099-2109' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:12.273106+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b099-2109' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:22.242677+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b094-4640' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:32.233825+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b099-2109' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:42.225609+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b096-8731' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:14:52.228055+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b098-4949' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:15:02.276729+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b092-3269' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:15:12.281319+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b002-7522' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:15:26.964122+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b011-5385' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:16:26.644196+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:16:36.651348+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:16:46.661544+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b097-9773' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:16:56.675926+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b010-9231' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:17:11.056296+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b104-5834' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:18:15.520425+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:18:25.567177+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b102-8592' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:19:14.727231+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b105-1326' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:19:24.690665+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b105-1326' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:19:34.662387+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b094-4640' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:19:44.629134+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b095-4297' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:19:54.604312+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b099-2109' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:20:04.573266+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b095-4297' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:20:14.545212+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w1-b095-4297' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:21:41.926495+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b004-2450' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:21:51.895124+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b004-2450' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        },
+        {
+          "utc": "2026-11-03T23:22:03.452036+00:00",
+          "defender": 0,
+          "receipt": "[station] 'Garrison (Str) in Ganymede under attack by mcp-w2-b104-5834' (voice 820, target TEAM) -> side 0 [107 peer(s)] [under attack]"
+        }
+      ],
+      "stationLosses": [
+        {
+          "utc": "2026-11-03T22:55:14.079329+00:00",
+          "attacker": 1,
+          "receipt": "[station] station 4328 destroyed (launcher 9527) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+        }
+      ],
+      "unknownScoring": {},
+      "matchup": "[matchup] mission #0 match=6 seed=2018225410 side0=25:Iron Coalition(plan_a) side1=18:Gigacorp(generated)",
+      "armedBy": 1
+    }
+  ],
+  "limits": [
+    "Filtered server logs omit spawn, full ship-warp, damage and worker telemetry; pod-trip routes are partial observations. Identity comes only from explicit side receipts.",
+    "Observed scoring is counted from kill +1 / death +1 receipts; final peer scores are separate and may omit NPC/departed scores.",
+    "Ejection sectors locate hull losses, not all kills or true deaths. No invented sector attribution for other events.",
+    "First queued station Attack is an order opportunity, not proof of launch, weapon fire or arrival.",
+    "Money deltas are logged transactions, not commander wallet balances, income or mining totals.",
+    "Pod outcomes count completions inside the observed match window; removed is not death and unfinished trips remain censored.",
+    "UTC bins are 300 wall seconds from matchup (or first observation for a censored opening). Opening includes ready/countdown time."
+  ]
+}

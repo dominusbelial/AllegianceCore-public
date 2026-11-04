@@ -1,0 +1,38 @@
+[
+  {
+    "matches": 50,
+    "rejectAtLeast": 33,
+    "rejectAtMost": 17,
+    "power": 0.7821932227280478
+  },
+  {
+    "matches": 52,
+    "rejectAtLeast": 34,
+    "rejectAtMost": 18,
+    "power": 0.8111959699077714
+  },
+  {
+    "matches": 60,
+    "rejectAtLeast": 39,
+    "rejectAtMost": 21,
+    "power": 0.8381821393917308
+  },
+  {
+    "matches": 80,
+    "rejectAtLeast": 50,
+    "rejectAtMost": 30,
+    "power": 0.9412518883175138
+  },
+  {
+    "matches": 100,
+    "rejectAtLeast": 61,
+    "rejectAtMost": 39,
+    "power": 0.9790114241380645
+  },
+  {
+    "matches": 104,
+    "rejectAtLeast": 63,
+    "rejectAtMost": 41,
+    "power": 0.984581224614147
+  }
+]

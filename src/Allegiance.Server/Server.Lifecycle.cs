@@ -1180,7 +1180,8 @@ public sealed partial class Server
     private readonly Dictionary<(GameConfig Game, short Side, short Civ), ResearchPlanCatalog.Selection> _showcasePlanSelections = new();
     private readonly HashSet<GameConfig> _primedPlanGames = new();
     private readonly Dictionary<GameConfig, Random> _civSeedStreams = new();
-    private readonly Dictionary<Mission, (long Number, int Seed, string Goals)> _matchups = new();
+    private readonly Dictionary<Mission, (long Number, int Seed, string Goals, string Homes)> _matchups = new();
+    private readonly Dictionary<GameConfig, int> _homeMatches = new();
 
     /// <summary>P802 — the <see cref="GameConfig"/> each live mission was assembled
     /// from (assigned in <see cref="AssembleGameMission"/> and dropped on the
@@ -1263,7 +1264,7 @@ public sealed partial class Server
         var match = _matchups[mission];
         return $"match={match.Number} seed={match.Seed}{match.Goals} " + string.Join(" ", mission.Sides.Select(side =>
             $"side{side.Id}={side.Civilization.CivilizationId}:{side.Civilization.Name}"
-            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})"));
+            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})")) + match.Homes;
     }
 
     /// <summary>
@@ -1302,6 +1303,8 @@ public sealed partial class Server
         // with MapGen null (every existing config), the byte-for-byte
         // file-load path below runs unchanged.
         var goals = g.ResolveGoals();
+        int homeMatch = _homeMatches.GetValueOrDefault(g) + 1;
+        bool swapHomes = HomeAssignments.Swapped(g, homeMatch, _config.LiveSettings?.DebugMode == true);
         int civSeed = NextCivSeed(g);
         string goalDescription = "";
         // P871b — a player-created mission keeps the goals the player chose; the
@@ -1321,7 +1324,8 @@ public sealed partial class Server
         bool fromMapGen = mg is not null;
         if (fromMapGen)
         {
-            var pmp = ToCoreParams(mg!, g.Teams, civIds, goals);
+            // Generated station types must belong to the receiving civilization.
+            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals);
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
@@ -1357,6 +1361,8 @@ public sealed partial class Server
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)civIds[t]);
 
         var researchPlans = SelectShowcasePlans(g, civIds);
+        map = HomeAssignments.Apply(map, swapHomes);
+        string homeDescription = HomeAssignments.Describe(g, homeMatch, swapHomes, map);
         if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {
@@ -1376,7 +1382,8 @@ public sealed partial class Server
             mission.ResearchPlans[side] = selection.Plan;
             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
         }
-        _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription));
+        _homeMatches[g] = homeMatch;
+        _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription, homeDescription));
         Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;

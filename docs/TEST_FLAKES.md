@@ -4,6 +4,55 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P924 verification
+
+Exactly **one Fast sweep**: **12,983 passed / 12 failed / 3 optional-pack skips**,
+12,998 executions in 555.1 s. All nine infrastructure checks passed. Two
+executions exceeded the ten-second guard: missile tips (38.317 s, also failed)
+and native warp-exit wobble (10.772 s). The sweep remains **FAIL** and was not
+rerun. All new task-specific cases pass; no HUD, transport, combat, pathing, voting
+or profile implementation changed.
+
+The final synthetic-debug/home-swap compatibility check was added after the
+sweep. The complete solution/tool/AOT gate and all new P924 core/loopback tests
+were requalified afterward. The installed SDK's implicit ILCompiler 10.0.11
+also produced NU1903 during the later restore; qualification used official
+compiler/runtime 10.0.14 in task-local scratch with auditing enabled, without
+repository toolchain edits. Details and the advisory are in the P924 report.
+
+| Failure / timing offender | Three isolated outcomes | Classification |
+|---|---|---|
+| `PlayerBundlePathsTests` (four methods, five failed cases) | **5 failed / 4 passed** in each of three complete family runs | Existing fixture-ancestry conflict: required worktree-local `TMPDIR` makes an allegedly external directory discover the checkout's `local.env`. Same persistent P915/P914/P913 signature. No resolver change. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **fail/fail/fail**, 0.049/0.048/0.060 s; **pass/pass/pass** with scratch `XDG_CONFIG_HOME`, 0.065/0.065/0.054 s | Existing sandbox blocks restoring the real user profile. Writable scratch configuration resolves the obstruction; profile/UI code unchanged. |
+| `P897ClientTransportTests.Reconnect_reuses_initial_protocol_even_after_preference_changes` | **pass/pass/pass**, both TCP and UDP each time (6/6 cases) | Sweep TCP setup threw `Address already in use`. Standalone reconnect succeeds; no transport code change. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.372/38.325/38.287 s | Known missing partial-tip receipt despite final lock 1.000; persistent alone, not classified as solely load-induced. Also exceeds Fast's time guard. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.234/1.245/1.229 s | Known null `DefendTarget` / reference assertion, persistent under prior baseline controls. No NPC/flight policy change. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/fail**, 0.321/0.326/0.367 s | Known expected flying=3 / actual docked=2 join-burst history; intermittent even alone. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | **pass/pass/pass**, 1.664/1.726/1.655 s | Sweep missed the same-side driver's relayed pod update. Existing intake/receipt-order fixture family; no pod update code change. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | **pass/pass/pass**, 0.616/0.606/0.571 s | Sweep received the proposal-passed chat but missed the terminal expected receipt. Existing ballot receipt family; no voting code change. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**, 9.529/9.514/9.511 s | Timing only: 10.772 s in sweep, below the ten-second limit in every isolated run. |
+
+The five required switch-off showcase executions are **4 pass / 1 fail**.
+All five held the parking bound. The failed composite run reached 27/30, fired
+144 shots with zero hits at 480 s, and had 0.000 s parked-with-target. The next
+three isolated off executions pass 3/3, and the fifth also passes. The same
+zero-hit combat-coverage signature is recorded under P895. An unmodified
+`8a2f35f3` control built from `git archive HEAD` passes in 213.851 s; this is
+context, not a deterministic replay or proof of win balance. The new switch-on
+showcase cohort passes **3/3**, 184.250/305.193/455.669 s, with real hits and a
+maximum 2.006 s stopped-with-target interval. No assertion, timeout or tier was
+weakened to obtain these results.
+
+Final P924 qualification: **18/18 core cases**, **3/3 real 15v15 native-kill
+completions**, **9/9 evidence-parser** and **9/9 matchup-tally Python cases**
+pass across three isolated repetitions. P825 compatibility passes **27/27**;
+focused cohorts have zero skips. Serial isolation's passive one-minute load
+samples range 0.26–1.17; no synthetic load was created.
+
+Small results: [P924 validation](reports/P924_assets/validation.json).
+Raw TRX/logs are retained in `.scratch/p924/` in the P924 worktree. Full audit,
+evidence limits, toolchain qualification and rig plan: [P924 report](reports/P924_REPORT.md).
+
 ## P915 verification
 
 Exactly one Fast sweep: **12,935 passed / 12 failed / 3 optional-pack skips**,

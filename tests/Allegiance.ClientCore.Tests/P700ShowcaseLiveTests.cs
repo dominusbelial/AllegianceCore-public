@@ -14,10 +14,19 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
 {
     [SkippableFact]
     public void Local_showcase_never_parks_with_target_for_five_seconds()
+        => Run(false);
+
+    [SkippableFact]
+    public void P924_swapped_showcase_never_parks_with_target_for_five_seconds()
+        => Run(true);
+
+    private void Run(bool swapHomes)
     {
         Require.Artwork();
         using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
-        server.Boot(P660NextMatchLiveTests.Config(false));
+        var config = P660NextMatchLiveTests.Config(false);
+        config.Games[0].HomeSwap = swapHomes ? "on" : "off";
+        server.Boot(config);
         using var stop = new CancellationTokenSource();
         var ticker = new Thread(() =>
         {

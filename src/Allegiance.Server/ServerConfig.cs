@@ -204,6 +204,11 @@ public sealed class GameConfig
     /// Omit to draw and log a seed. Each logged match seed replays as the first civSeed.</summary>
     public int? CivSeed { get; set; }
 
+    /// <summary>P924 home-assignment experiment: off (default), on (swap the two
+    /// authored owners), alternate (normal first, then swap on even matches).
+    /// Non-off modes require two teams and debugMode=false; civilizations remain attached to sides.</summary>
+    public string HomeSwap { get; set; } = "off";
+
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
     public string[] SideNames { get; set; } = [];
 

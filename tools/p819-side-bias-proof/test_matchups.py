@@ -3,6 +3,19 @@ from matchups import tally
 
 
 class MatchupTallyTests(unittest.TestCase):
+    def test_home_trailer_preserves_last_civ_and_tallies_winning_home(self):
+        result = tally([
+            "[matchup] mission #0 match=2 seed=924 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) homeSwap=alternate homeMatch=2 homes=1,0 home0=1051 home1=1050",
+            "[gameover] mission #0 -> Stage Over, iSideWinner=1; match=2 seed=924 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) homeSwap=alternate homeMatch=2 homes=1,0 home0=1051 home1=1050",
+        ])
+        self.assertEqual(2, len(result['assembled'][0]['sides']))
+        self.assertEqual({'18,4': 1}, result['completedMatchups'])
+        self.assertEqual(1, result['byCiv']['4']['wins'])
+        self.assertEqual(1, result['byAuthoredHome']['0']['wins'])
+        self.assertEqual(1, result['byAuthoredHome']['1']['losses'])
+        self.assertEqual({'0': '1051', '1': '1050'}, result['completed'][0]['homeSectors'])
+        self.assertEqual({}, tally(["[gameover] mission #0 -> Stage Over, iSideWinner=1; match=1 seed=1 side0=18:Gigacorp(generated) side1=4:Phoenix(generated)"])['byAuthoredHome'])
+
     def test_interleaved_missions_actual_civs_draws_and_three_sides(self):
         result = tally([
             "[matchup] mission #0 match=1 seed=825 side0=25:Iron Coalition(plan_a) side1=3:Ga'Taraan(plan_a)",

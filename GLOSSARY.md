@@ -1545,6 +1545,14 @@ list in **reverse**.
 
 ## 14. Match civilizations (P825)
 
+- **Home assignment trials (P924, preset experiment)** — per-game `homeSwap`
+  (`off`, `on`, `alternate`) in `src/Allegiance.Server/ServerConfig.cs`;
+  `src/Allegiance.Server/HomeAssignments.cs` permutes station owners before
+  research resources and mission assembly. Geometry and authored files stay
+  fixed; civilizations remain with their sides. Per-game rotation counters and
+  seed/home receipts live in `src/Allegiance.Server/Server.Lifecycle.cs`.
+  Evidence parser: `tools/p924-side-bias-audit.py`; audit and paired rig plan:
+  `docs/reports/P924_REPORT.md`. This is an experiment policy, not a native rule.
 - **Creation-time random civs** — `games[].civIds` accepts JSON `null` or `-1`
   for a fresh legal draw on boot and every rotation. `games[].civSeed` pins the
   sequence; each `[matchup]` logs a directly replayable match seed.

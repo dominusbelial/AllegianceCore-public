@@ -12,11 +12,11 @@ import re
 from pathlib import Path
 
 
-SIDES = re.compile(r"side(\d+)=(-?\d+):(.*?)\(([^()]*)\)(?=\s+side\d+=|$)")
+SIDES = re.compile(r"side(\d+)=(-?\d+):(.*?)\(([^()]*)\)(?=\s+(?:side\d+=|homeSwap=)|$)")
 
 
 def tally(lines):
-    civs, positions = {}, {}
+    civs, positions, homes = {}, {}, {}
     assembled, completed = [], []
     for line in lines:
         if not (line.startswith("[matchup]") or (line.startswith("[gameover] mission") and "Stage Over" in line)):
@@ -27,6 +27,10 @@ def tally(lines):
         sides = [{"side": int(s), "civ": int(c), "name": n, "plan": p}
                  for s, c, n, p in SIDES.findall(line.strip())]
         record = {"mission": int(header[1]), "match": int(header[2]), "seed": int(header[3]), "sides": sides}
+        assignment = re.search(r"\bhomes=([\d,]+)", line)
+        if assignment:
+            record["homes"] = [int(s) for s in assignment[1].split(",")]
+            record["homeSectors"] = dict(re.findall(r"\bhome(\d+)=([\d,]+)", line))
         if line.startswith("[matchup]"):
             assembled.append(record)
             continue
@@ -39,11 +43,15 @@ def tally(lines):
             civ = civs.setdefault(str(side["civ"]), {"name": side["name"], "appearances": 0, "wins": 0, "losses": 0, "draws": 0})
             position = positions.setdefault(str(side["side"]), {"appearances": 0, "wins": 0, "losses": 0, "draws": 0})
             outcome = "draws" if record["winner"] is None else "wins" if record["winner"] == side["side"] else "losses"
-            for counter in (civ, position):
+            counters = [civ, position]
+            if "homes" in record and side["side"] < len(record["homes"]):
+                home = str(record["homes"][side["side"]])
+                counters.append(homes.setdefault(home, {"appearances": 0, "wins": 0, "losses": 0, "draws": 0}))
+            for counter in counters:
                 counter["appearances"] += 1
                 counter[outcome] += 1
     tuples = collections.Counter(",".join(str(s["civ"]) for s in match["sides"]) for match in completed)
-    return {"assembled": assembled, "completed": completed, "byCiv": civs, "byPosition": positions,
+    return {"assembled": assembled, "completed": completed, "byCiv": civs, "byPosition": positions, "byAuthoredHome": homes,
             "completedMatchups": dict(tuples), "completedMatches": len(completed)}
 
 
