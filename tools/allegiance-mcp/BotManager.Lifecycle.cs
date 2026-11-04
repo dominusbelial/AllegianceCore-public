@@ -284,6 +284,7 @@ internal sealed partial class BotManager
             bot.LifeCookie = world.Mission?.Cookie;
             if (!bot.ObjectivesPending) return true;
             if (!world.WorldReady) return false;
+            short? battleTarget = _mapBattleTarget ? ResolveShowcaseTarget(world) : null;
             short? target = null;
             if (bot.TargetSector is not null && string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase))
             {
@@ -298,6 +299,7 @@ internal sealed partial class BotManager
                     if (enemyHomes.Length == 1) target = enemyHomes[0];
                 }
             }
+            target ??= battleTarget;
             if (bot.TargetSector is not null && target is null && bot.ObjectiveName is { } name)
                 target = world.Clusters.Values.Where(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
                     .Select(c => (short?)c.ClusterId).FirstOrDefault();

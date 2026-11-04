@@ -42,10 +42,10 @@ internal sealed partial class BotManager
         IReadOnlyList<(short Sector, int Count)> fighterRendezvous,
         IReadOnlyList<(short Sector, int Count)> fightersPresent)
     {
-        if (finaleTriggered && finaleSector is { } fs && fs > 0) return new(SupportPhaseKind.Strike, fs);
-        if (strikeWaveActive && strikeWaveSector > 0) return new(SupportPhaseKind.Strike, strikeWaveSector);
+        if (finaleTriggered && finaleSector is { } fs && fs >= 0) return new(SupportPhaseKind.Strike, fs);
+        if (strikeWaveActive && strikeWaveSector >= 0) return new(SupportPhaseKind.Strike, strikeWaveSector);
         (short Sector, int Count)? best = Mode(fighterRendezvous) ?? Mode(fightersPresent);
-        return new(SupportPhaseKind.Opening, best is { } m && m.Sector > 0 ? m.Sector : null);
+        return new(SupportPhaseKind.Opening, best is { } m && m.Sector >= 0 ? m.Sector : null);
     }
 
     private static (short Sector, int Count)? Mode(IReadOnlyList<(short Sector, int Count)> counts)

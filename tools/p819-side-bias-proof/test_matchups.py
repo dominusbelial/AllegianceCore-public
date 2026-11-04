@@ -35,6 +35,19 @@ class MatchupTallyTests(unittest.TestCase):
         self.assertEqual(1, result["byCiv"]["25"]["losses"])
         self.assertEqual({"25,2": 1, "1,2,4": 1}, result["completedMatchups"])
 
+    def test_map_receipts_keep_last_civ_and_group_completed_results_by_map(self):
+        lines = [
+            "[matchup] mission #0 match=1 seed=926 side0=25:Iron Coalition(plan_a) side1=3:Ga'Taraan(plan_a) homeSwap=off homes=0,1 map=gen:SingleRing mapSeed=123 rotation=cycle#1",
+            "[gameover] mission #0 -> Stage Over, iSideWinner=1; match=1 seed=926 side0=25:Iron Coalition(plan_a) side1=3:Ga'Taraan(plan_a) homeSwap=off homes=0,1 map=gen:SingleRing mapSeed=123 rotation=cycle#1",
+            "[gameover] mission #0 -> Stage Over, iSideWinner=NA(draw); match=2 seed=8 side0=25:Iron Coalition(plan_a) side1=3:Ga'Taraan(plan_a) homeSwap=off homes=0,1 map=m2xspiderw.igc mapSeed=9 rotation=random#0",
+        ]
+        result = tally(lines)
+        self.assertEqual(2, len(result['assembled'][0]['sides']))
+        self.assertEqual(123, result['completed'][0]['mapSeed'])
+        self.assertEqual({'matches': 1, 'draws': 0, 'winsBySide': {'1': 1}}, result['byMap']['gen:SingleRing'])
+        self.assertEqual(1, result['byMap']['m2xspiderw.igc']['draws'])
+        self.assertEqual({}, tally([])['byMap'])
+
     def test_negative_seed_replays_and_empty_log_is_empty(self):
         result = tally(["[matchup] mission #0 match=1 seed=-825 side0=25:Iron Coalition(plan_a)\n"])
         self.assertEqual(-825, result["assembled"][0]["seed"])

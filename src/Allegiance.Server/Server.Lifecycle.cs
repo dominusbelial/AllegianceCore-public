@@ -77,6 +77,7 @@ public sealed partial class Server
         ValidatePaths();
         LoadStaticMapCatalog();
         var startupCore = LoadCore();
+        ValidateMapRotation(startupCore);
         foreach (var game in _config.Games) PrimeShowcasePlans(startupCore, game);
         Console.WriteLine(FormattableString.Invariant($"[boot] showcase.researchTimeScale = {_config.Showcase.ResearchTimeScale}"));
         Console.WriteLine($"[boot] showcase.techMode = {_config.Showcase.TechMode}; incomeMultiplier={_config.Showcase.IncomeMultiplier}; researchCommander={(_config.Showcase.TechMode == "research" ? "on" : "per-plan")}");
@@ -978,7 +979,7 @@ public sealed partial class Server
                     var mission = _missions?.FirstOrDefault();
                     return new DiscoverySnapshot(
                         Name: game?.Name ?? "",
-                        Map: game?.Map ?? "",
+                        Map: MissionMapLabel(mission, game?.Map ?? ""),
                         Players: LivePlayerCount,
                         MaxPlayers: 0,
                         Version: _core?.Version.ToString() ?? "",
@@ -1057,7 +1058,7 @@ public sealed partial class Server
     /// <see cref="MapGenType"/>. Throws on an unknown topology name so a typo'd
     /// config fails loudly at boot rather than silently falling back to a file.
     /// </summary>
-    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds, MissionGoals? goals = null)
+    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds, MissionGoals? goals = null, int? seedOverride = null)
     {
         if (!Enum.TryParse<MapGenType>(cfg.Type, ignoreCase: true, out var type))
             throw new InvalidDataException(
@@ -1073,7 +1074,7 @@ public sealed partial class Server
             // unseeded game draws a fresh seed per generated map (native
             // srand(iSeed) per run) and logs it, so EVERY generated map — boot
             // and each game-over rotation — is rebuildable with --map-seed N.
-            Seed = cfg.Seed ?? Random.Shared.Next(),
+            Seed = seedOverride ?? cfg.Seed ?? Random.Shared.Next(),
             Teams = teams,
             CivIds = civIds,
             MapSize = cfg.MapSize ?? 0,
@@ -1164,7 +1165,7 @@ public sealed partial class Server
             // game-over from the SAME inputs, byte-for-byte identical to boot.
             var mission = AssembleGameMission(g, core, landingBays, weaponMuzzles, stationLandingBays, collisionHulls);
             missions.Add(mission);
-            Console.WriteLine($"[boot] game '{g.Name}' ready: map={g.Map}, {mission.Sectors.Count} sectors, " +
+            Console.WriteLine($"[boot] game '{g.Name}' ready: map={MissionMapLabel(mission, g.Map)}, {mission.Sectors.Count} sectors, " +
                               $"{mission.Sides.Count} sides [{string.Join(", ", mission.Sides.Select(s => s.Name ?? $"side{s.Id}"))}], " +
                               $"{mission.Warps.Count} warps, {mission.Sectors.Sum(s => s.Stations.Count)} stations, " +
                               $"{mission.Sectors.Sum(s => s.Asteroids.Count)} asteroids" +
@@ -1180,7 +1181,7 @@ public sealed partial class Server
     private readonly Dictionary<(GameConfig Game, short Side, short Civ), ResearchPlanCatalog.Selection> _showcasePlanSelections = new();
     private readonly HashSet<GameConfig> _primedPlanGames = new();
     private readonly Dictionary<GameConfig, Random> _civSeedStreams = new();
-    private readonly Dictionary<Mission, (long Number, int Seed, string Goals, string Homes)> _matchups = new();
+    private readonly Dictionary<Mission, (long Number, int Seed, string Goals, string Homes, string Map, string MapName)> _matchups = new();
     private readonly Dictionary<GameConfig, int> _homeMatches = new();
 
     /// <summary>P802 — the <see cref="GameConfig"/> each live mission was assembled
@@ -1259,12 +1260,21 @@ public sealed partial class Server
 
     private readonly Dictionary<GameConfig, (int Match, int Index)> _goalRotations = new();
 
+    private string MissionMapLabel(Mission? mission, string fallback)
+    {
+        if (mission is null) return fallback;
+        // The discovery responder reads this on its UDP thread while the sim
+        // publishes/retires missions. Matchup dictionary writes use this lock.
+        lock (_matchups)
+            return _matchups.TryGetValue(mission, out var match) && match.Map.Length > 0 ? match.MapName : fallback;
+    }
+
     private string MatchupDetails(Mission mission)
     {
         var match = _matchups[mission];
         return $"match={match.Number} seed={match.Seed}{match.Goals} " + string.Join(" ", mission.Sides.Select(side =>
             $"side{side.Id}={side.Civilization.CivilizationId}:{side.Civilization.Name}"
-            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})")) + match.Homes;
+            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})")) + match.Homes + match.Map;
     }
 
     /// <summary>
@@ -1302,7 +1312,7 @@ public sealed partial class Server
         // file when g.MapGen is set. The generator path is a pure addition:
         // with MapGen null (every existing config), the byte-for-byte
         // file-load path below runs unchanged.
-        var goals = g.ResolveGoals();
+        var goals = g.ResolveGoals(playerCreated || _config.Showcase.MapRotation is null);
         int homeMatch = _homeMatches.GetValueOrDefault(g) + 1;
         bool swapHomes = HomeAssignments.Swapped(g, homeMatch, _config.LiveSettings?.DebugMode == true);
         int civSeed = NextCivSeed(g);
@@ -1313,19 +1323,20 @@ public sealed partial class Server
         {
             var previous = _goalRotations.GetValueOrDefault(g, (Match: 0, Index: -1));
             int index = rotation.Select(previous.Match, civSeed, previous.Index);
-            goals = g.ValidateGoals(rotation.Entries[index].Goals with { });
+            goals = g.ValidateGoals(rotation.Entries[index].Goals with { }, _config.Showcase.MapRotation is null);
             goalDescription = $" goals={rotation.Entries[index].Name}({GoalRotationConfig.Describe(goals)})"
                 + $" goalIndex={index} goalMatch={previous.Match + 1} previousGoalIndex={previous.Index}";
             _goalRotations[g] = (previous.Match + 1, index);
         }
         var civIds = MatchCivilizations.Resolve(g, core, civSeed);
         MissionMap map;
-        MapGenConfig? mg = g.MapGen;
+        var selectedMap = !playerCreated && _config.Showcase.MapRotation is not null ? NextMap(g) : ((MapRotationEntry Entry, int Seed, string Receipt)?)null;
+        MapGenConfig? mg = selectedMap is { } selected ? selected.Entry.MapGen : g.MapGen;
         bool fromMapGen = mg is not null;
         if (fromMapGen)
         {
             // Generated station types must belong to the receiving civilization.
-            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals);
+            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed);
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
@@ -1335,6 +1346,8 @@ public sealed partial class Server
                 + $" ({map.Clusters.Count} sectors / {map.Warps.Count} warps / "
                 + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids)");
         }
+        else if (selectedMap is { } fileSelection)
+            map = _rotationFileMaps[fileSelection.Entry];
         else
         {
             var mapPath = Path.Combine(_config.ArtPath, ResolveCatalogMap(g));
@@ -1363,7 +1376,7 @@ public sealed partial class Server
         var researchPlans = SelectShowcasePlans(g, civIds);
         map = HomeAssignments.Apply(map, swapHomes);
         string homeDescription = HomeAssignments.Describe(g, homeMatch, swapHomes, map);
-        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans);
+        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans, selectedMap?.Seed);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {
             AllowDevelopments = g.AllowDevelopments,
@@ -1383,7 +1396,9 @@ public sealed partial class Server
             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
         }
         _homeMatches[g] = homeMatch;
-        _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription, homeDescription));
+        string mapName = selectedMap is { } choice
+            ? choice.Entry.Map ?? $"gen:{Enum.Parse<MapGenType>(choice.Entry.MapGen!.Type, true)}" : g.Map;
+        lock (_matchups) _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription, homeDescription, selectedMap?.Receipt ?? "", mapName));
         Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
@@ -1440,7 +1455,7 @@ public sealed partial class Server
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
         if (fromMapGen) mission.PopulateGoalObjects(_simNow);
-        else mission.PopulateFileMap(_simNow, MapGenParams.FileMapDefaults(g.Teams));
+        else mission.PopulateFileMap(_simNow, MapGenParams.FileMapDefaults(g.Teams, selectedMap?.Seed));
 
         if (mg is not null)
         {

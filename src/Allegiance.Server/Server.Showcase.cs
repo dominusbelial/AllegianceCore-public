@@ -50,8 +50,9 @@ public sealed partial class Server
     /// plans; constructors must still be funded, fly and build normally. Capability
     /// matching is native (Igc/shipIGC.cpp:2814-2815); this resource layout is a port extension.</summary>
     private static MissionMap PrepareResearchMap(StaticCore core, MissionMap map,
-        IReadOnlyDictionary<short, ResearchPlanCatalog.Selection> plans)
+        IReadOnlyDictionary<short, ResearchPlanCatalog.Selection> plans, int? mapSeed = null)
     {
+        var mapRandom = mapSeed is { } seed ? Allegiance.Core.MapGen.MapRandomFactory.FromSeed(seed) : null;
         var stations = map.Stations.ToArray();
         // File maps can bake a different civilization's home type. Research plans
         // assume the selected civ's initial station (native generated homes:
@@ -98,7 +99,7 @@ public sealed partial class Server
                     // Real native model/icon/hp/radius/prefix for this rock's
                     // build capability (asteroidigc.cpp:126-137) instead of the
                     // invented "rock_build"; ore stays 0 (these are build sites).
-                    int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(mask);
+                    int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(mask, mapRandom);
                     var astDef = NativeAsteroidTypes.GetTypeDefaults(typeIndex);
                     rocks.Add(new(1, [home.Position[0] + radius * (float)Math.Cos(angle),
                         home.Position[1] + radius * (float)Math.Sin(angle), z],

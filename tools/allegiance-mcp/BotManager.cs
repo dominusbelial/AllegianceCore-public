@@ -880,7 +880,7 @@ internal sealed partial class BotManager : IDisposable
             foreach (var st in Probe.World.Stations.Values)
             {
                 if (st.SideId != side) continue;
-                if (st.ClusterId <= 0) continue;
+                if (st.ClusterId < 0) continue;
                 anySector ??= st.ClusterId;
                 // Restart-capable home (c_sabmRestart) is the strongest anchor —
                 // the sector a side's freshly-launched ships sit in.

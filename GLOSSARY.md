@@ -95,6 +95,15 @@ list in **reverse**.
   in `src/Allegiance.Core/MapGen/MissionMapGenerator.cs`; file-map resource
   defaults come from native Reset. Native: `Igc/missionigc.cpp:3977-4055`.
   Report: `docs/reports/P864c_REPORT.md`.
+- **Per-match showcase map rotation (P926, preset policy)** — default-off
+  `showcase.mapRotation` chooses file or generated entries before every configured
+  world's assembly. `src/Allegiance.Server/MapRotationConfig.cs` preflights all
+  entries and owns independent seeded streams; file-map asteroid top-ups also use
+  the receipt's seed. `tools/allegiance-mcp/ShowcaseBattleSector.cs` derives a
+  shared neutral rendezvous from public topology and re-resolves it each match;
+  `tools/allegiance-mcp/BotManager.Exploration.cs` resets adapted fleets' scout intel on client mission generations.
+  `tools/p819-side-bias-proof/matchups.py` groups results by map. Operator reference:
+  `docs/GUIDE.md`; report: `docs/reports/P926_REPORT.md`. No new native rule.
 - **Per-match goal rotation (P832g, preset policy)** — opt-in
   `showcase.goalRotation` (`cycle`/seeded `random`, no consecutive repeats),
   `src/Allegiance.Server/GoalRotationConfig.cs`; selects creator parameters before

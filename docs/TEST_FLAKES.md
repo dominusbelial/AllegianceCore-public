@@ -5633,3 +5633,60 @@ receipts: [P925 isolations](reports/P925_assets/isolations.json); exact gate res
 [Fast summary](reports/P925_assets/fast-summary.json). Raw logs/TRX remain in the
 ignored task-worktree `.scratch/p925/`, as linked by the
 [P925 report](reports/P925_REPORT.md).
+
+## P926 validation — showcase arrival deadline, 2026-11-04
+
+The required rotation-off P700 series finished **4/5 overall assertions**, with
+**5/5 holding the never-park bound**. Run 4 expired at the separate 480-second
+arrival deadline: **18/30** ships reached their objectives (requires at least
+24), while real combat continued (3,769 shots, 1,243 hits, eight kills). Its
+longest speed below 1 with a target was **2.005 seconds**, with no `Parked >5s`
+violation. This is the same arrival-limit failure class previously recorded for
+P817/P822/P841; its exact cause in this invocation is not established.
+
+The next three filtered, serial invocations of
+`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+(runs 5–7, including the required fifth attempt) passed **3/3**, with 24/30
+arrivals each:
+
+| Isolation | Observation seconds | Longest idle with target |
+|---|---:|---:|
+| 5 | 256.7 | 1.812 s |
+| 6 | 277.0 | 2.908 s |
+| 7 | 398.1 | 4.007 s |
+
+No assertions, timeouts, movement law or standoff distances were weakened.
+The initial run used the test host's workstation GC; subsequent off runs and
+the final rotating research proofs use server GC. The off series uses native
+ship updates/nativeGotoPlan, pool transport and parallel immutable broadcasts.
+The final fogged research proof separately checks real impacts in each derived
+battle sector and no stale sector ids after rotation. No rig A/B or fresh
+pre-change five-run rate is claimed.
+
+Raw TRX/logs: `.scratch/p926/never-parks-{1..7}.*` in the task worktree; compact
+results: [P926 verification](reports/P926_assets/verification.json). The arrival
+limit remains a qualified gate result, rather than being reported as 5/5 clean.
+
+## P926 validation — single Fast sweep and filtered isolations, 2026-11-04
+
+Exactly one Fast invocation ran: **13,030 passed, nine failed, three skipped**
+(optional private Meshy-pack cases), with one timing offender against the
+calibrated **10.000 s** limit. Infrastructure passed all nine checks. All 26 new
+P926 Fast executions passed; the 29-case focused cohort (including three Live
+assembly/replay cases) passed three filtered repetitions, with zero skips.
+The three fogged rotating research proofs also passed, with zero skips.
+No full-tier retry was run and no unrelated implementation was changed.
+
+| Sweep failure / timing case | Three filtered repetitions | Qualification |
+|---|---|---|
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail at line 179 (expected AttackTarget, actual null) | Same unchanged behavior already reproduced 3/3 on dispatch-base sources in P923. Not claimed cleared. |
+| Five `PlayerBundlePathsTests` cases: Artwork executable fallback, Artwork/NativeSource missing defaults, native-source subdirectory guessing, and synthetic sky config precedence | Each fails 3/3; the other four class cases pass each run | Existing in-checkout TMPDIR obstruction: the simulated outside-repo bundle can discover the worktree's ancestor `local.env`. Same fixture assumption ledgered in P909–P916; resolver/fixtures unchanged. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | pass / pass / pass (1.263 / 1.269 / 1.265 s) | Sweep-only missing same-side relay; cause not established. Lifepod/broadcast code unchanged. |
+| `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | pass / pass / pass | Sweep observed the teammate's lobby side (-2) before expected side 0 at line 167. Population/side-assignment code unchanged. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass / pass / pass with writable task-local `XDG_CONFIG_HOME` | Already-ledgered sandbox profile-restoration failure: the original fixture attempted to write the read-only default player profile. The control uses the same source and test. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (functionally passed the sweep in 10.745 s) | pass / pass / pass (9.344 / 9.531 / 9.301 s) | Sweep-only timing overrun; isolated samples meet this run's 10 s guard. No limit, tier or flight law changed. |
+
+These qualifications retain the original failed Fast gate. Raw sweep and
+filtered TRX/logs remain under `.scratch/p926/fast/` and
+`.scratch/p926/*-isolation-*` in the task worktree. Small counters and per-case
+outcomes: [P926 verification](reports/P926_assets/verification.json).

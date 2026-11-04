@@ -608,6 +608,11 @@ internal sealed class SideIntelStore
         }
     }
 
+    internal void Clear()
+    {
+        lock (_gate) _map.Clear();
+    }
+
     internal SideIntel? Find(uint cookie, short side)
     {
         lock (_gate) return _map.TryGetValue((cookie, side), out var intel) ? intel : null;

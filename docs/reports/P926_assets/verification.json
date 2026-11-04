@@ -1,0 +1,1437 @@
+{
+  "task": "P926",
+  "branch": "codex/p926",
+  "committed": false,
+  "pushed": false,
+  "baseline": {
+    "immutableSnapshot": true,
+    "encodeOnce": true,
+    "parallelBuild": true,
+    "transport": "pool",
+    "shipUpdateModel": "native",
+    "nativeGotoPlan": true,
+    "serverGC": true
+  },
+  "focused": [
+    {
+      "evidence": ".scratch/p926/focused-verified-1.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000402"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009061"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0141493"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0408945"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031015"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+          "outcome": "Passed",
+          "duration": "00:00:04.4148749"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011760"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1158579"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0509608"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000251"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003183"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041376"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005190"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017555"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008596"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+          "outcome": "Passed",
+          "duration": "00:00:00.0267752"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005247"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000243"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+          "outcome": "Passed",
+          "duration": "00:00:00.0263629"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001875"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000344"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000148"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000710"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000184"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000184"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0282900"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0538273"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.2138444"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000281"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/focused-verified-2.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000366"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0061258"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000326"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.2447057"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000279"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012699"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000340"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+          "outcome": "Passed",
+          "duration": "00:00:00.0268169"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002514"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000569"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000523"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007610"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000342"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026693"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000260"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011444"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022637"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+          "outcome": "Passed",
+          "duration": "00:00:00.0242211"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1396853"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0079697"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000742"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0081276"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+          "outcome": "Passed",
+          "duration": "00:00:04.4357661"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0400082"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0867160"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0146703"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010428"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004115"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019461"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/focused-verified-3.trx",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000231"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026676"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000656"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010508"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0211652"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000183"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020817"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000394"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0351513"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0403750"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000180"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000341"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004130"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000234"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000293"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009970"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012336"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000144"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+          "outcome": "Passed",
+          "duration": "00:00:04.4184878"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005307"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1149449"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0522016"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+          "outcome": "Passed",
+          "duration": "00:00:00.0220753"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.2231074"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005243"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039028"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+          "outcome": "Passed",
+          "duration": "00:00:00.0259167"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0111491"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001851"
+        }
+      ]
+    }
+  ],
+  "fogProofs": [
+    {
+      "evidence": ".scratch/p926/fog-final-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationLiveTests.Showcase_marches_fights_and_completes_three_map_rotations",
+          "outcome": "Passed",
+          "duration": "00:04:39.7677940",
+          "matches": [
+            "match=1 battle=1052:Alderan wall=182.5s reachedSides=0,1 bothInBattleSamples=1429 battleHits=1873 hits=2585 longestIdle=2.01s stage=Over log=.scratch/p926/loopback-20261104T061524.log",
+            "match=2 battle=1:Cirt wall=36.3s reachedSides=1,0 bothInBattleSamples=518 battleHits=728 hits=879 longestIdle=1.26s stage=Over log=.scratch/p926/loopback-20261104T061524.log",
+            "match=3 battle=2:Dunatis wall=39.1s reachedSides=1,0 bothInBattleSamples=575 battleHits=996 hits=988 longestIdle=1.15s stage=Over log=.scratch/p926/loopback-20261104T061524.log"
+          ],
+          "byMap": {
+            "m2xspiderw.igc": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            },
+            "gen:SingleRing": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            },
+            "gen:PinWheel": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            }
+          },
+          "completed": [
+            {
+              "mission": 0,
+              "match": 1,
+              "seed": 926,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "m2xspiderw.igc",
+              "mapSeed": 1056742792,
+              "rotation": "cycle",
+              "mapIndex": 0,
+              "rotationSeed": 926,
+              "rotationMatch": 1,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "1050",
+                "1": "1051"
+              },
+              "winner": 1
+            },
+            {
+              "mission": 0,
+              "match": 2,
+              "seed": 1056742792,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:SingleRing",
+              "mapSeed": 1123059318,
+              "rotation": "cycle",
+              "mapIndex": 1,
+              "rotationSeed": 926,
+              "rotationMatch": 2,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "2"
+              },
+              "winner": 1
+            },
+            {
+              "mission": 0,
+              "match": 3,
+              "seed": 1123059318,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:PinWheel",
+              "mapSeed": 66361264,
+              "rotation": "cycle",
+              "mapIndex": 2,
+              "rotationSeed": 926,
+              "rotationMatch": 3,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "1"
+              },
+              "winner": 1
+            }
+          ],
+          "battleChoices": [
+            "[battle-sector] cookie=1 generation=1 sector=1052 name=Alderan source=requested requested=Alderan",
+            "[battle-sector] cookie=1 generation=2 sector=1 name=Cirt source=derived requested=Alderan",
+            "[battle-sector] cookie=1 generation=3 sector=2 name=Dunatis source=derived requested=Alderan"
+          ],
+          "gcModes": [
+            "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)"
+          ],
+          "generationResets": 4
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/fog-final-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationLiveTests.Showcase_marches_fights_and_completes_three_map_rotations",
+          "outcome": "Passed",
+          "duration": "00:04:01.8946053",
+          "matches": [
+            "match=1 battle=1052:Alderan wall=131.4s reachedSides=0,1 bothInBattleSamples=743 battleHits=911 hits=914 longestIdle=1.96s stage=Over log=.scratch/p926/loopback-20261104T062007.log",
+            "match=2 battle=1:Cirt wall=49.0s reachedSides=1,0 bothInBattleSamples=773 battleHits=1216 hits=1348 longestIdle=1.51s stage=Over log=.scratch/p926/loopback-20261104T062007.log",
+            "match=3 battle=2:Dunatis wall=39.8s reachedSides=1,0 bothInBattleSamples=588 battleHits=1077 hits=1073 longestIdle=1.45s stage=Over log=.scratch/p926/loopback-20261104T062007.log"
+          ],
+          "byMap": {
+            "m2xspiderw.igc": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "0": 1
+              }
+            },
+            "gen:SingleRing": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            },
+            "gen:PinWheel": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "0": 1
+              }
+            }
+          },
+          "completed": [
+            {
+              "mission": 0,
+              "match": 1,
+              "seed": 926,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "m2xspiderw.igc",
+              "mapSeed": 1056742792,
+              "rotation": "cycle",
+              "mapIndex": 0,
+              "rotationSeed": 926,
+              "rotationMatch": 1,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "1050",
+                "1": "1051"
+              },
+              "winner": 0
+            },
+            {
+              "mission": 0,
+              "match": 2,
+              "seed": 1056742792,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:SingleRing",
+              "mapSeed": 1123059318,
+              "rotation": "cycle",
+              "mapIndex": 1,
+              "rotationSeed": 926,
+              "rotationMatch": 2,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "2"
+              },
+              "winner": 1
+            },
+            {
+              "mission": 0,
+              "match": 3,
+              "seed": 1123059318,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:PinWheel",
+              "mapSeed": 66361264,
+              "rotation": "cycle",
+              "mapIndex": 2,
+              "rotationSeed": 926,
+              "rotationMatch": 3,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "1"
+              },
+              "winner": 0
+            }
+          ],
+          "battleChoices": [
+            "[battle-sector] cookie=1 generation=1 sector=1052 name=Alderan source=requested requested=Alderan",
+            "[battle-sector] cookie=1 generation=2 sector=1 name=Cirt source=derived requested=Alderan",
+            "[battle-sector] cookie=1 generation=3 sector=2 name=Dunatis source=derived requested=Alderan"
+          ],
+          "gcModes": [
+            "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)"
+          ],
+          "generationResets": 4
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/fog-final-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P926MapRotationLiveTests.Showcase_marches_fights_and_completes_three_map_rotations",
+          "outcome": "Passed",
+          "duration": "00:04:06.9130003",
+          "matches": [
+            "match=1 battle=1052:Alderan wall=143.7s reachedSides=0,1 bothInBattleSamples=970 battleHits=1480 hits=1638 longestIdle=2.01s stage=Over log=.scratch/p926/loopback-20261104T062412.log",
+            "match=2 battle=1:Cirt wall=40.1s reachedSides=1,0 bothInBattleSamples=595 battleHits=1225 hits=1339 longestIdle=2.01s stage=Over log=.scratch/p926/loopback-20261104T062412.log",
+            "match=3 battle=2:Dunatis wall=41.4s reachedSides=1,0 bothInBattleSamples=622 battleHits=1110 hits=1109 longestIdle=1.91s stage=Over log=.scratch/p926/loopback-20261104T062412.log"
+          ],
+          "byMap": {
+            "m2xspiderw.igc": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "0": 1
+              }
+            },
+            "gen:SingleRing": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            },
+            "gen:PinWheel": {
+              "matches": 1,
+              "draws": 0,
+              "winsBySide": {
+                "1": 1
+              }
+            }
+          },
+          "completed": [
+            {
+              "mission": 0,
+              "match": 1,
+              "seed": 926,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "m2xspiderw.igc",
+              "mapSeed": 1056742792,
+              "rotation": "cycle",
+              "mapIndex": 0,
+              "rotationSeed": 926,
+              "rotationMatch": 1,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "1050",
+                "1": "1051"
+              },
+              "winner": 0
+            },
+            {
+              "mission": 0,
+              "match": 2,
+              "seed": 1056742792,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:SingleRing",
+              "mapSeed": 1123059318,
+              "rotation": "cycle",
+              "mapIndex": 1,
+              "rotationSeed": 926,
+              "rotationMatch": 2,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "2"
+              },
+              "winner": 1
+            },
+            {
+              "mission": 0,
+              "match": 3,
+              "seed": 1123059318,
+              "sides": [
+                {
+                  "side": 0,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                },
+                {
+                  "side": 1,
+                  "civ": 25,
+                  "name": "Iron Coalition",
+                  "plan": "plan_a"
+                }
+              ],
+              "map": "gen:PinWheel",
+              "mapSeed": 66361264,
+              "rotation": "cycle",
+              "mapIndex": 2,
+              "rotationSeed": 926,
+              "rotationMatch": 3,
+              "homes": [
+                0,
+                1
+              ],
+              "homeSectors": {
+                "0": "0",
+                "1": "1"
+              },
+              "winner": 1
+            }
+          ],
+          "battleChoices": [
+            "[battle-sector] cookie=1 generation=1 sector=1052 name=Alderan source=requested requested=Alderan",
+            "[battle-sector] cookie=1 generation=2 sector=1 name=Cirt source=derived requested=Alderan",
+            "[battle-sector] cookie=1 generation=3 sector=2 name=Dunatis source=derived requested=Alderan"
+          ],
+          "gcModes": [
+            "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)"
+          ],
+          "generationResets": 4
+        }
+      ]
+    }
+  ],
+  "neverParksOff": [
+    {
+      "evidence": ".scratch/p926/never-parks-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:06:20.6365934",
+          "summary": [
+            "P700 local 15v15: 376.4s, samples=3759, reached=24/30, longest speed<1 with target=1.603s, shots=4606, hits=1806, kills=13"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:34.2292443",
+          "summary": [
+            "P700 local 15v15: 210.2s, samples=2099, reached=24/30, longest speed<1 with target=1.918s, shots=3228, hits=1473, kills=12"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:59.3639033",
+          "summary": [
+            "P700 local 15v15: 234.9s, samples=2346, reached=24/30, longest speed<1 with target=0.000s, shots=656, hits=89, kills=0"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-4.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Failed",
+          "duration": "00:08:03.9605694",
+          "summary": [
+            "P700 local 15v15: 480.0s, samples=4791, reached=18/30, longest speed<1 with target=2.005s, shots=3769, hits=1243, kills=8"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-5.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:20.6848710",
+          "summary": [
+            "P700 local 15v15: 256.7s, samples=2563, reached=24/30, longest speed<1 with target=1.812s, shots=1585, hits=464, kills=1"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-6.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:41.0227355",
+          "summary": [
+            "P700 local 15v15: 277.0s, samples=2766, reached=24/30, longest speed<1 with target=2.908s, shots=10959, hits=4920, kills=32"
+          ]
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/never-parks-7.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "results": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:06:42.0672649",
+          "summary": [
+            "P700 local 15v15: 398.1s, samples=3975, reached=24/30, longest speed<1 with target=4.007s, shots=5628, hits=1840, kills=10"
+          ]
+        }
+      ]
+    }
+  ],
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 119,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4715,
+        "live": 123,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2115,
+        "live": 168,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6065,
+        "live": 72,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 546.9756794560235,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 119,
+            "outcomes": {
+              "Passed": 119
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4715,
+            "outcomes": {
+              "Passed": 4711,
+              "NotExecuted": 3,
+              "Failed": 1
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2115,
+            "outcomes": {
+              "Passed": 2114,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6065,
+            "outcomes": {
+              "Passed": 6058,
+              "Failed": 7
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9725729442970822,
+          "referenceMs": 3.6666,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.745486
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.MonoGame.Tests: main failed",
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "1 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.05832654901314527,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05832654901314527,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "isolations": [
+    {
+      "evidence": ".scratch/p926/core-isolation-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0004052"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001621"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002918"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010091"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003576"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002929"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+          "outcome": "Passed",
+          "duration": "00:00:01.2629476"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142958"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9237546"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003584"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0044454"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.3439367"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/core-isolation-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001862"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002918"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0041977"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0140860"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.5307035"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+          "outcome": "Passed",
+          "duration": "00:00:01.2694824"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002738"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0004439"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003332"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003914"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9503272"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009311"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/core-isolation-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0041709"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002582"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001577"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002730"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.3006464"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+          "outcome": "Passed",
+          "duration": "00:00:01.2648746"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002272"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142256"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.8869006"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003131"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009391"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003756"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/population-isolation-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer",
+          "outcome": "Passed",
+          "duration": "00:00:01.6533190"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/population-isolation-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer",
+          "outcome": "Passed",
+          "duration": "00:00:01.6460847"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/population-isolation-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer",
+          "outcome": "Passed",
+          "duration": "00:00:01.6941674"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/profile-isolation-1.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0664558"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/profile-isolation-2.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0657354"
+        }
+      ]
+    },
+    {
+      "evidence": ".scratch/p926/profile-isolation-3.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0544753"
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "solution": true,
+    "tools114": true,
+    "aot": true,
+    "parityUnchanged": true,
+    "compose": true
+  },
+  "aotSmoke": {
+    "aot-smoke.log": [
+      "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+      "[matchup] mission #0 match=1 seed=926 side0=25:Iron Coalition(none) side1=3:Ga'Taraan(none) homeSwap=off homeMatch=1 homes=0,1 home0=1050 home1=1051 map=m2xspiderw.igc mapSeed=1056742792 rotation=cycle#0 rotationMatch=1 rotationSeed=926",
+      "[shutdown] clean: 162 ticks, 0 overruns"
+    ],
+    "aot-smoke-random.log": [
+      "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+      "[matchup] mission #0 match=1 seed=926 side0=25:Iron Coalition(none) side1=3:Ga'Taraan(none) homeSwap=off homeMatch=1 homes=0,1 home0=0 home1=2 map=gen:SingleRing mapSeed=1123059318 rotation=random#1 rotationMatch=1 rotationSeed=926",
+      "[shutdown] clean: 163 ticks, 0 overruns"
+    ]
+  }
+}

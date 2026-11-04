@@ -16,7 +16,7 @@ SIDES = re.compile(r"side(\d+)=(-?\d+):(.*?)\(([^()]*)\)(?=\s+(?:side\d+=|homeSw
 
 
 def tally(lines):
-    civs, positions, homes = {}, {}, {}
+    civs, positions, homes, maps = {}, {}, {}, {}
     assembled, completed = [], []
     for line in lines:
         if not (line.startswith("[matchup]") or (line.startswith("[gameover] mission") and "Stage Over" in line)):
@@ -27,6 +27,13 @@ def tally(lines):
         sides = [{"side": int(s), "civ": int(c), "name": n, "plan": p}
                  for s, c, n, p in SIDES.findall(line.strip())]
         record = {"mission": int(header[1]), "match": int(header[2]), "seed": int(header[3]), "sides": sides}
+        geography = re.search(r"\bmap=(\S+) mapSeed=(-?\d+) rotation=(cycle|random)#(\d+)", line)
+        if geography:
+            record.update(map=geography[1], mapSeed=int(geography[2]), rotation=geography[3], mapIndex=int(geography[4]))
+            for key in ("rotationSeed", "rotationMatch"):
+                field = re.search(r"\b" + key + r"=(-?\d+)", line)
+                if field:
+                    record[key] = int(field[1])
         assignment = re.search(r"\bhomes=([\d,]+)", line)
         if assignment:
             record["homes"] = [int(s) for s in assignment[1].split(",")]
@@ -39,6 +46,14 @@ def tally(lines):
             continue
         record["winner"] = None if winner[1] == "NA(draw)" else int(winner[1])
         completed.append(record)
+        if "map" in record:
+            counter = maps.setdefault(record["map"], {"matches": 0, "draws": 0, "winsBySide": {}})
+            counter["matches"] += 1
+            if record["winner"] is None:
+                counter["draws"] += 1
+            else:
+                side_key = str(record["winner"])
+                counter["winsBySide"][side_key] = counter["winsBySide"].get(side_key, 0) + 1
         for side in sides:
             civ = civs.setdefault(str(side["civ"]), {"name": side["name"], "appearances": 0, "wins": 0, "losses": 0, "draws": 0})
             position = positions.setdefault(str(side["side"]), {"appearances": 0, "wins": 0, "losses": 0, "draws": 0})
@@ -51,7 +66,7 @@ def tally(lines):
                 counter["appearances"] += 1
                 counter[outcome] += 1
     tuples = collections.Counter(",".join(str(s["civ"]) for s in match["sides"]) for match in completed)
-    return {"assembled": assembled, "completed": completed, "byCiv": civs, "byPosition": positions, "byAuthoredHome": homes,
+    return {"assembled": assembled, "completed": completed, "byCiv": civs, "byPosition": positions, "byAuthoredHome": homes, "byMap": maps,
             "completedMatchups": dict(tuples), "completedMatches": len(completed)}
 
 

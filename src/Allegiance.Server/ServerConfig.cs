@@ -20,6 +20,7 @@ public sealed class ShowcaseConfig
     public bool LoopResearchPlans { get; set; }
     /// <summary>Opt-in preset orchestration; native has creator-selected goals, no rotation.</summary>
     public GoalRotationConfig? GoalRotation { get; set; }
+    public MapRotationConfig? MapRotation { get; set; }
     public void Validate()
     {
         if (TechMode is not ("unlocked" or "research"))
@@ -50,13 +51,13 @@ public sealed class GameConfig
     /// dedicated-server policy (no event goal; optional legacy countdown).</summary>
     public Allegiance.Core.Model.MissionGoals Goals { get; set; } = new();
 
-    public Allegiance.Core.Model.MissionGoals ResolveGoals()
+    public Allegiance.Core.Model.MissionGoals ResolveGoals(bool validateMap = true)
     {
         if (Goals is null) throw new InvalidDataException($"game '{Name}': goals must be an object");
-        return ValidateGoals(Goals with { });
+        return ValidateGoals(Goals with { }, validateMap);
     }
 
-    internal Allegiance.Core.Model.MissionGoals ValidateGoals(Allegiance.Core.Model.MissionGoals goals)
+    internal Allegiance.Core.Model.MissionGoals ValidateGoals(Allegiance.Core.Model.MissionGoals goals, bool validateMap = true)
     {
         if (GameLengthSeconds is { } duration)
         {
@@ -69,12 +70,21 @@ public sealed class GameConfig
         goals.Validate($"game '{Name}'.goals");
         if (goals.IsProsperityGame && !AllowDevelopments)
             throw new InvalidDataException($"game '{Name}': prosperity requires allowDevelopments=true (Igc/igc.h:1484-1489)");
-        if (goals.IsTerritoryGame && MapGen is { } map &&
-            (string.Equals(map.Type, "Brawl", StringComparison.OrdinalIgnoreCase) ||
-             (Teams == 2 && (string.Equals(map.Type, "SingleRing", StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(map.Type, "DoubleRing", StringComparison.OrdinalIgnoreCase)))))
-            throw new InvalidDataException($"game '{Name}': territory requires a larger generated map (Igc/igc.h:1494-1503)");
+        if (validateMap)
+        {
+            try { ValidateMapGoals(goals, Teams, MapGen); }
+            catch (InvalidDataException e) { throw new InvalidDataException($"game '{Name}': {e.Message}", e); }
+        }
         return goals;
+    }
+
+    internal static void ValidateMapGoals(Allegiance.Core.Model.MissionGoals goals, int teams, MapGenConfig? map)
+    {
+        if (goals.IsTerritoryGame && map is not null &&
+            (string.Equals(map.Type, "Brawl", StringComparison.OrdinalIgnoreCase) ||
+             (teams == 2 && (string.Equals(map.Type, "SingleRing", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(map.Type, "DoubleRing", StringComparison.OrdinalIgnoreCase)))))
+            throw new InvalidDataException("territory requires a larger generated map (Igc/igc.h:1494-1503)");
     }
 
     /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
@@ -1128,8 +1138,9 @@ public sealed class ServerConfig
     public void ResolveShowcaseMode()
     {
         Showcase.Validate();
+        Showcase.MapRotation?.Validate(this);
         if (Showcase.GoalRotation is { } rotation)
-            foreach (var game in Games) rotation.Validate(game);
+            foreach (var game in Games) rotation.Validate(game, Showcase.MapRotation is null);
         if (Showcase.TechMode != "research") return;
         var live = LiveSettings ?? new LiveSettingsConfig();
         void Conflict(string key) => throw new InvalidDataException($"showcase.techMode=research conflicts with {key}");
@@ -1437,7 +1448,7 @@ public static class ServerConfigLoader
             Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE"),
             Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ"));
         ApplyCli(config, cli);
-        foreach (var game in config.Games) _ = game.ResolveGoals();
+        foreach (var game in config.Games) _ = game.ResolveGoals(config.Showcase.MapRotation is null);
         return config;
     }
 
@@ -1569,10 +1580,13 @@ public static class ServerConfigLoader
                     // only loads file maps cannot be made reproducible this way.
                     if (!int.TryParse(value, out var mapSeed))
                         throw new InvalidDataException($"--map-seed must be an integer, got '{value}'");
-                    if (config.Games.All(g => g.MapGen is null))
+                    if (config.Games.All(g => g.MapGen is null) && config.Showcase.MapRotation?.Entries.Any(e => e.MapGen is not null) != true)
                         throw new InvalidDataException("--map-seed requires a game configured with a generated map (a \"mapGen\" block with a topology type), not a file map");
                     foreach (var game in config.Games)
                         if (game.MapGen is { } mg) mg.Seed = mapSeed;
+                    if (config.Showcase.MapRotation is { } mapRotation)
+                        foreach (var entry in mapRotation.Entries)
+                            if (entry.MapGen is { } mg) mg.Seed = mapSeed;
                     recognized++; break;
                 case "capture":
                 case "capturefile":

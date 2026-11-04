@@ -15,9 +15,9 @@ public sealed class MapGenParams
 {
     /// <summary>MissionParams::Reset resource defaults for custom maps
     /// (Igc/igc.h:1284,1315-1328). Generated-map presets retain their own defaults.</summary>
-    public static MapGenParams FileMapDefaults(int teams) => new()
+    public static MapGenParams FileMapDefaults(int teams, int? seed = null) => new()
     {
-        Teams = teams,
+        Teams = teams, Seed = seed,
         PlayerSectorAsteroids = 20, NeutralSectorAsteroids = 20,
         PlayerSectorMineableAsteroids = 2, NeutralSectorMineableAsteroids = 4,
         PlayerSectorSpecialAsteroids = 1, NeutralSectorSpecialAsteroids = 1,

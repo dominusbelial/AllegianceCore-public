@@ -338,6 +338,73 @@ Top-level fields: `artPath`, `staticCore`, `port`, `updatesPerSecond`,
   Printed at boot and in the tick-profiler header. See §7's cinematic mode.
 - `adminCheats` — see below.
 
+### Showcase map rotation
+
+`showcase.mapRotation` is opt-in operator orchestration. Omit it (or set it to
+`null`) to preserve the existing fixed `games[].map` / `games[].mapGen` assembly
+and receipts. It applies to configured worlds at boot and after every game over;
+player-created lobby worlds and the fixed-map client benchmarks retain their own
+map. Example for two teams:
+
+```json
+{
+  "showcase": {
+    "mapRotation": {
+      "mode": "cycle",
+      "seed": 926,
+      "entries": [
+        { "map": "m2xspiderw.igc" },
+        { "mapGen": { "type": "SingleRing" } },
+        { "mapGen": { "type": "PinWheel", "seed": 123 } }
+      ]
+    }
+  }
+}
+```
+
+`entries` requires at least two objects, each containing exactly one file name
+`map` (under `artPath`, no directories/whitespace) or a `mapGen` block with the
+existing generator tunables. `cycle` uses list order and wraps; `random` draws
+from an independent seeded stream, excluding the previous entry. Both modes use
+`seed` to reproduce the sequence and fresh layout seeds. An omitted stream seed
+is drawn once per configured game and logged. Unpinned generated entries get a
+fresh seed each match; `mapGen.seed` pins that entry's layout, and `--map-seed N`
+pins every generated entry. File entries also log a seed, used for runtime
+asteroid top-ups when the authored map leaves a sector empty. Civilizations and
+goals use their existing independent selection paths.
+
+Boot parses every file and preflights every generated entry for every configured
+game, including all rotated goals. Invalid topology/team combinations fail boot.
+Generated types are SingleRing, DoubleRing, BigRing, HiLo, HiHigher, InsideOut,
+LargeSplit, Star, PinWheel, DiamondRing, SnowFlake, Grid, EastWest, SplitBase and
+Brawl. DiamondRing needs at least three teams; EastWest needs exactly two.
+Resource counts must be 0–1000, `mapSize` 0 or 1, and `he3Density` finite in
+0–100. Rotation requires `liveSettings.debugMode=false`. File-only rotation can
+use `games[].homeSwap`; any generated entry requires `homeSwap=off` so generated
+homes keep their own civilization rules. The current home-swap trial should
+finish before enabling a mixed rotation.
+
+Both `[matchup]` and `[gameover]` include
+`map=<file|gen:Type> mapSeed=N rotation=<mode>#<zero-based-entry-index>` plus
+`rotationMatch` (one based) and `rotationSeed`. Keep the core version, tunables,
+goals and civ receipt as well as these fields to replay the geography. Restart
+with the same rotation seed and configuration to replay the stream; a generated
+single-map replay can use `games[].mapGen` with the logged seed. These seeds do
+not make combat, transport scheduling or treasure drops deterministic.
+`tools/p819-side-bias-proof/matchups.py` adds `byMap` counts and winner-side tallies.
+
+For MCP showcase march, a valid `target_sector` remains an override. When absent
+or absent from the new map, the shared battle sector is a reachable neutral
+sector ranked by smallest worst hop distance from every home, smallest distance
+spread, smallest total hop distance, then sector id. If no neutral exists, rank
+all sectors; maps without flagged homes (Brawl) use the smallest id. This picks
+Alderan on m2xspiderw. Bots resolve names and the current graph again each match,
+log `[battle-sector]` and clear old routes. After a derived target or changed map
+activates adaptation, fresh mission generations reset scout intel; numeric overrides are remembered by
+the resolved name. Normal per-role objectives (bombers, scouts, support and
+mission goals) still apply. See [P926](reports/P926_REPORT.md) for coverage and
+local proof receipts.
+
 ### Admin cheats — LAN-only, documented safety
 
 `liveSettings.adminCheats` is an **off-by-default** port of native's

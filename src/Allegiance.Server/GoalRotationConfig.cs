@@ -21,13 +21,13 @@ public sealed class GoalRotationConfig
         new() { Name = "flags-artifacts", Goals = new() { Flags = 1, Artifacts = 1 } },
     ];
 
-    internal void Validate(GameConfig game)
+    internal void Validate(GameConfig game, bool validateMap = true)
     {
         if (Mode is not ("cycle" or "random"))
             throw new InvalidDataException("showcase.goalRotation.mode must be cycle|random");
         if (Entries is null || Entries.Length < 2)
             throw new InvalidDataException("showcase.goalRotation.entries requires at least two entries");
-        if (!game.ResolveGoals().IsNoWinningConditionsGame)
+        if (!game.ResolveGoals(validateMap).IsNoWinningConditionsGame)
             throw new InvalidDataException("showcase.goalRotation conflicts with fixed goals/gameLengthSeconds");
         var names = new HashSet<string>(StringComparer.Ordinal);
         var goals = new HashSet<MissionGoals>();
@@ -38,7 +38,7 @@ public sealed class GoalRotationConfig
                 throw new InvalidDataException("showcase.goalRotation entry names must be unique ASCII letters/digits/hyphens (1..64)");
             if (entry.Goals is null)
                 throw new InvalidDataException($"showcase.goalRotation '{entry.Name}': goals must be an object");
-            var resolved = game.ValidateGoals(entry.Goals with { });
+            var resolved = game.ValidateGoals(entry.Goals with { }, validateMap);
             if (resolved.IsNoWinningConditionsGame || !goals.Add(resolved))
                 throw new InvalidDataException("showcase.goalRotation entries require distinct, enabled goals");
         }

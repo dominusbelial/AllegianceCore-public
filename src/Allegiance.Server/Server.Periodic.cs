@@ -108,7 +108,7 @@ public sealed partial class Server
             if (index >= 0 && index < _config.Games.Count && ReferenceEquals(_missionConfigs.GetValueOrDefault(mission), _config.Games[index]))
                 _config.Games.RemoveAt(index);
             _missionConfigs.Remove(mission);
-            _matchups.Remove(mission);
+            lock (_matchups) _matchups.Remove(mission);
             _missionParams.Remove(mission);
             _mapGenMissions.Remove(mission);
             break;                                             // deleting 1 mission per check is plenty (FedSrv.CPP:7909)

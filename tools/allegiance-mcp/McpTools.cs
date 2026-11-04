@@ -90,7 +90,7 @@ internal static class McpTools
                         count_a = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side A bot count; overrides size_scale." },
                         count_b = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side B bot count; defaults to count_a." },
                         size_scale = new { type = "integer", @default = 1, minimum = 1, description = "P557: scales the showcase fleet size (15 × size_scale ships per side)." },
-                        target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
+                        target_sector = new { type = "string", description = "Optional sector name or id. Showcase uses a neutral minimax-hop rendezvous when absent or missing from the current map; re-resolved every match." },
                         tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
                         tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
                         mode = new { type = "string", @enum = new[] { "march" }, @default = "march", description = "Battle start mode. `march` (DEFAULT and now the ONLY mode, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. History: the `arena` mode (both fleets spawned directly in `target_sector`, formerly also reachable as the legacy `arena: true` flag) was removed in P795 because it collapsed into a home-sector death loop; an arena request returns a removal error instead of silently marching." },
@@ -683,14 +683,12 @@ internal static class McpTools
             }
         }
 
-        short? targetSector = null;
-        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
-            targetSector = ScenarioTarget(args, ts, mgr);
-        else if (args.ContainsKey("target_sector"))
+        string? targetQuery = OptStr(args, "target_sector");
+        if (args.ContainsKey("target_sector") && string.IsNullOrEmpty(targetQuery))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
-        // P798 — the explicit showcase target is the optional override; without
-        // it the bots compute the clash sector from their own intel.
-        mgr.ConfigureScenarioTarget(targetSector);
+        short? targetSector = showcase ? mgr.ConfigureShowcaseTarget(targetQuery)
+            : targetQuery is not null ? ScenarioTarget(args, targetQuery, mgr) : null;
+        if (!showcase) mgr.ConfigureScenarioTarget(targetSector);
 
         var sides = mgr.ValidSides();
         if (sides.Count < 2)

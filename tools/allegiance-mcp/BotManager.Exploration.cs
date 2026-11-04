@@ -45,6 +45,25 @@ internal sealed partial class BotManager
     private readonly Dictionary<string, double> _laneStarted = [];
     private double _openingStartedAt = -1;
     private uint _openingCookie = uint.MaxValue;
+    private Dictionary<ConnectionSession, long>? _intelGenerations;
+
+    // Native mission cookies survive restarts. Track each connection's local
+    // generation: late joiners may have a different counter from older peers.
+    // Every migrated batch clears intel; once the last peer migrates no old-map
+    // observations remain, even when the join bursts arrive at different times.
+    private bool ObserveIntelGeneration(ConnectionSession session)
+    {
+        if (!_mapBattleTarget) return false;
+        lock (session.Gate)
+        {
+            if (!session.World.WorldReady) return false;
+            var generations = _intelGenerations ??= new();
+            long generation = session.World.MissionGeneration;
+            bool changed = generations.TryGetValue(session, out long previous) && previous != generation;
+            generations[session] = generation;
+            return changed && _refreshMapIntel;
+        }
+    }
     private double _nextIntelScan = double.NegativeInfinity;
     private double _nextExplorerAssign = double.NegativeInfinity;
     private double _nextClashCheck = double.NegativeInfinity;
@@ -68,6 +87,10 @@ internal sealed partial class BotManager
     internal void ConfigureScenarioTarget(short? sector)
     {
         _scenarioTargetOverride = sector;
+        _mapBattleTarget = false;
+        _battleTargetQuery = null;
+        _refreshMapIntel = false;
+        _battleMapSignature = null;
     }
 
     private static uint CookieOf(ConnectionSession cs) => cs.World.Mission?.Cookie ?? 0;
@@ -532,7 +555,22 @@ internal sealed partial class BotManager
     /// enemy home when the side has resolved one).</summary>
     private void AssignClashTargets(ActiveBot[] bots, double now)
     {
-        if (_scenarioTargetOverride is not null) return;
+        if (_scenarioTargetOverride is not null)
+        {
+            // A map-derived rendezvous still honors the small skirmish's
+            // meeting-engagement option: travel while fighting, no wing hold.
+            if (MeetingEngagementEnabled)
+                foreach (var group in bots.Where(b => IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is not null).GroupBy(b => b.Side))
+                {
+                    bool meeting = group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MeetingEngagementCombatBots;
+                    foreach (var bot in group)
+                    {
+                        bot.MeetingEngagement = meeting;
+                        if (meeting) bot.UseStaging = false;
+                    }
+                }
+            return;
+        }
         foreach (var group in bots.Where(b => IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is not null)
                      .GroupBy(b => (CookieOf(b.Cs!), b.Side)))
         {
@@ -669,12 +707,17 @@ internal sealed partial class BotManager
         bool haveCookie = false;
         foreach (var bot in bots)
             if (bot.Cs is { } c) { cookie = CookieOf(c); haveCookie = true; break; }
-        if (haveCookie && cookie != _openingCookie)
+        bool generationChanged = false;
+        foreach (var bot in bots)
+            if (bot.Cs is { } session) generationChanged |= ObserveIntelGeneration(session);
+        if (haveCookie && (cookie != _openingCookie || generationChanged))
         {
             if (_openingCookie != uint.MaxValue)
-                Console.WriteLine($"[opening] new mission {cookie} — resetting the scout opening");
+                Console.WriteLine($"[opening] new mission {cookie} clientGenerationChanged={generationChanged} — resetting the scout opening");
             _openingCookie = cookie;
             _openingStartedAt = -1;
+            if (_mapBattleTarget) _intel.Clear();
+            _nextIntelScan = _nextExplorerAssign = _nextClashCheck = double.NegativeInfinity;
             _clash.Clear();
             _clashLogged.Clear();
             _exploreDoneLogged.Clear();
