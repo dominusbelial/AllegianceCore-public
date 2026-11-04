@@ -6,7 +6,7 @@ whole Allegiance ecosystem from one command instead of several ad-hoc steps.
 
 ## Prerequisites
 
-- .NET 10 SDK (`~/.dotnet/dotnet`, pinned 10.0.400).
+- .NET 10 SDK (`~/.dotnet/dotnet`, pinned 10.0.403).
 - The FreeAllegiance artwork corpus (a Git checkout). Point to it with
   `ALLEGIANCE_ARTWORK_PATH` in the gitignored `local.env`, or pass `--art`.
 - Python 3 for the bot driver (`scripts/mcp_driver.py`).

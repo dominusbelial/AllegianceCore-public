@@ -34,9 +34,9 @@
 # different port, map the host port with `-p` accordingly.
 
 # ---- build stage -----------------------------------------------------------
-# SDK pinned to the exact documented dev version (10.0.400), not a floating
+# SDK pinned to the exact documented dev version (10.0.403), not a floating
 # 10.0 tag, for reproducible builds.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build
 WORKDIR /src
 
 # Native AOT prerequisites (https://aka.ms/nativeaot-prerequisites): the SDK

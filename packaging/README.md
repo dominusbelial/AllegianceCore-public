@@ -1,6 +1,6 @@
 # Player bundle maintenance
 
-Use Python 3.11+, git and .NET SDK 10.0.400. On Linux install FreeType for MGCB
+Use Python 3.11+, git and .NET SDK 10.0.403. On Linux install FreeType for MGCB
 (the fonts themselves are bundled in the repo, so no system font package is
 needed — see `src/Allegiance.ClientCore.MonoGame/Content/Fonts/`). DesktopGL
 Content is

@@ -8,8 +8,8 @@
 # by the ASPNETCORE_URLS env var below.
 
 # ---- build stage -----------------------------------------------------------
-# Same pinned SDK as Allegiance.Server (documented dev version 10.0.400).
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
+# Same pinned SDK as Allegiance.Server (documented dev version 10.0.403).
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build
 WORKDIR /src
 
 COPY Directory.Build.props .
@@ -31,7 +31,7 @@ RUN dotnet publish src/Allegiance.Lobby/Allegiance.Lobby.csproj \
 # ASP.NET Core runtime image (NOT the base runtime) — this project uses the Web
 # SDK (Sdk="Microsoft.NET.Sdk.Web"), so it needs Microsoft.AspNetCore.App at
 # runtime. Pinned to the 10.0.x patch shipping with the SDK above.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.11 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS final
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app .

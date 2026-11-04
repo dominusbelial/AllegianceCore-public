@@ -10,7 +10,7 @@ verbatim from the original README).
 
 ## 1. Prerequisites
 
-- **.NET SDK 10.0.400** — CI pins this exact version
+- **.NET SDK 10.0.403** — CI pins this exact version
   (`.github/workflows/ci.yml`). Check with `dotnet --version`; if you see
   "Looks like you don't yet have a .NET SDK", your `PATH` doesn't point at the
   SDK you installed (Linux users: this project does **not** use the snap

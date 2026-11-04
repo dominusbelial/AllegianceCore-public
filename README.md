@@ -150,14 +150,14 @@ The first public release, **v0.1.0**, is out. For local packaging and the releas
 > see **[QUICKSTART.md](QUICKSTART.md)**. `GLOSSARY.md` is the kept-current
 > per-domain index of the codebase.
 
-Prerequisites: the **.NET SDK 10.0.400** (CI pins this exact version) and a
+Prerequisites: the **.NET SDK 10.0.403** (CI pins this exact version) and a
 clone of the **original game art**.
 
 ```bash
 # 1. Set up the .NET SDK (adjust to your install)
 export DOTNET_ROOT="$HOME/.dotnet"
 export PATH="$DOTNET_ROOT:$PATH"
-dotnet --version        # must print 10.0.400
+dotnet --version        # must print 10.0.403
 
 # 2. Get the original art (not included in this repo), plus the optional sky pack
 git clone https://github.com/FreeAllegiance/Artwork ../Artwork
