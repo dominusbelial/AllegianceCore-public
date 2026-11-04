@@ -1,0 +1,5189 @@
+{
+  "inputs": [
+    {
+      "name": "rig-b63-server.log.gz",
+      "sha256": "6065a76f8f5794065d7ee99c60de4ff3c307cf03b9731bc4b18a53993730865c"
+    },
+    {
+      "name": "err.worker-1.log.gz",
+      "sha256": "9b687a56adf9d86bf21336b6a2e330dceadf2060180ff07181e3a7157027ac19"
+    },
+    {
+      "name": "err.worker-2.log.gz",
+      "sha256": "ed818455cc43b2d13ef20cdb6ec89d58de3f8def8dfd720c1958cd111908d25c"
+    }
+  ],
+  "matches": [
+    {
+      "match": 1,
+      "opening": "2026-11-04T02:10:17.218636457Z",
+      "complete": true,
+      "homes": [
+        1050,
+        1051
+      ],
+      "civs": [
+        18,
+        4
+      ],
+      "stationLosses": [
+        "2026-11-04T02:36:16.515956545Z [station] station 9196 destroyed (launcher 8290) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]",
+        "2026-11-04T02:39:01.328156247Z [station] station 9190 destroyed (launcher 8304) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+      ],
+      "result": "2026-11-04T03:00:54.418191929Z [gameover] mission #0 -> Stage Over, iSideWinner=1, 214 peer(s), result packet 13395 bytes; match=1 seed=1489076803 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) homeSwap=alternate homeMatch=1 homes=0,1 home0=1050 home1=1051"
+    },
+    {
+      "match": 2,
+      "opening": "2026-11-04T03:00:54.427263095Z",
+      "complete": true,
+      "homes": [
+        1051,
+        1050
+      ],
+      "civs": [
+        18,
+        4
+      ],
+      "stationLosses": [
+        "2026-11-04T03:20:44.787788330Z [station] station 9189 destroyed (launcher 8544) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]",
+        "2026-11-04T03:27:33.094194572Z [station] station 9198 destroyed (launcher 8544) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+      ],
+      "result": "2026-11-04T03:50:53.170547254Z [gameover] mission #0 -> Stage Over, iSideWinner=0, 214 peer(s), result packet 13392 bytes; match=2 seed=827356404 side0=18:Gigacorp(generated) side1=4:Phoenix(generated) homeSwap=alternate homeMatch=2 homes=1,0 home0=1051 home1=1050"
+    },
+    {
+      "match": 3,
+      "opening": "2026-11-04T03:50:53.174132454Z",
+      "complete": false,
+      "homes": [
+        1050,
+        1051
+      ],
+      "civs": [
+        18,
+        4
+      ],
+      "stationLosses": [
+        "2026-11-04T04:14:02.720628948Z [station] station 9196 destroyed (launcher 8792) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]",
+        "2026-11-04T04:15:18.580262041Z [station] station 9191 destroyed (launcher 8807) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]",
+        "2026-11-04T04:18:10.138440706Z [station] station 9187 destroyed (launcher 8806) => STATION_DESTROYED(59) -> 214 peer(s) [WHOLE MISSION]"
+      ]
+    }
+  ],
+  "pods": [
+    {
+      "match": 1,
+      "complete": true,
+      "side": 0,
+      "home": 1050,
+      "civ": 18,
+      "outcomes": {
+        "removed": 22,
+        "death": 295,
+        "docked": 161,
+        "rescued": 27,
+        "oxygen": 51
+      },
+      "oxygenStages": {
+        "Radius": 11,
+        "Away": 23,
+        "Home": 17
+      },
+      "dockStages": {
+        "Bay": 110,
+        "Home": 50,
+        "Radius": 1
+      },
+      "radiusToOxygen": {
+        "n": 11,
+        "median": 141.90000000051623,
+        "p95": 278.80000000101427
+      },
+      "radiusReachedThenEndedOutside": 2,
+      "endDistance": {
+        "n": 28,
+        "median": 2480.6728618491443,
+        "p95": 8235.408882943997
+      },
+      "endBayMouthDistance": {
+        "n": 28,
+        "median": 2352.841768793963,
+        "p95": 8224.81315532413
+      },
+      "endBayLineOffset": {
+        "n": 28,
+        "median": 847.6416822313802,
+        "p95": 6256.930385102302
+      },
+      "podHulls": {
+        "244": 556
+      }
+    },
+    {
+      "match": 1,
+      "complete": true,
+      "side": 1,
+      "home": 1051,
+      "civ": 4,
+      "outcomes": {
+        "death": 169,
+        "rescued": 41,
+        "docked": 37,
+        "oxygen": 120,
+        "removed": 2,
+        "station-rescued": 25
+      },
+      "oxygenStages": {
+        "Radius": 24,
+        "Home": 84,
+        "Away": 12
+      },
+      "dockStages": {
+        "Bay": 29,
+        "Home": 8
+      },
+      "radiusToOxygen": {
+        "n": 24,
+        "median": 65.65000000001089,
+        "p95": 74.750000000017
+      },
+      "radiusReachedThenEndedOutside": 10,
+      "endDistance": {
+        "n": 108,
+        "median": 4378.50071552128,
+        "p95": 6471.042790349997
+      },
+      "endBayMouthDistance": {
+        "n": 104,
+        "median": 4283.774059666888,
+        "p95": 6459.3014429418945
+      },
+      "endBayLineOffset": {
+        "n": 104,
+        "median": 2210.2819376173948,
+        "p95": 4775.345316877153
+      },
+      "podHulls": {
+        "77": 394
+      }
+    },
+    {
+      "match": 2,
+      "complete": true,
+      "side": 0,
+      "home": 1051,
+      "civ": 18,
+      "outcomes": {
+        "removed": 31,
+        "death": 360,
+        "rescued": 47,
+        "oxygen": 56,
+        "docked": 120
+      },
+      "oxygenStages": {
+        "Radius": 29,
+        "Home": 23,
+        "Away": 4
+      },
+      "dockStages": {
+        "Home": 116,
+        "Radius": 1,
+        "Bay": 3
+      },
+      "radiusToOxygen": {
+        "n": 29,
+        "median": 73.2000000002663,
+        "p95": 185.3500000006743
+      },
+      "radiusReachedThenEndedOutside": 14,
+      "endDistance": {
+        "n": 52,
+        "median": 3483.454626747973,
+        "p95": 5454.9555252684095
+      },
+      "endBayMouthDistance": {
+        "n": 52,
+        "median": 3393.754370719955,
+        "p95": 5335.173638973241
+      },
+      "endBayLineOffset": {
+        "n": 52,
+        "median": 1093.1970983749789,
+        "p95": 4508.355203984901
+      },
+      "podHulls": {
+        "244": 614
+      }
+    },
+    {
+      "match": 2,
+      "complete": true,
+      "side": 1,
+      "home": 1050,
+      "civ": 4,
+      "outcomes": {
+        "removed": 13,
+        "death": 299,
+        "rescued": 171,
+        "oxygen": 134,
+        "docked": 25
+      },
+      "oxygenStages": {
+        "Radius": 95,
+        "Home": 36,
+        "Away": 3
+      },
+      "dockStages": {
+        "Bay": 14,
+        "Home": 6,
+        "Radius": 5
+      },
+      "radiusToOxygen": {
+        "n": 95,
+        "median": 141.00000000051296,
+        "p95": 186.2000000006774
+      },
+      "radiusReachedThenEndedOutside": 42,
+      "endDistance": {
+        "n": 131,
+        "median": 2102.739744745117,
+        "p95": 8332.67537646696
+      },
+      "endBayMouthDistance": {
+        "n": 130,
+        "median": 2188.4844742486466,
+        "p95": 8200.652036395906
+      },
+      "endBayLineOffset": {
+        "n": 130,
+        "median": 780.9094319032657,
+        "p95": 6422.120080597484
+      },
+      "podHulls": {
+        "77": 642
+      }
+    },
+    {
+      "match": 3,
+      "complete": false,
+      "side": 0,
+      "home": 1050,
+      "civ": 18,
+      "outcomes": {
+        "removed": 34,
+        "death": 183,
+        "rescued": 13,
+        "docked": 78,
+        "oxygen": 20
+      },
+      "oxygenStages": {
+        "Home": 5,
+        "Radius": 15
+      },
+      "dockStages": {
+        "Bay": 68,
+        "Home": 10
+      },
+      "radiusToOxygen": {
+        "n": 15,
+        "median": 78.80000000028667,
+        "p95": 95.10000000034597
+      },
+      "radiusReachedThenEndedOutside": 0,
+      "endDistance": {
+        "n": 20,
+        "median": 43.48731011855062,
+        "p95": 3874.214922548009
+      },
+      "endBayMouthDistance": {
+        "n": 20,
+        "median": 167.59219148456447,
+        "p95": 3748.479978023328
+      },
+      "endBayLineOffset": {
+        "n": 20,
+        "median": 120.4594764142314,
+        "p95": 1574.683336872354
+      },
+      "podHulls": {
+        "244": 328
+      }
+    },
+    {
+      "match": 3,
+      "complete": false,
+      "side": 1,
+      "home": 1051,
+      "civ": 4,
+      "outcomes": {
+        "removed": 17,
+        "death": 132,
+        "rescued": 35,
+        "docked": 31,
+        "oxygen": 103
+      },
+      "oxygenStages": {
+        "Radius": 25,
+        "Away": 3,
+        "Home": 75
+      },
+      "dockStages": {
+        "Bay": 22,
+        "Home": 9
+      },
+      "radiusToOxygen": {
+        "n": 25,
+        "median": 58.25000000021191,
+        "p95": 73.55000000026757
+      },
+      "radiusReachedThenEndedOutside": 11,
+      "endDistance": {
+        "n": 100,
+        "median": 4650.227841932511,
+        "p95": 7549.151068102695
+      },
+      "endBayMouthDistance": {
+        "n": 100,
+        "median": 4556.842550752675,
+        "p95": 7400.033500908772
+      },
+      "endBayLineOffset": {
+        "n": 100,
+        "median": 2671.2184410818636,
+        "p95": 5880.679313243246
+      },
+      "podHulls": {
+        "77": 318
+      }
+    }
+  ],
+  "waves": [
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 19118,
+      "match": 1,
+      "side": "0",
+      "wave": "1",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "226.2s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 20730,
+        "match": 1,
+        "side": "0",
+        "wave": "1",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "1",
+        "dur": "104.4s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 20887,
+      "match": 1,
+      "side": "1",
+      "wave": "1",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "357.5s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 22413,
+        "match": 1,
+        "side": "1",
+        "wave": "1",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "2",
+        "dur": "121.3s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 20935,
+      "match": 1,
+      "side": "0",
+      "wave": "2",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "18.2s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 22179,
+        "match": 1,
+        "side": "0",
+        "wave": "2",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "89.4s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 22605,
+      "match": 1,
+      "side": "1",
+      "wave": "2",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "32.0s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 23713,
+        "match": 1,
+        "side": "1",
+        "wave": "2",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "104.9s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 23175,
+      "match": 1,
+      "side": "0",
+      "wave": "3",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "108.8s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 24000,
+        "match": 1,
+        "side": "0",
+        "wave": "3",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "65.6s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 25114,
+      "match": 1,
+      "side": "1",
+      "wave": "3",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "59.6s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 25776,
+        "match": 1,
+        "side": "1",
+        "wave": "3",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "74.0s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 25412,
+      "match": 1,
+      "side": "0",
+      "wave": "4",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9198",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "0.892",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "68.1s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 27311,
+        "match": 1,
+        "side": "0",
+        "wave": "4",
+        "members": "1",
+        "arrived": "1",
+        "peakOnTarget": "1",
+        "escorts": "3",
+        "dur": "175.6s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 27808,
+      "match": 1,
+      "side": "0",
+      "wave": "5",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "18.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 29781,
+        "match": 1,
+        "side": "0",
+        "wave": "5",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "3",
+        "dur": "130.5s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 31560,
+      "match": 1,
+      "side": "1",
+      "wave": "3",
+      "target": "station#9187",
+      "sector": "1050",
+      "stationHull": "-1",
+      "stationShield": "-1",
+      "reason": "insufficient-volley",
+      "required": "2",
+      "assembled": "1",
+      "wait": "215.0s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "-1s",
+      "kind": "abort"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 31647,
+      "match": 1,
+      "side": "0",
+      "wave": "6",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "94.3s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 32593,
+        "match": 1,
+        "side": "0",
+        "wave": "6",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "57.0s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 31736,
+      "match": 1,
+      "side": "1",
+      "wave": "4",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9191",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "25.2s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 33331,
+        "match": 1,
+        "side": "1",
+        "wave": "4",
+        "members": "1",
+        "arrived": "2",
+        "peakOnTarget": "1",
+        "escorts": "4",
+        "dur": "101.4s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 32710,
+      "match": 1,
+      "side": "0",
+      "wave": "7",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "5.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 33255,
+        "match": 1,
+        "side": "0",
+        "wave": "7",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "39.0s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 33513,
+      "match": 1,
+      "side": "0",
+      "wave": "8",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "25.4s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 34012,
+        "match": 1,
+        "side": "0",
+        "wave": "8",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "1",
+        "dur": "64.8s",
+        "stationHull": "-1",
+        "stationShield": "-1",
+        "reason": "no-strike-pilots"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 33652,
+      "match": 1,
+      "side": "1",
+      "wave": "5",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "45.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 34868,
+        "match": 1,
+        "side": "1",
+        "wave": "5",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "98.6s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 35434,
+      "match": 1,
+      "side": "1",
+      "wave": "6",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "16.4s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 36296,
+        "match": 1,
+        "side": "1",
+        "wave": "6",
+        "members": "2",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "50.3s",
+        "stationHull": "-1",
+        "stationShield": "-1",
+        "reason": "no-strike-pilots"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 72403,
+      "match": 2,
+      "side": "0",
+      "wave": "1",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#9189",
+      "sector": "1050",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "296.9s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 73677,
+        "match": 2,
+        "side": "0",
+        "wave": "1",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "2",
+        "dur": "49.9s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 78797,
+      "match": 2,
+      "side": "0",
+      "wave": "2",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9198",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "0.600",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "40.1s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 79587,
+        "match": 2,
+        "side": "0",
+        "wave": "2",
+        "members": "1",
+        "arrived": "2",
+        "peakOnTarget": "1",
+        "escorts": "3",
+        "dur": "66.4s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 80994,
+      "match": 2,
+      "side": "1",
+      "wave": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "stationHull": "-1",
+      "stationShield": "-1",
+      "reason": "insufficient-volley",
+      "required": "2",
+      "assembled": "1",
+      "wait": "254.6s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "-1s",
+      "kind": "abort"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 82063,
+      "match": 2,
+      "side": "1",
+      "wave": "1",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "36.4s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 83934,
+        "match": 2,
+        "side": "1",
+        "wave": "1",
+        "members": "1",
+        "arrived": "1",
+        "peakOnTarget": "1",
+        "escorts": "3",
+        "dur": "104.1s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 83285,
+      "match": 2,
+      "side": "0",
+      "wave": "3",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9198",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "0.158",
+      "stationShield": "0.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "5.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 83313,
+        "match": 2,
+        "side": "0",
+        "wave": "3",
+        "members": "2",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "1.1s",
+        "stationHull": "-1",
+        "stationShield": "-1",
+        "reason": "station-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 87021,
+      "match": 2,
+      "side": "1",
+      "wave": "2",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#9187",
+      "sector": "1051",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "217.8s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 88580,
+        "match": 2,
+        "side": "1",
+        "wave": "2",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "2",
+        "dur": "88.7s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 88518,
+      "match": 2,
+      "side": "0",
+      "wave": "3",
+      "target": "station#9194",
+      "sector": "1050",
+      "stationHull": "-1",
+      "stationShield": "-1",
+      "reason": "insufficient-volley",
+      "required": "3",
+      "assembled": "1",
+      "wait": "353.6s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "-1s",
+      "kind": "abort"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 89909,
+      "match": 2,
+      "side": "0",
+      "wave": "4",
+      "members": "4",
+      "atRally": "4",
+      "target": "station#4328",
+      "sector": "1050",
+      "escorts": "6",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "4",
+      "assembled": "4",
+      "wait": "61.5s",
+      "visible": "4",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 90680,
+        "match": 2,
+        "side": "0",
+        "wave": "4",
+        "members": "2",
+        "arrived": "4",
+        "peakOnTarget": "3",
+        "escorts": "5",
+        "dur": "90.1s",
+        "stationHull": "0.850",
+        "stationShield": "0.000",
+        "reason": "no-members-in-target"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 90612,
+      "match": 2,
+      "side": "1",
+      "wave": "3",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "137.4s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 90748,
+        "match": 2,
+        "side": "1",
+        "wave": "3",
+        "members": "2",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "11.4s",
+        "stationHull": "-1",
+        "stationShield": "-1",
+        "reason": "no-strike-pilots"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 123983,
+      "match": 3,
+      "side": "0",
+      "wave": "1",
+      "members": "1",
+      "atRally": "1",
+      "target": "station#4329",
+      "sector": "1051",
+      "escorts": "2",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "1",
+      "assembled": "1",
+      "wait": "230.3s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 124093,
+        "match": 3,
+        "side": "0",
+        "wave": "1",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "2",
+        "dur": "3.4s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 126803,
+      "match": 3,
+      "side": "0",
+      "wave": "1",
+      "target": "station#4329",
+      "sector": "1051",
+      "stationHull": "-1",
+      "stationShield": "-1",
+      "reason": "insufficient-volley",
+      "required": "3",
+      "assembled": "1",
+      "wait": "198.9s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "-1s",
+      "kind": "abort"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 128720,
+      "match": 3,
+      "side": "0",
+      "wave": "2",
+      "members": "4",
+      "atRally": "4",
+      "target": "station#4329",
+      "sector": "1051",
+      "escorts": "6",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "4",
+      "assembled": "4",
+      "wait": "131.9s",
+      "visible": "4",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 130163,
+        "match": 3,
+        "side": "0",
+        "wave": "2",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "5",
+        "dur": "89.0s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 130355,
+      "match": 3,
+      "side": "0",
+      "wave": "3",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9189",
+      "sector": "1051",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "5.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 131101,
+        "match": 3,
+        "side": "0",
+        "wave": "3",
+        "members": "1",
+        "arrived": "0",
+        "peakOnTarget": "0",
+        "escorts": "4",
+        "dur": "45.1s",
+        "stationHull": "1.000",
+        "stationShield": "1.000",
+        "reason": "members-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 131965,
+      "match": 3,
+      "side": "1",
+      "wave": "1",
+      "members": "2",
+      "atRally": "2",
+      "target": "station#9187",
+      "sector": "1050",
+      "escorts": "4",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed",
+      "required": "2",
+      "assembled": "2",
+      "wait": "5.9s",
+      "visible": "2",
+      "loneWolves": "0",
+      "goIn": "0.0s",
+      "kind": "commit",
+      "end": {
+        "worker": "err.worker-1.log.gz",
+        "row": 132875,
+        "match": 3,
+        "side": "1",
+        "wave": "1",
+        "members": "2",
+        "arrived": "2",
+        "peakOnTarget": "2",
+        "escorts": "4",
+        "dur": "75.9s",
+        "stationHull": "-1",
+        "stationShield": "-1",
+        "reason": "station-gone"
+      }
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 133186,
+      "match": 3,
+      "side": "0",
+      "wave": "3",
+      "target": "station#9189",
+      "sector": "1051",
+      "stationHull": "-1",
+      "stationShield": "-1",
+      "reason": "insufficient-volley",
+      "required": "2",
+      "assembled": "1",
+      "wait": "180.6s",
+      "visible": "1",
+      "loneWolves": "0",
+      "goIn": "-1s",
+      "kind": "abort"
+    }
+  ],
+  "finales": [
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 40898,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "7.2s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 41271,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "0.0s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 91205,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "21.7s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 92449,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "39.0s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 92992,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "4.1s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-1.log.gz",
+      "row": 99701,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "97.0s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 15049,
+      "match": 1,
+      "side": "1",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4328",
+      "sector": "1050",
+      "goIn": "5s",
+      "wait": "5.0s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 15361,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "24.8s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 15707,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "48.3s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 16105,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "16.3s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 16485,
+      "match": 1,
+      "side": "0",
+      "required": "3",
+      "assembled": "3",
+      "visible": "3",
+      "loneWolves": "0",
+      "target": "station#4329",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "62.0s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 35242,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "24.5s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 35581,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "39.1s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    },
+    {
+      "worker": "err.worker-2.log.gz",
+      "row": 36946,
+      "match": 2,
+      "side": "1",
+      "required": "2",
+      "assembled": "2",
+      "visible": "2",
+      "loneWolves": "0",
+      "target": "station#9187",
+      "sector": "1051",
+      "goIn": "5s",
+      "wait": "46.4s",
+      "stationHull": "1.000",
+      "stationShield": "1.000",
+      "reason": "massed"
+    }
+  ],
+  "unmatchedWaveEnds": [],
+  "damage": [
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:28:56.287123895Z",
+      "t": "1125.1",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8287",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=39",
+      "parts": "[33:PW",
+      "damageType": "2",
+      "shield": "1.0000->0.9996",
+      "killed": "False",
+      "receipt": "2026-11-04T02:28:56.287123895Z [station-damage] t=1125.1 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8287 hull=195:Bomber weapon=projectile=39 parts=[33:PW Gat Gun 1@0,33:PW Gat Gun 1@1] damageType=2 shield=1.0000->0.9996 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:29:01.373376949Z",
+      "t": "1130.2",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8287",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=39",
+      "parts": "[33:PW",
+      "damageType": "2",
+      "shield": "0.9806->0.9802",
+      "killed": "False",
+      "receipt": "2026-11-04T02:29:01.373376949Z [station-damage] t=1130.2 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8287 hull=195:Bomber weapon=projectile=39 parts=[33:PW Gat Gun 1@0,33:PW Gat Gun 1@1] damageType=2 shield=0.9806->0.9802 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:36:08.523011233Z",
+      "t": "1559.65",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8290",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=40",
+      "parts": "[71:PW",
+      "damageType": "2",
+      "shield": "1.0000->0.9995",
+      "killed": "False",
+      "receipt": "2026-11-04T02:36:08.523011233Z [station-damage] t=1559.65 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8290 hull=195:Bomber weapon=projectile=40 parts=[71:PW Gat Gun 2@0,71:PW Gat Gun 2@1] damageType=2 shield=1.0000->0.9995 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:36:13.588327936Z",
+      "t": "1564.75",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8290",
+      "hull": "0.5682->0.5679",
+      "weapon": "projectile=40",
+      "parts": "[71:PW",
+      "damageType": "2",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T02:36:13.588327936Z [station-damage] t=1564.75 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8290 hull=195:Bomber weapon=projectile=40 parts=[71:PW Gat Gun 2@0,71:PW Gat Gun 2@1] damageType=2 shield=0.0000->0.0000 hull=0.5682->0.5679 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:36:16.515909254Z",
+      "t": "1567.7",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8290",
+      "hull": "0.5369->0.0000",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T02:36:16.515909254Z [station-damage] t=1567.7 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8290 hull=195:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.5369->0.0000 killed=True"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:36:34.813032449Z",
+      "t": "1586.1",
+      "side": "0",
+      "station": "9191:Outpost",
+      "attackerSide": "1",
+      "ship": "8290",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=40",
+      "parts": "[71:PW",
+      "damageType": "2",
+      "shield": "1.0000->0.9997",
+      "killed": "False",
+      "receipt": "2026-11-04T02:36:34.813032449Z [station-damage] t=1586.1 side=0 station=9191:Outpost (Lt) attackerSide=1 ship=8290 hull=195:Bomber weapon=projectile=40 parts=[71:PW Gat Gun 2@0,71:PW Gat Gun 2@1] damageType=2 shield=1.0000->0.9997 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:36:39.883741557Z",
+      "t": "1591.2",
+      "side": "0",
+      "station": "9191:Outpost",
+      "attackerSide": "1",
+      "ship": "8290",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=40",
+      "parts": "[71:PW",
+      "damageType": "2",
+      "shield": "0.9842->0.9839",
+      "killed": "False",
+      "receipt": "2026-11-04T02:36:39.883741557Z [station-damage] t=1591.2 side=0 station=9191:Outpost (Lt) attackerSide=1 ship=8290 hull=195:Bomber weapon=projectile=40 parts=[71:PW Gat Gun 2@0,71:PW Gat Gun 2@1] damageType=2 shield=0.9842->0.9839 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:38:58.137199311Z",
+      "t": "1730.15",
+      "side": "1",
+      "station": "9190:Teleport",
+      "attackerSide": "0",
+      "ship": "8304",
+      "hull": "1.0000->0.9052",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T02:38:58.137199311Z [station-damage] t=1730.15 side=1 station=9190:Teleport attackerSide=0 ship=8304 hull=204:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=1.0000->0.0000 hull=1.0000->0.9052 killed=False"
+    },
+    {
+      "match": 1,
+      "utc": "2026-11-04T02:39:01.328135376Z",
+      "t": "1733.35",
+      "side": "1",
+      "station": "9190:Teleport",
+      "attackerSide": "0",
+      "ship": "8304",
+      "hull": "0.9121->0.0000",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T02:39:01.328135376Z [station-damage] t=1733.35 side=1 station=9190:Teleport attackerSide=0 ship=8304 hull=204:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.9121->0.0000 killed=True"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:20:38.153464679Z",
+      "t": "4243.3",
+      "side": "1",
+      "station": "9189:Refinery",
+      "attackerSide": "0",
+      "ship": "8544",
+      "hull": "1.0000->1.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.0399",
+      "killed": "False",
+      "receipt": "2026-11-04T03:20:38.153464679Z [station-damage] t=4243.3 side=1 station=9189:Refinery attackerSide=0 ship=8544 hull=204:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.0399 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:20:44.787774624Z",
+      "t": "4249.95",
+      "side": "1",
+      "station": "9189:Refinery",
+      "attackerSide": "0",
+      "ship": "8544",
+      "hull": "0.0756->0.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T03:20:44.787774624Z [station-damage] t=4249.95 side=1 station=9189:Refinery attackerSide=0 ship=8544 hull=204:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.0756->0.0000 killed=True"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:27:26.392370061Z",
+      "t": "4653.75",
+      "side": "1",
+      "station": "9198:Refinery",
+      "attackerSide": "0",
+      "ship": "8544",
+      "hull": "1.0000->1.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.0399",
+      "killed": "False",
+      "receipt": "2026-11-04T03:27:26.392370061Z [station-damage] t=4653.75 side=1 station=9198:Refinery attackerSide=0 ship=8544 hull=204:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.0399 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:27:33.094167399Z",
+      "t": "4660.5",
+      "side": "1",
+      "station": "9198:Refinery",
+      "attackerSide": "0",
+      "ship": "8544",
+      "hull": "0.1606->0.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T03:27:33.094167399Z [station-damage] t=4660.5 side=1 station=9198:Refinery attackerSide=0 ship=8544 hull=204:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.1606->0.0000 killed=True"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:35:23.157772498Z",
+      "t": "5133.05",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "0",
+      "ship": "8551",
+      "hull": "1.0000->1.0000",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.7333",
+      "killed": "False",
+      "receipt": "2026-11-04T03:35:23.157772498Z [station-damage] t=5133.05 side=1 station=4328:Garrison (Str) attackerSide=0 ship=8551 hull=204:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=1.0000->0.7333 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:35:29.635704976Z",
+      "t": "5139.55",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "0",
+      "ship": "8561",
+      "hull": "1.0000->0.9878",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "0.2520->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:35:29.635704976Z [station-damage] t=5139.55 side=1 station=4328:Garrison (Str) attackerSide=0 ship=8561 hull=204:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.2520->0.0000 hull=1.0000->0.9878 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:35:47.633668963Z",
+      "t": "5157.65",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8433",
+      "hull": "0.8058->0.8071",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:35:47.633668963Z [station-damage] t=5157.65 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8433 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.8058->0.8071 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:35:53.252172832Z",
+      "t": "5163.3",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8532",
+      "hull": "0.8343->0.8357",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:35:53.252172832Z [station-damage] t=5163.3 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8532 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.8343->0.8357 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:35:58.705129162Z",
+      "t": "5168.8",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8433",
+      "hull": "0.8586->0.8599",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:35:58.705129162Z [station-damage] t=5168.8 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8433 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.8586->0.8599 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:36:04.468616251Z",
+      "t": "5174.6",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8433",
+      "hull": "0.8914->0.8928",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:36:04.468616251Z [station-damage] t=5174.6 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8433 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.8914->0.8928 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:36:09.737003751Z",
+      "t": "5179.9",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8532",
+      "hull": "0.9126->0.9139",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:36:09.737003751Z [station-damage] t=5179.9 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8532 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.9126->0.9139 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:36:15.656619191Z",
+      "t": "5185.85",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8532",
+      "hull": "0.9484->0.9498",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:36:15.656619191Z [station-damage] t=5185.85 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8532 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.9484->0.9498 killed=False"
+    },
+    {
+      "match": 2,
+      "utc": "2026-11-04T03:36:28.223475936Z",
+      "t": "5198.5",
+      "side": "1",
+      "station": "4328:Garrison",
+      "attackerSide": "1",
+      "ship": "8473",
+      "hull": "0.9805->0.9819",
+      "weapon": "projectile=59",
+      "parts": "[190:ER",
+      "damageType": "10",
+      "shield": "0.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T03:36:28.223475936Z [station-damage] t=5198.5 side=1 station=4328:Garrison (Str) attackerSide=1 ship=8473 hull=187:Scout weapon=projectile=59 parts=[190:ER Nanite 2@0] damageType=10 shield=0.0000->0.0000 hull=0.9805->0.9819 killed=False"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:13:58.942210580Z",
+      "t": "7460.65",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8792",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=39",
+      "parts": "[33:PW",
+      "damageType": "2",
+      "shield": "1.0000->0.9996",
+      "killed": "False",
+      "receipt": "2026-11-04T04:13:58.942210580Z [station-damage] t=7460.65 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8792 hull=195:Bomber weapon=projectile=39 parts=[33:PW Gat Gun 1@0,33:PW Gat Gun 1@1] damageType=2 shield=1.0000->0.9996 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:14:02.720611755Z",
+      "t": "7464.45",
+      "side": "0",
+      "station": "9196:SpecMine",
+      "attackerSide": "1",
+      "ship": "8792",
+      "hull": "0.6052->0.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T04:14:02.720611755Z [station-damage] t=7464.45 side=0 station=9196:SpecMine (Si) attackerSide=1 ship=8792 hull=195:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.6052->0.0000 killed=True"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:15:13.861238914Z",
+      "t": "7535.9",
+      "side": "0",
+      "station": "9191:Outpost",
+      "attackerSide": "1",
+      "ship": "8803",
+      "hull": "1.0000->1.0000",
+      "weapon": "projectile=40",
+      "parts": "[71:PW",
+      "damageType": "2",
+      "shield": "1.0000->0.9996",
+      "killed": "False",
+      "receipt": "2026-11-04T04:15:13.861238914Z [station-damage] t=7535.9 side=0 station=9191:Outpost (Lt) attackerSide=1 ship=8803 hull=195:Bomber weapon=projectile=40 parts=[71:PW Gat Gun 2@0,71:PW Gat Gun 2@1] damageType=2 shield=1.0000->0.9996 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:15:18.580218768Z",
+      "t": "7540.65",
+      "side": "0",
+      "station": "9191:Outpost",
+      "attackerSide": "1",
+      "ship": "8807",
+      "hull": "0.1033->0.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T04:15:18.580218768Z [station-damage] t=7540.65 side=0 station=9191:Outpost (Lt) attackerSide=1 ship=8807 hull=195:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.1033->0.0000 killed=True"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:15:45.516956183Z",
+      "t": "7567.7",
+      "side": "0",
+      "station": "9197:Supremacy",
+      "attackerSide": "1",
+      "ship": "8803",
+      "hull": "1.0000->1.0000",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.3729",
+      "killed": "False",
+      "receipt": "2026-11-04T04:15:45.516956183Z [station-damage] t=7567.7 side=0 station=9197:Supremacy attackerSide=1 ship=8803 hull=195:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.3729 hull=1.0000->1.0000 killed=False"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:18:08.254297776Z",
+      "t": "7711.2",
+      "side": "0",
+      "station": "9187:Refinery",
+      "attackerSide": "1",
+      "ship": "8809",
+      "hull": "1.0000->0.5106",
+      "weapon": "missile=39:SRM",
+      "damageType": "8",
+      "shield": "1.0000->0.0000",
+      "killed": "False",
+      "receipt": "2026-11-04T04:18:08.254297776Z [station-damage] t=7711.2 side=0 station=9187:Refinery (Lt) attackerSide=1 ship=8809 hull=195:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.0000 hull=1.0000->0.5106 killed=False"
+    },
+    {
+      "match": 3,
+      "utc": "2026-11-04T04:18:10.138419014Z",
+      "t": "7713.1",
+      "side": "0",
+      "station": "9187:Refinery",
+      "attackerSide": "1",
+      "ship": "8806",
+      "hull": "0.5062->0.0000",
+      "weapon": "missile=40:SRM",
+      "damageType": "8",
+      "shield": "0.0000->0.0000",
+      "killed": "True",
+      "receipt": "2026-11-04T04:18:10.138419014Z [station-damage] t=7713.1 side=0 station=9187:Refinery (Lt) attackerSide=1 ship=8806 hull=195:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.5062->0.0000 killed=True"
+    }
+  ],
+  "stations": [
+    {
+      "Match": 1,
+      "Station": 4328,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 4329,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9191,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 2,
+      "StationModel": "ss92",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        1425.99,
+        -1926.5986,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 4328,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 10,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 4329,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 61,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9192,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 70,
+      "StationModel": "dn_faphbsop",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -5286.497,
+        -2409.6367,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9197,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 11,
+      "StationModel": "ss93",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        580.2551,
+        -2605.1738,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9194,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 62,
+      "StationModel": "dn_faphbssup",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2379.7449,
+        -5965.174,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9198,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 64,
+      "StationModel": "dn_faphbsexp",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -5075.2095,
+        -464.5525,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9199,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 12,
+      "StationModel": "utl20",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -493.17456,
+        -1546.0696,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9202,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 13,
+      "StationModel": "ss23",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2513.887,
+        -545.91187,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9197,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 7,
+      "StationModel": "ss93",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        580.2551,
+        -2605.1738,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9204,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 73,
+      "StationModel": "dn_faphbstrn",
+      "StationRadius": 180,
+      "StationPosition": [
+        1660,
+        -1800,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9205,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 68,
+      "StationModel": "acs05",
+      "StationRadius": 540,
+      "StationPosition": [
+        -2748.615,
+        1580.0027,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9206,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 3,
+      "StationModel": "ss18",
+      "StationRadius": 540,
+      "StationPosition": [
+        3249.536,
+        4337.6025,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9205,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 69,
+      "StationModel": "acs05",
+      "StationRadius": 540,
+      "StationPosition": [
+        -2748.615,
+        1580.0027,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 1,
+      "Station": 9202,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 9,
+      "StationModel": "ss23",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2513.887,
+        -545.91187,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9205,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 69,
+      "StationModel": "acs05",
+      "StationRadius": 540,
+      "StationPosition": [
+        -2748.615,
+        1580.0027,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4328,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 10,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9202,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 9,
+      "StationModel": "ss23",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -792.5065,
+        1539.5745,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4329,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 61,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9204,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 73,
+      "StationModel": "dn_faphbstrn",
+      "StationRadius": 180,
+      "StationPosition": [
+        4620,
+        1560,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9197,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 7,
+      "StationModel": "ss93",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2379.7449,
+        -5965.174,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9191,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 2,
+      "StationModel": "ss92",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -1534.01,
+        -5286.5986,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4329,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4328,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4329,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 10,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9192,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 70,
+      "StationModel": "dn_faphbsop",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2326.4973,
+        950.36316,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 4328,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 61,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9194,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 62,
+      "StationModel": "dn_faphbssup",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        580.2551,
+        -2605.1738,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9197,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 11,
+      "StationModel": "ss93",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2379.7449,
+        -5965.174,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9200,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 64,
+      "StationModel": "dn_faphbsexp",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2115.2095,
+        2895.4475,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9199,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 12,
+      "StationModel": "utl20",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -3453.1746,
+        -4906.0693,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9202,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 13,
+      "StationModel": "ss23",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -792.5065,
+        1539.5745,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9203,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 66,
+      "StationModel": "dn_faphbstac",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2513.887,
+        -545.91187,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 2,
+      "Station": 9205,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 3,
+      "StationModel": "ss18",
+      "StationRadius": 540,
+      "StationPosition": [
+        289.5359,
+        977.60254,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9202,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 9,
+      "StationModel": "ss23",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -792.5065,
+        1539.5745,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9205,
+      "Side": 0,
+      "HomeSector": 1051,
+      "StationType": 3,
+      "StationModel": "ss18",
+      "StationRadius": 540,
+      "StationPosition": [
+        289.5359,
+        977.60254,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9204,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 73,
+      "StationModel": "dn_faphbstrn",
+      "StationRadius": 180,
+      "StationPosition": [
+        4620,
+        1560,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9194,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 62,
+      "StationModel": "dn_faphbssup",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2379.7449,
+        -5965.174,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 4328,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 61,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9200,
+      "Side": 1,
+      "HomeSector": 1050,
+      "StationType": 64,
+      "StationModel": "dn_faphbsexp",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -2115.2095,
+        2895.4475,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9191,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 2,
+      "StationModel": "ss92",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        1425.99,
+        -1926.5986,
+        800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 4329,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 4328,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 4328,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 10,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9192,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 70,
+      "StationModel": "dn_faphbsop",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -5286.497,
+        -2409.6367,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 4329,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 61,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9197,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 11,
+      "StationModel": "ss93",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        580.2551,
+        -2605.1738,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9198,
+      "Side": 1,
+      "HomeSector": 1051,
+      "StationType": 64,
+      "StationModel": "dn_faphbsexp",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -5075.2095,
+        -464.5525,
+        -800
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "Match": 3,
+      "Station": 9199,
+      "Side": 0,
+      "HomeSector": 1050,
+      "StationType": 12,
+      "StationModel": "utl20",
+      "StationRadius": 302.5,
+      "StationPosition": [
+        -493.17456,
+        -1546.0696,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "Ship": 8223,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 185.05000000000783,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 185.05000000000783
+        },
+        {
+          "Sector": 1061,
+          "At": 210.4000000000136
+        },
+        {
+          "Sector": 1051,
+          "At": 314.4000000000372
+        }
+      ],
+      "HomeAt": 314.4000000000372,
+      "RadiusAt": 413.00000000005963,
+      "BayAt": null,
+      "ApproachAt": 412.15000000005944,
+      "EndAt": 485.050000000076,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1990.4838,
+        -1829.5912,
+        79.70643
+      ],
+      "Seconds": 300.0000000000682,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 72.90000000001658,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        23.450075,
+        8.832287,
+        -18.971859
+      ],
+      "EndForward": [
+        0.85196394,
+        0.19114491,
+        -0.487464
+      ],
+      "EndUp": [
+        0.43921432,
+        0.24592331,
+        0.86406744
+      ],
+      "EndTurnRates": [
+        -0.038479716,
+        -0.038479716,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8195,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 190.6000000000091,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 190.6000000000091
+        },
+        {
+          "Sector": 1061,
+          "At": 217.60000000001523
+        },
+        {
+          "Sector": 1051,
+          "At": 321.55000000003884
+        }
+      ],
+      "HomeAt": 321.55000000003884,
+      "RadiusAt": 419.70000000006115,
+      "BayAt": null,
+      "ApproachAt": 418.90000000006097,
+      "EndAt": 490.6000000000773,
+      "EndSector": 1051,
+      "EndPosition": [
+        -5130.4756,
+        90.760025,
+        -488.15433
+      ],
+      "Seconds": 300.0000000000682,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.850000000003604,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -51.597927,
+        29.648811,
+        -7.6553144
+      ],
+      "EndForward": [
+        -0.8599652,
+        0.49414673,
+        -0.12758854
+      ],
+      "EndUp": [
+        0.11916194,
+        -0.048673842,
+        -0.9916811
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8117,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 202.70000000001184,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 202.70000000001184
+        },
+        {
+          "Sector": 1061,
+          "At": 228.0000000000176
+        },
+        {
+          "Sector": 1051,
+          "At": 333.3500000000415
+        }
+      ],
+      "HomeAt": 333.3500000000415,
+      "RadiusAt": 431.65000000006387,
+      "BayAt": null,
+      "ApproachAt": 430.8000000000637,
+      "EndAt": 502.70000000008,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1753.6212,
+        -1810.2307,
+        45.102654
+      ],
+      "Seconds": 300.0000000000682,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 71.90000000001635,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        8.163173,
+        14.868907,
+        16.171877
+      ],
+      "EndForward": [
+        -0.57902056,
+        0.7852719,
+        0.21927914
+      ],
+      "EndUp": [
+        -0.15212418,
+        0.1601727,
+        -0.9752963
+      ],
+      "EndTurnRates": [
+        -0.49365383,
+        -0.49365383,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8275,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 204.50000000001225,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 204.50000000001225
+        },
+        {
+          "Sector": 1061,
+          "At": 228.30000000001766
+        },
+        {
+          "Sector": 1051,
+          "At": 332.3000000000413
+        }
+      ],
+      "HomeAt": 332.3000000000413,
+      "RadiusAt": 430.4500000000636,
+      "BayAt": null,
+      "ApproachAt": 429.6500000000634,
+      "EndAt": 504.50000000008043,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1984.9042,
+        -1848.38,
+        103.742836
+      ],
+      "Seconds": 300.0000000000682,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 74.85000000001702,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        24.184631,
+        11.502925,
+        -22.583933
+      ],
+      "EndForward": [
+        0.76890856,
+        0.27452675,
+        -0.5774208
+      ],
+      "EndUp": [
+        0.51214975,
+        0.27616024,
+        0.81328845
+      ],
+      "EndTurnRates": [
+        -0.02748551,
+        -0.02748551,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8166,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 209.45000000001338,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 209.45000000001338
+        },
+        {
+          "Sector": 1061,
+          "At": 235.1000000000192
+        },
+        {
+          "Sector": 1051,
+          "At": 337.6000000000425
+        }
+      ],
+      "HomeAt": 337.6000000000425,
+      "RadiusAt": 434.70000000006456,
+      "BayAt": null,
+      "ApproachAt": 433.9000000000644,
+      "EndAt": 509.45000000008156,
+      "EndSector": 1051,
+      "EndPosition": [
+        -5327.038,
+        255.25137,
+        -545.0674
+      ],
+      "Seconds": 300.0000000000682,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.750000000003581,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -51.52875,
+        30.371687,
+        -8.055709
+      ],
+      "EndForward": [
+        -0.85378224,
+        0.50322986,
+        -0.13347541
+      ],
+      "EndUp": [
+        0.3407094,
+        0.3462037,
+        -0.87410533
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8153,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 219.05000000001556,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 219.05000000001556
+        },
+        {
+          "Sector": 1061,
+          "At": 253.30000000002335
+        },
+        {
+          "Sector": 1051,
+          "At": 356.9000000000469
+        }
+      ],
+      "HomeAt": 356.9000000000469,
+      "RadiusAt": 455.1500000000692,
+      "BayAt": null,
+      "ApproachAt": 454.35000000006903,
+      "EndAt": 519.0500000000757,
+      "EndSector": 1051,
+      "EndPosition": [
+        -4771.959,
+        -121.908104,
+        -433.5727
+      ],
+      "Seconds": 300.00000000006014,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.850000000003604,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -51.65065,
+        29.561253,
+        -7.638346
+      ],
+      "EndForward": [
+        -0.860844,
+        0.49268746,
+        -0.12730575
+      ],
+      "EndUp": [
+        0.075269885,
+        -0.1241384,
+        -0.989406
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8296,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1055,
+      "EjectAt": 220.25000000001583,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1055,
+          "At": 220.25000000001583
+        },
+        {
+          "Sector": 1053,
+          "At": 253.9500000000235
+        },
+        {
+          "Sector": 1054,
+          "At": 352.40000000004585
+        },
+        {
+          "Sector": 1050,
+          "At": 404.4000000000577
+        }
+      ],
+      "HomeAt": 404.4000000000577,
+      "RadiusAt": 453.60000000006886,
+      "BayAt": null,
+      "ApproachAt": 452.8500000000687,
+      "EndAt": 520.2500000000746,
+      "EndSector": 1050,
+      "EndPosition": [
+        1081.226,
+        1551.928,
+        7.0566187
+      ],
+      "Seconds": 300.0000000000588,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 67.40000000000589,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        7.694334,
+        18.165123,
+        3.5222104
+      ],
+      "EndForward": [
+        0.8827749,
+        0.46353236,
+        -0.07646181
+      ],
+      "EndUp": [
+        0.4412493,
+        -0.7622083,
+        0.47364295
+      ],
+      "EndTurnRates": [
+        -0.3023405,
+        -0.26386082,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8313,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1054,
+      "EjectAt": 242.25000000002083,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1054,
+          "At": 242.25000000002083
+        },
+        {
+          "Sector": 1050,
+          "At": 353.35000000004607
+        }
+      ],
+      "HomeAt": 353.35000000004607,
+      "RadiusAt": 399.95000000005666,
+      "BayAt": null,
+      "ApproachAt": 399.2000000000565,
+      "EndAt": 542.2500000000546,
+      "EndSector": 1050,
+      "EndPosition": [
+        -3362.9353,
+        9320.834,
+        -175.71623
+      ],
+      "Seconds": 300.00000000003376,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 14.400000000003274,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -33.0054,
+        57.139923,
+        -1.2934816
+      ],
+      "EndForward": [
+        -0.50008184,
+        0.8657564,
+        -0.019598207
+      ],
+      "EndUp": [
+        0.19743237,
+        0.09194803,
+        -0.9759949
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8193,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 245.6500000000216,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 245.6500000000216
+        },
+        {
+          "Sector": 1059,
+          "At": 316.2000000000376
+        },
+        {
+          "Sector": 1050,
+          "At": 398.2500000000563
+        }
+      ],
+      "HomeAt": 398.2500000000563,
+      "RadiusAt": 453.3500000000688,
+      "BayAt": null,
+      "ApproachAt": 452.60000000006863,
+      "EndAt": 545.6500000000515,
+      "EndSector": 1050,
+      "EndPosition": [
+        1164.1078,
+        1571.1791,
+        -8.712212
+      ],
+      "Seconds": 300.0000000000299,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 93.04999999998284,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        7.699742,
+        -16.428705,
+        3.061153
+      ],
+      "EndForward": [
+        -0.6123105,
+        -0.7320805,
+        0.29855317
+      ],
+      "EndUp": [
+        -0.39284205,
+        0.60942495,
+        0.6886773
+      ],
+      "EndTurnRates": [
+        -0.550569,
+        -0.42925718,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8262,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1057,
+      "EjectAt": 318.50000000003814,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1057,
+          "At": 318.50000000003814
+        },
+        {
+          "Sector": 1050,
+          "At": 410.80000000005913
+        }
+      ],
+      "HomeAt": 410.80000000005913,
+      "RadiusAt": 487.7500000000766,
+      "BayAt": null,
+      "ApproachAt": 487.00000000007645,
+      "EndAt": 618.5499999999852,
+      "EndSector": 1050,
+      "EndPosition": [
+        6935.3433,
+        7391.089,
+        -46.29089
+      ],
+      "Seconds": 300.04999999994703,
+      "OxygenAllowance": 300.00000000000006,
+      "WaitedAtBay": 14.350000000003263,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        46.768238,
+        46.894722,
+        -0.37269697
+      ],
+      "EndForward": [
+        0.7061401,
+        0.70804983,
+        -0.005627244
+      ],
+      "EndUp": [
+        0.028301492,
+        -0.0361643,
+        -0.99894506
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8282,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1053,
+      "EjectAt": 319.40000000003835,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1053,
+          "At": 319.40000000003835
+        },
+        {
+          "Sector": 1054,
+          "At": 427.0500000000628
+        },
+        {
+          "Sector": 1050,
+          "At": 481.5500000000752
+        }
+      ],
+      "HomeAt": 481.5500000000752,
+      "RadiusAt": 527.8500000000677,
+      "BayAt": null,
+      "ApproachAt": 527.1000000000683,
+      "EndAt": 619.4499999999844,
+      "EndSector": 1050,
+      "EndPosition": [
+        1065.2373,
+        1587.5256,
+        -34.39145
+      ],
+      "Seconds": 300.049999999946,
+      "OxygenAllowance": 299.99999999999994,
+      "WaitedAtBay": 88.54999999991946,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -8.780513,
+        20.873066,
+        1.9339433
+      ],
+      "EndForward": [
+        0.5078921,
+        0.5079023,
+        0.6957593
+      ],
+      "EndUp": [
+        0.04753,
+        0.7899347,
+        -0.6113462
+      ],
+      "EndTurnRates": [
+        0.49365368,
+        0.49365368,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8308,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1051,
+      "EjectAt": 762.1999999998545,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1051,
+          "At": 762.1999999998545
+        },
+        {
+          "Sector": 1055,
+          "At": 816.0499999998056
+        },
+        {
+          "Sector": 1053,
+          "At": 888.6499999997395
+        },
+        {
+          "Sector": 1054,
+          "At": 986.7499999996503
+        },
+        {
+          "Sector": 1050,
+          "At": 1040.2999999996016
+        }
+      ],
+      "HomeAt": 1040.2999999996016,
+      "RadiusAt": null,
+      "BayAt": null,
+      "ApproachAt": null,
+      "EndAt": 1062.2499999995816,
+      "EndSector": 1050,
+      "EndPosition": [
+        1786.1754,
+        -1759.5348,
+        609.9279
+      ],
+      "Seconds": 300.0499999997271,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 0,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 10,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -53.954468,
+        -24.900312,
+        28.315725
+      ],
+      "EndForward": [
+        -0.81964463,
+        -0.37833264,
+        0.43017098
+      ],
+      "EndUp": [
+        -0.37587032,
+        -0.21151811,
+        -0.90220934
+      ],
+      "EndTurnRates": [
+        -0.0054971003,
+        0,
+        0
+      ],
+      "Match": 1
+    },
+    {
+      "Ship": 8489,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3260.800000003097,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3260.800000003097
+        },
+        {
+          "Sector": 1059,
+          "At": 3331.750000003355
+        },
+        {
+          "Sector": 1050,
+          "At": 3404.60000000362
+        }
+      ],
+      "HomeAt": 3404.60000000362,
+      "RadiusAt": 3464.750000003839,
+      "BayAt": null,
+      "ApproachAt": 3463.900000003836,
+      "EndAt": 3560.8000000041884,
+      "EndSector": 1050,
+      "EndPosition": [
+        4602.872,
+        -2473.1292,
+        -275.09186
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.850000000057662,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        39.164288,
+        -45.350986,
+        -3.0929794
+      ],
+      "EndForward": [
+        0.6527273,
+        -0.75583726,
+        -0.0515488
+      ],
+      "EndUp": [
+        0.014613446,
+        -0.05546873,
+        0.99835354
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8487,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3267.8000000031225,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3267.8000000031225
+        },
+        {
+          "Sector": 1059,
+          "At": 3341.8000000033917
+        },
+        {
+          "Sector": 1050,
+          "At": 3414.700000003657
+        }
+      ],
+      "HomeAt": 3414.700000003657,
+      "RadiusAt": 3475.500000003878,
+      "BayAt": null,
+      "ApproachAt": 3474.650000003875,
+      "EndAt": 3567.800000004214,
+      "EndSector": 1050,
+      "EndPosition": [
+        4347.3267,
+        -2400.3218,
+        -190.00099
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.850000000057662,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        37.876976,
+        -46.479733,
+        -2.2294226
+      ],
+      "EndForward": [
+        0.6312828,
+        -0.7746621,
+        -0.037157036
+      ],
+      "EndUp": [
+        0.19084232,
+        0.10872583,
+        0.9755809
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8503,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3269.2500000031278,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3269.2500000031278
+        },
+        {
+          "Sector": 1059,
+          "At": 3353.8500000034355
+        },
+        {
+          "Sector": 1050,
+          "At": 3426.3500000036993
+        }
+      ],
+      "HomeAt": 3426.3500000036993,
+      "RadiusAt": 3486.9500000039197,
+      "BayAt": null,
+      "ApproachAt": 3486.1000000039166,
+      "EndAt": 3569.250000004219,
+      "EndSector": 1050,
+      "EndPosition": [
+        4080.6807,
+        -1836.114,
+        -221.86815
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 15.850000000057662,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        39.38085,
+        -45.17126,
+        -2.9506485
+      ],
+      "EndForward": [
+        0.6563475,
+        -0.7528543,
+        -0.04917747
+      ],
+      "EndUp": [
+        0.013962934,
+        -0.05304995,
+        0.99849427
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8548,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1054,
+      "EjectAt": 3270.150000003131,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1054,
+          "At": 3270.150000003131
+        },
+        {
+          "Sector": 1055,
+          "At": 3338.300000003379
+        },
+        {
+          "Sector": 1051,
+          "At": 3462.7500000038317
+        }
+      ],
+      "HomeAt": 3462.7500000038317,
+      "RadiusAt": 3569.45000000422,
+      "BayAt": null,
+      "ApproachAt": 3568.700000004217,
+      "EndAt": 3570.1500000042224,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1521.9103,
+        -1593.2758,
+        -46.801697
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 1.450000000005275,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -55.155193,
+        -35.91245,
+        8.254856
+      ],
+      "EndForward": [
+        -0.83150136,
+        -0.5414041,
+        0.124447465
+      ],
+      "EndUp": [
+        -0.007775194,
+        0.23533875,
+        0.97188234
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8521,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3279.4000000031647,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3279.4000000031647
+        },
+        {
+          "Sector": 1061,
+          "At": 3304.550000003256
+        },
+        {
+          "Sector": 1051,
+          "At": 3399.300000003601
+        }
+      ],
+      "HomeAt": 3399.300000003601,
+      "RadiusAt": 3489.7000000039297,
+      "BayAt": null,
+      "ApproachAt": 3488.900000003927,
+      "EndAt": 3579.400000004256,
+      "EndSector": 1051,
+      "EndPosition": [
+        -6617.555,
+        845.8971,
+        -603.1684
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 14.450000000052569,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -57.387756,
+        31.783154,
+        -7.24522
+      ],
+      "EndForward": [
+        -0.8695099,
+        0.48156205,
+        -0.10977586
+      ],
+      "EndUp": [
+        0.3312976,
+        0.40380028,
+        -0.85275275
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8429,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3286.40000000319,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3286.40000000319
+        },
+        {
+          "Sector": 1061,
+          "At": 3314.150000003291
+        },
+        {
+          "Sector": 1051,
+          "At": 3408.900000003636
+        }
+      ],
+      "HomeAt": 3408.900000003636,
+      "RadiusAt": 3497.8500000039594,
+      "BayAt": null,
+      "ApproachAt": 3497.0500000039565,
+      "EndAt": 3586.4000000042815,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1828.211,
+        -1819.7614,
+        -2.4259112
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 85.3500000003105,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        5.2487025,
+        29.692554,
+        12.793857
+      ],
+      "EndForward": [
+        -0.20507722,
+        0.94398123,
+        0.25853968
+      ],
+      "EndUp": [
+        0.87996787,
+        0.2934753,
+        -0.37353575
+      ],
+      "EndTurnRates": [
+        -0.32982603,
+        0.3078376,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8458,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3309.450000003274,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3309.450000003274
+        },
+        {
+          "Sector": 1059,
+          "At": 3427.600000003704
+        },
+        {
+          "Sector": 1050,
+          "At": 3499.2500000039645
+        }
+      ],
+      "HomeAt": 3499.2500000039645,
+      "RadiusAt": 3559.050000004182,
+      "BayAt": null,
+      "ApproachAt": 3558.200000004179,
+      "EndAt": 3609.4500000043654,
+      "EndSector": 1050,
+      "EndPosition": [
+        1081.7214,
+        1606.718,
+        15.85886
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 51.250000000186446,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        0.7741746,
+        -13.019805,
+        14.106371
+      ],
+      "EndForward": [
+        0.5214046,
+        -0.8513357,
+        0.058006935
+      ],
+      "EndUp": [
+        -0.24404283,
+        -0.21391386,
+        -0.94587743
+      ],
+      "EndTurnRates": [
+        -0.31883192,
+        -0.35731164,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8556,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1054,
+      "EjectAt": 3315.750000003297,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1054,
+          "At": 3315.750000003297
+        },
+        {
+          "Sector": 1053,
+          "At": 3371.7000000035005
+        },
+        {
+          "Sector": 1055,
+          "At": 3470.300000003859
+        },
+        {
+          "Sector": 1051,
+          "At": 3545.9500000041344
+        }
+      ],
+      "HomeAt": 3545.9500000041344,
+      "RadiusAt": null,
+      "BayAt": null,
+      "ApproachAt": null,
+      "EndAt": 3615.7500000043883,
+      "EndSector": 1051,
+      "EndPosition": [
+        658.031,
+        -147.96048,
+        -376.17386
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 0,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -54.694855,
+        -35.99254,
+        8.309618
+      ],
+      "EndForward": [
+        -0.8287062,
+        -0.54533905,
+        0.12590274
+      ],
+      "EndUp": [
+        -0.056715794,
+        0.30562016,
+        0.9504629
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8513,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3318.4000000033066,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3318.4000000033066
+        },
+        {
+          "Sector": 1061,
+          "At": 3349.55000000342
+        },
+        {
+          "Sector": 1051,
+          "At": 3446.650000003773
+        }
+      ],
+      "HomeAt": 3446.650000003773,
+      "RadiusAt": 3536.000000004098,
+      "BayAt": null,
+      "ApproachAt": 3535.2500000040955,
+      "EndAt": 3618.400000004398,
+      "EndSector": 1051,
+      "EndPosition": [
+        -6166.3643,
+        682.139,
+        -489.2457
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 14.400000000052387,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -56.974644,
+        32.686176,
+        -6.442364
+      ],
+      "EndForward": [
+        -0.86325216,
+        0.4952451,
+        -0.09761158
+      ],
+      "EndUp": [
+        0.04473018,
+        -0.117563754,
+        -0.9920575
+      ],
+      "EndTurnRates": [
+        0,
+        0,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8461,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3322.400000003321,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3322.400000003321
+        },
+        {
+          "Sector": 1059,
+          "At": 3404.050000003618
+        },
+        {
+          "Sector": 1050,
+          "At": 3476.250000003881
+        }
+      ],
+      "HomeAt": 3476.250000003881,
+      "RadiusAt": 3537.350000004103,
+      "BayAt": null,
+      "ApproachAt": 3536.5500000041,
+      "EndAt": 3622.4000000044125,
+      "EndSector": 1050,
+      "EndPosition": [
+        1100.324,
+        1575.9496,
+        -16.251907
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 85.85000000031232,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -10.845749,
+        10.724318,
+        13.802919
+      ],
+      "EndForward": [
+        0.04575477,
+        -0.04327657,
+        0.9980149
+      ],
+      "EndUp": [
+        0.095755264,
+        0.9946508,
+        0.038740717
+      ],
+      "EndTurnRates": [
+        0.5215637,
+        0.4640685,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8407,
+      "Side": 1,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3323.6000000033255,
+      "HomeSector": 1050,
+      "Station": 4328,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3323.6000000033255
+        },
+        {
+          "Sector": 1059,
+          "At": 3431.200000003717
+        },
+        {
+          "Sector": 1050,
+          "At": 3516.150000004026
+        }
+      ],
+      "HomeAt": 3516.150000004026,
+      "RadiusAt": 3577.150000004248,
+      "BayAt": null,
+      "ApproachAt": 3576.350000004245,
+      "EndAt": 3623.600000004417,
+      "EndSector": 1050,
+      "EndPosition": [
+        1108.3287,
+        1525.7869,
+        -26.316328
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 47.250000000171894,
+      "PodHull": 77,
+      "PodCapabilities": 164,
+      "StationType": 60,
+      "StationModel": "dn_faphbsgar",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        1120,
+        1560,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        -19.421886,
+        1.3051627,
+        -9.366867
+      ],
+      "EndForward": [
+        -0.62559164,
+        0.77460676,
+        0.09284161
+      ],
+      "EndUp": [
+        -0.75725085,
+        -0.6315351,
+        0.16653724
+      ],
+      "EndTurnRates": [
+        -0.49365383,
+        0.49365383,
+        0
+      ],
+      "Match": 2
+    },
+    {
+      "Ship": 8534,
+      "Side": 0,
+      "Outcome": "oxygen",
+      "EjectSector": 1052,
+      "EjectAt": 3337.450000003376,
+      "HomeSector": 1051,
+      "Station": 4329,
+      "Route": [
+        {
+          "Sector": 1052,
+          "At": 3337.450000003376
+        },
+        {
+          "Sector": 1061,
+          "At": 3367.0000000034834
+        },
+        {
+          "Sector": 1051,
+          "At": 3462.800000003832
+        }
+      ],
+      "HomeAt": 3462.800000003832,
+      "RadiusAt": 3552.8500000041595,
+      "BayAt": null,
+      "ApproachAt": 3552.1000000041568,
+      "EndAt": 3637.4500000044673,
+      "EndSector": 1051,
+      "EndPosition": [
+        -1872.1136,
+        -1855.3479,
+        -64.1034
+      ],
+      "Seconds": 300.0000000010914,
+      "OxygenAllowance": 300,
+      "WaitedAtBay": 81.2000000002954,
+      "PodHull": 244,
+      "PodCapabilities": 164,
+      "StationType": 15,
+      "StationModel": "ss24a",
+      "StationRadius": 423.5,
+      "StationPosition": [
+        -1840,
+        -1800,
+        0
+      ],
+      "StationForward": [
+        0,
+        0,
+        -1
+      ],
+      "StationUp": [
+        0,
+        1,
+        0
+      ],
+      "EndVelocity": [
+        13.90327,
+        -9.903357,
+        -0.39088595
+      ],
+      "EndForward": [
+        0.6504576,
+        0.3682381,
+        0.6643085
+      ],
+      "EndUp": [
+        -0.15984274,
+        0.92139435,
+        -0.35423538
+      ],
+      "EndTurnRates": [
+        -0.42877382,
+        -0.3902941,
+        0
+      ],
+      "Match": 2
+    }
+  ],
+  "limits": [
+    "Worker match attribution uses preceding explicit server-known ship IDs; no worker UTC exists.",
+    "Sample poses are oxygen endings, restarted with fresh oxygen; original radius/ejection poses were not logged.",
+    "Wave station fractions are observations, not damage credited to that wave; -1 means unknown.",
+    "Station-damage receipts are rate-limited and cannot yield total damage or exact first damage.",
+    "Partial match and unended waves remain censored. Diagnostic HomeSector may differ from bot target."
+  ]
+}

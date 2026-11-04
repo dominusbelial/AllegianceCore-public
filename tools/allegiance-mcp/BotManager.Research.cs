@@ -129,7 +129,16 @@ internal sealed partial class BotManager
                                 // SC8 — one summary line per strike-wave commit/end, where
                                 // the other commander telemetry is printed (not per tick).
                                 foreach (var wave in tactics.Policy.TakeStrikeEvents())
-                                    Console.WriteLine(StrikeLogLine(side, wave));
+                                {
+                                    // Once per wave edge; UTC closes the b63 worker/server
+                                    // join gap. Target geometry identifies expansions.
+                                    bool targetKnown = peer.World.Stations.TryGetValue(wave.Target, out var target);
+                                    string position = target.Position is { Length: 3 } p
+                                        ? FormattableString.Invariant($"{p[0]:R},{p[1]:R},{p[2]:R}") : "unknown";
+                                    Console.WriteLine(StrikeLogLine(side, wave)
+                                        + $" utc={DateTime.UtcNow:O} cookie={peer.World.Mission?.Cookie} generation={peer.World.MissionGeneration}"
+                                        + $" targetType={(targetKnown ? target.StationTypeId : -1)} targetPosition={position}");
+                                }
                             }
                         }
                     }

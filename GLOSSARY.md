@@ -1407,6 +1407,17 @@ list in **reverse**.
 
 ## 10. Dev tooling (P811)
 
+- **Home geometry / pod and strike audit (P925)** — `tools/p925-home-geometry/`
+  dumps native station launch/bay planes, aleph entry envelopes and seeded
+  file-map rock approach lanes, and runs sampled-pose pod / three-bomber
+  loopback fixtures. `tools/p925-home-audit.py` joins b63 receipts by match,
+  home and civilization; fixtures: `tools/test_p925_home_audit.py` and
+  `tests/Allegiance.ClientCore.Tests/P925HomeGeometryTests.cs`. Event-only
+  actual-target/first-radius pod receipts live in
+  `tools/allegiance-mcp/BotManager.HomeTelemetry.cs`; strike edges include UTC
+  and target geometry. Existing controls and strategy are unchanged. Report:
+  `docs/reports/P925_REPORT.md`.
+
 - **Allegiance Index (AIX1/AIX2)** — session effective-player benchmark in
   `scripts/allegiance-index.py`, with stdlib fixture tests in
   `scripts/tests/test_allegiance_index.py`; formula and usage in

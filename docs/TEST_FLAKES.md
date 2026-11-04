@@ -5606,3 +5606,30 @@ See [P923 report](reports/P923_REPORT.md) and
 [verification receipt](reports/P923_assets/verification.json). Raw Fast and
 three-run isolation TRX/logs remain in `.scratch/p923/` in the task worktree;
 the base-source reproduction is under `.scratch/p923/base-failure/`.
+
+## P925 — home geometry audit gate (2026-11-04 UTC)
+
+One Fast invocation with artwork/local.env: **13,005 passed, 11 failed, 3 skipped**
+(13,019 total), plus three calibrated Fast timing offenders. No Core or Server
+simulation/transport source changed. New P925 tests pass 3/3 runs with zero skips.
+The failures below remain visible in the gate; the suite was not repeated.
+
+| Test / group | Three isolated executions | Classification / observed failure |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail in original environment; pass / pass / pass with task-local `XDG_CONFIG_HOME` | Existing read-only default-profile restoration obstruction at line 237. |
+| Five failing `PlayerBundlePathsTests` cases: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, local config precedence | Each fails 3/3; four companion cases pass each run | Existing mandated in-checkout `TMPDIR` ancestor `local.env` discovery. Resolver and fixtures unchanged. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip at final lock 1.000; failed isolated run lasts 38 s. Not cleared as a load-only flake. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / pass / pass | Sweep expected state 3, received 2; isolated durations 0.355 / 0.370 / 0.360 s. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Previously ledgered expected-charge / actual-null `AttackTarget`, line 179; remains open. |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | pass / pass / pass | Sweep clearance assertion: minObsDist 75.2, obstacle radius 60. No dodge/physics change. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | pass / pass / pass | Sweep-only display/wire assertion; no server countdown or wire change. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass at 9.678 / 9.740 / 10.064 s | Sweep passed at 11.341 s; final isolation still marginally exceeds the 10 s Fast limit. |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | pass at 1.616 / 1.773 / 1.627 s | Sweep passed at 11.334 s; timing-only offender in the sweep. |
+
+The three skips are the unavailable optional Meshy-pack catalogue/content tests,
+not missing native artwork. Sampled host load was about 3.4–4.1 (one/five-minute
+averages), with real local proof scenarios and no synthetic load. Isolation
+receipts: [P925 isolations](reports/P925_assets/isolations.json); exact gate result:
+[Fast summary](reports/P925_assets/fast-summary.json). Raw logs/TRX remain in the
+ignored task-worktree `.scratch/p925/`, as linked by the
+[P925 report](reports/P925_REPORT.md).

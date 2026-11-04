@@ -1,0 +1,137 @@
+{
+  "base": "0ebb5c76",
+  "branch": "codex/p925",
+  "committed": false,
+  "pushed": false,
+  "remoteHostsContacted": false,
+  "solutionBuild": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "toolsBuild": {
+    "projects": 115,
+    "passed": true,
+    "finalAffectedToolRebuilt": true
+  },
+  "newTests": {
+    "csharpRuns": [
+      [
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Logged_pod_poses_dock_without_a_control_change_and_replay_deterministically",
+          "outcome": "Passed",
+          "duration": "00:00:00.3159105"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Fixture_pins_generated_home_rocks_and_preserves_every_authored_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0828263"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Navigation_receipt_handles_missing_pose_and_target_without_inventing_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0134831"
+        }
+      ],
+      [
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Logged_pod_poses_dock_without_a_control_change_and_replay_deterministically",
+          "outcome": "Passed",
+          "duration": "00:00:00.3004998"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Navigation_receipt_handles_missing_pose_and_target_without_inventing_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0100832"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Fixture_pins_generated_home_rocks_and_preserves_every_authored_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0746386"
+        }
+      ],
+      [
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Fixture_pins_generated_home_rocks_and_preserves_every_authored_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0725522"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Logged_pod_poses_dock_without_a_control_change_and_replay_deterministically",
+          "outcome": "Passed",
+          "duration": "00:00:00.2957001"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P925HomeGeometryTests.Navigation_receipt_handles_missing_pose_and_target_without_inventing_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0099535"
+        }
+      ]
+    ],
+    "pythonRuns": 3,
+    "pythonTestsPerRun": 4,
+    "skipped": 0
+  },
+  "neverParks": [
+    {
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:25.3136556"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:03:55.8474546"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:07.7742580"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:03:45.0829883"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:31.6580270"
+    }
+  ],
+  "fast": {
+    "runs": 1,
+    "passed": false,
+    "tests": 13019,
+    "successes": 13005,
+    "failures": 11,
+    "skipped": 3,
+    "timingOffenders": 3,
+    "details": "fast-summary.json"
+  },
+  "parity": {
+    "validatedBeforeAndAfter": true,
+    "nativeRulesChanged": false,
+    "simWeightedPercent": 98.51
+  },
+  "glossary": {
+    "passed": true,
+    "distinctPaths": 538
+  },
+  "podLoopback": {
+    "trials": 24,
+    "docked": 24,
+    "serverReceiptsConfirmed": 24,
+    "failures": 0
+  },
+  "strikeLoopback": {
+    "scenarios": 4,
+    "bombersPerScenario": 3,
+    "defenders": 0,
+    "simStageFailures": 0
+  },
+  "limitations": [
+    "No runtime gameplay fix; original pod trip causation remains unknown.",
+    "One Fast run remains red; all unrelated failures and timing offenders have three-run isolation receipts.",
+    "Raw logs and TRX retained in ignored task-worktree scratch; public evidence contains only small JSON summaries."
+  ]
+}

@@ -1,0 +1,1882 @@
+[
+  {
+    "Ship": 8223,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 185.05000000000783,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 185.05000000000783
+      },
+      {
+        "Sector": 1061,
+        "At": 210.4000000000136
+      },
+      {
+        "Sector": 1051,
+        "At": 314.4000000000372
+      }
+    ],
+    "HomeAt": 314.4000000000372,
+    "RadiusAt": 413.00000000005963,
+    "BayAt": null,
+    "ApproachAt": 412.15000000005944,
+    "EndAt": 485.050000000076,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1990.4838,
+      -1829.5912,
+      79.70643
+    ],
+    "Seconds": 300.0000000000682,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 72.90000000001658,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      23.450075,
+      8.832287,
+      -18.971859
+    ],
+    "EndForward": [
+      0.85196394,
+      0.19114491,
+      -0.487464
+    ],
+    "EndUp": [
+      0.43921432,
+      0.24592331,
+      0.86406744
+    ],
+    "EndTurnRates": [
+      -0.038479716,
+      -0.038479716,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8195,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 190.6000000000091,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 190.6000000000091
+      },
+      {
+        "Sector": 1061,
+        "At": 217.60000000001523
+      },
+      {
+        "Sector": 1051,
+        "At": 321.55000000003884
+      }
+    ],
+    "HomeAt": 321.55000000003884,
+    "RadiusAt": 419.70000000006115,
+    "BayAt": null,
+    "ApproachAt": 418.90000000006097,
+    "EndAt": 490.6000000000773,
+    "EndSector": 1051,
+    "EndPosition": [
+      -5130.4756,
+      90.760025,
+      -488.15433
+    ],
+    "Seconds": 300.0000000000682,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.850000000003604,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -51.597927,
+      29.648811,
+      -7.6553144
+    ],
+    "EndForward": [
+      -0.8599652,
+      0.49414673,
+      -0.12758854
+    ],
+    "EndUp": [
+      0.11916194,
+      -0.048673842,
+      -0.9916811
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8117,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 202.70000000001184,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 202.70000000001184
+      },
+      {
+        "Sector": 1061,
+        "At": 228.0000000000176
+      },
+      {
+        "Sector": 1051,
+        "At": 333.3500000000415
+      }
+    ],
+    "HomeAt": 333.3500000000415,
+    "RadiusAt": 431.65000000006387,
+    "BayAt": null,
+    "ApproachAt": 430.8000000000637,
+    "EndAt": 502.70000000008,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1753.6212,
+      -1810.2307,
+      45.102654
+    ],
+    "Seconds": 300.0000000000682,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 71.90000000001635,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      8.163173,
+      14.868907,
+      16.171877
+    ],
+    "EndForward": [
+      -0.57902056,
+      0.7852719,
+      0.21927914
+    ],
+    "EndUp": [
+      -0.15212418,
+      0.1601727,
+      -0.9752963
+    ],
+    "EndTurnRates": [
+      -0.49365383,
+      -0.49365383,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8275,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 204.50000000001225,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 204.50000000001225
+      },
+      {
+        "Sector": 1061,
+        "At": 228.30000000001766
+      },
+      {
+        "Sector": 1051,
+        "At": 332.3000000000413
+      }
+    ],
+    "HomeAt": 332.3000000000413,
+    "RadiusAt": 430.4500000000636,
+    "BayAt": null,
+    "ApproachAt": 429.6500000000634,
+    "EndAt": 504.50000000008043,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1984.9042,
+      -1848.38,
+      103.742836
+    ],
+    "Seconds": 300.0000000000682,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 74.85000000001702,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      24.184631,
+      11.502925,
+      -22.583933
+    ],
+    "EndForward": [
+      0.76890856,
+      0.27452675,
+      -0.5774208
+    ],
+    "EndUp": [
+      0.51214975,
+      0.27616024,
+      0.81328845
+    ],
+    "EndTurnRates": [
+      -0.02748551,
+      -0.02748551,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8166,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 209.45000000001338,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 209.45000000001338
+      },
+      {
+        "Sector": 1061,
+        "At": 235.1000000000192
+      },
+      {
+        "Sector": 1051,
+        "At": 337.6000000000425
+      }
+    ],
+    "HomeAt": 337.6000000000425,
+    "RadiusAt": 434.70000000006456,
+    "BayAt": null,
+    "ApproachAt": 433.9000000000644,
+    "EndAt": 509.45000000008156,
+    "EndSector": 1051,
+    "EndPosition": [
+      -5327.038,
+      255.25137,
+      -545.0674
+    ],
+    "Seconds": 300.0000000000682,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.750000000003581,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -51.52875,
+      30.371687,
+      -8.055709
+    ],
+    "EndForward": [
+      -0.85378224,
+      0.50322986,
+      -0.13347541
+    ],
+    "EndUp": [
+      0.3407094,
+      0.3462037,
+      -0.87410533
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8153,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 219.05000000001556,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 219.05000000001556
+      },
+      {
+        "Sector": 1061,
+        "At": 253.30000000002335
+      },
+      {
+        "Sector": 1051,
+        "At": 356.9000000000469
+      }
+    ],
+    "HomeAt": 356.9000000000469,
+    "RadiusAt": 455.1500000000692,
+    "BayAt": null,
+    "ApproachAt": 454.35000000006903,
+    "EndAt": 519.0500000000757,
+    "EndSector": 1051,
+    "EndPosition": [
+      -4771.959,
+      -121.908104,
+      -433.5727
+    ],
+    "Seconds": 300.00000000006014,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.850000000003604,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -51.65065,
+      29.561253,
+      -7.638346
+    ],
+    "EndForward": [
+      -0.860844,
+      0.49268746,
+      -0.12730575
+    ],
+    "EndUp": [
+      0.075269885,
+      -0.1241384,
+      -0.989406
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8296,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1055,
+    "EjectAt": 220.25000000001583,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1055,
+        "At": 220.25000000001583
+      },
+      {
+        "Sector": 1053,
+        "At": 253.9500000000235
+      },
+      {
+        "Sector": 1054,
+        "At": 352.40000000004585
+      },
+      {
+        "Sector": 1050,
+        "At": 404.4000000000577
+      }
+    ],
+    "HomeAt": 404.4000000000577,
+    "RadiusAt": 453.60000000006886,
+    "BayAt": null,
+    "ApproachAt": 452.8500000000687,
+    "EndAt": 520.2500000000746,
+    "EndSector": 1050,
+    "EndPosition": [
+      1081.226,
+      1551.928,
+      7.0566187
+    ],
+    "Seconds": 300.0000000000588,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 67.40000000000589,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      7.694334,
+      18.165123,
+      3.5222104
+    ],
+    "EndForward": [
+      0.8827749,
+      0.46353236,
+      -0.07646181
+    ],
+    "EndUp": [
+      0.4412493,
+      -0.7622083,
+      0.47364295
+    ],
+    "EndTurnRates": [
+      -0.3023405,
+      -0.26386082,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8313,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1054,
+    "EjectAt": 242.25000000002083,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1054,
+        "At": 242.25000000002083
+      },
+      {
+        "Sector": 1050,
+        "At": 353.35000000004607
+      }
+    ],
+    "HomeAt": 353.35000000004607,
+    "RadiusAt": 399.95000000005666,
+    "BayAt": null,
+    "ApproachAt": 399.2000000000565,
+    "EndAt": 542.2500000000546,
+    "EndSector": 1050,
+    "EndPosition": [
+      -3362.9353,
+      9320.834,
+      -175.71623
+    ],
+    "Seconds": 300.00000000003376,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 14.400000000003274,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -33.0054,
+      57.139923,
+      -1.2934816
+    ],
+    "EndForward": [
+      -0.50008184,
+      0.8657564,
+      -0.019598207
+    ],
+    "EndUp": [
+      0.19743237,
+      0.09194803,
+      -0.9759949
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8193,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 245.6500000000216,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 245.6500000000216
+      },
+      {
+        "Sector": 1059,
+        "At": 316.2000000000376
+      },
+      {
+        "Sector": 1050,
+        "At": 398.2500000000563
+      }
+    ],
+    "HomeAt": 398.2500000000563,
+    "RadiusAt": 453.3500000000688,
+    "BayAt": null,
+    "ApproachAt": 452.60000000006863,
+    "EndAt": 545.6500000000515,
+    "EndSector": 1050,
+    "EndPosition": [
+      1164.1078,
+      1571.1791,
+      -8.712212
+    ],
+    "Seconds": 300.0000000000299,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 93.04999999998284,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      7.699742,
+      -16.428705,
+      3.061153
+    ],
+    "EndForward": [
+      -0.6123105,
+      -0.7320805,
+      0.29855317
+    ],
+    "EndUp": [
+      -0.39284205,
+      0.60942495,
+      0.6886773
+    ],
+    "EndTurnRates": [
+      -0.550569,
+      -0.42925718,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8262,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1057,
+    "EjectAt": 318.50000000003814,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1057,
+        "At": 318.50000000003814
+      },
+      {
+        "Sector": 1050,
+        "At": 410.80000000005913
+      }
+    ],
+    "HomeAt": 410.80000000005913,
+    "RadiusAt": 487.7500000000766,
+    "BayAt": null,
+    "ApproachAt": 487.00000000007645,
+    "EndAt": 618.5499999999852,
+    "EndSector": 1050,
+    "EndPosition": [
+      6935.3433,
+      7391.089,
+      -46.29089
+    ],
+    "Seconds": 300.04999999994703,
+    "OxygenAllowance": 300.00000000000006,
+    "WaitedAtBay": 14.350000000003263,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      46.768238,
+      46.894722,
+      -0.37269697
+    ],
+    "EndForward": [
+      0.7061401,
+      0.70804983,
+      -0.005627244
+    ],
+    "EndUp": [
+      0.028301492,
+      -0.0361643,
+      -0.99894506
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8282,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1053,
+    "EjectAt": 319.40000000003835,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1053,
+        "At": 319.40000000003835
+      },
+      {
+        "Sector": 1054,
+        "At": 427.0500000000628
+      },
+      {
+        "Sector": 1050,
+        "At": 481.5500000000752
+      }
+    ],
+    "HomeAt": 481.5500000000752,
+    "RadiusAt": 527.8500000000677,
+    "BayAt": null,
+    "ApproachAt": 527.1000000000683,
+    "EndAt": 619.4499999999844,
+    "EndSector": 1050,
+    "EndPosition": [
+      1065.2373,
+      1587.5256,
+      -34.39145
+    ],
+    "Seconds": 300.049999999946,
+    "OxygenAllowance": 299.99999999999994,
+    "WaitedAtBay": 88.54999999991946,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -8.780513,
+      20.873066,
+      1.9339433
+    ],
+    "EndForward": [
+      0.5078921,
+      0.5079023,
+      0.6957593
+    ],
+    "EndUp": [
+      0.04753,
+      0.7899347,
+      -0.6113462
+    ],
+    "EndTurnRates": [
+      0.49365368,
+      0.49365368,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8308,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1051,
+    "EjectAt": 762.1999999998545,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1051,
+        "At": 762.1999999998545
+      },
+      {
+        "Sector": 1055,
+        "At": 816.0499999998056
+      },
+      {
+        "Sector": 1053,
+        "At": 888.6499999997395
+      },
+      {
+        "Sector": 1054,
+        "At": 986.7499999996503
+      },
+      {
+        "Sector": 1050,
+        "At": 1040.2999999996016
+      }
+    ],
+    "HomeAt": 1040.2999999996016,
+    "RadiusAt": null,
+    "BayAt": null,
+    "ApproachAt": null,
+    "EndAt": 1062.2499999995816,
+    "EndSector": 1050,
+    "EndPosition": [
+      1786.1754,
+      -1759.5348,
+      609.9279
+    ],
+    "Seconds": 300.0499999997271,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 0,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 10,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -53.954468,
+      -24.900312,
+      28.315725
+    ],
+    "EndForward": [
+      -0.81964463,
+      -0.37833264,
+      0.43017098
+    ],
+    "EndUp": [
+      -0.37587032,
+      -0.21151811,
+      -0.90220934
+    ],
+    "EndTurnRates": [
+      -0.0054971003,
+      0,
+      0
+    ],
+    "Match": 1
+  },
+  {
+    "Ship": 8489,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3260.800000003097,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3260.800000003097
+      },
+      {
+        "Sector": 1059,
+        "At": 3331.750000003355
+      },
+      {
+        "Sector": 1050,
+        "At": 3404.60000000362
+      }
+    ],
+    "HomeAt": 3404.60000000362,
+    "RadiusAt": 3464.750000003839,
+    "BayAt": null,
+    "ApproachAt": 3463.900000003836,
+    "EndAt": 3560.8000000041884,
+    "EndSector": 1050,
+    "EndPosition": [
+      4602.872,
+      -2473.1292,
+      -275.09186
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.850000000057662,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      39.164288,
+      -45.350986,
+      -3.0929794
+    ],
+    "EndForward": [
+      0.6527273,
+      -0.75583726,
+      -0.0515488
+    ],
+    "EndUp": [
+      0.014613446,
+      -0.05546873,
+      0.99835354
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8487,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3267.8000000031225,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3267.8000000031225
+      },
+      {
+        "Sector": 1059,
+        "At": 3341.8000000033917
+      },
+      {
+        "Sector": 1050,
+        "At": 3414.700000003657
+      }
+    ],
+    "HomeAt": 3414.700000003657,
+    "RadiusAt": 3475.500000003878,
+    "BayAt": null,
+    "ApproachAt": 3474.650000003875,
+    "EndAt": 3567.800000004214,
+    "EndSector": 1050,
+    "EndPosition": [
+      4347.3267,
+      -2400.3218,
+      -190.00099
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.850000000057662,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      37.876976,
+      -46.479733,
+      -2.2294226
+    ],
+    "EndForward": [
+      0.6312828,
+      -0.7746621,
+      -0.037157036
+    ],
+    "EndUp": [
+      0.19084232,
+      0.10872583,
+      0.9755809
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8503,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3269.2500000031278,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3269.2500000031278
+      },
+      {
+        "Sector": 1059,
+        "At": 3353.8500000034355
+      },
+      {
+        "Sector": 1050,
+        "At": 3426.3500000036993
+      }
+    ],
+    "HomeAt": 3426.3500000036993,
+    "RadiusAt": 3486.9500000039197,
+    "BayAt": null,
+    "ApproachAt": 3486.1000000039166,
+    "EndAt": 3569.250000004219,
+    "EndSector": 1050,
+    "EndPosition": [
+      4080.6807,
+      -1836.114,
+      -221.86815
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 15.850000000057662,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      39.38085,
+      -45.17126,
+      -2.9506485
+    ],
+    "EndForward": [
+      0.6563475,
+      -0.7528543,
+      -0.04917747
+    ],
+    "EndUp": [
+      0.013962934,
+      -0.05304995,
+      0.99849427
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8548,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1054,
+    "EjectAt": 3270.150000003131,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1054,
+        "At": 3270.150000003131
+      },
+      {
+        "Sector": 1055,
+        "At": 3338.300000003379
+      },
+      {
+        "Sector": 1051,
+        "At": 3462.7500000038317
+      }
+    ],
+    "HomeAt": 3462.7500000038317,
+    "RadiusAt": 3569.45000000422,
+    "BayAt": null,
+    "ApproachAt": 3568.700000004217,
+    "EndAt": 3570.1500000042224,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1521.9103,
+      -1593.2758,
+      -46.801697
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 1.450000000005275,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -55.155193,
+      -35.91245,
+      8.254856
+    ],
+    "EndForward": [
+      -0.83150136,
+      -0.5414041,
+      0.124447465
+    ],
+    "EndUp": [
+      -0.007775194,
+      0.23533875,
+      0.97188234
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8521,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3279.4000000031647,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3279.4000000031647
+      },
+      {
+        "Sector": 1061,
+        "At": 3304.550000003256
+      },
+      {
+        "Sector": 1051,
+        "At": 3399.300000003601
+      }
+    ],
+    "HomeAt": 3399.300000003601,
+    "RadiusAt": 3489.7000000039297,
+    "BayAt": null,
+    "ApproachAt": 3488.900000003927,
+    "EndAt": 3579.400000004256,
+    "EndSector": 1051,
+    "EndPosition": [
+      -6617.555,
+      845.8971,
+      -603.1684
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 14.450000000052569,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -57.387756,
+      31.783154,
+      -7.24522
+    ],
+    "EndForward": [
+      -0.8695099,
+      0.48156205,
+      -0.10977586
+    ],
+    "EndUp": [
+      0.3312976,
+      0.40380028,
+      -0.85275275
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8429,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3286.40000000319,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3286.40000000319
+      },
+      {
+        "Sector": 1061,
+        "At": 3314.150000003291
+      },
+      {
+        "Sector": 1051,
+        "At": 3408.900000003636
+      }
+    ],
+    "HomeAt": 3408.900000003636,
+    "RadiusAt": 3497.8500000039594,
+    "BayAt": null,
+    "ApproachAt": 3497.0500000039565,
+    "EndAt": 3586.4000000042815,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1828.211,
+      -1819.7614,
+      -2.4259112
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 85.3500000003105,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      5.2487025,
+      29.692554,
+      12.793857
+    ],
+    "EndForward": [
+      -0.20507722,
+      0.94398123,
+      0.25853968
+    ],
+    "EndUp": [
+      0.87996787,
+      0.2934753,
+      -0.37353575
+    ],
+    "EndTurnRates": [
+      -0.32982603,
+      0.3078376,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8458,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3309.450000003274,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3309.450000003274
+      },
+      {
+        "Sector": 1059,
+        "At": 3427.600000003704
+      },
+      {
+        "Sector": 1050,
+        "At": 3499.2500000039645
+      }
+    ],
+    "HomeAt": 3499.2500000039645,
+    "RadiusAt": 3559.050000004182,
+    "BayAt": null,
+    "ApproachAt": 3558.200000004179,
+    "EndAt": 3609.4500000043654,
+    "EndSector": 1050,
+    "EndPosition": [
+      1081.7214,
+      1606.718,
+      15.85886
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 51.250000000186446,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      0.7741746,
+      -13.019805,
+      14.106371
+    ],
+    "EndForward": [
+      0.5214046,
+      -0.8513357,
+      0.058006935
+    ],
+    "EndUp": [
+      -0.24404283,
+      -0.21391386,
+      -0.94587743
+    ],
+    "EndTurnRates": [
+      -0.31883192,
+      -0.35731164,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8556,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1054,
+    "EjectAt": 3315.750000003297,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1054,
+        "At": 3315.750000003297
+      },
+      {
+        "Sector": 1053,
+        "At": 3371.7000000035005
+      },
+      {
+        "Sector": 1055,
+        "At": 3470.300000003859
+      },
+      {
+        "Sector": 1051,
+        "At": 3545.9500000041344
+      }
+    ],
+    "HomeAt": 3545.9500000041344,
+    "RadiusAt": null,
+    "BayAt": null,
+    "ApproachAt": null,
+    "EndAt": 3615.7500000043883,
+    "EndSector": 1051,
+    "EndPosition": [
+      658.031,
+      -147.96048,
+      -376.17386
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 0,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -54.694855,
+      -35.99254,
+      8.309618
+    ],
+    "EndForward": [
+      -0.8287062,
+      -0.54533905,
+      0.12590274
+    ],
+    "EndUp": [
+      -0.056715794,
+      0.30562016,
+      0.9504629
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8513,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3318.4000000033066,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3318.4000000033066
+      },
+      {
+        "Sector": 1061,
+        "At": 3349.55000000342
+      },
+      {
+        "Sector": 1051,
+        "At": 3446.650000003773
+      }
+    ],
+    "HomeAt": 3446.650000003773,
+    "RadiusAt": 3536.000000004098,
+    "BayAt": null,
+    "ApproachAt": 3535.2500000040955,
+    "EndAt": 3618.400000004398,
+    "EndSector": 1051,
+    "EndPosition": [
+      -6166.3643,
+      682.139,
+      -489.2457
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 14.400000000052387,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -56.974644,
+      32.686176,
+      -6.442364
+    ],
+    "EndForward": [
+      -0.86325216,
+      0.4952451,
+      -0.09761158
+    ],
+    "EndUp": [
+      0.04473018,
+      -0.117563754,
+      -0.9920575
+    ],
+    "EndTurnRates": [
+      0,
+      0,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8461,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3322.400000003321,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3322.400000003321
+      },
+      {
+        "Sector": 1059,
+        "At": 3404.050000003618
+      },
+      {
+        "Sector": 1050,
+        "At": 3476.250000003881
+      }
+    ],
+    "HomeAt": 3476.250000003881,
+    "RadiusAt": 3537.350000004103,
+    "BayAt": null,
+    "ApproachAt": 3536.5500000041,
+    "EndAt": 3622.4000000044125,
+    "EndSector": 1050,
+    "EndPosition": [
+      1100.324,
+      1575.9496,
+      -16.251907
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 85.85000000031232,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -10.845749,
+      10.724318,
+      13.802919
+    ],
+    "EndForward": [
+      0.04575477,
+      -0.04327657,
+      0.9980149
+    ],
+    "EndUp": [
+      0.095755264,
+      0.9946508,
+      0.038740717
+    ],
+    "EndTurnRates": [
+      0.5215637,
+      0.4640685,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8407,
+    "Side": 1,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3323.6000000033255,
+    "HomeSector": 1050,
+    "Station": 4328,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3323.6000000033255
+      },
+      {
+        "Sector": 1059,
+        "At": 3431.200000003717
+      },
+      {
+        "Sector": 1050,
+        "At": 3516.150000004026
+      }
+    ],
+    "HomeAt": 3516.150000004026,
+    "RadiusAt": 3577.150000004248,
+    "BayAt": null,
+    "ApproachAt": 3576.350000004245,
+    "EndAt": 3623.600000004417,
+    "EndSector": 1050,
+    "EndPosition": [
+      1108.3287,
+      1525.7869,
+      -26.316328
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 47.250000000171894,
+    "PodHull": 77,
+    "PodCapabilities": 164,
+    "StationType": 60,
+    "StationModel": "dn_faphbsgar",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      1120,
+      1560,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      -19.421886,
+      1.3051627,
+      -9.366867
+    ],
+    "EndForward": [
+      -0.62559164,
+      0.77460676,
+      0.09284161
+    ],
+    "EndUp": [
+      -0.75725085,
+      -0.6315351,
+      0.16653724
+    ],
+    "EndTurnRates": [
+      -0.49365383,
+      0.49365383,
+      0
+    ],
+    "Match": 2
+  },
+  {
+    "Ship": 8534,
+    "Side": 0,
+    "Outcome": "oxygen",
+    "EjectSector": 1052,
+    "EjectAt": 3337.450000003376,
+    "HomeSector": 1051,
+    "Station": 4329,
+    "Route": [
+      {
+        "Sector": 1052,
+        "At": 3337.450000003376
+      },
+      {
+        "Sector": 1061,
+        "At": 3367.0000000034834
+      },
+      {
+        "Sector": 1051,
+        "At": 3462.800000003832
+      }
+    ],
+    "HomeAt": 3462.800000003832,
+    "RadiusAt": 3552.8500000041595,
+    "BayAt": null,
+    "ApproachAt": 3552.1000000041568,
+    "EndAt": 3637.4500000044673,
+    "EndSector": 1051,
+    "EndPosition": [
+      -1872.1136,
+      -1855.3479,
+      -64.1034
+    ],
+    "Seconds": 300.0000000010914,
+    "OxygenAllowance": 300,
+    "WaitedAtBay": 81.2000000002954,
+    "PodHull": 244,
+    "PodCapabilities": 164,
+    "StationType": 15,
+    "StationModel": "ss24a",
+    "StationRadius": 423.5,
+    "StationPosition": [
+      -1840,
+      -1800,
+      0
+    ],
+    "StationForward": [
+      0,
+      0,
+      -1
+    ],
+    "StationUp": [
+      0,
+      1,
+      0
+    ],
+    "EndVelocity": [
+      13.90327,
+      -9.903357,
+      -0.39088595
+    ],
+    "EndForward": [
+      0.6504576,
+      0.3682381,
+      0.6643085
+    ],
+    "EndUp": [
+      -0.15984274,
+      0.92139435,
+      -0.35423538
+    ],
+    "EndTurnRates": [
+      -0.42877382,
+      -0.3902941,
+      0
+    ],
+    "Match": 2
+  }
+]

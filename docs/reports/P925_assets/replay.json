@@ -1,0 +1,866 @@
+[
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8223,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 3.35,
+    "Stage": "bay",
+    "End": [
+      -1977.7152,
+      -1859.5785,
+      35.310078
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8223,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 3.35,
+    "Stage": "bay",
+    "End": [
+      -1977.1846,
+      -1859.692,
+      34.59294
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8195,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 70.8,
+    "Stage": "bay",
+    "End": [
+      -1703.5662,
+      -1402.898,
+      1.6279335
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8195,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 70.75,
+    "Stage": "bay",
+    "End": [
+      -1704.086,
+      -1402.7156,
+      1.5083115
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8117,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 5.45,
+    "Stage": "bay",
+    "End": [
+      -1665.2306,
+      -1643.227,
+      62.84693
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8117,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 5.25,
+    "Stage": "bay",
+    "End": [
+      -1664.5559,
+      -1653.9672,
+      62.95939
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8275,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 3.75,
+    "Stage": "bay",
+    "End": [
+      -1973.1697,
+      -1883.7653,
+      50.528545
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8275,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 3.7,
+    "Stage": "bay",
+    "End": [
+      -1973.1154,
+      -1882.3394,
+      51.43093
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8166,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 75.10000000000001,
+    "Stage": "bay",
+    "End": [
+      -1703.5583,
+      -1400.1648,
+      0.23257437
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8166,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 75.05,
+    "Stage": "bay",
+    "End": [
+      -1702.4725,
+      -1400.7192,
+      0.5308616
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8153,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 63.900000000000006,
+    "Stage": "bay",
+    "End": [
+      -1702.2136,
+      -1405.7081,
+      1.5955
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1051,
+    "Pod": 77,
+    "Ship": 8153,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 63.900000000000006,
+    "Stage": "bay",
+    "End": [
+      -1701.8334,
+      -1405.9698,
+      1.2885095
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8296,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 6.7,
+    "Stage": "bay",
+    "End": [
+      1045.8365,
+      1797.7096,
+      -23.50986
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8296,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 6.300000000000001,
+    "Stage": "bay",
+    "End": [
+      1045.5446,
+      1776.453,
+      -22.067348
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8313,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 145.85,
+    "Stage": "bay",
+    "End": [
+      983.7202,
+      1960.7197,
+      -43.1232
+    ],
+    "Pivots": 68,
+    "Enters": 38
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8313,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 145.65,
+    "Stage": "bay",
+    "End": [
+      984.0827,
+      1959.921,
+      -43.09738
+    ],
+    "Pivots": 66,
+    "Enters": 39
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8193,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 4.95,
+    "Stage": "bay",
+    "End": [
+      1194.2527,
+      1403.4817,
+      -15.19658
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8193,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 4.45,
+    "Stage": "bay",
+    "End": [
+      1194.3041,
+      1426.9825,
+      -14.930969
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8262,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 138.35,
+    "Stage": "bay",
+    "End": [
+      993.7777,
+      1963.4414,
+      -42.971607
+    ],
+    "Pivots": 77,
+    "Enters": 30
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8262,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 137.70000000000002,
+    "Stage": "bay",
+    "End": [
+      993.8991,
+      1963.527,
+      -42.94537
+    ],
+    "Pivots": 62,
+    "Enters": 30
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8282,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 2.8000000000000003,
+    "Stage": "bay",
+    "End": [
+      1044.031,
+      1672.218,
+      -34.249874
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8282,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 2.8000000000000003,
+    "Stage": "bay",
+    "End": [
+      1042.2753,
+      1672.2723,
+      -34.66636
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8308,
+    "StationType": 10,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 58.75,
+    "Stage": "bay",
+    "End": [
+      1263.807,
+      1162.3986,
+      -38.39074
+    ],
+    "Pivots": 54,
+    "Enters": 47
+  },
+  {
+    "Match": 1,
+    "Home": 1050,
+    "Pod": 244,
+    "Ship": 8308,
+    "StationType": 10,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 58.400000000000006,
+    "Stage": "bay",
+    "End": [
+      1263.9229,
+      1161.9508,
+      -38.238144
+    ],
+    "Pivots": 44,
+    "Enters": 47
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8489,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 102.5,
+    "Stage": "bay",
+    "End": [
+      839.3476,
+      1241.5695,
+      25.958588
+    ],
+    "Pivots": 74,
+    "Enters": 29
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8489,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 101.7,
+    "Stage": "bay",
+    "End": [
+      839.5194,
+      1241.4375,
+      25.921879
+    ],
+    "Pivots": 57,
+    "Enters": 29
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8487,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 98.4,
+    "Stage": "bay",
+    "End": [
+      838.8325,
+      1241.8403,
+      26.113459
+    ],
+    "Pivots": 73,
+    "Enters": 29
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8487,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 97.55000000000001,
+    "Stage": "bay",
+    "End": [
+      839.30316,
+      1241.4468,
+      26.115072
+    ],
+    "Pivots": 51,
+    "Enters": 31
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8503,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 88.7,
+    "Stage": "bay",
+    "End": [
+      838.69,
+      1242.4391,
+      26.027374
+    ],
+    "Pivots": 74,
+    "Enters": 29
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8503,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 87.85000000000001,
+    "Stage": "bay",
+    "End": [
+      838.748,
+      1242.4281,
+      26.0038
+    ],
+    "Pivots": 57,
+    "Enters": 29
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8548,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 9.4,
+    "Stage": "bay",
+    "End": [
+      -1915.6777,
+      -1443.0513,
+      -40.575977
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8548,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 9.5,
+    "Stage": "bay",
+    "End": [
+      -1914.9495,
+      -1439.2367,
+      -41.058044
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8521,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 95.55000000000001,
+    "Stage": "bay",
+    "End": [
+      -1975.7347,
+      -1399.6034,
+      -43.5494
+    ],
+    "Pivots": 84,
+    "Enters": 31
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8521,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 95.35000000000001,
+    "Stage": "bay",
+    "End": [
+      -1976.2494,
+      -1399.4681,
+      -43.607437
+    ],
+    "Pivots": 77,
+    "Enters": 34
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8429,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 7.1000000000000005,
+    "Stage": "bay",
+    "End": [
+      -1914.5002,
+      -1522.7429,
+      -14.08516
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8429,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 7.1000000000000005,
+    "Stage": "bay",
+    "End": [
+      -1914.9886,
+      -1524.8029,
+      -17.665297
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8458,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 7.65,
+    "Stage": "bay",
+    "End": [
+      1255.5005,
+      1743.71,
+      29.038912
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8458,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 7.75,
+    "Stage": "bay",
+    "End": [
+      1255.9745,
+      1750.6951,
+      27.877176
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8556,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 51.6,
+    "Stage": "bay",
+    "End": [
+      -1965.7743,
+      -1396.0403,
+      -43.630127
+    ],
+    "Pivots": 86,
+    "Enters": 27
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8556,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 51.45,
+    "Stage": "bay",
+    "End": [
+      -1966.1802,
+      -1396.2493,
+      -43.573845
+    ],
+    "Pivots": 82,
+    "Enters": 27
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8513,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 88.15,
+    "Stage": "bay",
+    "End": [
+      -1975.4164,
+      -1399.6997,
+      -43.44583
+    ],
+    "Pivots": 86,
+    "Enters": 31
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8513,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 87.85000000000001,
+    "Stage": "bay",
+    "End": [
+      -1975.4906,
+      -1399.7207,
+      -43.47023
+    ],
+    "Pivots": 79,
+    "Enters": 32
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8461,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 7.5,
+    "Stage": "bay",
+    "End": [
+      1256.1923,
+      1762.995,
+      23.239485
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8461,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 7.5,
+    "Stage": "bay",
+    "End": [
+      1256.0707,
+      1764.4208,
+      18.960096
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8407,
+    "StationType": 60,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 4.7,
+    "Stage": "bay",
+    "End": [
+      986.4704,
+      1442.2661,
+      -29.790659
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1050,
+    "Pod": 77,
+    "Ship": 8407,
+    "StationType": 60,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 4.800000000000001,
+    "Stage": "bay",
+    "End": [
+      987.0716,
+      1436.0338,
+      -29.512405
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8534,
+    "StationType": 15,
+    "NativeTurn": false,
+    "Docked": true,
+    "Seconds": 6.300000000000001,
+    "Stage": "bay",
+    "End": [
+      -1765.0983,
+      -2052.6023,
+      -38.96809
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  },
+  {
+    "Match": 2,
+    "Home": 1051,
+    "Pod": 244,
+    "Ship": 8534,
+    "StationType": 15,
+    "NativeTurn": true,
+    "Docked": true,
+    "Seconds": 6.5,
+    "Stage": "bay",
+    "End": [
+      -1764.9908,
+      -2064.7126,
+      -44.070023
+    ],
+    "Pivots": 0,
+    "Enters": 0
+  }
+]

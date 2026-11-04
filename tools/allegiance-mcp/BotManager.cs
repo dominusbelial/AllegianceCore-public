@@ -3636,6 +3636,8 @@ bool isThreat =
             if (!bot.IsPod)
             {
                 bot.IsPod = true;
+                bot.PodRadiusLogged = false;
+                bot.PodFallbackLogged = false;
                 bot.EverPod = true;
                 bot.Deaths++;
                 if (bot.FinaleBomberActive && bot.Finale is { } finale)
@@ -3677,6 +3679,7 @@ bool isThreat =
             {
                 bot.PodDocked = true;
                 bot.PodDockStationId = stationId;
+                Console.WriteLine(HomeNavigationReceipt(cs, bot.ShipId, bot.PodStationId, bot.PodRestarted ? "restart" : "docked"));
                 if (bot.PodRestarted)
                 {
                     bot.PodsRestartedTotal++;
@@ -3749,7 +3752,15 @@ bool isThreat =
             catch { geom = null; }
             _podDockBays[stype.StationTypeId] = geom;
         }
-        if (geom is null || geom.LandSlots.Count == 0) return false;
+        if (geom is null || geom.LandSlots.Count == 0)
+        {
+            if (bot.IsPod && !bot.PodFallbackLogged)
+            {
+                bot.PodFallbackLogged = true;
+                Console.WriteLine(HomeNavigationReceipt(cs, bot.ShipId, stationId, "no-bay-fallback"));
+            }
+            return false;
+        }
 
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return false;
         Vector3 vel = Vector3.Zero;
@@ -3792,6 +3803,13 @@ bool isThreat =
             pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
             totalRadius, rateYaw, ratePitch, experimental: false,
             bayPreference: hull.HasCapability(DataHullTypeIGC.HabmLifepod) ? bot.ShipId : 0);
+        float diagnosticRadius = totalRadius - 10;
+        if (bot.IsPod && !bot.PodRadiusLogged && (pos - center).LengthSquared() <= diagnosticRadius * diagnosticRadius)
+        {
+            bot.PodRadiusLogged = true;
+            Console.WriteLine(HomeNavigationReceipt(cs, bot.ShipId, stationId, "radius")
+                + $" bays={nLand} bay={step.BayIndex} mask={step.Mask}");
+        }
 
         // This controls-only client follows authoritative snapshots, rather than
         // integrating its own pose. Retain its stable cross-product turn law;
@@ -4192,6 +4210,8 @@ bool isThreat =
         bot.PodProbeId = -1;
         bot.PodStationSector = pk.SectorId;
         bot.PodStationCenter = pk.Center;
+        bot.PodRadiusLogged = false;
+        Console.WriteLine(HomeNavigationReceipt(cs, bot.ShipId, bot.PodStationId, "target"));
         Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly restart-capable station {bot.PodStationId} in sector {bot.PodStationSector}");
     }
 
@@ -6168,6 +6188,7 @@ bool isThreat =
         public short PodRouteSector = -1, PodRouteWarpId = -1;
         public int PodRouteWarpCount;
         public short PodStationId = -1;
+        public bool PodRadiusLogged, PodFallbackLogged;
         public short PodStationSector = -1;
         public Vector3 PodStationCenter;
         // P779b-1 — a pod may also fly to a friendly RESCUE CAPABLE probe (native

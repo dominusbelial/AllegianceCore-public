@@ -1,0 +1,269 @@
+{
+  "Seed": 925,
+  "Defenders": 0,
+  "BomberHull": 195,
+  "RequestedLoadout": [
+    {
+      "PartId": 33,
+      "Amount": 1,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 198,
+      "Amount": 1,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 130,
+      "Amount": 1,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 203,
+      "Amount": 1,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 22,
+      "Amount": 1,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 157,
+      "Amount": 10,
+      "MountId": 0,
+      "FractionMounted": 255
+    },
+    {
+      "PartId": 80,
+      "Amount": 10,
+      "MountId": 0,
+      "FractionMounted": 255
+    }
+  ],
+  "LimitSeconds": 180,
+  "Failures": 0,
+  "Trials": [
+    {
+      "Home": 1051,
+      "StationId": 4329,
+      "Type": 15,
+      "Start": 0.8000000000000002,
+      "Arrival": 11.400000000000038,
+      "FirstDamage": 129.84999999999545,
+      "Peak": 3,
+      "EndHull": 1,
+      "EndShield": 0.62100005,
+      "Members": [
+        {
+          "Id": 8097,
+          "Hull": 195,
+          "Sector": 1051,
+          "End": [
+            -917.3988,
+            -1194.0952,
+            -129.11713
+          ],
+          "Parts": [
+            {
+              "PartId": 33,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 203,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 157,
+              "MountId": 0,
+              "Amount": 4
+            },
+            {
+              "PartId": 80,
+              "MountId": 0,
+              "Amount": 8
+            }
+          ]
+        },
+        {
+          "Id": 8098,
+          "Hull": 195,
+          "Sector": 1051,
+          "End": [
+            -848.4076,
+            -1141.331,
+            -130.4838
+          ],
+          "Parts": [
+            {
+              "PartId": 33,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 203,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 157,
+              "MountId": 0,
+              "Amount": 4
+            },
+            {
+              "PartId": 80,
+              "MountId": 0,
+              "Amount": 8
+            }
+          ]
+        },
+        {
+          "Id": 8099,
+          "Hull": 195,
+          "Sector": 1051,
+          "End": [
+            -1148.5271,
+            -1340.2396,
+            -94.65754
+          ],
+          "Parts": [
+            {
+              "PartId": 33,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 203,
+              "MountId": 0,
+              "Amount": 1
+            },
+            {
+              "PartId": 157,
+              "MountId": 0,
+              "Amount": 3
+            },
+            {
+              "PartId": 80,
+              "MountId": 0,
+              "Amount": 8
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Bots": [
+    {
+      "Name": "mcp-b001-3404",
+      "ShipId": 8097,
+      "Side": 1,
+      "Hull": "Bomber",
+      "Sector": 1051,
+      "Behavior": "combat",
+      "Position": [
+        -914.9017333984375,
+        -1192.4461669921875,
+        -129.47207641601562
+      ],
+      "Target": 4329,
+      "OrderedTarget": null,
+      "Engagers": 0,
+      "WorldReady": true,
+      "WorldReadyDelaySec": 0.0013419999999999543,
+      "WorldNotReadyAttempts": 0,
+      "RouteIndex": -1,
+      "RouteName": "single",
+      "Role": "Bomber",
+      "AiDecisions": 2685,
+      "State": "active",
+      "DefenseSector": null,
+      "TargetSector": 1051,
+      "StagingSector": -1,
+      "StagePhase": 0,
+      "Velocity": [
+        -49.95729064941406,
+        -32.88645935058594,
+        7.0291666984558105
+      ],
+      "Speed": 60.22174835205078,
+      "Idle": false
+    },
+    {
+      "Name": "mcp-b002-4055",
+      "ShipId": 8098,
+      "Side": 1,
+      "Hull": "Bomber",
+      "Sector": 1051,
+      "Behavior": "combat",
+      "Position": [
+        -848.4075927734375,
+        -1141.3310546875,
+        -130.48379516601562
+      ],
+      "Target": 4329,
+      "OrderedTarget": null,
+      "Engagers": 0,
+      "WorldReady": true,
+      "WorldReadyDelaySec": 0.008773699999999995,
+      "WorldNotReadyAttempts": 0,
+      "RouteIndex": -1,
+      "RouteName": "single",
+      "Role": "Bomber",
+      "AiDecisions": 2682,
+      "State": "active",
+      "DefenseSector": null,
+      "TargetSector": 1051,
+      "StagingSector": -1,
+      "StagePhase": 0,
+      "Velocity": [
+        -49.60312271118164,
+        -33.06875228881836,
+        6.764062404632568
+      ],
+      "Speed": 59.99803924560547,
+      "Idle": false
+    },
+    {
+      "Name": "mcp-b003-9501",
+      "ShipId": 8099,
+      "Side": 1,
+      "Hull": "Bomber",
+      "Sector": 1051,
+      "Behavior": "combat",
+      "Position": [
+        -1148.527099609375,
+        -1340.2396240234375,
+        -94.65753936767578
+      ],
+      "Target": 4329,
+      "OrderedTarget": null,
+      "Engagers": 0,
+      "WorldReady": true,
+      "WorldReadyDelaySec": 0.04228520000000002,
+      "WorldNotReadyAttempts": 0,
+      "RouteIndex": -1,
+      "RouteName": "single",
+      "Role": "Bomber",
+      "AiDecisions": 2677,
+      "State": "active",
+      "DefenseSector": null,
+      "TargetSector": 1051,
+      "StagingSector": -1,
+      "StagePhase": 0,
+      "Velocity": [
+        -29.6875,
+        -19.1484375,
+        4.3046875
+      ],
+      "Speed": 35.5884895324707,
+      "Idle": false
+    }
+  ]
+}

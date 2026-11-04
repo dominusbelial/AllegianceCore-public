@@ -1,0 +1,176 @@
+{
+  "Seed": 925,
+  "NativeTurn": false,
+  "Swap": true,
+  "Failures": 0,
+  "Trials": [
+    {
+      "Sample": 8489,
+      "Ship": 8097,
+      "Outcome": "docked",
+      "Seconds": 103.04999999999627,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 425.17224,
+      "End": [
+        839.16766,
+        1241.7585,
+        25.039568
+      ]
+    },
+    {
+      "Sample": 8487,
+      "Ship": 8098,
+      "Outcome": "docked",
+      "Seconds": 98.8999999999965,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 424.91968,
+      "End": [
+        838.22266,
+        1243.1759,
+        27.942251
+      ]
+    },
+    {
+      "Sample": 8503,
+      "Ship": 8099,
+      "Outcome": "docked",
+      "Seconds": 89.14999999999704,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 425.4206,
+      "End": [
+        839.2996,
+        1241.3765,
+        25.865753
+      ]
+    },
+    {
+      "Sample": 8548,
+      "Ship": 8100,
+      "Outcome": "docked",
+      "Seconds": 9.500000000000016,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 229.0015,
+      "End": [
+        -1915.6316,
+        -1440.0005,
+        -40.647816
+      ]
+    },
+    {
+      "Sample": 8521,
+      "Ship": 8101,
+      "Outcome": "docked",
+      "Seconds": 95.64999999999662,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 424.98062,
+      "End": [
+        -1976.2919,
+        -1399.8391,
+        -43.63835
+      ]
+    },
+    {
+      "Sample": 8429,
+      "Ship": 8102,
+      "Outcome": "docked",
+      "Seconds": 7.9,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 41.48873,
+      "End": [
+        -1928.3259,
+        -1485.9922,
+        -21.252338
+      ]
+    },
+    {
+      "Sample": 8458,
+      "Ship": 8103,
+      "Outcome": "docked",
+      "Seconds": 7.900000000000005,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 55.971516,
+      "End": [
+        1262.5156,
+        1753.4005,
+        28.178936
+      ]
+    },
+    {
+      "Sample": 8556,
+      "Ship": 8104,
+      "Outcome": "docked",
+      "Seconds": 51.799999999999066,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 424.6804,
+      "End": [
+        -1965.856,
+        -1396.7626,
+        -43.740997
+      ]
+    },
+    {
+      "Sample": 8513,
+      "Ship": 8105,
+      "Outcome": "docked",
+      "Seconds": 88.49999999999697,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 425.04144,
+      "End": [
+        -1976.3657,
+        -1399.8147,
+        -43.775898
+      ]
+    },
+    {
+      "Sample": 8461,
+      "Ship": 8106,
+      "Outcome": "docked",
+      "Seconds": 7.90000000000002,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 34.708664,
+      "End": [
+        1270.2462,
+        1778.0098,
+        23.19413
+      ]
+    },
+    {
+      "Sample": 8407,
+      "Ship": 8107,
+      "Outcome": "docked",
+      "Seconds": 7.900000000000024,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 49.30814,
+      "End": [
+        897.3701,
+        1322.2324,
+        1.6542423
+      ]
+    },
+    {
+      "Sample": 8534,
+      "Ship": 8108,
+      "Outcome": "docked",
+      "Seconds": 7.900000000000029,
+      "Stage": "Bay",
+      "Confirmed": true,
+      "MinDistance": 90.82889,
+      "End": [
+        -1733.6268,
+        -2127.5508,
+        -39.704052
+      ]
+    }
+  ]
+}
