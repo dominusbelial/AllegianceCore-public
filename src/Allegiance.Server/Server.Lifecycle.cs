@@ -1220,13 +1220,23 @@ public sealed partial class Server
             {
                 bool random = game.CivIds[side] == -1;
                 var civs = random ? LegalLobbyCivs(core).Select(c => (int)c.CivilizationId) : [game.CivIds[side]];
+                // P938 — P929 rotation hands every configured civilization to every
+                // side in turn, so prime a plan for each civ this side can receive.
+                // Without it a rotated match found no plan and ran with no research.
+                if (game.CivRotation == "alternate")
+                    civs = game.CivIds.Take(game.Teams).Any(id => id == -1)
+                        ? LegalLobbyCivs(core).Select(c => (int)c.CivilizationId)
+                        : game.CivIds.Take(game.Teams).Distinct();
                 foreach (int civ in civs)
                     try
                     {
-                        string choice = game.ResearchPlans.GetValueOrDefault(side, "auto");
+                        // A side's named plan belongs to its configured civ; a rotated-in
+                        // civ uses its own default choice.
+                        bool foreign = civ != game.CivIds[side];
+                        string choice = foreign ? "auto" : game.ResearchPlans.GetValueOrDefault(side, "auto");
                         // A named plan for the old fixed matchup must not prevent
                         // rolling a civ with no authored plan (P702 fallback).
-                        if (random && !authored.Any(p => p.CivId == civ)) choice = "generated";
+                        if ((random || foreign) && !authored.Any(p => p.CivId == civ)) choice = "generated";
                         var selection = ResearchPlanCatalog.Select(core, coreName, (short)civ, directory, choice, settings);
                         if (research && !selection.Plan.Steps.Any(step => step.Action == "develop"))
                             throw new InvalidDataException("no plan with real developments (this civilization/settings has no research cycle)");
@@ -1385,6 +1395,9 @@ public sealed partial class Server
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)civIds[t]);
 
         var researchPlans = SelectShowcasePlans(g, civIds);
+        if (_config.Showcase.TechMode == "research" && !playerCreated && researchPlans.Count != g.Teams)
+            Console.WriteLine($"[research-plan] WARNING game '{g.Name}': side(s) without a research plan: "
+                + string.Join(",", Enumerable.Range(0, g.Teams).Where(t => !researchPlans.ContainsKey((short)t)).Select(t => $"{t}(civ {civIds[t]})")));
         map = HomeAssignments.Apply(map, swapHomes);
         string homeDescription = HomeAssignments.Describe(g, homeMatch, swapHomes, map) + MatchCivilizations.Describe(g, homeMatch);
         if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans, selectedMap?.Seed);

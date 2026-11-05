@@ -833,6 +833,8 @@ internal sealed partial class BotManager
                 lock (peer.Gate)
                     if (Guid.TryParseExact(peer.World.ResearchBriefing?.Epoch, "N", out var epoch))
                         peer.SendShowcaseFinale(epoch, researchPeer.Side);
+                    else
+                        Console.WriteLine($"[finale] side={researchPeer.Side}: research finale triggered with no RESEARCH_BRIEFING epoch; server deadline NOT armed");
             foreach (short side in sides)
             {
                 // P896 — a side that has not observed an enemy station gets no strike:

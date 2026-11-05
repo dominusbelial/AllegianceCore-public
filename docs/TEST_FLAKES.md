@@ -5859,3 +5859,13 @@ P930 final-binary parking controls (runs 3–7): **5/5 base and 5/5 changed pass
 Early exploratory runs 1–2 are retained separately. Samples overlap on the
 shared host; no synthetic load was generated. See the P930 report/evidence
 for sample IDs, server binary hashes and observed idle durations.
+
+## 2026-11-05 — P938 fast suite (concurrent with the Codex P931 training gate)
+
+One fast run: 13,100 tests, 6 main failures, none in showcase research/rotation code. Isolation 3×:
+`NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` failed 3/3 (the
+pre-existing fixture failure, also failing on base in P930); `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+2/3 (known flaky); `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`,
+`FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose`,
+`MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` and
+`WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` passed 3/3 (load during the shared run).

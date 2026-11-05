@@ -74,4 +74,42 @@ public sealed class P929CivRotationTests
         }
         finally { Console.SetOut(saved); }
     }
+
+    // P938 — b65's rotated research matches assembled with no plan for either side
+    // (matchup "(none)"), so no briefing, no research and no finale.
+    [SkippableTheory, Trait("Tier", "Live")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Alternate_keeps_a_research_plan_for_every_side_in_every_match(bool generated)
+    {
+        Require.Artwork();
+        var saved = Console.Out;
+        using var log = new StringWriter(); Console.SetOut(log);
+        try
+        {
+            using var server = new Srv();
+            var game = new GameConfig { Name = "P938", Map = "m2xspiderw.igc", Teams = 2, CivIds = [18, 4], CivSeed = 938,
+                SideNames = ["Alpha", "Bravo"], CivRotation = "alternate", Goals = new() { Flags = 10 } };
+            if (generated) game.MapGen = new() { Type = "SingleRing", Seed = 938 };
+            server.Boot(new()
+            {
+                Port = 0, Showcase = new() { TechMode = "research", IncomeMultiplier = 5000, ResearchTimeScale = 8 },
+                LiveSettings = new() { AutoNextMatch = new() { Enabled = false } }, Games = [game],
+            });
+            for (int match = 1; match <= 3; match++)
+            {
+                var mission = server.Missions[0];
+                Assert.Equal(2, mission.ResearchPlans.Count);
+                foreach (var side in mission.Sides)
+                    Assert.Equal(side.Civilization.CivilizationId, mission.ResearchPlans[side.Id].CivId);
+                string line = log.ToString().Split('\n').Last(l => l.StartsWith("[matchup]"));
+                Assert.DoesNotContain("(none)", line);
+                Assert.Contains($"civShift={(match - 1) % 2}", line);
+                mission.Stage = MissionStage.Started;
+                typeof(Srv).GetMethod("DeclareGameOver", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(server, [mission, (short)0, "P938 rotation"]);
+            }
+            Assert.DoesNotContain("side(s) without a research plan", log.ToString());
+        }
+        finally { Console.SetOut(saved); }
+    }
 }
