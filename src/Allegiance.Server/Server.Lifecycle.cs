@@ -1328,7 +1328,7 @@ public sealed partial class Server
                 + $" goalIndex={index} goalMatch={previous.Match + 1} previousGoalIndex={previous.Index}";
             _goalRotations[g] = (previous.Match + 1, index);
         }
-        var civIds = MatchCivilizations.Resolve(g, core, civSeed);
+        var civIds = MatchCivilizations.Rotate(g, MatchCivilizations.Resolve(g, core, civSeed), homeMatch);
         MissionMap map;
         var selectedMap = !playerCreated && _config.Showcase.MapRotation is not null ? NextMap(g) : ((MapRotationEntry Entry, int Seed, string Receipt)?)null;
         MapGenConfig? mg = selectedMap is { } selected ? selected.Entry.MapGen : g.MapGen;
@@ -1375,7 +1375,7 @@ public sealed partial class Server
 
         var researchPlans = SelectShowcasePlans(g, civIds);
         map = HomeAssignments.Apply(map, swapHomes);
-        string homeDescription = HomeAssignments.Describe(g, homeMatch, swapHomes, map);
+        string homeDescription = HomeAssignments.Describe(g, homeMatch, swapHomes, map) + MatchCivilizations.Describe(g, homeMatch);
         if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans, selectedMap?.Seed);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {

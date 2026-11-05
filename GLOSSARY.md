@@ -1573,6 +1573,10 @@ list in **reverse**.
 
 ## 14. Match civilizations (P825)
 
+- **Civilization rotation (P929, preset experiment)** — per-game `civRotation` (`off`, `alternate`) in
+  `src/Allegiance.Server/ServerConfig.cs`; `src/Allegiance.Server/MatchCivilizations.cs` `Rotate` shifts the resolved
+  civilizations one side per match (two teams: swap on even matches) so side and civ effects separate; receipts add
+  `civRotation=… civShift=…`. Test: `tests/Allegiance.Core.Tests/P929CivRotationTests.cs`.
 - **Home assignment trials (P924, preset experiment)** — per-game `homeSwap`
   (`off`, `on`, `alternate`) in `src/Allegiance.Server/ServerConfig.cs`;
   `src/Allegiance.Server/HomeAssignments.cs` permutes station owners before

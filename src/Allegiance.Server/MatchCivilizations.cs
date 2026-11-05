@@ -33,6 +33,19 @@ internal static class MatchCivilizations
             throw new InvalidDataException($"game '{game.Name}': no legal random civilizations remain after excluding fixed sides");
     }
 
+    /// <summary>P929 experiment policy, not a native rule: with civRotation=alternate, match N
+    /// gives side s the civilization resolved for side (s + N - 1) mod teams. Match 1 is unchanged.</summary>
+    internal static int[] Rotate(GameConfig game, int[] civIds, int match)
+    {
+        if (game.CivRotation is not ("off" or "alternate"))
+            throw new InvalidDataException($"game '{game.Name}': civRotation must be off or alternate");
+        int shift = game.CivRotation == "off" || civIds.Length < 2 ? 0 : (match - 1) % civIds.Length;
+        return shift == 0 ? civIds : Enumerable.Range(0, civIds.Length).Select(s => civIds[(s + shift) % civIds.Length]).ToArray();
+    }
+
+    internal static string Describe(GameConfig game, int match) => game.CivRotation == "off" ? ""
+        : $" civRotation={game.CivRotation} civShift={(match - 1) % Math.Max(1, game.Teams)}";
+
     private static int[] Pool(GameConfig game, StaticCore core) => Server.LegalLobbyCivs(core)
         .Select(c => (int)c.CivilizationId).Except(game.CivIds.Take(game.Teams).Where(id => id >= 0)).ToArray();
 

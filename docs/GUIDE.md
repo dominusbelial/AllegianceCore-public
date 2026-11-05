@@ -384,6 +384,13 @@ use `games[].homeSwap`; any generated entry requires `homeSwap=off` so generated
 homes keep their own civilization rules. The current home-swap trial should
 finish before enabling a mixed rotation.
 
+To separate a side effect from a civilization effect on any map, including
+generated ones, set `games[].civRotation` to `alternate` (default `off`). Match N
+gives side s the civilization configured for side (s + N − 1) mod teams, so with
+two teams the civilizations swap on even matches; homes stay with their sides.
+The receipt gains `civRotation=alternate civShift=<n>`, and the `side0=`/`side1=`
+fields show the civilizations actually played.
+
 Both `[matchup]` and `[gameover]` include
 `map=<file|gen:Type> mapSeed=N rotation=<mode>#<zero-based-entry-index>` plus
 `rotationMatch` (one based) and `rotationSeed`. Keep the core version, tunables,

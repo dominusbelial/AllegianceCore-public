@@ -219,6 +219,11 @@ public sealed class GameConfig
     /// Non-off modes require two teams and debugMode=false; civilizations remain attached to sides.</summary>
     public string HomeSwap { get; set; } = "off";
 
+    /// <summary>P929 side-order experiment: off (default) or alternate (shift the configured
+    /// civilizations one side per match, so with two teams they swap on even matches). Separates
+    /// side effects from civilization effects on maps where homeSwap cannot run.</summary>
+    public string CivRotation { get; set; } = "off";
+
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
     public string[] SideNames { get; set; } = [];
 
