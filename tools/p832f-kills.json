@@ -4,7 +4,7 @@
   "port": 6073,
   "updatesPerSecond": 20,
   "sideSelectAutoSeatSeconds": 30,
-  "showcase": { "techMode": "research", "incomeMultiplier": 5000, "researchTimeScale": 16 },
+  "showcase": { "matchCapSeconds": 3600, "techMode": "research", "incomeMultiplier": 5000, "researchTimeScale": 16 },
   "liveSettings": {
     "timeDilation": "off",
     "autoNextMatch": { "enabled": true, "intermissionSeconds": 60 },

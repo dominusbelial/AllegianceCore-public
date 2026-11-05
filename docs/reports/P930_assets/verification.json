@@ -1,0 +1,3353 @@
+{
+  "task": "P930",
+  "localEnvPresent": true,
+  "baseCommit": "826a974d2a217d8b8612f82f5cca9e853243caf9",
+  "baseline": {
+    "immutableSnapshot": true,
+    "encodeOnce": true,
+    "parallelBuild": true,
+    "transport": "pool",
+    "shipUpdateModel": "native",
+    "nativeGotoPlan": true,
+    "serverGc": true
+  },
+  "solution": {
+    "log": ".scratch/p930/solution-build-final.txt",
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "log": ".scratch/p930/build-tools.txt",
+    "projects": 116,
+    "warnings": 0,
+    "errors": 0
+  },
+  "aot": {
+    "log": ".scratch/p930/aot-final.txt",
+    "IL2026": false,
+    "IL3050": false
+  },
+  "before": {
+    "file": ".scratch/p930/base-live.trx",
+    "counters": {
+      "total": 1,
+      "executed": 1,
+      "passed": 0,
+      "failed": 1,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.Tests.P930MatchCapLiveTests.Research_bots_complete_two_capped_matches_and_restart_the_clock",
+        "outcome": "Failed",
+        "duration": "00:00:41.8301361",
+        "error": "Assert.Equal() Failure: Values differ\nExpected: Over\nActual:   Started",
+        "matches": [
+          "match=1 stage=Started start=15.55 end=180.20000000000672 wall=40.01 log=.scratch/p930/cap-loopback-20261105T132420918.log"
+        ]
+      }
+    ]
+  },
+  "focused": {
+    "p930": [
+      {
+        "file": ".scratch/p930/final-p930-1.trx",
+        "counters": {
+          "total": 26,
+          "executed": 26,
+          "passed": 26,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0111927"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 0, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0140957"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0156126"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Source_generated_defaults_and_explicit_cap_roundtrip",
+            "outcome": "Passed",
+            "duration": "00:00:00.0468769"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 0, timeout: 300, expected: 410)",
+            "outcome": "Passed",
+            "duration": "00:00:00.8606717"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: NaN)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005511"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 59.990000000000002)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0001341"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 86401)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000073"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0131247"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 60, timeout: 300, expected: 160)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7229535"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapLiveTests.Research_bots_complete_two_capped_matches_and_restart_the_clock",
+            "outcome": "Passed",
+            "duration": "00:00:35.7786939",
+            "matches": [
+              "match=1 stage=Over start=15.3 end=75.34999999999786 wall=16.47 log=.scratch/p930/cap-loopback-20261105T133352191.log",
+              "match=2 stage=Over start=95.39999999999758 end=155.40000000000109 wall=17.92 log=.scratch/p930/cap-loopback-20261105T133352191.log"
+            ]
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 7200, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0130290"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: False, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7283532"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7407612"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000027"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 90, expected: 90)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0186083"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000025"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0277410"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Player_created_and_LAN_worlds_keep_human_countdown",
+            "outcome": "Passed",
+            "duration": "00:00:00.2078549"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 60, authored: 0, timeout: 20, expected: 130)",
+            "outcome": "Passed",
+            "duration": "00:00:00.8089174"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7321850"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: False, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0364395"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0234375"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000025"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0129348"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 0.10000000000000001)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000033"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-p930-2.trx",
+        "counters": {
+          "total": 26,
+          "executed": 26,
+          "passed": 26,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0131148"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 0, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0127640"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 0.10000000000000001)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000037"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7592087"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0193021"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: False, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0382711"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapLiveTests.Research_bots_complete_two_capped_matches_and_restart_the_clock",
+            "outcome": "Passed",
+            "duration": "00:00:35.8024692",
+            "matches": [
+              "match=1 stage=Over start=15.35 end=75.39999999999786 wall=16.42 log=.scratch/p930/cap-loopback-20261105T133617485.log",
+              "match=2 stage=Over start=95.44999999999757 end=155.4500000000011 wall=17.88 log=.scratch/p930/cap-loopback-20261105T133617485.log"
+            ]
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0251396"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000031"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 7200, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0115731"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0300706"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Source_generated_defaults_and_explicit_cap_roundtrip",
+            "outcome": "Passed",
+            "duration": "00:00:00.0468055"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7413032"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 59.990000000000002)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0001239"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Player_created_and_LAN_worlds_keep_human_countdown",
+            "outcome": "Passed",
+            "duration": "00:00:00.2016832"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: False, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7331566"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 60, authored: 0, timeout: 20, expected: 130)",
+            "outcome": "Passed",
+            "duration": "00:00:00.8063446"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 86401)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000090"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0121647"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 60, timeout: 300, expected: 160)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7326208"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000028"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: NaN)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005073"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 0, timeout: 300, expected: 410)",
+            "outcome": "Passed",
+            "duration": "00:00:00.8875620"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000029"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 90, expected: 90)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0153355"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0110455"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-p930-3.trx",
+        "counters": {
+          "total": 26,
+          "executed": 26,
+          "passed": 26,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 60, timeout: 300, expected: 160)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7164710"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7448434"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 90, expected: 90)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0147838"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0282369"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 59.990000000000002)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0001174"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: False, teams: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0403954"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Source_generated_defaults_and_explicit_cap_roundtrip",
+            "outcome": "Passed",
+            "duration": "00:00:00.0458630"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0209071"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Fresh_rebuilds_map_goal_and_civ_rotations_reapply_cap(rotateMaps: True, teams: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0239522"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: True, tie: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7392464"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 0.10000000000000001)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000032"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000039"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 7200, expected: 7200)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0131553"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 0, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0120923"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: NaN)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0004745"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 60, authored: 0, timeout: 20, expected: 130)",
+            "outcome": "Passed",
+            "duration": "00:00:00.8070191"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 0, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0150652"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Player_created_and_LAN_worlds_keep_human_countdown",
+            "outcome": "Passed",
+            "duration": "00:00:00.2060449"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: False, cap: 3600, duration: 0, expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0160300"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: 86401)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000075"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000028"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapLiveTests.Research_bots_complete_two_capped_matches_and_restart_the_clock",
+            "outcome": "Passed",
+            "duration": "00:00:35.6519265",
+            "matches": [
+              "match=1 stage=Over start=15.4 end=75.44999999999786 wall=16.40 log=.scratch/p930/cap-loopback-20261105T133851890.log",
+              "match=2 stage=Over start=95.49999999999757 end=155.5000000000011 wall=17.85 log=.scratch/p930/cap-loopback-20261105T133851890.log"
+            ]
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Invalid_cap_fails_validation(seconds: -Infinity)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000033"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Earlier_finale_and_disabled_cap_keep_their_deadlines(cap: 0, authored: 0, timeout: 300, expected: 410)",
+            "outcome": "Passed",
+            "duration": "00:00:00.9620276"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Only_presets_receive_cap_and_shorter_explicit_countdown_wins(preset: True, cap: 3600, duration: 7200, expected: 3600)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0125274"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P930MatchCapTests.Late_finale_clamps_to_cap_and_same_tick_emits_one_result(armFinale: False, tie: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.7256712"
+          }
+        ]
+      }
+    ],
+    "affectedClient": [
+      {
+        "file": ".scratch/p930/final-affected-client-1.trx",
+        "counters": {
+          "total": 29,
+          "executed": 29,
+          "passed": 29,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1211133"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000578"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0007886"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"cycle\")",
+            "outcome": "Passed",
+            "duration": "00:00:01.0320628"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000210"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000222"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000402"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0010702"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+            "outcome": "Passed",
+            "duration": "00:00:00.0267360"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0011623"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+            "outcome": "Passed",
+            "duration": "00:00:00.0451840"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+            "outcome": "Passed",
+            "duration": "00:00:00.0984030"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+            "outcome": "Passed",
+            "duration": "00:00:00.0267712"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0022799"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0023923"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"random\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.8506808"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000089"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Two_matches_rotate_flags_to_artifacts_and_bots_win_each_native_rule",
+            "outcome": "Passed",
+            "duration": "00:01:29.0489113"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000157"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+            "outcome": "Passed",
+            "duration": "00:00:04.9770221"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000379"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003098"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000088"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2552874"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0012825"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000180"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003252"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0066512"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"fixed\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.7735801"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-affected-client-2.trx",
+        "counters": {
+          "total": 29,
+          "executed": 29,
+          "passed": 29,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"fixed\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.7688390"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0026685"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000165"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"random\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.8211221"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003747"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2641420"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1513680"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0061543"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+            "outcome": "Passed",
+            "duration": "00:00:00.0443050"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000677"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0020649"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000358"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Two_matches_rotate_flags_to_artifacts_and_bots_win_each_native_rule",
+            "outcome": "Passed",
+            "duration": "00:01:38.6220004"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002671"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000176"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"cycle\")",
+            "outcome": "Passed",
+            "duration": "00:00:01.1168303"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009748"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000125"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+            "outcome": "Passed",
+            "duration": "00:00:00.0918646"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000085"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0011019"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0007829"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000092"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000494"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+            "outcome": "Passed",
+            "duration": "00:00:00.0282852"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+            "outcome": "Passed",
+            "duration": "00:00:04.9203372"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+            "outcome": "Passed",
+            "duration": "00:00:00.0284814"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0014248"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000106"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-affected-client-3.trx",
+        "counters": {
+          "total": 29,
+          "executed": 29,
+          "passed": 29,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Player_created_world_keeps_its_fixed_map_across_rebuilds",
+            "outcome": "Passed",
+            "duration": "00:00:00.0241598"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009661"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"cycle\")",
+            "outcome": "Passed",
+            "duration": "00:00:01.0857347"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_is_Alderan_and_every_supported_generated_type_has_a_reachable_choice",
+            "outcome": "Passed",
+            "duration": "00:00:00.0894390"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Two_matches_rotate_flags_to_artifacts_and_bots_win_each_native_rule",
+            "outcome": "Passed",
+            "duration": "00:01:41.5043252"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"notMap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0024853"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"path\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000215"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"size\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000259"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"neither\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000061"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: True)",
+            "outcome": "Passed",
+            "duration": "00:00:04.8573480"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"teams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002741"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"homeSwap\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000440"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"random\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.8334258"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"both\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000043"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P832gGoalRotationLiveTests.Fresh_missions_advertise_selected_goals_before_countdown_and_fixed_goals_survive(mode: \"fixed\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.7553635"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Json_defaults_roundtrip_and_seeded_order",
+            "outcome": "Passed",
+            "duration": "00:00:00.0434087"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"topologyTeams\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0007791"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"numericType\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000139"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"count\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005911"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"cycle\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1224162"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"debug\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000452"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Unselected_entries_are_preflighted_at_boot(fault: \"missing\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0011476"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"empty\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000090"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Battle_sector_prefers_balanced_short_routes_then_id_and_ignores_disconnected_neutrals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0021101"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"type\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002535"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"mode\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000122"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Assembly_replays_layouts_civ_stream_and_receipts_across_rotations(mode: \"random\", research: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2545201"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Rotation_absent_preserves_authored_assembly_bytes_and_existing_receipt",
+            "outcome": "Passed",
+            "duration": "00:00:00.0288356"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P926MapRotationTests.Bad_settings_fail_before_artwork_or_listener(fault: \"density\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0050908"
+          }
+        ]
+      }
+    ],
+    "affectedCore": [
+      {
+        "file": ".scratch/p930/final-affected-core-1.trx",
+        "counters": {
+          "total": 51,
+          "executed": 51,
+          "passed": 51,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Match_timeout_uses_real_game_over_rotation_once",
+            "outcome": "Passed",
+            "duration": "00:00:00.0376669"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 3, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0411667"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Off_is_the_default_and_alternate_shifts_one_side_per_match",
+            "outcome": "Passed",
+            "duration": "00:00:00.0341615"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Expired_match_suppresses_due_payday_but_exact_timeout_boundary_does_not",
+            "outcome": "Passed",
+            "duration": "00:00:00.0091659"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0495193"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0369204"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ballot_strict_expiry_all_votes_and_cancellation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0007083"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_flags_and_artifacts_populate_real_objectives_at_boot",
+            "outcome": "Passed",
+            "duration": "00:00:00.0461118"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0434336"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0004019"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mine_survives_exact_expiry_and_is_removed_after_it",
+            "outcome": "Passed",
+            "duration": "00:00:00.0052387"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0230625"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Damage_slots_retire_one_boundary_per_call_and_sort_only_on_damage",
+            "outcome": "Passed",
+            "duration": "00:00:00.0027703"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"kills\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0036465"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0338016"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mission_damage_phase_is_shared_once_before_chunks_and_seeded_at_rotation_time",
+            "outcome": "Passed",
+            "duration": "00:00:00.0047063"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0251233"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0165513"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0466520"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: False, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0993465"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_strict_expiry_stage_and_kills_deaths_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0041022"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0151326"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Count_includes_nonship_and_retired_launchers_tracks_collapse_excludes_capture_and_deduplicates",
+            "outcome": "Passed",
+            "duration": "00:00:00.0274126"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0246439"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 4, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0452919"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"flags\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0040738"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Joining_another_mission_receives_its_own_configured_goals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0372437"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"prosperity\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0673503"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0138917"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2426144"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Player_created_world_does_not_inherit_the_operators_rotating_preset",
+            "outcome": "Passed",
+            "duration": "00:00:00.0220512"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ships_damaged_at_different_times_share_mission_slot_phase",
+            "outcome": "Passed",
+            "duration": "00:00:00.0092277"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_goals_roundtrip_over_tcp_to_briefing_and_investment_catalog",
+            "outcome": "Passed",
+            "duration": "00:00:00.0989490"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 1, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2290585"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0131411"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Research_finale_uses_same_rule_and_logs_the_deciding_values",
+            "outcome": "Passed",
+            "duration": "00:00:01.7334640"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"artifacts\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0035566"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0151771"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"territory\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0070065"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.P832e_Join_sync_reports_native_rankings_before_any_station_event",
+            "outcome": "Passed",
+            "duration": "00:00:00.0633649"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{}}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000581"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"artifacts\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0114085"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0216169"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0174264"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"flags\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0121148"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"conquest\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0039905"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{\\\"stationKillsDecideDeadline\\\":true\"\u00b7\u00b7\u00b7, enabled: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0010971"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"prosperity\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0038925"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: False, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0450103"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 2, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0447924"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 5, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0391118"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-affected-core-2.trx",
+        "counters": {
+          "total": 51,
+          "executed": 51,
+          "passed": 51,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"flags\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0044564"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mine_survives_exact_expiry_and_is_removed_after_it",
+            "outcome": "Passed",
+            "duration": "00:00:00.0055949"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: False, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0407519"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Match_timeout_uses_real_game_over_rotation_once",
+            "outcome": "Passed",
+            "duration": "00:00:00.0248285"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0461559"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"conquest\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0049880"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Joining_another_mission_receives_its_own_configured_goals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0404518"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 5, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0420077"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0163685"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Expired_match_suppresses_due_payday_but_exact_timeout_boundary_does_not",
+            "outcome": "Passed",
+            "duration": "00:00:00.0139242"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"prosperity\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0042813"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{\\\"stationKillsDecideDeadline\\\":true\"\u00b7\u00b7\u00b7, enabled: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009385"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"artifacts\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0143825"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0724857"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0372148"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 1, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2323119"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Research_finale_uses_same_rule_and_logs_the_deciding_values",
+            "outcome": "Passed",
+            "duration": "00:00:01.6298486"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_strict_expiry_stage_and_kills_deaths_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0047263"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"flags\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0143568"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"kills\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0039731"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1844685"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_goals_roundtrip_over_tcp_to_briefing_and_investment_catalog",
+            "outcome": "Passed",
+            "duration": "00:00:00.0897839"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002869"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 4, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0445875"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_flags_and_artifacts_populate_real_objectives_at_boot",
+            "outcome": "Passed",
+            "duration": "00:00:00.0144866"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0415054"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0134342"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ballot_strict_expiry_all_votes_and_cancellation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0006460"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"territory\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0069909"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0134821"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{}}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000615"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0169271"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"prosperity\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0151005"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Player_created_world_does_not_inherit_the_operators_rotating_preset",
+            "outcome": "Passed",
+            "duration": "00:00:00.0219810"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: False, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0434207"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0356076"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Off_is_the_default_and_alternate_shifts_one_side_per_match",
+            "outcome": "Passed",
+            "duration": "00:00:00.0268427"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"artifacts\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0043976"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mission_damage_phase_is_shared_once_before_chunks_and_seeded_at_rotation_time",
+            "outcome": "Passed",
+            "duration": "00:00:00.0209499"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Count_includes_nonship_and_retired_launchers_tracks_collapse_excludes_capture_and_deduplicates",
+            "outcome": "Passed",
+            "duration": "00:00:00.0270866"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ships_damaged_at_different_times_share_mission_slot_phase",
+            "outcome": "Passed",
+            "duration": "00:00:00.0090244"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 3, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0428980"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0221340"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0168305"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0155424"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 2, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0400859"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Damage_slots_retire_one_boundary_per_call_and_sort_only_on_damage",
+            "outcome": "Passed",
+            "duration": "00:00:00.0029979"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0240548"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0123114"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0284290"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.P832e_Join_sync_reports_native_rankings_before_any_station_event",
+            "outcome": "Passed",
+            "duration": "00:00:00.0377009"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/final-affected-core-3.trx",
+        "counters": {
+          "total": 51,
+          "executed": 51,
+          "passed": 51,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0558941"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.1887414"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Expired_match_suppresses_due_payday_but_exact_timeout_boundary_does_not",
+            "outcome": "Passed",
+            "duration": "00:00:00.0072975"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Damage_slots_retire_one_boundary_per_call_and_sort_only_on_damage",
+            "outcome": "Passed",
+            "duration": "00:00:00.0018784"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: False, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0363454"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Research_finale_uses_same_rule_and_logs_the_deciding_values",
+            "outcome": "Passed",
+            "duration": "00:00:01.9059577"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 3, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0387853"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ships_damaged_at_different_times_share_mission_slot_phase",
+            "outcome": "Passed",
+            "duration": "00:00:00.0083137"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0175614"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0160054"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mine_survives_exact_expiry_and_is_removed_after_it",
+            "outcome": "Passed",
+            "duration": "00:00:00.0044465"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Ballot_strict_expiry_all_votes_and_cancellation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0007174"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0250990"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0142740"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Player_created_world_does_not_inherit_the_operators_rotating_preset",
+            "outcome": "Passed",
+            "duration": "00:00:00.0196997"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0358381"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0120952"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P927DeadlineTests.Three_side_deadline_uses_all_sides_station_kills_then_native_kills_deaths_and_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0164319"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Off_is_the_default_and_alternate_shifts_one_side_per_match",
+            "outcome": "Passed",
+            "duration": "00:00:00.0331175"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"prosperity\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0132372"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_station_goal_ends_a_local_match_and_survives_rotation(goal: \"territory\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0265336"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"conquest\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0132783"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: False, shape: 2, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0459805"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0248191"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"conquest\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0033655"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 4, expectedWinner: -1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0381504"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"artifacts\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0110548"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Match_timeout_uses_real_game_over_rotation_once",
+            "outcome": "Passed",
+            "duration": "00:00:00.0227495"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 5, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0518666"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_goals_roundtrip_over_tcp_to_briefing_and_investment_catalog",
+            "outcome": "Passed",
+            "duration": "00:00:00.0970794"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{}}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0000722"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Joining_another_mission_receives_its_own_configured_goals",
+            "outcome": "Passed",
+            "duration": "00:00:00.0471970"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Count_includes_nonship_and_retired_launchers_tracks_collapse_excludes_capture_and_deduplicates",
+            "outcome": "Passed",
+            "duration": "00:00:00.0265338"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: False, enabled: True, shape: 0, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0430577"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"flags\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0038466"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match(empty: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0132606"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_flags_and_artifacts_populate_real_objectives_at_boot",
+            "outcome": "Passed",
+            "duration": "00:00:00.0121593"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.P832e_Join_sync_reports_native_rankings_before_any_station_event",
+            "outcome": "Passed",
+            "duration": "00:00:00.0594976"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P832aGoalServerTests.Configured_countdown_ends_by_clock_and_absent_goals_keep_master_behavior(timed: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0289844"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{\\\"showcase\\\":{\\\"stationKillsDecideDeadline\\\":true\"\u00b7\u00b7\u00b7, enabled: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0010950"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"kills\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0038915"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Mission_damage_phase_is_shared_once_before_chunks_and_seeded_at_rotation_time",
+            "outcome": "Passed",
+            "duration": "00:00:00.0040190"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"prosperity\", expected: 2)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0034792"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 2, expectedWinner: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0423865"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Real_deadline_preserves_off_and_ordinary_paths_and_falls_through_ties(preset: True, enabled: True, shape: 1, expectedWinner: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.2265077"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"artifacts\", expected: 0)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0036910"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence(criterion: \"territory\", expected: 1)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0073715"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P929CivRotationTests.Alternate_swaps_civilizations_and_home_station_types_across_matches(generated: True)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0249513"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Source_generated_config_defaults_roundtrip_and_validate(json: \"{}\", enabled: False)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003348"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_strict_expiry_stage_and_kills_deaths_draw",
+            "outcome": "Passed",
+            "duration": "00:00:00.0106681"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P914StationDeadlineTests.Native_goal_criteria_still_precede_station_kills(goal: \"flags\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0124493"
+          }
+        ]
+      }
+    ]
+  },
+  "parking": {
+    "base": [
+      {
+        "file": ".scratch/p930/baseline-parks-1.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:04:51.8855687",
+            "parking": [
+              "P700 local 15v15: 286.3s, samples=2857, reached=24/30, longest speed<1 with target=0.307s, shots=2472, hits=817, kills=6"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-2.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:03:22.4475260",
+            "parking": [
+              "P700 local 15v15: 198.5s, samples=1983, reached=24/30, longest speed<1 with target=2.005s, shots=7469, hits=2970, kills=22"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-3.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:04:06.1812832",
+            "parking": [
+              "P700 local 15v15: 241.9s, samples=2416, reached=24/30, longest speed<1 with target=2.006s, shots=8192, hits=3579, kills=24"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-4.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:03:27.7594332",
+            "parking": [
+              "P700 local 15v15: 204.2s, samples=2040, reached=24/30, longest speed<1 with target=4.310s, shots=8516, hits=3860, kills=23"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-5.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:03:38.7540702",
+            "parking": [
+              "P700 local 15v15: 215.0s, samples=2147, reached=24/30, longest speed<1 with target=3.007s, shots=8387, hits=4459, kills=24"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-6.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:03:15.8450348",
+            "parking": [
+              "P700 local 15v15: 191.8s, samples=1916, reached=24/30, longest speed<1 with target=0.806s, shots=302, hits=190, kills=2"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/baseline-parks-7.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:06:47.1936324",
+            "parking": [
+              "P700 local 15v15: 403.6s, samples=4031, reached=24/30, longest speed<1 with target=2.005s, shots=4511, hits=1290, kills=9"
+            ]
+          }
+        ]
+      }
+    ],
+    "changed": [
+      {
+        "file": ".scratch/p930/changed-parks-1.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:06:04.7249364",
+            "parking": [
+              "P700 local 15v15: 359.3s, samples=3587, reached=24/30, longest speed<1 with target=1.311s, shots=2707, hits=787, kills=4"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-2.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:04:25.9387722",
+            "parking": [
+              "P700 local 15v15: 262.5s, samples=2621, reached=24/30, longest speed<1 with target=2.005s, shots=2376, hits=816, kills=5"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-3.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:04:19.3536915",
+            "parking": [
+              "P700 local 15v15: 255.5s, samples=2552, reached=24/30, longest speed<1 with target=0.201s, shots=966, hits=426, kills=1"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-4.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:04:57.6327921",
+            "parking": [
+              "P700 local 15v15: 294.0s, samples=2936, reached=24/30, longest speed<1 with target=0.000s, shots=2097, hits=539, kills=3"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-5.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:05:59.2534959",
+            "parking": [
+              "P700 local 15v15: 355.8s, samples=3553, reached=24/30, longest speed<1 with target=1.914s, shots=4174, hits=1911, kills=15"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-6.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:06:20.4375480",
+            "parking": [
+              "P700 local 15v15: 376.8s, samples=3763, reached=24/30, longest speed<1 with target=4.213s, shots=4187, hits=1264, kills=6"
+            ]
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/changed-parks-7.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "outcome": "Passed",
+            "duration": "00:06:01.4422896",
+            "parking": [
+              "P700 local 15v15: 357.7s, samples=3573, reached=24/30, longest speed<1 with target=1.913s, shots=3373, hits=1099, kills=10"
+            ]
+          }
+        ]
+      }
+    ],
+    "finalSampleRuns": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "exploratoryRuns": [
+      1,
+      2
+    ],
+    "binarySha256": {
+      "base-bin": "57b86bd599113d315080e317a229a87f74d4c107fd80bfc7e97e09e4ec4687bc",
+      "after-bin": "4dcab69841b0d8384f7cc328f78652d00e59cd804dfce725b4d0e8b65d3505eb"
+    },
+    "loadSamples": [
+      " 08:30:07 up 6 days, 13 min,  1 user,  load average: 4.94, 4.06, 2.08",
+      " 08:36:12 up 6 days, 19 min,  1 user,  load average: 5.25, 7.46, 4.70",
+      " 08:40:39 up 6 days, 24 min,  1 user,  load average: 6.81, 6.58, 4.96",
+      " 08:44:59 up 6 days, 28 min,  1 user,  load average: 5.65, 5.81, 4.99",
+      " 08:49:58 up 6 days, 33 min,  1 user,  load average: 2.07, 3.61, 4.28",
+      " 08:57:29 up 6 days, 40 min,  1 user,  load average: 0.44, 1.53, 3.03"
+    ]
+  },
+  "isolations": {
+    "visibility": [
+      {
+        "file": ".scratch/p930/visibility-isolation-1.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "outcome": "Passed",
+            "duration": "00:00:01.0406070"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/visibility-isolation-2.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "outcome": "Passed",
+            "duration": "00:00:01.0337703"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/visibility-isolation-3.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "outcome": "Passed",
+            "duration": "00:00:01.0078841"
+          }
+        ]
+      }
+    ],
+    "paths": [
+      {
+        "file": ".scratch/p930/paths-isolation-1.trx",
+        "counters": {
+          "total": 9,
+          "executed": 9,
+          "passed": 4,
+          "failed": 5,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0003156",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Artwork\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005119"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003120"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0001829"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002702",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0004131",
+            "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \".scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009496"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0001651",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0048070",
+            "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \".scra\"\u00b7\u00b7\u00b7\nActual:   \"<user-home>/Development/Artwork\"\n                         \u2191 (pos 14)"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/paths-isolation-2.trx",
+        "counters": {
+          "total": 9,
+          "executed": 9,
+          "passed": 4,
+          "failed": 5,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0004122",
+            "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \".scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0047110",
+            "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \".scra\"\u00b7\u00b7\u00b7\nActual:   \"<user-home>/Development/Artwork\"\n                         \u2191 (pos 14)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0003237",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Artwork\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0011840"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005427"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0001666",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0001953"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002528",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002725"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/paths-isolation-3.trx",
+        "counters": {
+          "total": 9,
+          "executed": 9,
+          "passed": 4,
+          "failed": 5,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "outcome": "Passed",
+            "duration": "00:00:00.0003178"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0001738",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "outcome": "Failed",
+            "duration": "00:00:00.0002943",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "outcome": "Passed",
+            "duration": "00:00:00.0010421"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "outcome": "Failed",
+            "duration": "00:00:00.0004141",
+            "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \".scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "outcome": "Passed",
+            "duration": "00:00:00.0002181"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "outcome": "Failed",
+            "duration": "00:00:00.0048589",
+            "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \".scra\"\u00b7\u00b7\u00b7\nActual:   \"<user-home>/Development/Artwork\"\n                         \u2191 (pos 14)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "outcome": "Failed",
+            "duration": "00:00:00.0003327",
+            "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Artwork\"\n           \u2191 (pos 0)"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "outcome": "Passed",
+            "duration": "00:00:00.0005539"
+          }
+        ]
+      }
+    ],
+    "otherCore": [
+      {
+        "file": ".scratch/p930/other-core-isolation-1.trx",
+        "counters": {
+          "total": 7,
+          "executed": 7,
+          "passed": 6,
+          "failed": 1,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "duration": "00:00:01.4203836"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+            "outcome": "Passed",
+            "duration": "00:00:00.0600650"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Profiler_overhead_with_gc_tracking_is_bounded",
+            "outcome": "Passed",
+            "duration": "00:00:00.0011084"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Disabled_profiler_records_no_step_allocation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0041640"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets",
+            "outcome": "Passed",
+            "duration": "00:00:00.0021767"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.2754610"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:00.8612067",
+            "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/other-core-isolation-2.trx",
+        "counters": {
+          "total": 7,
+          "executed": 7,
+          "passed": 6,
+          "failed": 1,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.3562458"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets",
+            "outcome": "Passed",
+            "duration": "00:00:00.0021979"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Profiler_overhead_with_gc_tracking_is_bounded",
+            "outcome": "Passed",
+            "duration": "00:00:00.0009981"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Disabled_profiler_records_no_step_allocation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0053210"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "duration": "00:00:01.4189548"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:00.8906632",
+            "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+            "outcome": "Passed",
+            "duration": "00:00:00.0641192"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/other-core-isolation-3.trx",
+        "counters": {
+          "total": 7,
+          "executed": 7,
+          "passed": 6,
+          "failed": 1,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets",
+            "outcome": "Passed",
+            "duration": "00:00:00.0021681"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "duration": "00:00:09.2356992"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Profiler_overhead_with_gc_tracking_is_bounded",
+            "outcome": "Passed",
+            "duration": "00:00:00.0010155"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+            "outcome": "Failed",
+            "duration": "00:00:00.8483116",
+            "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Disabled_profiler_records_no_step_allocation",
+            "outcome": "Passed",
+            "duration": "00:00:00.0040360"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+            "outcome": "Passed",
+            "duration": "00:00:00.0715102"
+          },
+          {
+            "testName": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "duration": "00:00:01.4231440"
+          }
+        ]
+      }
+    ],
+    "timingClient": [
+      {
+        "file": ".scratch/p930/timing-client-isolation-1.trx",
+        "counters": {
+          "total": 3,
+          "executed": 3,
+          "passed": 3,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:04.1927678"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "duration": "00:00:03.4361402"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "duration": "00:00:03.7129101"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/timing-client-isolation-2.trx",
+        "counters": {
+          "total": 3,
+          "executed": 3,
+          "passed": 3,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "duration": "00:00:03.4302161"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "duration": "00:00:03.7710927"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:04.4320700"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/timing-client-isolation-3.trx",
+        "counters": {
+          "total": 3,
+          "executed": 3,
+          "passed": 3,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "outcome": "Passed",
+            "duration": "00:00:04.3304334"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "duration": "00:00:03.8539543"
+          },
+          {
+            "testName": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "outcome": "Passed",
+            "duration": "00:00:03.5103386"
+          }
+        ]
+      }
+    ],
+    "timingMono": [
+      {
+        "file": ".scratch/p930/timing-mono-isolation-1.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "duration": "00:00:03.8647912"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/timing-mono-isolation-2.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "duration": "00:00:04.2496747"
+          }
+        ]
+      },
+      {
+        "file": ".scratch/p930/timing-mono-isolation-3.trx",
+        "counters": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0
+        },
+        "cases": [
+          {
+            "testName": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "duration": "00:00:04.0663353"
+          }
+        ]
+      }
+    ]
+  },
+  "rawEvidence": ".scratch/p930",
+  "suite": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 119,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4715,
+        "live": 123,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2163,
+        "live": 174,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6075,
+        "live": 76,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 512.3905483700219,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 119,
+            "outcomes": {
+              "Passed": 119
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4715,
+            "outcomes": {
+              "Passed": 4712,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2163,
+            "outcomes": {
+              "Passed": 2162,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6075,
+            "outcomes": {
+              "Passed": 6066,
+              "Failed": 9
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9728381962864722,
+          "referenceMs": 3.6676,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+            "outcome": "Passed",
+            "seconds": 10.305988
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 10.8248455
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+            "outcome": "Passed",
+            "seconds": 10.6301393
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.1967752
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "4 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.05793668399564922,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05793668399564922,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "suiteExceptions": [
+    {
+      "file": ".scratch/p930/fast-final/fast/Allegiance.ClientCore.MonoGame.Tests-main.trx",
+      "counters": {
+        "total": 4715,
+        "executed": 4712,
+        "passed": 4712,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "cases": [
+        {
+          "testName": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "outcome": "NotExecuted",
+          "duration": "00:00:00.0002316",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "testName": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "outcome": "NotExecuted",
+          "duration": "00:00:00.0002948",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "testName": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "outcome": "NotExecuted",
+          "duration": "00:00:00.0007297",
+          "error": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p930/fast-final/fast/Allegiance.ClientCore.Tests-main.trx",
+      "counters": {
+        "total": 2161,
+        "executed": 2161,
+        "passed": 2160,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "cases": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+          "outcome": "Failed",
+          "duration": "00:00:00.7408891",
+          "error": "Assert.Equal() Failure: Values differ\nExpected: 1\nActual:   -2"
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p930/fast-final/fast/Allegiance.Core.Tests-main.trx",
+      "counters": {
+        "total": 6058,
+        "executed": 6058,
+        "passed": 6049,
+        "failed": 9,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0009435",
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Failed",
+          "duration": "00:00:01.3968198",
+          "error": "Assert.Empty() Failure: Collection was not empty\nCollection: [AsteroidMined { AsteroidId = 248, BpOreFraction = 228, ClusterId = 1061 }]"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0520479",
+          "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \".scra\"\u00b7\u00b7\u00b7\nActual:   \"<user-home>/Development/Artwork\"\n                         \u2191 (pos 14)"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0021889",
+          "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \".scra\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003753",
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Allegiance\"\n           \u2191 (pos 0)"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged",
+          "outcome": "Failed",
+          "duration": "00:00:00.1931411",
+          "error": "Assert.Contains() Failure: Sub-string not found\nString:    \"[tickprof] window 1s ticks=20 [broadcast.\"\u00b7\u00b7\u00b7\nNot found: \"top-alloc steps\""
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0275504",
+          "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"<user-home>/Development/Artwork\"\n           \u2191 (pos 0)"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P838GcProfTests.Step_allocation_attribution_accumulates_and_ignores_non_step_buckets",
+          "outcome": "Failed",
+          "duration": "00:00:00.0010778",
+          "error": "the step scope's allocation must be tracked"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.8001151",
+          "error": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+        }
+      ]
+    },
+    {
+      "file": ".scratch/p930/fast-final/fast/Allegiance.Lobby.Tests-main.trx",
+      "counters": {
+        "total": 119,
+        "executed": 119,
+        "passed": 119,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "cases": []
+    },
+    {
+      "file": ".scratch/p930/fast-final/fast/Allegiance.Update.Tests-main.trx",
+      "counters": {
+        "total": 28,
+        "executed": 28,
+        "passed": 28,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "cases": []
+    }
+  ],
+  "hygiene": {
+    "files": 17,
+    "issues": []
+  }
+}

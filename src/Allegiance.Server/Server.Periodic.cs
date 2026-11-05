@@ -47,7 +47,12 @@ public sealed partial class Server
             var result = mission.EvaluateCountdown(now, stationKillsCriterion: _config.Showcase.StationKillsDecideDeadline);
             if (!result.Expired) continue;
             if (mission.IsShowcasePreset)
+            {
                 Console.WriteLine($"[finale] deadline winner side={result.Winner?.Id ?? GameOver.NA} by={(result.Winner is null ? "draw" : result.Criterion)} values={mission.CountdownValues(result.Criterion)} epoch={mission.ResearchEpoch}");
+                if (ShowcaseMatchCap(mission) > 0)
+                    Console.WriteLine(FormattableString.Invariant($"[finale] cap winner side={result.Winner?.Id ?? GameOver.NA} by={(result.Winner is null ? "draw" : result.Criterion)} values={mission.CountdownValues(result.Criterion)} elapsed={now - mission.CountdownStart:0.###}"));
+            }
+            _researchFinales.Remove(mission);
             string reason = result.Winner is { } winner
                 ? $"The clock has stopped. The winner: {winner.Name} by {result.Criterion}"
                 : "The clock has stopped. The game is a draw.";

@@ -728,7 +728,9 @@ public sealed partial class Server
         // regenerates on the next start; this port assembles now). _config.Games
         // and _missions are index-aligned (one mission per game).
         var swR = (ConsoleLog.Verbose || TickProfiler.Instance is not null) ? Stopwatch.StartNew() : null;
-        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls, playerCreated: mission.PlayerCreated && _config.Showcase.MapRotation is not null);
+        // Preserve the creator's own goals and cap exclusion on every rebuild,
+        // including fixed-map servers (P930), not only map-rotation servers.
+        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls, playerCreated: mission.PlayerCreated);
         // P872/SIM-0750 — native resets the SAME CmissionIGC object and its
         // ResetMission increments m_nReplayCount after the first generation
         // (missionigc.cpp:3849-3857); the port rebuilds a fresh Mission, so the

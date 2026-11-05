@@ -15,6 +15,9 @@ public sealed class ShowcaseConfig
     public double ResearchTimeScale { get; set; } = 1;
     /// <summary>Hard simulation-time bound after a research showcase finale fires. Port orchestration.</summary>
     public double FinaleTimeoutSeconds { get; set; } = 300;
+    /// <summary>Preset match bound in native countdown seconds (Igc/igc.h:1162,1526-1528).
+    /// Zero disables the cap; an authored shorter countdown remains authoritative.</summary>
+    public double MatchCapSeconds { get; set; } = 3600;
     /// <summary>Preset policy: rank enemy station destructions before ship kills at a deadline.</summary>
     public bool StationKillsDecideDeadline { get; set; }
     public bool LoopResearchPlans { get; set; }
@@ -29,6 +32,8 @@ public sealed class ShowcaseConfig
             throw new InvalidDataException("showcase.incomeMultiplier must be finite and between 1 and 10000");
         if (!double.IsFinite(FinaleTimeoutSeconds) || FinaleTimeoutSeconds < 1 || FinaleTimeoutSeconds > 3600)
             throw new InvalidDataException("showcase.finaleTimeoutSeconds must be finite and between 1 and 3600");
+        if (!double.IsFinite(MatchCapSeconds) || (MatchCapSeconds != 0 && (MatchCapSeconds < 60 || MatchCapSeconds > 86400)))
+            throw new InvalidDataException("showcase.matchCapSeconds must be finite and either 0 or between 60 and 86400");
         if (!double.IsFinite(ResearchTimeScale) || ResearchTimeScale < 1 || ResearchTimeScale > 64)
             throw new InvalidDataException("showcase.researchTimeScale must be finite and between 1 and 64");
     }

@@ -338,6 +338,31 @@ Top-level fields: `artPath`, `staticCore`, `port`, `updatesPerSecond`,
   Printed at boot and in the tick-profiler header. See §7's cinematic mode.
 - `adminCheats` — see below.
 
+### Showcase match cap
+
+`showcase.matchCapSeconds` defaults to **3600 simulation seconds** (60 minutes).
+Use `0` to disable it; enabled values must be finite and between 60 and 86400.
+It applies to `IsShowcasePreset` missions (research/goal-rotation showcase),
+including every fresh match after game over. Offline skirmish sets it to 0
+(`SkirmishOptions.CreateConfig`), so a human skirmish stays open-ended. Ordinary games,
+LAN hosts and player-created lobby worlds retain their own countdown settings.
+
+The cap sets native `MissionParams::dtGameLength` (`Igc/igc.h:1162,1526–1528`),
+using the smaller nonzero length when `games[].gameLengthSeconds`, native
+`goals.gameLengthSeconds`, or a goal-rotation entry already supplies a countdown.
+The clock starts at STAGE_STARTED, so intermission and briefing do not spend it.
+A late research finale is clamped to that end; an earlier finale keeps its own
+deadline. Expiry uses native conquest/territory/prosperity/artifacts/flags, then
+the optional `showcase.stationKillsDecideDeadline` criterion, then ship kills
+and fewer deaths; an unresolved tie is a draw (`FedSrv/fsmission.cpp:2337–2504`;
+station kills are the P914 preset extension).
+
+Example: `"showcase": { "techMode": "research", "matchCapSeconds": 3600 }`.
+`[matchup]` includes `cap=<effective seconds>` (`0` when disabled/inapplicable).
+A capped countdown ending emits `[finale] cap winner side=<id|-1> by=<criterion|draw>
+values=<scores> elapsed=<simulation seconds>` beside the existing deadline line;
+`-1` is native `NA`. The research finale never needs to arm for the cap to work.
+
 ### Showcase map rotation
 
 `showcase.mapRotation` is opt-in operator orchestration. Omit it (or set it to

@@ -27,6 +27,8 @@ public sealed class SP6GameSpeedTests
             config.SideSelectAutoSeatSeconds);
         // Normal and Fast/Showcase all use the rig's bounded 300 s finale timeout.
         Assert.Equal(SkirmishOptions.RigFinaleTimeoutSeconds, config.Showcase.FinaleTimeoutSeconds);
+        // P930 — the showcase match cap stays off for a human skirmish.
+        Assert.Equal(0, config.Showcase.MatchCapSeconds);
     }
 
     [Fact]

@@ -10,6 +10,15 @@ public sealed partial class Server
 {
     private readonly Dictionary<Mission, (double Deadline, short ArmedBy)> _researchFinales = new();
 
+    // The effective cap includes a shorter authored countdown. Zero means this
+    // mission is outside the cap policy, even if it has its own native clock.
+    private double ShowcaseMatchCap(Mission mission) => mission.IsShowcasePreset && _config.Showcase.MatchCapSeconds > 0
+        ? mission.CountdownDuration ?? 0 : 0;
+
+    private static double? ShowcaseCountdownEnd(Mission mission) =>
+        mission.IsShowcasePreset && mission.CountdownDuration is { } duration
+            ? mission.CountdownStart + duration : null;
+
     // Explicit port orchestration. A request is scoped to its seated peer's current mission
     // and epoch; retries cannot postpone the deadline or arm the automatic next match.
     private void ArmResearchFinale(ConnectionId from, ShowcaseFinaleRequest request)
@@ -23,6 +32,7 @@ public sealed partial class Server
             || live.Ship.SideId != request.Winner || !mission.Sides.Any(s => s.Id == request.Winner && s.Active)
             || request.Epoch.ToString("N") != mission.ResearchEpoch || _researchFinales.ContainsKey(mission)) return;
         double deadline = _simNow + _config.Showcase.FinaleTimeoutSeconds;
+        if (ShowcaseCountdownEnd(mission) is { } capEnd) deadline = Math.Min(deadline, capEnd);
         _researchFinales[mission] = (deadline, request.Winner);
         Console.WriteLine(FormattableString.Invariant($"[finale] research showcase epoch={mission.ResearchEpoch} armedBy={request.Winner}: bounded finale armed; deadline={deadline:0.###}; timeout={_config.Showcase.FinaleTimeoutSeconds}s; legal loadouts only, native station damage may be unavailable"));
     }
@@ -34,6 +44,11 @@ public sealed partial class Server
             if (!_missions.Contains(mission) || mission.Stage != MissionStage.Started)
             { _researchFinales.Remove(mission); continue; }
             if (now < finale.Deadline) continue;
+            // Countdown expiry owns a coincident deadline and its cap receipt.
+            // Preserve native strict '>' (fsmission.cpp:2339), including equality:
+            // the periodic pass resolves it on the first tick beyond the end.
+            if (ShowcaseCountdownEnd(mission) is { } capEnd && now >= capEnd && finale.Deadline >= capEnd)
+                continue;
             _researchFinales.Remove(mission);
             var result = mission.EvaluateCountdown(now, deadlineReached: true,
                 stationKillsCriterion: _config.Showcase.StationKillsDecideDeadline);

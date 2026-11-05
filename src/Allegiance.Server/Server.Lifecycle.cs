@@ -1274,7 +1274,8 @@ public sealed partial class Server
         var match = _matchups[mission];
         return $"match={match.Number} seed={match.Seed}{match.Goals} " + string.Join(" ", mission.Sides.Select(side =>
             $"side{side.Id}={side.Civilization.CivilizationId}:{side.Civilization.Name}"
-            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})")) + match.Homes + match.Map;
+            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})")) + match.Homes + match.Map
+            + FormattableString.Invariant($" cap={ShowcaseMatchCap(mission):0.###}");
     }
 
     /// <summary>
@@ -1313,6 +1314,8 @@ public sealed partial class Server
         // with MapGen null (every existing config), the byte-for-byte
         // file-load path below runs unchanged.
         var goals = g.ResolveGoals(playerCreated || _config.Showcase.MapRotation is null);
+        bool isShowcasePreset = !playerCreated && !RequireLanListeners &&
+            (g.SkirmishPreset || _config.Showcase.TechMode == "research" || _config.Showcase.GoalRotation is not null);
         int homeMatch = _homeMatches.GetValueOrDefault(g) + 1;
         bool swapHomes = HomeAssignments.Swapped(g, homeMatch, _config.LiveSettings?.DebugMode == true);
         int civSeed = NextCivSeed(g);
@@ -1328,6 +1331,14 @@ public sealed partial class Server
                 + $" goalIndex={index} goalMatch={previous.Match + 1} previousGoalIndex={previous.Index}";
             _goalRotations[g] = (previous.Match + 1, index);
         }
+        // P930 preset policy uses the native dtGameLength clock and expiry ranking
+        // (Igc/igc.h:1162,1526-1528; FedSrv/fsmission.cpp:2337-2504).
+        // Apply after goal selection, before map/world assembly, on boot and every
+        // P439 rebuild. The cloned goals leave creator/rotation configuration intact.
+        if (isShowcasePreset && _config.Showcase.MatchCapSeconds > 0)
+            goals.GameLengthSeconds = (float)(goals.IsCountdownGame
+                ? Math.Min(goals.GameLengthSeconds, _config.Showcase.MatchCapSeconds)
+                : _config.Showcase.MatchCapSeconds);
         var civIds = MatchCivilizations.Rotate(g, MatchCivilizations.Resolve(g, core, civSeed), homeMatch);
         MissionMap map;
         var selectedMap = !playerCreated && _config.Showcase.MapRotation is not null ? NextMap(g) : ((MapRotationEntry Entry, int Seed, string Receipt)?)null;
@@ -1386,8 +1397,7 @@ public sealed partial class Server
         }, goals);
         // Research/rotating showcase and offline skirmish are authored presets.
         // A lobby-created world or LAN host keeps ordinary native deadline policy.
-        mission.IsShowcasePreset = !playerCreated && !RequireLanListeners &&
-            (g.SkirmishPreset || _config.Showcase.TechMode == "research" || _config.Showcase.GoalRotation is not null);
+        mission.IsShowcasePreset = isShowcasePreset;
         mission.Cookie = ++_nextMissionCookie; // P883: unique for this server lifetime; never NA.
         mission.Skills = new SkillTelemetry(++_skillMatchNumber, mission.Sides.Select(s => s.Id));
         foreach (var (side, selection) in researchPlans)

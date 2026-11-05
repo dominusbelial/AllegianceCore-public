@@ -184,7 +184,9 @@ public sealed record SkirmishOptions
             Port = HostLan ? HostPort : 0, BindAddress = HostLan ? "0.0.0.0" : "127.0.0.1",
             Discovery = new() { Enabled = HostLan },
             SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
-            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation, StationKillsDecideDeadline = StationKillsDecideDeadline },
+            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds, GoalRotation = GoalRotation, StationKillsDecideDeadline = StationKillsDecideDeadline,
+                // P930's match cap is rig/showcase orchestration; a human skirmish keeps native open-ended games.
+                MatchCapSeconds = 0 },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = !HostLan && TechMode == "unlocked", Money = 1_000_000 },

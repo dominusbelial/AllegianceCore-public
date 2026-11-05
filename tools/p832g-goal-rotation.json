@@ -4,6 +4,7 @@
   "updatesPerSecond": 20,
   "sideSelectAutoSeatSeconds": 30,
   "showcase": {
+    "matchCapSeconds": 3600,
     "techMode": "research",
     "incomeMultiplier": 5000,
     "researchTimeScale": 16,

@@ -5805,3 +5805,57 @@ Raw TRX/logs: task-worktree `.scratch/p927/p927-never-parks-{1..8}.trx` and
 successful timing samples are retained in
 [P927 verification](reports/P927_assets/verification.json) and the
 [P927 report](reports/P927_REPORT.md).
+
+## P930 validation — local scratch and seating, 2026-11-05
+
+The final P930 Fast-tier run reproduced the existing fixture-ancestry failures
+with mandatory worktree-local `TMPDIR`. Each of three separate
+`PlayerBundlePathsTests` family runs had **5 failed / 4 passed / 0 skipped**:
+Artwork executable fallback, Artwork/NativeSource missing defaults, local sky
+config precedence, and native-source install-subdirectory guessing failed.
+The fake outside-repository executable directory discovers the real checkout's
+ancestor `local.env`; no resolver or fixture source changed. These are persistent
+environment/fixture failures already recorded above, not new cap behavior.
+
+`ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`
+failed in the Fast run at its side assertion (expected `1`, observed `-2`), then
+passed **3/3** exact-method isolation invocations. This retains the existing
+asynchronous seating/logon-drain flake qualification; no seating, visibility,
+transport or assertion code changed.
+
+An earlier interrupted attempt also hit the already-known read-only default
+profile restoration in
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`.
+The final run uses task-local `XDG_CONFIG_HOME`; that test and all 4712 executable
+MonoGame cases passed, with three optional private-pack cases skipped.
+The interrupted attempt is not reported as a completed full-suite gate.
+
+Raw evidence: task-worktree `.scratch/p930/fast-final/`,
+`.scratch/p930/{visibility,paths}-isolation-{1..3}.trx`; compact outcomes and
+parking controls: [P930 verification](reports/P930_assets/verification.json).
+Final gate qualifications and parking counts are in
+[P930 report](../MATCH_CAP_P930.md).
+
+The complete final Fast gate covered **13,100 cases: 13,087 passed, 10 failed,
+3 skipped**, with four additional timing-limit violations. Other final failures
+and their separate three-run follow-ups:
+
+| Test | Follow-up outcome | Qualification |
+|---|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | pass/pass/pass (~1.42 s) | Sweep received one extra queued mining report; existing mining receipt intermittency. |
+| `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` and `Step_allocation_attribution_accumulates_and_ignores_non_step_buckets` | Both pass/pass/pass; all four profiler-family cases pass each invocation | Sweep missed step allocation values. Profiler implementation unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail (0.861/0.891/0.848 s) | Existing null target assertion at line 179, also persistent in the prior dispatch-base controls recorded above. Remains open. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass/pass/pass (3.865/4.250/4.066 s) | Timing only: 10.306 s in sweep. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass/pass/pass (3.713/3.771/3.854 s) | Timing only: 10.825 s in sweep. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases pass/pass/pass, 3.430–4.433 s | Timing only: civ 25 took 10.630 s in sweep. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass (9.275/9.356/9.236 s) | Timing only: 10.197 s in sweep. |
+
+Raw follow-ups: `.scratch/p930/other-core-isolation-{1..3}.trx`,
+`.scratch/p930/timing-{client,mono}-isolation-{1..3}.trx`. No assertion, timing
+limit, tier, simulation law or bot policy was changed to obtain these outcomes.
+The full-suite gate remains failed/qualified.
+
+P930 final-binary parking controls (runs 3–7): **5/5 base and 5/5 changed passes**, zero skips.
+Early exploratory runs 1–2 are retained separately. Samples overlap on the
+shared host; no synthetic load was generated. See the P930 report/evidence
+for sample IDs, server binary hashes and observed idle durations.

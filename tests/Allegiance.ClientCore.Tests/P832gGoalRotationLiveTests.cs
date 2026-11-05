@@ -26,6 +26,7 @@ public sealed class P832gGoalRotationLiveTests(ITestOutputHelper output)
         config.Games[0].CivSeed = 832;
         config.Games[0].Goals = mode == "fixed" ? new() { Flags = 2, TeamKills = 5 } : new();
         config.Showcase.GoalRotation = mode == "fixed" ? null : new() { Mode = mode };
+        config.Showcase.MatchCapSeconds = 0; // This fixture checks unmodified authored goal tuples.
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(config);
         using var peer = P660NextMatchLiveTests.Connect(server, "P832g-observer", 83207);
@@ -65,6 +66,7 @@ public sealed class P832gGoalRotationLiveTests(ITestOutputHelper output)
             config.BenchmarkSeed = 832;
             config.Showcase = new() { TechMode = "research", GoalRotation = new() { Entries =
                 [new() { Name = "flags", Goals = new() { Flags = 1 } }, new() { Name = "artifacts", Goals = new() { Artifacts = 1 } }] } };
+            config.Showcase.MatchCapSeconds = 0; // This fixture isolates flag/artifact victories.
             config.LiveSettings.TestHarness = null;
             config.Games[0].Map = "";
             config.Games[0].CivSeed = 832;

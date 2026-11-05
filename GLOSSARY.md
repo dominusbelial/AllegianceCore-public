@@ -112,6 +112,17 @@ list in **reverse**.
   `tools/allegiance-mcp/BotManager.Exploration.cs` resets adapted fleets' scout intel on client mission generations.
   `tools/p819-side-bias-proof/matchups.py` groups results by map. Operator reference:
   `docs/GUIDE.md`; report: `docs/reports/P926_REPORT.md`. No new native rule.
+- **Showcase match cap (P930, preset policy)** — `showcase.matchCapSeconds`
+  defaults to 3600 simulation seconds (`0` off), applied after goal selection in
+  `src/Allegiance.Server/Server.Lifecycle.cs` on boot and every fresh rebuild.
+  A shorter authored countdown wins; research finales clamp to its end in
+  `src/Allegiance.Server/Server.Showcase.cs`. Native `dtGameLength`
+  (`Igc/igc.h:1162,1526-1528`) drives the ordinary clock and timeout ranking
+  (`FedSrv/fsmission.cpp:2337-2504`), with the P914 station-kill preset option.
+  Cap receipts come from `src/Allegiance.Server/Server.Periodic.cs`; tests:
+  `tests/Allegiance.ClientCore.Tests/P930MatchCapTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P930MatchCapLiveTests.cs`.
+  Report: `MATCH_CAP_P930.md`.
 - **Per-match goal rotation (P832g, preset policy)** — opt-in
   `showcase.goalRotation` (`cycle`/seeded `random`, no consecutive repeats),
   `src/Allegiance.Server/GoalRotationConfig.cs`; selects creator parameters before
