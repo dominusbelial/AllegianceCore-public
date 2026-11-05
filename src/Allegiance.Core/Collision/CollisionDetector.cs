@@ -12,6 +12,73 @@ public sealed class CollisionDetector
 {
     private readonly List<Collider> _colliders = [];
     private readonly CollisionQueue _queue = new();
+    private readonly Dictionary<Geometry, int> _groups = new();
+    private int[] _groupIds = [];
+    private CollisionTest[] _directResults = [];
+    private bool[] _directTested = [];
+    private readonly Dictionary<long, CollisionTest> _solved = new();
+    private readonly List<(int I, int J)> _pairs = [];
+    private readonly List<(int I, int J)> _work = [];
+    private int[] _workIds = [];
+    private CollisionTest[] _results = [];
+    private readonly Dictionary<long, int> _unique = new();
+
+    private static T[] Buffer<T>(ref T[] buffer, int count)
+    {
+        if (buffer.Length < count) Array.Resize(ref buffer, Math.Max(count, buffer.Length * 2));
+        return buffer;
+    }
+
+    // P928: sector-local frame storage. Never shared between sectors or held
+    // by broadcast workers. A nested callback gets independent storage.
+    private readonly List<Collider> _pool = [];
+    private bool _frameActive;
+    private int _poolCursor;
+
+    internal Frame BeginFrame()
+    {
+        if (_frameActive) return new CollisionDetector().BeginFrame();
+        _frameActive = true;
+        _poolCursor = 0;
+        GeometricPairTests = 0;
+        _colliders.Clear();
+        _queue.Clear();
+        return new(this);
+    }
+
+    internal readonly struct Frame(CollisionDetector detector) : IDisposable
+    {
+        public CollisionDetector Detector => detector;
+        public void Dispose()
+        {
+            for (int i = 0; i < detector._poolCursor; i++) detector._pool[i].Release();
+            detector._colliders.Clear();
+            detector._queue.Clear();
+            detector._groups.Clear(); // geometry keys contain hull references
+            detector._frameActive = false;
+        }
+    }
+
+    internal Collider CreateCollider(object? data, Vector3 position, Vector3 velocity,
+        Sim.Orientation? orientation, CvhFile? hull, float desiredRadius, bool isStatic,
+        int fallbackShape = HitShape.Sphere)
+    {
+        Collider collider;
+        if (_poolCursor == _pool.Count)
+        {
+            collider = new(data, position, velocity, orientation ?? Sim.Orientation.Identity, hull, desiredRadius, isStatic, fallbackShape);
+            _pool.Add(collider);
+            _poolCursor++;
+        }
+        else
+        {
+            // Count the borrowed slot before Reset: a failing hull-support
+            // build must still release its newly assigned model/hull references.
+            collider = _pool[_poolCursor++];
+            collider.Reset(data, position, velocity, orientation, hull, desiredRadius, isStatic, fallbackShape);
+        }
+        return collider;
+    }
 
     public IReadOnlyList<Collider> Colliders => _colliders;
     public int CandidatePairs => BroadPhase.OverlappingPairs(_colliders).Count();
@@ -72,8 +139,12 @@ public sealed class CollisionDetector
         // with exactly the same geometric inputs. Solve each ordered geometry
         // pair once per Detect call, then expand onto the ORIGINAL colliders.
         // No persistent cache, approximation, or gameplay-state filtering.
-        var groups = new Dictionary<Geometry, int>();
-        var groupIds = new int[_colliders.Count];
+        var groups = _groups;
+        // No removes: group numbers still come from first encounter in collider
+        // registration order. Dictionary enumeration is never used here.
+        groups.Clear();
+        groups.EnsureCapacity(_colliders.Count);
+        var groupIds = Buffer(ref _groupIds, _colliders.Count);
         for (int i = 0; i < _colliders.Count; i++)
         {
             var key = Geometry.Of(_colliders[i]);
@@ -90,9 +161,12 @@ public sealed class CollisionDetector
             // larger worlds retain the sparse dictionary and unique geometry
             // still needs no result cache at all.
             bool direct = groups.Count * 2 <= _colliders.Count && groups.Count <= 256;
-            var resultsByGroup = direct ? new CollisionTest[groups.Count * groups.Count] : null;
-            var tested = direct ? new bool[resultsByGroup!.Length] : null;
-            Dictionary<long, CollisionTest>? solved = !direct && groups.Count < _colliders.Count ? [] : null;
+            int cells = direct ? groups.Count * groups.Count : 0;
+            var resultsByGroup = direct ? Buffer(ref _directResults, cells) : null;
+            var tested = direct ? Buffer(ref _directTested, cells) : null;
+            if (direct) Array.Clear(tested!, 0, cells);
+            _solved.Clear();
+            Dictionary<long, CollisionTest>? solved = !direct && groups.Count < _colliders.Count ? _solved : null;
             foreach (var (i, j) in BroadPhase.OverlappingPairs(_colliders, pairFilter))
             {
                 CollisionTest ev;
@@ -124,14 +198,18 @@ public sealed class CollisionDetector
             return _queue.Ordered();
         }
 
-        var pairs = BroadPhase.OverlappingPairs(_colliders, pairFilter).ToList();
+        var pairs = _pairs;
+        pairs.Clear();
+        foreach (var pair in BroadPhase.OverlappingPairs(_colliders, pairFilter)) pairs.Add(pair);
         var work = pairs;
         int[]? workIds = null;
         if (groups.Count < _colliders.Count)
         {
-            work = [];
-            workIds = new int[pairs.Count];
-            var unique = new Dictionary<long, int>();
+            work = _work;
+            work.Clear();
+            workIds = Buffer(ref _workIds, pairs.Count);
+            var unique = _unique;
+            unique.Clear();
             for (int k = 0; k < pairs.Count; k++)
             {
                 var (i, j) = pairs[k];
@@ -145,7 +223,7 @@ public sealed class CollisionDetector
             }
         }
         GeometricPairTests = work.Count;
-        var results = new CollisionTest[work.Count];
+        var results = Buffer(ref _results, work.Count);
         if (parallel && threads > 1)
             Parallel.For(0, work.Count, NewOpts(threads), k =>
             {

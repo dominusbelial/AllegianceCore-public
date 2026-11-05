@@ -23,17 +23,29 @@ namespace Allegiance.Core.Collision;
 /// </summary>
 public sealed class Collider
 {
-    private readonly List<HullSupport> _supports = [];
+    private IReadOnlyList<HullSupport> _supports = Array.Empty<HullSupport>();
+    private readonly Orientation _identity = new();
     private int _shape;
 
     /// <summary>Create a collider from the given state. A <c>null</c> hull means a primitive (default sphere).</summary>
     public Collider(object? data, Vector3 position, Vector3 velocity, Orientation orientation, CvhFile? hull,
         float desiredRadius, bool isStatic, int fallbackShape = HitShape.Sphere)
+        => Reset(data, position, velocity, orientation ?? throw new ArgumentNullException(nameof(orientation)), hull, desiredRadius, isStatic, fallbackShape);
+
+    // P928: a frame owns this body until dispatch finishes. Every field that a
+    // fresh constructor would initialise is assigned here, including step bounds.
+    internal void Reset(object? data, Vector3 position, Vector3 velocity, Orientation? orientation, CvhFile? hull,
+        float desiredRadius, bool isStatic, int fallbackShape = HitShape.Sphere)
     {
+        Ordinal = 0;
+        StepStart = StepStop = BoundsMin = BoundsMax = Vector3.Zero;
+        _shape = 0;
+        _identity.Reset();
+        _supports = Array.Empty<HullSupport>();
         Data = data;
         Position = position;
         Velocity = velocity;
-        Orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
+        Orientation = orientation ?? _identity;
         Hull = hull;
         IsStatic = isStatic;
 
@@ -62,10 +74,18 @@ public sealed class Collider
             // is immutable after build, so building it once per model (per name,
             // via CollisionHullCache) instead of once per collider per tick keeps
             // the per-step collision cost flat as the field population grows.
-            _supports.AddRange(SupportCache.GetValue(hull, h => BuildSupports(h)));
+            _supports = SupportCache.GetValue(hull, static h => BuildSupports(h));
         }
 
         Shape = TrueShape;
+    }
+
+    internal void Release()
+    {
+        Data = null;
+        Hull = null;
+        Orientation = _identity;
+        _supports = Array.Empty<HullSupport>();
     }
 
     /// <summary>Shared per-<see cref="CvhFile"/> support geometry, keyed by
@@ -82,27 +102,27 @@ public sealed class Collider
     }
 
     /// <summary>The attached data object (a <c>Model</c>), used for identity in reports.</summary>
-    public object? Data { get; }
+    public object? Data { get; private set; }
 
     /// <summary>Stable ordering ordinal, assigned by the detector in input order; used for deterministic tie-breaking.</summary>
     public int Ordinal { get; set; }
 
     public Vector3 Position { get; set; }
     public Vector3 Velocity { get; set; }
-    public Orientation Orientation { get; set; }
-    public CvhFile? Hull { get; }
+    public Orientation Orientation { get; set; } = null!;
+    public CvhFile? Hull { get; private set; }
 
     /// <summary>Whether the body is static: its swept AABB does not travel this step.</summary>
-    public bool IsStatic { get; }
+    public bool IsStatic { get; private set; }
 
     /// <summary>The file's original bounding-sphere radius (<c>m_originalRadius</c>).</summary>
-    public float OriginalRadius { get; }
+    public float OriginalRadius { get; private set; }
 
     /// <summary>The game-set bounding radius (<c>m_desiredRadius</c>); the scale base.</summary>
-    public float DesiredRadius { get; }
+    public float DesiredRadius { get; private set; }
 
     /// <summary><c>m_scale = desiredRadius / originalRadius</c> (<c>HitTest.cpp:571</c>); every hull vertex read is scaled by it.</summary>
-    public float Scale { get; }
+    public float Scale { get; private set; }
 
     /// <summary>The bounding-sphere radius the swept AABB uses (<c>m_radius</c>).</summary>
     public float EffectiveRadius { get; private set; }
@@ -111,7 +131,7 @@ public sealed class Collider
     public Vector3 EllipseEquation { get; private set; }
 
     /// <summary>The collider's true (most detailed) shape.</summary>
-    public int TrueShape { get; }
+    public int TrueShape { get; private set; }
 
     /// <summary>The collider's current working shape (may be reduced from <see cref="TrueShape"/>).</summary>
     public int Shape { get => _shape; set => SetShapeInternal(value); }

@@ -867,6 +867,63 @@ public sealed partial class Ship : Model, IShipIgc
         return (short)NextLaunchSlot;
     }
 
+    private List<(Weapon Weapon, short Mount)>? _turretWeaponScratch;
+    private bool _turretWeaponScratchInUse;
+
+    private void UpdateMountedWeapons(double now, double dt)
+    {
+        int selected = (int)(StateM & ShipControlState.SelectedWeaponMask);
+        for (int i = _hull.MaxFixedWeapons; i > 0; i--)
+        {
+            int mount = (i + selected) % _hull.MaxFixedWeapons;
+            // First match, including duplicate MountIds, exactly as FirstOrDefault.
+            for (int j = 0; j < _weapons.Count; j++)
+                if (_weapons[j].MountId == mount) { _weapons[j].Update(now); break; }
+        }
+        if (_weapons.Count == 0) return;
+        bool ownsScratch = !_turretWeaponScratchInUse;
+        var turrets = ownsScratch ? _turretWeaponScratch ??= [] : new List<(Weapon Weapon, short Mount)>();
+        if (ownsScratch) _turretWeaponScratchInUse = true;
+        try
+        {
+            // OrderBy buffers the selected weapon objects/keys before it calls
+            // Update. Preserve that snapshot even if a firing callback changes
+            // the loadout. Stable insertion keeps equal mounts in list order.
+            for (int i = 0; i < _weapons.Count; i++)
+            {
+                var weapon = _weapons[i];
+                if (weapon.MountId < _hull.MaxFixedWeapons) continue;
+                int at = turrets.Count;
+                turrets.Add((weapon, weapon.MountId));
+                while (at > 0 && turrets[at - 1].Mount > weapon.MountId)
+                {
+                    turrets[at] = turrets[at - 1];
+                    at--;
+                }
+                turrets[at] = (weapon, weapon.MountId);
+            }
+            for (int i = 0; i < turrets.Count; i++)
+            {
+                var weapon = turrets[i].Weapon;
+                if (weapon.MountId >= _hull.MaxFixedWeapons && weapon.Gunner is { } gunner)
+                {
+                    // Keep native value-copy semantics, including old basis
+                    // references retained by callbacks. Pooling this mutable
+                    // Orientation would mutate a previously published value.
+                    Orientation o = gunner.Orientation.Copy();
+                    gunner.ExecuteTurretMove(now - dt, now, o);
+                    gunner.SetOrientation(o);
+                }
+                weapon.Update(now);
+            }
+        }
+        finally
+        {
+            turrets.Clear();
+            if (ownsScratch) _turretWeaponScratchInUse = false;
+        }
+    }
+
     /// <summary>The weapons mounted on this ship, in mount order. Driven by
     /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.
     /// Realised from the ship's <see cref="Mission"/> core at mount time. This is
@@ -7482,7 +7539,9 @@ public sealed partial class Ship : Model, IShipIgc
         // The target sector is resolved through this port's existing
         // sectors-by-id lookup (Mission.Sectors searched by Sector.Id — the
         // same shape Server.cs:2748 / Mission.cs:366 use); no new index added.
-        var target = mission.Sectors.FirstOrDefault(s => s.Id == targetClusterId);
+        Sector? target = null;
+        foreach (var candidate in mission.Sectors)
+            if (candidate.Id == targetClusterId) { target = candidate; break; }
         if (target is null)
         {
             LogNoPath($"{what} is in sector {targetClusterId}, not present in the mission");
@@ -7849,7 +7908,7 @@ public sealed partial class Ship : Model, IShipIgc
             // H-18: single-commitment — never send two constructors to the same
             // asteroid. Another builder already owns this rock, so pick again
             // next tick rather than duplicating the build (avoid occupied rocks).
-            if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
+            if (HasBuildAt(sector, rock)) return;
             BuilderAsteroidTarget = rock; // fly before drilling; shipIGC.cpp:2810-2827
             TryStartBuilderBuild(sector.LastUpdate);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
@@ -7970,7 +8029,7 @@ public sealed partial class Ship : Model, IShipIgc
         else if (RepairStationTarget is { } station)
         {
             if (!IsFriendlySide(station.SideId) ||
-                Mission?.Sectors.FirstOrDefault(s => s.Id == station.ClusterId)?.StationRuntimes.Contains(station) != true)
+                !IsLiveRepairStation(station))
             { SetRepairOrder(null); return; }
             if (!Sector.StationRuntimes.Contains(station)) return;
             position = station.Center; velocity = Vector3.Zero;
@@ -8000,15 +8059,30 @@ public sealed partial class Ship : Model, IShipIgc
         if ((WingmanBehaviour & 4) != 0 &&
             _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0)
                 is { Type.Type: DataPartTypeIGC.MineLauncher } &&
-            Sector.Models.OfType<Ship>().Any(s => s.SideId != SideId &&
-                (s.PilotType == PilotTypeWingman || s.PilotType >= PilotTypePlayer) &&
-                (s.Position - Position).Length() < 2500f))
+            HasNearbyMineThreat(Sector))
             state |= ShipControlState.MineFire;
         if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f && needsRepair)
             state |= ShipControlState.AllWeapons;
         StateM = (StateM & ~(ShipControlState.MoveButtonsMask | ShipControlState.WeaponsMask |
             ShipControlState.MineFire)) | state;
         if ((state & ShipControlState.MineFire) != 0) TryDeployRepairMine(now);
+    }
+
+    private bool IsLiveRepairStation(Station station)
+    {
+        if (Mission is not { } mission) return false;
+        foreach (var sector in mission.Sectors)
+            if (sector.Id == station.ClusterId) return sector.StationRuntimes.Contains(station);
+        return false;
+    }
+
+    private bool HasNearbyMineThreat(Sector sector)
+    {
+        foreach (var model in sector.Models)
+            if (model is Ship ship && ship.SideId != SideId &&
+                (ship.PilotType == PilotTypeWingman || ship.PilotType >= PilotTypePlayer) &&
+                (ship.Position - Position).Length() < 2500f) return true;
+        return false;
     }
 
     private void TryDeployRepairMine(double now)
@@ -8552,12 +8626,16 @@ public sealed partial class Ship : Model, IShipIgc
         if (!IsNpc || PilotType != PilotTypeMiner || StationId is not null || Dead || Ore <= 0 ||
             PlanCommandId != OrderChange.CidGoto || PlanTarget is not { } plan ||
             Sector is not { } sector || Mission is not { } mission || plan.ClusterId != sector.Id) return;
-        var station = sector.StationRuntimes.FirstOrDefault(s => s.StationId == plan.StationId);
+        Station? station = null;
+        foreach (var candidate in sector.StationRuntimes)
+            if (candidate.StationId == plan.StationId) { station = candidate; break; }
         if (station is null || !station.Type.HasCapability(teleportUnload)) return;
         float radius = station.Radius + 0.5f * HullType.Length + 100f;
         var p = station.Data.Position;
         if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius) return;
-        var side = mission.Sides.FirstOrDefault(s => s.Id == SideId);
+        Side? side = null;
+        foreach (var candidate in mission.Sides)
+            if (candidate.Id == SideId) { side = candidate; break; }
         if (side is null) return;
         float proceeds = Ore * EffectiveOreCreditPerUnit();
         side.Money += (long)proceeds;
@@ -8576,7 +8654,9 @@ public sealed partial class Ship : Model, IShipIgc
         // P652c: IsBuilding can also be an idle reservation. Only a registered
         // effect means drilling has actually started; preserve that construction
         // on repeated orders, but release a reservation for the accepted trip.
-        if (Sector?.BuildingEffects.Any(e => ReferenceEquals(e.Builder, this)) == true) return;
+        if (Sector is { } buildSector)
+            foreach (var effect in buildSector.BuildingEffects)
+                if (ReferenceEquals(effect.Builder, this)) return;
         IsBuilding = false;
         PlanTarget = null; PlanCommandId = OrderChange.CidNone;
         GotoWaypoint = null; MiningAsteroidTarget = null; LayerAsteroidTarget = null;
@@ -8851,10 +8931,17 @@ public sealed partial class Ship : Model, IShipIgc
         // H-18: another builder claimed this rock while we travelled — back off
         // and pick again next decision cycle rather than crashing on the
         // occupied-rock guard inside StartBuildingEffect (Sector.cs).
-        if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
+        if (HasBuildAt(sector, rock)) return;
         Mission!.Site.CreateBuildingEffect(now, rock, this);
         if (rock.BuildingEffect is null) sector.StartBuildingEffect(this, rock, type, now);
         BuilderAsteroidTarget = null;
+    }
+
+    private static bool HasBuildAt(Sector sector, Asteroid rock)
+    {
+        foreach (var effect in sector.BuildingEffects)
+            if (ReferenceEquals(effect.Target, rock)) return true;
+        return false;
     }
 
     private (DataStationIGC? Station, Ship? Carrier) FindRetreatRepairDestination()
@@ -8895,8 +8982,14 @@ public sealed partial class Ship : Model, IShipIgc
     {
         if (SideId is not { } side || other is null) return false;
         if (other == side) return true;
-        var group = Mission?.Sides.FirstOrDefault(s => s.Id == side)?.AllyGroup;
-        return group is not null && Mission!.Sides.Any(s => s.Id == other && s.AllyGroup == group);
+        if (Mission is not { } mission) return false;
+        var group = default(sbyte?);
+        foreach (var candidate in mission.Sides)
+            if (candidate.Id == side) { group = candidate.AllyGroup; break; }
+        if (group is null) return false;
+        foreach (var candidate in mission.Sides)
+            if (candidate.Id == other && candidate.AllyGroup == group) return true;
+        return false;
     }
 
     private void UpdateDamageRetreat(double now)
@@ -9422,22 +9515,7 @@ public sealed partial class Ship : Model, IShipIgc
         // shipIGC.cpp:322), so the loop keys off the weapon's mount index.
         // shipIGC.cpp:312-349: selected fixed gun first, then descending
         // cyclic mounts; turret mounts ascend. Preserve energy priority.
-        int selected = (int)(StateM & ShipControlState.SelectedWeaponMask);
-        for (int i = _hull.MaxFixedWeapons; i > 0; i--)
-        {
-            int mount = (i + selected) % _hull.MaxFixedWeapons;
-            _weapons.FirstOrDefault(w => w.MountId == mount)?.Update(now);
-        }
-        foreach (var weapon in _weapons.Where(w => w.MountId >= _hull.MaxFixedWeapons).OrderBy(w => w.MountId))
-        {
-            if (weapon.MountId >= _hull.MaxFixedWeapons && weapon.Gunner is { } gunner)
-            {
-                Orientation o = gunner.Orientation.Copy();       // Orientation o = pshipGunner->GetOrientation()
-                gunner.ExecuteTurretMove(now - dt, now, o);      // pshipGunner->ExecuteTurretMove(lastUpdate, now, &o)
-                gunner.SetOrientation(o);                        // pshipGunner->SetOrientation(o)
-            }
-            weapon.Update(now);
-        }
+        UpdateMountedWeapons(now, dt);
 
         // shipIGC.cpp:347-349: weapons take energy before shield regeneration.
         UpdateShield((float)dt);

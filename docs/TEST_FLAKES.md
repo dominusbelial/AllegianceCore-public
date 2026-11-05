@@ -4,6 +4,46 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P928 validation — one Fast sweep, serial Live runs and base controls, 2026-11-04
+
+Exactly one Fast sweep: **13,060 passed / 10 failed / 3 optional Meshy-pack
+skips**, 13,073 executions in 882.0 s. All nine infrastructure checks passed.
+The missile-tip failure also exceeded the 10 s guard (38.498 s). The sweep
+remains **FAIL**; no full-tier retry, timeout relaxation, tier change or unrelated
+implementation fix was made. Artwork and worktree `local.env` were available;
+all task-specific tests and the 126-case affected cohort had zero skips.
+
+Each affected test family was then run three times with serial collection
+settings. To distinguish baseline defects, the exact dispatch-base Core source
+files were temporarily restored, the new scratch partial and scratch-API test
+were removed for compilation, and the same failed methods were run three times.
+All optimized sources/tests were restored afterward and requalified.
+
+| Sweep failure | Optimized tree: three filtered runs | Dispatch base: three controls | Qualification |
+|---|---|---|---|
+| Five `PlayerBundlePathsTests` cases (Artwork executable fallback; Artwork/NativeSource missing defaults; local config precedence; native-source subdirectory guessing) | Each **fail/fail/fail**; selected SkyPack companion cases pass 3/3 | Same five cases **fail/fail/fail**, companions pass 3/3 | Existing mandated in-worktree TMPDIR discovers ancestor `local.env`; no resolver/fixture change. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail** | **fail/fail/fail** | Existing null target assertion; same dispatch-base behavior. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **fail/fail/fail** | **fail/fail/fail** | Existing expected flying=3 / observed docked=2 history. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail** | **pass/fail/pass** | Existing partial-tip receipt failure with final lock 1.000, sensitive to receipt timing. Not classified as cleared or solely load-induced. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass** | **pass/fail/fail** | Sweep observed 31.2 simulated seconds against [28,31]; existing clock/receipt boundary. |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **pass/pass/fail** | **pass/pass/pass** | Existing mining receipt family (also ledgered in P903/P926): sweep saw one queued report after the asserted drain. Intermittent here; this small control sample does not establish its cause or clear the failure. |
+
+The required normal-home showcase never-parks case passes **5/5**. The additional
+swapped-home case is **pass/fail/pass/pass/pass**: the failed second run reached
+17/30 objectives at 480 s, with **1.705 s** maximum parked-with-target, 3,508
+shots and 1,448 hits. This is the exact pre-existing swapped arrival-deadline
+failure ledgered under the P925+P926 merge below (2/3 in standalone base-era
+runs). The final three serial repetitions pass; every one of the ten normal /
+swapped executions holds the actual five-second parking bound (maximum 2.006 s).
+Do not relabel the composite swapped gate as wholly green.
+
+P928's original and supplemental 500-tick fixtures pass after all allocation
+cuts; the collision-order negative control fails on tick 1. A final regression
+covers cleanup when hull-support construction throws. Evidence and qualification
+counts: [P928 report](reports/P928_REPORT.md),
+[P928 verification](reports/P928_assets/verification.json). Raw logs/TRX remain
+under `.scratch/p928/` in the task worktree. No commits or pushes were made.
+
 ## P924 verification
 
 Exactly **one Fast sweep**: **12,983 passed / 12 failed / 3 optional-pack skips**,

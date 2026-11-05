@@ -31,6 +31,7 @@ int shipCount = args.Length > 0 ? int.Parse(args[0]) : 400;
 int projectileCount = args.Length > 1 ? int.Parse(args[1]) : 240;
 int mineCount = args.Length > 2 ? int.Parse(args[2]) : 60;
 Console.WriteLine($"P835-BENCH: ships={shipCount} projectiles={projectileCount} mines={mineCount} cpu={Environment.ProcessorCount}");
+Console.WriteLine($"P928 baseline: serverGC={System.Runtime.GCSettings.IsServerGC} nativeGotoPlan=true nativeShipPhases=false nativeCollisionQueue=false");
 
 var (core, map) = LoadCoreAndMap(artRoot, args.Length > 3 ? args[3] : "m2xspiderw.igc");
 Console.WriteLine($"P835-BENCH: core={core.HullTypes.Count} hulls, {core.ProjectileTypes.Count} projectiles, {core.MineTypes.Count} mines; map clusters={map.Clusters.Count}");
@@ -51,7 +52,7 @@ static void PrintStats(string label, List<double> walls)
     var s = walls.OrderBy(x => x).ToList();
     double mean = s.Average();
     double p95 = s[(int)Math.Ceiling(0.95 * s.Count) - 1];
-    Console.WriteLine($"P835-BENCH {label}: Mission.Update mean={mean,6:0.00} ms  p95={p95,6:0.00} ms  max={s[^1],6:0.00} ms  ({s.Count} ticks)");
+    Console.WriteLine($"P835-BENCH {label}: Mission.Update mean={mean,6:0.00} ms  median={s[s.Count / 2],6:0.00} ms  p95={p95,6:0.00} ms  p99={s[(int)Math.Ceiling(.99 * s.Count) - 1],6:0.00} ms  max={s[^1],6:0.00} ms  ({s.Count} ticks)");
 }
 
 static (StaticCore core, MissionMap map) LoadCoreAndMap(string artRoot, string mapName)
@@ -108,6 +109,7 @@ internal sealed class ClashBench
         var sides = new SideSpec[] { new(0, "Alpha", civs[0].CivilizationId), new(1, "Bravo", civs[1].CivilizationId) };
         _m = Mission.Assemble(core, map, sides, new NullIgcSite());
         _m.Stage = MissionStage.Started;
+        _m.NativeGotoPlanEnabled = true;
         foreach (var s in _m.Sectors) s.CollisionHulls = hulls;
         _sector = _m.Sectors.OrderByDescending(s => s.Mineable.Count).First();
         // P863: sustain the population; lethal random salvos previously killed

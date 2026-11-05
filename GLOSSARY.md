@@ -283,6 +283,15 @@ list in **reverse**.
   `tools/p895-transport-proof/AllocationEventMeter.cs` cross-check decreasing
   runtime cumulative allocation counters without changing GC settings;
   meaning and rig plan: `docs/reports/P907_REPORT.md`, `docs/UDP_TRANSPORT.md`.
+- **Sector collision and model scratch (P928)** — each sector owns a leased
+  `src/Allegiance.Core/Collision/CollisionDetector.cs` with resettable collider
+  slots (`src/Allegiance.Core/Collision/Collider.cs`) and reusable geometry/result
+  buffers. `src/Allegiance.Core/Model/Sector.Scratch.cs` captures fresh ordered
+  model membership for each pass; disposal clears references and nested callbacks
+  use independent storage. Weapon updates retain a stable per-ship turret snapshot.
+  No simulation rule or flag changes. Pre-refactor 500-tick byte-identity fixture:
+  `tests/Allegiance.Core.Tests/Fixtures/P928Golden.csv`; replay and allocation
+  reporter: `tools/p928-allocation-proof/`; report `docs/reports/P928_REPORT.md`.
 - **Random / determinism** — the seeded RNG abstraction behind reproducible
   generation. `src/Allegiance.Core/MapGen/MapRandom.cs`.
 

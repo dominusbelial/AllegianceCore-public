@@ -1,0 +1,2787 @@
+{
+  "base": "5ca9f37ac1e9799482122ac8dd8417df27d9375b",
+  "solution": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "post-control-build.log"
+  },
+  "tools": {
+    "projects": 116,
+    "exit": 0,
+    "log": "post-control-build-tools.log"
+  },
+  "affected": [
+    {
+      "run": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_uses_rcs_not_away_facing_and_respects_skip_and_ships_only",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007126"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0098622"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Divert_uses_tangent_path_around_stationary_blockers",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002267"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006137"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mines_have_native_speed_gate_and_minefield_slowdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001529"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: True, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0437983"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_weapon_consumes_ammo_and_stops_when_empty",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020782"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022815"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Fixed_weapon_without_gunner_keeps_firing_along_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045344"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: True, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0050220"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Firing_respects_cooldown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016005"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014423"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: False, damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020243"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020802"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Unavailable_target_waits_without_completing_or_steering",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001648"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0067721"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Native_layer_waits_for_visible_buoy_stop_then_lays_before_movement_legacy_keeps_reach_radius",
+          "outcome": "Passed",
+          "duration": "00:00:00.0352096"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"station\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020462"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.ReceiveDamage_negative_amount_repairs_hull_and_does_not_touch_shield",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012461"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+          "outcome": "Passed",
+          "duration": "00:00:00.0171190"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.MountCombatWeapon_arms_every_fixed_hardpoint_and_no_turrets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0229621"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002888"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071775"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017240"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0415683"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007995"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0109326"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mine_warp_sell_trajectory_matches_independent_native_formula_trace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0053827"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018797"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: null, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000048"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2000, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001293"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_positive_power_round_still_deals_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014356"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"armed\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021315"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020721"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Explicit_warp_order_enters_at_speed_boost_uses_original_goal_and_arrival_clears_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0078161"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018122"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"ship\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019296"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019640"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008868"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Cross_side_nan_round_also_restores_enemy_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014048"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"missile\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031734"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Json_environment_and_cli_carry_both_options_with_native_defaults",
+          "outcome": "Passed",
+          "duration": "00:00:00.0464863"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029648"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008512"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 150)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0123433"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029089"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0298565"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000031"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006500"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5352765"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020306"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Missiondef_carries_both_option_bits_at_the_native_offsets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066941"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+          "outcome": "Passed",
+          "duration": "00:00:00.0120449"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021382"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_expires_and_restores_the_model_count",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054592"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007089"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014256"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: \"1\", expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002532"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 0, running: True, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0038888"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_nan_round_repairs_friendly_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0046438"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+          "outcome": "Passed",
+          "duration": "00:00:00.0078171"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_lives_in_and_ticks_with_the_sector",
+          "outcome": "Passed",
+          "duration": "00:00:00.0082026"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"missile\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029598"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045632"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Blast_weapon_uses_gunner_target_and_leads_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040651"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pure_control_and_route_loops_allocate_no_bytes_after_warmup",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039464"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Waypoint_replans_on_ship_and_target_cluster_changes_and_enter_completion",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001435"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+          "outcome": "Passed",
+          "duration": "00:00:00.0032234"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0.100000001, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002209"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Turret_weapon_fires_along_gunner_orientation_not_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0082601"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.FindPath_obeys_visibility_initial_distance_and_coward_final_cluster_exception",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003872"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: True, damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021490"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052648"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_travels_along_heading_at_weapon_speed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026776"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 1999, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000053"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.A_weapon_mounted_on_an_occupied_turret_picks_up_its_gunner_and_fires",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052707"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pickup_predicts_intercept_and_flies_through_target",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004904"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: null, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000010"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"armed\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019569"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 100, expected: 450.693848)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001147"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wide_angle_turn_uses_native_yaw_escape_and_directional_rcs",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001398"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0032789"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 14, stopping: 0, drift: 0, mask: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000014"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+          "outcome": "Passed",
+          "duration": "00:00:00.1509354"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021008"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+          "outcome": "Passed",
+          "duration": "00:00:00.0035047"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001758"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000979"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"ship\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018943"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 10, expected: 8.83922195)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000017"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001059"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0073127"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054396"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001829"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029663"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001049"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018817"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_no_bay_power_glides_and_bay_approach_keeps_native_masks",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009457"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"FALSE\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000023"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_entry_roll_compensates_current_angular_velocity",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001621"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Warp_entry_keeps_full_throttle_inside_stopping_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010217"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0059649"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041446"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Moving_ship_targets_use_native_coasting_and_approach_speed_matches",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001508"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0028671"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Broad_phase_filter_uses_registration_order_and_preserves_original_pair_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007444"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"0\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000020"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 50, expected: 153.426407)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000053"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 20, stopping: 0, drift: 0, mask: 6)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002054"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 30)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0051659"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+          "outcome": "Passed",
+          "duration": "00:00:00.0098501"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011276"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2001, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002001"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_horizon_is_inclusive_and_equal_time_ties_keep_first_candidate",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005320"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 257)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7908605"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005194"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 100, stopping: 10, drift: 30, mask: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000835"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Builder_strip_pivots_then_completes_without_dodging_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014210"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"station\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0027208"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 50, stopping: 10, drift: 30, mask: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000036"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"off\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001336"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039645"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Enter_station_goto_clears_on_docking_and_moving_ship_goto_reads_live_position",
+          "outcome": "Passed",
+          "duration": "00:00:00.0173198"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+          "outcome": "Passed",
+          "duration": "00:00:00.3784177"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:03.8429051"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0126331"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Moving_ship_targets_use_native_coasting_and_approach_speed_matches",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002074"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014166"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0053566"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 20, stopping: 0, drift: 0, mask: 6)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002144"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"missile\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033201"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0055686"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 50, stopping: 10, drift: 30, mask: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000060"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 100, expected: 450.693848)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001196"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+          "outcome": "Passed",
+          "duration": "00:00:00.0151028"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.MountCombatWeapon_arms_every_fixed_hardpoint_and_no_turrets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0216710"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025728"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041261"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Unavailable_target_waits_without_completing_or_steering",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001646"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: True, damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029298"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022657"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"ship\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019244"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+          "outcome": "Passed",
+          "duration": "00:00:00.0097515"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:03.8712764"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"0\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000019"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Enter_station_goto_clears_on_docking_and_moving_ship_goto_reads_live_position",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142192"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0055528"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"missile\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018866"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_entry_roll_compensates_current_angular_velocity",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001748"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5625897"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_expires_and_restores_the_model_count",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040078"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"off\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001209"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001177"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Firing_respects_cooldown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010778"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 10, expected: 8.83922195)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000019"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Fixed_weapon_without_gunner_keeps_firing_along_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036662"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Blast_weapon_uses_gunner_target_and_leads_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0081812"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0082915"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+          "outcome": "Passed",
+          "duration": "00:00:00.1458472"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016444"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"ship\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019093"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014664"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 14, stopping: 0, drift: 0, mask: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000022"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: null, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000055"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022380"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mine_warp_sell_trajectory_matches_independent_native_formula_trace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0165501"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001912"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mines_have_native_speed_gate_and_minefield_slowdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001674"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_weapon_consumes_ammo_and_stops_when_empty",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015671"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000040"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019166"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+          "outcome": "Passed",
+          "duration": "00:00:00.0138208"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030961"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Json_environment_and_cli_carry_both_options_with_native_defaults",
+          "outcome": "Passed",
+          "duration": "00:00:00.0494527"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030101"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Broad_phase_filter_uses_registration_order_and_preserves_original_pair_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007788"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019884"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021063"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Waypoint_replans_on_ship_and_target_cluster_changes_and_enter_completion",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001561"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Turret_weapon_fires_along_gunner_orientation_not_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0160273"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025534"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020309"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: null, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000011"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: True, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025989"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017252"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"station\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019811"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011557"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+          "outcome": "Passed",
+          "duration": "00:00:00.0032969"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Cross_side_nan_round_also_restores_enemy_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015514"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_nan_round_repairs_friendly_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0080503"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"station\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0158022"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001912"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_uses_rcs_not_away_facing_and_respects_skip_and_ships_only",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006484"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019906"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.ReceiveDamage_negative_amount_repairs_hull_and_does_not_touch_shield",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012218"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 0, running: True, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023389"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_horizon_is_inclusive_and_equal_time_ties_keep_first_candidate",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004263"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Native_layer_waits_for_visible_buoy_stop_then_lays_before_movement_legacy_keeps_reach_radius",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071731"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019298"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012294"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 30)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045755"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001263"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014638"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 100, stopping: 10, drift: 30, mask: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000875"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pickup_predicts_intercept_and_flies_through_target",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004121"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Explicit_warp_order_enters_at_speed_boost_uses_original_goal_and_arrival_clears_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040815"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004509"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_positive_power_round_still_deals_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016463"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030912"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2001, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001979"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006338"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Builder_strip_pivots_then_completes_without_dodging_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012630"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"armed\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018752"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2000, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001112"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0235597"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0159210"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.FindPath_obeys_visibility_initial_distance_and_coward_final_cluster_exception",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003878"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0.100000001, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002212"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 50, expected: 153.426407)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000032"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: True, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0046855"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007749"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 257)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7990472"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0970139"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0024884"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+          "outcome": "Passed",
+          "duration": "00:00:00.3667229"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Missiondef_carries_both_option_bits_at_the_native_offsets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0088313"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003902"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: False, damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020709"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.A_weapon_mounted_on_an_occupied_turret_picks_up_its_gunner_and_fires",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017442"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007050"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: \"1\", expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002061"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pure_control_and_route_loops_allocate_no_bytes_after_warmup",
+          "outcome": "Passed",
+          "duration": "00:00:00.0034220"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0075939"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Warp_entry_keeps_full_throttle_inside_stopping_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010554"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0073750"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020650"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 150)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0127090"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+          "outcome": "Passed",
+          "duration": "00:00:00.0049684"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0028091"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005047"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019919"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"armed\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022269"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041556"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"FALSE\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000036"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_lives_in_and_ticks_with_the_sector",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031077"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0035334"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 1999, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000079"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_travels_along_heading_at_weapon_speed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010852"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Divert_uses_tangent_path_around_stationary_blockers",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002030"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wide_angle_turn_uses_native_yaw_escape_and_directional_rcs",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001247"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_no_bay_power_glides_and_bay_approach_keeps_native_masks",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008890"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002705"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005560"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: False, damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021050"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.MultiHullCollider_ExercisesSubHulls",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008871"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 100, expected: 450.693848)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001693"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093401"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Json_environment_and_cli_carry_both_options_with_native_defaults",
+          "outcome": "Passed",
+          "duration": "00:00:00.0487123"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"ship\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018705"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 150)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0139426"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Enter_station_goto_clears_on_docking_and_moving_ship_goto_reads_live_position",
+          "outcome": "Passed",
+          "duration": "00:00:00.0064614"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0027563"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mine_warp_sell_trajectory_matches_independent_native_formula_trace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0053608"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: True, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0070809"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_weapon_consumes_ammo_and_stops_when_empty",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014178"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 20, stopping: 0, drift: 0, mask: 6)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002317"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"missile\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018622"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_positive_power_round_still_deals_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021678"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Cross_side_nan_round_also_restores_enemy_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018016"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019284"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: False, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0127580"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045357"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5731961"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: null, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000048"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:03.8925450"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Shielded_target_takes_proportionally_less_collision_damage_than_unshielded",
+          "outcome": "Passed",
+          "duration": "00:00:00.0097038"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties(count: 30)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0119864"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Model_GainsOptionalHull_AndCreatesCollider",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006810"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004078"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011828"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004675"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Builder_strip_pivots_then_completes_without_dodging_rock",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012524"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"off\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001619"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 14, stopping: 0, drift: 0, mask: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000020"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"missile\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031059"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0053147"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.Same_side_nan_round_repairs_friendly_hull",
+          "outcome": "Passed",
+          "duration": "00:00:00.0112823"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NaniteRepairTests.ReceiveDamage_negative_amount_repairs_hull_and_does_not_touch_shield",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013372"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014633"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014106"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020822"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_no_bay_power_glides_and_bay_approach_keeps_native_masks",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023901"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 50, expected: 153.426407)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000035"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0095944"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Same_side_rescue_pair_triggers_rescue_not_a_physics_bump",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029783"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Start_reveals_an_allied_home_cluster_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019019"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: False, visible: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030043"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ParallelCourses_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001100"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Turret_weapon_fires_along_gunner_orientation_not_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0560810"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire",
+          "outcome": "Passed",
+          "duration": "00:00:00.3951634"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Fixed_weapon_without_gunner_keeps_firing_along_carrier",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021604"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Determinism_IdenticalSetup_YieldsIdenticalListTwice",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003755"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.A_weapon_mounted_on_an_occupied_turret_picks_up_its_gunner_and_fires",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021530"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Lifepod_bounces_off_station_with_no_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040943"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wide_angle_turn_uses_native_yaw_escape_and_directional_rcs",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001514"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.MountCombatWeapon_arms_every_fixed_hardpoint_and_no_turrets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0166566"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_horizon_is_inclusive_and_equal_time_ties_keep_first_candidate",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006107"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: False, kind: \"station\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026053"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019295"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Head_on_collision_changes_both_velocities_conserves_momentum_and_deflects_lighter_more",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019570"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0126541"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Enemy_lifepod_takes_real_collision_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0116733"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022049"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Actively_mining_ship_does_not_bounce_and_ore_accrues_uninterrupted",
+          "outcome": "Passed",
+          "duration": "00:00:00.0042810"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 0, running: True, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0027748"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pickup_predicts_intercept_and_flies_through_target",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004416"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_scans_are_shared_with_allies_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020977"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Probe_firing_reveal_reaches_allied_sides_through_live_alliance_groups(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020487"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2001, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004521"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_sides_see_each_others_models_only_with_allied_visualization(allow: True, visible: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013959"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Waypoint_replans_on_ship_and_target_cluster_changes_and_enter_completion",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001577"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0064300"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Moving_ship_targets_use_native_coasting_and_approach_speed_matches",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001760"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Faster_heavier_ship_bumping_a_slower_one_accelerates_it_forward",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018793"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Dense_and_sparse_candidates_keep_filtered_brute_force_order(dense: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0050434"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Firing_respects_cooldown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008916"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"0\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000086"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033184"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: True, ammo: False, carrierGoal: True, expectedBoost: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030402"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: \"1\", expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000991"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake(pilot: 2, running: False, ammo: False, carrierGoal: False, expectedBoost: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029459"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mines_have_native_speed_gate_and_minefield_slowdown",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001499"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"sensor\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072506"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Ordinal_event_sort_matches_general_comparator_for_common_and_mixed_times(commonTime: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005816"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0.100000001, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002784"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_travels_along_heading_at_weapon_speed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008334"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.CrossingSpheres_NearMiss_NeverCollide",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001103"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Warp_entry_keeps_full_throttle_inside_stopping_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011056"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.ShipIntoStationHull_Collides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007161"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 100, stopping: 10, drift: 30, mask: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000930"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Allied_damage_obeys_the_option_through_live_alliance_groups(allow: True, damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036153"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_entry_roll_compensates_current_angular_velocity",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001825"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"ship\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019578"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: False, kind: \"armed\", damaged: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021336"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P694bCollisionWorkTests.Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(groups: 257)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7519190"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Same_side_ship_is_not_bounced_off_its_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:00.0035093"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 10, expected: 8.83922195)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000039"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_expires_and_restores_the_model_count",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039842"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: False, env: null, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000033"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.FindPath_obeys_visibility_initial_distance_and_coward_final_cluster_exception",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003716"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.Queue_IsSortedAscendingByCollisionTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001970"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CombatWeaponFiringTests.Projectile_lives_in_and_ticks_with_the_sector",
+          "outcome": "Passed",
+          "duration": "00:00:00.0051046"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Friendly_ramming_still_bounces_both_ships",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021259"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_Spheres_CollideAtAnalyticTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001213"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072955"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Divert_uses_tangent_path_around_stationary_blockers",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007607"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance(speed: 0, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000060"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Explicit_warp_order_enters_at_speed_boost_uses_original_goal_and_arrival_clears_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040515"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008955"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Missiondef_carries_both_option_bits_at_the_native_offsets",
+          "outcome": "Passed",
+          "duration": "00:00:00.0068456"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Unavailable_target_waits_without_completing_or_steering",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001618"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P689CollisionPairTests.Broad_phase_filter_uses_registration_order_and_preserves_original_pair_order",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008100"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"armed\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019241"
+        },
+        {
+          "name": "Allegiance.Core.Tests.TurretGunnerFiringTests.Blast_weapon_uses_gunner_target_and_leads_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052175"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStationCollisionTests.Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures",
+          "outcome": "Passed",
+          "duration": "00:00:00.0571393"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_probe_damage_follows_native_armed_probe_immunity(allow: True, kind: \"rescueAny\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019301"
+        },
+        {
+          "name": "Allegiance.Core.Tests.CollisionDetectionTests.HeadOn_RealHulls_CollideAtPredictableTime",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001851"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P856FriendlyFireAlliedVizTests.Friendly_fire_option_gates_ship_station_and_missile_damage(allow: True, kind: \"station\", damaged: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019484"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pure_control_and_route_loops_allocate_no_bytes_after_warmup",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036431"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests(distance: 50, stopping: 10, drift: 30, mask: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000050"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipShipCollisionTests.Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020769"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006370"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_uses_rcs_not_away_facing_and_respects_skip_and_ships_only",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006598"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 2000, expected: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001364"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius(distance: 1999, expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000070"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Native_layer_waits_for_visible_buoy_stop_then_lays_before_movement_legacy_keeps_reach_radius",
+          "outcome": "Passed",
+          "duration": "00:00:00.0112780"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipAsteroidCollisionTests.Loopback_collision_event_reaches_the_wire_as_collision_event_216",
+          "outcome": "Passed",
+          "duration": "00:00:00.1586177"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_on_and_environment_overrides_config(config: True, env: \"FALSE\", expected: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000071"
+        }
+      ]
+    }
+  ],
+  "task_tests": [
+    {
+      "run": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0162289"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045611"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0024642"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Failed_body_reset_releases_the_borrowed_slot_and_next_frame_is_clean",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011462"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008488"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5395349"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037724"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:03.9661054"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020225"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005273"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022685"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0297889"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0123386"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0087134"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008824"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0252738"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5338850"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:04.0028985"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015131"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Failed_body_reset_releases_the_borrowed_slot_and_next_frame_is_clean",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013801"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_skips_removed_models_defers_additions_and_survives_nested_resolver",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008544"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Snapshot_is_released_when_a_model_callback_throws",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005638"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_frames_match_fresh_detector_through_size_and_geometry_changes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0154297"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Nested_frames_and_independent_parallel_sectors_do_not_share_bodies",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021039"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Weapon_updates_keep_first_fixed_match_stable_turret_ties_and_callback_snapshot",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052662"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Failed_body_reset_releases_the_borrowed_slot_and_next_frame_is_clean",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010751"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: True)",
+          "outcome": "Passed",
+          "duration": "00:00:03.9975321"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928CollisionScratchTests.Reused_body_resets_hull_shape_basis_bounds_and_releases_references",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033159"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden(supplemental: False)",
+          "outcome": "Passed",
+          "duration": "00:00:03.5596264"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P928TraversalTests.Turret_prediction_does_not_mutate_previously_published_orientation_values",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020763"
+        }
+      ]
+    }
+  ],
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 119,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4715,
+        "live": 123,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2138,
+        "live": 173,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6073,
+        "live": 74,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 882.0291884359904,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 119,
+            "outcomes": {
+              "Passed": 119
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4715,
+            "outcomes": {
+              "Passed": 4712,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2138,
+            "outcomes": {
+              "Passed": 2137,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6073,
+            "outcomes": {
+              "Passed": 6064,
+              "Failed": 9
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9674801061007958,
+          "referenceMs": 3.6474,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "outcome": "Failed",
+            "seconds": 38.4981645
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "1 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.06068312900606543,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06068312900606543,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "never_parks": [
+    {
+      "run": 1,
+      "test": "P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:07:23.5452773",
+      "seconds": 439.3,
+      "samples": 4386,
+      "reached": 24,
+      "longest_park_seconds": 1.913,
+      "shots": 4555,
+      "hits": 1779,
+      "kills": 12
+    },
+    {
+      "run": 1,
+      "test": "Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:03:31.5467267",
+      "seconds": 207.8,
+      "samples": 2075,
+      "reached": 24,
+      "longest_park_seconds": 2.005,
+      "shots": 4416,
+      "hits": 2138,
+      "kills": 12
+    },
+    {
+      "run": 2,
+      "test": "P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Failed",
+      "duration": "00:08:03.8726126",
+      "seconds": 480.0,
+      "samples": 4792,
+      "reached": 17,
+      "longest_park_seconds": 1.705,
+      "shots": 3508,
+      "hits": 1448,
+      "kills": 10
+    },
+    {
+      "run": 2,
+      "test": "Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:06:35.9490865",
+      "seconds": 393.1,
+      "samples": 3925,
+      "reached": 25,
+      "longest_park_seconds": 1.806,
+      "shots": 5919,
+      "hits": 1492,
+      "kills": 9
+    },
+    {
+      "run": 3,
+      "test": "Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:28.4864689",
+      "seconds": 265.1,
+      "samples": 2647,
+      "reached": 24,
+      "longest_park_seconds": 1.905,
+      "shots": 2167,
+      "hits": 706,
+      "kills": 2
+    },
+    {
+      "run": 3,
+      "test": "P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:06:01.4364677",
+      "seconds": 357.5,
+      "samples": 3570,
+      "reached": 24,
+      "longest_park_seconds": 2.006,
+      "shots": 3294,
+      "hits": 1323,
+      "kills": 8
+    },
+    {
+      "run": 4,
+      "test": "P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:06.9378811",
+      "seconds": 242.5,
+      "samples": 2422,
+      "reached": 24,
+      "longest_park_seconds": 1.907,
+      "shots": 2410,
+      "hits": 1161,
+      "kills": 8
+    },
+    {
+      "run": 4,
+      "test": "Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:03:09.9176866",
+      "seconds": 186.9,
+      "samples": 1867,
+      "reached": 24,
+      "longest_park_seconds": 2.006,
+      "shots": 3797,
+      "hits": 1397,
+      "kills": 5
+    },
+    {
+      "run": 5,
+      "test": "Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:05:46.2761702",
+      "seconds": 342.7,
+      "samples": 3422,
+      "reached": 24,
+      "longest_park_seconds": 2.005,
+      "shots": 2181,
+      "hits": 942,
+      "kills": 6
+    },
+    {
+      "run": 5,
+      "test": "P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:07:39.1532077",
+      "seconds": 455.2,
+      "samples": 4545,
+      "reached": 24,
+      "longest_park_seconds": 1.915,
+      "shots": 3600,
+      "hits": 1635,
+      "kills": 11
+    }
+  ],
+  "filtered_isolations": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "iteration": 1,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3928211"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Passed",
+          "duration": "00:00:01.4282853"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002295"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0141259"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003348"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9931882"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0029117"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004018"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:00.7367021"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002261"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003235"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "iteration": 2,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:00.7432152"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3725159"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010178"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003427"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0142842"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001825"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0037294"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.0195933"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002508"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Passed",
+          "duration": "00:00:01.4247242"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001485"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "iteration": 3,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0028126"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0141624"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Failed",
+          "duration": "00:00:01.4283725"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004286"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002447"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:00.7125041"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002216"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3880490"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003432"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9401668"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003020"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "iteration": 1,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.2649515"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "iteration": 2,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.3177513"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "iteration": 3,
+      "exit": 1,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.2712395"
+        }
+      ]
+    }
+  ],
+  "base_controls": [
+    {
+      "file": "base-control-Allegiance.ClientCore.Tests-1.trx",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "duration": "00:00:01.5601940"
+        }
+      ]
+    },
+    {
+      "file": "base-control-Allegiance.ClientCore.Tests-2.trx",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "duration": "00:00:38.3213997"
+        }
+      ]
+    },
+    {
+      "file": "base-control-Allegiance.ClientCore.Tests-3.trx",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "duration": "00:00:01.8611910"
+        }
+      ]
+    },
+    {
+      "file": "base-control-Allegiance.Core.Tests-1.trx",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0140471"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002134"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0028543"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Passed",
+          "duration": "00:00:01.4508876"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3798657"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0004060"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002911"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.0534842"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002329"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:00.7372108"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003992"
+        }
+      ]
+    },
+    {
+      "file": "base-control-Allegiance.Core.Tests-2.trx",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002866"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002699"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Passed",
+          "duration": "00:00:01.4619218"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0143060"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007555"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9892784"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3801781"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001875"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "duration": "00:00:00.7878524"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002646"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0035984"
+        }
+      ]
+    },
+    {
+      "file": "base-control-Allegiance.Core.Tests-3.trx",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002642"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001451"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001884"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002969"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0142195"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0035416"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Failed",
+          "duration": "00:00:00.3814937"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:00.9734858"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007686"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "duration": "00:00:00.7705054"
+        },
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Passed",
+          "duration": "00:00:01.4459411"
+        }
+      ]
+    }
+  ],
+  "server_native_aot": {
+    "exit": 0,
+    "il2026": 0,
+    "il3050": 0,
+    "log": "server-final-publish.log"
+  },
+  "parity_before_after_identical": true,
+  "glossary_paths_checked": 550,
+  "notes": [
+    "Exactly one Fast sweep; late exception-cleanup regression added afterward and qualified 3x alone.",
+    "No commits or pushes; temporary base control source swaps restored before final build."
+  ],
+  "hygiene": {
+    "files_scanned": 21,
+    "sensitive_pattern_hits": 0,
+    "new_media": 0,
+    "git_diff_check": "pass",
+    "head_unchanged": true
+  },
+  "final_core_sha256": {
+    "src/Allegiance.Core/Collision/BroadPhase.cs": "ea6bd3b26a25cdb676c97c3d04ce00a21bc6052a7a7a9089f8ea3218c8115496",
+    "src/Allegiance.Core/Collision/Collider.cs": "65856750fe1767d3d66a84379f8ba7c9fc25212d0d1c02aa7c6a1e5e8daf960b",
+    "src/Allegiance.Core/Collision/CollisionDetector.cs": "c7a0527a475a434b3615d9209b12c4920dfb389e6d245d9d3139b2ea25a6194d",
+    "src/Allegiance.Core/Model/Sector.Scratch.cs": "9fb950e604bd698c5812dc4892e2490cc9aeadd25d604343c5f80a9a00e9ecbe",
+    "src/Allegiance.Core/Model/Sector.cs": "8e8aba82fbbd3f589230b1791612ef49b875e9aec67691c171b239d0acf98106",
+    "src/Allegiance.Core/Sim/Ship.cs": "7ef3241c3510df46cf59440a4106c3e2ea0e9a12cbcbe217aaeb1ea47ec8a47e"
+  }
+}

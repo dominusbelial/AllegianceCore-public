@@ -102,7 +102,14 @@ public static class BroadPhase
             var cur = colliders[curIdx];
 
             // Drop expired actives (their sweep-maximum passed the sweep pos).
-            active.RemoveAll(a => a.SweepMax <= curMin);
+            int kept = 0;
+            for (int ai = 0; ai < active.Count; ai++)
+            {
+                var entry = active[ai];
+                // Negate the original removal predicate (also preserves NaN).
+                if (!(entry.SweepMax <= curMin)) active[kept++] = entry;
+            }
+            if (kept < active.Count) active.RemoveRange(kept, active.Count - kept);
 
             // Test every still-active box on the two remaining axes.
             foreach (var (aj, _) in active)

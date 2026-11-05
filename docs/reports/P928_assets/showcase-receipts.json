@@ -1,0 +1,116 @@
+[
+  {
+    "arm": "before",
+    "run": 1,
+    "spawned": [
+      60,
+      60
+    ],
+    "final_perf": "First capture queried an unavailable combat tool; spawn and server profiler windows are valid."
+  },
+  {
+    "arm": "before",
+    "run": 2,
+    "spawned": [
+      60,
+      60
+    ],
+    "fleet": {
+      "state": "active",
+      "requested": 120,
+      "active": 120,
+      "recovering": 0,
+      "failed": 0,
+      "ok": true
+    },
+    "combat": {
+      "shotsFired": 122,
+      "shipHits": 0,
+      "kills": 0
+    }
+  },
+  {
+    "arm": "before",
+    "run": 3,
+    "spawned": [
+      60,
+      60
+    ],
+    "fleet": {
+      "state": "active",
+      "requested": 120,
+      "active": 120,
+      "recovering": 0,
+      "failed": 0,
+      "ok": true
+    },
+    "combat": {
+      "shotsFired": 79,
+      "shipHits": 0,
+      "kills": 0
+    }
+  },
+  {
+    "arm": "after",
+    "run": 1,
+    "spawned": [
+      60,
+      60
+    ],
+    "fleet": {
+      "state": "active",
+      "requested": 120,
+      "active": 120,
+      "recovering": 0,
+      "failed": 0,
+      "ok": true
+    },
+    "combat": {
+      "shotsFired": 121,
+      "shipHits": 115,
+      "kills": 2
+    }
+  },
+  {
+    "arm": "after",
+    "run": 2,
+    "spawned": [
+      60,
+      60
+    ],
+    "fleet": {
+      "state": "active",
+      "requested": 120,
+      "active": 120,
+      "recovering": 0,
+      "failed": 0,
+      "ok": true
+    },
+    "combat": {
+      "shotsFired": 320,
+      "shipHits": 168,
+      "kills": 2
+    }
+  },
+  {
+    "arm": "after",
+    "run": 3,
+    "spawned": [
+      60,
+      60
+    ],
+    "fleet": {
+      "state": "active",
+      "requested": 120,
+      "active": 120,
+      "recovering": 0,
+      "failed": 0,
+      "ok": true
+    },
+    "combat": {
+      "shotsFired": 172,
+      "shipHits": 102,
+      "kills": 1
+    }
+  }
+]

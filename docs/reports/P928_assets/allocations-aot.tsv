@@ -1,0 +1,3 @@
+# GCAllocationTick samples=423 sampled-bytes=47398880; includes startup and warmup
+sampled-bytes	samples	type	first-application-frame
+47398880	423	NULL	[unresolved]

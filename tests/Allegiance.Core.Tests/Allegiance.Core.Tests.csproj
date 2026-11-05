@@ -51,5 +51,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Fixtures/P817NativeGotoTrace.csv" />
+    <EmbeddedResource Include="Fixtures/P928Golden.csv" />
+    <EmbeddedResource Include="Fixtures/P928SupplementalGolden.csv" />
+    <Compile Include="../../tools/p928-allocation-proof/P928Trace.cs" Link="P928Trace.cs" />
   </ItemGroup>
 </Project>

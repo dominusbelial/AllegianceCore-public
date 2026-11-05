@@ -157,6 +157,7 @@ public sealed partial class Sector : IClusterIgc
     // Models living in this sector and ticking with it. Ships today; stations,
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
+    private CollisionDetector? _collisionDetector;
     // P863: constant-time membership for update/blast snapshots. Counts preserve
     // even duplicate Add/Remove semantics; iteration still uses insertion order.
     // Native: Igc/clusterIGC.cpp:243-250 (capture-next model traversal).
@@ -1018,7 +1019,8 @@ public sealed partial class Sector : IClusterIgc
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
         using (TickProfiler.Enter("sim.models"))
         {
-            var snapshot = _models.ToArray();
+            using var snapshotLease = CaptureModelSnapshot();
+            var snapshot = snapshotLease.Models;
             foreach (var model in snapshot)
             {
                 if (!_modelMembership.ContainsKey(model)) continue; // a previous model's blast may destroy it
@@ -1237,7 +1239,8 @@ public sealed partial class Sector : IClusterIgc
     /// </summary>
     internal void ResolveRipcordCountdowns(float dt)
     {
-        foreach (var model in _models.ToArray())
+        using var snapshotLease = CaptureModelSnapshot();
+        foreach (var model in snapshotLease.Models)
         {
             if (model is not Ship ship) continue;
             if (!ship.IsRipcordActive || ship.ParentShip is not null) continue;
@@ -2265,16 +2268,17 @@ public sealed partial class Sector : IClusterIgc
         if (!_models.Any(m => m is Projectile || m is Missile)) return;   // nothing can deal damage
 
         var buildScope = TickProfiler.Enter("combat.build");
-        var detector = new CollisionDetector();
+        using var collisionFrame = (_collisionDetector ??= new()).BeginFrame();
+        var detector = collisionFrame.Detector;
         foreach (var model in _models)
         {
             Collider? c = model switch
             {
-                IOrdnance o => new Collider(o, o.Position, o.Velocity, Orientation.Identity,
+                IOrdnance o => detector.CreateCollider(o, o.Position, o.Velocity, null,
                     hull: null, o.Radius, isStatic: false, HitShape.Sphere),
-                Ship s => new Collider(s, s.Position, s.Velocity, s.Orientation,
+                Ship s => detector.CreateCollider(s, s.Position, s.Velocity, s.Orientation,
                     hull: EnsureShipHull(s), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
-                Probe p => new Collider(p, p.Position, Vector3.Zero, Orientation.Identity,
+                Probe p => detector.CreateCollider(p, p.Position, Vector3.Zero, null,
                     hull: null, p.ProbeType.Radius, isStatic: true, HitShape.Sphere),
                 _ => null,
             };
@@ -2293,8 +2297,8 @@ public sealed partial class Sector : IClusterIgc
         foreach (var ast in _mineable)
         {
             if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
-            detector.Add(new Collider(
-                ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Orientation.Identity,
+            detector.Add(detector.CreateCollider(
+                ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, null,
                 hull: CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
@@ -2309,8 +2313,8 @@ public sealed partial class Sector : IClusterIgc
         foreach (var st in _stationRuntimes)
         {
             if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
-            detector.Add(new Collider(
-                st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero, Orientation.Identity,
+            detector.Add(detector.CreateCollider(
+                st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero, null,
                 hull: CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
@@ -2856,21 +2860,22 @@ public sealed partial class Sector : IClusterIgc
     {
         if (_models.Count == 0 || _mineable.Count == 0) return;
 
-        var detector = new CollisionDetector();
+        using var collisionFrame = (_collisionDetector ??= new()).BeginFrame();
+        var detector = collisionFrame.Detector;
         foreach (var model in _models)
         {
             if (model is not Ship s) continue;
             if (s.Dead) continue;
             // P621 — collide against the ship's real .cvh hull (native LoadCVH),
             // not a bounding sphere; falls back to a sphere when no .cvh exists.
-            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+            detector.Add(detector.CreateCollider(s, s.Position, s.Velocity, s.Orientation,
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
         foreach (var ast in _mineable)
         {
             if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
-            detector.Add(new Collider(ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero,
-                Orientation.Identity, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
+            detector.Add(detector.CreateCollider(ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero,
+                null, CollisionHulls?.Resolve(ast.Data.ModelName), ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
         IReadOnlyList<CollisionEvent> events;
@@ -3150,13 +3155,14 @@ public sealed partial class Sector : IClusterIgc
     {
         if (_models.Count < 2) return;
 
-        var detector = new CollisionDetector();
+        using var collisionFrame = (_collisionDetector ??= new()).BeginFrame();
+        var detector = collisionFrame.Detector;
         foreach (var model in _models)
         {
             if (model is not Ship s) continue;
             if (s.Dead) continue;
             if (s.Mission is null || s.StationId is not null) continue;   // flying placed ships only
-            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+            detector.Add(detector.CreateCollider(s, s.Position, s.Velocity, s.Orientation,
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
 
@@ -3407,20 +3413,21 @@ public sealed partial class Sector : IClusterIgc
     {
         if (_models.Count == 0 || _stationRuntimes.Count == 0) return;
 
-        var detector = new CollisionDetector();
+        using var collisionFrame = (_collisionDetector ??= new()).BeginFrame();
+        var detector = collisionFrame.Detector;
         foreach (var model in _models)
         {
             if (model is not Ship s) continue;
             if (s.Dead) continue;
             if (s.Mission is null || s.StationId is not null) continue;  // flying placed ships only — a docked ship is not a collision body
-            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+            detector.Add(detector.CreateCollider(s, s.Position, s.Velocity, s.Orientation,
                 CollisionHulls?.Resolve(s.HullType.ModelName), 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
         }
         foreach (var st in _stationRuntimes)
         {
             if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
-            detector.Add(new Collider(st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero,
-                Orientation.Identity, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
+            detector.Add(detector.CreateCollider(st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero,
+                null, CollisionHulls?.Resolve(st.Type.ModelName), st.Radius, isStatic: true, HitShape.Sphere));
         }
 
         IReadOnlyList<CollisionEvent> events;
@@ -3806,7 +3813,8 @@ public sealed partial class Sector : IClusterIgc
         if (!Active || Mission?.Stage != MissionStage.Started) return;
         if (!_models.Any(m => m is Mine)) return;   // nothing to chew on
 
-        var snapshot = _models.ToArray();
+        using var snapshotLease = CaptureModelSnapshot();
+        var snapshot = snapshotLease.Models;
 
         // Worst-hit-per-tick accumulation (native AddMineDamage, shipIGC.h:1998-2016):
         // each ship records its largest mine hit this tick, applied once at the
