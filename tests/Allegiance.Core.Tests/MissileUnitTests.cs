@@ -117,6 +117,7 @@ public class MissileUnitTests
         mission.Update(mType.Lifespan + 0.5);
 
         Assert.False(sector.Models.Contains(missile), "an expired missile must be removed from its sector");
+        Assert.Equal("expired", missile.EndReason);
         float travelled = (missile.Position - p0).Length();
         float ideal = mType.InitialSpeed * mType.Lifespan;      // distance at the nominal expiry instant
         float chunkSlack = mType.InitialSpeed * 0.08f;          // up to ~one extra chunk's travel + float slack

@@ -146,6 +146,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             if (Dead && previous > 0)
             {
                 _sector.Terminate(this);        // P754b: real Terminate (modelIGC.cpp:55-61)
+                EndReason = "shot down";
                 mission?.Site.MissileDestroyedEvent(this);
                 // FedSrv.CPP:12524-12529: killed missiles also explode, except
                 // the zero-position resonator sentinel. Remove first so the
@@ -171,6 +172,22 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// <inheritdoc/>
     float IOrdnance.BlastRadius => MissileType.BlastRadius;
 
+    /// <summary>Why the missile ended, for the server's destroy log: every end that
+    /// is not an expiry, a shoot-down or a bad state is an impact (the collision
+    /// paths in <see cref="Model.Sector"/>).</summary>
+    public string EndReason { get; private set; } = "hit";
+
+    /// <summary>Size of the blast a client draws when this missile explodes. Native
+    /// Explode (missileigc.cpp:516-531) queues a blast-power missile's explosion at
+    /// its blast radius, which the cluster then shows at that size
+    /// (clusterIGC.cpp:406-407); only a missile with no blast power uses its own
+    /// model radius.</summary>
+    public float ExplosionScale => ExplosionScaleFor(MissileType.BlastPower, MissileType.BlastRadius, MissileType.Radius);
+
+    /// <inheritdoc cref="ExplosionScale"/>
+    public static float ExplosionScaleFor(float blastPower, float blastRadius, float radius) =>
+        blastPower != 0f ? blastRadius : radius;
+
     /// <summary>The model that launched this missile (<c>m_launcher</c>), mirroring
     /// <see cref="Projectile.Launcher"/>. Here it doubles as the route to the host
     /// seam: a <see cref="Ship"/> launcher exposes the authoritative
@@ -194,6 +211,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
                     MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),
                     MissileType.BlastRadius, now, Position, Launcher), now);
+            EndReason = "expired";
             (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
             return;
         }
@@ -240,6 +258,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         {
             _terminated = true;
             _sector.Terminate(this);
+            EndReason = "invalid state";
             (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
         }
     }

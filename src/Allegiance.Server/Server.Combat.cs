@@ -386,7 +386,7 @@ public sealed partial class Server
         foreach (var peer in destroyAudio)
             SendPeer(peer, packet);
         int n = destroyAudio.Count;
-        Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
+        Console.WriteLine($"[missile] ship {shooter.Id} missile {m.Id} {m.EndReason} -> MISSILE_DESTROYED(83) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s) (whole mission real sides, FedSrv.CPP:12520)");
 
         // P263 — the missile's impact/expiry blast VFX to the peers that KNEW the
@@ -394,7 +394,7 @@ public sealed partial class Server
         // (appmsg.cpp:1801-1803), so an unaware peer has nothing to explode. The
         // fireball sprites ride the missile's momentum (P375).
         if (viewers.Count > 0)
-            SendExplosionEvent(viewers, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
+            SendExplosionEvent(viewers, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.ExplosionScale);
     }
 
     // Explicit PROMOTE/SWAP_PART echoes apply their own mutations on clients.

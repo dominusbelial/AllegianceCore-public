@@ -314,6 +314,7 @@ public sealed class MissileCombatTests
 
         // (3a) the missile disappeared from the sector on impact.
         Assert.DoesNotContain(live, live.OwnerSector.Models);   // removed from its sector on impact
+        Assert.Equal("hit", live.EndReason);
 
         // (3b) the same-side peer received a real MISSILE_DESTROYED(83) for it.
         PumpUntil(seat.Server, () => seat.ObserverBot.MissileDestroyeds.Any(d => d.MissileId == mId), 4000);
