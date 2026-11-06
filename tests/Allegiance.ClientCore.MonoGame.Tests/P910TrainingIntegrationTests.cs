@@ -28,6 +28,7 @@ public sealed class P910TrainingIntegrationTests : IDisposable
     {
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1));
         GC.SuppressFinalize(game);
+        game.MaxElapsedTime = TimeSpan.FromMilliseconds(500);
         Set(game, "_session", connection);
         Set(game, "_hudSettings", new HudSettings { Style = style });
         Set(game, "_trainingSounds", new Dictionary<int, Microsoft.Xna.Framework.Audio.SoundEffectInstance>());
@@ -144,6 +145,8 @@ public sealed class P910TrainingIntegrationTests : IDisposable
     public void Every_exit_restores_preferences_keymap_and_overlay(HudStyle style, string route)
     {
         using var c = new ConnectionSession(); Seed(c); var game = Headless(c, style);
+        var previousFrameCap = TimeSpan.FromMilliseconds(700);
+        game.MaxElapsedTime = previousFrameCap;
         var map = KeyBindingStore.Instance.Map;
         string original = map.ToJson(); var oldFilter = map.ActionFilter;
         try
@@ -151,6 +154,7 @@ public sealed class P910TrainingIntegrationTests : IDisposable
             map.SetBinding("FireWeapon", new KeyBinding(Keys.F9, InputModifiers.None), force: true);
             var saved = map.ToJson();
             Call(game, "SaveTrainingPreferences");
+            Assert.Equal(TimeSpan.FromSeconds(5), game.MaxElapsedTime);
             var site = Site(c); var session = new TrainingSession(site, new ProbeMission(site));
             Set(game, "_trainingSession", session);
             Set(game, "_trainingMissionId", 6);
@@ -173,6 +177,7 @@ public sealed class P910TrainingIntegrationTests : IDisposable
                 case "window-close": Call(game, "ReleaseTraining"); break;
             }
             Assert.False(TrainingController.IsTraining); Assert.Equal(0, TrainingOverlay.Current);
+            Assert.Equal(previousFrameCap, game.MaxElapsedTime);
             Assert.Equal(style, Get<HudSettings>(game, "_hudSettings").Style);
             Assert.Equal(saved, map.ToJson()); Assert.Same(oldFilter, map.ActionFilter);
             Assert.Null(Get<object?>(game, "_trainingSession")); Assert.Null(c.World.TrainingChatRecipient);

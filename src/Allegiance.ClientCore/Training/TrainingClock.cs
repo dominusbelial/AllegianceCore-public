@@ -32,7 +32,7 @@ public static class TrainingClock
     /// <summary>Max shift (native ztime.cpp:58-67 clamps to ±3).</summary>
     public const int MaxShift = 3;
 
-    private const double MaxFrameSeconds = 0.25;  // native dwMaxDeltaTime = 4 FPS (ztime.h:57)
+    private const double DebugMaxFrameSeconds = 0.25; // _DEBUG_TRAINING only (ztime.h:50-63)
 
     private static double _accumulated;      // s_dwAccumulatedTime
     private static double _negativeOffset;   // s_dwNegativeOffset
@@ -72,7 +72,8 @@ public static class TrainingClock
     /// <summary>
     /// Advance the clock by one real frame and return the game-clock time in seconds —
     /// the port of <c>Time::Now()</c> (ztime.h:41-77): the frame time is clamped to
-    /// 0.25 s (native's 4 FPS cap), scaled by 2^shift in the debug build, accumulated
+    /// 0.25 s and scaled by 2^shift only in the debug build; shipping keeps the
+    /// complete elapsed interval (ztime.h:75-77). The clock is accumulated
     /// only while unpaused, and reported as <c>(paused ? pauseStart : accumulated) −
     /// negativeOffset</c>. While paused the returned time is frozen, so every training
     /// condition keyed off the clock stops too (native pauses the whole client clock;
@@ -81,13 +82,13 @@ public static class TrainingClock
     /// </summary>
     public static double Advance(double realDeltaSeconds)
     {
-        double dt = Math.Clamp(realDeltaSeconds, 0.0, MaxFrameSeconds);
+        double dt = Math.Max(realDeltaSeconds, 0.0);
         if (!_paused)
         {
             // The shift scaling lives behind the debug gate like native: in shipping
             // builds Time::Now() accumulates real time unscaled (ztime.h:76-77) — only
             // the _DEBUG_TRAINING build multiplies by 2^shift (ztime.h:62-63).
-            _accumulated += TrainingClock.DebugTrainingKeys ? dt * Math.Pow(2.0, _shift) : dt;
+            _accumulated += DebugTrainingKeys ? Math.Min(dt, DebugMaxFrameSeconds) * Math.Pow(2.0, _shift) : dt;
         }
         // native Now(): (s_dwPauseStart != 0 ? s_dwPauseStart : s_dwAccumulatedTime) - s_dwNegativeOffset
         return (_paused ? _pauseStart : _accumulated) - _negativeOffset;

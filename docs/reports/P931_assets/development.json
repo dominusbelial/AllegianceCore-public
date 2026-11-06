@@ -1,0 +1,319 @@
+{
+  "cohorts": [
+    {
+      "path": ".scratch/p931/v10/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 2
+        },
+        "hunt Modern": {
+          "Failed": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v11/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 2
+        },
+        "hunt Modern": {
+          "Failed": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v12/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Passed": 1
+        },
+        "sacrifice Classic": {
+          "Passed": 1
+        },
+        "hunt Classic": {
+          "Failed": 1
+        },
+        "sacrifice Modern": {
+          "Passed": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v13/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "hunt Modern": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v15/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Passed": 1,
+          "NotRun": 1
+        },
+        "hunt Classic": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v16/summary.json",
+      "outcomes": {
+        "sacrifice Classic": {
+          "Passed": 1,
+          "NotRun": 1
+        },
+        "sacrifice Modern": {
+          "Passed": 1,
+          "NotRun": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v17/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "hunt Modern": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v18/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "hunt Classic": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v19/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "hunt Classic": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v20/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "hunt Classic": {
+          "NotRun": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v22/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Passed": 1,
+          "Failed": 1
+        },
+        "hunt Classic": {
+          "Passed": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v23/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 1,
+          "Cancelled": 1
+        },
+        "hunt Modern": {
+          "Failed": 1,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v24/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Failed": 2
+        },
+        "hunt Classic": {
+          "Failed": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v25/summary.json",
+      "outcomes": {
+        "sacrifice Classic": {
+          "Passed": 1,
+          "NotRun": 1
+        },
+        "sacrifice Modern": {
+          "Passed": 1,
+          "NotRun": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v26/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 1,
+          "NotRun": 1
+        },
+        "hunt Modern": {
+          "NotRun": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v27/summary.json",
+      "outcomes": {
+        "sacrifice Classic": {
+          "Cancelled": 1,
+          "NotRun": 1
+        },
+        "sacrifice Modern": {
+          "NotRun": 2
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v8/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Passed": 1
+        },
+        "hunt Classic": {
+          "Passed": 1
+        },
+        "sacrifice Modern": {
+          "Passed": 1
+        },
+        "sacrifice Classic": {
+          "Passed": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/v9/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Failed": 1
+        },
+        "hunt Classic": {
+          "Failed": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/qualification-final/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "hunt Modern": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "sacrifice Modern": {
+          "Cancelled": 1,
+          "NotRun": 9
+        },
+        "sacrifice Classic": {
+          "NotRun": 9,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/qualification-tail-chase/summary.json",
+      "outcomes": {
+        "hunt Classic": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "hunt Modern": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "sacrifice Modern": {
+          "Cancelled": 1,
+          "NotRun": 9
+        },
+        "sacrifice Classic": {
+          "Cancelled": 1,
+          "NotRun": 9
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    },
+    {
+      "path": ".scratch/p931/qualification-retained-policy/summary.json",
+      "outcomes": {
+        "hunt Modern": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "hunt Classic": {
+          "Failed": 1,
+          "NotRun": 9
+        },
+        "sacrifice Modern": {
+          "Cancelled": 1,
+          "NotRun": 9
+        },
+        "sacrifice Classic": {
+          "NotRun": 9,
+          "Cancelled": 1
+        }
+      },
+      "note": "Development candidate; cancellations and NotRun cases are not qualification credit."
+    }
+  ]
+}

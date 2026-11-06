@@ -30,8 +30,8 @@ public class P785TrainingCompletionTests
     {
         // native Time::Pause/Continue (ztime.cpp:15-49): Now() returns the frozen
         // stamp while paused; resuming adds the paused span to the negative offset
-        // so the game clock continues from the freeze with no jump. Frame times are
-        // clamped to 0.25 s (ztime.h:57, the 4 FPS cap) like the port's Advance.
+        // so the game clock continues from the freeze with no jump. The 4 FPS
+        // cap is debug-only (ztime.h:50-77); shipping keeps complete intervals.
         TrainingClock.ResetForTests();
         Assert.Equal(0.25, TrainingClock.Advance(0.25), 6);
         TrainingClock.Pause();

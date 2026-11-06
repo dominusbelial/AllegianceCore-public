@@ -1,0 +1,297 @@
+{
+  "baseline_revision": "b5fa1d6b71125aa77f714be10f4b45bda3a68654",
+  "baseline": [
+    {
+      "window": ".scratch/p931/baseline/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.498,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 62.457,
+      "branch_edges": []
+    },
+    {
+      "window": ".scratch/p931/baseline/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 20.713,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    }
+  ],
+  "experiments": [
+    {
+      "window": ".scratch/p931/v1/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 85.496,
+      "branch_edges": []
+    },
+    {
+      "window": ".scratch/p931/v1/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.4495,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 39.762,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v2/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 169.808,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=582.7 speed=0.0 sim=184.39"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v2/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.45005,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 19.52,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v3/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 216.722,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=602.0 speed=0.0 sim=218.10"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v3/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 34.609,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v4/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 261.695,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=528.8 speed=0.0 sim=205.65"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v4/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 25.852,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v5/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 189.833,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=172.4 speed=0.0 sim=196.70"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v5/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.4482,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 18.105,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v6/hunt-classic",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M4 8.1: did not kill a miner before it left Mars",
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 188.896,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=838.6 speed=0.0 sim=183.99"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v6/sacrifice-modern",
+      "outcome": "Failed",
+      "error": "Unhandled exception. System.InvalidOperationException: M8 3.22: did not exercise the combined bomber/outpost loss branch",
+      "combat_frame_dt_seconds": {
+        "median": 0.44725000000000004,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 36.729,
+      "branch_edges": [
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=False bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v7/hunt-modern",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.5,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 146.702,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=877.1 speed=0.0 sim=183.40",
+        "[p912] M4_BRANCH minerKilled=True targetDeparted=False killedInMars=1103"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v7/sacrifice-classic",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.4481,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "max_trainee_pose_offset": 26.304,
+      "branch_edges": [
+        "[tproof] SACRIFICE cease-repair hull=0.2662 pending=0.0000 outpostShield=0.0000 outpostArmor=0.3893",
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v8/hunt-Classic-1",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.49495,
+        "p95": 0.9956,
+        "max": 1.8416
+      },
+      "max_trainee_pose_offset": 170.803,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=809.4 speed=0.0 sim=157.20",
+        "[p912] M4_BRANCH minerKilled=True targetDeparted=False killedInMars=1103"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v8/hunt-Modern-1",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.5516000000000001,
+        "p95": 0.9998,
+        "max": 2.4413
+      },
+      "max_trainee_pose_offset": 174.707,
+      "branch_edges": [
+        "[tproof] HUNT commit target=1103 distance=775.2 speed=0.0 sim=161.50",
+        "[p912] M4_BRANCH minerKilled=True targetDeparted=False killedInMars=1103"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v8/sacrifice-Classic-1",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.4493,
+        "p95": 0.5968,
+        "max": 0.5976
+      },
+      "max_trainee_pose_offset": 19.941,
+      "branch_edges": [
+        "[tproof] SACRIFICE cease-repair hull=0.2025 pending=0.0000 outpostShield=0.0000 outpostArmor=0.7046",
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ]
+    },
+    {
+      "window": ".scratch/p931/v8/sacrifice-Modern-1",
+      "outcome": "Passed",
+      "error": null,
+      "combat_frame_dt_seconds": {
+        "median": 0.44815,
+        "p95": 0.5995,
+        "max": 0.7463
+      },
+      "max_trainee_pose_offset": 16.421,
+      "branch_edges": [
+        "[tproof] SACRIFICE cease-repair hull=0.2913 pending=0.0000 outpostShield=0.0000 outpostArmor=0.8203",
+        "[p912] OUTCOME minerSurvived=True outpostDestroyed=True bomberDestroyed=True"
+      ]
+    }
+  ],
+  "clock_counterexample": {
+    "native": "zlib/ztime.h:50-77",
+    "red": ".scratch/p931/clock-red/result.trx",
+    "green": ".scratch/p931/clock-green/result.trx",
+    "old_shipping_elapsed": 0.35,
+    "expected_shipping_elapsed": 0.8,
+    "debug_cap_preserved": true
+  }
+}

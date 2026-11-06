@@ -15,10 +15,23 @@ if (args is ["universe"])
         using var host = TrainingHost.Start(variant);
         var ship = host.PlayerShip;
         Console.WriteLine($"{variant.GameName} hull={ship.HullType.HullId} price={ship.HullType.Price}");
+        Console.WriteLine($"kinematics mass={ship.Mass} thrust={ship.EffectiveThrust()} speed={ship.EffectiveMaxSpeed()} yaw={ship.EffectiveMaxTurnRate(0)} pitch={ship.EffectiveMaxTurnRate(1)} yawTorque={ship.EffectiveTurnTorque(0)} pitchTorque={ship.EffectiveTurnTorque(1)}");
         Console.WriteLine($"preferred={string.Join(',', ship.HullType.PreferredPartsTypes)}");
-        foreach (var part in ship.Parts.Concat(ship.CargoHold.OfType<Allegiance.Core.Sim.MountedPart>()))
-            Console.WriteLine($"part={part.PartId} et={part.EquipmentType} mount={part.MountId} amount={part.Amount} price={part.Type.Price}");
-        foreach (var weapon in ship.Weapons) Console.WriteLine($"speed={weapon.ProjectileType.Speed} life={weapon.GetLifespan()}");
+        foreach (var part in ship.Parts)
+            Console.WriteLine($"mounted part={part.PartId} et={part.EquipmentType} mount={part.MountId} amount={part.Amount}");
+        for (int slot = 0; slot < ship.CargoHold.Count; slot++)
+            if (ship.CargoHold[slot] is { } part) Console.WriteLine($"cargo[{slot}] part={part.PartId} et={part.EquipmentType} amount={part.Amount}");
+        foreach (var weapon in ship.Weapons) Console.WriteLine($"mount={weapon.MountId} muzzle={host.Mission.WeaponMuzzles?.Position(ship.HullType, weapon.MountId)} projectile={weapon.ProjectileType.ProjectileTypeId} speed={weapon.ProjectileType.Speed} life={weapon.GetLifespan()} power={weapon.ProjectileType.Power} burst={weapon.GetDtBurst()} damageType={weapon.ProjectileType.DamageType}");
+        foreach (var sector in host.Mission.Sectors)
+            foreach (var station in sector.StationRuntimes)
+                Console.WriteLine($"station={station.StationId} sector={sector.Id} side={station.SideId}");
+        if (variant == TrainingHost.EnemyEngagement)
+        {
+            var miner = host.Mission.Core.HullTypes[338];
+            Console.WriteLine($"miner hp={miner.HitPoints} armor={miner.DefenseType} sniperArmorFactor={host.Mission.Core.Constants.DamageConstants[4][miner.DefenseType]} shipDamageGA={ship.GlobalAttributeFactor(Allegiance.Core.Model.GlobalAttributeSet.DamageGuns)}");
+        }
+        if (variant == TrainingHost.Nanite && host.Mission.Core.ProjectileTypes.TryGetValue(201, out var torpedo))
+            Console.WriteLine($"bomber projectile=201 speed={torpedo.Speed} life={torpedo.Lifespan} direct={torpedo.Power} blast={torpedo.BlastPower} radius={torpedo.BlastRadius}");
         foreach (short id in ship.HullType.PreferredPartsTypes.Where(id => id >= 0))
         {
             if (!host.Mission.Core.PartTypes.TryGetValue(id, out var part) && !host.Mission.Core.TryBuildExpendableLauncher(id, out part)) continue;
@@ -39,6 +52,17 @@ var style = Enum.Parse<HudStyle>(args[3]);
 Directory.CreateDirectory(args[1]);
 Environment.SetEnvironmentVariable("ALLEGIANCE_TRAINING_START", mission.ToString());
 Environment.SetEnvironmentVariable("ALLEGIANCE_TRAIN_PROOF", "1");
+if (args.Length >= 5 && args[4] is "hunt" or "sacrifice")
+{
+    // Training reserves Insert as AcceptCommand (defaultinputmap.mdl:12-13;
+    // TrainingInputGate.NativeDefaultKeyDown). Use a normal per-window user
+    // key profile so requested vertical thrust reaches its ordinary handler.
+    var keymap = TrainingProofPilot.CreateInputMap();
+    string keymapPath = Path.GetFullPath(Path.Combine(args[1], "keymap.json"));
+    File.WriteAllText(keymapPath, keymap.ToJson());
+    Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", keymapPath);
+    Console.WriteLine("[p931] isolated input profile: ThrustUp=NumPad8; native Insert=AcceptCommand retained");
+}
 using var game = new Game1(new Game1.LaunchOptions
 {
     Intro = true, PlayerName = "Training Pilot", WindowWidth = 800, WindowHeight = 480,
@@ -64,6 +88,13 @@ else if (args.Length >= 5)
     string field = args[4] switch { "early" => "_proofNaniteMountEarly", "loss" => "_proofNaniteWithholdRepair", "departure" => "_proofM4WaitForDeparture", "hunt" => "_proofM4HuntMiner", "sacrifice" => "_proofNaniteSacrifice", _ => throw new ArgumentException("unknown policy") };
     typeof(Game1).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, true);
 }
+// Each real window records the exact binaries it loaded, including windows
+// launched later by the long training gate.
+File.WriteAllText(Path.Combine(args[1], "build.json"), System.Text.Json.JsonSerializer.Serialize(
+    new[] { Assembly.GetExecutingAssembly(), typeof(Game1).Assembly, typeof(TrainingClock).Assembly,
+        typeof(Allegiance.Core.Sim.Ship).Assembly }.Distinct().ToDictionary(a => Path.GetFileName(a.Location),
+            a => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(a.Location))).ToLowerInvariant()),
+    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
 game.Run();
 if (!proof.Completed) throw new InvalidOperationException("The lesson window exited before the requested proof completed.");
 if (lastLesson > 0 || args.Length >= 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
@@ -102,6 +133,40 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
     private bool _naniteLeadShot;
     private double _nextCombatTrace;
     private string _lastGoal = "";
+    private StreamWriter? _pilotTrace;
+    private TimeSpan _pilotFrame = TimeSpan.MinValue;
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _pilotTrace?.Dispose();
+        base.Dispose(disposing);
+    }
+
+    private void TracePilot(GameTime frame, TrainingHost host, string goal)
+    {
+        if (policy is not ("hunt" or "sacrifice")) return;
+        // Game1 also pumps components from UpdateFlying. Count each rendered
+        // frame once when measuring the sampling cadence.
+        if (_pilotFrame == frame.TotalGameTime) return;
+        _pilotFrame = frame.TotalGameTime;
+        _pilotTrace ??= new StreamWriter(Path.Combine(output, "pilot.csv")) { AutoFlush = true };
+        if (_pilotTrace.BaseStream.Position == 0)
+            _pilotTrace.WriteLine("wall,frameDt,sim,sampleDt,goal,target,sector,hull,shield,distance,ownError,aim,leadAim,yaw,pitch,fire,keys,outpostHull,outpostShield,ownX,ownY,ownZ,hostX,hostY,hostZ,forecastError");
+        var target = host.GetCommandTarget(host.PlayerShipId);
+        var own = Get<Allegiance.ClientCore.Flight.OwnShipSimulator>("_ownSim");
+        var controls = Get<Allegiance.Core.Sim.ControlData>("_lastSentControls");
+        var keys = Get<Microsoft.Xna.Framework.Input.Keys[]?>("_proofKeys") ?? [];
+        var ship = target is { Type: ObjectType.Ship } t && host.Drones.TryGetValue(t.Id, out var s) ? s : null;
+        var delta = ship is null ? Allegiance.Core.Collision.Vector3.Zero : ship.Position - own.Position;
+        float aim = delta.LengthSquared() > 0 ? MathF.Acos(Math.Clamp(own.Orientation.GetForward() * (delta / delta.Length()), -1, 1)) * 180 / MathF.PI : 0;
+        var point = Get<System.Numerics.Vector3?>("_proofAimPoint");
+        var leadDelta = point is { } p ? new Allegiance.Core.Collision.Vector3(p.X, p.Y, p.Z) - own.Position : delta;
+        float leadAim = leadDelta.LengthSquared() > 0 ? MathF.Acos(Math.Clamp(own.Orientation.GetForward() * leadDelta.Normalize(), -1, 1)) * 180 / MathF.PI : 0;
+        var hostPosition = host.PlayerShip.Position;
+        var forecast = Get<Allegiance.ClientCore.Flight.OwnShipSimulator>("_proofForecast");
+        var station = missionId == 8 ? host.Mission.GetStation(Mission8.EnemyOutpostStationId) : null;
+        _pilotTrace.WriteLine(FormattableString.Invariant($"{_watch.Elapsed.TotalSeconds:F4},{frame.ElapsedGameTime.TotalSeconds:F4},{host.Mission.LastUpdate:F4},{Get<float>("_proofSampleSeconds"):F4},{goal},{target?.Id},{ship?.Sector?.Id},{ship?.Fraction:F5},{ship?.ShieldFraction:F5},{delta.Length():F3},{(own.Position - hostPosition).Length():F3},{aim:F3},{leadAim:F3},{controls.Yaw:F5},{controls.Pitch:F5},{(host.PlayerShip.StateM & Allegiance.Core.Sim.ShipControlState.WeaponsMask) != 0},{string.Join('|', keys)},{station?.ArmorFraction:F5},{station?.ShieldFraction:F5},{own.Position.X:F3},{own.Position.Y:F3},{own.Position.Z:F3},{hostPosition.X:F3},{hostPosition.Y:F3},{hostPosition.Z:F3},{(forecast.Position - own.Position).Length():F3}"));
+    }
 
     private T Get<T>(string field) => (T)typeof(Game1).GetField(field, Hidden)!.GetValue(game)!;
     private void Set(string field, object? value) => typeof(Game1).GetField(field, Hidden)!.SetValue(game, value);
@@ -131,6 +196,7 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 _heightOrderSeen = true;
             }
             string goal = session.Mission.ActiveGoalPath;
+            TracePilot(gameTime, host, goal);
             var messages = ((ClientTrainingSite)session.Site).Messages;
             if (missionId == 8)
             {
@@ -176,6 +242,10 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                     _minerKillShot = true;
                     Shot($"m4-{style.ToString().ToLowerInvariant()}-miner-killed");
                 }
+                if (policy == "hunt" && goal == "7.7" && _minersKilledInMars.Count == 0)
+                    Check(!Enumerable.Range(1101, 4).All(id => host.TrainingShipExists(id)
+                        && host.Drones.TryGetValue(id, out var escaped) && escaped.Sector?.Id != 1031),
+                        "all four living miners left Mars without a kill; the local hunting window was missed");
             }
             if (missionId == 8 && !_combinedAnnouncementSeen
                 && messages.Contains("Our bomber got destroyed too, but that is an acceptable price to pay."))
@@ -192,21 +262,26 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 _naniteLeadShot = true;
                 Shot($"m8-{style.ToString().ToLowerInvariant()}-nanite-lead");
             }
-            // Native model retirement may clear this order one update before
-            // the lesson graph observes the death. Pin only live combatants.
-            if (missionId == 8 && goal == "3.19" && host.TrainingShipExists(8007)
-                && host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)) > 0
-                && host.Drones.TryGetValue(8007, out var commander))
-                Check(commander.AcceptedShipCommandId == TrainingMissionIds.CmdAttack
-                    && commander.AcceptedShipTarget?.Id == Mission8.EnemyOutpostStationId,
-                    "input replay replaced the authored bomber attack order");
+            // Capture the order BEFORE the locked liveness read. Retirement
+            // between these reads must be classified as death, not as a replay
+            // changing a live combatant's authored order.
+            if (missionId == 8 && goal == "3.19" && host.Drones.TryGetValue(8007, out var commander))
+            {
+                bool attack = commander.AcceptedShipCommandId == TrainingMissionIds.CmdAttack
+                    && commander.AcceptedShipTarget?.Id == Mission8.EnemyOutpostStationId;
+                if (host.TrainingShipExists(8007)
+                    && host.GetFraction(new(ObjectType.Station, Mission8.EnemyOutpostStationId)) > 0)
+                    Check(attack, "input replay replaced the authored bomber attack order");
+            }
             if (missionId == 4 && !_quickShot && Get<bool>("_qcMenuOpen"))
             { _quickShot = true; Shot($"m4-{style.ToString().ToLowerInvariant()}-quickcomm"); }
             if (missionId == 8 && !_commandShot && Get<CameraMode>("_cameraMode") == CameraMode.Command
                 && Get<bool>("_trainingCommandPane") && Get<PaneSlideTracker>("_paneSlides").Progress(SlidingPane.CommandPane, Get<double>("_nowSeconds")) >= .9f)
             { _commandShot = true; Shot($"m8-{style.ToString().ToLowerInvariant()}-command-bar"); }
-            if (missionId == 4 && goal == "7.7" && host.GetCommandTarget(host.PlayerShipId) is { Type: ObjectType.Ship } target)
-                _minerTarget = target.Id;
+            if (missionId == 4 && goal == "7.7")
+                // Native mission4.cpp:823 tests CURRENT target, not the last
+                // ship selected before switching to a local aleph.
+                _minerTarget = host.GetCommandTarget(host.PlayerShipId) is { Type: ObjectType.Ship } target ? target.Id : -1;
             if (goal != _lastGoal && missionId == 5 && goal == "5.5") Shot($"m5-{style.ToString().ToLowerInvariant()}-team");
             if (goal != _lastGoal && missionId == 8 && goal == "1.14") Shot($"m8-{style.ToString().ToLowerInvariant()}-repair");
             if (missionId == 8 && goal == "3.22")

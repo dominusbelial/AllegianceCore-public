@@ -1,0 +1,32 @@
+{
+  "fixtures": [
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.P931TrainingPilotTests.Cloaked_approach_brakes_before_colliding_with_the_mining_contact(sample: 0.150000006)",
+      "outcome": "Passed",
+      "stdout": "M4 approach sample=0.150s minimum range=182.67; old=116.24"
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.P931TrainingPilotTests.Cloaked_approach_brakes_before_colliding_with_the_mining_contact(sample: 0.5)",
+      "outcome": "Passed",
+      "stdout": "M4 approach sample=0.500s minimum range=170.86; old=76.05"
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.P931TrainingPilotTests.Cloaked_approach_brakes_before_colliding_with_the_mining_contact(sample: 0)",
+      "outcome": "Passed",
+      "stdout": "M4 approach sample=0.000s minimum range=171.32; old=-215.36"
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.P931TrainingPilotTests.Cloaked_approach_brakes_before_colliding_with_the_mining_contact(sample: 1)",
+      "outcome": "Passed",
+      "stdout": "M4 approach sample=1.000s minimum range=169.30; old=75.74"
+    },
+    {
+      "test": "Allegiance.ClientCore.MonoGame.Tests.P931TrainingPilotTests.Cloaked_approach_brakes_before_colliding_with_the_mining_contact(sample: 2)",
+      "outcome": "Passed",
+      "stdout": "M4 approach sample=2.000s minimum range=190.13; old=-273.10"
+    }
+  ],
+  "runs": 3,
+  "skipped": 0,
+  "source": "pilot-final-native-time/{1,2,3}/result.trx (five approach cases)"
+}

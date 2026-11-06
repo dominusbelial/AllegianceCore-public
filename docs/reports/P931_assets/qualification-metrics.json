@@ -1,0 +1,737 @@
+[
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-native-time/hunt-Modern-1",
+    "seconds": 306.107,
+    "combat_frames": 123,
+    "frame_median": 1.0484,
+    "frame_p95": 2.2368,
+    "frame_max": 2.6398,
+    "fire_host_origin_error_p95": 40.704,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "203.0",
+        "225.40"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.3848"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-native-time/hunt-Classic-1",
+    "seconds": 308.609,
+    "combat_frames": 111,
+    "frame_median": 1.2941,
+    "frame_p95": 2.2912,
+    "frame_max": 2.6962,
+    "fire_host_origin_error_p95": 56.593,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "207.6",
+        "226.40"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.4168"
+      ]
+    ]
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-native-time/sacrifice-Classic-1",
+    "seconds": 288.628,
+    "combat_frames": 55,
+    "frame_median": 0.4751,
+    "frame_p95": 0.6003,
+    "frame_max": 0.9916,
+    "fire_host_origin_error_p95": 7.083,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-native-time/sacrifice-Modern-1",
+    "seconds": 291.118,
+    "combat_frames": 55,
+    "frame_median": 0.4479,
+    "frame_p95": 0.5983,
+    "frame_max": 0.7428,
+    "fire_host_origin_error_p95": 6.076,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-native-time/hunt-Classic-2",
+    "seconds": 292.106,
+    "combat_frames": 215,
+    "frame_median": 0.602,
+    "frame_p95": 1.3926,
+    "frame_max": 2.5856,
+    "fire_host_origin_error_p95": 24.884,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "188.8",
+        "197.40"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.0191"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-native-time/hunt-Modern-2",
+    "seconds": 290.116,
+    "combat_frames": 210,
+    "frame_median": 0.5982,
+    "frame_p95": 1.4453,
+    "frame_max": 2.1905,
+    "fire_host_origin_error_p95": 22.274,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "191.2",
+        "194.85"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.0537"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-1",
+    "seconds": 289.617,
+    "combat_frames": 216,
+    "frame_median": 0.6172,
+    "frame_p95": 1.4423,
+    "frame_max": 1.9423,
+    "fire_host_origin_error_p95": 24.529,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "181.3",
+        "191.75"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.0593"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-1",
+    "seconds": 287.114,
+    "combat_frames": 214,
+    "frame_median": 0.599,
+    "frame_p95": 1.4949,
+    "frame_max": 2.2428,
+    "fire_host_origin_error_p95": 30.25,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "193.1",
+        "188.75"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.1476"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-2",
+    "seconds": 288.618,
+    "combat_frames": 216,
+    "frame_median": 0.6469,
+    "frame_p95": 1.3433,
+    "frame_max": 1.9403,
+    "fire_host_origin_error_p95": 38.309,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "194.4",
+        "188.20"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.1736"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-2",
+    "seconds": 293.609,
+    "combat_frames": 134,
+    "frame_median": 1.0707,
+    "frame_p95": 1.9422,
+    "frame_max": 2.9373,
+    "fire_host_origin_error_p95": 37.455,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "179.4",
+        "212.60"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.3820"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-3",
+    "seconds": 287.117,
+    "combat_frames": 211,
+    "frame_median": 0.6478,
+    "frame_p95": 1.3073,
+    "frame_max": 2.6371,
+    "fire_host_origin_error_p95": 30.575,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "202.3",
+        "189.34"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.0329"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-3",
+    "seconds": 288.109,
+    "combat_frames": 224,
+    "frame_median": 0.5979,
+    "frame_p95": 1.282,
+    "frame_max": 2.2397,
+    "fire_host_origin_error_p95": 27.559,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "184.6",
+        "190.05"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.0381"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Failed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-4",
+    "seconds": 290.615,
+    "combat_frames": 223,
+    "frame_median": 0.6,
+    "frame_p95": 1.296,
+    "frame_max": 1.7918,
+    "fire_host_origin_error_p95": 16.936,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "197.9",
+        "190.40"
+      ]
+    ],
+    "retreat": [
+      [
+        "1103",
+        "0.1007"
+      ]
+    ]
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-4",
+    "seconds": 240.101,
+    "combat_frames": 155,
+    "frame_median": 0.5974,
+    "frame_p95": 1.2466,
+    "frame_max": 2.5915,
+    "fire_host_origin_error_p95": 13.15,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "208.0",
+        "196.55"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-5",
+    "seconds": 237.093,
+    "combat_frames": 163,
+    "frame_median": 0.5504,
+    "frame_p95": 1.1962,
+    "frame_max": 2.189,
+    "fire_host_origin_error_p95": 25.818,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "194.2",
+        "187.50"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-5",
+    "seconds": 235.097,
+    "combat_frames": 158,
+    "frame_median": 0.5668,
+    "frame_p95": 1.2474,
+    "frame_max": 1.8989,
+    "fire_host_origin_error_p95": 27.851,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "208.5",
+        "187.65"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-6",
+    "seconds": 232.59,
+    "combat_frames": 152,
+    "frame_median": 0.5968,
+    "frame_p95": 0.9965,
+    "frame_max": 1.6937,
+    "fire_host_origin_error_p95": 15.991,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "184.6",
+        "190.25"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-6",
+    "seconds": 234.595,
+    "combat_frames": 147,
+    "frame_median": 0.5975,
+    "frame_p95": 1.1945,
+    "frame_max": 1.9203,
+    "fire_host_origin_error_p95": 19.167,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "182.9",
+        "190.50"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-7",
+    "seconds": 238.099,
+    "combat_frames": 156,
+    "frame_median": 0.5969,
+    "frame_p95": 1.1479,
+    "frame_max": 2.2423,
+    "fire_host_origin_error_p95": 23.383,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "193.7",
+        "190.65"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-7",
+    "seconds": 236.601,
+    "combat_frames": 142,
+    "frame_median": 0.6,
+    "frame_p95": 1.3452,
+    "frame_max": 2.175,
+    "fire_host_origin_error_p95": 14.428,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "191.8",
+        "192.15"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Classic-8",
+    "seconds": 233.59,
+    "combat_frames": 151,
+    "frame_median": 0.5957,
+    "frame_p95": 1.2475,
+    "frame_max": 2.0452,
+    "fire_host_origin_error_p95": 16.549,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "186.5",
+        "190.15"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "hunt",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-hunt/hunt-Modern-8",
+    "seconds": 234.094,
+    "combat_frames": 152,
+    "frame_median": 0.5974,
+    "frame_p95": 1.148,
+    "frame_max": 1.8425,
+    "fire_host_origin_error_p95": 23.556,
+    "fire_local_forecast_error_p95": 0.0,
+    "commit": [
+      [
+        "1103",
+        "206.7",
+        "188.85"
+      ]
+    ],
+    "retreat": []
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-1",
+    "seconds": 291.114,
+    "combat_frames": 54,
+    "frame_median": 0.4485,
+    "frame_p95": 0.5988,
+    "frame_max": 0.7485,
+    "fire_host_origin_error_p95": 5.185,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-1",
+    "seconds": 290.613,
+    "combat_frames": 54,
+    "frame_median": 0.4488,
+    "frame_p95": 0.5975,
+    "frame_max": 0.6257,
+    "fire_host_origin_error_p95": 5.909,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-2",
+    "seconds": 290.619,
+    "combat_frames": 54,
+    "frame_median": 0.4482,
+    "frame_p95": 0.5969,
+    "frame_max": 0.7448,
+    "fire_host_origin_error_p95": 8.152,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-2",
+    "seconds": 284.604,
+    "combat_frames": 47,
+    "frame_median": 0.5923,
+    "frame_p95": 0.5972,
+    "frame_max": 0.8933,
+    "fire_host_origin_error_p95": 6.66,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-3",
+    "seconds": 291.119,
+    "combat_frames": 54,
+    "frame_median": 0.4487,
+    "frame_p95": 0.5994,
+    "frame_max": 0.6954,
+    "fire_host_origin_error_p95": 6.056,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-3",
+    "seconds": 291.109,
+    "combat_frames": 55,
+    "frame_median": 0.4486,
+    "frame_p95": 0.5972,
+    "frame_max": 0.5989,
+    "fire_host_origin_error_p95": 7.006,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-4",
+    "seconds": 291.118,
+    "combat_frames": 54,
+    "frame_median": 0.4496,
+    "frame_p95": 0.5981,
+    "frame_max": 0.7441,
+    "fire_host_origin_error_p95": 4.837,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-4",
+    "seconds": 290.62,
+    "combat_frames": 55,
+    "frame_median": 0.4479,
+    "frame_p95": 0.5993,
+    "frame_max": 0.6358,
+    "fire_host_origin_error_p95": 6.37,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-5",
+    "seconds": 290.616,
+    "combat_frames": 53,
+    "frame_median": 0.4509,
+    "frame_p95": 0.5996,
+    "frame_max": 0.6967,
+    "fire_host_origin_error_p95": 6.924,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-5",
+    "seconds": 284.609,
+    "combat_frames": 53,
+    "frame_median": 0.449,
+    "frame_p95": 0.5984,
+    "frame_max": 0.7752,
+    "fire_host_origin_error_p95": 5.255,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-6",
+    "seconds": 289.619,
+    "combat_frames": 53,
+    "frame_median": 0.4492,
+    "frame_p95": 0.5985,
+    "frame_max": 0.6957,
+    "fire_host_origin_error_p95": 13.845,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-6",
+    "seconds": 292.623,
+    "combat_frames": 58,
+    "frame_median": 0.4479,
+    "frame_p95": 0.5971,
+    "frame_max": 0.6245,
+    "fire_host_origin_error_p95": 5.912,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-7",
+    "seconds": 290.122,
+    "combat_frames": 52,
+    "frame_median": 0.4667,
+    "frame_p95": 0.5998,
+    "frame_max": 0.7477,
+    "fire_host_origin_error_p95": 5.283,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-7",
+    "seconds": 290.617,
+    "combat_frames": 54,
+    "frame_median": 0.4489,
+    "frame_p95": 0.5962,
+    "frame_max": 0.8433,
+    "fire_host_origin_error_p95": 5.609,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-8",
+    "seconds": 289.625,
+    "combat_frames": 55,
+    "frame_median": 0.4485,
+    "frame_p95": 0.5964,
+    "frame_max": 0.6013,
+    "fire_host_origin_error_p95": 7.482,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-8",
+    "seconds": 290.612,
+    "combat_frames": 52,
+    "frame_median": 0.4498,
+    "frame_p95": 0.5949,
+    "frame_max": 0.5977,
+    "fire_host_origin_error_p95": 6.642,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Classic",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Classic-9",
+    "seconds": 284.109,
+    "combat_frames": 55,
+    "frame_median": 0.448,
+    "frame_p95": 0.5986,
+    "frame_max": 0.631,
+    "fire_host_origin_error_p95": 5.778,
+    "fire_local_forecast_error_p95": 0.0
+  },
+  {
+    "policy": "sacrifice",
+    "style": "Modern",
+    "outcome": "Passed",
+    "window": ".scratch/p931/qualification-final-sacrifice/sacrifice-Modern-9",
+    "seconds": 292.132,
+    "combat_frames": 60,
+    "frame_median": 0.4471,
+    "frame_p95": 0.6219,
+    "frame_max": 0.9966,
+    "fire_host_origin_error_p95": 5.523,
+    "fire_local_forecast_error_p95": 0.0
+  }
+]

@@ -33,7 +33,6 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
     [InlineData("Classic")] [InlineData("Modern")]
     public async Task Combined_bomber_and_outpost_loss_is_announced_through_real_input(string style)
     {
-        RequireBranchProof();
         await RunWindow(8, style, "sacrifice");
     }
 
@@ -55,11 +54,12 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         // actors. Stop only after the assigned lesson's real last condition.
         => await RunWindow(mission, "Modern", $"lesson={lesson}");
 
-    // Combat outcomes, not forced ones: hunt 7/8, sacrifice 13/14 (P917 report).
-    // Opt-in so a lost roll cannot fail the training gate.
+    // P931: the M4 hunt branch still lands only 4/14 Classic, 6/14 Modern (misses
+    // while the miner retreats), so it stays partial and opt-in; a lost combat roll
+    // must not fail the training gate. The M8 sacrifice proof runs every time.
     private static void RequireBranchProof() => Skip.IfNot(
         Environment.GetEnvironmentVariable("ALLEGIANCE_TRAINING_BRANCH_PROOFS") == "1",
-        "Set ALLEGIANCE_TRAINING_BRANCH_PROOFS=1 to run the P917 branch proofs.");
+        "Set ALLEGIANCE_TRAINING_BRANCH_PROOFS=1 to run the M4 hunt branch proof.");
 
     private async Task RunWindow(int mission, string style, string? policy, int? lastLesson = null)
     {
@@ -71,7 +71,7 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         string proof = Path.Combine(root, "tools", "p912-training-proof", "bin", configuration, "net10.0", "p912-training-proof.dll");
         string content = Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame", "bin", configuration, "net10.0", "Content");
         Assert.True(File.Exists(proof), "Build tools/p912-training-proof before running the window tests.");
-        string directory = Path.Combine(root, ".scratch", "p917", "windows",
+        string directory = Path.Combine(root, ".scratch", "p931", "windows",
             $"m{mission}-{style}-{policy ?? "default"}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         string dotnet = Environment.GetEnvironmentVariable("DOTNET")

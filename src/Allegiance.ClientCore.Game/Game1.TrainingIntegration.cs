@@ -7,19 +7,28 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     private sealed record TrainingPreferences(HudStyle Style, string Keymap, Func<string, bool>? Filter,
-        CameraMode Camera, RadarMode Radar, ConsolePaneState Panes);
+        CameraMode Camera, RadarMode Radar, ConsolePaneState Panes, TimeSpan FrameCap);
     private TrainingPreferences? _trainingPreferences;
     private bool _trainingQuitConfirm;
     private bool _trainingLaunchRequested;
 
     // training/trainingmission.cpp:74-80,119-128. The port supports both HUD
     // styles during lessons; preserve the user's style and keymap at every exit.
+    internal static readonly TimeSpan TrainingMaxElapsed = TimeSpan.FromSeconds(5);
+
     private void SaveTrainingPreferences()
     {
         if (_trainingPreferences is not null) return;
         var map = KeyBindingStore.Instance.Map;
         _trainingPreferences = new(_hudSettings.Style, map.ToJson(), map.ActionFilter,
-            _cameraMode, _radarMode, _consolePanes);
+            _cameraMode, _radarMode, _consolePanes, MaxElapsedTime);
+        // Native shipping Time::Now retains the complete elapsed interval
+        // (zlib/ztime.h:75-77). The framework's 500 ms cap otherwise discards
+        // time before TrainingClock and local flight can advance with the host.
+        // Bounded, not unlimited: with a fixed timestep MonoGame replays Updates to
+        // catch up, and a minimised window or a sleep must not unleash an unbounded
+        // burst (native has no catch-up loop). 5 s covers the gate's 2.9 s frames.
+        MaxElapsedTime = TrainingMaxElapsed;
         KeyBindingStore.Instance.Reload();
     }
 
@@ -43,6 +52,7 @@ public sealed partial class Game1
         map.ActionFilter = null;
         if (_trainingPreferences is { } saved)
         {
+            MaxElapsedTime = saved.FrameCap;
             _hudSettings.Style = saved.Style;
             map.ResetToDefaults();
             map.ApplyJson(saved.Keymap);

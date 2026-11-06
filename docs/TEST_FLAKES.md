@@ -4,6 +4,61 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P931 validation — one Fast sweep, 2026-11-05–06
+
+Exactly one Fast sweep: **13,113 passed / 9 failed / 3 optional-pack skips**,
+13,125 executions in 533.4 s. All nine infrastructure checks pass. The sweep
+remains **FAIL**; the runner's existing quarantine retry passed its AddPart
+case, but no second tier sweep, timeout increase or test exclusion was used.
+Task-owned real-input training failures are reported in the P931 report and
+are not classified as unrelated flakes.
+
+| Failure / timing offender | Three serial filtered outcomes | Evidence / classification |
+|---|---|---|
+| `P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame` | **pass/pass/pass**; 625/663/595 ns per solve | Sweep's allocation assertion passed; its **20,313 ns** measurement exceeded the unchanged 20,000 ns time budget. Lead implementation unchanged. Timing flake under the overlapping real training windows. |
+| Five `PlayerBundlePathsTests` cases (executable Artwork fallback; missing Artwork/NativeSource defaults; local config; native subdirectory guessing) | Each **fail/fail/fail**; two selected SkyPack companions pass 3/3 | Same mandated in-worktree TMPDIR / ancestor `local.env` signature documented in P928/P924; resolver unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**; 0.875/0.853/0.859 s | Same existing null target/reference assertion and prior dispatch-base controls documented in P928; NPC code unchanged. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass**; 0.711/0.709/0.728 s | Sweep observed **31.35** against [28,31]; existing receipt/clock boundary, also recorded in P928. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**; 9.590/9.609/9.401 s | Sweep passed its assertions in **10.747 s**, above the calibrated **10.180 s** Fast guard. Warp implementation unchanged. |
+| `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (existing quarantine) | **pass/pass/pass**; 0.058/0.057/0.162 s | Sweep's `Assert.Single` saw the expected part plus a random powerup. The runner's existing one-case retry also passed. Pickup/world code unchanged. |
+
+The filtered Core cohort contains eleven cases per run: **5 passed / 6 failed /
+0 skipped** each time, including the five bundle failures and one defender
+failure. It runs with serial collection settings while the real training gate
+and proof windows remain active; this is method isolation, not an exclusive-host
+claim. Raw receipts: `.scratch/p931/non-task/` in the task worktree. Compact
+results and task verdicts: [P931 report](reports/P931_REPORT.md).
+
+One incremental parallel solution build also hit MSB4166 worker exits without
+a diagnostic file. Three subsequent whole-solution builds using `-m:1
+-nr:false` and disabled node reuse each passed with **0 warnings / 0 errors**
+(`.scratch/p931/build-serial-{1,2,3}.log`); the retained Debug build uses the same
+process settings. No product change or check exclusion was used for this.
+
+The one-repeat training sweep also exposed an existing **observer read race**
+in `Every_lesson_completes_in_one_real_window_session(8, Modern, loss)`:
+the bomber died after `TrainingShipExists` released the host lock but before
+its accepted order was read, producing “input replay replaced the authored
+bomber attack order.” P931 captures the order first and performs the same
+locked liveness/live-outpost checks afterward. The order predicate, actual
+HP/death checks and messages are unchanged. **Three full replays of the exact
+failed window policy pass**, with the native `tm_8_15` loss voice and final
+completion marker checked, **zero skips** (`.scratch/p931/loss-isolation/`).
+This is a corrected harness race, not a remaining policy flake; the original
+sweep failure remains recorded. P931's task-owned hunt failures remain in its
+report and retain partial matrix status.
+
+The requested P931 one-repeat training command reached its owned **140-minute
+bound** at 01:45:40 UTC on November 6 and was terminated (exit -15). ClientCore
+completed **102/102, zero skips**; MonoGame produced no final TRX. Its 36 P912
+window observations comprise **32 completed proofs, three failures and one
+interrupted Modern early-Nanite window**. The failures are the original observer
+race above and both task-owned hunt cases; both combined-ending cases passed.
+A separate fresh early-Nanite invocation passes **2/2, zero skips**. The other
+training classes pass **219/219, zero skips**, in a separately disclosed
+continuation (`.scratch/p931/training-continuation-nonwindow/`). Owner-controlled interruption is not relabeled a test flake, and these
+follow-ups do not make the original broad gate green.
+
 ## P928 validation — one Fast sweep, serial Live runs and base controls, 2026-11-04
 
 Exactly one Fast sweep: **13,060 passed / 10 failed / 3 optional Meshy-pack

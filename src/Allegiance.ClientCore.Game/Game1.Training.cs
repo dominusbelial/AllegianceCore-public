@@ -433,7 +433,7 @@ public sealed partial class Game1
         // P886 — the training autoproof (inert unless ALLEGIANCE_TRAIN_PROOF=1): drives the
         // proof-only input seam every frame so the same frame's flight input reads the synthetic
         // keys/state. Runs before the mission pump, like native's input feeding the mission.
-        ApplyTrainingProof();
+        ApplyTrainingProof(dt);
         if (_trainingSession is not { } session) return;
         if (!session.Started)
         {
@@ -457,8 +457,9 @@ public sealed partial class Game1
                 return;
             }
         }
-        _trainingFrameDelta = (float)Math.Clamp(dt, 0.0, 0.25);
+        double previousClock = _trainingClock;
         _trainingClock = TrainingClock.Advance(dt);
+        _trainingFrameDelta = (float)(_trainingClock - previousClock);
         if (_embeddedHost is { } host) host.Paused = TrainingClock.IsPaused;
         if (session.Advance())
         {

@@ -1,0 +1,32 @@
+{
+  "fixture": "P931TrainingPilotTests",
+  "passed": 24,
+  "skipped": 0,
+  "runs": 3,
+  "source": "pilot-final-native-time/{1,2,3}/result.trx",
+  "metrics": [
+    "M4 formation sample=0.000s forecast position RMS=20.90; fixed-deadband RMS=127.45",
+    "Sample=0.000000s moving-sight-line mean=0.0151deg previous=0.9746deg",
+    "M4 sample=0.000000s improved=0.9971deg previous=1.5942deg",
+    "M4 formation sample=0.150s forecast position RMS=10.16; fixed-deadband RMS=23.21",
+    "M4 approach sample=1.000s minimum range=169.30; old=75.74",
+    "M4 sample=0.500000s improved=1.4315deg previous=1.8425deg",
+    "M4 formation sample=0.500s forecast position RMS=12.17; fixed-deadband RMS=22.75",
+    "M4 approach sample=0.150s minimum range=182.67; old=116.24",
+    "M4 sample=0.300000s improved=0.6360deg previous=1.3995deg",
+    "Sample=0.450000s moving-sight-line mean=0.0440deg previous=1.1368deg",
+    "M8 sample=0.300000s improved=0.0342deg previous=1.2734deg",
+    "M4 formation sample=2.300s forecast position RMS=36.89; fixed-deadband RMS=130.74",
+    "Sample=0.150000s moving-sight-line mean=0.0060deg previous=0.7580deg",
+    "M8 sample=0.500000s improved=0.0976deg previous=1.9528deg",
+    "M8 sample=0.150000s improved=0.0160deg previous=0.9016deg",
+    "M4 approach sample=0.000s minimum range=171.32; old=-215.36",
+    "M4 approach sample=2.000s minimum range=190.13; old=-273.10",
+    "Sample=0.300000s moving-sight-line mean=0.0158deg previous=1.0828deg",
+    "M4 formation sample=1.000s forecast position RMS=14.66; fixed-deadband RMS=29.55",
+    "M4 sample=0.150000s improved=0.5345deg previous=1.0395deg",
+    "Sample=0.016667s moving-sight-line mean=0.0023deg previous=0.5403deg",
+    "M4 approach sample=0.500s minimum range=170.86; old=76.05",
+    "M8 sample=0.000000s improved=0.0435deg previous=1.3213deg"
+  ]
+}

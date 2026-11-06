@@ -1059,6 +1059,26 @@ list in **reverse**.
   Native: `training/mission4.cpp:777-844`, `training/mission8.cpp:595-650`,
   `training/GetShipIsDamagedCondition.h:32-34`, `Igc/shipIGC.cpp:1730-1747`.
   Audit: `docs/reports/P917_REPORT.md`.
+- **Sampled training branch pilot (P931)** — simulation-time key edges and
+  moving-sight-line steering in
+  `src/Allegiance.ClientCore.Game/Training/TrainingProofPilot.cs`, with the
+  cloak/intercept input policy in `src/Allegiance.ClientCore.Game/Game1.TrainingProof.Hunt.cs`
+  and visible in-flight repair budgeting in
+  `src/Allegiance.ClientCore.Game/Game1.TrainingProof.Advanced.cs`.
+  `tools/p912-training-proof/Program.cs` records frame/simulation timing,
+  emitted inputs and loaded-binary hashes. The shared pilot forecasts ordinary digital
+  thrust combinations through the actual sampled frame. Its isolated user key profile keeps
+  Up thrust reachable without consuming native Insert/AcceptCommand; `tools/p931-training-qualify.py` runs bounded fresh-window
+  cohorts for both HUD styles. Physics regression:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P931TrainingPilotTests.cs`;
+  shipping `src/Allegiance.ClientCore/Training/TrainingClock.cs` retains whole
+  frame intervals (native `zlib/ztime.h:50-77` limits only `_DEBUG_TRAINING`),
+  with red/green coverage in `tests/Allegiance.ClientCore.Tests/P931TrainingClockTests.cs`.
+  `src/Allegiance.ClientCore.Game/Game1.TrainingIntegration.cs` also retains whole
+  framework frame intervals during lessons and restores the saved cap on every exit;
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P910TrainingIntegrationTests.cs` covers
+  all exit routes in both HUD styles.
+  Verdicts and native citations: `docs/reports/P931_REPORT.md`.
 - **Training mission completion bindings (P881a)** — Basic Flight and Basic Weaponry run
   start-to-finish through the production path: client orders/target picks use the real
   `ORDER_CHANGE` (`src/Allegiance.ClientCore.Game/Game1.Training.cs`), the own ship's applied
