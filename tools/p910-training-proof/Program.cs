@@ -4,18 +4,22 @@ using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 
-if (args.Length != 3) throw new ArgumentException("usage: p910-training-proof <content> <output> <Classic|Modern>");
+bool purchase = args is [_, _, _, "purchase"];
+if (args.Length != 3 && !purchase) throw new ArgumentException("usage: p910-training-proof <content> <output> <Classic|Modern> [purchase]");
 var style = Enum.Parse<HudStyle>(args[2]);
 using var game = new Game1(new Game1.LaunchOptions { Intro = true, PlayerName = "Training Pilot", WindowWidth = 800, WindowHeight = 480 });
 game.Content.RootDirectory = Path.GetFullPath(args[0]);
-game.Components.Add(new TrainingProof(game, Path.GetFullPath(args[1]), style));
+game.Components.Add(purchase
+    ? new PurchaseProof(game, Path.GetFullPath(args[1]), style)
+    : new TrainingProof(game, Path.GetFullPath(args[1]), style));
 game.Run();
 game.Dispose(); // real window unload must release a still-active lesson
 if (Allegiance.ClientCore.Training.TrainingController.IsTraining || TrainingOverlay.Current != 0)
     throw new InvalidOperationException("Window close left training active.");
 var hud = (HudSettings)typeof(Game1).GetField("_hudSettings", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(game)!;
 if (hud.Style != style) throw new InvalidOperationException("Window close failed to restore HUD style.");
-Console.WriteLine("P910_WINDOW_ROUTES_PASS: explicit quit, transport loss, window unload");
+Console.WriteLine(purchase ? $"P932_PURCHASE_WINDOW_PASS {style}: buy and same-call launch"
+    : "P910_WINDOW_ROUTES_PASS: explicit quit, transport loss, window unload");
 
 sealed class TrainingProof(Game1 game, string output, HudStyle style) : GameComponent(game)
 {
@@ -87,5 +91,83 @@ sealed class TrainingProof(Game1 game, string output, HudStyle style) : GameComp
             Get<HudSettings>("_hudSettings").Style = style == HudStyle.Classic ? HudStyle.Modern : HudStyle.Classic;
             game.Exit();
         }
+    }
+}
+
+// P932: Free Flight permits docking (training/mission10.cpp:66-74). Arrange
+// a dock, then use the exact shared
+// hangar button dispatcher. Screenshots come from Game1's real backbuffer;
+// the synchronous completion checks run on that same game thread.
+sealed class PurchaseProof(Game1 game, string output, HudStyle style) : GameComponent(game)
+{
+    private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
+    private readonly Stopwatch _watch = Stopwatch.StartNew();
+    private int _step, _completions;
+    private double _next;
+    private T Get<T>(string field) => (T)typeof(Game1).GetField(field, Hidden)!.GetValue(game)!;
+    private void Set(string field, object value) => typeof(Game1).GetField(field, Hidden)!.SetValue(game, value);
+    private object? Call(string method, params object[] args) => typeof(Game1).GetMethods(Hidden)
+        .Single(m => m.Name == method && m.GetParameters().Length == args.Length).Invoke(game, args);
+    private void Shot(string phase)
+    {
+        Set("_autoshotDir", output);
+        Set("_autoShotName", $"p932-{style.ToString().ToLowerInvariant()}-{phase}");
+        Set("_autoShotScheduled", true);
+    }
+    private static void Check(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+    public override void Update(GameTime gameTime)
+    {
+        if (_watch.Elapsed.TotalSeconds > 60) throw new TimeoutException("Purchase window proof timed out.");
+        if (_watch.Elapsed.TotalSeconds < _next) return;
+        if (_step == 0)
+        {
+            Get<HudSettings>("_hudSettings").Style = style;
+            Call("BeginTrainingMission", 10);
+            _step++; _next = _watch.Elapsed.TotalSeconds + 3; return;
+        }
+        if (Get<TrainingSession?>("_trainingSession") is not { Started: true }) return;
+        var host = Get<Allegiance.SinglePlayer.TrainingHost>("_embeddedHost");
+        var session = Get<Allegiance.ClientCore.Session.ConnectionSession>("_session");
+        if (_step == 1)
+        {
+            Call("DismissBriefing"); host.Paused = true;
+            host.Mission.Site.DockWithStationEvent(host.PlayerShip,
+                new Allegiance.Core.Model.DockStation(host.Mission.GetStation(host.HomeStationId)!.Data));
+            _step++; return;
+        }
+        if (_step == 2)
+        {
+            if (!Get<bool>("_dockedActive") || Get<ShopModel?>("_shopModel") is null) return;
+            session.PurchaseCompleted += success =>
+            {
+                Check(success && host.PlayerShip.StationId is not null, "Completion must run while still docked.");
+                Check(session.World.Ships[host.PlayerShip.Id].HullId == host.PlayerShip.HullType.HullId,
+                    "Purchased hull missing from client at completion.");
+                _completions++;
+            };
+            Call("ActivateHangar", HangarAction.Buy);
+            Check(_completions == 1 && host.PlayerShip.StationId is not null, "Buy must complete in this call without launching.");
+            Shot("hangar"); _step++; _next = _watch.Elapsed.TotalSeconds + .5; return;
+        }
+        if (_step == 3)
+        {
+            if (Get<bool>("_autoShotScheduled")) return;
+            Call("ActivateHangar", HangarAction.Launch);
+            Check(_completions == 2 && host.PlayerShip.StationId is null, "Launch must complete in this call after notification.");
+            Check(session.World.Ships[host.PlayerShip.Id].StationId < 0, "Client must leave the dock in the same call.");
+            _step++; _next = _watch.Elapsed.TotalSeconds + .5; return;
+        }
+        if (_step == 4)
+        {
+            Check(!Get<bool>("_dockedActive"), "The live client must leave the hangar after local launch.");
+            Shot("launch"); _step++; return;
+        }
+        if (Get<bool>("_autoShotScheduled")) return;
+        Directory.CreateDirectory(output);
+        File.WriteAllText(Path.Combine(output, "complete.txt"), $"{style}: buy completed, notification preceded launch, same-call launch confirmed.\n");
+        game.Exit();
     }
 }

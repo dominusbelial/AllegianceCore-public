@@ -29,7 +29,7 @@ public sealed partial class Game1
             return;
         }
         if (_shopModel is not { } shop || !shop.TryLaunch()) return;
-        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+        PurchaseHangarLoadout(shop.EffectiveHullId, shop.ChosenParts, launch: true);
         _launchSent = true;
         _throttle = Flight.FlightInput.DefaultThrottle;
     }
@@ -82,8 +82,25 @@ public sealed partial class Game1
             return;
         }
         shop.SaveCustomLoadout();
-        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: false, parts: shop.ChosenParts);
-        Console.WriteLine($"[monogame] BUY_LOADOUT(fLaunch=false) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+        PurchaseHangarLoadout(shop.EffectiveHullId, shop.ChosenParts, launch: false);
+        Console.WriteLine($"[monogame] purchase hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+    }
+
+    private void PurchaseHangarLoadout(short hullId, IReadOnlyList<ExpandedPartData> parts, bool launch)
+    {
+        if (_embeddedHost is not { } training)
+        {
+            _session.SendBuyLoadout(hullId, fLaunch: launch, parts: parts);
+            return;
+        }
+        // clintlib.cpp:1731-1744: the loadout and completion event precede
+        // station launch in the same call. The receive thread cannot interleave
+        // loopback updates with this transaction.
+        lock (_session.Gate)
+            training.BuyLoadout(hullId, parts, launch,
+                ship => _session.CompleteLocalTrainingPurchase(ship.HullType.HullId, ship.ExportInventoryForAck()),
+                ship => _session.ApplyLocalTrainingLaunch(ship.Sector!.Id,
+                    ServerShipUpdate.FromModel(ship.Id, ship, _session.World.Ships[ship.Id].LastUpdateTick)));
     }
 
     // This dispatcher is shared by the real pointer buttons and headless transition tests.

@@ -4,6 +4,58 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P932 validation — one Fast sweep and three isolated reruns, 2026-11-06 UTC
+
+Exactly one Fast sweep: **13,129 passed / 10 failed / 3 optional Meshy-pack
+skips**, 13,142 executions in 538.8 s. All nine infrastructure checks passed.
+The passing warp-exit case also exceeded Fast's ten-second limit (10.519 s).
+The sweep remains **FAIL**; it was not rerun. All new P932 cases passed, and
+the six new methods plus the existing no-station regression passed 48/48
+executions in three isolated repeats per method, with zero skips.
+
+Each failing method was rerun three times alone with serial collection
+settings; the path-fixture family ran as one serial class. No unrelated
+implementation, timeout, tier or assertion was changed.
+
+| Sweep failure / timing offender | Three isolated outcomes | Qualification |
+|---|---|---|
+| Five `PlayerBundlePathsTests` cases (Artwork executable fallback; Artwork/NativeSource missing defaults; local configuration precedence; native-source install-subdirectory guessing) | Each **fail/fail/fail**; whole class **5 failed / 4 passed** in each run | Existing fixture ancestry conflict: mandated in-worktree TMPDIR finds ancestor `local.env`. P928 and P939 already record the same baseline family. |
+| `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate` | **pass/pass/pass**, 0.430/0.452/0.420 s | Existing relay/lookup timing family: sweep got `goto` rather than `goto Garrison`. No command, station lookup or server code changed. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/pass**, 0.344/0.332/0.335 s | Existing join-status receipt race: sweep expected flying=3, saw docked=2. Previously recorded with baseline controls in P928. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.252/1.248/1.255 s | Existing persistent null-target assertion, including prior unmodified-source P928 controls. P932 changes no NPC/flight policy or server simulation code. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | **pass/pass/pass**, 0.491/0.489/0.441 s | Existing earlier-destruction signature: sweep ended about 1062.9 m from launch against the fixture's approximately 1848.6 m full-lifespan expectation. The same signature is already recorded below; no missile code changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/pass**, 1.068/0.992/1.000 s | Existing simulated-clock/receipt boundary against [28,31]. It remains intermittent alone; no seating policy changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed but 10.519 s) | **pass/pass/pass**, 9.212/9.345/9.302 s | Timing-only Fast guard failure, below ten seconds in all isolated runs. No limit or tier was relaxed. |
+
+Raw receipts remain in `.scratch/p932/fast/` and
+`.scratch/p932/flake-isolation/` in the task worktree; a compact persisted
+summary and task report are under `docs/reports/P932_assets/` and
+[the P932 report](reports/P932_REPORT.md). The artwork-enabled training gate
+has its own complete outcome in that report; isolated passes do not clear
+the failed Fast sweep.
+
+### P932 artwork-enabled training gate
+
+`tools/run-training-tests.sh --no-build --repeat 1` completed with **341 passed /
+1 failed / 4 skipped** (ClientCore 100/0/0; MonoGame 241/1/4). All P932 cases,
+both P918 windows, both early-Nanite windows and all 20 lesson-prefix windows
+passed. The four skips are the optional miner-loss and combined-loss branch
+proofs in both styles; artwork was present, with zero missing-artwork skips.
+
+The sole failure was
+`P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: "Modern", policy: null)`:
+its observer timed out at M4 goal 9.3, waiting for the goto-command acceptance
+after construction. The trace still held destroyed scout 1100 as the current
+target. No purchase was reached. Classic default, Modern departure and Modern
+lesson-9/10 prefix proofs passed in the same gate. Exact-case isolation passed **3/3 complete courses**, with case durations
+**00:11:12/00:11:06/00:09:46**. This was a full-gate-only window failure in these samples;
+the command-delivery cause was not isolated. The failed full gate remains failed.
+
+Receipts: `.scratch/p932/training/1/`,
+`.scratch/p932/training-isolation/` and
+`.scratch/p932/p917/windows/m4-Modern-default-a85b4e53c7a74056978ec88be6a1d3a8/`.
+No unrelated M4 condition, proof driver, timeout or assertion was changed.
+
 ## P931 validation — one Fast sweep, 2026-11-05–06
 
 Exactly one Fast sweep: **13,113 passed / 9 failed / 3 optional-pack skips**,

@@ -131,8 +131,22 @@ public sealed partial class TrainingHost
             || mission.Core.TryBuildExpendableLauncher(id, out p) ? p : null;
         bool CanBuy(DataPartTypeIGC p) => station is null
             || TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, station.Type.TtbmLocal, techs);
-        long budget = ship.HullType.Price;
         bool Launcher(DataPartTypeIGC part) => part.EquipmentType is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher;
+        // trainingmission.cpp:820-821 -> shipIGC.h:396-406: GetValue is
+        // the hull plus ALL existing parts, including cargo. Packs have zero
+        // resale value (packigc.h:80-83); launchers use quantity * unit price
+        // (magazineigc.h:85-88, dispenserigc.h:86-89).
+        long Value(MountedPart part) => part.Type.Type is DataPartTypeIGC.Pack ? 0
+            : Launcher(part.Type) ? (long)part.Type.Price * part.Amount : part.Type.Price;
+        long budget = ship.HullType.Price + ship.Parts.Sum(Value)
+            + ship.CargoHold.Sum(part => part is null ? 0L : Value(part));
+        if (station is not null)
+        {
+            // BuyDefaultLoadout(NULL hull) keeps equipment but terminates
+            // cargo AFTER sampling the refund (clintlib.h:2127-2136).
+            for (int mount = -Ship.CargoCapacity; mount < 0; mount++)
+                ship.TryRemoveCargoPart(mount, out _);
+        }
         short Buy(DataPartTypeIGC part, int mount, bool onBudget = true)
         {
             short amount = short.MaxValue;

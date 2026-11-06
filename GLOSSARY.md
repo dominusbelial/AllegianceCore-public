@@ -1001,6 +1001,21 @@ list in **reverse**.
   remembers its next lesson; native `-training` starts Free Flight. Real-window
   proof: `tools/p910-training-proof/`; row audit and remaining gaps:
   `docs/reports/P910_REPORT.md`.
+- **Training loadout transactions (P932)** — station default reapplication in
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Lifecycle.cs` samples the
+  hull plus equipment/cargo resale value before clearing cargo. Local hangar
+  purchases run synchronously through
+  `src/Allegiance.SinglePlayer/Training/TrainingHost.Purchase.cs` and
+  `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`; the shared
+  `src/Allegiance.ClientCore/Session/ConnectionSession.cs` completion event runs
+  after equipment installation and before optional station launch. Both HUD
+  styles use this transaction; multiplayer keeps its request/ACK path. Native:
+  `training/trainingmission.cpp:810-854`, `clintlib/clintlib.cpp:1731-1744`.
+  M3's station cargo fills before the missile filler; removing its mounted
+  magazine leaves no spare for lesson 9 (native authored-loadout bug).
+  Proof: `tests/Allegiance.ClientCore.MonoGame.Tests/P932TrainingLoadoutTests.cs`;
+  Both-style window proof: `tools/p910-training-proof/` (`purchase` mode);
+  report: `docs/reports/P932_REPORT.md`.
 - **Lesson universes and window completion (P912)** — M2 bounds use a private
   constants copy through `src/Allegiance.Core/Model/Mission.cs`; M8 cargo/tech
   and native M5 drone placement live in

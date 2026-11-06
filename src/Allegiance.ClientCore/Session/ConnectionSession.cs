@@ -274,6 +274,32 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// be mistaken for the purchase's ack).</summary>
     public void ResetBuyLoadoutAcks() { lock (_gate) _buyLoadoutAcks.Clear(); }
 
+    /// <summary>Native OnPurchaseCompleted: after installing the purchased
+    /// loadout, before a local training launch (clintlib.cpp:1736-1744;
+    /// appmsg.cpp:3183-3187). Invoked under Gate on the transaction's thread.
+    /// Like native, every received BUY_LOADOUT_ACK raises it — including the one
+    /// the port's server sends on docking, which native's server does not send.</summary>
+    public event Action<bool>? PurchaseCompleted;
+
+    /// <summary>Synchronously mirror a local training purchase and notify the
+    /// same completion event as the multiplayer acknowledgement. No packet is
+    /// sent and no server acknowledgement is added to BuyLoadoutAcks.</summary>
+    public void CompleteLocalTrainingPurchase(short hullId, IReadOnlyList<ExpandedPartData> parts)
+    {
+        lock (_gate)
+        {
+            _world.ApplyPurchasedLoadout(hullId, parts);
+            PurchaseCompleted?.Invoke(true);
+        }
+    }
+
+    /// <summary>Mirror local station launch without a network SET_CLUSTER's
+    /// remote-object retirement or new input cookie (clintlib.cpp:1740-1744).</summary>
+    public void ApplyLocalTrainingLaunch(short sectorId, ServerShipUpdate ship)
+    {
+        lock (_gate) _world.ApplyLocalTrainingLaunch(sectorId, ship);
+    }
+
     /// <summary>P508 — every FM_CS_PING(35) echo (server sim-ms, local receive
     /// ms) received since the last call, drained in arrival order for the own-ship
     /// server clock (<see cref="Flight.OwnShipServerClock"/>). Locked snapshot
@@ -1558,6 +1584,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         var bla = BuyLoadoutAck.Decode(m);
                         _buyLoadoutAcks.Add(bla);
                         _world.Apply(bla);
+                        PurchaseCompleted?.Invoke(bla.FBoughtEverything);
                         break;
                     case Allegiance.Core.Wire.LoadoutChange.Fmid:
                         // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull

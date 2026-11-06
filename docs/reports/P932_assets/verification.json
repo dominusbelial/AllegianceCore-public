@@ -1,0 +1,1297 @@
+{
+  "base": "86c5d74c73f11fbfb060538392d40b606e94c8ed",
+  "scorecard": {
+    "before": {
+      "credit": 797,
+      "weight": 901,
+      "complete": 204,
+      "eligible": 235
+    },
+    "after": {
+      "credit": 806,
+      "weight": 901,
+      "complete": 206,
+      "eligible": 235
+    },
+    "editedRows": [
+      "TRN-0106",
+      "TRN-0167",
+      "TRN-0208"
+    ]
+  },
+  "build": {
+    "solution": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "tools": {
+      "projects": 116,
+      "warnings": 0,
+      "errors": 0
+    },
+    "finalOracleSolution": {
+      "receipt": ".scratch/p932/solution-build-oracle-final.log",
+      "warnings": 0,
+      "errors": 0
+    }
+  },
+  "negativeControls": [
+    {
+      "mutation": "hull-only-budget",
+      "exit": 1
+    },
+    {
+      "mutation": "keep-old-cargo",
+      "exit": 1
+    },
+    {
+      "mutation": "async-local-purchase",
+      "exit": 1
+    },
+    {
+      "mutation": "notify-after-launch",
+      "exit": 1
+    },
+    {
+      "mutation": "network-sector-retirement",
+      "exit": 1
+    }
+  ],
+  "isolatedRegressions": [
+    {
+      "receipt": ".scratch/p932/isolation/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5085290"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3845756"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5057185"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3742247"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5198068"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3675294"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Hangar_training_purchase_installs_notifies_then_launches_before_return-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1677062"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0119704"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0296967"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0148229"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Hangar_training_purchase_installs_notifies_then_launches_before_return-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0322363"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1688966"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0169960"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0107715"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Hangar_training_purchase_installs_notifies_then_launches_before_return-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0168076"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0305024"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1709644"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0110574"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1596048"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1607499"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1613989"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1488847"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1471458"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1620980"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0034557"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054295"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0476250"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0076762"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0530274"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029573"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0073259"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023152"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0067891"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0539640"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045001"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0041851"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1483797"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1507921"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1465085"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0161677"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0310966"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1484611"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0153264"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1453189"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0319503"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0350168"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1464985"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0153025"
+        }
+      ]
+    }
+  ],
+  "fast": {
+    "tier": "fast",
+    "seconds": 538.765088862041,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 119,
+        "outcomes": {
+          "Passed": 119
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4728,
+        "outcomes": {
+          "Passed": 4725,
+          "NotExecuted": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2163,
+        "outcomes": {
+          "Passed": 2163
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6104,
+        "outcomes": {
+          "Passed": 6094,
+          "Failed": 10
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9418567639257295,
+      "referenceMs": 3.5508,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.5192204
+      }
+    ],
+    "errors": [
+      "Allegiance.Core.Tests: main failed",
+      "1 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05905629997141659,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "failureIsolation": [
+    {
+      "receipt": ".scratch/p932/flake-isolation/Defender_disengages_when_chased_enemy_flees_and_returns_to_charge-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.2516071"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Defender_disengages_when_chased_enemy_flees_and_returns_to_charge-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.2475153"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Defender_disengages_when_chased_enemy_flees_and_returns_to_charge-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Failed",
+          "duration": "00:00:01.2553003"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4910208"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4885355"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission",
+          "outcome": "Passed",
+          "duration": "00:00:00.4411024"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "duration": "00:00:01.0679495"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:00.9923125"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "duration": "00:00:01.0002812"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Npc_exit_touch_rate_is_measured-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.2122526"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Npc_exit_touch_rate_is_measured-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.3452034"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/Npc_exit_touch_rate_is_measured-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "duration": "00:00:09.3018143"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PeerReceivesItsOwnShipStatus_InJoinBurst-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3435006"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PeerReceivesItsOwnShipStatus_InJoinBurst-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3321741"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PeerReceivesItsOwnShipStatus_InJoinBurst-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst",
+          "outcome": "Passed",
+          "duration": "00:00:00.3351073"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PlayerBundlePathsTests-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002247"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0037125"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0144059"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007527"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002446"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002413"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003418"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003676"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001544"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PlayerBundlePathsTests-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002731"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002505"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0035869"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001711"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0141127"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007366"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002454"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003645"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001388"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/PlayerBundlePathsTests-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002290"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0003813"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0001525"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007618"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0002955"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0034774"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003685"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001856"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142623"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "duration": "00:00:00.4304335"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "duration": "00:00:00.4518373"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/flake-isolation/QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "duration": "00:00:00.4203673"
+        }
+      ]
+    }
+  ],
+  "purchaseWindows": [
+    {
+      "style": "Classic",
+      "repeat": 1,
+      "exit": 0
+    },
+    {
+      "style": "Modern",
+      "repeat": 1,
+      "exit": 0
+    },
+    {
+      "style": "Classic",
+      "repeat": 2,
+      "exit": 0
+    },
+    {
+      "style": "Modern",
+      "repeat": 2,
+      "exit": 0
+    },
+    {
+      "style": "Classic",
+      "repeat": 3,
+      "exit": 0
+    },
+    {
+      "style": "Modern",
+      "repeat": 3,
+      "exit": 0
+    }
+  ],
+  "trainingCore": {
+    "file": "PCore014.igc",
+    "bytes": 655514,
+    "sha256": "cd286ef9bf6937ff44defbdfe734e7acf20d578b2ce4f8c414f56c01ea26d73b"
+  },
+  "isolatedRegressionsFinal": [
+    {
+      "receipt": ".scratch/p932/isolation-final/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3728188"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5057964"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5063158"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3748207"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Connected_training_launch_remains_consistent_after_loopback_ticks_resume-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Modern)",
+          "outcome": "Passed",
+          "duration": "00:00:00.5151306"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Connected_training_launch_remains_consistent_after_loopback_ticks_resume(style: Classic)",
+          "outcome": "Passed",
+          "duration": "00:00:00.3735777"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Hangar_training_purchase_installs_notifies_then_launches_before_return-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0111257"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0170582"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0284028"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1678771"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Hangar_training_purchase_installs_notifies_then_launches_before_return-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1683335"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0110042"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0160789"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0288315"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Hangar_training_purchase_installs_notifies_then_launches_before_return-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0104953"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1644659"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0290277"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Hangar_training_purchase_installs_notifies_then_launches_before_return(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0151161"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1539350"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1543152"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Local_purchase_reports_true_even_when_requested_hull_is_unavailable-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Local_purchase_reports_true_even_when_requested_hull_is_unavailable",
+          "outcome": "Passed",
+          "duration": "00:00:00.1565973"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1416312"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1400797"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Mission3_station_default_then_script_removal_leaves_no_spare_for_goal09",
+          "outcome": "Passed",
+          "duration": "00:00:00.1405739"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0035943"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0503464"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0038505"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093493"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030402"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0038699"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0064611"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0484532"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025110"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0034664"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Classic, launch: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0084527"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Multiplayer_keeps_exact_buy_loadout_packet_and_waits_for_ack(style: Modern, launch: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0532040"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1462884"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1442747"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.No_landing_station_loadout_mounts_preferred_equipment_and_native_five_cargo_slots",
+          "outcome": "Passed",
+          "duration": "00:00:00.1459942"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-1/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0279413"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0147266"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1411771"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-2/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142528"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0272830"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1419860"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/isolation-final/Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo-3/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.1458456"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0309307"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0157526"
+        }
+      ]
+    }
+  ],
+  "pricedNegativeControlsFinal": [
+    {
+      "receipt": ".scratch/p932/oracle-final-negative/hull-only-budget/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0365164"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0163362"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Failed",
+          "duration": "00:00:00.1611411"
+        }
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/oracle-final-negative/keep-old-cargo/result.trx",
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 0)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0320463"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 2)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0157653"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P932TrainingLoadoutTests.Station_reapplication_uses_hull_equipment_and_cargo_value_before_clearing_cargo(refundSource: 1)",
+          "outcome": "Failed",
+          "duration": "00:00:00.1559518"
+        }
+      ]
+    }
+  ],
+  "trainingGate": [
+    {
+      "receipt": ".scratch/p932/training/1/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "outcomes": {
+        "Passed": 241,
+        "NotExecuted": 4,
+        "Failed": 1
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+          "duration": "00:20:00.2385243"
+        }
+      ],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")"
+      ]
+    },
+    {
+      "receipt": ".scratch/p932/training/1/Allegiance.ClientCore.Tests/training.trx",
+      "outcomes": {
+        "Passed": 100
+      },
+      "failures": [],
+      "skips": []
+    }
+  ],
+  "trainingFailureIsolation": [
+    {
+      "repeat": 1,
+      "exit": 0,
+      "seconds": 673.3140366077423,
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:11:12.2836258",
+      "receipt": ".scratch/p932/training-isolation/1/result.trx"
+    },
+    {
+      "repeat": 2,
+      "exit": 0,
+      "seconds": 667.8066651821136,
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:11:06.6927772",
+      "receipt": ".scratch/p932/training-isolation/2/result.trx"
+    },
+    {
+      "repeat": 3,
+      "exit": 0,
+      "seconds": 587.9255657196045,
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:09:46.8342393",
+      "receipt": ".scratch/p932/training-isolation/3/result.trx"
+    }
+  ],
+  "finalReview": {
+    "headUnchanged": true,
+    "commits": 0,
+    "pushes": 0,
+    "glossaryPathsChecked": 559,
+    "diffCheck": "passed",
+    "matrixScope": "only TRN-0106, TRN-0167, TRN-0208",
+    "matrixLineEndings": "LF"
+  }
+}

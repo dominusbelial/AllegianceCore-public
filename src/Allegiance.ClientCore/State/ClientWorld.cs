@@ -2619,6 +2619,22 @@ public sealed partial class ClientWorld
         }
     }
 
+    internal void ApplyLocalTrainingLaunch(short sectorId, ServerShipUpdate update)
+    {
+        var ship = Upsert(update.ShipId);
+        ship.StationId = -1;
+        ship.SectorId = sectorId;
+        ship.PoseSectorId = sectorId;
+        ship.StatusSectorKnown = true;
+        ship.State = ShipStatusMessage.StateFlying;
+        ship.Unknown = ship.IsGone = ship.IsDead = false;
+        ship.Latest = update;
+        ship.LastUpdateTick = update.Time;
+        ship.LatestArrivalTime = NowSeconds();
+        ship.HasPendingReset = true; // seed flight prediction from the launch pose
+        MarkSnapshotDirty();
+    }
+
     private void Apply(SetCluster set)
     {
         // Native treats EVERY SET_CLUSTER as a delete for every remote ship,
@@ -4168,10 +4184,15 @@ public sealed partial class ClientWorld
     /// ship: apply it to <see cref="MyShipId"/>, adopting the granted
     /// <c>HullId</c> and mounting the ack's part tail.</summary>
     private void Apply(BuyLoadoutAck ack)
+        => ApplyPurchasedLoadout(ack.HullId, ack.Parts);
+
+    /// <summary>The shared loadout projection used by a server acknowledgement
+    /// and an immediate local training purchase (clintlib.cpp:1736-1737).</summary>
+    internal void ApplyPurchasedLoadout(short hullId, IReadOnlyList<ExpandedPartData> parts)
     {
         if (MyShipId is not { } id) return;   // not assigned a ship yet — nothing to load
         var e = Upsert(id);
-        e.HullId = ack.HullId;          // the granted hull (echo of the requested one)
+        e.HullId = hullId;
         // P626 — the ack tail mixes mounted (non-negative mounts) and cargo
         // (negative mounts, encoded as high-bit bytes — native Mount is a
         // signed char) exactly like native's ProcessShipLoadout; split them so
@@ -4179,7 +4200,7 @@ public sealed partial class ClientWorld
         // preview) unchanged and the cargo hold feeds the in-flight cargo keys.
         var mounted = new List<Allegiance.Core.Wire.ExpandedPartData>();
         var cargo = new List<Allegiance.Core.Wire.ExpandedPartData>();
-        foreach (var p in ack.Parts)
+        foreach (var p in parts)
         {
             if (p.MountId >= 0x80)   // high bit => negative (cargo) mount
                 cargo.Add(p);
