@@ -45,10 +45,10 @@ public class P720EquipmentSwapTests
         _ = kind; _ = mount;
         var definition = InputActionCatalog.Definitions.Single(a => a.Name == action);
         Assert.Contains("TK_" + action, definition.Description);
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.Equal(Keys.None, map.BindingOf(action).Key);
         map.SetBinding(action, new(Keys.F18, InputModifiers.Control));
-        var restored = new ActionMap(InputActionCatalog.Definitions); restored.ApplyJson(map.ToJson());
+        var restored = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port); restored.ApplyJson(map.ToJson());
         var input = new EquipmentSwapInput(); var keys = new KeyboardState(Keys.F18, Keys.LeftControl);
         Assert.Equal(action, input.Step(keys, restored, false));
         Assert.Null(input.Step(keys, restored, false));

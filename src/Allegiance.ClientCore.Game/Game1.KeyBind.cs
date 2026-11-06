@@ -20,9 +20,27 @@ public partial class Game1
     private bool _keyBindVisible;
     private bool _keyBindOpenKeyWasDown;
     private KeyboardState _keyBindPrevKs;
+    /// <summary>P941 — the layout preset the virtual-joystick default was derived
+    /// from, so a preset switch inside the popup re-applies it once.</summary>
+    private InputLayout _keyBindLayoutSeen;
 
     private void InitKeyBindingUi(SpriteBatch sb)
     {
+        // P941 — the scripted training-proof pilot (ALLEGIANCE_TRAIN_PROOF=1)
+        // drives the pre-P941 port key set (raw SPACE to fire, W / LeftShift to
+        // fly and boost), so a proof run pins the Port layout preset instead of
+        // the fresh-profile native default. The native layout is exercised by the
+        // P941 tests and by the ALLEGIANCE_P941_PROOF real-window pairs.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_TRAIN_PROOF") == "1"
+            && Rendering.KeyBindingStore.Instance.Map.Layout != InputLayout.Port)
+        {
+            Rendering.KeyBindingStore.Instance.Map.SetLayout(InputLayout.Port);
+            // Persist it: the proof opens/closes the Controls popup, and Cancel
+            // (native Close -> reload) must not fall back to the native preset.
+            Rendering.KeyBindingStore.Instance.Save();
+            Console.WriteLine("[keymap] training-proof run pins the Port layout preset");
+        }
+
         // P757 — native OK-versus-Cancel persistence (trekinput.cpp:2436-2458,
         // 3005-3030): the popup mutates the LIVE map (so the help overlay and
         // the action lookups reflect a rebind immediately, like native's
@@ -34,8 +52,20 @@ public partial class Game1
             onDiscard: () => Rendering.KeyBindingStore.Instance.Reload());
         _keyBindRenderer = new KeyBindingRenderer(sb, _whitePixel, _hudSmall, _keyBindController);
         _keyBindPrevKs = Keyboard.GetState();
+
+        // P941 — a fresh profile's native layout is the virtual-joystick mode
+        // native's training text assumes ("Left click to fire your main weapon",
+        // training/mission3.cpp:646): the mouse buttons follow
+        // mouseButtonCommandMap (WinTrek.cpp:9289-9298 enables the virtual
+        // joystick, Game1.MousePick.cs implements the same map). The pre-P941
+        // port layout keeps the pointer default (a click picks; mouse flight on V
+        // is opt-in), exactly as before.
+        _keyBindLayoutSeen = _keyBindController.Map.Layout;
+        _mouseFlightEnabled = _keyBindLayoutSeen == InputLayout.Native;
+        IsMouseVisible = CommandCameraActive || _minimapExpanded || !_mouseFlightEnabled;
         Console.WriteLine("[keymap] Controls popup ready (open: "
-            + Rendering.KeyBindingStore.Instance.Map.BindingOf("OpenKeyBindings").Label + ")");
+            + Rendering.KeyBindingStore.Instance.Map.BindingOf("OpenKeyBindings").Label + ")"
+            + $", layout {_keyBindController.LayoutName}, mouse flight {(_mouseFlightEnabled ? "ON" : "OFF")}");
     }
 
     private void DrawKeyBindingOverlay()
@@ -74,12 +104,14 @@ public partial class Game1
         bool enter = Pressed(ks, XnaKeys.Enter), r = Pressed(ks, XnaKeys.R);
         bool esc = Pressed(ks, XnaKeys.Escape), y = Pressed(ks, XnaKeys.Y), n = Pressed(ks, XnaKeys.N);
         bool space = Pressed(ks, XnaKeys.Space);
+        bool preset = Pressed(ks, XnaKeys.P);
 
         switch (_keyBindController.Phase)
         {
             case KeyBindPhase.Browse:
                 if (up) _keyBindController.MoveUp();
                 else if (down) _keyBindController.MoveDown();
+                if (preset) _keyBindController.CycleLayout();   // P941 — native / port preset
                 if (space)
                 {
                     // OnButtonOK — persist and close (trekinput.cpp:3025-3028).
@@ -120,6 +152,21 @@ public partial class Game1
         }
 
         _keyBindPrevKs = ks;
+
+        // P941 — a preset switch inside the popup (P) re-applies the layout's
+        // virtual-joystick default: native's map assumes the mouse as a virtual
+        // joystick (training text "left click to fire"), the port preset keeps the
+        // pointer default. Only a CHANGE is applied, so a V toggle during play is
+        // never overridden by opening/closing the popup.
+        var layoutNow = _keyBindController.Map.Layout;
+        if (layoutNow != _keyBindLayoutSeen)
+        {
+            _keyBindLayoutSeen = layoutNow;
+            _mouseFlightEnabled = layoutNow == InputLayout.Native;
+            IsMouseVisible = CommandCameraActive || _minimapExpanded || !_mouseFlightEnabled;
+            if (_mouseFlightEnabled) _mouseFlight.Enable(); else _mouseFlight.Reset();
+            Console.WriteLine($"[keymap] preset {_keyBindController.LayoutName} -> mouse flight {(_mouseFlightEnabled ? "ON" : "OFF")}");
+        }
     }
 
     private bool Pressed(KeyboardState ks, XnaKeys key)
@@ -218,6 +265,107 @@ public partial class Game1
                 {
                     _keymapProofDone = true;
                     Console.WriteLine("[keymap-proof] done (three real frames requested)");
+                }
+                break;
+        }
+    }
+
+    // -- P941 real-window proof (ALLEGIANCE_P941_PROOF=1) --------------------
+
+    private bool _p941ProofStarted;
+    private bool _p941ProofDone;
+    private double _p941ProofElapsed;
+    private double _p941AirborneSeconds;
+    private double _p941WaitSeconds;
+    private int _p941ProofStep;
+
+    /// <summary>
+    /// P941 — scripted real-window proof of the layout presets and the F1
+    /// overview. Sequence: (1) open Controls (F6) on the fresh profile's native
+    /// layout; (2) P cycles to the Port layout; (3) P cycles back, OK saves, close;
+    /// (4) open the help overview on its CONTROLS page (the live key table);
+    /// (5) the FLIGHT page (live prose). Each step queues a named real-backbuffer
+    /// PNG (<c>--autoshot-dir</c>) whose name carries the HUD style, so
+    /// live-proof.sh can capture the Classic and Modern pairs.
+    /// </summary>
+    private void RunP941Proof(double dtSec)
+    {
+        if (_p941ProofDone) return;
+        // Wait for the hangar/loadout screen to clear (the live proof launches a
+        // ship first) so the frames show the flight HUD behind the overlays. The
+        // dock state arrives a frame or two after the mission starts, so require a
+        // continuous airborne second before opening the Controls popup — opening
+        // it earlier would compose-gate the docked auto-launch. A docked player
+        // still gets the frames after 15 s (the overlays draw over the hangar).
+        _p941WaitSeconds += dtSec;
+        _p941AirborneSeconds = _dockedActive ? 0 : _p941AirborneSeconds + dtSec;
+        if (!_p941ProofStarted && _p941AirborneSeconds < 1.0 && _p941WaitSeconds < 15.0) return;
+        _p941ProofElapsed += dtSec;
+        string style = _hudSettings.Style.ToString().ToLowerInvariant();
+
+        void Shot(string name)
+        {
+            _autoShotName = $"p941_{name}_{style}";
+            _autoShotScheduled = true;
+            Console.WriteLine($"[p941-proof] shot {_autoShotName}");
+        }
+
+        if (!_p941ProofStarted)
+        {
+            _p941ProofStarted = true;
+            _p941ProofElapsed = 0;
+            ToggleKeyBindings();
+            Shot("controls_native");
+            Console.WriteLine($"[p941-proof] Controls open: {_keyBindController.LayoutName}, "
+                + $"FireWeapon={_keyBindController.Map.LabelOf("FireWeapon")}, "
+                + $"FireBooster={_keyBindController.Map.LabelOf("FireBooster")}");
+            _p941ProofStep = 1;
+            return;
+        }
+
+        switch (_p941ProofStep)
+        {
+            case 1:
+                if (_p941ProofElapsed > 2.0)
+                {
+                    _keyBindController.CycleLayout();
+                    Shot("controls_port");
+                    Console.WriteLine($"[p941-proof] preset now {_keyBindController.LayoutName}, "
+                        + $"RollLeft={_keyBindController.Map.LabelOf("RollLeft")}");
+                    _p941ProofElapsed = 0;
+                    _p941ProofStep = 2;
+                }
+                break;
+            case 2:
+                if (_p941ProofElapsed > 2.0)
+                {
+                    _keyBindController.CycleLayout();   // back to native
+                    _keyBindController.Commit();        // OK: persist + close
+                    _keyBindVisible = false;
+                    _helpVisible = true;
+                    _helpManual = new Rendering.HelpManualModel();
+                    _helpManual.GoTo("hlpControls");
+                    Shot("help_controls");
+                    Console.WriteLine("[p941-proof] help overview: CONTROLS page (live key table)");
+                    _p941ProofElapsed = 0;
+                    _p941ProofStep = 3;
+                }
+                break;
+            case 3:
+                if (_p941ProofElapsed > 2.0)
+                {
+                    _helpManual.GoTo("hlpFlight");
+                    Shot("help_flight");
+                    Console.WriteLine("[p941-proof] help overview: FLIGHT page (live prose)");
+                    _p941ProofElapsed = 0;
+                    _p941ProofStep = 4;
+                }
+                break;
+            case 4:
+                if (_p941ProofElapsed > 3.0)
+                {
+                    _p941ProofDone = true;
+                    Console.WriteLine("[p941-proof] done (four real frames queued)");
                 }
                 break;
         }

@@ -34,6 +34,10 @@ public sealed class KeyBindingStore
 
     public KeyBindingStore()
     {
+        // P941 — a fresh profile (no keymap file) gets the native
+        // defaultinputmap.mdl layout; a file written before P941 has no layout
+        // marker and ApplyJson migrates it to the native layout with the
+        // player's own rebinds kept on top.
         Map = new ActionMap(InputActionCatalog.Definitions);
         string path = ResolvePath();
         if (File.Exists(path))
@@ -47,6 +51,15 @@ public sealed class KeyBindingStore
                 Console.WriteLine($"[keymap] failed to read {path}: {ex.Message}");
             }
         }
+        Console.WriteLine($"[keymap] layout preset: {InputLayouts.Name(Map.Layout)}");
+    }
+
+    /// <summary>P941 — the F6 preset cycle. Switches the whole default map and
+    /// persists (native's <c>SaveMap</c> writes the current map, trekinput.cpp:2376-2384).</summary>
+    public void CycleLayout()
+    {
+        Map.SetLayout(InputLayouts.Next(Map.Layout));
+        Save();
     }
 
     /// <summary>Persist the current (user-overridden) bindings to the keymap
@@ -111,7 +124,7 @@ public sealed class KeyBindingStore
                 // leave removed overrides behind, so reset first.
                 Map.ResetToDefaults();
                 Map.ApplyJson(File.ReadAllText(path));
-                Console.WriteLine($"[keymap] reloaded bindings <- {path}");
+                Console.WriteLine($"[keymap] reloaded bindings <- {path} ({InputLayouts.Name(Map.Layout)})");
                 return;
             }
             catch (Exception ex)
@@ -119,7 +132,8 @@ public sealed class KeyBindingStore
                 Console.WriteLine($"[keymap] failed to read {path}: {ex.Message} - falling back to defaults");
             }
         }
-        Map.ResetToDefaults();
-        Console.WriteLine("[keymap] no readable keymap - reverted to catalogue defaults (not saved)");
+        // Native falls back to LoadMap(DEFAULTINPUTMAP_FILE): the native layout.
+        Map.SetLayout(InputLayout.Native);
+        Console.WriteLine("[keymap] no readable keymap - reverted to the native default layout (not saved)");
     }
 }

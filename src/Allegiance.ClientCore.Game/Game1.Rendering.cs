@@ -1942,9 +1942,10 @@ public sealed partial class Game1
         // it reveals the previous overlays exactly as they were.
 
 
-        // P625 — the Controls (rebind) popup, drawn top-most (above even the
-        // help overlay, which it hides on open).
-        DrawKeyBindingOverlay();
+        // P625 — the Controls (rebind) popup is drawn after the docked / hangar /
+        // menu panes below, so F6 stays legible while docked (P941: the layout
+        // preset must be selectable from the hangar too). See the draw call after
+        // DrawHangarQuitConfirmation().
 
         // P577 — the in-game Credits/Licences screen, drawn top-most (F12).
         if (_creditsVisible)
@@ -2066,6 +2067,11 @@ public sealed partial class Game1
         }
         DrawMainMenu();
         DrawHangarQuitConfirmation();
+
+        // P625/P941 — the Controls (rebind) popup, top-most over the docked /
+        // hangar / menu panes so the layout preset is reachable from the hangar
+        // as well as in flight (it hides the help overlay on open).
+        DrawKeyBindingOverlay();
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
         // keymap) so it is unmissable: the "why did everything stop" answer.

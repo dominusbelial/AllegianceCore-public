@@ -277,9 +277,30 @@ public abstract class TrainingMission
     /// prompt sound once the player dawdles.</summary>
     protected Condition CreateTooLongCondition(float delay, int soundId)
     {
-        var periodic = new PeriodicCondition(new NTimesCondition(new TrueCondition(), 2, sticky: true), delay, Site);
-        return new ConditionalAction(periodic, new PlaySoundAction(Site, soundId));
+        return new ConditionalAction(TooLongPeriodic(delay), new PlaySoundAction(Site, soundId));
     }
+
+    /// <summary>
+    /// P941 — the corrected too-long reminder for a prompt whose voice-over
+    /// native MUTED because it named the wrong key (the <c>PlaySoundAction</c>
+    /// is commented out at, e.g., training/mission2.cpp:746, mission3.cpp:451,
+    /// :643, :942) but whose <c>CreateTooLongCondition(30.0f, &lt;muted sound&gt;)</c>
+    /// still passed that recording to the periodic reminder. Native's own
+    /// <c>CreateTooLongCondition</c> only knows a sound id (trainingmission.cpp:
+    /// 927-932), so a hesitating player heard the old, wrong key 30 s later.
+    /// This repeats the ON-SCREEN message instead — the text the player is
+    /// already reading — and never plays the muted recording.
+    /// </summary>
+    protected Condition CreateTooLongMessageCondition(float delay, MessageAction message)
+    {
+        return new ConditionalAction(TooLongPeriodic(delay), message);
+    }
+
+    /// <summary>The periodic trigger native builds inside
+    /// <c>CreateTooLongCondition</c> (<c>trainingmission.cpp:927-932</c>): after
+    /// <paramref name="delay"/> seconds, on every pass, for two times.</summary>
+    private Condition TooLongPeriodic(float delay)
+        => new PeriodicCondition(new NTimesCondition(new TrueCondition(), 2, sticky: true), delay, Site);
 
     /// <summary><c>CreateTooCloseCondition</c> (<c>trainingmission.cpp:905-924</c>): a rotating
     /// "don't get too close" reminder when the player is both within radius and moving towards a place.</summary>

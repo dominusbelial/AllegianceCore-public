@@ -214,7 +214,7 @@ public class P640CommandCameraTests
     [InlineData("ViewTarget", "TrackCommandView", Keys.F7, Keys.LeftControl)]
     public void Modified_commands_do_not_also_open_the_plain_F_key_action(string plain, string modified, Keys key, Keys modifier)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.True(map.IsDownMostSpecific(new KeyboardState(key), plain));
         Assert.False(map.IsDownMostSpecific(new KeyboardState(key, modifier), plain));
         Assert.True(map.IsDownMostSpecific(new KeyboardState(key, modifier), modified));

@@ -43,7 +43,10 @@ public static class TrainingProofPilot
     /// <summary>A proof-local user profile whose six thrust actions remain reachable during training.</summary>
     public static Rendering.ActionMap CreateInputMap()
     {
-        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions);
+        // P941 — the scripted proofs drive the pre-P941 port key set, so their
+        // isolated profile is the explicit "Port layout" preset (the fresh-profile
+        // default is now native's defaultinputmap.mdl map).
+        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions, Rendering.InputLayout.Port);
         string? conflict = map.SetBinding("ThrustUp", new(Microsoft.Xna.Framework.Input.Keys.NumPad8, Rendering.InputModifiers.None));
         if (conflict is not null) throw new InvalidOperationException($"Proof Up binding conflicts with {conflict}");
         return map;

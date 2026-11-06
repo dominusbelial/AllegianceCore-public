@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
@@ -13,68 +16,104 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <see cref="KeyBindingTable"/>) as the Controls page, and short gameplay
 /// pages that describe the port's real controls. Pure and MonoGame-free so
 /// every navigation rule is headless-testable.
+///
+/// <para>P941 — the gameplay pages that name keys are built from the LIVE
+/// <see cref="ActionMap"/> bindings (<see cref="BuildTopics"/>), so the F1
+/// overview states the keys the player actually has: the fresh-profile native
+/// layout (Q/E roll, SPACE booster, left mouse fire) and the Port layout preset
+/// both read correctly, and a rebind shows up the next time the help opens.</para>
 /// </summary>
 public sealed class HelpManualModel
 {
     /// <summary>One manual page: its topic id, display title and body lines.</summary>
     public readonly record struct Topic(string Id, string Title, IReadOnlyList<string> Lines);
 
-    /// <summary>The manual's topics in nav-pane order (native helpdata).</summary>
-    public static readonly Topic[] Topics =
+    /// <summary>The manual's topics in nav-pane order (native helpdata), with the
+    /// key-naming pages generated from the live bindings.</summary>
+    public static IReadOnlyList<Topic> Topics => BuildTopics(KeyBindingStore.Instance.Map);
+
+    /// <summary>Build every topic for <paramref name="map"/>. Kept public and pure
+    /// (an explicit map, no singletons) so the P941 test can pin both layouts.
+    /// Every line stays ASCII 32..126 (the baked HUD spritefonts).</summary>
+    public static IReadOnlyList<Topic> BuildTopics(ActionMap map)
     {
-        new("hlpStart", "START",
+        string Key(string action) => map.LabelOf(action) is { Length: > 0 } label ? label : "unbound";
+
+        return
         [
-            "ALLEGIANCE - QUICK START",
-            "",
-            "You are a pilot in a squad of starfighters. Work with your",
-            "team commander to capture sectors, mine helium, and destroy",
-            "the enemy team's stations.",
-            "",
-            "First steps: join a side in the lobby, launch from your",
-            "station's hangar, and follow your commander's orders.",
-            "The TAB key cycles your chat recipient; R opens the quick",
-            "chat order menu. H (this help) lists every control.",
-            "",
-            "Press H or ESC to close this help.",
-        ]),
-        new("hlpControls", "CONTROLS",
-        [
-            "Every current client binding, by group. See the columns.",
-            "Backspace returns to the previous topic (native Back).",
-        ]),
-        new("hlpFlight", "FLIGHT",
-        [
-            "FLIGHT",
-            "",
-            "W/S throttle up/down; Q/E roll; A/D lateral thrust.",
-            "Mouse or joystick steers (toggle with the mouse-flight key).",
-            "T cycles the nearest target; Insert toggles the autopilot,",
-            "which flies you to the selected target.",
-            "Ripcord (Ctrl+R) teleports you home when it is legal.",
-            "Dock at a friendly station to buy parts and new hulls.",
-        ]),
-        new("hlpCombat", "COMBAT",
-        [
-            "COMBAT",
-            "",
-            "Space fires the selected weapon; [ and ] cycle weapons.",
-            "G targets the nearest enemy; Ctrl+G the nearest enemy base.",
-            "Missiles lock while you hold the target in your front arc.",
-            "Launch chaff (C) to break an incoming missile's lock.",
-            "Shields regenerate when you stop taking hits.",
-        ]),
-        new("hlpCommand", "COMMAND",
-        [
-            "COMMANDING AND ORDERS",
-            "",
-            "The commander views the sector map (Ctrl+M) and clicks",
-            "objects to order drones: mine, build, attack, defend, goto.",
-            "Players issue orders with the commandee key + Insert.",
-            "Drones acknowledge through chat; refuse what they cannot do.",
-            "Invest in developments from the docked hangar to unlock",
-            "better hulls, weapons and stations.",
-        ]),
-    };
+            new("hlpStart", "START",
+            [
+                "ALLEGIANCE - QUICK START",
+                "",
+                "You are a pilot in a squad of starfighters. Work with your",
+                "team commander to capture sectors, mine helium, and destroy",
+                "the enemy team's stations.",
+                "",
+                "First steps: join a side in the lobby, launch from your",
+                "station's hangar, and follow your commander's orders.",
+                "The " + Key("CycleChatTarget") + " key cycles your chat recipient; "
+                    + Key("QuickChat") + " opens the",
+                "quick chat order menu. " + Key("Help") + " (this help) lists every control.",
+                "",
+                "Press " + Key("Help") + " or " + Key("CancelChat") + " to close this help.",
+            ]),
+            new("hlpControls", "CONTROLS",
+            [
+                "Every current client binding, by group. See the columns.",
+                "Mouse and wheel commands show the button native binds.",
+                "Backspace returns to the previous topic (native Back).",
+            ]),
+            new("hlpFlight", "FLIGHT",
+            [
+                "FLIGHT",
+                "",
+                Key("ThrustForward") + "/" + Key("ThrustBackward")
+                    + " throttle up/down; " + Key("ThrustLeft") + "/" + Key("ThrustRight")
+                    + " lateral thrust.",
+                Key("ThrustUp") + "/" + Key("ThrustDown") + " vertical thrust; "
+                    + Key("RollLeft") + "/" + Key("RollRight") + " roll the craft.",
+                Key("FireBooster") + " fires the booster (hold); the wheel or "
+                    + Key("ThrottleFull") + " sets full throttle.",
+                Key("ToggleMouse") + " toggles mouse flight (virtual joystick): with it ON",
+                "the mouse flies and its buttons fire (left = weapons, middle = missiles,",
+                "right = target centre). With it OFF the mouse is a pointer: left selects a",
+                "same-side ship, right orders the object under the cursor.",
+                Key("TargetFriendly") + " targets a friendly; " + Key("TargetEnemy")
+                    + " an enemy; " + Key("ToggleAutopilot") + " engages the autopilot.",
+                Key("Ripcord") + " teleports you home when it is legal.",
+                "Dock at a friendly station to buy parts and new hulls.",
+            ]),
+            new("hlpCombat", "COMBAT",
+            [
+                "COMBAT",
+                "",
+                Key("FireWeapon") + " fires the selected weapon; " + Key("FireMissile")
+                    + " fires a missile.",
+                Key("PrevWeapon") + "/" + Key("NextWeapon") + " cycle weapons.",
+                Key("TargetEnemy") + " targets the next enemy, " + Key("TargetEnemyBase")
+                    + " the next enemy base.",
+                "Missiles lock while you hold the target in your front arc.",
+                Key("DropChaff") + " launches chaff to break an incoming missile's lock.",
+                "Shields regenerate when you stop taking hits.",
+            ]),
+            new("hlpCommand", "COMMAND",
+            [
+                "COMMANDING AND ORDERS",
+                "",
+                "The commander views the sector map (" + Key("ToggleStarmap")
+                    + ") and picks with the mouse",
+                "to order drones: mine, build, attack, defend, goto.",
+                Key("CommandSelectionAdd") + "+left click adds recipients; right click issues "
+                    + Key("ExecuteCommand"),
+                "or the default order at that spot.",
+                Key("AcceptCommand") + " accepts a received order; " + Key("RejectCommand")
+                    + " declines it.",
+                "Drones acknowledge through chat; refuse what they cannot do.",
+                "Invest in developments from the docked hangar to unlock",
+                "better hulls, weapons and stations.",
+            ]),
+        ];
+    }
 
     /// <summary>The topic history, newest first (native <c>m_listHistory</c>).</summary>
     private readonly List<string> _history = new() { "hlpStart" };
@@ -120,16 +159,17 @@ public sealed class HelpManualModel
     /// going to a neighbouring topic is a normal topic switch (history push).</summary>
     public void MoveTopicSelection(int delta)
     {
-        int i = Array.FindIndex(Topics, t => t.Id == CurrentTopic);
-        int n = Topics.Length;
-        GoTo(Topics[(((i + delta) % n) + n) % n].Id);
+        var topics = Topics;
+        int i = topics.ToList().FindIndex(t => t.Id == CurrentTopic);
+        int n = topics.Count;
+        GoTo(topics[(((i + delta) % n) + n) % n].Id);
     }
 
     /// <summary>Scroll the current page (native per-page scroll bars). Clamped
     /// to the page's line count.</summary>
     public void ScrollBy(int lines, int visibleLines)
     {
-        int max = Math.Max(0, Current.Lines.Count - Math.Max(1, visibleLines));
-        Scroll = Math.Clamp(Scroll + lines, 0, max);
+        int max = System.Math.Max(0, Current.Lines.Count - System.Math.Max(1, visibleLines));
+        Scroll = System.Math.Clamp(Scroll + lines, 0, max);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Xunit;
@@ -16,44 +17,54 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// </summary>
 public class HelpOverlayTests
 {
-    // ── KeyBindingTable (data-driven from the live action map) ────────────
+    /// <summary>
+    /// P941 — these tests pin the KEY SET the port shipped before the native
+    /// defaults arrived, so they read the table of an explicit "Port layout"
+    /// map (never the process-wide live one, whose fresh-profile default is now
+    /// the native defaultinputmap.mdl layout).
+    /// </summary>
+    private static readonly ActionMap PortMap = new(InputActionCatalog.Definitions, InputLayout.Port);
+
+    private static IReadOnlyList<KeyBindingTable.Group> Groups => PortMap.ToHelpGroups();
+
+    // ── KeyBindingTable (data-driven from the action map) ─────────────────
 
     private static KeyBindingTable.Entry Find(string key) =>
-        KeyBindingTable.All
+        Groups
             .SelectMany(g => g.Entries)
             .First(e => e.Key == key);
 
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(19, KeyBindingTable.GroupCount);   // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728) and TRAINING (P785)
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "LOCAL SKIRMISH");
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
+        Assert.Equal(19, Groups.Count);   // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728) and TRAINING (P785)
+        Assert.Contains(Groups, g => g.Title == "LOCAL SKIRMISH");
+        Assert.Contains(Groups, g => g.Title == "MOVEMENT");
         // P445 — the persistent-cruise-throttle keys' own group.
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "CRUISE THROTTLE");
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "=" && e.Description.StartsWith("Cruise")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Backspace" && e.Description.StartsWith("Throttle ZERO")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "\\" && e.Description.StartsWith("Throttle FULL")));
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
-        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "CAMERA / VIEW");
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "MUSIC");
-        Assert.Contains(KeyBindingTable.All, g => g.Title == "CHAT");
-        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("LOBBY"));
+        Assert.Contains(Groups, g => g.Title == "CRUISE THROTTLE");
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "=" && e.Description.StartsWith("Cruise")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "Backspace" && e.Description.StartsWith("Throttle ZERO")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "\\" && e.Description.StartsWith("Throttle FULL")));
+        Assert.Contains(Groups, g => g.Title == "WEAPONS");
+        Assert.Contains(Groups, g => g.Title.StartsWith("TARGETING"));
+        Assert.Contains(Groups, g => g.Title == "CAMERA / VIEW");
+        Assert.Contains(Groups, g => g.Title == "MUSIC");
+        Assert.Contains(Groups, g => g.Title == "CHAT");
+        Assert.Contains(Groups, g => g.Title.StartsWith("LOBBY"));
         // P282 — the pre-flight READY-CHECK screen's own bindings.
-        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("READY CHECK"));
+        Assert.Contains(Groups, g => g.Title.StartsWith("READY CHECK"));
         // P424 — the accept/reject/clear queued-order keys' own group.
-        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("QUEUED ORDERS"));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Home" && e.Description.StartsWith("Accept")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "End" && e.Description.StartsWith("Reject")));
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Delete" && e.Description.StartsWith("Clear")));
+        Assert.Contains(Groups, g => g.Title.StartsWith("QUEUED ORDERS"));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "Home" && e.Description.StartsWith("Accept")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "End" && e.Description.StartsWith("Reject")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "Delete" && e.Description.StartsWith("Clear")));
         // P425 — the commandee-select / issue-order keys' own group.
-        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("COMMANDED SHIP"));
+        Assert.Contains(Groups, g => g.Title.StartsWith("COMMANDED SHIP"));
         // P626 — CycleCommandee moved from PageDown (native ChatPageDown owns
         // PageDown) to Shift+PageDown.
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Shift + PageDown" && e.Description.StartsWith("Cycle")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "Shift + PageDown" && e.Description.StartsWith("Cycle")));
         // P624 — IssueBuild moved from Insert (now TK_ThrustUp) to Alt+I.
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Alt + I" && e.Description.StartsWith("Issue")));
+        Assert.Contains(Groups, g => g.Entries.Any(e => e.Key == "Alt + I" && e.Description.StartsWith("Issue")));
     }
 
     [Fact]
@@ -70,9 +81,9 @@ public class HelpOverlayTests
     {
         // P625 — the Controls (rebind) popup is announced in the table and its
         // own entry exists (the help screen tells you how to rebind).
-        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(
+        Assert.Contains(Groups, g => g.Entries.Any(
             e => e.Description.Contains("rebind keys", System.StringComparison.OrdinalIgnoreCase)));
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "F6" && e.Description.Contains("Controls", System.StringComparison.OrdinalIgnoreCase));
     }
 
@@ -103,22 +114,22 @@ public class HelpOverlayTests
         // P625 — the F-key fix, visible in the table: F5 = fly-by camera and
         // F11 = station camera; screenshot moved to PrintScreen; music volume on
         // the Ctrl chord (not F5/F6/F11).
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "F5" && e.Description.Contains("fly-by", System.StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "F11" && e.Description.Contains("station", System.StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "PrintScreen" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
         // Music volume is on Ctrl + = / Ctrl + -, nowhere on the F-row.
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "Ctrl + =" && e.Description.Contains("volume up", System.StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.Contains(Groups.SelectMany(g => g.Entries),
             e => e.Key == "Ctrl + -" && e.Description.Contains("volume down", System.StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.DoesNotContain(Groups.SelectMany(g => g.Entries),
             e => e.Key is "F5" or "F6" or "F11"
                  && e.Description.Contains("volume", System.StringComparison.OrdinalIgnoreCase));
         // And screenshot is NOT on F11.
-        Assert.DoesNotContain(KeyBindingTable.All.SelectMany(g => g.Entries),
+        Assert.DoesNotContain(Groups.SelectMany(g => g.Entries),
             e => e.Key == "F11" && e.Description.Contains("screen shot", System.StringComparison.OrdinalIgnoreCase));
     }
 
@@ -127,7 +138,7 @@ public class HelpOverlayTests
     {
         // The HUD spritefonts bake ASCII 32..126 only; any high/unicode char
         // throws "cannot be resolved by this SpriteFont" and kills the game.
-        foreach (var group in KeyBindingTable.All)
+        foreach (var group in Groups)
         {
             Assert.False(string.IsNullOrWhiteSpace(group.Title));
             foreach (var e in group.Entries)
@@ -147,7 +158,7 @@ public class HelpOverlayTests
     [Fact]
     public void NoDuplicateKeys_WithinAGroup()
     {
-        foreach (var group in KeyBindingTable.All)
+        foreach (var group in Groups)
         {
             var dup = group.Entries
                 .Select(e => e.Key)
@@ -161,7 +172,7 @@ public class HelpOverlayTests
     [Fact]
     public void EveryGroup_HasAtLeastOneEntry()
     {
-        Assert.All(KeyBindingTable.All, g => Assert.NotEmpty(g.Entries));
+        Assert.All(Groups, g => Assert.NotEmpty(g.Entries));
     }
 
     // ── HelpOverlayLayout ────────────────────────────────────────────────
@@ -248,7 +259,7 @@ public class HelpOverlayTests
         // alone is taller than the whole band, so the Controls layout splits it
         // into sections. Every section stays inside the band, and the sections
         // still cover every entry of every group exactly once.
-        var groups = KeyBindingTable.All;
+        var groups = Groups;
         const float panelY = 720f * 0.05f;
         const float panelH = 720f * 0.90f;
         var band = HelpOverlayLayout.ContentBand(panelY, panelH, topicBar: true);
@@ -285,7 +296,7 @@ public class HelpOverlayTests
         // band, so the whole-group Layout can no longer place it — the renderer
         // splits such groups across columns, and this test pins that no section
         // of any group exceeds the panel.
-        var groups = KeyBindingTable.All;
+        var groups = Groups;
         const float panelY = 22f;
         // P761 — the renderer's panel grew to 92% of the backbuffer (the
         // CAMERA / VIEW group's 56 rows no longer fit the 90% band).

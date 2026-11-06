@@ -4,6 +4,15 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P941 validation — one Fast sweep, 2026-11-06 UTC
+
+One Fast sweep (Claude, after Hermes's session ended): 13,241 tests, **FAIL**. Task-caused and fixed:
+`P625KeyMapTests.Overrides_IgnoreUnknownActionsAndBadCodes` (legacy keymap migration). Not task-caused (P941 touches
+no Core code): `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` **pass/pass/pass**
+isolated; `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` and
+`NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage` (36 s, also over the
+10 s Fast limit) are already ledgered above.
+
 ## P936 validation — one Fast sweep and isolated controls, 2026-11-06 UTC
 
 One Fast sweep: **13,194 passed / 11 failed / 3 optional Meshy-pack skips**,

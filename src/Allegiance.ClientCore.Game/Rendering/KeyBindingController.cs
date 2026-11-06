@@ -131,6 +131,19 @@ public sealed class KeyBindingController
         Phase = KeyBindPhase.ConfirmReset;
     }
 
+    /// <summary>P941 — the layout-preset cycle (P from Browse): swap every default
+    /// between the native defaultinputmap.mdl layout and the pre-P941 port
+    /// layout. Pending until OK, exactly like a rebind: Cancel reloads the file.</summary>
+    public void CycleLayout()
+    {
+        if (Phase != KeyBindPhase.Browse) return;
+        _map.SetLayout(InputLayouts.Next(_map.Layout));
+        Message = $"Default layout: {InputLayouts.Name(_map.Layout)} (Space = OK, Esc = cancel)";
+    }
+
+    /// <summary>P941 — the selected preset's display name.</summary>
+    public string LayoutName => InputLayouts.Name(_map.Layout);
+
     // -- capture -------------------------------------------------------------
 
     /// <summary>A key was pressed during Capture: build its chord (honouring any

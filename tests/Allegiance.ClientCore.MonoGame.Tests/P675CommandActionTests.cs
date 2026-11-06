@@ -28,7 +28,7 @@ public class P675CommandActionTests
     }
     private static ActionMap Map()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding("ExecuteCommand", new(Keys.F16, InputModifiers.None), force: true);
         map.SetBinding("TargetCommand", new(Keys.F17, InputModifiers.None), force: true);
         return map;
@@ -43,12 +43,12 @@ public class P675CommandActionTests
     {
         var native = DefaultInputMap.ParseKeyMap(DefaultInputMap.EmbeddedText);
         Assert.DoesNotContain(native, b => b.TkNumber == tk);
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.Equal(Keys.None, map.BindingOf(action).Key);
         map.SetBinding(action, new(Keys.F18, InputModifiers.Control));
         Assert.True(map.IsDownMostSpecific(new(Keys.F18, Keys.LeftControl), action));
         Assert.False(map.IsDownMostSpecific(new(Keys.F18), action));
-        var restored = new ActionMap(InputActionCatalog.Definitions); restored.ApplyJson(map.ToJson());
+        var restored = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port); restored.ApplyJson(map.ToJson());
         Assert.Equal(map.BindingOf(action), restored.BindingOf(action));
     }
 

@@ -1000,10 +1000,13 @@ public sealed partial class Game1
     /// the LIVE action map (StartChat / QuickChat), so a rebind is honoured.
     /// </summary>
     internal static (bool Enter, bool R) ComputeSharedEdgePrimes(KeyboardState ks)
-    {
-        var map = Rendering.KeyBindingStore.Instance.Map;
-        return (map.IsDown(ks, "StartChat"), map.IsDown(ks, "QuickChat"));
-    }
+        => ComputeSharedEdgePrimes(ks, Rendering.KeyBindingStore.Instance.Map);
+
+    /// <summary>P941 — the same latch against an explicit map, so the rule is
+    /// testable for both layout presets (the shared keys differ: quick chat is R
+    /// in the port preset, '`' in the native one).</summary>
+    internal static (bool Enter, bool R) ComputeSharedEdgePrimes(KeyboardState ks, Rendering.ActionMap map)
+        => (map.IsDown(ks, "StartChat"), map.IsDown(ks, "QuickChat"));
 
     /// <summary>
     /// P304 — the per-frame music drive (see the call site in <see cref="Update"/>).
@@ -1278,6 +1281,12 @@ public sealed partial class Game1
         // console.cpp:2036).
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_P818_PROOF") == "1")
             RunChatSubjectProof(gameTime.ElapsedGameTime.TotalSeconds);
+
+        // P941 — real-window proof of the native/port layout presets and the F1
+        // overview. Runs OUTSIDE the flight-key block below because that block is
+        // composing-gated and the proof itself opens the F6 Controls popup.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_P941_PROOF") == "1")
+            RunP941Proof(gameTime.ElapsedGameTime.TotalSeconds);
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.

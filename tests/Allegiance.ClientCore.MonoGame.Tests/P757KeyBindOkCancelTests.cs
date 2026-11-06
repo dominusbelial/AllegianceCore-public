@@ -18,7 +18,7 @@ public sealed class P757KeyBindOkCancelTests
     [Fact]
     public void Mutation_is_pending_until_commit_and_commit_persists_once()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         string saved = map.ToJson();
         int commits = 0, discards = 0;
         var ctl = new KeyBindingController(map,
@@ -47,7 +47,7 @@ public sealed class P757KeyBindOkCancelTests
     {
         // Native Close() reloads INPUTMAP_FILE (trekinput.cpp:2436-2444) — the
         // port's discard delegate is the store's Reload.
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         string persisted = map.ToJson();
         var ctl = new KeyBindingController(map,
             onCommit: () => throw new InvalidOperationException("cancel must not save"),
@@ -69,7 +69,7 @@ public sealed class P757KeyBindOkCancelTests
     [Fact]
     public void Reset_is_also_pending_until_ok()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding("FireWeapon", new KeyBinding(Keys.X, InputModifiers.None), force: true);
         string saved = map.ToJson();
         var ctl = new KeyBindingController(map, onDiscard: () => { map.ResetToDefaults(); map.ApplyJson(saved); });
@@ -100,12 +100,18 @@ public sealed class P757KeyBindOkCancelTests
         Assert.Equal(new KeyBinding(Keys.F9, InputModifiers.None), map2.Map.BindingOf("FireWeapon"));
         Assert.Equal(new KeyBinding(Keys.F8, InputModifiers.None), map2.Map.BindingOf("ScreenShot"));
 
-        // A missing/unreadable file reverts to the catalogue defaults and does
-        // NOT write anything (the file stays absent).
+        // A missing/unreadable file reverts to the DEFAULT map (native
+        // LoadMap(DEFAULTINPUTMAP_FILE), trekinput.cpp:2437-2441) and does NOT
+        // write anything (the file stays absent). P941: the default map is the
+        // native layout, so FireWeapon is the left mouse button and ScreenShot is
+        // PrintScreen.
         string missing = Path.Combine(dir, "absent.json");
         map2.Map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         map2.ReloadFrom(missing);
-        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map2.Map.BindingOf("FireWeapon"));
+        Assert.Equal(InputLayout.Native, map2.Map.Layout);
+        Assert.Equal(Keys.None, map2.Map.BindingOf("FireWeapon").Key);
+        Assert.Equal(MouseButtonBinding.Left, map2.Map.MouseButtonOf("FireWeapon")!.Value.Button);
+        Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map2.Map.BindingOf("ScreenShot"));
         Assert.False(File.Exists(missing));
     }
 }

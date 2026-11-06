@@ -928,6 +928,16 @@ list in **reverse**.
   `tools/p853b-hostedit-proof/`, report `docs/reports/P853B_REPORT.md`.
 - **Input** — keyboard/mouse/joystick/gamepad rebindable.
   `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`, `Game1.KeyBind.cs`.
+  P941 **input layouts**: `Rendering/InputLayouts.cs` is the two selectable
+  default presets — `InputLayout.Native` (native's `defaultinputmap.mdl`
+  keyboard table plus its mouse/wheel map, the fresh-profile default) and
+  `InputLayout.Port` (the pre-P941 port keys, an F6-selectable preset) — and
+  `Rendering/InputBindings.cs` (`ActionMap`) resolves the live map from the
+  selected layout, including native mouse/wheel bindings
+  (`MouseButtonBinding`). Persistence is `Rendering/KeyBindingStore.cs`
+  (`keymap.json`: `{"layout":...,"bindings":{...}}`; a legacy flat file loads as
+  the Port layout). Training prompts that name a key are audited against the
+  native layout by `src/Allegiance.ClientCore/Training/TrainingPromptAudit.cs`.
 - **Host LAN game (P901)** — explicit `SkirmishOptions.HostLan` exposes the embedded server
   on TCP+UDP with discovery; offline defaults remain loopback/ephemeral. Shared setup:
   `src/Allegiance.SinglePlayer/HostLanScreenModel.cs`,

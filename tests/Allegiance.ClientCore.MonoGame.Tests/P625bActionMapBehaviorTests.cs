@@ -45,7 +45,7 @@ public class P625bActionMapBehaviorTests
     [MemberData(nameof(Samples))]
     public void Rebind_TriggersOnNewKey_NotOld(string action, string category, Keys oldKey, Keys newKey)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         // The action must belong to the advertised category (guards against a
         // mis-labelled sample).
         Assert.Contains(map.Definitions, d => d.Name == action && d.Category == category);
@@ -66,7 +66,7 @@ public class P625bActionMapBehaviorTests
     [MemberData(nameof(Samples))]
     public void Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(string action, string category, Keys oldKey, Keys newKey)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding(action, new KeyBinding(newKey, InputModifiers.None));
         _ = category;
 
@@ -87,7 +87,7 @@ public class P625bActionMapBehaviorTests
     [MemberData(nameof(Samples))]
     public void Rebind_HelpOverlayShowsNewKey(string action, string category, Keys oldKey, Keys newKey)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var def = map.Definitions.First(d => d.Name == action);
         _ = category;
         map.SetBinding(action, new KeyBinding(newKey, InputModifiers.None));

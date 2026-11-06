@@ -324,9 +324,13 @@ public class Mission3 : TrainingMission
 
         {
             var goal = new Goal(CreateGotTargetCondition());
-            goal.AddStartAction(new MessageAction(Site, "Press the right mouse button to target the objects in the center of your display."));
+            var prompt = new MessageAction(Site, "Press the right mouse button to target the objects in the center of your display.");
+            goal.AddStartAction(prompt);
             goal.AddStartAction(new SetHudOverlayAction(Site, OverlayTargetCenter));
-            goal.AddConstraintCondition(CreateTooLongCondition(30.0f, Tm3_11));
+            // P941 — native removed tm_3_11r ("Press the C key...", wrong keymap,
+            // training/mission3.cpp:451) but still passed tm_3_11 to the 30-second
+            // reminder (:453). Repeat the on-screen text instead.
+            goal.AddConstraintCondition(CreateTooLongMessageCondition(30.0f, prompt));
             list.AddGoal(goal);
         }
 
@@ -463,8 +467,12 @@ public class Mission3 : TrainingMission
             else
             {
                 goal.AddStartAction(new SetHudOverlayAction(Site, OverlayFireGuns));
-                goal.AddConstraintCondition(CreateTooLongCondition(30.0f, Tm3_19));
-                goal.AddStartAction(new MessageAction(Site, "Left click to fire your main weapon."));
+                var prompt = new MessageAction(Site, "Left click to fire your main weapon.");
+                goal.AddStartAction(prompt);
+                // P941 — native muted tm_3_19 ("spacebar", wrong keymap,
+                // training/mission3.cpp:643) but still passed it to the 30-second
+                // reminder (:645). Repeat the on-screen text instead.
+                goal.AddConstraintCondition(CreateTooLongMessageCondition(30.0f, prompt));
             }
             list.AddGoal(goal);
         }
@@ -648,9 +656,17 @@ public class Mission3 : TrainingMission
             }
             else
             {
-                goal.AddStartAction(new MessageAction(Site, "Press 5 or Middle click to fire your secondary weapon."));
+                // P941 — the native text said "Press 5 or Middle click"
+                // (training/mission3.cpp:943), but native's own keymap binds no
+                // key to '5' for missiles: TK_FireMissile is the MIDDLE mouse
+                // button (mouseButtonCommandMap (2,56), defaultinputmap.mdl:112).
+                // Corrected to the binding the map actually has.
+                var prompt = new MessageAction(Site, "Press the middle mouse button to fire your secondary weapon.");
+                goal.AddStartAction(prompt);
                 goal.AddStartAction(new SetHudOverlayAction(Site, OverlayMissile));
-                goal.AddConstraintCondition(CreateTooLongCondition(30.0f, Tm3_38));
+                // P941 — native muted tm_3_38 (wrong keymap, training/mission3.cpp:942)
+                // but still passed it to the 30-second reminder (:945).
+                goal.AddConstraintCondition(CreateTooLongMessageCondition(30.0f, prompt));
             }
             var constraints = new SetControlConstraintsAction();
             constraints.EnableInputAction(MissileFire);

@@ -126,7 +126,7 @@ public class P626InFlightUtilityPackTests
     [InlineData("VoteNo", Keys.N, "TK_VoteNo")]
     public void Catalogue_RegistersP626Command_WithKeyAndNativeName(string action, Keys key, string nativeName)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var def = map.Definitions.First(d => d.Name == action);
         Assert.Equal(key, map.BindingOf(action).Key);
         Assert.Contains(nativeName, def.Description);   // native TK name in the help text
@@ -135,7 +135,7 @@ public class P626InFlightUtilityPackTests
     [Fact]
     public void Catalogue_NativeWins_KeyChoices()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         // ChatPage owns the native PageUp/PageDown (defaultinputmap.mdl VK 0x21/0x22);
         // CycleCommandee vacated PageDown for it (now Shift+PageDown).
         Assert.Equal(Keys.PageUp, map.BindingOf("ChatPageUp").Key);
@@ -162,7 +162,7 @@ public class P626InFlightUtilityPackTests
     [Fact]
     public void Catalogue_NewCommandsAppearInHelpOverlay()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var all = map.ToHelpGroups().SelectMany(g => g.Entries).ToList();
         foreach (var desc in new[]
         {
@@ -182,7 +182,7 @@ public class P626InFlightUtilityPackTests
     [Fact]
     public void Catalogue_P626Commands_NoDuplicateKeysWithinAGroup()
     {
-        foreach (var group in new ActionMap(InputActionCatalog.Definitions).ToHelpGroups())
+        foreach (var group in new ActionMap(InputActionCatalog.Definitions, InputLayout.Port).ToHelpGroups())
         {
             var dup = group.Entries
                 .Select(e => e.Key)

@@ -7,21 +7,29 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// P625 - the catalogue of every rebindable command the client implements.
 ///
-/// <see cref="Default"/> is the binding the port actually ships today (kept -
-/// the port's WASD/pitch-yaw-roll flight scheme is a deliberate design, not a
-/// native omission; see the P625 report "Native behaviour classified" table).
+/// <see cref="Default"/> is the binding the pre-P941 port shipped (its
+/// WASD/pitch-yaw-roll flight scheme is a deliberate design, not a native
+/// omission; see the P625 report "Native behaviour classified" table). Since
+/// P941 it is the **"Port layout" preset** (`InputLayout.Port`,
+/// <see cref="InputLayouts"/>), kept selectable in the F6 Controls screen.
 /// <see cref="NativeDefault"/> is what <c>defaultinputmap.mdl</c> assigns to
-/// the same TK command (decoded via <see cref="DefaultInputMap"/>) and is shown
-/// on the rebind popup as a suggested native binding. Categories mirror native's
+/// the same TK command (decoded via <see cref="DefaultInputMap"/>) and is the
+/// **fresh-profile default** (`InputLayout.Native`, P941): native's own map wins
+/// for a new player, and the five commands native wires to the mouse
+/// (mouseButtonCommandMap, defaultinputmap.mdl:109-116) are exposed by
+/// <see cref="InputLayouts.MouseMap"/>. Categories mirror native's
 /// <c>g_pCommandInfo</c> groupings (trekinput.cpp:1441-1621) translated to the
 /// port's established help headings.
 ///
-/// NOTE the two exceptions the P625 brief mandates (Domingo 2026-10-12):
-///   - cameras keep the native F-row (F4 orbit, F5 flyby, F7 target,
-///     F10 base, F11 station) - "native wins the F-keys";
-///   - screenshot moved from the old port F11 to PrintScreen (native's own
-///     TK_ScrnShot default, defaultinputmap.mdl line 108);
-///   - music volume moved OFF the F-row to a free Ctrl chord (Ctrl + = / -).
+/// NOTE the P625 rules (they hold in both layouts unless native claims the key):
+///   - screenshot is PrintScreen (native's own TK_ScrnShot default,
+///     defaultinputmap.mdl line 108), never the old port F11;
+///   - music volume is OFF the F-row on a free Ctrl chord (Ctrl + = / -).
+/// Under P941's native layout the F-row follows native exactly: F2/F3/F4/F5/F6/
+/// F7/F8 are the native console modes (defaultinputmap.mdl:35-40, :103), so the
+/// port-only orbit/flyby/target cameras move to Shift+F4/F5/F7 (see
+/// <see cref="InputLayouts.Relocations"/>); F1 Help, F10 base and F11 station
+/// keep their native/port chords because native binds no key to the last two.
 /// </summary>
 public static class InputActionCatalog
 {
@@ -300,7 +308,11 @@ public static class InputActionCatalog
         new("MainMenu", "CAMERA / VIEW", "Open main menu [TK_MainMenu]", K(Keys.Escape), K(Keys.Escape)),
 
         // -- CAMERA / VIEW (native wins the F-row) --
-        new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), K(Keys.V)),
+        // P941 — CycleView is a port-only convenience (native has no TK for it);
+        // its old "native default" V was really TK_ToggleMouse's key, so the
+        // native layout gives V back to ToggleMouse and CycleView rides M
+        // (InputLayouts.Relocations). The bare V here is the PORT preset value.
+        new("CycleView", "CAMERA / VIEW", "Cycle view: cockpit -> chase -> turret -> missile-cam", K(Keys.V), null),
         // P624 — look-around cameras (TK_ViewRear & friends; native sets an
         // absolute head yaw, WinTrek.cpp:9733-9791, only in cockpit/external-
         // chase). Native leaves them UNBOUND in defaultinputmap.mdl (keyboard

@@ -108,7 +108,7 @@ public sealed class TR3TrainingMissions34Tests
                 if (!seen.Add(m)) continue;
                 if (m.Contains("Land in a green hangar", StringComparison.Ordinal))
                     reachedLand = true;   // goal 13's landing prompt → land to finish
-                else if (m.Contains("Press 5 or Middle click", StringComparison.Ordinal))
+                else if (m.Contains("middle mouse button to fire your secondary", StringComparison.Ordinal))
                 {
                     sampledFire = MissileFire;
                     missilePrompt = true;

@@ -53,7 +53,9 @@ public class P523SelfTargetAndBracketJitterTests
     [Fact]
     public void KeyBindingTable_DoesNotBindY_ToTargetSelf_KeepsSemicolonTargetNothing()
     {
-        var targeting = KeyBindingTable.All.First(g => g.Title.StartsWith("TARGETING"));
+        // P941 — the port layout preset (the key set this regression pinned).
+        var portMap = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
+        var targeting = portMap.ToHelpGroups().First(g => g.Title.StartsWith("TARGETING"));
 
         // Y must not be a targeting key at all (previously "Target self").
         Assert.DoesNotContain(targeting.Entries, e => e.Key == "Y");
@@ -74,15 +76,26 @@ public class P523SelfTargetAndBracketJitterTests
     [Fact]
     public void SharedPreFlightKeys_AreEdgePrimed_WhenHeldAcrossTransition()
     {
+        // P941 — the pre-flight/in-flight shared keys are preset-specific: the
+        // port layout puts quick chat on R, the native layout on '`'. The PORT
+        // preset is the one this regression pinned; the native preset is checked
+        // too so both stay latched.
+        var port = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var held = new KeyboardState(Keys.Enter, Keys.R);
-        var (enter, r) = Game1.ComputeSharedEdgePrimes(held);
+        var (enter, r) = Game1.ComputeSharedEdgePrimes(held, port);
         Assert.True(enter, "Enter held at transition must be primed (no chat-open edge on first flight frame)");
         Assert.True(r, "R held at transition must be primed (no quick-chat edge on first flight frame)");
 
         var empty = new KeyboardState();
-        var (e2, r2) = Game1.ComputeSharedEdgePrimes(empty);
+        var (e2, r2) = Game1.ComputeSharedEdgePrimes(empty, port);
         Assert.False(e2);
         Assert.False(r2);
+
+        var native = new ActionMap(InputActionCatalog.Definitions);
+        var nativeHeld = new KeyboardState(Keys.Enter, Keys.OemTilde);
+        var (nEnter, nQuick) = Game1.ComputeSharedEdgePrimes(nativeHeld, native);
+        Assert.True(nEnter);
+        Assert.True(nQuick, "'`' held at transition must prime quick chat in the native layout");
     }
 
     // ── Bug 2 · ship HUD anchors use the render pose ──────────────────────

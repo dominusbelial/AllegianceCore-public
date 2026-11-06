@@ -78,11 +78,11 @@ public class P625KeyMapTests
     [Fact]
     public void Overrides_PersistThroughJsonRoundTrip()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None));
 
         var json = map.ToJson();
-        var reloaded = new ActionMap(InputActionCatalog.Definitions);
+        var reloaded = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         reloaded.ApplyJson(json);
 
         Assert.Equal(new KeyBinding(Keys.F15, InputModifiers.None), reloaded.BindingOf("FireWeapon"));
@@ -93,7 +93,7 @@ public class P625KeyMapTests
     [Fact]
     public void Overrides_OnlyDifferencesAreSerialized()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None));
         var json = map.ToJson();
         Assert.Contains("\"FireWeapon\"", json);
@@ -103,10 +103,12 @@ public class P625KeyMapTests
     [Fact]
     public void Overrides_IgnoreUnknownActionsAndBadCodes()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.ApplyJson("{\"NoSuchAction\":[65,0],\"FireWeapon\":[99999,0],\"ThrottleUp\":[38,0]}");
-        // Unknown action ignored; out-of-range key code ignored.
-        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireWeapon"));
+        // Unknown action ignored; out-of-range key code ignored. A flat (pre-P941)
+        // file migrates to the native layout, so FireWeapon keeps the native default.
+        Assert.Equal(InputLayout.Native, map.Layout);
+        Assert.Equal(new ActionMap(InputActionCatalog.Definitions).BindingOf("FireWeapon"), map.BindingOf("FireWeapon"));
         // Valid override applied.
         Assert.Equal(new KeyBinding(Keys.Up, InputModifiers.None), map.BindingOf("ThrottleUp"));
     }
@@ -116,7 +118,7 @@ public class P625KeyMapTests
     [Fact]
     public void Conflict_DetectsTakenKey_AndRequiresForce()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         // FireWeapon is Space; try to give ScreenShot the same Space key.
         var conflict = map.SetBinding("ScreenShot", new KeyBinding(Keys.Space, InputModifiers.None));
         Assert.Equal("FireWeapon", conflict);
@@ -129,7 +131,7 @@ public class P625KeyMapTests
     [Fact]
     public void Controller_CaptureFlow_RebindsWithoutConflict()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var ctl = new KeyBindingController(map);
 
         // Move to FireWeapon and rebind it to F15 (free — no catalogue default
@@ -145,7 +147,7 @@ public class P625KeyMapTests
     [Fact]
     public void Controller_ConflictFlow_DetectsAndAllowsSwap()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
@@ -167,7 +169,7 @@ public class P625KeyMapTests
     [Fact]
     public void Controller_CancelConflict_LeavesBindingsUnchanged()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "ScreenShot") ctl.MoveDown();
         ctl.SelectCurrent();
@@ -182,7 +184,7 @@ public class P625KeyMapTests
     [Fact]
     public void Controller_ResetConfirm_RestoresDefaults()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var ctl = new KeyBindingController(map);
         map.SetBinding("FireWeapon", new KeyBinding(Keys.X, InputModifiers.None));
         ctl.RequestReset();
@@ -194,7 +196,7 @@ public class P625KeyMapTests
     [Fact]
     public void Controller_Capture_IgnoresBareModifierKey()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var ctl = new KeyBindingController(map);
         while (ctl.CurrentAction != "FireWeapon") ctl.MoveDown();
         ctl.SelectCurrent();
@@ -206,7 +208,7 @@ public class P625KeyMapTests
     [Fact]
     public void Reset_RestoresCatalogueDefaults()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         map.SetBinding("ScreenShot", new KeyBinding(Keys.Space, InputModifiers.None), force: true);
         map.ResetToDefaults();
@@ -220,7 +222,7 @@ public class P625KeyMapTests
     [Fact]
     public void Help_ReflectsReboundBinding()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var groups = map.ToHelpGroups();
         // Default: screenshot shown on PrintScreen.
         Assert.Contains(groups.SelectMany(g => g.Entries),
@@ -236,7 +238,7 @@ public class P625KeyMapTests
     [Fact]
     public void Help_GroupsMatchNativeCommandCategories()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var titles = map.ToHelpGroups().Select(g => g.Title).ToList();
         // The established help groups (native command categories plus the
         // P625b additions for panes/menus, free-cam/spectator and system, and
@@ -260,7 +262,7 @@ public class P625KeyMapTests
     [Fact]
     public void FKeyFix_CamerasOwnF4F5F7F10F11()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.Equal(new KeyBinding(Keys.F4, InputModifiers.None), map.BindingOf("ViewExternalOrbit"));
         Assert.Equal(new KeyBinding(Keys.F5, InputModifiers.None), map.BindingOf("ViewFlyby"));
         Assert.Equal(new KeyBinding(Keys.F7, InputModifiers.None), map.BindingOf("ViewTarget"));
@@ -271,14 +273,14 @@ public class P625KeyMapTests
     [Fact]
     public void FKeyFix_ScreenshotIsPrintScreen_NotF11()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map.BindingOf("ScreenShot"));
     }
 
     [Fact]
     public void FKeyFix_MusicVolumeOffTheFRow_OnFreeCtrlChord()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         Assert.Equal(new KeyBinding(Keys.OemPlus, InputModifiers.Control), map.BindingOf("MusicVolumeUp"));
         Assert.Equal(new KeyBinding(Keys.OemMinus, InputModifiers.Control), map.BindingOf("MusicVolumeDown"));
         // No music-volume binding may sit on the F-row that native reserves for

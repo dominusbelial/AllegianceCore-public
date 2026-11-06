@@ -453,7 +453,7 @@ public sealed class P912TrainingUniverseTests
     [Fact]
     public void Training_quickcomm_accepts_native_tilde_without_changing_normal_bindings()
     {
-        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions);
+        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions, Rendering.InputLayout.Port);
         Assert.False(Game1.QuickChatKeyDown(new(Keys.OemTilde), map, training: false));
         Assert.True(Game1.QuickChatKeyDown(new(Keys.OemTilde), map, training: true));
         Assert.True(Game1.QuickChatKeyDown(new(Keys.R), map, training: false));
@@ -464,7 +464,7 @@ public sealed class P912TrainingUniverseTests
     [Fact]
     public void Training_inventory_accepts_native_Ctrl_1_without_changing_normal_bindings()
     {
-        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions);
+        var map = new Rendering.ActionMap(Rendering.InputActionCatalog.Definitions, Rendering.InputLayout.Port);
         var input = new Rendering.EquipmentSwapInput();
         Assert.Null(input.Step(new(Keys.LeftControl, Keys.D1), map, false));
         Assert.Equal("SwapWeapon1", input.Step(new(Keys.LeftControl, Keys.D1), map, false, training: true));

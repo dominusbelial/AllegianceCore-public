@@ -65,8 +65,8 @@ public sealed class KeyBindingRenderer
             OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);
 
-            // Header: title + contextual instruction.
-            string title = PhaseHeader();
+            // Header: title + contextual instruction + P941 layout preset.
+            string title = PhaseHeader() + "   [" + _ctl.LayoutName.ToUpperInvariant() + "]";
             var hs = _small.MeasureString(title);
             Draw(title, new Vector2((w - hs.X) / 2f, panelY + 10f), HeaderColor, 1f);
 
@@ -98,10 +98,12 @@ public sealed class KeyBindingRenderer
                 string action = rows[i].Action!;
                 if (i == selRow)
                     FillRect(innerX - 4f, ry, panelW - 2f * Padding + 8f, RowHeight - 2f, SelBg);
-                var kb = _ctl.Map.BindingOf(action);
                 Draw(action.Replace("TK_", ""), new Vector2(innerX, ry), DescColor, 1f);
-                var kl = _small.MeasureString(kb.Label);
-                Draw(kb.Label, new Vector2(innerX + 330f, ry), KeyColor, 1f);
+                // P941 — the label carries the mouse/wheel binding too
+                // (native mouseButtonCommandMap, defaultinputmap.mdl:109-116).
+                var label = _ctl.Map.LabelOf(action);
+                var kl = _small.MeasureString(label);
+                Draw(label, new Vector2(innerX + 330f, ry), KeyColor, 1f);
                 Draw(_ctl.DefinitionOf(action).Description,
                     new Vector2(innerX + 330f + kl.X + 16f, ry), NoteColor, 0.82f);
             }
@@ -135,7 +137,7 @@ public sealed class KeyBindingRenderer
         bool warn = _ctl.Phase is KeyBindPhase.Conflict or KeyBindPhase.ConfirmReset;
         Draw(msg, new Vector2((w - sz.X) / 2f, my), warn ? WarnColor : NoteColor, 1f);
 
-        string hint = "Up/Down = move   Enter = pick   R = reset to defaults   Space = OK (save)   Esc = cancel (discard)";
+        string hint = "Up/Down = move   Enter = pick   P = layout preset   R = reset to defaults   Space = OK (save)   Esc = cancel (discard)";
         var hz = _small.MeasureString(hint);
         Draw(hint, new Vector2((w - hz.X) / 2f, panelY + panelH - 40f), NoteColor, 0.9f);
     }

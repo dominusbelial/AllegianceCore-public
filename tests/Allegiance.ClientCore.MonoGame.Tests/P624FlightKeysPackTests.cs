@@ -219,7 +219,7 @@ public class P624FlightKeysPackTests
     [Fact]
     public void ThrottleFull_Alternate_OemPipeBackslashStillWorks()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         // The catalogue default is OemBackslash (VK 0xDC, native mdl line 43)…
         Assert.Equal(Keys.OemBackslash, map.BindingOf("ThrottleFull").Key);
         // …and the ISO/US-layout OemPipe scancode is a registered alternate.
@@ -247,7 +247,7 @@ public class P624FlightKeysPackTests
     [InlineData("ViewRearRight", Keys.D8, "TK_ViewRearRight")]
     public void Catalogue_RegistersNewCommand_WithKeyAndNativeName(string action, Keys key, string nativeName)
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var def = map.Definitions.First(d => d.Name == action);
         Assert.Equal(key, map.BindingOf(action).Key);
         Assert.Contains(nativeName, def.Description);   // native TK name in the help text
@@ -256,7 +256,7 @@ public class P624FlightKeysPackTests
     [Fact]
     public void Catalogue_NativeWins_MovedBindings()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         // LockVector took native L; Ripcord moved to ITS native Ctrl+R (mdl line 68).
         Assert.Equal(Keys.L, map.BindingOf("LockVector").Key);
         Assert.Equal(Keys.R, map.BindingOf("Ripcord").Key);
@@ -273,7 +273,7 @@ public class P624FlightKeysPackTests
     [Fact]
     public void Catalogue_NewCommandsAppearInHelpOverlay()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var all = map.ToHelpGroups().SelectMany(g => g.Entries).ToList();
         foreach (var desc in new[]
         {

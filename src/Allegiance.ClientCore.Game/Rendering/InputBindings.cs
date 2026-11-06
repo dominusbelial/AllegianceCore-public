@@ -137,12 +137,18 @@ public sealed record InputActionDef(
     IReadOnlyList<KeyBinding>? Alternate = null);
 
 /// <summary>
-/// P625 - the live, data-driven action map. Owns the current binding of every
+/// P625/P941 - the live, data-driven action map. Owns the current binding of every
 /// action, applies user overrides from a JSON settings file over the
 /// <see cref="InputActionCatalog"/>.Definitions defaults, performs conflict
 /// detection, exposes reset-to-defaults, and resolves a
 /// <see cref="KeyboardState"/> to per-action press/held predicates that every
 /// Game1 input handler uses in place of raw <c>XnaKeys</c> literals.
+///
+/// <para>P941 — the map also owns the selected <see cref="InputLayout"/>: a fresh
+/// profile starts on the native <c>defaultinputmap.mdl</c> layout
+/// (<see cref="InputLayouts.Defaults"/>), the pre-P941 port layout stays a
+/// selectable preset, and a legacy keymap file (which has no layout marker) keeps
+/// the port layout so a saved profile's bindings do not move under the player.</para>
 /// </summary>
 public sealed class ActionMap
 {
@@ -151,25 +157,74 @@ public sealed class ActionMap
     private readonly IReadOnlyDictionary<string, InputActionDef> _defs;
     private readonly Dictionary<string, KeyBinding> _current;
 
-    public ActionMap(IReadOnlyCollection<InputActionDef> defs)
+    /// <summary>P941 — the selected default layout preset.</summary>
+    public InputLayout Layout { get; private set; }
+
+    /// <summary>P941 — the layout's effective default per action (the target of
+    /// <see cref="ResetToDefaults"/> and the baseline <see cref="ToJson"/> diffs
+    /// against). Regenerated when the preset changes.</summary>
+    private Dictionary<string, KeyBinding> _defaults;
+
+    /// <param name="layout">P941 — the preset to start from. Fresh profiles pass
+    /// <see cref="InputLayout.Native"/> (the default); tests/services that pin the
+    /// pre-P941 port keys pass <see cref="InputLayout.Port"/> explicitly.</param>
+    public ActionMap(IReadOnlyCollection<InputActionDef> defs, InputLayout layout = InputLayout.Native)
     {
         _defs = defs.ToDictionary(d => d.Name, d => d);
-        _current = defs.ToDictionary(d => d.Name, d => d.Default);
+        Layout = layout;
+        _defaults = InputLayouts.Defaults(layout).ToDictionary(kv => kv.Key, kv => kv.Value);
+        _current = defs.ToDictionary(d => d.Name, d => _defaults[d.Name]);
     }
 
     public IReadOnlyCollection<InputActionDef> Definitions => _defs.Values.ToList();
 
+    /// <summary>P941 — switch the default layout preset. Every action returns to
+    /// its default under the new layout (native's own map behaves the same way:
+    /// <c>LoadMap(DEFAULTINPUTMAP_FILE)</c> rebuilds the whole map,
+    /// trekinput.cpp:484-598); user overrides saved on top of the old preset are
+    /// the caller's to re-apply.</summary>
+    public void SetLayout(InputLayout layout)
+    {
+        Layout = layout;
+        _defaults = InputLayouts.Defaults(layout).ToDictionary(kv => kv.Key, kv => kv.Value);
+        foreach (var name in _current.Keys.ToList())
+            _current[name] = _defaults[name];
+    }
+
     /// <summary>Current binding of an action (never null; falls back to the
     /// definition default if somehow absent).</summary>
     public KeyBinding BindingOf(string action)
-        => _current.TryGetValue(action, out var kb) ? kb : _defs[action].Default;
+        => _current.TryGetValue(action, out var kb) ? kb : _defaults[action];
+
+    /// <summary>P941 — the action's native mouse/wheel binding (null when native
+    /// binds it to the keyboard only, or the action is port-only).</summary>
+    public MouseButtonBinding? MouseButtonOf(string action)
+        => InputLayouts.MouseMap.TryGetValue(action, out var m) ? m : null;
+
+    /// <summary>P941 — the label the F6 list and the F1 help overlay show: the
+    /// action's keyboard chord, or — when native gives the action NO keyboard
+    /// chord — the mouse/wheel button it is bound to instead (FireWeapon,
+    /// FireMissile, TargetCenter). Empty when unbound either way.</summary>
+    public string LabelOf(string action)
+    {
+        var chord = BindingOf(action);
+        if (chord.Key != Keys.None) return chord.Label;
+        return MouseButtonOf(action) is { } m ? m.Label : "";
+    }
 
     /// <summary>P624 — an action's alternate chords (hardware-layout aliases,
     /// e.g. ThrottleFull's ISO/EU backslash scancode OemPipe alongside its
     /// OemBackslash default). Empty when the action has none. Alternates match
-    /// in <see cref="IsDown"/> exactly like the primary binding.</summary>
+    /// in <see cref="IsDown"/> exactly like the primary binding. P941 adds the
+    /// native layout's second chords (native binds '['/INSERT and ']'/DELETE to
+    /// the command verbs, defaultinputmap.mdl:12-15).</summary>
     public IReadOnlyList<KeyBinding> AlternatesOf(string action)
-        => _defs.TryGetValue(action, out var def) && def.Alternate is { } alts ? alts : Array.Empty<KeyBinding>();
+    {
+        var alternates = new List<KeyBinding>();
+        if (_defs.TryGetValue(action, out var def) && def.Alternate is { } alts) alternates.AddRange(alts);
+        if (Layout == InputLayout.Native) alternates.AddRange(InputLayouts.Alternates(action));
+        return alternates;
+    }
 
     /// <summary>An action is "held" right now when its chord (or any alternate
     /// chord) is down.</summary>
@@ -242,16 +297,20 @@ public sealed class ActionMap
         _current[b] = ka;
     }
 
-    /// <summary>Restore every action to its catalogue default.</summary>
+    /// <summary>Restore every action to the CURRENT layout's default (native's
+    /// map for a fresh profile, the port preset for a legacy/port profile).</summary>
     public void ResetToDefaults()
     {
-        foreach (var d in _defs.Values)
-            _current[d.Name] = d.Default;
+        foreach (var name in _current.Keys.ToList())
+            _current[name] = _defaults[name];
     }
 
     /// <summary>Build the help-overlay table groups from the LIVE bindings so a
     /// rebind is reflected immediately (the P625 requirement). Order follows
-    /// the catalogue; groups are keyed by category in first-appearance order.</summary>
+    /// the catalogue; groups are keyed by category in first-appearance order.
+    /// P941 — an action bound only to a native mouse button/wheel (FireWeapon,
+    /// FireMissile, TargetCenter) is included too, labelled with that button, so
+    /// the F1 overview states how to fire (native mouseButtonCommandMap).</summary>
     public IReadOnlyList<KeyBindingTable.Group> ToHelpGroups()
     {
         var groups = new List<KeyBindingTable.Group>();
@@ -262,7 +321,7 @@ public sealed class ActionMap
         // and a blank key row is noise.
         foreach (var def in _defs.Values
                      .OrderBy(d => _Order(d.Category))
-                     .Where(d => BindingOf(d.Name).Key != Keys.None))
+                     .Where(d => BindingOf(d.Name).Key != Keys.None || MouseButtonOf(d.Name) is not null))
         {
             var title = def.Category;
             var group = groups.FirstOrDefault(g => g.Title == title);
@@ -272,7 +331,7 @@ public sealed class ActionMap
                 groups.Add(group);
             }
             var entries = group.Entries.ToList();
-            entries.Add(new KeyBindingTable.Entry(BindingOf(def.Name).Label, def.Description));
+            entries.Add(new KeyBindingTable.Entry(LabelOf(def.Name), def.Description));
             // Replace the immutable record's entry list by rebuilding the group.
             groups[groups.IndexOf(group)] = group with { Entries = entries };
         }
@@ -285,23 +344,64 @@ public sealed class ActionMap
         return i >= 0 ? i : int.MaxValue;
     }
 
-    /// <summary>Serialize only the user overrides (differences from defaults)
-    /// as compact JSON, so a fresh default change on upgrade still flows
-    /// through.</summary>
-    public string ToJson() =>
-        System.Text.Json.JsonSerializer.Serialize(
-            _current.Where(kv => kv.Value != _defs[kv.Key].Default)
-                    .ToDictionary(kv => kv.Key, kv => new[] { (int)kv.Value.Key, (int)kv.Value.Modifiers }),
-            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    /// <summary>
+    /// Serialize the layout preset plus only the user overrides (differences from
+    /// that layout's defaults) as compact JSON, so a fresh default change on
+    /// upgrade still flows through. Format (P941):
+    /// <c>{"layout":"native|port","bindings":{"Action":[key,mods]}}</c>.
+    /// </summary>
+    public string ToJson() => System.Text.Json.JsonSerializer.Serialize(
+        new PersistedMap(
+            Layout == InputLayout.Native ? "native" : "port",
+            _current.Where(kv => kv.Value != _defaults[kv.Key])
+                    .ToDictionary(kv => kv.Key, kv => new[] { (int)kv.Value.Key, (int)kv.Value.Modifiers })),
+        new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
 
-    /// <summary>Apply persisted overrides (format of <see cref="ToJson"/>).
-    /// Unknown action names and out-of-range key codes are skipped defensively
-    /// so a hand-edited or stale file can't crash the client.</summary>
+    /// <summary>One persisted keymap document (P941): the layout preset the
+    /// overrides sit on top of, plus the overrides themselves. The JSON names are
+    /// the contract with older/newer client builds and with hand-written files.</summary>
+    private sealed record PersistedMap(
+        [property: System.Text.Json.Serialization.JsonPropertyName("layout")] string Layout,
+        [property: System.Text.Json.Serialization.JsonPropertyName("bindings")] Dictionary<string, int[]> Bindings);
+
+    /// <summary>
+    /// Apply persisted bindings. Accepts both the P941 document
+    /// (<c>{"layout":...,"bindings":{...}}</c>) and the pre-P941 flat override
+    /// map (<c>{"Action":[key,mods]}</c>). A legacy flat file has no layout
+    /// marker; it holds only the player's own rebinds, so it migrates to the
+    /// NATIVE layout with those rebinds on top (the pre-P941 port defaults broke
+    /// the training prompts; a player who only pressed OK in F6 wrote "{}").
+    /// Unknown action names and out-of-range key codes are skipped defensively so
+    /// a hand-edited or stale file can't crash the client.
+    /// </summary>
     public void ApplyJson(string json)
     {
         try
         {
-            var map = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(json);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object) return;
+
+            bool hasBindings = doc.RootElement.TryGetProperty("bindings", out var bindings);
+            if (hasBindings)
+            {
+                var layout = InputLayout.Port;
+                if (doc.RootElement.TryGetProperty("layout", out var l)
+                    && l.ValueKind == System.Text.Json.JsonValueKind.String
+                    && string.Equals(l.GetString(), "native", StringComparison.OrdinalIgnoreCase))
+                    layout = InputLayout.Native;
+                SetLayout(layout);
+            }
+            else
+            {
+                // Legacy (< P941) flat override file: only the player's rebinds.
+                // Migrate to native defaults and keep those rebinds on top; the
+                // old port defaults stay one F6 preset switch away.
+                SetLayout(InputLayout.Native);
+            }
+
+            var map = hasBindings
+                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(bindings.GetRawText())
+                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(json);
             if (map == null) return;
             foreach (var (action, kv) in map)
             {

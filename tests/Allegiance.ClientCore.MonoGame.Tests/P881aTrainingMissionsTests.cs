@@ -48,7 +48,8 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         public readonly ClientTrainingSite Site;
         public readonly TrainingSession Session;
         public readonly TrainingMission Mission;
-        public readonly ActionMap Map = new(InputActionCatalog.Definitions);
+        // P941: the scripted pilot presses the pre-P941 keys (SPACE fires), so it pins the Port preset.
+        public readonly ActionMap Map = new(InputActionCatalog.Definitions, InputLayout.Port);
         public readonly TrainingInputGate Gate;
         public bool Eyeball;
         public Coll.Vector3? BayApproach;
@@ -560,7 +561,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             Session = connection,
         });
         var mission = new Mission3(site);
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var gate = new TrainingInputGate(mission.RecordKeyPress);
         map.ActionFilter = gate.Approves;
         map.SetBinding("TargetEnemy", new(Keys.F, InputModifiers.None), true);
@@ -583,7 +584,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             Session = connection,
         });
         var mission = new Mission4(site);
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var gate = new TrainingInputGate(mission.RecordKeyPress);
         map.ActionFilter = gate.Approves;
         map.SetBinding("ToggleCloak", new(Keys.G, InputModifiers.None), true);
@@ -623,7 +624,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         // training key filter must ALSO recognise the action's NATIVE-default key (the 5th catalog
         // arg), so SPACEBAR still reaches TK_FireBooster (50). This test uses the REAL default map —
         // no explicit rebind — so it fails before the fix and passes after.
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var received = new List<int>();
         var gate = new TrainingInputGate(key => { received.Add(key); return true; });
         map.ActionFilter = gate.Approves;
@@ -644,7 +645,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         // must ALSO honour each action's native-default key (defaultinputmap.mdl: TK_TargetFriendlyBase
         // = B, TK_TargetEnemy = F) while a training mission runs — mirroring TrainingInputGate — and
         // must NOT change normal flight (training=false stays binding-only).
-        var map = new ActionMap(InputActionCatalog.Definitions);   // shipped default bindings
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);   // shipped default bindings
         // FAILS BEFORE THE FIX: with only the binding consulted, B is down but TargetFriendlyBase is
         // unbound → false. After the fix the native-default fallback (training=true) makes it true.
         Assert.True(Game1.RemainderTargetKeyDown(map, new KeyboardState(Keys.B), "TargetFriendlyBase", training: true));
@@ -704,7 +705,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         site.CreateWaypoint(700, new(800, 100, 0), 1030, 0, true);
         world.Apply(new QueuedCommandUpdate { CommandId = OrderChange.CidGoto,
             TargetType = IgcObjectType.Buoy, TargetId = 700 });
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         TrainingController.BeginMission();
         var input = new Allegiance.ClientCore.MonoGame.Flight.CommandActionInput();
         var result = input.Step(new(Keys.OemOpenBrackets), false, map, world);
@@ -722,7 +723,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.False(TrainingInputGate.NativeDefaultKeyDown(new(Keys.B), "TargetFriendlyBasePrev"));
         Assert.True(TrainingInputGate.NativeDefaultKeyDown(new(Keys.LeftControl, Keys.B), "TargetFriendlyBasePrev"));
         Assert.False(TrainingInputGate.NativeDefaultKeyDown(new(Keys.LeftControl, Keys.B), "TargetFriendlyBase"));
-        var map = new ActionMap(InputActionCatalog.Definitions);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         var recorded = new List<int>();
         var gate = new TrainingInputGate(k => { recorded.Add(k); return true; });
         map.ActionFilter = gate.Approves;
@@ -759,7 +760,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         // key under training (YieldsToTrainingTarget). So before the fix a real G press recorded
         // TK_ToggleCloak for the mission but never ENGAGED the cloak. CloakKeyDown honours the
         // native-default key under training so G really cloaks, while F keeps standing down.
-        var map = new ActionMap(InputActionCatalog.Definitions);   // shipped default: ToggleCloak→F, native default G
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);   // shipped default: ToggleCloak→F, native default G
         // G actually cloaks under training (the M4 prompt key).
         Assert.True(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: true));
         // F still stands down for TargetEnemy under training — it must NOT cloak.
@@ -768,7 +769,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         Assert.False(Game1.CloakKeyDown(map, new KeyboardState(Keys.G), training: false));
         Assert.True(Game1.CloakKeyDown(map, new KeyboardState(Keys.F), training: false));
         // A user who rebinds ToggleCloak to G gets a real cloak from G in both modes.
-        var rebound = new ActionMap(InputActionCatalog.Definitions);
+        var rebound = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
         rebound.SetBinding("ToggleCloak", new(Keys.G, InputModifiers.None), true);
         Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: true));
         Assert.True(Game1.CloakKeyDown(rebound, new KeyboardState(Keys.G), training: false));
