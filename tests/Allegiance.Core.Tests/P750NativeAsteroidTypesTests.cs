@@ -34,6 +34,14 @@ public sealed class P750NativeAsteroidTypesTests
 
     private static readonly Lazy<StaticCore> GenCore = new(MapGenTestCore.LoadRepresentative);
 
+    /// <summary>P939 — the three special classes are distinct capability bits
+    /// (Uranium <c>special&lt;&lt;0</c>, Silicon <c>&lt;&lt;1</c>, Carbonaceous
+    /// <c>&lt;&lt;2</c>; asteroidigc.cpp:134-136), so a generated map that enables
+    /// several research paths places all three and a class test must use the
+    /// union, not <c>special&lt;&lt;0</c> alone.</summary>
+    private const short SpecialClasses =
+        (short)(DataAsteroidIGC.AabmSpecial | (DataAsteroidIGC.AabmSpecial << 1) | (DataAsteroidIGC.AabmSpecial << 2));
+
     private static MissionMap Generate(MapGenType type, int teams, int mapSize = 0)
         => MissionMapGenerator.Generate(new MapGenParams
         {
@@ -187,10 +195,20 @@ public sealed class P750NativeAsteroidTypesTests
                 Assert.InRange(a.Radius, (short)100, (short)200);   // randomInt(100,200) incl.
                 Assert.StartsWith("He", a.Name);
             }
-            else if ((a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0)
+            else if ((a.AabmCapabilities & SpecialClasses) != 0)
             {
-                Assert.Equal("bgrnd51", a.ModelName);
-                Assert.Equal("hotrock", a.IconName);
+                // P939 — each native special class has its own row
+                // (asteroidigc.cpp:134-136): U bgrnd51/hotrock, Si bgrnd52/copperrock,
+                // C bgrnd53/carbonrock. hp/radius are the same for all three.
+                var (model, icon) = a.AabmCapabilities switch
+                {
+                    (short)(DataAsteroidIGC.AabmSpecial << 0) => ("bgrnd51", "hotrock"),
+                    (short)(DataAsteroidIGC.AabmSpecial << 1) => ("bgrnd52", "copperrock"),
+                    (short)(DataAsteroidIGC.AabmSpecial << 2) => ("bgrnd53", "carbonrock"),
+                    _ => ("unexpected", "unexpected"),
+                };
+                Assert.Equal(model, a.ModelName);
+                Assert.Equal(icon, a.IconName);
                 Assert.Equal(25000f, a.HitPoints);
                 Assert.InRange(a.Radius, (short)200, (short)400);
             }
@@ -226,11 +244,20 @@ public sealed class P750NativeAsteroidTypesTests
             Assert.Equal(25000f, a.HitPoints);
             Assert.InRange(a.Radius, 400, 800);
         }
-        // Special rocks (0x10 in this port's single-subtype assignment) are uranium bgrnd51.
-        foreach (var a in map.Asteroids.Where(a => (a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0))
+        // Special rocks carry the class row of their capability: Uranium bgrnd51,
+        // Silicon bgrnd52, Carbonaceous bgrnd53 (asteroidigc.cpp:134-136; P939 —
+        // all paths on by default, so a Brawl sector cycles all three classes).
+        foreach (var a in map.Asteroids.Where(a => (a.AabmCapabilities & SpecialClasses) != 0))
         {
-            Assert.Equal("bgrnd51", a.ModelName);
-            Assert.Equal("hotrock", a.IconName);
+            var (model, icon) = a.AabmCapabilities switch
+            {
+                (short)(DataAsteroidIGC.AabmSpecial << 0) => ("bgrnd51", "hotrock"),
+                (short)(DataAsteroidIGC.AabmSpecial << 1) => ("bgrnd52", "copperrock"),
+                (short)(DataAsteroidIGC.AabmSpecial << 2) => ("bgrnd53", "carbonrock"),
+                _ => ("unexpected", "unexpected"),
+            };
+            Assert.Equal(model, a.ModelName);
+            Assert.Equal(icon, a.IconName);
             Assert.Equal(25000f, a.HitPoints);
             Assert.InRange(a.Radius, 200, 400);
         }

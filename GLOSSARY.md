@@ -1480,7 +1480,17 @@ list in **reverse**.
 ## 11. Map generation (`src/Allegiance.Core/MapGen`)
 
 - **`MissionMapGenerator.cs`** — the procedural map generator (port of native
-  `mapmakerigc.cpp`), producing `MissionMap` records.
+  `mapmakerigc.cpp`), producing `MissionMap` records. Its special-asteroid
+  classes are the direct port of `Igc/asteroidigc.cpp` `NumberSpecialAsteroids`
+  / `GetSpecialAsterioid` (`NumberSpecialAsteroids`, `SpecialAsteroidKind`,
+  `SpecialAsteroidCapability`, `SpecialAsteroidOffset`): the three
+  research-path switches select Uranium 0x10 / Silicon 0x20 / Carbonaceous 0x40
+  for **generated and file maps alike** (`common.cpp:3052-3058`), and the
+  per-sector start index is 1 or `randomInt(1, count)` inclusive. Generated maps
+  take the switches from `MapGenParams.AllowExpansionPath` /
+  `AllowTacticalPath` / `AllowSupremacyPath` (native `MissionParams`, fed from
+  the game config); the file-map top-up takes `Mission.Research`. Tests:
+  `tests/Allegiance.Core.Tests/P939SpecialAsteroidTests.cs`.
 - **`MapGenParams.cs`** — per-run parameters incl. `Seed`.
 - **`MapGenContext.cs`** — per-run plumbing (port of native `CMapData`).
 - **`MapRandom.cs`** — the seeded/shared RNG abstraction.

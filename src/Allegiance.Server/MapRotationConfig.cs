@@ -82,7 +82,8 @@ public sealed partial class Server
                 else
                 {
                     var civs = MatchCivilizations.Resolve(game, core, 0);
-                    map = MissionMapGenerator.Generate(ToCoreParams(entry.MapGen!, game.Teams, civs, seedOverride: 0), core, 0);
+                    map = MissionMapGenerator.Generate(ToCoreParams(entry.MapGen!, game.Teams, civs, seedOverride: 0,
+                        research: ResearchSettingsFor(game)), core, 0);
                 }
                 if (map.Clusters.Count == 0 || map.Clusters.Count >= ClusterInfo.MaxClusters || map.Warps.Count >= ClusterInfo.MaxWarps)
                     throw new InvalidDataException("map exceeds the CLUSTERINFO sector/warp limits or has no sectors");

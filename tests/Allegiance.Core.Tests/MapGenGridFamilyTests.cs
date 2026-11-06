@@ -31,6 +31,12 @@ public sealed class MapGenGridFamilyTests
 {
     private static readonly Lazy<StaticCore> GenCore = new(MapGenTestCore.LoadRepresentative);
 
+    /// <summary>P939 — a special rock is any of Uranium 0x10, Silicon 0x20 or
+    /// Carbonaceous 0x40 (<c>asteroidigc.cpp:134-136</c>): three distinct capability
+    /// bits, so the class mask is their union.</summary>
+    private const short SpecialClasses =
+        (short)(DataAsteroidIGC.AabmSpecial | (DataAsteroidIGC.AabmSpecial << 1) | (DataAsteroidIGC.AabmSpecial << 2));
+
     private static int[] CivIds(int n) =>
         GenCore.Value.Civilizations.Values
             .OrderBy(c => c.CivilizationId)
@@ -286,7 +292,7 @@ public sealed class MapGenGridFamilyTests
         int He3(short cid) => map.Asteroids.Count(a =>
             a.ClusterId == cid && (a.AabmCapabilities & DataAsteroidIGC.AabmMineHe3) != 0);
         int Special(short cid) => map.Asteroids.Count(a =>
-            a.ClusterId == cid && (a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0);
+            a.ClusterId == cid && (a.AabmCapabilities & SpecialClasses) != 0);
 
         // Team-0 block: global 0 = local 0 (home), global 1 = local 1 (home),
         // global 2 = local 2 (neutral), global 6 = local 6, global 10 = local 10.

@@ -44,6 +44,38 @@ counts: [P928 report](reports/P928_REPORT.md),
 [P928 verification](reports/P928_assets/verification.json). Raw logs/TRX remain
 under `.scratch/p928/` in the task worktree. No commits or pushes were made.
 
+## P939 verification — one Fast sweep and 3× isolation, 2026-11-05
+
+**One Fast sweep**: 13,129 executions, **13,123 passed / 3 failed / 3
+not-executed (optional Meshy pack) / 2 slow**, 534.4 s. All infrastructure checks
+passed; worktree `local.env` was present (artwork corpus configured), so the
+map-gen cohort ran rather than skipped. The sweep is **FAIL**; each failure was
+re-run three times alone, serially, and none is in a file P939 touched (no map,
+asteroid, class-selection or parity test failed).
+
+| Sweep failure | Three runs alone | Qualification |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.3 s, also over the 10 s guard) | **pass / fail / pass** | Existing ledgered partial-tip receipt timing failure (P928: optimized fail/fail/fail, dispatch base pass/fail/pass). Intermittent; unrelated to map generation. Not cleared. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail** | Existing baseline defect recorded by P928 (pristine dispatch-base tree also fail/fail/fail): null target where the test expects the chasing ship. Not P939's to fix; unchanged by this task. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass / pass / pass** | Load/timing flake — the sweep saw 31.1 simulated seconds against the [28, 31] window (P928 already lists the clock/receipt boundary). |
+
+Slow-but-passing Fast executions (over the calibrated 10 s limit) beyond the
+missile-lock case: `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured`
+(10.49 s, passed). No tier change, timeout relaxation or unrelated fix was made.
+
+The showcase never-parks pair (`P700ShowcaseLiveTests`) was then run five times
+serially (both cases per run): normal home **pass/fail/pass/pass/fail**, swapped
+home **pass/pass/pass/pass/pass**. The two failures ran the whole 480 s window and
+failed the end-of-window `reached >= 24` assertion, not the 5 s parking bound
+(parking never exceeded that bound in any run). Three further runs of the failing
+normal case **alone** were **pass/pass/pass**. A base control pair on
+`HEAD:src/Allegiance.Core/MapGen/MissionMapGenerator.cs` failed too — the swapped
+case, `reached=17/30` at 480.1 s, `longest speed<1 with target=0.601s` — i.e. the
+P928-ledgered arrival-deadline shape, on a file map (`m2xspiderw.igc`, no MapGen,
+`techMode` unlocked) that P939's changed code never reaches. Host load 4.5–5.5 on
+24 CPUs. Raw logs are in `~/allegiance-evidence/P939/`; the summary is under
+`docs/reports/P939_assets/`.
+
 ## P924 verification
 
 Exactly **one Fast sweep**: **12,983 passed / 12 failed / 3 optional-pack skips**,

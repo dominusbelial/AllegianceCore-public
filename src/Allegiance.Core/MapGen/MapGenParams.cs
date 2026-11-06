@@ -67,6 +67,23 @@ public sealed class MapGenParams
     /// <summary>Neutral-sector runtime treasure count (<c>nNeutralSectorTreasures</c>).</summary>
     public short NeutralSectorTreasures { get; init; }
 
+    /// <summary><c>MissionParams.bAllowExpansionPath</c> (Igc/igc.h:1132, default
+    /// <c>true</c> at igc.h:1247-1249) — one of the three research-path switches
+    /// <c>IasteroidIGC::NumberSpecialAsteroids</c> / <c>GetSpecialAsterioid</c>
+    /// read when <c>PopulateCluster</c> picks a special asteroid's class
+    /// (<c>asteroidigc.cpp:179-229</c>; <c>common.cpp:3052-3058</c>). A generated
+    /// map takes them from the game's research settings, the same source the
+    /// file-map top-up reads off the assembled mission.</summary>
+    public bool AllowExpansionPath { get; init; } = true;
+
+    /// <summary><c>MissionParams.bAllowTacticalPath</c> (Igc/igc.h:1130, default
+    /// <c>true</c> at igc.h:1247-1249) — see <see cref="AllowExpansionPath"/>.</summary>
+    public bool AllowTacticalPath { get; init; } = true;
+
+    /// <summary><c>MissionParams.bAllowSupremacyPath</c> (Igc/igc.h:1131, default
+    /// <c>true</c> at igc.h:1247-1249) — see <see cref="AllowExpansionPath"/>.</summary>
+    public bool AllowSupremacyPath { get; init; } = true;
+
     /// <summary><c>MissionParams.fHe3Density</c> — scales the per-map He3 total.</summary>
     public float He3Density { get; init; } = 1.0f;
 

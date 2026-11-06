@@ -74,7 +74,17 @@ public sealed class MissionMapGenerator
 
     private int _nextAsteroidId;
     private HashSet<short>? _reservedAsteroidIds;
-    private ResearchSettings? _fileMapResearch;
+
+    /// <summary>The mission's three research-path switches
+    /// (<c>MissionParams.bAllowExpansionPath</c> / <c>bAllowTacticalPath</c> /
+    /// <c>bAllowSupremacyPath</c>, <c>Igc/igc.h:1130-1132</c>, defaults
+    /// <c>igc.h:1247-1249</c>). Native <c>PopulateCluster</c> reads them off the
+    /// mission params for every map, generated or file
+    /// (<c>Igc/common.cpp:3052-3058</c>). A generated map takes them from
+    /// <see cref="MapGenParams"/>; the file-map top-up takes the assembled
+    /// mission's own <see cref="ResearchSettings"/> — the same source the mission
+    /// itself is built from.</summary>
+    private (bool Expansion, bool Tactical, bool Supremacy) _paths;
     private (short ClusterId, float[] Position, float Radius)[] _fileMapTreasures = [];
     private int _nextStationId;
 
@@ -88,6 +98,9 @@ public sealed class MissionMapGenerator
         // 1412, 1485, 1511). The port has no per-class state, so the topology is
         // held here and the shared methods branch on it identically.
         _type = ctx.Params.Type;
+        // The mission's research-path switches drive the special-asteroid classes
+        // for generated maps too (common.cpp:3052-3058; asteroidigc.cpp:179-229).
+        _paths = (ctx.Params.AllowExpansionPath, ctx.Params.AllowTacticalPath, ctx.Params.AllowSupremacyPath);
     }
 
     /// <summary>
@@ -1178,26 +1191,81 @@ public sealed class MissionMapGenerator
         for (int i = 0; i < nMine; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmMineHe3, amountHe3);
 
-        // Special asteroids (c_aabmSpecial).
+        // Special asteroids (c_aabmSpecial) — native PopulateCluster's block
+        // (common.cpp:3040-3059): each rock's class comes from
+        // GetSpecialAsterioid over the enabled research paths, from a per-cluster
+        // running type index that starts at 1 or at randomInt(1, count)
+        // (asteroidigc.cpp:179-229). The offset is drawn once, before the loop,
+        // even when the sector's special count is 0 — exactly native's order.
         int nSpecial = ApplyMultiplier(home ? _ctx.Params.PlayerSectorSpecialAsteroids
                                             : _ctx.Params.NeutralSectorSpecialAsteroids, multSpecial);
-        // File-map PopulateCluster cycles only enabled resource paths, with a
-        // random starting offset (common.cpp:3054-3057; asteroidigc.cpp:179-228).
-        var specialKinds = _fileMapResearch is { } research
-            ? new[] { research.AllowExpansionPath, research.AllowTacticalPath, research.AllowSupremacyPath }
-                .Select((enabled, index) => (enabled, index)).Where(p => p.enabled).Select(p => p.index).ToArray()
-            : [];
-        if (_fileMapResearch is not null && specialKinds.Length == 0) specialKinds = [0, 1, 2];
-        int specialOffset = specialKinds.Length > 1 ? _rng.Next(1, specialKinds.Length + 1) : 1;
+        var (expansion, tactical, supremacy) = _paths;
+        int specialOffset = SpecialAsteroidOffset(_rng, expansion, tactical, supremacy);
         for (int i = 0; i < nSpecial; i++)
-            AddAsteroid(clusterId, specialKinds.Length == 0 ? DataAsteroidIGC.AabmSpecial
-                : (short)(DataAsteroidIGC.AabmSpecial << specialKinds[(specialOffset + i) % specialKinds.Length]), 0f);
+            AddAsteroid(clusterId, SpecialAsteroidCapability(expansion, tactical, supremacy, specialOffset + i), 0f);
 
         // Generic buildable (c_aabmBuildable).
         int nGeneric = ApplyMultiplier(home ? _ctx.Params.PlayerSectorAsteroids
                                             : _ctx.Params.NeutralSectorAsteroids, multGeneric);
         for (int i = 0; i < nGeneric; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmBuildable, 0f);
+    }
+
+    // ── Special-asteroid class selection: direct port of asteroidigc.cpp:179-229 ─
+    /// <summary>Native <c>c_nSpecialAsteroidTypes[8] = {3,1,1,2,1,2,2,3}</c>
+    /// (<c>Igc/asteroidigc.cpp:181</c>): how many distinct special classes the
+    /// enabled research paths allow, indexed by <see cref="SpecialPathCode"/>.</summary>
+    private static readonly int[] SpecialAsteroidTypeCounts = [3, 1, 1, 2, 1, 2, 2, 3];
+
+    /// <summary>The <c>(supremacy ? 4 : 0) + (tactical ? 2 : 0) + (expansion ? 1 : 0)</c>
+    /// key both native helpers switch on (<c>asteroidigc.cpp:183-185</c> and
+    /// <c>:193-195</c>).</summary>
+    private static int SpecialPathCode(bool expansion, bool tactical, bool supremacy)
+        => (supremacy ? 4 : 0) + (tactical ? 2 : 0) + (expansion ? 1 : 0);
+
+    /// <summary><c>IasteroidIGC::NumberSpecialAsteroids</c>
+    /// (<c>asteroidigc.cpp:179-188</c>): 3 classes with all paths on or all off,
+    /// 1 with exactly one path, 2 with two. <c>PopulateCluster</c> uses it as the
+    /// inclusive upper bound of the per-cluster starting type index
+    /// (<c>common.cpp:3052-3054</c>).</summary>
+    public static int NumberSpecialAsteroids(bool expansion, bool tactical, bool supremacy)
+        => SpecialAsteroidTypeCounts[SpecialPathCode(expansion, tactical, supremacy)];
+
+    /// <summary><c>IasteroidIGC::GetSpecialAsterioid</c>'s class for a type index
+    /// (<c>asteroidigc.cpp:190-229</c>): 0 = Uranium, 1 = Silicon,
+    /// 2 = Carbonaceous. <paramref name="index"/> is native's running
+    /// <c>offset++</c>, which starts at 1 or at the drawn offset — never reset per
+    /// rock.</summary>
+    public static int SpecialAsteroidKind(bool expansion, bool tactical, bool supremacy, int index)
+        => SpecialPathCode(expansion, tactical, supremacy) switch
+        {
+            0 or 7 => index % 3,                 // asteroidigc.cpp:198-201
+            1 => 0,                              // asteroidigc.cpp:203-205
+            2 => 1,                              // asteroidigc.cpp:207-209
+            3 => index % 2,                      // asteroidigc.cpp:211-213
+            4 => 2,                              // asteroidigc.cpp:215-217
+            5 => ((index % 2) == 0) ? 0 : 2,     // asteroidigc.cpp:219-221
+            6 => 1 + (index % 2),                // asteroidigc.cpp:223-225
+            _ => throw new ArgumentOutOfRangeException(nameof(index)),
+        };
+
+    /// <summary>The capability mask of that class: native returns
+    /// <c>n + nFirstSpecialType</c> (<c>asteroidigc.cpp:146,228</c>), whose row's
+    /// <c>aabmCapabilities</c> is <c>c_aabmSpecial &lt;&lt; n</c>
+    /// (<c>asteroidigc.cpp:134-136</c>).</summary>
+    public static short SpecialAsteroidCapability(bool expansion, bool tactical, bool supremacy, int index)
+        => (short)(DataAsteroidIGC.AabmSpecial << SpecialAsteroidKind(expansion, tactical, supremacy, index));
+
+    /// <summary>The per-cluster starting type index — native's
+    /// <c>offset = NumberSpecialAsteroids(pmp); if (offset != 1) offset =
+    /// randomInt(1, offset)</c> (<c>common.cpp:3052-3054</c>). A count of 1 draws
+    /// nothing at all; any other count draws exactly one inclusive value in
+    /// <c>[1, count]</c>. <paramref name="rng"/> must be the generator's own
+    /// stream so the draw lands in native order.</summary>
+    public static int SpecialAsteroidOffset(IMapRandom rng, bool expansion, bool tactical, bool supremacy)
+    {
+        int count = NumberSpecialAsteroids(expansion, tactical, supremacy);
+        return count != 1 ? rng.Next(1, count + 1) : 1;
     }
 
     /// <summary>File-map top-up (Igc/missionigc.cpp:3978-4007,4048-4051).
@@ -1207,7 +1275,8 @@ public sealed class MissionMapGenerator
     {
         var rng = MapRandomFactory.FromSeed(parameters.Seed);
         var generator = new MissionMapGenerator(new MapGenContext(parameters, mission.LastUpdate, rng), mission.Core, rng);
-        generator._fileMapResearch = mission.Research;
+        generator._paths = (mission.Research.AllowExpansionPath, mission.Research.AllowTacticalPath,
+            mission.Research.AllowSupremacyPath);
         generator._fileMapTreasures = mission.Sectors.SelectMany(s => s.Models.OfType<Allegiance.Core.Sim.Treasure>()
             .Select(t => (s.Id, new[] { t.Position.X, t.Position.Y, t.Position.Z }, Allegiance.Core.Sim.Treasure.PickupRadius))).ToArray();
         generator._warps.AddRange(mission.Warps.Select(w => w.Warp));

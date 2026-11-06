@@ -33,6 +33,15 @@ public sealed class MapGenBrawlTests
 {
     private static readonly Lazy<StaticCore> GenCore = new(MapGenTestCore.LoadRepresentative);
 
+    /// <summary>P939 — a special rock is any of the three native special classes:
+    /// Uranium 0x10, Silicon 0x20, Carbonaceous 0x40
+    /// (<c>asteroidigc.cpp:134-136</c>). They are distinct capability bits, so the
+    /// class test is the union of the three, not <c>AabmSpecial</c> alone — generated
+    /// maps now place all three classes when the research paths allow them
+    /// (<c>common.cpp:3052-3058</c>).</summary>
+    private const short SpecialClasses =
+        (short)(DataAsteroidIGC.AabmSpecial | (DataAsteroidIGC.AabmSpecial << 1) | (DataAsteroidIGC.AabmSpecial << 2));
+
     private static int[] CivIds(int n) =>
         GenCore.Value.Civilizations.Values
             .OrderBy(c => c.CivilizationId)
@@ -151,7 +160,7 @@ public sealed class MapGenBrawlTests
         Require.Artwork();
         var map = Generate(2);
         int mineable = map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmMineHe3) != 0);
-        int special = map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0);
+        int special = map.Asteroids.Count(a => (a.AabmCapabilities & SpecialClasses) != 0);
         int generic = map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmBuildable) != 0);
 
         Assert.Equal(8, mineable);    // neutral 8 × 1
@@ -173,7 +182,7 @@ public sealed class MapGenBrawlTests
         Assert.Single(map.Clusters);         // still one shared sector
         Assert.Empty(map.Warps);             // still nothing to link
         Assert.Equal(3, map.Stations.Count); // one station per side (3 teams)
-        Assert.Equal(3, map.Asteroids.Count(a => (a.AabmCapabilities & DataAsteroidIGC.AabmSpecial) != 0));
+        Assert.Equal(3, map.Asteroids.Count(a => (a.AabmCapabilities & SpecialClasses) != 0));
         // -3·(3/2) = -3·1 = -3 (integer division) → exactly 3 special rocks.
     }
 

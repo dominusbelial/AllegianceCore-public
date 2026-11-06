@@ -112,9 +112,11 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
         var mission = server.Missions[0];
         var firstBranch = mission.ResearchPlans.ToDictionary(kv => kv.Key, kv => kv.Value.Steps.First(s =>
             s.Action == "station" && new[] { "Supremacy", "Tactical", "Expansion", "Shipyard" }.Contains(s.Name)));
-        // A resource-complete test map, derived from each actual plan. The current map generator
-        // emits generic special rocks (0x10), not every core-specific build capability. This is
-        // fixture map content, not a commander cheat or a grant of tech/money/constructors.
+        // A resource-complete test map, derived from each actual plan. The generator
+        // now places the enabled research paths' own special classes (P939,
+        // asteroidigc.cpp:179-229), but a plan may need more copies of a class than a
+        // sector holds, so this fixture tops each plan class up. This is fixture map
+        // content, not a commander cheat or a grant of tech/money/constructors.
         short rockId = 10000;
         foreach (var side in mission.Sides)
         {

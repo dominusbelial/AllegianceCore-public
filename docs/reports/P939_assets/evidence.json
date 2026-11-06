@@ -1,0 +1,276 @@
+{
+  "task": "P939 — generated maps place the per-path special asteroids (Uranium/Silicon/Carbonaceous) exactly as native PopulateCluster",
+  "native_rule": {
+    "populate_cluster": "Igc/common.cpp:3052-3058 — offset = NumberSpecialAsteroids(pmp); if (offset != 1) offset = randomInt(1, offset); then GetSpecialAsterioid(pmp, offset++) per rock",
+    "number_special_asteroids": "Igc/asteroidigc.cpp:179-188 — c_nSpecialAsteroidTypes[8] = {3,1,1,2,1,2,2,3} indexed by supremacy*4 + tactical*2 + expansion*1",
+    "get_special_asterioid": "Igc/asteroidigc.cpp:190-229 — kind per index: 0/7 index%3, 1 -> 0, 2 -> 1, 3 index%2, 4 -> 2, 5 (index%2==0)?0:2, 6 1+(index%2); returns n + nFirstSpecialType (6, asteroidigc.cpp:146)",
+    "classes": "Igc/asteroidigc.cpp:134-136 — 0x10 Uranium (bgrnd51/hotrock), 0x20 Silicon (bgrnd52/copperrock), 0x40 Carbonaceous (bgrnd53/carbonrock)",
+    "map_maker_call": "Igc/mapmakerigc.cpp:944-948 — generated maps call the same ::PopulateCluster",
+    "params": "Igc/igc.h:1130-1132 (bAllowTacticalPath / bAllowSupremacyPath / bAllowExpansionPath), defaults true at igc.h:1247-1249"
+  },
+  "table_kinds_by_combination": {
+    "code0_exp0_tac0_sup0": {
+      "count": 3,
+      "kinds_index_0_to_5": [
+        "U",
+        "Si",
+        "C",
+        "U",
+        "Si",
+        "C"
+      ]
+    },
+    "code1_exp1_tac0_sup0": {
+      "count": 1,
+      "kinds_index_0_to_5": [
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U"
+      ]
+    },
+    "code2_exp0_tac1_sup0": {
+      "count": 1,
+      "kinds_index_0_to_5": [
+        "Si",
+        "Si",
+        "Si",
+        "Si",
+        "Si",
+        "Si"
+      ]
+    },
+    "code3_exp1_tac1_sup0": {
+      "count": 2,
+      "kinds_index_0_to_5": [
+        "U",
+        "Si",
+        "U",
+        "Si",
+        "U",
+        "Si"
+      ]
+    },
+    "code4_exp0_tac0_sup1": {
+      "count": 1,
+      "kinds_index_0_to_5": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ]
+    },
+    "code5_exp1_tac0_sup1": {
+      "count": 2,
+      "kinds_index_0_to_5": [
+        "U",
+        "C",
+        "U",
+        "C",
+        "U",
+        "C"
+      ]
+    },
+    "code6_exp0_tac1_sup1": {
+      "count": 2,
+      "kinds_index_0_to_5": [
+        "Si",
+        "C",
+        "Si",
+        "C",
+        "Si",
+        "C"
+      ]
+    },
+    "code7_exp1_tac1_sup1": {
+      "count": 3,
+      "kinds_index_0_to_5": [
+        "U",
+        "Si",
+        "C",
+        "U",
+        "Si",
+        "C"
+      ]
+    }
+  },
+  "generated_maps": {
+    "team_core": "PCore001.igc, teams=2, MapSize=0, default resource counts (home/neutral special = 2)",
+    "before_base": {
+      "SingleRing_seed_1123059318": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 8
+        },
+        "per_sector": {
+          "0": "0x10,0x10",
+          "1": "0x10,0x10",
+          "2": "0x10,0x10",
+          "3": "0x10,0x10"
+        }
+      },
+      "PinWheel_seed_939": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 8
+        },
+        "per_sector": {
+          "0": "0x10,0x10",
+          "1": "0x10,0x10",
+          "2": "0x10,0x10,0x10,0x10"
+        }
+      }
+    },
+    "after_this_change": {
+      "SingleRing_seed_1123059318_all_paths": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 3,
+          "0x20": 2,
+          "0x40": 3
+        },
+        "per_sector": {
+          "0": "0x40,0x10",
+          "1": "0x10,0x20",
+          "2": "0x20,0x40",
+          "3": "0x40,0x10"
+        },
+        "fingerprint_sha256": "F31BE1B70D2377826AAF2013B6E2526675C66CD72D0B7948A7919C59DD99442E"
+      },
+      "PinWheel_seed_939_all_paths": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 3,
+          "0x20": 3,
+          "0x40": 2
+        },
+        "per_sector": {
+          "0": "0x40,0x10",
+          "1": "0x10,0x20",
+          "2": "0x20,0x40,0x10,0x20"
+        },
+        "fingerprint_sha256": "89AC4A7FAE5F94178CDC806479509780EF81FE4C337F9F26A76A1756C3BEFD18"
+      },
+      "SingleRing_seed_1123059318_expansion_only": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 8
+        },
+        "fingerprint_sha256": "CE5D9DC09A5CADB30A6F2ECB01F2D6691DF188C17139A5A49E89EB87AD3EE086",
+        "note": "identical to the pre-change map: count 1 draws no offset, so the stream and every other rock are unchanged"
+      },
+      "PinWheel_seed_939_expansion_only": {
+        "rocks": 80,
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x10": 8
+        },
+        "fingerprint_sha256": "54C03DF1D1A4B98673B87200B776978623BFDFBF3C57057BE1A18364D90E952D",
+        "note": "identical to the pre-change PinWheel seed 939 map"
+      },
+      "SingleRing_seed_4242_tactical_only": {
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x20": 8
+        },
+        "fingerprint_sha256": "3428F8A9D58A49E0F0F3CC37F75B82850614ADD709738903CE7AFAE8C92D58F4"
+      },
+      "SingleRing_seed_4242_supremacy_only": {
+        "caps": {
+          "0x01": 36,
+          "0x08": 36,
+          "0x40": 8
+        },
+        "fingerprint_sha256": "43C354DC1182CD0B1FB7357E821A2B531BDF354F799C99C02C0C820A3293E91B"
+      }
+    }
+  },
+  "file_maps": {
+    "setup": "synthetic core, 3 sectors (1 home), 4 specials per sector, seed 864, mission ResearchSettings per combination",
+    "before_and_after_identical": true,
+    "per_sector_sequences": {
+      "exp0_tac0_sup0": "0x20,0x40,0x10,0x20",
+      "exp1_tac0_sup0": "0x10,0x10,0x10,0x10",
+      "exp0_tac1_sup0": "0x20,0x20,0x20,0x20",
+      "exp1_tac1_sup0": "0x20,0x10,0x20,0x10",
+      "exp0_tac0_sup1": "0x40,0x40,0x40,0x40",
+      "exp1_tac0_sup1": "0x40,0x10,0x40,0x10",
+      "exp0_tac1_sup1": "0x40,0x20,0x40,0x20",
+      "exp1_tac1_sup1": "0x20,0x40,0x10,0x20"
+    },
+    "method": "same probe run twice: once against HEAD:src/Allegiance.Core/MapGen/MissionMapGenerator.cs and once against the P939 working tree; byte-identical sequences for all 8 combinations (all three sectors each)"
+  },
+  "red_before_green_after": {
+    "before": "Generated_singlering_specials_cover_all_three_native_classes FAIL: 'generated SingleRing seed=1123059318 has no 0x20 special rock; census: sector 0: 0x10,0x10 | sector 1: 0x10,0x10 | sector 2: 0x10,0x10 | sector 3: 0x10,0x10'; Generated_pinwheel_specials_cover_all_three_native_classes FAIL (same shape); Generated_special_sequence_per_sector_follows_the_native_all_paths_cycle FAIL: 'SingleRing sector 0: special sequence U,U is not a native rotation (Si,C / C,U / U,Si)'; Same_seed_reproduces... PASS (reproducibility guard)",
+    "after": "P939SpecialAsteroidTests: 29 passed, 0 failed"
+  },
+  "gate": {
+    "build": "AllegianceCore.slnx: 0 warnings, 0 errors",
+    "build_tools": "tools/build-tools.sh: all 116 tool projects built (exit 0)",
+    "aot_publish": "src/Allegiance.Server Release linux-x64 PublishAot=true: exit 0, 0 IL2026/IL3050",
+    "cohort_3x": "P939+P750+Brawl+Grid+Radial+SeedRepro+Foundation+P864c: 96 passed, 3 serial runs",
+    "fast_tier": {
+      "executions": 13129,
+      "passed": 13123,
+      "failed": 3,
+      "not_executed": 3,
+      "seconds": 534.4,
+      "result": "FAIL",
+      "failures": {
+        "MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire": "pass/fail/pass alone (existing receipt-timing flake, P928)",
+        "NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge": "fail/fail/fail alone (existing baseline defect, P928)",
+        "LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds": "pass/pass/pass alone (timing flake, sweep 31.1s vs [28,31])"
+      },
+      "slow": [
+        "MissileLockLiveTests 38.3 s (failed)",
+        "P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured 10.49 s (passed)"
+      ]
+    },
+    "showcase_never_parks": {
+      "five_pair_runs": {
+        "normal_home": [
+          "pass",
+          "fail",
+          "pass",
+          "pass",
+          "fail"
+        ],
+        "swapped_home": [
+          "pass",
+          "pass",
+          "pass",
+          "pass",
+          "pass"
+        ],
+        "failure_detail": "failures ran the full 480 s window and failed reached>=24; the 5 s parking bound was never breached"
+      },
+      "normal_case_alone_3x": [
+        "pass",
+        "pass",
+        "pass"
+      ],
+      "base_control_pair_HEAD_MissionMapGenerator": {
+        "swapped_home": "FAIL reached=17/30 at 480.1 s, longest speed<1 with target=0.601 s",
+        "normal_home": "pass"
+      },
+      "note": "showcase config boots the file map m2xspiderw.igc with no MapGen and techMode unlocked: P939 changed code is never reached; base tree fails the same pair under the same load"
+    },
+    "skips": "0 in the affected cohort and P939 tests (artwork configured via local.env); 3 NotExecuted in the sweep are optional Meshy-pack skips"
+  }
+}

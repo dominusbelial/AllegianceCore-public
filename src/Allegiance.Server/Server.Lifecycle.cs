@@ -1058,7 +1058,7 @@ public sealed partial class Server
     /// <see cref="MapGenType"/>. Throws on an unknown topology name so a typo'd
     /// config fails loudly at boot rather than silently falling back to a file.
     /// </summary>
-    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds, MissionGoals? goals = null, int? seedOverride = null)
+    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds, MissionGoals? goals = null, int? seedOverride = null, ResearchSettings? research = null)
     {
         if (!Enum.TryParse<MapGenType>(cfg.Type, ignoreCase: true, out var type))
             throw new InvalidDataException(
@@ -1087,6 +1087,15 @@ public sealed partial class Server
             NeutralSectorAsteroids = (short)(cfg.NeutralSectorAsteroids ?? 8),
             NeutralSectorTreasures = (short)(cfg.NeutralSectorTreasures ?? 0),
             He3Density = (float)(cfg.He3Density ?? 1.0),
+            // P939 — the game's three research-path switches decide the special
+            // asteroid classes of every map, generated included (native
+            // MissionParams.bAllow*Path, Igc/igc.h:1130-1132; PopulateCluster at
+            // Igc/common.cpp:3052-3058). Same GameConfig source the mission's
+            // ResearchSettings comes from, so a generated map and a file map of
+            // the same game place the same classes.
+            AllowExpansionPath = research?.AllowExpansionPath ?? true,
+            AllowTacticalPath = research?.AllowTacticalPath ?? true,
+            AllowSupremacyPath = research?.AllowSupremacyPath ?? true,
             FlagsGame = goals?.IsFlagsGame == true || (cfg.FlagsGame ?? false),
             ArtifactsGame = goals?.IsArtifactsGame == true || (cfg.ArtifactsGame ?? false),
         };
@@ -1357,7 +1366,8 @@ public sealed partial class Server
         if (fromMapGen)
         {
             // Generated station types must belong to the receiving civilization.
-            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed);
+            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed,
+                ResearchSettingsFor(g));
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
