@@ -96,7 +96,8 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
         var ip = addresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork) ?? addresses.First();
         lock (_gate)
         {
-            EnsureStopped();
+            if (!_traversalPrepared) EnsureStopped();
+            else if (!_running || _host || _remote is not null) throw new InvalidOperationException("prepared socket unavailable");
             _host = false;
             _joined.Reset();
             _remote = Normalize(new IPEndPoint(ip, port));
@@ -105,7 +106,8 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             WriteMagic(_hello, Kind.Hello);
             RandomNumberGenerator.Fill(_hello.AsSpan(8, 16));
             _lastHandshake = 0;
-            Start(IPAddress.IPv6Any, 0);
+            if (!_traversalPrepared) Start(IPAddress.IPv6Any, 0);
+            else ServiceClient(Environment.TickCount64);
         }
         if (!_joined.Wait(HandshakeTimeout))
         {
@@ -256,8 +258,11 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
 
     private void Receive(ReadOnlySpan<byte> d, IPEndPoint ep, long now)
     {
+        ep = InboundRouteForTesting?.Invoke(ep) ?? ep;
+        if (ReceiveTraversal(d, ep, now)) return;
         if (d.Length < 8 || BinaryPrimitives.ReadUInt32LittleEndian(d) != Magic) return;
         var kind = (Kind)d[4];
+        if (_host && kind <= Kind.Accept && !CanIntroduce(ep, now)) return;
         if (kind <= Kind.Accept) { Handshake(d, ep, kind, now); return; }
         if (d.Length < Header || !_endpoints.TryGetValue(ep, out var p) || new Guid(d.Slice(8, 16)) != p.Token) return;
         int acks = d[5], offset = Header;
@@ -638,6 +643,7 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     {
         try
         {
+            endpoint = OutboundRouteForTesting?.Invoke(endpoint) ?? endpoint;
             int n = _socket!.SendTo(data, _socket.AddressFamily == AddressFamily.InterNetwork
                 ? new IPEndPoint(endpoint.Address.MapToIPv4(), endpoint.Port) : endpoint);
             Interlocked.Add(ref _written, n);
@@ -720,6 +726,8 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             if (!_running && _socket is null) return;
             foreach (var p in _peers.Values.ToArray()) Drop(p, "shutdown");
             _running = false;
+            _binding?.Completion.TrySetException(new IOException("UDP game socket is closed"));
+            _introductions.Clear();
             _wake.Set();
             _clientTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             _socket?.Dispose(); // Interrupt a client's blocking receive before joining.

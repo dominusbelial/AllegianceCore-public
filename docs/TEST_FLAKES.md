@@ -4,6 +4,36 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P936 validation — one Fast sweep and isolated controls, 2026-11-06 UTC
+
+One Fast sweep: **13,194 passed / 11 failed / 3 optional Meshy-pack skips**,
+13,208 executions in 580.3 s. Infrastructure checks passed. Two existing cases
+also exceeded Fast's ten-second limit (attack 36.844 s; warp exit 10.892 s).
+The sweep remains **FAIL** and was not repeated.
+
+The task-owned failure was `P625bActionMapGuardTests`: the new browser password
+handler used raw Tab/Enter. It now uses the catalogued `LobbyPassword` action and
+existing `LobbyJoin`; the guard and affected action-map/client group passed
+**1,005/1,005 ×3** after the final core/lobby follow-ups, including new
+Classic/Modern rebind/finish-key tests. All 30 final P936 cases passed in each
+repetition, with zero skips. No guard allow-list,
+assertion, timeout or tier was relaxed.
+
+| Non-task sweep failure / timing offender | Three isolated outcomes | Qualification |
+|---|---|---|
+| Five `PlayerBundlePathsTests` cases | Same five **fail/fail/fail**; full class **4 passed / 5 failed** each time | Existing fixture ancestry issue: mandated in-worktree TMPDIR finds the ancestor local.env. Same P932/P939/P901 family; resolver and path fixtures unchanged. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **pass/pass/pass**, 0.057/0.055/0.066 s, with scratch `XDG_CONFIG_HOME` | Existing sandbox obstruction: sweep cannot restore the read-only real user profile. The writable-profile control changes no product or fixture code. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | All three delay rows **pass/pass/pass** | Existing floating upper-bound signature on delay 7 in the sweep. Timer/warp-bomb code unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.267/1.209/1.263 s; unmodified base also **fail/fail/fail** | Existing null-target assertion. Baseline archive is `bf1978d7d5c7b8602bfd581478d5e77b0c1b08f0`; no NPC/flight policy change. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/fail/fail**, 1.048/1.032/1.063 s; unmodified base **fail/pass/fail** | Existing simulated-clock/receipt boundary against [28,31]; first isolated value 31.85. No seating policy or limit changed. |
+| `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage` | **pass/pass/pass**, 1.099/0.665/0.734 s | Existing sweep-only damage/timing signature; NPC, damage and flight code unchanged. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed but 10.892 s) | **pass/pass/pass**, 9.024/9.184/9.154 s | Existing timing-only Fast offender; no limit relaxed. |
+
+Evidence: `.scratch/p936/fast-tier/`, `.scratch/p936/isolations/`; small final
+summary in `.scratch/p936/validation.json` (not published). P936 report:
+`NAT_TRAVERSAL_P936.md`. Raw evidence remains ignored inside the permitted
+worktree scratch directory. These results do not claim a green full Fast gate.
+
 ## P932 validation — one Fast sweep and three isolated reruns, 2026-11-06 UTC
 
 Exactly one Fast sweep: **13,129 passed / 10 failed / 3 optional Meshy-pack

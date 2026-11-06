@@ -74,7 +74,7 @@ sealed class CaptureSettings(Game1 game, string output, DiscoveredServer found) 
         if (_watch.Elapsed.TotalSeconds > 40) throw new TimeoutException("P897 capture timed out");
         if (_armed || _watch.Elapsed.TotalSeconds < 3) return;
         void Set(string name, object value) => typeof(Game1).GetField(name, Hidden)!.SetValue(game, value);
-        typeof(Game1).GetMethod("BeginConnect", Hidden)!.Invoke(game, [found.Address, (ushort)found.Port, uint.MaxValue, found]);
+        typeof(Game1).GetMethod("BeginConnect", Hidden)!.Invoke(game, [found.Address, (ushort)found.Port, uint.MaxValue, found, false, null]);
         Set("_graphicsSettingsVisible", true); Set("_graphicsRow", 21);
         // EndDraw captures after the real settings overlay is drawn.
         Set("_budgetCapture", output); Set("_budgetStart", Stopwatch.GetTimestamp()); Set("_budgetDuration", 2d);

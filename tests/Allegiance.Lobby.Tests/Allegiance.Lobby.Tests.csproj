@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Include="../_shared/P936NatShim.cs" Link="_shared/P936NatShim.cs" />
+    <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+  </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

@@ -938,6 +938,18 @@ list in **reverse**.
   process/window proof: `tools/p901-lan-proof/Program.cs`; native intent:
   `docs/parity/p901-lan-host.csv`; report:
   `docs/reports/P901_REPORT.md`.
+- **Internet player hosting / NAT traversal (P936, port extension)** — explicit
+  `SkirmishOptions.HostInternet` uses the shared host screen and
+  `src/Allegiance.SinglePlayer/InternetHostPublisher.cs` to publish and refresh a
+  20-second player listing. The default-off lobby observers in
+  `src/Allegiance.Lobby/NatBindingResponder.cs` / `src/Allegiance.Lobby/NatObservationStore.cs`
+  issue endpoint reception receipts; `src/Allegiance.Lobby/PunchSignaling.cs`
+  introduces only observed endpoints. `src/Allegiance.Core/Transport/StunBinding.cs`,
+  `src/Allegiance.Core/Transport/UdpTransport.Traversal.cs` and
+  `src/Allegiance.Core/Transport/NatTraversalClient.cs` share the game socket for
+  discovery, bounded probes and normal UDP join. Two lobby ports detect changed
+  mappings; no relay, router mapping or public STUN dependency. Local NAT shims:
+  `tests/_shared/P936NatShim.cs`. Report: `NAT_TRAVERSAL_P936.md`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
   (`SkirmishHost.cs`, `SkirmishOptions.cs`), hosted from `Game1.Skirmish.cs`.
 - **Training** — the native training missions. `src/Allegiance.SinglePlayer/Training/`.

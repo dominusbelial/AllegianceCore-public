@@ -17,6 +17,7 @@ public static class RateLimiting
     public const string IdentityPolicy = "identity";
 
     public const string RegisterPolicy = "register";
+    public const string PunchPollPolicy = "punch-poll";
 
     /// <summary>P871 — directory chat: a per-IP window for the authenticated
     /// relay POST (native's chat relay is throttled by the game's own chat
@@ -43,6 +44,9 @@ public static class RateLimiting
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy(PunchPollPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = 90, Window = RegisterWindow, QueueLimit = 0, AutoReplenishment = true }));
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",

@@ -501,6 +501,9 @@ public sealed partial class Game1
             return;
         }
 
+        // Backspace edits text; command keys use the rebindable action map.
+        if (HandleLobbyPassword(ks, ks.IsKeyDown(XnaKeys.Back))) return;
+
         // P806 — open the dialog (the native Filter button; the keyboard stand-in).
         bool filtersKey = ActionDown(ks, "LobbyGameFilters");
         if (filtersKey && !_filtersKeyWasDown && !_filterActive && !_findPlayerActive)
@@ -1041,6 +1044,9 @@ public sealed partial class Game1
                 }
             }
 
+            _spriteBatch.DrawString(_hudSmall, KeyOf("LobbyPassword").Label + " game password: " + new string('*', _lanJoinPassword.Length)
+                + (_editingLanPassword ? "_  (" + KeyOf("LobbyJoin").Label + " done)" : ""),
+                new Vector2(40, h - 66), dimCol);
             string footer = connect
                 ? "TAP a row or BUTTON   A/CONNECT join   Y ADD   X EDIT   B back"
                 : (_filterActive
@@ -1103,8 +1109,9 @@ public sealed partial class Game1
                 new Color(1f, 0.62f, 0.35f));
             string reason = _connectFailureReason ?? "unknown failure";
             var rsz = _hudSmall.MeasureString(reason);
-            _spriteBatch.DrawString(_hudSmall, reason, new Vector2((w - rsz.X) / 2f, h / 2f - 18f),
-                new Color(0.88f, 0.96f, 0.95f));
+            float reasonScale = Math.Min(1f, (w - 64f) / Math.Max(1f, rsz.X));
+            _spriteBatch.DrawString(_hudSmall, reason, new Vector2((w - rsz.X * reasonScale) / 2f, h / 2f - 18f),
+                new Color(0.88f, 0.96f, 0.95f), 0, Vector2.Zero, reasonScale, SpriteEffects.None, 0);
             // P894 — a refused old client is told how to fix it, not just why it
             // failed (native sent AUTO_UPDATE_INFO and dropped the connection,
             // lobby/client.cpp:272-288).
@@ -1142,10 +1149,12 @@ public sealed partial class Game1
     private uint _connectMissionCookie = uint.MaxValue;
 
     private Discovery.DiscoveredServer? _connectDiscovery;
+    private ServerListing? _connectListingTarget;
     private string _transportReason = "not connected";
 
     private void ConfigureClientTransport(string host, ushort port, uint cookie, Discovery.DiscoveredServer? found)
     {
+        _session.InternetJoinTarget = null;
         // Embedded modes keep their existing loopback TCP path, regardless of Settings/env.
         if (_skirmish is not null || _trainingSession is not null || _embeddedHost is not null)
         {
@@ -1154,9 +1163,17 @@ public sealed partial class Game1
             _transportReason = "local Skirmish/Training";
             return;
         }
+        if (_connectListingTarget is { PlayerHosted: true } playerHost)
+        {
+            _session.InternetJoinTarget = new(_lobbyUrl, playerHost.Id);
+            _session.TransportProtocol = "udp";
+            _session.UdpPort = (ushort?)playerHost.UdpPort;
+            _transportReason = "player-hosted internet game; lobby introduction and UDP direct";
+            return;
+        }
         ServerListing? listing;
         lock (_introLobbyLock)
-            listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.MissionCookie == cookie);
+            listing = _servers.FirstOrDefault(s => !s.PlayerHosted && s.Address == host && s.Port == port && s.MissionCookie == cookie);
         var source = found?.Source ?? (listing is null ? Discovery.DiscoverySource.Manual : Discovery.DiscoverySource.Lobby);
         int? udp = found?.UdpPort ?? listing?.UdpPort;
         var choice = Discovery.ClientTransportPolicy.Resolve(_hudSettings.Transport, source, udp,
@@ -1168,7 +1185,7 @@ public sealed partial class Game1
         _transportReason = choice.Reason;
     }
 
-    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false)
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null)
     {
         if (!training) ReleaseTraining();
         _moderation.Reset();
@@ -1182,6 +1199,7 @@ public sealed partial class Game1
         // last-used memory both work regardless of entry path.
         _connectMissionCookie = missionCookie;
         _connectDiscovery = discovered;
+        _connectListingTarget = listingTarget;
         _connectHost = host;
         _connectPort = port;
         // P789 — remote matches record their performance too (no wire change:
@@ -1299,7 +1317,7 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
             _connectFailureReason = null;
-            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery);
+            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget);
             return;
         }
         _connectRetryWasDown = retry;
@@ -1347,7 +1365,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
             bool prior = _returnToLobbyOnFailure;
             _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
-            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery); }
+            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget); }
             finally { _returnToLobbyOnFailure = prior; }
         }
     }
@@ -1482,6 +1500,12 @@ public sealed partial class Game1
             return;
         if (c < 32 || c == 127)
             return;
+
+        if (_state == ClientState.Lobby && _editingLanPassword)
+        {
+            if (c <= 126 && _lanJoinPassword.Length < 15) _lanJoinPassword.Append(c);
+            return;
+        }
 
         // P853b — the team lobby's TEAM NAME edit box owns typed text while it is
         // open (native's teamNameEditPane, teamscreen.cpp:887/897: max length

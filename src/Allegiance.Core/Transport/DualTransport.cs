@@ -9,6 +9,8 @@ public sealed class DualTransport : IServerTransport
     private const uint UdpBit = 0x80000000;
     public TcpTransport Tcp { get; }
     public UdpTransport Udp { get; }
+    /// <summary>Embedded internet hosts keep local TCP IPv4 while UDP can also use global IPv6.</summary>
+    public IPAddress? UdpBindAddress { get; init; }
     private readonly ushort _udpPort;
     public DualTransport(ITransportSite site, TcpTransport tcp, ushort udpPort,
         EgressAccounting? egress, ReliableTelemetry? reliable, ServerCounters counters, bool park,
@@ -33,7 +35,7 @@ public sealed class DualTransport : IServerTransport
     public void Host(ushort port, IPAddress? bindAddress)
     {
         Tcp.Host(port, bindAddress);
-        try { Udp.Host(_udpPort == 0 ? Tcp.BoundPort : _udpPort, bindAddress); }
+        try { Udp.Host(_udpPort == 0 ? Tcp.BoundPort : _udpPort, UdpBindAddress ?? bindAddress); }
         catch { Tcp.Shutdown(); throw; }
     }
     public void Join(string address, ushort port, string playerName) => throw new NotSupportedException("host-only multiplexing transport");

@@ -20,6 +20,8 @@ public sealed record SkirmishOptions
     ];
     /// <summary>Explicit multiplayer exposure; ordinary skirmishes remain loopback only.</summary>
     public bool HostLan { get; init; }
+    public bool HostInternet { get; init; }
+    public string InternetLobbyUrl { get; init; } = "";
     public const int DefaultHostPort = 6073;
     public int HostPort { get; init; } = DefaultHostPort;
     public string GameName { get; init; } = "LAN game";
@@ -138,6 +140,11 @@ public sealed record SkirmishOptions
 
     public ServerConfig CreateConfig(string? artwork = null)
     {
+        if (HostInternet)
+        {
+            if (!HostLan) throw new ArgumentException("Internet hosting requires the multiplayer host listeners.");
+            Allegiance.Core.Transport.NatTraversalClient.ValidateLobbyUrl(InternetLobbyUrl);
+        }
         if (!Civilizations.Any(c => c.Id == PlayerCiv) || !Civilizations.Any(c => c.Id == EnemyCiv))
             throw new ArgumentException("Select a PCore001 civilization");
         if (TechMode is not ("research" or "unlocked")) throw new ArgumentException("Invalid tech mode");

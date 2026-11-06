@@ -21,7 +21,7 @@ public sealed partial class SkirmishHost
             if (Environment.TickCount64 < _lanStatusAt) return _lanStatus;
             _lanStatusAt = Environment.TickCount64 + 1000;
             return _lanStatus = OnSimulation(server =>
-                $"{Options.GameName} | Join: {string.Join(" / ", JoinAddresses.DefaultIfEmpty("<this PC's IPv4 address>:" + Port))} | "
+                (Options.HostInternet ? _internet?.Status + " | " : $"{Options.GameName} | Join: {string.Join(" / ", JoinAddresses.DefaultIfEmpty("<this PC's IPv4 address>:" + Port))} | ")
                 + $"{server.LivePlayerCount} players (humans + bots) | Ctrl+F10 ends game for everyone");
         }
     }

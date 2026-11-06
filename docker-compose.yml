@@ -16,7 +16,13 @@ services:
       dockerfile: src/Allegiance.Lobby/Dockerfile
     ports:
       - "8080:8080"
+      - "${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}:${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}/udp"
+      - "${ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT:-3479}:${ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT:-3479}/udp"
     environment:
+      Lobby__PlayerHostedGames: "${ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES:-false}"
+      Lobby__StunBindAddress: "${ALLEGIANCE_LOBBY_STUN_BIND_ADDRESS:-::}"
+      Lobby__StunPrimaryPort: "${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}"
+      Lobby__StunSecondaryPort: "${ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT:-3479}"
       Lobby__Identity__PublicUrl: "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"
       Lobby__Identity__Store: Sqlite
       Lobby__Identity__ConnectionString: Data Source=/identity/accounts.db

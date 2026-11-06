@@ -932,7 +932,9 @@ public sealed partial class Server
         _host.Transport = protocol == "udp"
             ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
                 measureReceiveDelay: _threadPoolTelemetry is not null)
+                { UdpBindAddress = RequireUdpIntroductions ? System.Net.IPAddress.IPv6Any : null }
             : transport;
+        if (_host.Transport is DualTransport internetTransport) internetTransport.Udp.RequireIntroductions = RequireUdpIntroductions;
         _host.Transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);
         if (_host.Transport is DualTransport dual) Console.WriteLine($"[boot] UDP transport listening on {dual.UdpPort} (TCP remains available)");
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");

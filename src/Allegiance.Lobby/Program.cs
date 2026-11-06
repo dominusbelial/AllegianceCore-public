@@ -24,6 +24,10 @@ var builder = WebApplication.CreateBuilder(args);
 var settings = new LobbySettings();
 builder.Configuration.GetSection("Lobby").Bind(settings);
 builder.Services.AddSingleton(settings);
+builder.Services.AddSingleton<NatObservationStore>();
+builder.Services.AddSingleton<PunchSignaling>();
+builder.Services.AddSingleton<NatBindingResponder>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<NatBindingResponder>());
 
 // TimeProvider is registered as a singleton so tests can swap in a fake clock; the
 // ServerRegistry depends on it rather than sampling DateTime.UtcNow itself.
@@ -97,6 +101,7 @@ app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapLobbyEndpoints(settings);
+app.MapNatEndpoints();
 app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
 app.MapCareer();
 app.MapSquad();

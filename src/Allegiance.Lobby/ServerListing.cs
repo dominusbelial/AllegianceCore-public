@@ -61,7 +61,8 @@ internal sealed record ServerListing(
     /// (native <c>verLobby</c>, <c>lobby/messagesls.h:43</c>). Null = the host did
     /// not state one (pre-P894 build, accepted).</summary>
     int? LobbyProtocolVersion = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null,
+    bool PlayerHosted = false);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -120,7 +121,8 @@ public sealed record ServerListingDto(
     /// (<see cref="GameParamsDto.StartTimeOffsetMs"/>); the directory publishes the
     /// absolute time. Null = no start time armed.</summary>
     DateTimeOffset? StartTimeUtc = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PlayerHosted = false);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -214,6 +216,8 @@ public sealed record FindPlayerResultDto(
 /// </summary>
 public sealed class RegisterRequest
 {
+    public bool PlayerHosted { get; set; }
+    public string? Receipt { get; set; }
     public string? IdentityServerId { get; set; }
     public string? IdentityServerSecret { get; set; }
     // Never bound from JSON: only the endpoint can authenticate enrollment.

@@ -45,5 +45,6 @@ ENV ASPNETCORE_URLS=http://+:8080
 
 # Documentation only (the real mapping is `-p` / compose `ports`).
 EXPOSE 8080
+EXPOSE 3478/udp 3479/udp
 
 ENTRYPOINT ["dotnet", "Allegiance.Lobby.dll"]

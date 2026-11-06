@@ -172,7 +172,7 @@ public sealed partial class Game1
         }
         _returnToLobbyOnFailure = true;
         Console.WriteLine($"[monogame] joining {s.Name} @ {s.Address}:{s.Port} ...");
-        BeginConnect(s.Address, (ushort)s.Port, s.MissionCookie);
+        BeginConnect(s.Address, (ushort)s.Port, s.MissionCookie, listingTarget: s);
     }
 
     /// <summary>Delete the selected SAVED server (no-op otherwise) and persist.</summary>

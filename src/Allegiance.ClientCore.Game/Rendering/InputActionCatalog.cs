@@ -443,6 +443,7 @@ public static class InputActionCatalog
         new("LobbyUp", "LOBBY (SERVER BROWSER)", "Select server up", K(Keys.Up), null),
         new("LobbyDown", "LOBBY (SERVER BROWSER)", "Select server down", K(Keys.Down), null),
         new("LobbyJoin", "LOBBY (SERVER BROWSER)", "Join selected server", K(Keys.Enter), null),
+        new("LobbyPassword", "LOBBY (SERVER BROWSER)", "Edit optional game password", K(Keys.Tab), null),
         new("LobbyFilter", "LOBBY (SERVER BROWSER)", "Find / filter servers by name", K(Keys.F), null),
         new("LobbyRefresh", "LOBBY (SERVER BROWSER)", "Refresh server list", K(Keys.R), null),
         new("LobbyClearFilter", "LOBBY (SERVER BROWSER)", "Clear filter", K(Keys.Escape), null),

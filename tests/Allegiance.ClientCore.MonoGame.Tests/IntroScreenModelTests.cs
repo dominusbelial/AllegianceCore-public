@@ -84,7 +84,7 @@ public class IntroScreenModelTests
         // P757 — Replay Intro and Help join the native button set after
         // Credits; the port's extras stay at the end. P789 renamed it Showcase;
         // P808c appends Career; P901 appends the explicit LAN host entry.
-        Assert.Equal(12, IntroScreenModel.MainLabels.Length);
+        Assert.Equal(13, IntroScreenModel.MainLabels.Length);
         Assert.Equal("Replay Intro", IntroScreenModel.MainLabels[6]);
         Assert.Equal("Help", IntroScreenModel.MainLabels[7]);
         Assert.Equal("Exit", IntroScreenModel.MainLabels[8]);
@@ -94,6 +94,8 @@ public class IntroScreenModelTests
         Assert.Equal(IntroCommand.Career, IntroScreenModel.Activate(10));
         Assert.Equal("Host LAN game", IntroScreenModel.MainLabels[11]);
         Assert.Equal(IntroCommand.HostLan, IntroScreenModel.Activate(11));
+        Assert.Equal("Host internet game", IntroScreenModel.MainLabels[12]);
+        Assert.Equal(IntroCommand.HostInternet, IntroScreenModel.Activate(12));
         Assert.Equal("Single Player", IntroScreenModel.MainLabels[0]);
     }
 }

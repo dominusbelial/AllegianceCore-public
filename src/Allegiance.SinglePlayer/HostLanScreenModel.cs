@@ -6,6 +6,8 @@ public sealed class HostLanScreenModel
     public SkirmishOptions Options { get; private set; } = new() { HostLan = true, StartAsSpectator = false };
     public string PortText { get; private set; } = SkirmishOptions.DefaultHostPort.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public int Selected { get; private set; }
+    public void UseInternetLobby(string? lobbyUrl) => Options = Options with
+        { HostInternet = lobbyUrl is not null, InternetLobbyUrl = lobbyUrl ?? "" };
     public const int StartRow = 7, BackRow = 8, RowCount = 9;
     public const string NetworkHelp = "Firewall blocked? Friends see no LAN listing or connection times out. Allow the game on your private network.";
     public const string InternetHelp = "Internet friends: forward TCP/UDP game port, or use a Tailscale address in Direct Connect. Host quitting ends the game.";
@@ -52,6 +54,6 @@ public sealed class HostLanScreenModel
         "Bot difficulty: " + Options.Difficulty,
         "Your race: " + SkirmishOptions.Civilizations.First(c => c.Id == Options.PlayerCiv).Name,
         "Enemy race: " + SkirmishOptions.Civilizations.First(c => c.Id == Options.EnemyCiv).Name,
-        "Host LAN game (research tech, normal speed)", "Back"
+        Options.HostInternet ? "Host internet game (research tech, normal speed)" : "Host LAN game (research tech, normal speed)", "Back"
     ];
 }

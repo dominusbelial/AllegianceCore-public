@@ -18,7 +18,7 @@ public static class LobbyEndpoints
         settings ??= app.Services.GetRequiredService<LobbySettings>();
         // Fresh registration (no token) or idempotent heartbeat/update (valid token).
         // Rate-limited: this is the single write path a public registry must protect.
-        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, Identity.IdentityStore identities, LobbySettings cfg, HttpContext context) =>
+        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, Identity.IdentityStore identities, LobbySettings cfg, NatObservationStore observations, HttpContext context) =>
         {
             // The socket source (or a configured trusted proxy's source) owns
             // the listing. A caller cannot redirect clients to a victim IP/DNS.
@@ -45,6 +45,20 @@ public static class LobbyEndpoints
                 Console.WriteLine($"[lobby] registration refused: {req.Address} speaks lobby protocol {req.LobbyProtocolVersion}, this lobby speaks {cfg.LobbyProtocolVersion}");
                 return Results.Text($"{reason} (server protocol {req.LobbyProtocolVersion}, lobby protocol {cfg.LobbyProtocolVersion})",
                     statusCode: StatusCodes.Status409Conflict);
+            }
+
+            if (req.PlayerHosted)
+            {
+                if (!cfg.PlayerHostedGames) return Results.StatusCode(403);
+                if (observations.Resolve(req.Receipt, source) is not { } observed)
+                    return Results.BadRequest("A fresh primary lobby UDP observation receipt is required");
+                req.Address = observed.Address.ToString();
+                req.UdpPort = observed.Port;
+                req.MissionName ??= req.Name;
+                // The owned desktop match occupies its only game slot. It does
+                // not claim the dedicated-server CREATE_MISSION_REQ relay.
+                req.CurrentGames = 1;
+                req.MaxGames = 1;
             }
 
             if (req.Port is < 1 or > 65535) return Results.BadRequest("port must be in 1..65535");

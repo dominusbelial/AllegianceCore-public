@@ -372,6 +372,12 @@ public sealed partial class Game1
         switch (IntroScreenModel.Activate(_introIndex))
         {
             case IntroCommand.HostLan:
+                _hostLanScreen.UseInternetLobby(null);
+                _introView = IntroView.HostLan;
+                _skirmishError = "";
+                break;
+            case IntroCommand.HostInternet:
+                _hostLanScreen.UseInternetLobby(string.IsNullOrWhiteSpace(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl);
                 _introView = IntroView.HostLan;
                 _skirmishError = "";
                 break;

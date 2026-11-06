@@ -20,6 +20,7 @@ public sealed partial class SkirmishHost : IDisposable
     private Process? _driver;
     private Thread? _ticker;
     private Task? _reader, _stderr;
+    private InternetHostPublisher? _internet;
     private long _request, _heartbeat;
     private int _disposed;
     private string? _failure;
@@ -50,7 +51,7 @@ public sealed partial class SkirmishHost : IDisposable
     private SkirmishHost(SkirmishOptions options)
     {
         Options = options;
-        _server = new() { AllowSinglePlayerPause = !options.HostLan, RequireLanListeners = options.HostLan };
+        _server = new() { AllowSinglePlayerPause = !options.HostLan, RequireLanListeners = options.HostLan, RequireUdpIntroductions = options.HostInternet };
         PlayerSide = options.StartAsSpectator ? null : (short)0;
         // P889 — size the bot driver from the same shared-machine budget the
         // server resolver uses (client + bot reserve), not a flat "cores - 2".
@@ -123,6 +124,9 @@ public sealed partial class SkirmishHost : IDisposable
             await host._driver.StandardInput.WriteLineAsync("start");
             await host._driver.StandardInput.FlushAsync(cancellationToken);
             await host._ready.Task.WaitAsync(TimeSpan.FromMinutes(3), cancellationToken);
+            if (options.HostInternet)
+                host._internet = await InternetHostPublisher.StartAsync(host._server.UdpGameTransport!, options.InternetLobbyUrl,
+                    options.GameName, host.Port, options.SeatCount + 12, () => host._server.LivePlayerCount, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return host;
         }
@@ -248,6 +252,7 @@ public sealed partial class SkirmishHost : IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop.Cancel();
+        _internet?.Dispose();
         if (Options.HostLan)
         {
             _ticker?.Join();

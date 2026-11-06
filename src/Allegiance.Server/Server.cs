@@ -836,6 +836,9 @@ public sealed partial class Server : IDisposable
     /// <summary>The game worlds, in config order.</summary>
     /// <summary>Embedded LAN host only: require both transports and discovery, irrespective of dedicated-server env overrides.</summary>
     public bool RequireLanListeners { get; init; }
+    /// <summary>P936 embedded internet host admission; dedicated/LAN defaults remain false.</summary>
+    public bool RequireUdpIntroductions { get; init; }
+    public UdpTransport? UdpGameTransport => (_host?.Transport as DualTransport)?.Udp;
 
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");
 

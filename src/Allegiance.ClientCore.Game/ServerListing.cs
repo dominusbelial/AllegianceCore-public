@@ -62,7 +62,8 @@ public sealed record ServerListing(
     /// lobby's clock (native <c>plmi-&gt;dwStartTime += Time::Now()</c>,
     /// <c>lobby/mission.cpp:61</c>). Null = no start time armed.</summary>
     DateTimeOffset? StartTimeUtc = null,
-    int? UdpPort = null)
+    int? UdpPort = null,
+    bool PlayerHosted = false)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
@@ -144,7 +145,7 @@ public sealed record ServerListing(
             ? $"{PlayerCount}/{MaxPlayers}"
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
-        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
+        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
     }
 
     /// <summary>
@@ -249,6 +250,7 @@ public static class ServerDirectorySearch
             "VERSION: " + (string.IsNullOrWhiteSpace(l.Version) ? "-" : l.Version),
             "PLAYERS: " + l.PlayerCount + (l.MaxPlayers > 0 ? "/" + l.MaxPlayers : ""),
         };
+        if (l.PlayerHosted) lines.Add("CONNECT: player hosted, UDP direct via lobby");
         // P894 / LOB-0018 — native's server metadata: LOCATION and the games /
         // load columns of its server list (CreateGameDialog.h:79-100).
         if (!string.IsNullOrWhiteSpace(l.Location)) lines.Add("LOCATION: " + l.Location.Trim());

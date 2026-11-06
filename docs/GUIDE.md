@@ -828,3 +828,43 @@ See [the hosting quickstart](../QUICKSTART.md#host-friends-from-the-client) for
 firewall ports, custom-port discovery, internet/Tailscale connections and ending
 the session. Closing the host ends the game for everyone. Ordinary offline
 skirmishes still accept no LAN guests.
+
+## Host for internet friends without router changes
+
+Start the client with `--lobby https://lobby.example.org` (use your community's
+actual lobby), then choose **Host internet game**. Choose a name, optional
+password, game port and Small/Medium fleet, and start. The host joins as a normal
+pilot; friends choose **Play Online** on that same lobby, select the
+**[player hosted]** listing and join. In the browser, **Tab** edits the optional
+game password; **Enter** finishes editing, then **Enter** joins. Classic and
+Modern share this setup and join flow. The host status bar reports whether its
+internet listing is available. Closing the host ends the game for everyone.
+
+The lobby administrator must opt in with `Lobby:PlayerHostedGames=true`
+(`ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES=true` in Compose). The approved-server
+filter still applies. Publish the lobby's two UDP STUN ports, default **3478 and
+3479**, at the same public address as HTTPS signaling, preserving both port
+numbers. `Lobby:StunPrimaryPort`, `Lobby:StunSecondaryPort` and
+`Lobby:StunBindAddress` configure them; Compose equivalents and deployment
+details are in [docker/README.md](../docker/README.md#internet-player-hosting).
+The default setting is off and binds neither UDP observer. No new game-server
+container or public STUN provider is required.
+
+Allow the client's UDP traffic through the local firewall. Discovery and
+connection probes use the actual game socket. Both peers need compatible UDP
+mapping/filtering; STUN does not guarantee access through every router. If it
+says **Direct connection not possible on this network**, forward the TCP/UDP
+game port or use a Tailscale address through **Direct Connect**. There is no
+relay fallback yet. A failed probe is bounded and never silently switches this
+internet join to TCP. Player listings expire within 20 seconds without a fresh
+heartbeat (or sooner if the administrator configures a shorter directory age); the host refreshes its mapping and listing every five seconds.
+
+IPv4 is preferred. IPv6 direct access is supported when the lobby and both
+peers use global unicast IPv6 and the HTTP/UDP observations have the same source
+address. Use a global IPv6 lobby URL or a lobby hostname with only global AAAA
+records for that path. Private/link-local IPv6 and mixed-family introductions
+are refused; this version does not gather multiple candidates or bridge address
+families. Two observers can detect a changed mapping, but a successful check
+cannot classify every real NAT. The later two-network hardware check remains
+necessary. Ordinary **Host LAN game**, dedicated servers, offline skirmishes,
+and manual TCP connections retain their existing defaults.

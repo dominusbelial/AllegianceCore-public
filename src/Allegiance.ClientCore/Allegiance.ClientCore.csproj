@@ -11,6 +11,7 @@
   <!-- Client library: references AllegianceCore's Core (the wire codecs) only;
        the client has no business depending on a server. -->
   <ItemGroup>
+    <InternalsVisibleTo Include="Allegiance.Lobby.Tests" />
     <ProjectReference Include="../Allegiance.Core/Allegiance.Core.csproj" />
   </ItemGroup>
 

@@ -7,6 +7,11 @@ namespace Allegiance.Lobby;
 /// </summary>
 public sealed class LobbySettings
 {
+    /// <summary>P936: opt in to client-hosted listings and the two lobby UDP observers.</summary>
+    public bool PlayerHostedGames { get; set; }
+    public string StunBindAddress { get; set; } = "::";
+    public int StunPrimaryPort { get; set; } = 3478;
+    public int StunSecondaryPort { get; set; } = 3479;
     /// <summary>Hard cap on distinct listings ("a few hundred"). Heartbeats to existing ids are never evicted by it.</summary>
     public int MaxEntries { get; set; } = 384;
     public int MaxEntriesPerAddress { get; set; } = 4;

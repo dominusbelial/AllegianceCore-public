@@ -10,11 +10,11 @@ using Allegiance.Core.Sim;
 using Allegiance.Core;
 using Microsoft.Xna.Framework;
 
-if (args[0] is "capture" or "capture-live")
+if (args[0] is "capture" or "capture-live" or "capture-internet" or "capture-online" or "capture-failure")
 {
     using var game = new Game1(new Game1.LaunchOptions { Intro = true, PlayerName = "LAN pilot", WindowWidth = 1280, WindowHeight = 720 });
     game.Content.RootDirectory = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
-    game.Components.Add(new Capture(game, Enum.Parse<HudStyle>(args[1]), Path.GetFullPath(args[2]), args[0] == "capture-live"));
+    game.Components.Add(new Capture(game, Enum.Parse<HudStyle>(args[1]), Path.GetFullPath(args[2]), args[0] == "capture-live", args[0] == "capture-internet", args[0] == "capture-online", args[0] == "capture-failure"));
     game.Run();
     return;
 }
@@ -101,7 +101,7 @@ while (clock.Elapsed.TotalSeconds < 300)
 }
 throw new TimeoutException("Guest proof exceeded its time bound");
 
-sealed class Capture(Game1 game, HudStyle style, string output, bool live) : GameComponent(game)
+sealed class Capture(Game1 game, HudStyle style, string output, bool live, bool internet, bool online, bool failure) : GameComponent(game)
 {
     const BindingFlags H = BindingFlags.Instance | BindingFlags.NonPublic;
     readonly Stopwatch watch = Stopwatch.StartNew();
@@ -112,8 +112,30 @@ sealed class Capture(Game1 game, HudStyle style, string output, bool live) : Gam
         void Set(string name, object value) => typeof(Game1).GetField(name, H)!.SetValue(game, value);
         var view = typeof(Game1).GetNestedType("IntroView", BindingFlags.NonPublic)!;
         if (watch.Elapsed.TotalSeconds > 90) throw new TimeoutException("LAN window capture timed out");
-        if (!live || !started)
+        if (failure)
         {
+            var state = typeof(Game1).GetField("_state", H)!.FieldType;
+            Set("_state", Enum.Parse(state, "ConnectFailed"));
+            Set("_connectFailureReason", Allegiance.Core.Transport.DirectConnectionException.Advice);
+        }
+        else if (online)
+        {
+            var state = typeof(Game1).GetField("_state", H)!.FieldType;
+            Set("_state", Enum.Parse(state, "Lobby")); Set("_lobbyUrl", "");
+            if (!armed)
+            {
+                var servers = (List<ServerListing>)typeof(Game1).GetField("_servers", H)!.GetValue(game)!;
+                servers.Clear(); servers.Add(new("p936-example", "Friends", "192.0.2.1", 6073, 2, 12, "Friends", "PCore001.igc", "1",
+                    DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, UdpPort: 32001, PlayerHosted: true));
+                typeof(Game1).GetMethod("RebuildDisplay", H)!.Invoke(game, [false]);
+                ((System.Text.StringBuilder)typeof(Game1).GetField("_lanJoinPassword", H)!.GetValue(game)!).Append("sample");
+                Set("_editingLanPassword", true);
+            }
+        }
+        else if (!live || !started)
+        {
+            if (internet)
+                ((Allegiance.SinglePlayer.HostLanScreenModel)typeof(Game1).GetField("_hostLanScreen", H)!.GetValue(game)!).UseInternetLobby("https://lobby.example.org");
             Set("_introView", Enum.Parse(view, "HostLan"));
             var state = typeof(Game1).GetField("_state", H)!.FieldType;
             Set("_state", Enum.Parse(state, "Intro"));

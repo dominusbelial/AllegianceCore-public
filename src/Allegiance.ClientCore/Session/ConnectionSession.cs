@@ -41,6 +41,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     public string? TransportProtocol { get; set; }
     /// <summary>Advertised UDP port; null uses the game TCP port/environment override.</summary>
     public ushort? UdpPort { get; set; }
+    public InternetJoin? InternetJoinTarget { get; set; }
+    private InternetJoin? _joinedInternet;
+    internal HttpClient? TraversalHttpForTesting { get; set; }
+    internal Action<UdpTransport>? ConfigureTraversalForTesting { get; set; }
 
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
     public Allegiance.ClientCore.Replay.WireRecording? Recording { get; set; }
@@ -391,9 +395,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         if (UdpPort is null && _joinedProtocol.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase)
             && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } envPort)
             _joinedUdpPort = ushort.Parse(envPort, System.Globalization.CultureInfo.InvariantCulture);
-        _transport = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
-        _transport.Join(host, port, playerName);
+        _joinedInternet = InternetJoinTarget;
+        ConnectTransport(host, port, playerName);
         StartKeepAlive();
+    }
+
+    private void ConnectTransport(string host, ushort port, string playerName)
+    {
+        if (_joinedInternet is { } internet)
+        {
+            var udp = new UdpTransport(this);
+            ConfigureTraversalForTesting?.Invoke(udp);
+            _transport = udp;
+            if (TraversalHttpForTesting is { } http)
+                NatTraversalClient.ConnectAsync(udp, http, internet.ListingId, playerName).GetAwaiter().GetResult();
+            else NatTraversalClient.ConnectAsync(udp, internet, playerName).GetAwaiter().GetResult();
+        }
+        else
+        {
+            _transport = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
+            _transport.Join(host, port, playerName);
+        }
     }
 
     /// <summary>P671 — (re)arm the native keep-alive thread for this session.
@@ -1334,9 +1356,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     _connectionGeneration++;
                 }
 
-                var fresh = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
-                _transport = fresh;
-                fresh.Join(_resumeHost!, _resumePort, _resumeName!);
+                ConnectTransport(_resumeHost!, _resumePort, _resumeName!);
 
                 var req = _resumeRequest ?? new LogonRequest
                 {

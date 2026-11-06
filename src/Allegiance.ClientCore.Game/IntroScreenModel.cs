@@ -26,6 +26,7 @@ public enum IntroCommand
     Benchmark,
     Career,
     HostLan,
+    HostInternet,
 }
 
 /// <summary>
@@ -44,7 +45,7 @@ public sealed class IntroScreenModel
     {
         "Single Player", "Play Online", "Play LAN / Find Server",
         "Direct Connect", "Options", "Credits", "Replay Intro", "Help",
-        "Exit", "Showcase", "Career", "Host LAN game",
+        "Exit", "Showcase", "Career", "Host LAN game", "Host internet game",
     };
 
     /// <summary>The currently highlighted main-menu index.</summary>
@@ -71,6 +72,7 @@ public sealed class IntroScreenModel
         9 => IntroCommand.Benchmark,
         10 => IntroCommand.Career,
         11 => IntroCommand.HostLan,
+        12 => IntroCommand.HostInternet,
         _ => IntroCommand.None,
     };
 

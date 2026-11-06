@@ -319,5 +319,44 @@ that should answer LAN discovery, an operator can additionally publish
 `ALLEGIANCE_LAN_PASSWORD` is a private child-process value supplied by the desktop
 host to its bot driver, never an operator environment setting or a Compose secret.
 Game-config `password` defaults empty; the existing mission password gate enforces
-it for humans and bots, including after match rotation. Do not publish a desktop
-host through the lobby. See the [player hosting instructions](../QUICKSTART.md#host-friends-from-the-client).
+it for humans and bots, including after match rotation. LAN mode does not publish
+through the lobby. See the [player hosting instructions](../QUICKSTART.md#host-friends-from-the-client).
+
+### Internet player hosting
+
+P936 optionally makes this lobby the STUN observer and introduction service for
+desktop **Host internet game**. This is separate from LAN mode and dedicated
+server registration. Enable it in the operator environment:
+
+```sh
+ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES=true docker compose up --build -d lobby
+```
+
+Compose publishes **3478/udp** and **3479/udp**. With hosting off (the default),
+the lobby binds neither socket and rejects player-hosted registration and punch
+requests. With it on, both UDP ports must reach the same lobby process as HTTPS
+signaling, directly and without a UDP proxy that replaces the peer's source
+address. The HTTP listener remains 8080; terminate public HTTPS at your trusted
+reverse proxy. Configure `Lobby__KnownProxies__0` in a private override if that
+proxy supplies forwarded source addresses. The approved-server filter remains
+active for player hosts. Pin a single lobby instance: observation receipts and
+introductions are process-local and intentionally ephemeral.
+
+| Compose environment | Lobby setting | Default |
+|---|---|---|
+| `ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES` | `Lobby:PlayerHostedGames` | `false` |
+| `ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT` | `Lobby:StunPrimaryPort` | `3478` |
+| `ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT` | `Lobby:StunSecondaryPort` | `3479` |
+| `ALLEGIANCE_LOBBY_STUN_BIND_ADDRESS` | `Lobby:StunBindAddress` | `::` (dual stack) |
+
+Custom UDP ports must be distinct and map to the same port numbers externally:
+the `/api/nat/config` response advertises the actual listener ports. `0` is for
+ephemeral loopback fixtures only. Hosts refresh their mapping and listing every
+five seconds, poll introductions once a second, and disappear within 20 seconds
+without a heartbeat (or the directory's shorter configured maximum age). Each
+player host advertises one occupied game slot; it cannot accept the dedicated
+create-game relay. Joining its current match remains available. No host enrollment credential is required, and player
+listings remain unverified unless the existing enrollment path authenticates
+them. HTTPS protects endpoint receipts and introduction secrets. Internet joins
+require direct UDP and have no TCP/relay fallback. No public STUN dependency,
+UPnP or NAT-PMP traffic is introduced.

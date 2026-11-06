@@ -9,6 +9,23 @@ public sealed partial class Game1
     private readonly HostLanScreenModel _hostLanScreen = new();
     private readonly System.Text.StringBuilder _lanJoinPassword = new();
     private bool _editingLanPassword;
+    private bool _internetPasswordTabWasDown;
+
+    private bool HandleLobbyPassword(KeyboardState keys, bool backspace)
+    {
+        bool toggle = ActionDown(keys, "LobbyPassword");
+        if (toggle && !_internetPasswordTabWasDown && !_filterActive && !_findPlayerActive)
+            _editingLanPassword = !_editingLanPassword;
+        _internetPasswordTabWasDown = toggle;
+        if (!_editingLanPassword) return false;
+        if (backspace && !_backWasDown && _lanJoinPassword.Length > 0) _lanJoinPassword.Length--;
+        _backWasDown = backspace;
+        bool done = ActionDown(keys, "LobbyJoin");
+        // Finishing text entry must not also join on the next held-key frame.
+        _enterWasDown = done;
+        if (done) _editingLanPassword = false;
+        return true;
+    }
 
     private void UpdateHostLan(KeyboardState keys, bool up, bool down, bool enter, bool esc)
     {
@@ -48,7 +65,9 @@ public sealed partial class Game1
 
     private void DrawIntroHostLan(float w, float h, Color title, Color dim, Color text)
     {
-        DrawIntroTitle(w, "Host LAN game", "Friends join through Play LAN / Find Server or Direct Connect", title, dim);
+        bool internet = _hostLanScreen.Options.HostInternet;
+        DrawIntroTitle(w, internet ? "Host internet game" : "Host LAN game", internet
+            ? "Friends join through Play Online on the same lobby" : "Friends join through Play LAN / Find Server or Direct Connect", title, dim);
         var rows = _hostLanScreen.Rows;
         for (int i = 0; i < rows.Length; i++)
             _spriteBatch.DrawString(_hudSmall, (i == _hostLanScreen.Selected ? "> " : "  ") + rows[i],
@@ -57,8 +76,9 @@ public sealed partial class Game1
         [
             _skirmishStart is not null ? "Starting host... ESC cancels" : _skirmishError,
             "Bots keep their seats. Friends join beside them, within native team capacity and balance limits.",
-            "Share your PC's IPv4 address and the game port shown above. Live addresses and count appear in game.",
-            HostLanScreenModel.NetworkHelp, HostLanScreenModel.InternetHelp,
+            internet ? "Lobby: " + _hostLanScreen.Options.InternetLobbyUrl : "Share your PC's IPv4 address and the game port shown above. Live addresses and count appear in game.",
+            internet ? "The lobby must enable player hosting. Allow the game's UDP traffic through your firewall." : HostLanScreenModel.NetworkHelp,
+            internet ? "Direct connection unavailable? Forward TCP/UDP or use Tailscale. Host quitting ends the game." : HostLanScreenModel.InternetHelp,
             "TYPE name / port / password   UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back"
         ];
         for (int i = 0; i < help.Length; i++)

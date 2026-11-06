@@ -16,6 +16,8 @@ namespace Allegiance.Lobby;
 /// </summary>
 public sealed class ServerRegistry
 {
+    public static readonly TimeSpan PlayerHostMaxAge = TimeSpan.FromSeconds(20);
+    private TimeSpan EntryMaxAge(ServerListing listing) => listing.PlayerHosted && PlayerHostMaxAge < _maxAge ? PlayerHostMaxAge : _maxAge;
     /// <summary>Practical cap for <c>Name</c> / <c>MissionName</c>.</summary>
     private const int NameMax = 100;
     /// <summary><c>Address</c> must hold an IPv4/IPv6 literal or a DNS hostname.</summary>
@@ -122,7 +124,7 @@ public sealed class ServerRegistry
                 Math.Max(1, req.MaxGames ?? 20),
                 // P894 — native's server metadata (location), the paused flag the
                 // listing hides on, and the host's stated lobby protocol version.
-                Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort));
+                Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted);
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -137,7 +139,8 @@ public sealed class ServerRegistry
 
         // Heartbeat: locate the listing owning this token and refresh it in place.
         var target = _entries.Values.FirstOrDefault(e => e.Token == req.Token);
-        if (target is null || target.Address != Sanitize(req.Address, AddressMax))
+        if (target is null || target.Address != Sanitize(req.Address, AddressMax) || target.PlayerHosted != req.PlayerHosted
+            || target.PlayerHosted && now - target.LastSeenUtc > EntryMaxAge(target))
             return null; // token present but no match → reject, do not create
 
         var refreshed = target with
@@ -240,7 +243,7 @@ public sealed class ServerRegistry
     {
         var cutoff = _time.GetUtcNow() - _maxAge;
         return _entries.Values
-            .Where(e => e.LastSeenUtc >= cutoff)
+            .Where(e => e.LastSeenUtc >= cutoff && _time.GetUtcNow() - e.LastSeenUtc <= EntryMaxAge(e))
             .Where(IsServerAdvertised)
             .Select(ToDto).ToList();
     }
@@ -271,7 +274,7 @@ public sealed class ServerRegistry
     {
         if (!_entries.TryGetValue(id, out var listing))
             return null;
-        if (_time.GetUtcNow() - listing.LastSeenUtc > _maxAge)
+        if (_time.GetUtcNow() - listing.LastSeenUtc > EntryMaxAge(listing))
             return null;
         return ToDto(listing);
     }
@@ -294,7 +297,7 @@ public sealed class ServerRegistry
         string wanted = name.Trim();
         var cutoff = _time.GetUtcNow() - _maxAge;
         return _entries.Values
-            .Where(e => e.PublishPlayers && e.LastSeenUtc >= cutoff)
+            .Where(e => e.PublishPlayers && e.LastSeenUtc >= cutoff && _time.GetUtcNow() - e.LastSeenUtc <= EntryMaxAge(e))
             .Where(e => e.Players.Any(p => string.Equals(p, wanted, StringComparison.OrdinalIgnoreCase)))
             .Select(e => new FindPlayerResultDto(
                 e.Id, e.Name, e.Address, e.Port, e.MaxPlayers,
@@ -311,7 +314,8 @@ public sealed class ServerRegistry
         var cutoff = _time.GetUtcNow() - maxAge;
         foreach (var kv in _entries)
         {
-            if (kv.Value.LastSeenUtc < cutoff && _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value)))
+            if ((kv.Value.LastSeenUtc < cutoff || _time.GetUtcNow() - kv.Value.LastSeenUtc > EntryMaxAge(kv.Value))
+                && _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value)))
             {
                 // P894 / LOB-0035 — a missed roll call is also a lifecycle event
                 // (native's RollCall drop, lobby/lobbyapp.cpp:426-460).
@@ -330,7 +334,7 @@ public sealed class ServerRegistry
     public LobbyCoreListDto CoreList(IReadOnlyList<string>? curated = null)
     {
         var cutoff = _time.GetUtcNow() - _maxAge;
-        var live = _entries.Values.Where(e => e.LastSeenUtc >= cutoff && IsServerAdvertised(e)).ToList();
+        var live = _entries.Values.Where(e => e.LastSeenUtc >= cutoff && _time.GetUtcNow() - e.LastSeenUtc <= EntryMaxAge(e) && IsServerAdvertised(e)).ToList();
         var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var listing in live)
             if (!string.IsNullOrEmpty(listing.CoreFile))
@@ -353,7 +357,7 @@ public sealed class ServerRegistry
     public LobbyStatsDto Stats()
     {
         var cutoff = _time.GetUtcNow() - _maxAge;
-        var alive = _entries.Values.Where(e => e.LastSeenUtc >= cutoff).ToList();
+        var alive = _entries.Values.Where(e => e.LastSeenUtc >= cutoff && _time.GetUtcNow() - e.LastSeenUtc <= EntryMaxAge(e)).ToList();
         var live = alive.Where(IsServerAdvertised).ToList();
         return new LobbyStatsDto(
             Servers: live.Count,
@@ -428,7 +432,7 @@ public sealed class ServerRegistry
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
         l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, VisibleMissions(l), l.CurrentGames, l.MaxGames,
-        l.Location, PercentLoad(l), StartTimeUtc(l), l.UdpPort);
+        l.Location, PercentLoad(l), StartTimeUtc(l), l.UdpPort, l.PlayerHosted);
 
     /// <summary>P894 / LOB-0008 — the mission rows a client may see: native drops a
     /// zero-player non-arena mission from the advertisement
