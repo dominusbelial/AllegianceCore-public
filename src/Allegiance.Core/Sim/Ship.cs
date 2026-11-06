@@ -7804,7 +7804,12 @@ public sealed partial class Ship : Model, IShipIgc
 
         if (FindNearestEnemyShip() is { } enemy)
         {
-            SetWingmanAttackOrder(enemy);
+            // Local training uses native model-valued command slots. The
+            // fallback must accept the attack too, just like the M6/M10 hook;
+            // merely setting the execution target leaves c_cmdAccepted empty.
+            // Igc/shipIGC.h:2438-2447,766-773.
+            if (Mission?.IsTraining == true) SetCommand(OrderChange.CmdAccepted, enemy, OrderChange.CidAttack);
+            else SetWingmanAttackOrder(enemy);
             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
             // P872/SIM-0270 — native emits "Attacking %s" with the target's
             // model name on the accepted default attack, only when the host
@@ -7814,6 +7819,10 @@ public sealed partial class Ship : Model, IShipIgc
         }
         else
         {
+            // No hook order and no enemy: native clears the accepted slot,
+            // rather than retaining an obsolete repair command or going home.
+            // Igc/shipIGC.h:2458-2459.
+            if (Mission?.IsTraining == true) SetCommand(OrderChange.CmdAccepted, null, OrderChange.CidNone);
             // No enemy in this sector: stand by (do not spin — the next tick
             // retries naturally since the ship still has no target), the same
             // no-op the Miner's/Layer's no-target branches use.

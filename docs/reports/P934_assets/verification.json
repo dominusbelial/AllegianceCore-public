@@ -1,0 +1,417 @@
+{
+  "task": "P934",
+  "baseHead": "0f6c98926fe3095f5ad23e8e47553a45bb3681cb",
+  "sourceSha256": {
+    "src/Allegiance.Core/Model/Mission.cs": "200c6bf1623591077775fb531e4cadb86c9ded4f57f53b0fe54e97f2217f29f8",
+    "src/Allegiance.Core/Model/Sector.cs": "28d84ba20fa0bdf2f20c36d4e03e7e2856c0fbabce1a808e1ef8d441e216b4d6",
+    "src/Allegiance.Core/Model/Sector.TrainingVisibility.cs": "c5e1683a8c0599ee7c08fc220d3e5ed35c72e5abb7d72761ecb278a89499a336",
+    "src/Allegiance.Core/Sim/SideVisibilityState.cs": "dae44d1eab9ccc9f39eadf4a627c78cd90fa7006fcd4da963d19a293f2f5b4c4",
+    "src/Allegiance.Core/Sim/Ship.cs": "8a16f729eeffdf707e0b8c05342f20bc5dea20c696d95993a24c622c6b7a4190",
+    "tools/p934-training-proof/Program.cs": "4cb1697ec2de9eb09b39ca97965402f3b5ccd25e9e48318ec9b83b28264772e4",
+    "tools/p934-training-proof/p934-training-proof.csproj": "a6644e94a421c35a45ee671e9599d9e4f4b9659529b9f12ff061aca557553801",
+    "tests/Allegiance.Core.Tests/P934TrainingVisibilityTests.cs": "eb784736273334c14dd8e20972686c22428ee203f710ed73c5197c1649aced09",
+    "tests/Allegiance.ClientCore.Tests/P934TrainingSupportTests.cs": "a83d141944182fb62606a45379da428d9fbf204afb54e5db00462a1d70accea2",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P934TrainingVisibilityBindingTests.cs": "9545e8080fbc8423cca18c903004b22ee36c0579d089735db60de807a06c1354"
+  },
+  "rows": {
+    "TRN-0189": "implemented",
+    "TRN-0215": "corrected and implemented"
+  },
+  "scorecard": {
+    "before": {
+      "credit": 807,
+      "weight": 901,
+      "complete": 206,
+      "eligible": 235
+    },
+    "after": {
+      "credit": 815,
+      "weight": 901,
+      "complete": 208,
+      "eligible": 235
+    }
+  },
+  "builds": {
+    "debug": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "tools": {
+      "projects": 117,
+      "warnings": 0,
+      "errors": 0
+    },
+    "nativeAot": {
+      "passed": true,
+      "ilWarnings": 0
+    }
+  },
+  "isolated": {
+    "invocations": 48,
+    "passed": 63,
+    "failed": 0,
+    "skipped": 0
+  },
+  "trainingRepeat": 1,
+  "training": {
+    "Allegiance.ClientCore.Tests": {
+      "total": 109,
+      "executed": 109,
+      "passed": 109,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0,
+      "skipped": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "total": 257,
+      "executed": 255,
+      "passed": 255,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0,
+      "skipped": 2
+    }
+  },
+  "fast": {
+    "invocations": 1,
+    "outcomes": {
+      "Passed": 13158,
+      "NotExecuted": 3,
+      "Failed": 13
+    },
+    "qualified": true,
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05910379404667765,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "fastIsolationInvocations": 39,
+  "dispatchMissileLockFailures": 3,
+  "showcase": [
+    {
+      "variant": "base",
+      "repeat": 1,
+      "exitCode": 0,
+      "seconds": 398.103,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 2.005,
+      "receipt": "P700 local 15v15: 393.5s, samples=3929, reached=24/30, longest speed<1 with target=2.005s, shots=5256, hits=1292, kills=10",
+      "loadBefore": [
+        0.625,
+        0.73828125,
+        1.1328125
+      ],
+      "loadAfter": [
+        1.7802734375,
+        1.15966796875,
+        1.18212890625
+      ],
+      "coreSha256": "b6869a1af052f9fcaef40399dc94e186bfb54ae28727725c9799f3f6ec436313"
+    },
+    {
+      "variant": "changed",
+      "repeat": 1,
+      "exitCode": 0,
+      "seconds": 272.916,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 0.802,
+      "receipt": "P700 local 15v15: 268.2s, samples=2679, reached=24/30, longest speed<1 with target=0.802s, shots=1531, hits=587, kills=3",
+      "loadBefore": [
+        1.7802734375,
+        1.15966796875,
+        1.18212890625
+      ],
+      "loadAfter": [
+        1.74658203125,
+        1.0927734375,
+        1.1162109375
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "base",
+      "repeat": 2,
+      "exitCode": 0,
+      "seconds": 460.134,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.108,
+      "receipt": "P700 local 15v15: 455.9s, samples=4552, reached=24/30, longest speed<1 with target=1.108s, shots=3197, hits=1049, kills=5",
+      "loadBefore": [
+        1.74658203125,
+        1.0927734375,
+        1.1162109375
+      ],
+      "loadAfter": [
+        0.298828125,
+        0.69091796875,
+        0.9130859375
+      ],
+      "coreSha256": "b6869a1af052f9fcaef40399dc94e186bfb54ae28727725c9799f3f6ec436313"
+    },
+    {
+      "variant": "changed",
+      "repeat": 2,
+      "exitCode": 0,
+      "seconds": 188.79,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.904,
+      "receipt": "P700 local 15v15: 184.0s, samples=1838, reached=24/30, longest speed<1 with target=1.904s, shots=4257, hits=2196, kills=14",
+      "loadBefore": [
+        0.298828125,
+        0.69091796875,
+        0.9130859375
+      ],
+      "loadAfter": [
+        0.52294921875,
+        0.6044921875,
+        0.83447265625
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "base",
+      "repeat": 3,
+      "exitCode": 0,
+      "seconds": 469.742,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.912,
+      "receipt": "P700 local 15v15: 464.7s, samples=4640, reached=24/30, longest speed<1 with target=1.912s, shots=3890, hits=1435, kills=8",
+      "loadBefore": [
+        0.52294921875,
+        0.6044921875,
+        0.83447265625
+      ],
+      "loadAfter": [
+        0.2802734375,
+        0.70458984375,
+        0.86328125
+      ],
+      "coreSha256": "b6869a1af052f9fcaef40399dc94e186bfb54ae28727725c9799f3f6ec436313"
+    },
+    {
+      "variant": "changed",
+      "repeat": 3,
+      "exitCode": 0,
+      "seconds": 191.05,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 2.007,
+      "receipt": "P700 local 15v15: 185.8s, samples=1856, reached=24/30, longest speed<1 with target=2.007s, shots=4999, hits=2366, kills=16",
+      "loadBefore": [
+        0.2802734375,
+        0.70458984375,
+        0.86328125
+      ],
+      "loadAfter": [
+        2.14111328125,
+        1.2421875,
+        1.03369140625
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "base",
+      "repeat": 4,
+      "exitCode": 0,
+      "seconds": 360.883,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.813,
+      "receipt": "P700 local 15v15: 356.1s, samples=3556, reached=24/30, longest speed<1 with target=1.813s, shots=4187, hits=1502, kills=11",
+      "loadBefore": [
+        2.14111328125,
+        1.2421875,
+        1.03369140625
+      ],
+      "loadAfter": [
+        3.38134765625,
+        2.095703125,
+        1.4404296875
+      ],
+      "coreSha256": "b6869a1af052f9fcaef40399dc94e186bfb54ae28727725c9799f3f6ec436313"
+    },
+    {
+      "variant": "changed",
+      "repeat": 4,
+      "exitCode": 1,
+      "seconds": 484.529,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.904,
+      "receipt": "P700 local 15v15: 480.0s, samples=4792, reached=18/30, longest speed<1 with target=1.904s, shots=4447, hits=1575, kills=9",
+      "loadBefore": [
+        3.38134765625,
+        2.095703125,
+        1.4404296875
+      ],
+      "loadAfter": [
+        1.107421875,
+        1.6572265625,
+        1.56982421875
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "base",
+      "repeat": 5,
+      "exitCode": 0,
+      "seconds": 185.485,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 2.005,
+      "receipt": "P700 local 15v15: 180.9s, samples=1807, reached=24/30, longest speed<1 with target=2.005s, shots=5061, hits=2711, kills=18",
+      "loadBefore": [
+        1.107421875,
+        1.6572265625,
+        1.56982421875
+      ],
+      "loadAfter": [
+        0.74609375,
+        1.26025390625,
+        1.4287109375
+      ],
+      "coreSha256": "b6869a1af052f9fcaef40399dc94e186bfb54ae28727725c9799f3f6ec436313"
+    },
+    {
+      "variant": "changed",
+      "repeat": 5,
+      "exitCode": 0,
+      "seconds": 221.733,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.907,
+      "receipt": "P700 local 15v15: 217.3s, samples=2170, reached=24/30, longest speed<1 with target=1.907s, shots=4945, hits=2170, kills=17",
+      "loadBefore": [
+        0.74609375,
+        1.26025390625,
+        1.4287109375
+      ],
+      "loadAfter": [
+        0.52783203125,
+        0.900390625,
+        1.2451171875
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    }
+  ],
+  "showcaseFollowup": [
+    {
+      "variant": "changed",
+      "repeat": 1,
+      "exitCode": 0,
+      "seconds": 406.198,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.906,
+      "receipt": "P700 local 15v15: 401.0s, samples=4004, reached=24/30, longest speed<1 with target=1.906s, shots=2890, hits=1148, kills=8",
+      "loadBefore": [
+        0.83154296875,
+        0.791015625,
+        1.0810546875
+      ],
+      "loadAfter": [
+        0.91748046875,
+        1.162109375,
+        1.15673828125
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "changed",
+      "repeat": 2,
+      "exitCode": 0,
+      "seconds": 176.759,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 1.003,
+      "receipt": "P700 local 15v15: 171.8s, samples=1716, reached=24/30, longest speed<1 with target=1.003s, shots=4748, hits=2065, kills=15",
+      "loadBefore": [
+        0.91748046875,
+        1.162109375,
+        1.15673828125
+      ],
+      "loadAfter": [
+        0.44140625,
+        0.82763671875,
+        1.02197265625
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    },
+    {
+      "variant": "changed",
+      "repeat": 3,
+      "exitCode": 0,
+      "seconds": 478.811,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "maxTargetStopSeconds": 2.014,
+      "receipt": "P700 local 15v15: 473.9s, samples=4732, reached=24/30, longest speed<1 with target=2.014s, shots=3107, hits=1375, kills=11",
+      "loadBefore": [
+        0.44140625,
+        0.82763671875,
+        1.02197265625
+      ],
+      "loadAfter": [
+        2.9794921875,
+        1.251953125,
+        1.0625
+      ],
+      "coreSha256": "db7259c153fc00e90fef3bab124c00af476f052ccd7aae3435773997ceb7858a"
+    }
+  ],
+  "nativeAudit": {
+    "rules": 241,
+    "primitiveTypes": 82,
+    "errors": 0
+  },
+  "screenshots": {
+    "visuallyReviewed": 4,
+    "styles": [
+      "Classic",
+      "Modern"
+    ]
+  },
+  "noCommitsOrPushes": true
+}

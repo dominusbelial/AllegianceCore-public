@@ -6009,6 +6009,51 @@ pre-existing fixture failure, also failing on base in P930); `MissileLockLiveTes
 `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` and
 `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` passed 3/3 (load during the shared run).
 
+## 2026-11-06 — P934 Fast qualification (local training visibility/support)
+
+One complete Fast-tier invocation: **13,174 cases: 13,158 passed, 13 failed,
+3 skipped**, plus nine passing infrastructure checks. The three skips are the
+optional Meshy pack, not artwork. Four executions exceeded the Fast limit:
+missile lock 38.187 s, missile-track warning 25.839 s, miner auto-launch 36.109 s,
+and warp-exit wobble 10.128 s. No test limits, assertions, tiers or non-training
+simulation paths were changed. Separate exact-method isolation ran three times
+per method (39 invocations, including theory companions):
+
+| Failure / timing case | Isolation 3× | Qualification |
+| --- | --- | --- |
+| Five `PlayerBundlePathsTests` cases: Artwork executable fallback; Artwork/NativeSource missing defaults; native install-subdirectory guessing; synthetic sky config precedence | Each failing case fails 3/3; included SkyPack companions pass | Existing in-checkout `TMPDIR` fixture obstruction: these simulated outside-repository installs discover the real ancestor `local.env`. Same constraint as P909–P930. Resolver and fixtures unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail (1.161/1.176/1.247 s) | Existing line-179 null-target assertion; already reproduced on dispatch/base in P918/P930 above. The P934 training guard is inactive in this fixture. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail/fail/fail (38.525/38.336/38.394 s); **dispatch Core control also fails 3/3** | Lock reaches 1.000 but expected partial-lock tip is absent, line 150. The same assertion reproduces with the four changed Core files replaced at compile time by HEAD originals and the new training helper excluded, using separate artifacts without altering the working tree. Existing missile feedback failure, not introduced by training. |
+| `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | pass/pass/pass (1.563/1.489/1.479 s) | Sweep timed out; warning/transport code unchanged. |
+| `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | pass/pass/pass (1.714/1.618/1.697 s) | Sweep read lobby side -2 before expected side 0 at line 167; existing side-seating race. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass (1.003/0.999/0.996 s) | Existing auto-seat timing fixture; no side-selection change. |
+| `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | pass/pass/pass (3.443/3.437/3.271 s) | Sweep waited 36 s; ordinary NPC auto-launch unchanged. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass (9.458/9.311/9.196 s) | Timing-only violation in the sweep; isolated case durations stay below 10 s. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass/pass/pass with task-local `XDG_CONFIG_HOME` | The sweep attempted to restore an existing read-only home profile. Existing sandbox/profile fixture; the sole sweep did not redirect XDG. No profile code changed. |
+| `P871bCreateGameClientTests.Ready_joins_the_created_mission_and_failure_stays_on_the_wizard` | Both theory cases pass/pass/pass with task-local `XDG_CONFIG_HOME` | Sweep success branch observed null pending join; writable isolated profile configuration avoids it. Wizard/client code unchanged. |
+
+Raw receipts: `.scratch/p934/fast/summary.json`,
+`.scratch/p934/fast-isolation/summary.json`, `.scratch/p934/base-missile/summary.json`.
+Dispatch source/build and Core binary hashes: `.scratch/p934/base-head.txt`,
+`.scratch/p934/baseline.targets`, `.scratch/p934/build-baseline.log`,
+`.scratch/p934/showcase-binaries.json`. No synthetic load was generated.
+The single full Fast gate remains failed/qualified; no second sweep was run.
+
+P934 showcase qualification: five interleaved dispatch controls passed **5/5**;
+the five planned P934 trials passed **4/5 overall**. P934 trial 4 observed only
+18/30 arrivals by the existing 480-second horizon (required 24), with real
+combat and a maximum target stop of **1.904 s**. Every parking assertion passed;
+no five-second parked target was observed. Three subsequent exact-method
+invocations passed **3/3** (scenario times 401.0 / 171.8 / 473.9 s, maximum target
+stops 1.906 / 1.003 / 2.014 s). This qualifies the arrival-horizon fluctuation;
+the original failed scenario remains recorded. Across all 13 trials, the
+parking checks pass 13/13; full-scenario outcomes are dispatch 5/5 and P934 7/8.
+No limit, assertion, tier, routing policy or ordinary multiplayer code was
+changed. Each trial ran in its own process on the prescribed baseline; trials
+interleaved and overlapped the real training qualification on the shared host.
+Load and binary hashes are included in `.scratch/p934/showcase/summary.json`
+and `.scratch/p934/showcase-followup/summary.json`.
+
 ## P933 Fast qualification — 2026-11-06
 
 The single requested Fast sweep completed **13,156 passed / 12 failed / 3 skipped**

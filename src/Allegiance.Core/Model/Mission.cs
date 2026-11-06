@@ -151,7 +151,17 @@ public sealed partial class Mission : IMissionIgc
     public bool IsTraining { get; set; }
     /// <summary>The local trainee's GetShip identity, for client-only training
     /// cluster callbacks (WinTrek/trekigc.cpp:2746-2749,2773-2785).</summary>
-    public short? TrainingPlayerShipId { get; set; }
+    public short? TrainingPlayerShipId
+    {
+        get => _trainingPlayerShipId;
+        set
+        {
+            _trainingPlayerShipId = value;
+            if (IsTraining && value is { } id && GetShip(id)?.SideId is { } side)
+                foreach (var sector in Sectors) sector.InitializeTrainingVisibility(side);
+        }
+    }
+    private short? _trainingPlayerShipId;
 
     /// <summary>The raw map this mission is assembled from.</summary>
     public MissionMap Map { get; }

@@ -1028,6 +1028,19 @@ list in **reverse**.
   Proof: `tests/Allegiance.ClientCore.MonoGame.Tests/P932TrainingLoadoutTests.cs`;
   Both-style window proof: `tools/p910-training-proof/` (`purchase` mode);
   report: `docs/reports/P932_REPORT.md`.
+- **Training enemy ThingSite latch (P934)** — local training binds the trainee's
+  side to two visibility slots in `src/Allegiance.Core/Sim/SideVisibilityState.cs`;
+  `src/Allegiance.Core/Model/Sector.TrainingVisibility.cs` maintains the shared
+  enemy eye, predictable knowledge and retained spotter identity. Every other
+  side reads/writes that same enemy slot; multiplayer keeps independent sides.
+  Native: `WinTrek/trekigc.cpp:1996-2010,2172-2249`. Nanite wingmen are exempt
+  from damage retreat; targetless support uses the ordinary default-order path,
+  including the accepted attack slot in `src/Allegiance.Core/Sim/Ship.cs`.
+  Native: `Igc/shipIGC.cpp:1730-1747`, `Igc/shipIGC.h:2436-2459`.
+  Both-style wire regressions:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P934TrainingVisibilityBindingTests.cs`;
+  real-window captures: `tools/p934-training-proof/`; audit:
+  `docs/reports/P934_REPORT.md` (TRN-0215 corrects an unsupported flee claim).
 - **Lesson universes and window completion (P912)** — M2 bounds use a private
   constants copy through `src/Allegiance.Core/Model/Mission.cs`; M8 cargo/tech
   and native M5 drone placement live in

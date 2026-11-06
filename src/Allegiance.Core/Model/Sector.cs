@@ -374,6 +374,7 @@ public sealed partial class Sector : IClusterIgc
         _stations.Add(station.Data);
         _stationRuntimes.Add(station);
         AddPickable(station);
+        BindTrainingVisibility(station.SideVisibility);
         Mission?.AddStation(station);
     }
 
@@ -451,6 +452,7 @@ public sealed partial class Sector : IClusterIgc
         _asteroids.Add(asteroid.Data);
         _mineable.Add(asteroid);
         AddPickable(asteroid);
+        BindTrainingVisibility(asteroid.SideVisibility);
         Mission?.AddAsteroid(asteroid);
     }
     internal void AttachWarp(ResolvedWarp warp)
@@ -523,6 +525,7 @@ public sealed partial class Sector : IClusterIgc
         // Native observer/turret ships reload as c_mtNotPickable (shipIGC.cpp:3632);
         // the port keeps them listed, so consumers must filter ships themselves.
         if (model is Ship or Missile or Probe or Mine or Treasure) AddPickable(model);
+        if (model is Ship or Probe or Mine or Treasure) BindTrainingVisibility(model.SideVisibility);
         _modelMembership.TryGetValue(model, out int copies);
         _modelMembership[model] = copies + 1;
         if (model is Probe { } addedProbe &&
@@ -5310,6 +5313,13 @@ public sealed partial class Sector : IClusterIgc
         foreach (var a in _mineable)
             if (a.Data.Position is { Length: 3 } ap)
                 occluders.Add(new VisibilityMath.SightBody(new Vector3(ap[0], ap[1], ap[2]), a.Radius));
+
+        if (Mission is { IsTraining: true, TrainingPlayerShipId: { } trainee } training &&
+            training.GetShip(trainee)?.SideId is { } playerSide)
+        {
+            ResolveTrainingVisibility(targets, scannersBySide, occluders, playerSide);
+            return;
+        }
 
         // P835 — lookup of this sweep's participants by (objectType, objectId),
         // so the spotter-cache short-circuit can resolve a recorded last spotter

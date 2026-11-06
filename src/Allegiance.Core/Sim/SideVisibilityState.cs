@@ -59,6 +59,44 @@ public sealed class SideVisibilityState
     private readonly Dictionary<short, bool> _visible = [];
     private readonly Dictionary<short, bool> _currentEye = [];
     private readonly HashSet<short> _revealedPredictable = [];
+    // Local WinTrek has two ThingSite slots, not FedSrv's per-side array.
+    // WinTrek/trekigc.cpp:2216-2249. Never enabled by a multiplayer mission.
+    private short? _trainingPlayerSide;
+    private Dictionary<short, ISideVisible>? _trainingSpotters;
+    private const short TrainingEnemySlot = short.MinValue;
+    private short Slot(short sideId) => _trainingPlayerSide is { } player && sideId != player
+        ? TrainingEnemySlot : sideId;
+
+    internal void BindTraining(short playerSide)
+    {
+        if (_trainingPlayerSide == playerSide) return;
+        _trainingPlayerSide = playerSide;
+        // SetCluster initializes BOTH predictable slots, even without a scan.
+        // WinTrek/trekigc.cpp:1996-2010; non-predictable slots start false
+        // (Igc/igc.h:4667-4671).
+        _visible[playerSide] = _currentEye[playerSide] = Predictable;
+        _visible[TrainingEnemySlot] = _currentEye[TrainingEnemySlot] = Predictable;
+        _lastSpotter.Clear();
+        _trainingSpotters = [];
+    }
+
+    internal ISideVisible? TrainingSpotterFor(short sideId) =>
+        _trainingSpotters?.GetValueOrDefault(Slot(sideId));
+
+    internal void SetTrainingSpotter(short sideId, ISideVisible body, short objectType, short objectId)
+    {
+        _trainingSpotters![Slot(sideId)] = body;
+        SetLastSpotter(sideId, objectType, objectId);
+    }
+
+    internal void UpdateTrainingEye(short sideId, bool eye)
+    {
+        short slot = Slot(sideId);
+        // Decay the eye, retain predictable knowledge and the spotter pointer.
+        // WinTrek/trekigc.cpp:2166-2168,2195-2197 (no spotter clear on loss).
+        _visible[slot] = eye || (Predictable && SeenBySide(sideId));
+        _currentEye[slot] = eye;
+    }
 
     /// <summary>
     /// Whether this model carries the native <c>c_mtPredictable</c> attribute
@@ -99,16 +137,16 @@ public sealed class SideVisibilityState
     private readonly Dictionary<short, (short ObjectType, short ObjectId)> _lastSpotter = [];
 
     public (short ObjectType, short ObjectId) LastSpotterFor(short sideId) =>
-        _lastSpotter.TryGetValue(sideId, out var spotter) ? spotter : ((short)-1, (short)-1);
+        _lastSpotter.TryGetValue(Slot(sideId), out var spotter) ? spotter : ((short)-1, (short)-1);
 
     /// <summary>Record the scanner that just established visibility for a side
     /// (native <c>sv.pLastSpotter(s)</c>, <c>FedSrv.CPP:10944</c>).</summary>
     public void SetLastSpotter(short sideId, short objectType, short objectId) =>
-        _lastSpotter[sideId] = (objectType, objectId);
+        _lastSpotter[Slot(sideId)] = (objectType, objectId);
 
     /// <summary>Clear the last spotter — native <c>sv.pLastSpotter(NULL)</c> when the
     /// eye is lost while the object stays known (<c>FedSrv.CPP:11119-11120</c>).</summary>
-    public void ClearLastSpotter(short sideId) => _lastSpotter.Remove(sideId);
+    public void ClearLastSpotter(short sideId) => _lastSpotter.Remove(Slot(sideId));
 
     /// <summary>
     /// Force this model visible to a side <b>without</b> touching its current-eye
@@ -123,7 +161,7 @@ public sealed class SideVisibilityState
     public void RevealToSide(short sideId)
     {
         bool discovered = _onDiscovery is not null && !SeenBySide(sideId);
-        _visible[sideId] = true;
+        _visible[Slot(sideId)] = true;
         if (discovered) _onDiscovery!(sideId);
     }
 
@@ -142,16 +180,16 @@ public sealed class SideVisibilityState
     /// the port of <c>ThingSiteImpl::GetSideVisibility</c>
     /// (<c>FedSrv.CPP:11133-11137</c>). Untouched sides read <c>false</c>,
     /// matching a fresh native array entry (zero-initialised).</summary>
-    internal bool HasState(short sideId) => _visible.ContainsKey(sideId);
+    internal bool HasState(short sideId) => _visible.ContainsKey(Slot(sideId));
 
     public bool SeenBySide(short sideId)
-        => _visible.TryGetValue(sideId, out var visible) && visible;
+        => _visible.TryGetValue(Slot(sideId), out var visible) && visible;
 
     /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
     /// model — the port of <c>ThingSiteImpl::GetCurrentEye</c>
     /// (<c>FedSrv.CPP:11139-11143</c>). Untouched sides read <c>false</c>.</summary>
     public bool GetCurrentEye(short sideId)
-        => _currentEye.TryGetValue(sideId, out var eye) && eye;
+        => _currentEye.TryGetValue(Slot(sideId), out var eye) && eye;
 
     /// <summary>
     /// Set the visibility of this model to <paramref name="sideId"/> to
@@ -168,6 +206,17 @@ public sealed class SideVisibilityState
     public void SetSideVisibility(short sideId, bool visible)
     {
         bool discovered = visible && _onDiscovery is not null && !SeenBySide(sideId);
+        if (_trainingPlayerSide is not null)
+        {
+            // Unlike an update, the local explicit setter overwrites BOTH
+            // flags, including a predictable latch. WinTrek/trekigc.cpp:2238-2249.
+            // Native also gates on m_bSideVisibility (:2240); every bound model
+            // type here is side-visible, so no gate is needed.
+            short slot = Slot(sideId);
+            _visible[slot] = _currentEye[slot] = visible;
+            if (discovered) _onDiscovery!(sideId);
+            return;
+        }
         // The predictable latch (native FedSrv.CPP:11124-11126): a static object
         // that was ever seen stays visible to that side; only the current-eye
         // flag drops. Non-predictable models (ships) keep the plain assignment.
