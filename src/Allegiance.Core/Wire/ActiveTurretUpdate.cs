@@ -148,6 +148,11 @@ public sealed class ClientActiveTurretUpdate
         return u;
     }
 
+    /// <summary>Native client turret export (Igc/shipIGC.h:1206-1212).</summary>
+    public static ClientActiveTurretUpdate FromLocalTime(IIgcSite site, double localTimeSeconds,
+        ControlData controls, Orientation orientation) =>
+        From(IgcTime.ToMilliseconds(site.ServerTimeFromClientTime(localTimeSeconds)), controls, orientation);
+
     /// <summary>Encode the 16 canonical bytes at the writer's current position.</summary>
     public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
 

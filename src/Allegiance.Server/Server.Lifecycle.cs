@@ -1323,6 +1323,11 @@ public sealed partial class Server
     /// parameters stay authoritative, so the showcase goal rotation is skipped and
     /// the mission is stamped <see cref="Mission.PlayerCreated"/> (SIM-0146).</param>
     private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls, bool playerCreated = false)
+        => AssembleGameMissionWithOverrides(g, core, landingBays, weaponMuzzles, stationLandingBays, collisionHulls, playerCreated, null);
+
+    private Mission AssembleGameMissionWithOverrides(GameConfig g, StaticCore core, HullLandingBayCache landingBays,
+        WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls,
+        bool playerCreated, TechBitOverrides? techOverrides)
     {
         // P802 — remember the config that produced this mission; the lobby civ
         // picker re-selects research plans through it (see Server.TeamCiv.cs).
@@ -1417,7 +1422,7 @@ public sealed partial class Server
             AllowShipyardPath = g.AllowShipyardPath, AllowExpansionPath = g.AllowExpansionPath,
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
-        }, goals);
+        }, goals, techOverrides ?? g.ResolveTechBitOverrides());
         // Research/rotating showcase and offline skirmish are authored presets.
         // A lobby-created world or LAN host keeps ordinary native deadline policy.
         mission.IsShowcasePreset = isShowcasePreset;

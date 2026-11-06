@@ -28,7 +28,7 @@ public sealed class Treasure : Model, ITreasureIgc
     {
         OwnerSector = sector ?? throw new ArgumentNullException(nameof(sector));
         OwnerMission = mission;
-        CreatedAt = data.CreateNow ? now : data.Time0 / 1000.0;
+        CreatedAt = data.CreateNow ? now : (mission?.Site.ClientTimeFromServerTime(data.Time0 / 1000.0) ?? data.Time0 / 1000.0);
         Data = data with { Time0 = data.CreateNow ? (uint)(now * 1000) : data.Time0, CreateNow = false };
         ExpireAt = CreatedAt + data.Lifespan;
         Position = TreasureMotion.PositionAt(TreasureMotion.Vector(data.P0), TreasureMotion.Vector(data.V0), now - CreatedAt);
@@ -41,6 +41,14 @@ public sealed class Treasure : Model, ITreasureIgc
         SideVisibility.Predictable = true;
         InitClock(now);
     }
+
+    /// <summary>Native treasure export converts its original creation instant,
+    /// never the time of export (Igc/treasureIGC.cpp:268-277).</summary>
+    public DataTreasureIGC ExportData() => Data with
+    {
+        Time0 = IgcTime.ToMilliseconds(OwnerMission?.Site.ServerTimeFromClientTime(CreatedAt) ?? CreatedAt),
+        CreateNow = false,
+    };
 
     protected override void OnUpdate(double now, double dt)
     {

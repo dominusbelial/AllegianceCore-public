@@ -90,4 +90,8 @@ public sealed class MineEntity
     /// <see cref="ClientWorld.SimulationTimeSeconds"/>.
     /// </summary>
     public double Time0ServerSeconds;
+
+    /// <summary>Converted creation time (Igc/probeigc.cpp:51; mineigc.cpp:44).</summary>
+    public double Time0ClientSeconds;
+    internal bool CreatedLocally;
 }

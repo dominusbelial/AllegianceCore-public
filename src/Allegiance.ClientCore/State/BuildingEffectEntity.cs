@@ -22,7 +22,7 @@ namespace Allegiance.ClientCore.State;
 /// building effect's placement is static — it sits over the target asteroid —
 /// but unlike them it is a <b>transient</b> object with a timed lifespan
 /// (<see cref="ConstructionPhase.Duration"/> seconds), so it carries a
-/// <see cref="ReceivedLocalMs"/> anchor exactly like <see cref="ProjectileEntity"/>
+/// converted creation-time anchor
 /// and is pruned when it completes. <see cref="ProgressFraction"/> drives the
 /// "under construction" reveal (the renderer grows/scales it toward the
 /// finished station, mirroring native's grow/shrink phases without a periodic
@@ -57,21 +57,28 @@ public sealed class BuildingEffectEntity
     public Vector3 PositionStop;
 
     /// <summary>The local monotonic instant this export was received, in ms —
-    /// the anchor for <see cref="ProgressFraction"/> and pruning (same
-    /// receipt-anchor convention as <see cref="ProjectileEntity"/>).</summary>
+    /// fallback anchor for a local fixture without a session clock.</summary>
     public long ReceivedLocalMs;
 
+    /// <summary>Native converted creation instant in the local simulation epoch.</summary>
+    public double StartClientSeconds;
+    internal double StartServerSeconds;
+    internal Func<long, double>? ClientTimeAt;
+    public double ElapsedSeconds(long nowLocalMs) => ClientTimeAt is null
+        ? (nowLocalMs - ReceivedLocalMs) / 1000.0
+        : ClientTimeAt(nowLocalMs) - StartClientSeconds;
+
+
     /// <summary>Construction progress in [0,1]: 0 = just started, 1 =
-    /// complete. Computed purely from elapsed wall-clock since receipt and
+    /// complete. Computed from elapsed local simulation time since creation and
     /// <see cref="ConstructionPhase.Duration"/> (the sum of native's four
     /// 10-second phase constants), clamped to [0,1].</summary>
     public ConstructionPhase Phase(long nowLocalMs) => ConstructionPhase.At(
-        (nowLocalMs - ReceivedLocalMs) / 1000.0, PositionStart, PositionStop, RadiusAsteroid, RadiusStation);
+        ElapsedSeconds(nowLocalMs), PositionStart, PositionStop, RadiusAsteroid, RadiusStation);
 
     public float ProgressFraction(long nowLocalMs)
     {
-        long elapsed = nowLocalMs - ReceivedLocalMs;
-        float p = (float)elapsed / (float)(ConstructionPhase.Duration * 1000.0);
+        float p = (float)(ElapsedSeconds(nowLocalMs) / ConstructionPhase.Duration);
         return Math.Clamp(p, 0f, 1f);
     }
 }

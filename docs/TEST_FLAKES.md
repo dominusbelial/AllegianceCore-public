@@ -6139,3 +6139,37 @@ seconds. No five-second parking assertion failed in any of the twelve pinned
 observations. Runs 6–7 are follow-ups, excluded from the original five-pair
 rate comparison. Equal observed rates in this small sample do not establish
 a causal performance result; the arrival failure remains qualified.
+
+## P935 — gate isolation (2026-11-06)
+
+The single Fast sweep encountered the already-ledgered
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+profile-restoration obstruction: the fixture's `finally` block (line 237) tries
+to write the default user profile outside the lane's writable roots.
+Isolation in the original environment reproduced the same I/O failure **3/3**;
+the same source/test passed **3/3** with `XDG_CONFIG_HOME` pointing at task-local
+scratch. This is an environment restriction; P935 changes no profile or chat
+implementation. Evidence: `.scratch/p935/isolated/P761-default-{1,2,3}.trx`
+and `P761-writable-{1,2,3}.trx`. Report: `docs/reports/P935_REPORT.md`.
+
+Additional P935 Fast-sweep non-task isolations:
+
+| Case | Three isolated trials | Finding |
+|---|---|---|
+| `PlayerBundlePathsTests`: Artwork executable fallback; Artwork/NativeSource missing default; local config precedence; NativeSource install-subdirectory guessing | Each failing case fails 3/3; four companion cases pass each time | Existing fixture-ancestry obstruction: mandatory in-worktree `TMPDIR` lets fake outside-repo bundles discover the ancestor `local.env`. Resolver and fixtures unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing expected charge target / actual null at line 179, previously reproduced against dispatch-base sources. Remains open. |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | pass / pass / pass | Sweep-only repair-credit ratio failure (0.083); same intermittent family already ledgered. No repair/credit implementation changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail | Lock reaches 1.000 but the expected partial/full tip pair is absent. The approximately 38-second failure also exceeds the Fast budget; already persistent in the prior cohort. No lock/tip implementation changed. |
+
+Raw isolation files are `.scratch/p935/isolated/non-task-<method>-{1,2,3}.trx`.
+P935's raw timestamp compatibility checks and mission-assembly reflection check
+are task regressions, corrected and rechecked separately; they are not classified
+as flakes here.
+
+| Additional P935 sweep case | Three isolated trials | Finding |
+|---|---|---|
+| `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | pass / pass / pass (4.023 / 3.990 / 5.477 s) | Sweep missed the first mine/sell transition after 51.676 s. Existing miner-cycle intermittency; also a sweep timing offender. |
+| `LivePositionRequestTests.Empty_side_request_auto_accepts` | pass / fail / pass | Existing early JOIN_SIDE receipt assertion intermittency; not claimed cleared. |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / pass / pass | Existing unscoped status-history assertion includes another docked ship. Docking/status code unchanged. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases pass 3/3 (3.215–5.463 s) | Passed in the sweep; civ 25 took 10.679 s, over the Fast limit. Timing only. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass (3.605 / 3.469 / 3.521 s) | Passed in the sweep at 10.700 s, over the Fast limit. Timing only. |

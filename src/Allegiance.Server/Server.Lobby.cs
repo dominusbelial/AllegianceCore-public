@@ -730,7 +730,7 @@ public sealed partial class Server
         var swR = (ConsoleLog.Verbose || TickProfiler.Instance is not null) ? Stopwatch.StartNew() : null;
         // Preserve the creator's own goals and cap exclusion on every rebuild,
         // including fixed-map servers (P930), not only map-rotation servers.
-        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls, playerCreated: mission.PlayerCreated);
+        var fresh = AssembleGameMissionWithOverrides(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls, playerCreated: mission.PlayerCreated, techOverrides: mission.TechOverrides);
         // P872/SIM-0750 — native resets the SAME CmissionIGC object and its
         // ResetMission increments m_nReplayCount after the first generation
         // (missionigc.cpp:3849-3857); the port rebuilds a fresh Mission, so the
@@ -2048,8 +2048,8 @@ public sealed partial class Server
     /// (<c>now + countdownSeconds</c>), and broadcast <c>SET_START_TIME(14)</c>
     /// whole-mission. Native's remaining <c>StartCountdown</c> side-effects
     /// (<c>GenerateMission</c>, briefing-text broadcast, fsmission.cpp:1940-1980)
-    /// are OUT OF SCOPE — this port's bucket/mission generation already happens
-    /// once at <c>Mission.Assemble</c> and briefing text is a separate feature.
+    /// use the already assembled map. Admin starting-tech masks are finalized
+    /// here before initial techs/buckets are sent, at the native generation boundary.
     /// The eventual <c>Starting → Started</c> transition + <c>ENTER_GAME</c>
     /// broadcast is driven by <see cref="AdvanceStartCountdowns"/> on a later
     /// tick once the target time passes.</summary>
@@ -2059,6 +2059,12 @@ public sealed partial class Server
             return;   // intermission is authoritative; native allows re-starting from STAGE_STARTING too, but
                       // this port has no re-trigger path — refuse
 
+        mission.ApplyStartingTechOverrides(restoreAuthoredStations: !MissionCameFromMapGen(mission));
+        if (mission.TechOverrides.IsAllocated)
+            foreach (var peer in _peerShips)
+                if (ReferenceEquals(peer.Value.Ship.Mission, mission)
+                    && mission.GetSide(peer.Value.Ship.SideId ?? -1) is { } side)
+                    SendSideTechToPeer(peer.Key, side);
         mission.Stage = MissionStage.Starting;
         MarkLobbyDirty("stage-starting");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
         double target = _simNow + countdownSeconds;

@@ -202,11 +202,18 @@ syntax; malformed input prints one usage line without repeating the input.
 | `boot <id>` | Remove that ship/user ID from its game with the native administrator boot reason; uses the moderator departure path. |
 | `say <text>` | System chat to every player in every hosted game, including side selection. |
 | `whisper <id> <text>` | System chat to that ship/user ID alone. |
+| `override-tech <game-index> <side> <bit> on\|off` | Queue a starting technology override while the game is NotStarted. Game indices start at 0 in `status` order; sides are native slots 0–5 and bits 0–399. Applied at countdown; later calls are refused. |
 | `status` | Live connection/player/mission counts, uptime, ticks, overruns, cumulative output/timeout counters, and each game's stage. |
 | `chat [n]` | Show the newest `n` captured chat entries in chronological order (default 20; allowed 1–200). |
 | `chat on` / `chat off` | Enable/disable live console chat and history capture; initially off. Previously captured history remains readable. |
 | `alerts on` / `alerts off` | Enable/disable standalone admin alerts; initially on. A player's chat addressed to ADMIN triggers an alert. Chat capture can still retain/display ADMIN messages when alerts are off. |
 | `skills` | Existing per-match skill telemetry. |
+
+Startup admin parameters use the same masks, for example
+`"techBitOverrides": [{"side": 0, "bit": 399, "setting": true}]`
+inside a `games[]` entry. Unmentioned bits retain the civilization/path defaults.
+Console changes are pending until countdown and survive that game's rotations;
+`on`/`off` sets the latest value of an altered bit.
 
 The history is an in-memory 200-entry ring shared across games, including
 sender/target/message and UTC timestamp; it resets when the server boots.

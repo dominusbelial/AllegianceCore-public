@@ -11,7 +11,7 @@ public sealed partial class Server
     private void BroadcastGeneratedTreasure(Treasure treasure)
     {
         // Sector IDs may repeat across games. Route by mission as well as sector.
-        byte[] packet = FedPacket.Pack([new TreasureSpawn { Data = treasure.Data }.Encode()]);
+        byte[] packet = FedPacket.Pack([new TreasureSpawn { Data = treasure.ExportData() }.Encode()]);
         foreach (var (connection, live) in _peerShips)
             if (ReferenceEquals(live.Ship.Mission, treasure.OwnerMission) && live.Sector == treasure.OwnerSector)
             {
@@ -54,7 +54,7 @@ public sealed partial class Server
             SendPeer(connection, FedPacket.Pack([new Ping { TimeServer = (uint)(_simNow * 1000) }.Encode()]));
         foreach (var treasure in treasures)
         {
-            SendPeer(connection, FedPacket.Pack([new TreasureSpawn { Data = treasure.Data }.Encode()]));
+            SendPeer(connection, FedPacket.Pack([new TreasureSpawn { Data = treasure.ExportData() }.Encode()]));
             if (side is not null)
                 _crossSideDiscoverySent.Add((connection, (byte)IgcObjectType.Treasure, treasure.Id));
         }

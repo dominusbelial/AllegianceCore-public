@@ -31,6 +31,7 @@ public sealed class TreasureEntity
     private Vector3 _position;
     internal Vector3 InitialVelocity;
     internal double CreatedAt;
+    internal double? PendingServerCreation, PendingClientCreation;
     internal Func<double>? ServerClock;
     public Vector3 Position
     {

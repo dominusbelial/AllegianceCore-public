@@ -78,4 +78,8 @@ public sealed class ProbeEntity
     /// seconds, the same clock the treasure entities use).
     /// </summary>
     public double Time0ServerSeconds;
+
+    /// <summary>Converted creation time (Igc/probeigc.cpp:51; mineigc.cpp:44).</summary>
+    public double Time0ClientSeconds;
+    internal bool CreatedLocally;
 }

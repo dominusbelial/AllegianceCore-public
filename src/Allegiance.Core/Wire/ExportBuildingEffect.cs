@@ -119,7 +119,7 @@ public sealed class ExportBuildingEffect : IFedMessage
     /// the server-side counterpart to the native
     /// <c>CbuildingEffectIGC::Export</c> (<c>src/Igc/buildingeffectigc.h:136-158</c>),
     /// which assigns every field explicitly. <c>timeStart</c> =
-    /// <paramref name="timeStart"/> (the server tick the build began; native
+    /// the original envelope start in server milliseconds (native
     /// <c>ServerTimeFromClientTime(m_timeEnvelope)</c>,
     /// <c>buildingeffectigc.h:142</c>), <c>radiusAsteroid</c> = the target rock's
     /// radius (<c>pasteroid-&gt;GetRadius()</c>, clintlib.h:1025),
@@ -133,7 +133,6 @@ public sealed class ExportBuildingEffect : IFedMessage
     /// </summary>
     public static ExportBuildingEffect FromBuildingEffect(
         Sim.BuildingEffect effect,
-        uint timeStart,
         Vector3 builderPosition,
         float sideR, float sideG, float sideB, float sideA)
     {
@@ -146,7 +145,7 @@ public sealed class ExportBuildingEffect : IFedMessage
         {
             ObjectType = OtBuildingEffect,
             Effect = new DataBuildingEffectExport(
-                TimeStart: timeStart,
+                TimeStart: Sim.IgcTime.ToMilliseconds(effect.Builder.Mission?.Site.ServerTimeFromClientTime(effect.StartTime) ?? effect.StartTime),
                 RadiusAsteroid: target.Radius,
                 RadiusStation: effect.StationType.Radius,
                 PositionStart: builderPos,

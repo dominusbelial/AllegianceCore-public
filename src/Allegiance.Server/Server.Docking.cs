@@ -495,7 +495,7 @@ public sealed partial class Server
     /// wait for side visibility (FedSrv.CPP:10750-10778).</summary>
     private void SendTreasureSpawnSectorWide(Sector sector, Treasure treasure)
     {
-        var packet = FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
+        var packet = FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.ExportData() }.Encode() });
         foreach (var kv in _peerShips)
             if (ReferenceEquals(kv.Value.Ship.Sector, sector) && ArtifactKnownToPeer(treasure, kv.Value.Ship))
             {
@@ -1312,7 +1312,7 @@ public sealed partial class Server
     /// <c>FedSrv.CPP:10819-10825</c>).</summary>
     private ExportBuildingEffect BuildingEffectExport(BuildingEffect effect)
         => ExportBuildingEffect.FromBuildingEffect(
-            effect, (uint)TickIndex, effect.PositionStart,
+            effect, effect.PositionStart,
             50f / 255f, 28f / 255f, 146f / 255f, 1f);
 
     private void BroadcastBuildingEffectCreated(BuildingEffect effect)

@@ -1388,7 +1388,7 @@ public sealed partial class Game1
                             var pos = c.PositionAt(chaffNow);
                             var toMe = pos - anchorChaff;
                             if (toMe.LengthSquared() > ChaffVisibilityRadiusSqr) continue;
-                            float age = Math.Max(0f, (chaffNow - c.ReceivedLocalMs) / 1000.0f);
+                            float age = Math.Max(0f, (float)c.ElapsedSeconds(chaffNow));
                             float lifespan = Rendering.ChaffModelSource.ResolveLifespan(c.Etid, chaffTypes);
                             float radius = Rendering.ChaffAnimation.CurrentRadius(
                                 age, lifespan, Rendering.ChaffModelSource.ResolveRadiusCeiling(c.Etid, chaffTypes));
@@ -4060,9 +4060,9 @@ public sealed partial class Game1
                 _shopCatalog?.Core?.Constants.FloatConstants is { Length: > 7 } fc ? fc[7] : null,
                 world.GlobalAttributesFor(mySide).Get(Allegiance.Core.Model.GlobalAttributeSet.MiningCapacity));
             // P786 — native probe/mine GetTimeFraction reads GetMyLastUpdate()
-            // (server sim time); the client's server-clock sample stands in and
-            // is only usable once a PING seeded it.
-            double simSeconds = world.ServerClockSeeded ? world.SimulationTimeSeconds : double.NaN;
+            // in the client simulation epoch after the session conversion.
+            // It is only usable once a PING has seeded that epoch.
+            double simSeconds = world.ServerClockSeeded ? world.ClientSimulationTimeSeconds : double.NaN;
             var accepted = world.MyAcceptedCommand;
             var queued = world.MyQueuedCommand;
             float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
@@ -4473,7 +4473,7 @@ public sealed partial class Game1
                     Fill: !double.IsNaN(simSeconds)
                           && _shopCatalog?.ProbeTypes is { } probeTypesFill
                           && probeTypesFill.TryGetValue(pb.ProbetypeId, out var probeTypeFill)
-                          ? HudWireValues.ProbeMineTimeFraction(pb.Time0ServerSeconds,
+                          ? HudWireValues.ProbeMineTimeFraction(pb.Time0ClientSeconds,
                                 probeTypeFill.Lifespan, simSeconds)
                           : null,
                     IsEnemy: !probeSameSide && !world.AreAllied(mySide, pb.SideId),
@@ -4517,7 +4517,7 @@ public sealed partial class Game1
                     Fill: !double.IsNaN(simSeconds)
                           && _shopCatalog?.MineTypes is { } mineTypesFill
                           && mineTypesFill.TryGetValue(mine.MinetypeId, out var mineTypeFill)
-                          ? HudWireValues.ProbeMineTimeFraction(mine.Time0ServerSeconds,
+                          ? HudWireValues.ProbeMineTimeFraction(mine.Time0ClientSeconds,
                                 mineTypeFill.Lifespan, simSeconds)
                           : null,
                     IsEnemy: !mineSameSide && !world.AreAllied(mySide, mine.SideId),

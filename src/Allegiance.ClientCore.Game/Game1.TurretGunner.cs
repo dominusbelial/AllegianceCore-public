@@ -48,14 +48,6 @@ public sealed partial class Game1
     private bool _turretFiring;
 
     /// <summary>
-    /// Wire timestamp from the shared PING-fed clock, in milliseconds.
-    /// </summary>
-    private uint TurretServerTimeMilliseconds()
-    {
-        return _ownServerClock.ServerTimeMs(Environment.TickCount64);
-    }
-
-    /// <summary>
     /// P464 + P517 — the per-frame turret-gunner drive, called from
     /// <see cref="FlightInput.UpdateFlying"/> in place of the flight
     /// <c>CommandControls</c> send whenever the local ship is boarded as a
@@ -118,8 +110,9 @@ public sealed partial class Game1
         {
             case Flight.TurretSendAction.Active:
             {
-                uint t = TurretServerTimeMilliseconds();
-                var atu = ClientActiveTurretUpdate.From(t, turretControls, _turretOrientation);
+                var atu = ClientActiveTurretUpdate.FromLocalTime(_ownServerClock,
+                    _ownServerClock.ClientTimeSeconds(Environment.TickCount64), turretControls, _turretOrientation);
+                uint t = atu.Time;
                 _session.SendActiveTurret(t, atu);
                 Console.WriteLine($"[monogame] turret fire -> ACTIVE_TURRET_UPDATE(99) time={t} " +
                                   $"fw={_turretOrientation.GetForward()} ctrl={turretControls}");

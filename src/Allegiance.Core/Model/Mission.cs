@@ -861,7 +861,8 @@ public sealed partial class Mission : IMissionIgc
         IIgcSite site,
         double initialTime = 0,
         ResearchSettings? research = null,
-        MissionGoals? goals = null)
+        MissionGoals? goals = null,
+        TechBitOverrides? techOverrides = null)
     {
         if (!double.IsFinite(initialTime) || initialTime < 0)
             throw new ArgumentOutOfRangeException(nameof(initialTime));
@@ -874,6 +875,7 @@ public sealed partial class Mission : IMissionIgc
         goals.Validate();
         research ??= new ResearchSettings();
         research.Validate();
+        techOverrides = techOverrides?.Copy() ?? new TechBitOverrides();
         // 1. Resolve the sides' civilizations from the core.
         var sideList = new List<Side>(sides.Count);
         foreach (var spec in sides)
@@ -883,13 +885,13 @@ public sealed partial class Mission : IMissionIgc
                     $"side {spec.Id} ('{spec.Name}') names civilization {spec.CivilizationId} " +
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
             sideList.Add(new Side(spec.Id, spec.Name, civ,
-                research.AllowDevelopments ? BucketCatalog.ForSide(core, site, research.StartingTechs(civ),
+                research.AllowDevelopments ? BucketCatalog.ForSide(core, site, techOverrides.Apply(spec.Id, research.StartingTechs(civ)),
                     // P478 — the side's GA at bucket creation is the civ's base
                     // attribute set (no development has completed yet), exactly
                     // what native reads while CreateBuckets runs.
                     GlobalAttributeSet.FromArray(civ.GasBaseAttributes),
                     goals.IsProsperityGame ? goals.TeamMoney : 1) : Array.Empty<Bucket>()));
-            sideList[^1].DevelopmentTechs = research.StartingTechs(civ);
+            sideList[^1].DevelopmentTechs = techOverrides.Apply(spec.Id, research.StartingTechs(civ));
             sideList[^1].InitialTechs = sideList[^1].DevelopmentTechs;
             // P363 — seed each side's colour from the native per-side-id palette
             // (missionigc.cpp:3734-3746), the port of `ds.color.SetRGBA(...)`.
@@ -957,7 +959,8 @@ public sealed partial class Mission : IMissionIgc
         // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
         // Seed BEFORE any ship placement or countdown can observe this world.
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
-        { LastUpdate = initialTime, Goals = goals, Research = research, AllowDevelopments = research.AllowDevelopments };
+        { LastUpdate = initialTime, Goals = goals, Research = research, AllowDevelopments = research.AllowDevelopments,
+            TechOverrides = techOverrides };
         mission.DamageClock.Initialize(initialTime);
         foreach (var sector in sectors)
         {

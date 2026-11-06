@@ -10,10 +10,11 @@ namespace Allegiance.ClientCore.Flight;
 /// even a newly received timestamp outside the native ±1.5 second gate
 /// (Igc/shipIGC.cpp:3139-3142,3199-3200).
 /// </summary>
-public sealed class OwnShipServerClock
+public sealed class OwnShipServerClock : Allegiance.Core.Sim.IIgcSite
 {
     private bool _ready;
     private double _serverMs;
+    private double _clientMs;
     private long _localMs;
     private uint _lastSample;
     private double _timeScale = 1;
@@ -26,6 +27,7 @@ public sealed class OwnShipServerClock
     {
         _ready = false;
         _serverMs = 0;
+        _clientMs = 0;
         _localMs = 0;
         _lastSample = 0;
         _timeScale = 1;
@@ -39,7 +41,9 @@ public sealed class OwnShipServerClock
         if (timeScale == _timeScale) return;
         if (_ready)
         {
-            _serverMs += Math.Max(0, localMs - _localMs) * _timeScale;
+            double elapsed = Math.Max(0, localMs - _localMs) * _timeScale;
+            _serverMs += elapsed;
+            _clientMs += elapsed;
             _localMs = localMs;
         }
         _timeScale = timeScale;
@@ -50,6 +54,7 @@ public sealed class OwnShipServerClock
     public void AddSample(uint serverSimMs, long localRecvMs)
     {
         if (_ready && (serverSimMs <= _lastSample || localRecvMs < _localMs)) return;
+        _clientMs = _ready ? ClientTimeSeconds(localRecvMs) * 1000 : localRecvMs;
         _serverMs = serverSimMs;
         _localMs = localRecvMs;
         _lastSample = serverSimMs;
@@ -65,4 +70,18 @@ public sealed class OwnShipServerClock
         double estimate = _serverMs + Math.Max(0, localMs - _localMs) * _timeScale;
         return estimate <= 0 ? 0u : (uint)estimate;
     }
+
+    /// <summary>Local simulation time at a monotonic wall instant. Rate changes
+    /// integrate before reanchoring, including pause; no inverse division by rate.</summary>
+    public double ClientTimeSeconds(long localMs) => !_ready ? localMs / 1000.0
+        : (_clientMs + Math.Max(0, localMs - _localMs) * _timeScale) / 1000.0;
+
+    // Native clintlib/clintlib.h:860-869: add/subtract the same session offset.
+    // Inputs are simulation seconds; wire factories perform the ms encoding.
+    public double ServerTimeFromClientTime(double timeClient) =>
+        !_ready ? timeClient : (timeClient * 1000 - _clientMs + _serverMs) / 1000.0;
+
+    public double ClientTimeFromServerTime(double timeServer) =>
+        !_ready ? timeServer : (timeServer * 1000 - _serverMs + _clientMs) / 1000.0;
+
 }

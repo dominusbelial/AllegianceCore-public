@@ -11,24 +11,12 @@ namespace Allegiance.ClientCore.State;
 /// removes the model from its cluster, <c>chaffigc.h:68-73</c>), so a chaff is
 /// modelled as an entry in a short-lived list that expires
 /// <see cref="ClientWorld.PruneExpiredChaff"/> seconds after
-/// <see cref="ReceivedLocalMs"/> and is then pruned client-side.
+/// its converted creation instant and is then pruned client-side.
 /// </summary>
-/// <remarks>
-/// <para><b>Why local receipt time, not the wire <c>Time0</c>.</b> The codec's
-/// <c>Time0</c> is the server tick index (a uint in the server's epoch) that
-/// shares no clock with the client — the same situation as the projectile's
-/// <c>TimeCreate</c> (see <see cref="ProjectileEntity"/>). The port therefore
-/// anchors both motion extrapolation and expiry to the local monotonic instant
-/// the message was received (<see cref="Environment.TickCount64"/>), captured
-/// in <see cref="ClientWorld.Apply(Wire.CreateChaff)"/>. The server broadcasts
-/// CREATE_CHAFF at deploy, so for a same-host client receipt ≈ creation.</para>
-/// <para><b>What rides along.</b> The wire carries the chaff's spawn position
-/// (<see cref="P0"/>), its constant coasting velocity (<see cref="V0"/>), and
-/// the chaff <em>type</em> id (<see cref="Etid"/>). Lifespan / radius-ceiling /
-/// texture are <em>not</em> on the wire — the renderer resolves them from the
-/// static core's <c>DataChaffTypeIGC</c> via <c>ChaffModelSource</c> (the
-/// client otherwise has no static core; see <c>Rendering.ShopCatalog</c>).</para>
-/// </remarks>
+/// <remarks>The wire Time0 is server simulation milliseconds. The world converts
+/// it through its PING-fed session site (Igc/chaffigc.cpp:48); coasting and
+/// expiry therefore include time already elapsed before receipt. Local-only
+/// fixtures without a server sample retain a receipt anchor until one arrives.</remarks>
 public sealed class ChaffEntity
 {
     /// <summary>The decoded chaff type id (<c>CreateChaff.Etid</c> = the
@@ -52,6 +40,15 @@ public sealed class ChaffEntity
     /// <see cref="ClientWorld.Apply(Wire.CreateChaff)"/>.</summary>
     public long ReceivedLocalMs;
 
+    /// <summary>Native converted creation instant in the local simulation epoch.</summary>
+    public double StartClientSeconds;
+    internal double StartServerSeconds;
+    internal Func<long, double>? ClientTimeAt;
+    public double ElapsedSeconds(long nowLocalMs) => ClientTimeAt is null
+        ? (nowLocalMs - ReceivedLocalMs) / 1000.0
+        : ClientTimeAt(nowLocalMs) - StartClientSeconds;
+
+
     /// <summary>The chaff's extrapolated world position at the given local
     /// monotonic instant — its spawn position advanced along its
     /// <see cref="V0"/> by the elapsed seconds (clamped so it never travels
@@ -60,7 +57,7 @@ public sealed class ChaffEntity
     /// projectile entity uses.</summary>
     public Vector3 PositionAt(long nowLocalMs)
     {
-        float elapsed = Math.Max(0f, (nowLocalMs - ReceivedLocalMs) / 1000.0f);
+        float elapsed = Math.Max(0f, (float)ElapsedSeconds(nowLocalMs));
         return P0 + V0 * elapsed;
     }
 

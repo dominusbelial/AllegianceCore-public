@@ -194,7 +194,9 @@ internal sealed partial class BotManager
         bool fire = GunnerPolicy.FireGate(remaining, dist, weaponRange, GunnerTune) && serverMs != 0u;
         if (fire)
         {
-            cs.SendActiveTurret(serverMs, ClientActiveTurretUpdate.From(serverMs, controls, bot.TurretOrientation));
+            var update = ClientActiveTurretUpdate.FromLocalTime(bot.ServerClock,
+                bot.ServerClock.ClientTimeSeconds(Environment.TickCount64), controls, bot.TurretOrientation);
+            cs.SendActiveTurret(update.Time, update);
             bot.GunnerShots++;
             SampleGunnerTargetHealth(bot, cs, targetId);   // hit/kill bookkeeping
             if (bot.GunnerShots % 15 == 0)

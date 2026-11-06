@@ -49,6 +49,25 @@ public sealed class ShowcaseConfig
 /// </summary>
 public sealed class GameConfig
 {
+    /// <summary>Admin game parameters, FedSrv/fsmission.cpp:225-236.
+    /// Each entry marks one bit altered and supplies its new setting.</summary>
+    public TechBitOverrideConfig[] TechBitOverrides { get; set; } = [];
+
+    internal Allegiance.Core.Model.TechBitOverrides ResolveTechBitOverrides()
+    {
+        var masks = new Allegiance.Core.Model.TechBitOverrides();
+        foreach (var entry in TechBitOverrides)
+        {
+            // Native trusts the admin (AdminGame.cpp:312-328); a config typo is a config error here, not a crash.
+            if (entry.Side is < 0 or >= Allegiance.Core.Model.TechBitOverrides.MaxSides)
+                throw new InvalidDataException($"game '{Name}': techBitOverrides side {entry.Side} must be 0..{Allegiance.Core.Model.TechBitOverrides.MaxSides - 1}");
+            if (entry.Bit is < 0 or >= Allegiance.Core.Model.TechBitOverrides.MaxBits)
+                throw new InvalidDataException($"game '{Name}': techBitOverrides bit {entry.Bit} must be 0..{Allegiance.Core.Model.TechBitOverrides.MaxBits - 1}");
+            masks.Set(entry.Side, entry.Bit, entry.Setting);
+        }
+        return masks;
+    }
+
     /// <summary>Set by the offline skirmish preset, including unlocked-tech games.</summary>
     public bool SkirmishPreset { get; set; }
 
@@ -1649,4 +1668,12 @@ public static class ServerConfigLoader
         }
         return recognized;
     }
+}
+
+/// <summary>One admin starting-tech setting, equivalent to an altered/value bit pair.</summary>
+public sealed class TechBitOverrideConfig
+{
+    public int Side { get; set; }
+    public int Bit { get; set; }
+    public bool Setting { get; set; }
 }

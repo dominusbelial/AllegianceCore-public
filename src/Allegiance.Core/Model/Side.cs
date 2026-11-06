@@ -78,6 +78,14 @@ public sealed class Side : ISideIgc
     private readonly List<Bucket> _buckets;
     public IReadOnlyList<Bucket> Buckets { get; }
 
+    internal void ResetStartingBuckets(IReadOnlyList<Bucket> buckets)
+    {
+        _buckets.Clear();
+        _buckets.AddRange(buckets);
+        foreach (var bucket in _buckets) bucket.Side = this;
+        _bucketTechs = _bucketDevelopments = null;
+    }
+
     internal void RemoveBucket(Bucket bucket) => _buckets.Remove(bucket);
 
     private readonly Dictionary<(IgcObjectType Type, short Id), int> _stockpile = [];

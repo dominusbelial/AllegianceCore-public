@@ -812,7 +812,8 @@ public sealed partial class Server
         {
             enc.Add(new CreateChaff
             {
-                P0 = chaff.Position, V0 = chaff.Velocity, Time0 = (uint)TickIndex,
+                P0 = chaff.Position, V0 = chaff.Velocity,
+                Time0 = IgcTime.ToMilliseconds(ship.Mission?.Site.ServerTimeFromClientTime(now) ?? now),
                 Etid = chaff.ChaffType.ExpendableTypeId
             }.Encode());
             foreach (var missile in deployment.Spoofed)

@@ -13,7 +13,7 @@ public sealed partial class Server
 {
     internal const int ConsoleChatCapacity = 200;
     private const int ConsoleCommandLength = 1024;
-    private const string ConsoleUsage = "usage: help | players | boot <id> | say <text> | whisper <id> <text> | status | chat [n|on|off] | alerts on|off | skills";
+    private const string ConsoleUsage = "usage: help | players | boot <id> | say <text> | whisper <id> <text> | status | chat [n|on|off] | alerts on|off | skills | override-tech <game-index> <side> <bit> on|off";
     private readonly Channel<string> _consoleCommands = Channel.CreateBounded<string>(new BoundedChannelOptions(64)
     { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly string?[] _consoleChats = new string?[ConsoleChatCapacity];
@@ -100,6 +100,18 @@ public sealed partial class Server
                 BootConsolePlayer(bootId); return;
             case "say" when rest.Length > 0:
                 SendConsoleChat(null, rest); return;
+            case "override-tech":
+                var args = rest.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                if (args.Length == 4 && TryConsoleId(args[0], out short game) && game < _missions.Count
+                    && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int side)
+                    && int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int bit)
+                    && (args[3] == "on" || args[3] == "off"))
+                {
+                    bool accepted = _missions[game].OverrideTechBit(side, bit, args[3] == "on");
+                    Console.WriteLine($"[console] override-tech game={game} side={side} bit={bit} {args[3]} {(accepted ? "accepted" : "refused")}");
+                    return;
+                }
+                break;
             case "whisper":
                 int space = rest.IndexOfAny([' ', '\t']);
                 if (space > 0 && TryConsoleId(rest[..space], out short id) && rest[(space + 1)..].Trim().Length > 0)

@@ -55,7 +55,7 @@ namespace Allegiance.Core.Wire;
 ///   = 56 bytes total (4-aligned, no trailing pad)
 /// </code>
 /// <c>timeStart</c> is the native <c>m_timeEnvelope</c> converted back to a
-/// server tick (<c>ServerTimeFromClientTime</c>, <c>buildingeffectigc.h:142</c>);
+/// server milliseconds (<c>ServerTimeFromClientTime</c>, <c>buildingeffectigc.h:142</c>);
 /// in this port it is the server tick the build began (<c>(uint)TickIndex</c>).
 /// The <c>color</c> is the building side's colour (<c>buildingeffectigc.h:154</c>);
 /// this port's renderer uses its own under-construction treatment, but the

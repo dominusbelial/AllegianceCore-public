@@ -347,6 +347,7 @@ public sealed partial class ClientWorld
             if (_countdownClockLocalMs is { } last)
                 _countdownClockServerMs += (now - last) * _timeScale;
             if (_countdownClockLocalMs is not null) _countdownClockLocalMs = now;
+            _importClock.SetTimeScale(value, now);
             _timeScale = value;
         }
     }
@@ -1998,6 +1999,11 @@ public sealed partial class ClientWorld
     public bool IsIntermission => _countdownTargetMs is not null
         && _mission?.Stage == MissionStageMessage.StageNotStarted;
 
+    private readonly Allegiance.ClientCore.Flight.OwnShipServerClock _importClock = new();
+    public Allegiance.Core.Sim.IIgcSite TimeSite => _importClock;
+    public double ClientSimulationTimeSeconds => ClientSimulationTimeAt((long)(NowSeconds() * 1000));
+    private double ClientSimulationTimeAt(long localMs) => _importClock.ClientTimeSeconds(localMs);
+
     private bool _treasureClockSeeded;
     private double _treasureServerSeconds;
     private double _treasureLocalSeconds;
@@ -2015,6 +2021,37 @@ public sealed partial class ClientWorld
 
     public void ObserveServerTime(uint serverMs, long localMs)
     {
+        bool firstSample = !_importClock.Ready;
+        _importClock.AddSample(serverMs, (long)(NowSeconds() * 1000));
+        if (firstSample)
+        {
+            // Initial exports can precede the first PING on the existing connection.
+            // Bind their original wire instants once the session epoch is known.
+            foreach (var effect in _buildingEffects.Values)
+            {
+                effect.StartClientSeconds = TimeSite.ClientTimeFromServerTime(effect.StartServerSeconds);
+                effect.ClientTimeAt = ClientSimulationTimeAt;
+            }
+            foreach (var chaff in _chaff)
+            {
+                chaff.StartClientSeconds = TimeSite.ClientTimeFromServerTime(chaff.StartServerSeconds);
+                chaff.ClientTimeAt = ClientSimulationTimeAt;
+            }
+            foreach (var treasure in _treasures.Values)
+                if (treasure.PendingServerCreation is not null || treasure.PendingClientCreation is not null)
+                {
+                    treasure.CreatedAt = treasure.PendingServerCreation is { } start
+                        ? TimeSite.ClientTimeFromServerTime(start) : treasure.PendingClientCreation!.Value;
+                    treasure.ServerClock = () => ClientSimulationTimeSeconds;
+                    treasure.PendingServerCreation = treasure.PendingClientCreation = null;
+                }
+            foreach (var probe in _probes.Values)
+                if (!probe.CreatedLocally)
+                    probe.Time0ClientSeconds = TimeSite.ClientTimeFromServerTime(probe.Time0ServerSeconds);
+            foreach (var mine in _mines.Values)
+                if (!mine.CreatedLocally)
+                    mine.Time0ClientSeconds = TimeSite.ClientTimeFromServerTime(mine.Time0ServerSeconds);
+        }
         _treasureClockSeeded = true;
         _treasureServerSeconds = serverMs / 1000.0;
         _treasureLocalSeconds = NowSeconds();
@@ -2128,6 +2165,7 @@ public sealed partial class ClientWorld
         _buildingEffects.Clear();
         _treasures.Clear();
         _commandBuoys.Clear();
+        _importClock.Reset();
         _treasureClockSeeded = false;
         _chaff.Clear();
         _explosions.Clear();
@@ -3476,7 +3514,10 @@ public sealed partial class ClientWorld
             Position = dp.P0,
             // P786 — the export's m_time0 (probeigc.cpp:542) in server seconds,
             // the anchor of the radar probe lifetime fill (probeigc.h:271-279).
+            CreatedLocally = dp.ExportF && dp.CreateNow,
             Time0ServerSeconds = dp.Time0 / 1000.0,
+            Time0ClientSeconds = dp.ExportF && dp.CreateNow ? ClientSimulationTimeSeconds
+                : TimeSite.ClientTimeFromServerTime(dp.Time0 / 1000.0),
         };
         // P786 — the OWN ship's dispenser deploy is the native client's own
         // magazine-clock event for the arming readout (a dispenser fires with
@@ -3511,7 +3552,10 @@ public sealed partial class ClientWorld
             Position = dm.P0,
             // P786 — the export's m_time0 (mineigc.cpp:167) in server seconds,
             // the anchor of the radar mine lifetime fill (mineigc.h:183-191).
+            CreatedLocally = dm.ExportF && dm.CreateNow,
             Time0ServerSeconds = dm.Time0 / 1000.0,
+            Time0ClientSeconds = dm.ExportF && dm.CreateNow ? ClientSimulationTimeSeconds
+                : TimeSite.ClientTimeFromServerTime(dm.Time0 / 1000.0),
         };
         // P786 — the OWN ship's dispenser deploy is the native client's own
         // magazine-clock event for the arming readout (see ExportProbe above).
@@ -3547,7 +3591,7 @@ public sealed partial class ClientWorld
     /// station construction (a Builder committed to building at an asteroid)
     /// enters the table keyed by its target <c>AsteroidId</c>. A building effect
     /// is static over the asteroid (no per-tick stream), so this is its only
-    /// placement write; the receipt instant anchors
+    /// placement write; the converted original creation instant anchors
     /// <see cref="BuildingEffectEntity.ProgressFraction"/> and the eventual
     /// self-expiry (<c>buildingeffectigc.h:160-165</c> terminates the cosmetic
     /// effect at <c>m_timeComplete</c>, so native sends nothing on completion).</summary>
@@ -3563,6 +3607,9 @@ public sealed partial class ClientWorld
             PositionStart = d.PositionStart,
             PositionStop = d.PositionStop,
             ReceivedLocalMs = (long)(NowSeconds() * 1000),
+            StartClientSeconds = TimeSite.ClientTimeFromServerTime(d.TimeStart / 1000.0),
+            StartServerSeconds = d.TimeStart / 1000.0,
+            ClientTimeAt = _importClock.Ready ? ClientSimulationTimeAt : null,
         };
     }
 
@@ -3575,7 +3622,7 @@ public sealed partial class ClientWorld
 
     /// <summary>Remove building effects whose build has completed by the given
     /// local monotonic instant (elapsed ≥ <see cref="ConstructionPhase.Duration"/>
-    /// since receipt). <see cref="ClientWorld"/> is pure (no clock), so the
+    /// since creation in local simulation time). The
     /// caller supplies the time and typically calls this once per frame under
     /// the same gate lock guarding the other world reads, before gathering the
     /// live set to render — the exact shape of
@@ -3606,8 +3653,12 @@ public sealed partial class ClientWorld
             Amount = d.Amount,
             Code = d.TreasureCode,
             InitialVelocity = Allegiance.Core.Sim.TreasureMotion.Vector(d.V0),
-            CreatedAt = d.CreateNow ? TreasureServerSeconds() : d.Time0 / 1000.0,
-            ServerClock = TreasureServerSeconds,
+            CreatedAt = _importClock.Ready
+                ? d.CreateNow ? ClientSimulationTimeSeconds : TimeSite.ClientTimeFromServerTime(d.Time0 / 1000.0)
+                : d.CreateNow ? TreasureServerSeconds() : d.Time0 / 1000.0,
+            PendingServerCreation = !_importClock.Ready && !d.CreateNow ? d.Time0 / 1000.0 : null,
+            PendingClientCreation = !_importClock.Ready && d.CreateNow ? NowSeconds() : null,
+            ServerClock = _importClock.Ready ? () => ClientSimulationTimeSeconds : TreasureServerSeconds,
             Position = d.P0 is { Length: 3 } p
                 ? new Vector3(p[0], p[1], p[2])
                 : Vector3.Zero,
@@ -3624,9 +3675,7 @@ public sealed partial class ClientWorld
     /// <summary>P292 — <c>FM_S_CREATE_CHAFF(109)</c>: the server's sector-wide
     /// deploy broadcast for a fresh chaff decoy. Appends a transient
     /// <see cref="ChaffEntity"/> capturing the real spawn position/velocity and
-    /// the chaff type id plus the local receipt instant (see
-    /// <see cref="ChaffEntity"/> for why receipt time anchors coasting +
-    /// expiry). One entry per real broadcast; there is no id to upsert on and no
+    /// the chaff type id plus its converted original creation instant. One entry per real broadcast; there is no id to upsert on and no
     /// destruction message (native chaff expiry just removes the model from its
     /// cluster, <c>chaffigc.h:68-73</c>), so removal is purely time-based via
     /// <see cref="PruneExpiredChaff"/>.</summary>
@@ -3638,6 +3687,9 @@ public sealed partial class ClientWorld
             P0 = m.P0,
             V0 = m.V0,
             ReceivedLocalMs = (long)(NowSeconds() * 1000),
+            StartClientSeconds = TimeSite.ClientTimeFromServerTime(m.Time0 / 1000.0),
+            StartServerSeconds = m.Time0 / 1000.0,
+            ClientTimeAt = _importClock.Ready ? ClientSimulationTimeAt : null,
         });
         // P638 — remember the newest decoy's spawn position so a following
         // MISSILE_SPOOFED(110) can retarget a missile onto it (native's
@@ -3657,7 +3709,7 @@ public sealed partial class ClientWorld
     public void PruneExpiredChaff(long nowLocalMs, IReadOnlyDictionary<short, DataChaffTypeIGC>? chaffTypes)
     {
         _chaff.RemoveAll(c =>
-            c.ReceivedLocalMs + (long)(ResolveLifespan(c.Etid, chaffTypes) * 1000.0) <= nowLocalMs);
+            c.ElapsedSeconds(nowLocalMs) >= ResolveLifespan(c.Etid, chaffTypes));
     }
 
     /// <summary>Resolve a chaff type's real lifespan (seconds) from the static

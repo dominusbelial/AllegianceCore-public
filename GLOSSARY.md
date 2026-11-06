@@ -572,6 +572,21 @@ list in **reverse**.
   / env `ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS` opts into always refusing
   (default off). Native: `FedSrv/fsmission.cpp:1248-1273`, `FedSrv/FedSrv.CPP:629`.
   Report: `docs/reports/P864c_REPORT.md`.
+- **Session time conversion / admin starting tech (P935)** —
+  `src/Allegiance.ClientCore/Flight/OwnShipServerClock.cs` implements the IGC
+  add/subtract offset seam in simulation seconds, shared by native client ship
+  and turret exporters; `src/Allegiance.Core/Sim/IgcTime.cs` encodes native
+  millisecond rounding (`zlib/ztime.h:144-159`). Object imports live in
+  `src/Allegiance.ClientCore/State/ClientWorld.cs`. Construction/chaff use original
+  creation times; server pose tick indices stay unchanged. Native:
+  `clintlib/clintlib.h:860-869`, `Igc/buildingeffectigc.h:50,142`.
+  `src/Allegiance.Core/Model/TechBitOverrides.cs` holds lazy per-side altered/value
+  masks; `src/Allegiance.Core/Model/Mission.TechOverrides.cs` applies them before
+  initial techs/buckets at countdown. Production: console `override-tech` and
+  `games[].techBitOverrides` in `src/Allegiance.Server/ServerConfig.cs`.
+  Native: `FedSrv/fsmission.cpp:228-236,2718-2733`,
+  `FedSrv/AdminGame.cpp:312-328`, `Igc/missionigc.cpp:3885-3898`.
+  Report: `docs/reports/P935_REPORT.md`.
 - **Local admin console (P913)** — existing stdin enqueues bounded commands for
   the tick thread in `src/Allegiance.Server/Server.Console.cs`: live player
   roster, moderator-path boot, all-games system chat/private whisper, status,

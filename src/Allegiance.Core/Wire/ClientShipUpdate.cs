@@ -111,6 +111,14 @@ public sealed class ClientShipUpdate
         return u;
     }
 
+    /// <summary>Native client export (Igc/shipIGC.h:1173-1186): convert the
+    /// local simulation timestamp through the session site before encoding.</summary>
+    public static ClientShipUpdate FromLocalPose(
+        IIgcSite site, double localTimeSeconds, Vector3 position, Vector3 velocity,
+        Orientation orientation, int stateM, ControlData controls, float[] turnRates, float power) =>
+        FromPose(IgcTime.ToMilliseconds(site.ServerTimeFromClientTime(localTimeSeconds)),
+            position, velocity, orientation, stateM, controls, turnRates, power);
+
     /// <summary>Encode the 39 canonical bytes at the writer's current position.</summary>
     public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
 

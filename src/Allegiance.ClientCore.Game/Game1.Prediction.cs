@@ -302,13 +302,12 @@ public sealed partial class Game1
 
         if (!_shipSendCadence.Update(_nowSeconds)) return;
 
-        uint t = _ownServerClock.ServerTimeMs(ClientNowMilliseconds);
-        var payload = ClientShipUpdate.FromPose(
-            t,
+        var payload = ClientShipUpdate.FromLocalPose(
+            _ownServerClock, _ownServerClock.ClientTimeSeconds(ClientNowMilliseconds),
             _ownSim.Position, _ownSim.Velocity, _ownSim.Orientation,
             _ownSim.StateM, _ownSim.Controls, _ownSim.TurnRates,
             _ownSim.Power);
-        _session.SendShipPose(t, _ownShipCookie, payload);
+        _session.SendShipPose(payload.Time, _ownShipCookie, payload);
     }
 
     /// <summary>

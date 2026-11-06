@@ -2269,7 +2269,7 @@ public sealed partial class Server
                             foreach (var conn in TestLegacyClashProjection ? conns : sweep.Recipients(treasure, sideId, treasure.Id, TickIndex, scope: m.Cookie))
                                 if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Treasure, treasure.Id)))
                                 {
-                                    packet ??= FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
+                                    packet ??= FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.ExportData() }.Encode() });
                                     SendPeer(conn, packet);
                                     told++;
                                 }
