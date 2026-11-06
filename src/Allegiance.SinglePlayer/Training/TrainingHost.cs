@@ -504,11 +504,16 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
             while (!_stop.IsCancellationRequested)
             {
                 if (Paused) { Thread.Sleep(10); continue; }
+                double cost;
                 lock (_simGate)
                 {
-                    _server.Tick();
+                    cost = _server.TickWork();
                     AdvanceAutopilot();
                 }
+                // Sleep the cadence outside the lock: the client reads the sim
+                // under _simGate every frame (e.g. CopyVisibleBuoys), and holding
+                // it through the sleep stalled rendering by whole ticks.
+                _server.TickCadence(cost);
             }
         }
         catch (Exception)

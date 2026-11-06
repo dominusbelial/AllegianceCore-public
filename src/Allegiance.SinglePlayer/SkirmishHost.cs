@@ -162,7 +162,14 @@ public sealed partial class SkirmishHost : IDisposable
         try
         {
             while (!_stop.IsCancellationRequested)
-                lock (_simGate) _server.Tick(); // Includes fixed cadence and automatic time dilation.
+            {
+                // Work (incl. automatic time dilation) under the lock; the cadence
+                // sleep outside it, so the observer's per-frame Observe never waits
+                // out the idle part of a tick.
+                double cost;
+                lock (_simGate) cost = _server.TickWork();
+                _server.TickCadence(cost);
+            }
         }
         catch (Exception ex) { Fail("Embedded server stopped: " + ex.Message); }
     }

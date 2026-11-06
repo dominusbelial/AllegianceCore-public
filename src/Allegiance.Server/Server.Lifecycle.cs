@@ -1619,9 +1619,16 @@ public sealed partial class Server
     /// that overran the period (never silently skips or accumulates — the sim
     /// clock is independent of real wall time).
     /// </summary>
-    public void Tick()
+    public void Tick() => TickCadence(TickWork());
+
+    /// <summary>The work half of <see cref="Tick"/>: the simulation pass, its
+    /// measurement and the time-dilation feed, with no cadence sleep. Returns the
+    /// pass cost in seconds for <see cref="TickCadence"/>. In-process hosts call
+    /// this under their simulation lock and sleep the cadence outside it, so the
+    /// client's render thread is never blocked for the idle part of a tick.</summary>
+    public double TickWork()
     {
-        if (_shutdown) return;
+        if (_shutdown) return 0;
         var sw = Stopwatch.StartNew();
         SimPass();
         sw.Stop();
@@ -1633,7 +1640,14 @@ public sealed partial class Server
         // here so the controller's rate limiting tracks real time even under an
         // overrun (no cadence sleep).
         ObserveTimeDilation(cost, ConsumeTidiWallDelta());
-        SyncCadence(cost);
+        return cost;
+    }
+
+    /// <summary>The cadence half of <see cref="Tick"/>: sleep the real remainder
+    /// of the period after a pass that cost <paramref name="cost"/> seconds.</summary>
+    public void TickCadence(double cost)
+    {
+        if (!_shutdown) SyncCadence(cost);
     }
 
     /// <summary>The simulation half of a tick, with no cadence sleep and no
