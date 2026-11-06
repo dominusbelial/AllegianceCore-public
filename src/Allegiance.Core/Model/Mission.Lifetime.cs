@@ -38,8 +38,10 @@ public sealed partial class Mission : IDisposable
         foreach (var sector in Sectors)
         {
             foreach (var model in sector.Models) DetachThingSite(model);
+            sector.ClearPickables();
             sector.Active = false; sector.Mission = null; sector.MissionSides = null;
         }
+        foreach (var buoy in _buoyRegistry.View) buoy.PickableSector = null;
         _warpRegistry.Clear(); _stationRegistry.Clear(); _treasureRegistry.Clear();
         _asteroidRegistry.Clear(); _probeRegistry.Clear(); _mineRegistry.Clear();
         _sideRegistry.Clear(); _clusterRegistry.Clear(); _shipRegistry.Clear(); _buoyRegistry.Clear();

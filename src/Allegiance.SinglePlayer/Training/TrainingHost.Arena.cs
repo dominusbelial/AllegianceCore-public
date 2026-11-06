@@ -11,6 +11,9 @@ public sealed partial class TrainingHost
 {
     // The two native bodies are identical (apart from names/debug text/whitespace):
     // training/mission6.cpp:82-287; training/mission10.cpp:78-283.
+    // Internal deterministic source for patrol replay; ordinary sessions retain Shared.
+    internal Random ArenaPatrolRandom { get; set; } = Random.Shared;
+
     private bool HandleArenaDefaultOrder(Ship ship)
     {
         var lesson = _activeMission;
@@ -85,20 +88,22 @@ public sealed partial class TrainingHost
                     points.Add(new V(rock.Data.Position[0], rock.Data.Position[1], rock.Data.Position[2] + 350));
             for (int i = 0; i < 2; i++)
             {
-                V random = new(Random.Shared.NextSingle() * 6000 - 3000,
-                    Random.Shared.NextSingle() * 6000 - 3000, Random.Shared.NextSingle() * 2000 - 1000);
+                V random = new(ArenaPatrolRandom.NextSingle() * 6000 - 3000,
+                    ArenaPatrolRandom.NextSingle() * 6000 - 3000, ArenaPatrolRandom.NextSingle() * 2000 - 1000);
                 // Native deliberately tests the SHIP position, not the random point.
-                // Pickable static bodies are stations, asteroids, warps and probes.
-                foreach (var body in ArenaPatrolObstacles(sector))
+                // Igc/clusterIGC.cpp:514-518: mixed append order, including dynamic bodies.
+                foreach (var body in ArenaPatrolObstacles(sector, ship))
                 {
                     V delta = ship.Position - body.Position;
                     float min = body.Radius + ship.Radius + 10;
                     float length = delta.Length();
-                    if (length < min && length > 0) random = body.Position + delta / length * min;
+                    // zlib/vector.h:97-108 returns zero after ZError at coincident
+                    // centers. Match retail (zassert.h:67), omitting the debug assertion.
+                    if (length < min) random = body.Position + delta.Normalize() * min;
                 }
                 points.Add(random);
             }
-            point = points[Random.Shared.Next(points.Count)];
+            point = points[ArenaPatrolRandom.Next(points.Count)];
             kind = DataBuoyIGC.CBuoyWaypoint;
             ship.WingmanBehaviour |= 0x80;
         }
@@ -109,13 +114,26 @@ public sealed partial class TrainingHost
         return true;
     }
 
-    private static IEnumerable<(V Position, float Radius)> ArenaPatrolObstacles(Sector sector)
+    private static IEnumerable<(V Position, float Radius)> ArenaPatrolObstacles(Sector sector, Ship ship)
     {
-        foreach (var station in sector.StationRuntimes) if (!station.Dead) yield return (station.Center, station.Radius);
-        foreach (var rock in sector.Mineable) if (!rock.Dead)
-            yield return (new(rock.Data.Position[0], rock.Data.Position[1], rock.Data.Position[2]), rock.Radius);
-        foreach (var warp in sector.Warps) yield return (warp.Position, warp.Radius);
-        foreach (var probe in sector.Models.OfType<Probe>()) if (!probe.Dead) yield return (probe.Position, probe.ProbeType.Radius);
+        // training/mission6.cpp:250-260 / mission10.cpp:246-256. Only missiles
+        // among pickables set NoHit to a ship (Igc/missileigc.cpp:87-99);
+        // compare identities, never IDs. Mines and every ship are excluded.
+        foreach (var body in sector.PickableModels)
+        {
+            if (body is Ship or Mine || body is Missile m && ReferenceEquals(m.Launcher, ship)) continue;
+            yield return body switch
+            {
+                Station s => (s.Center, s.Radius),
+                Asteroid a => (new V(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius),
+                ResolvedWarp w => (w.Position, w.Radius),
+                Probe p => (p.Position, p.ProbeType.Radius),
+                Missile missile => (missile.Position, missile.MissileType.Radius),
+                Treasure t => (t.Position, Treasure.PickupRadius),
+                Buoy b => (b.Position, b.Radius),
+                _ => throw new InvalidOperationException("Unknown pickable patrol body.")
+            };
+        }
     }
 
     // Igc/shipIGC.h:341-389: side knowledge OR own directional scanner + LOS.

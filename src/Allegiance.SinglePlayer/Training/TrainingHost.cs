@@ -242,6 +242,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         server.Boot(TrainingConfig(variant, artPath));
         var mission = server.Missions[0];
         mission.IsTraining = true;
+        // Arena patrols observe all cluster pickables, including navigation buoys.
+        // Observe before any training ship can create a lazy plan buoy, so native
+        // buoy insertion order is retained (Igc/buoyigc.cpp:69-71).
+        _ = mission.GetBuoys();
         // Native local ThingSite::SetCluster reveals predictable objects to
         // both visibility slots (WinTrek/trekigc.cpp:1996-2010). The loopback
         // server must give its simulation the same static-world knowledge.

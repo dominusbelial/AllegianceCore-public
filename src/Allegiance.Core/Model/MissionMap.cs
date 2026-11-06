@@ -25,6 +25,9 @@ public sealed class MissionMap
     /// <summary>Asteroids, in file order.</summary>
     public IReadOnlyList<DataAsteroidIGC> Asteroids { get; }
 
+    // Native Import preserves the cross-type file order, not just each typed list.
+    internal IReadOnlyList<(IgcObjectType Type, short Cluster, short Id)>? ImportedModelOrder { get; private init; }
+
     private MissionMap(
         IReadOnlyList<DataClusterIGC> clusters,
         IReadOnlyList<DataWarpIGC> warps,
@@ -77,15 +80,22 @@ public sealed class MissionMap
         var stations = new List<DataStationIGC>();
         var asteroids = new List<DataAsteroidIGC>();
 
+        var order = new List<(IgcObjectType, short, short)>();
         foreach (var r in file.Records)
         {
             var b = file.Body.Slice(r.PayloadOffset, r.Size).Span;
             switch (r.Type)
             {
                 case IgcObjectType.Cluster: clusters.Add(DataClusterIGC.Decode(b)); break;
-                case IgcObjectType.Warp: warps.Add(DataWarpIGC.Decode(b)); break;
-                case IgcObjectType.Station: stations.Add(DataStationIGC.Decode(b)); break;
-                case IgcObjectType.Asteroid: asteroids.Add(DataAsteroidIGC.Decode(b)); break;
+                case IgcObjectType.Warp:
+                    var warp = DataWarpIGC.Decode(b); warps.Add(warp);
+                    order.Add((r.Type, warp.ClusterId, warp.WarpId)); break;
+                case IgcObjectType.Station:
+                    var station = DataStationIGC.Decode(b); stations.Add(station);
+                    order.Add((r.Type, station.ClusterId, station.StationId)); break;
+                case IgcObjectType.Asteroid:
+                    var asteroid = DataAsteroidIGC.Decode(b); asteroids.Add(asteroid);
+                    order.Add((r.Type, asteroid.ClusterId, asteroid.AsteroidId)); break;
                 default:
                     throw new InvalidDataException(
                         $"MissionMap: unexpected record type {(short)r.Type} ({r.Type}) in a map; " +
@@ -93,6 +103,6 @@ public sealed class MissionMap
             }
         }
 
-        return new MissionMap(clusters, warps, stations, asteroids);
+        return new MissionMap(clusters, warps, stations, asteroids) { ImportedModelOrder = order };
     }
 }

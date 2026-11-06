@@ -7,6 +7,7 @@ public sealed class Buoy : Model
 {
     public readonly record struct Visual(short Id, short SectorId, Vector3 Position, float Radius);
     public DataBuoyIGC Data { get; }
+    internal Allegiance.Core.Model.Sector? PickableSector;
     // Igc/buoyigc.cpp:39-54; buoyigc.h:67-88. Lifetime is distinct from
     // managed reachability: the last command/action consumer removes the model.
     public float Radius => Data.Visible ? 20f : 2f;

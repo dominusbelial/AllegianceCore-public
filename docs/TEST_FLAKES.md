@@ -6008,3 +6008,89 @@ pre-existing fixture failure, also failing on base in P930); `MissileLockLiveTes
 `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose`,
 `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` and
 `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` passed 3/3 (load during the shared run).
+
+## P933 Fast qualification — 2026-11-06
+
+The single requested Fast sweep completed **13,156 passed / 12 failed / 3 skipped**
+(13,171 total), with two timing-limit violations. All nine infrastructure checks
+passed. The skips are the existing optional private-pack cases. No P933 test
+failed. Each failing method and the additional timing offender received three
+separate filtered invocations after the sweep, with no other task tests running.
+
+| Test / family | Three filtered repetitions | Qualification |
+|---|---|---|
+| `PlayerBundlePathsTests` five failing cases: Artwork executable fallback, Artwork/NativeSource missing defaults, local config precedence, NativeSource install-subdirectory guessing | Every failing case fails 3/3; companion passing theory cases remain passing | Existing fixture-ancestry issue with mandatory worktree-local `TMPDIR`: fake executable folders discover the checkout's ancestor `local.env`. Same signature documented in P930 and earlier entries. No resolver changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same null charge-target assertion already reproduced on unchanged-base controls in P930 and earlier entries; remains open. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail, 38.239 / 38.260 / 38.229 s | Lock reaches 1.000 but the expected full/partial tips do not both arrive. Existing intermittent failure recorded in P938; persistent in this cohort. Also the sweep's 38.185 s timing offender. No lock, tip or assertion code changed. |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | first invocation 3 passed / 1 failed; next two 4/4 passed | The disabled/off case reports 14.90 against [14.94, 15.06]. Mixed outcomes remain qualified; not relabeled three clean passes. No clock/countdown code changed. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | pass / pass / pass | Sweep destruction receipt reports roughly 1.5 s of travel for a 2 s missile. Same terminal-position signature was qualified in P911; collision/broadcast source unchanged. |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | Sweep time 8.20 exceeds the fixture's upper bound 8.00. No roster/time accounting changed. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | pass / pass / pass | Sweep receives the passed-ballot chat without the expected matching collection/state observation; existing ballot delivery intermittency. |
+| `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | pass / pass / pass | Sweep misses the expected single-round damage observation; no gun/development rule changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass, 9.136 / 9.113 / 9.098 s | Timing only: 10.170 s in sweep. No timing limit, tier, clearance or flight law changed. |
+
+The original Fast gate remains **FAIL**. Raw receipts are in task-worktree
+`.scratch/p933/fast/` and `.scratch/p933/isolation/`; the exact method/run mapping
+is `.scratch/p933/fast-isolations.json`. Compact outcomes are in
+[P933 verification](reports/P933_assets/verification.json). The separate long
+training-window qualification is reported in [P933](reports/P933_REPORT.md).
+
+## P933 training-window qualification — 2026-11-06
+
+The single artwork-backed training gate finished **367 passed / 4 failed /
+2 skipped**. Both skips were existing opt-in M4 hunt branches; zero artwork
+cases skipped. All ten full-course windows passed. Four existing P912 proofs
+failed in that run, then each passed all three isolated repetitions:
+
+| Case | Broad-run signature | Three serial follow-ups |
+|---|---|---|
+| `Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 5)` | 20-minute timeout, `M4 stalled at 5.7`; Mars warp traversal with repeated trainee death/restoration | pass / pass / pass, 109.6 / 109.5 / 110.3 s |
+| Same method, `(mission: 4, lesson: 10)` | 20-minute timeout, `M4 stalled at 8.7`; waiting for command acceptance, queued target empty | pass / pass / pass, 457.5 / 571.3 / 617.5 s |
+| Same method, `(mission: 3, lesson: 9)` | 20-minute timeout, `M3 stalled at 9.7` | pass / pass / pass, 123.2 / 156.3 / 118.4 s |
+| `Early_nanite_mounting_wins_through_real_input(style: "Modern")` | M8 goal 3.1: early mounting/conserved repair energy did not exercise miner survival; survived=false, deathMessage=false | pass / pass / pass, 279.0 / 292.5 / 268.5 s |
+
+Each of the three filtered invocations ran these four cases serially with the
+sequential runsettings and no other task tests alongside it: **12 passes,
+0 failures, 0 skips**. No controller, assertion, timeout or production source
+changed between the full gate and these follow-ups. Under lane rules these
+are intermittent proof failures; the full gate remains **FAIL**, and their
+root cause is not established.
+
+Four unchanged-dispatch-base controls also passed once each. They intentionally
+ran concurrently in separate processes, so they do not reproduce the full-run
+conditions or provide a matched-load comparison. Base/current assembly hashes
+and code-marker checks are in the compact evidence. Do not claim that base
+reproduced any of these failures or that load alone explains them.
+
+Raw evidence: `.scratch/p933/training/`, `.scratch/p933/window-isolation/`,
+`.scratch/p933/base-window-controls/`, and
+`.scratch/p933/inherited-p931/windows/`. Compact results:
+[P933 verification](reports/P933_assets/verification.json).
+
+## P933 baseline parking qualification — 2026-11-06
+
+With `DOTNET_gcServer=1` and the native/pooled/parallel/immutable/encode-once
+baseline, the first unchanged-dispatch-base
+`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+run failed **arrival coverage**, not its five-second idle assertion: after
+480.0 seconds, 19/30 ships had reached their objectives; longest speed below
+1 with a target was 1.913 seconds. The assertion was
+`Most showcase ships must reach their objectives`.
+
+The next three serial filtered base invocations passed **3/3, zero skips**:
+241.8 / 302.5 / 193.1 observation seconds, each 24/30 arrivals, with longest
+idle periods 1.804 / 1.612 / 1.904 seconds. No source, assertion, timeout or bot
+policy changed. This establishes unchanged-base arrival intermittency; it does
+not establish its cause or a five-second parking violation. Full five-pair
+base/working-tree results are recorded in the [P933 report](reports/P933_REPORT.md).
+Raw receipts: `.scratch/p933/baseline-parking/`.
+
+The complete five alternating base/working-tree pairs finished **4/5 passes
+in each lane, zero skips**. Working-tree run 4 failed the same arrival assertion
+at 480.1 seconds (17/30 reached, longest idle only 0.802 seconds). Its next
+three serial invocations, runs 5–7, passed **3/3**: 266.2 / 216.1 / 209.1
+observation seconds, 24/30 arrivals each, longest idle 1.212 / 2.003 / 0.000
+seconds. No five-second parking assertion failed in any of the twelve pinned
+observations. Runs 6–7 are follow-ups, excluded from the original five-pair
+rate comparison. Equal observed rates in this small sample do not establish
+a causal performance result; the arrival failure remains qualified.

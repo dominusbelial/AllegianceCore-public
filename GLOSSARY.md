@@ -989,8 +989,20 @@ list in **reverse**.
   `tests/_shared/P911ArenaFiringRange.cs`. Respawn removal releases deferred buoy
   holds. Native: `training/mission6.cpp:82-287`, `training/mission10.cpp:78-283`,
   `Igc/shipIGC.h:707-718,2438`. Non-training tick comparison:
-  `tools/p911-arena-proof/`; exact remaining parity gaps:
+  `tools/p911-arena-proof/`; original parity audit:
   `docs/reports/P911_REPORT.md`.
+- **Arena patrol pickables (P933)** — `src/Allegiance.Core/Model/Sector.Pickables.cs`
+  retains mixed cluster-entry order and live identities; `src/Allegiance.Core/Model/MissionMap.cs`
+  preserves imported map record order. Hidden/visible and navigation buoys share
+  the list through `src/Allegiance.Core/Model/Mission.Registry.cs`. The arena
+  correction in `src/Allegiance.SinglePlayer/Training/TrainingHost.Arena.cs` includes
+  missiles/treasures/buoys and excludes the choosing ship's own missiles by
+  launcher identity. Coincident centers use native retail's zero return without
+  its debug assertion. Native: `Igc/clusterIGC.cpp:500-518,539-551`,
+  `training/mission6.cpp:248-266`, `training/mission10.cpp:244-262`,
+  `zlib/vector.h:97-108`, `zlib/zassert.h:54,67`. Regression and live M6/M10 proof:
+  `tests/Allegiance.ClientCore.Tests/P933TrainingPatrolTests.cs`; report:
+  `docs/reports/P933_REPORT.md`. Closes the three P911 patrol-dependent gaps.
 - **Training client integration (P910)** — local IGC death/station events and
   chat recipient/default-drone hooks bind through
   `src/Allegiance.ClientCore.Game/Training/TrainingRuntime.cs` and

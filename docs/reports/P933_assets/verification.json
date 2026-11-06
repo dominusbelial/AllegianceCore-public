@@ -1,0 +1,3657 @@
+{
+  "task": "P933",
+  "base": "0f6c98926fe3095f5ad23e8e47553a45bb3681cb",
+  "trainingScorecard": {
+    "before": {
+      "credit": 807,
+      "weight": 901,
+      "complete": 206,
+      "eligible": 235
+    },
+    "after": {
+      "credit": 819,
+      "weight": 901,
+      "complete": 209,
+      "eligible": 235
+    }
+  },
+  "receipts": [
+    {
+      "path": ".scratch/p933/arena-1/arena.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:00:51.3688151-05:00",
+        "queuing": "2026-11-06T01:00:51.3688151-05:00",
+        "start": "2026-11-06T01:00:49.8357096-05:00",
+        "finish": "2026-11-06T01:00:56.1712229-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/arena-2/arena.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:00:59.5180766-05:00",
+        "queuing": "2026-11-06T01:00:59.5180766-05:00",
+        "start": "2026-11-06T01:00:57.8918154-05:00",
+        "finish": "2026-11-06T01:01:04.3421238-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/arena-3/arena.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:01:07.6269105-05:00",
+        "queuing": "2026-11-06T01:01:07.6269105-05:00",
+        "start": "2026-11-06T01:01:06.0707526-05:00",
+        "finish": "2026-11-06T01:01:12.3915834-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/base-showcase-1/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T05:52:16.1004472-05:00",
+        "queuing": "2026-11-06T05:52:16.1004472-05:00",
+        "start": "2026-11-06T05:46:42.0859066-05:00",
+        "finish": "2026-11-06T05:52:16.1030822-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 329.2s, samples=3287, reached=24/30, longest speed<1 with target=1.914s, shots=2881, hits=491, kills=2"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/base-showcase-2/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T05:57:44.5048284-05:00",
+        "queuing": "2026-11-06T05:57:44.5048284-05:00",
+        "start": "2026-11-06T05:52:16.4612778-05:00",
+        "finish": "2026-11-06T05:57:44.5081557-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 323.4s, samples=3230, reached=24/30, longest speed<1 with target=0.903s, shots=3919, hits=1340, kills=13"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/base-showcase-3/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:01:12.8204900-05:00",
+        "queuing": "2026-11-06T06:01:12.8204901-05:00",
+        "start": "2026-11-06T05:57:44.9080645-05:00",
+        "finish": "2026-11-06T06:01:12.8239943-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 203.9s, samples=2036, reached=24/30, longest speed<1 with target=3.406s, shots=5737, hits=3180, kills=21"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/base-showcase-4/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:09:17.6112970-05:00",
+        "queuing": "2026-11-06T06:09:17.6112970-05:00",
+        "start": "2026-11-06T06:01:13.2286946-05:00",
+        "finish": "2026-11-06T06:09:17.6198174-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+        }
+      ],
+      "parking": [
+        "P700 local 15v15: 480.1s, samples=4793, reached=18/30, longest speed<1 with target=2.213s, shots=5912, hits=1950, kills=14"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/base-showcase-5/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:15:52.2326647-05:00",
+        "queuing": "2026-11-06T06:15:52.2326647-05:00",
+        "start": "2026-11-06T06:09:18.0032090-05:00",
+        "finish": "2026-11-06T06:15:52.2359180-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 389.9s, samples=3894, reached=24/30, longest speed<1 with target=2.105s, shots=5766, hits=2463, kills=16"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/base-window-controls/m3-l9/base.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:44:40.4173881-05:00",
+        "queuing": "2026-11-06T04:44:40.4173881-05:00",
+        "start": "2026-11-06T04:42:09.1418515-05:00",
+        "finish": "2026-11-06T04:44:40.4201011-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/base-window-controls/m4-l10/base.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:51:40.2566220-05:00",
+        "queuing": "2026-11-06T04:51:40.2566220-05:00",
+        "start": "2026-11-06T04:42:09.1257711-05:00",
+        "finish": "2026-11-06T04:51:40.2595617-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/base-window-controls/m4-l5/base.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:44:07.3297154-05:00",
+        "queuing": "2026-11-06T04:44:07.3297154-05:00",
+        "start": "2026-11-06T04:42:09.1413236-05:00",
+        "finish": "2026-11-06T04:44:07.3323954-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/base-window-controls/m8-early-modern/base.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:47:10.8297853-05:00",
+        "queuing": "2026-11-06T04:47:10.8297853-05:00",
+        "start": "2026-11-06T04:42:09.1530249-05:00",
+        "finish": "2026-11-06T04:47:10.8329754-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/base-1/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:03:49.3988757-05:00",
+        "queuing": "2026-11-06T06:03:49.3988757-05:00",
+        "start": "2026-11-06T05:55:45.0287379-05:00",
+        "finish": "2026-11-06T06:03:49.4078916-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+        }
+      ],
+      "parking": [
+        "P700 local 15v15: 480.0s, samples=4793, reached=19/30, longest speed<1 with target=1.913s, shots=3532, hits=1250, kills=7"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/base-2/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:11:42.1706533-05:00",
+        "queuing": "2026-11-06T06:11:42.1706533-05:00",
+        "start": "2026-11-06T06:07:36.1354361-05:00",
+        "finish": "2026-11-06T06:11:42.1737738-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 241.8s, samples=2415, reached=24/30, longest speed<1 with target=1.804s, shots=8328, hits=3044, kills=22"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/base-3/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:23:16.5726112-05:00",
+        "queuing": "2026-11-06T06:23:16.5726112-05:00",
+        "start": "2026-11-06T06:18:09.4240686-05:00",
+        "finish": "2026-11-06T06:23:16.5757034-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 302.5s, samples=3021, reached=24/30, longest speed<1 with target=1.612s, shots=4416, hits=2212, kills=16"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/base-4/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:29:47.6385594-05:00",
+        "queuing": "2026-11-06T06:29:47.6385594-05:00",
+        "start": "2026-11-06T06:26:29.9652503-05:00",
+        "finish": "2026-11-06T06:29:47.6417085-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 193.1s, samples=1929, reached=24/30, longest speed<1 with target=1.904s, shots=6760, hits=2971, kills=20"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/base-5/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:41:02.0496768-05:00",
+        "queuing": "2026-11-06T06:41:02.0496768-05:00",
+        "start": "2026-11-06T06:37:53.3166873-05:00",
+        "finish": "2026-11-06T06:41:02.0528879-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 183.8s, samples=1836, reached=24/30, longest speed<1 with target=1.911s, shots=2159, hits=640, kills=4"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-1/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:07:35.7104595-05:00",
+        "queuing": "2026-11-06T06:07:35.7104595-05:00",
+        "start": "2026-11-06T06:03:49.8100675-05:00",
+        "finish": "2026-11-06T06:07:35.7173874-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 221.6s, samples=2213, reached=24/30, longest speed<1 with target=2.204s, shots=7302, hits=3660, kills=25"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-2/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:18:09.0127687-05:00",
+        "queuing": "2026-11-06T06:18:09.0127687-05:00",
+        "start": "2026-11-06T06:11:42.5688876-05:00",
+        "finish": "2026-11-06T06:18:09.0153913-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 382.1s, samples=3816, reached=24/30, longest speed<1 with target=1.403s, shots=2570, hits=805, kills=7"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-3/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:26:29.5897188-05:00",
+        "queuing": "2026-11-06T06:26:29.5897188-05:00",
+        "start": "2026-11-06T06:23:16.9606108-05:00",
+        "finish": "2026-11-06T06:26:29.5942294-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 187.8s, samples=1876, reached=24/30, longest speed<1 with target=1.910s, shots=7760, hits=4126, kills=31"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-4/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:37:52.9211664-05:00",
+        "queuing": "2026-11-06T06:37:52.9211664-05:00",
+        "start": "2026-11-06T06:29:48.0091339-05:00",
+        "finish": "2026-11-06T06:37:52.9251001-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+        }
+      ],
+      "parking": [
+        "P700 local 15v15: 480.1s, samples=4793, reached=17/30, longest speed<1 with target=0.802s, shots=1955, hits=694, kills=8"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-5/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:33.2164227-05:00",
+        "queuing": "2026-11-06T06:45:33.2164227-05:00",
+        "start": "2026-11-06T06:41:02.4417100-05:00",
+        "finish": "2026-11-06T06:45:33.2195569-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 266.2s, samples=2659, reached=24/30, longest speed<1 with target=1.212s, shots=2353, hits=820, kills=4"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-6/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:49:44.2212188-05:00",
+        "queuing": "2026-11-06T06:49:44.2212189-05:00",
+        "start": "2026-11-06T06:46:03.4540656-05:00",
+        "finish": "2026-11-06T06:49:44.2243813-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 216.1s, samples=2158, reached=24/30, longest speed<1 with target=2.003s, shots=6353, hits=3409, kills=23"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/baseline-parking/current-7/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T06:53:18.1945996-05:00",
+        "queuing": "2026-11-06T06:53:18.1945997-05:00",
+        "start": "2026-11-06T06:49:44.5994140-05:00",
+        "finish": "2026-11-06T06:53:18.1971824-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 209.1s, samples=2089, reached=24/30, longest speed<1 with target=0.000s, shots=1039, hits=293, kills=2"
+      ],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/dev4/dev.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T00:54:30.3596331-05:00",
+        "queuing": "2026-11-06T00:54:30.3596332-05:00",
+        "start": "2026-11-06T00:54:29.4747265-05:00",
+        "finish": "2026-11-06T00:54:30.4791636-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/focused-1/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:00:49.3463204-05:00",
+        "queuing": "2026-11-06T01:00:49.3463204-05:00",
+        "start": "2026-11-06T01:00:48.4734240-05:00",
+        "finish": "2026-11-06T01:00:49.4777039-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/focused-2/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:00:57.3954328-05:00",
+        "queuing": "2026-11-06T01:00:57.3954329-05:00",
+        "start": "2026-11-06T01:00:56.5274386-05:00",
+        "finish": "2026-11-06T01:00:57.5340251-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/focused-3/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T01:01:05.5805950-05:00",
+        "queuing": "2026-11-06T01:01:05.5805951-05:00",
+        "start": "2026-11-06T01:01:04.7050776-05:00",
+        "finish": "2026-11-06T01:01:05.7079781-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/01/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:37:20.3750182-05:00",
+        "queuing": "2026-11-06T04:37:20.3750182-05:00",
+        "start": "2026-11-06T04:36:41.5884367-05:00",
+        "finish": "2026-11-06T04:37:20.3781803-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/01/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:37:59.5403511-05:00",
+        "queuing": "2026-11-06T04:37:59.5403511-05:00",
+        "start": "2026-11-06T04:37:20.7684240-05:00",
+        "finish": "2026-11-06T04:37:59.5436664-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/01/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:38:38.6939159-05:00",
+        "queuing": "2026-11-06T04:38:38.6939160-05:00",
+        "start": "2026-11-06T04:37:59.9234583-05:00",
+        "finish": "2026-11-06T04:38:38.6970332-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/02/1/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "3",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 3,
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:38:42.4000024-05:00",
+        "queuing": "2026-11-06T04:38:42.4000025-05:00",
+        "start": "2026-11-06T04:38:39.0845504-05:00",
+        "finish": "2026-11-06T04:38:52.4672141-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/02/2/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4
+      },
+      "times": {
+        "creation": "2026-11-06T04:38:56.1620720-05:00",
+        "queuing": "2026-11-06T04:38:56.1620720-05:00",
+        "start": "2026-11-06T04:38:52.8389381-05:00",
+        "finish": "2026-11-06T04:39:06.3558487-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/02/3/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:10.0249532-05:00",
+        "queuing": "2026-11-06T04:39:10.0249532-05:00",
+        "start": "2026-11-06T04:39:06.7475107-05:00",
+        "finish": "2026-11-06T04:39:19.7143935-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/03/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:21.5682381-05:00",
+        "queuing": "2026-11-06T04:39:21.5682381-05:00",
+        "start": "2026-11-06T04:39:20.0903389-05:00",
+        "finish": "2026-11-06T04:39:21.5710958-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/03/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:23.4863087-05:00",
+        "queuing": "2026-11-06T04:39:23.4863087-05:00",
+        "start": "2026-11-06T04:39:21.9529102-05:00",
+        "finish": "2026-11-06T04:39:23.4892837-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/03/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:25.4073148-05:00",
+        "queuing": "2026-11-06T04:39:25.4073149-05:00",
+        "start": "2026-11-06T04:39:23.8728890-05:00",
+        "finish": "2026-11-06T04:39:25.4102248-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/04/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:27.2679150-05:00",
+        "queuing": "2026-11-06T04:39:27.2679151-05:00",
+        "start": "2026-11-06T04:39:25.7884387-05:00",
+        "finish": "2026-11-06T04:39:27.2709340-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/04/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:29.1455650-05:00",
+        "queuing": "2026-11-06T04:39:29.1455650-05:00",
+        "start": "2026-11-06T04:39:27.6477949-05:00",
+        "finish": "2026-11-06T04:39:29.1484822-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/04/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:31.0447829-05:00",
+        "queuing": "2026-11-06T04:39:31.0447830-05:00",
+        "start": "2026-11-06T04:39:29.5291740-05:00",
+        "finish": "2026-11-06T04:39:31.0477354-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/05/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:32.8459692-05:00",
+        "queuing": "2026-11-06T04:39:32.8459692-05:00",
+        "start": "2026-11-06T04:39:31.4355496-05:00",
+        "finish": "2026-11-06T04:39:32.8489682-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/05/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:34.5652154-05:00",
+        "queuing": "2026-11-06T04:39:34.5652155-05:00",
+        "start": "2026-11-06T04:39:33.2348893-05:00",
+        "finish": "2026-11-06T04:39:34.5675543-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/05/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:36.3492907-05:00",
+        "queuing": "2026-11-06T04:39:36.3492908-05:00",
+        "start": "2026-11-06T04:39:34.9487119-05:00",
+        "finish": "2026-11-06T04:39:36.3521952-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/06/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:38.7944850-05:00",
+        "queuing": "2026-11-06T04:39:38.7944850-05:00",
+        "start": "2026-11-06T04:39:36.7366718-05:00",
+        "finish": "2026-11-06T04:39:38.7970086-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/06/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:41.2831588-05:00",
+        "queuing": "2026-11-06T04:39:41.2831588-05:00",
+        "start": "2026-11-06T04:39:39.1709012-05:00",
+        "finish": "2026-11-06T04:39:41.2856953-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/06/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:43.7804141-05:00",
+        "queuing": "2026-11-06T04:39:43.7804142-05:00",
+        "start": "2026-11-06T04:39:41.6824490-05:00",
+        "finish": "2026-11-06T04:39:43.7835658-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/07/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:46.5498873-05:00",
+        "queuing": "2026-11-06T04:39:46.5498874-05:00",
+        "start": "2026-11-06T04:39:44.1747124-05:00",
+        "finish": "2026-11-06T04:39:46.5528482-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/07/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:49.2951852-05:00",
+        "queuing": "2026-11-06T04:39:49.2951853-05:00",
+        "start": "2026-11-06T04:39:46.9421258-05:00",
+        "finish": "2026-11-06T04:39:49.2981493-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/07/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:39:51.9719484-05:00",
+        "queuing": "2026-11-06T04:39:51.9719484-05:00",
+        "start": "2026-11-06T04:39:49.6742022-05:00",
+        "finish": "2026-11-06T04:39:51.9743865-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/08/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:02.4362572-05:00",
+        "queuing": "2026-11-06T04:40:02.4362573-05:00",
+        "start": "2026-11-06T04:39:52.3559396-05:00",
+        "finish": "2026-11-06T04:40:02.4392610-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/08/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:12.8502326-05:00",
+        "queuing": "2026-11-06T04:40:12.8502326-05:00",
+        "start": "2026-11-06T04:40:02.8309341-05:00",
+        "finish": "2026-11-06T04:40:12.8532366-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/08/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:23.2304042-05:00",
+        "queuing": "2026-11-06T04:40:23.2304042-05:00",
+        "start": "2026-11-06T04:40:13.2369119-05:00",
+        "finish": "2026-11-06T04:40:23.2333843-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/isolation/09/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:24.5678662-05:00",
+        "queuing": "2026-11-06T04:40:24.5678663-05:00",
+        "start": "2026-11-06T04:40:23.6359558-05:00",
+        "finish": "2026-11-06T04:40:24.5703711-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/09/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:25.8706338-05:00",
+        "queuing": "2026-11-06T04:40:25.8706338-05:00",
+        "start": "2026-11-06T04:40:24.9434494-05:00",
+        "finish": "2026-11-06T04:40:25.8732778-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/09/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:27.1942467-05:00",
+        "queuing": "2026-11-06T04:40:27.1942467-05:00",
+        "start": "2026-11-06T04:40:26.2512389-05:00",
+        "finish": "2026-11-06T04:40:27.1968741-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/10/1/isolation.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1,
+        "Failed": 2
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:28.4838992-05:00",
+        "queuing": "2026-11-06T04:40:28.4838993-05:00",
+        "start": "2026-11-06T04:40:27.5898539-05:00",
+        "finish": "2026-11-06T04:40:28.4878669-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/10/2/isolation.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1,
+        "Failed": 2
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:29.7725285-05:00",
+        "queuing": "2026-11-06T04:40:29.7725285-05:00",
+        "start": "2026-11-06T04:40:28.8729995-05:00",
+        "finish": "2026-11-06T04:40:29.7756539-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/10/3/isolation.trx",
+      "counters": {
+        "total": "3",
+        "executed": "3",
+        "passed": "1",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1,
+        "Failed": 2
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:31.0739403-05:00",
+        "queuing": "2026-11-06T04:40:31.0739404-05:00",
+        "start": "2026-11-06T04:40:30.1587357-05:00",
+        "finish": "2026-11-06T04:40:31.0770702-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/11/1/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:32.3915470-05:00",
+        "queuing": "2026-11-06T04:40:32.3915470-05:00",
+        "start": "2026-11-06T04:40:31.4472063-05:00",
+        "finish": "2026-11-06T04:40:32.3941188-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/11/2/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:33.7066384-05:00",
+        "queuing": "2026-11-06T04:40:33.7066384-05:00",
+        "start": "2026-11-06T04:40:32.7676042-05:00",
+        "finish": "2026-11-06T04:40:33.7092141-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/11/3/isolation.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:34.9825803-05:00",
+        "queuing": "2026-11-06T04:40:34.9825803-05:00",
+        "start": "2026-11-06T04:40:34.0901938-05:00",
+        "finish": "2026-11-06T04:40:34.9850598-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/12/1/isolation.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:36.2792291-05:00",
+        "queuing": "2026-11-06T04:40:36.2792291-05:00",
+        "start": "2026-11-06T04:40:35.3681202-05:00",
+        "finish": "2026-11-06T04:40:36.2824404-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/12/2/isolation.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:37.6232973-05:00",
+        "queuing": "2026-11-06T04:40:37.6232973-05:00",
+        "start": "2026-11-06T04:40:36.6770741-05:00",
+        "finish": "2026-11-06T04:40:37.6259764-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/isolation/12/3/isolation.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "1",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:40:38.9186510-05:00",
+        "queuing": "2026-11-06T04:40:38.9186510-05:00",
+        "start": "2026-11-06T04:40:37.9962644-05:00",
+        "finish": "2026-11-06T04:40:38.9219934-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/mutations/legacy-policy/legacy-policy.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "7",
+        "failed": "9",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 9,
+        "Passed": 7
+      },
+      "purpose": "Expected regression failure control; production restored before qualification",
+      "times": {
+        "creation": "2026-11-06T00:55:05.7231127-05:00",
+        "queuing": "2026-11-06T00:55:05.7231127-05:00",
+        "start": "2026-11-06T00:55:04.8289080-05:00",
+        "finish": "2026-11-06T00:55:05.8326186-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"hidden buoy\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Coincident_centers_use_native_retail_return_without_the_debug_assertion"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Mixed_pickable_insertion_order_and_reentry_determine_the_last_correction(probeFirst: True)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Live_arena_tick_picks_through_complete_candidates_for_each_lesson(free: False)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"treasure\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"visible buoy\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"missile\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.NoHit_excludes_only_the_identical_launcher_and_removed_buoys_leave_the_list"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Live_arena_tick_picks_through_complete_candidates_for_each_lesson(free: True)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/mutations/reverse-order/reverse-order.trx",
+      "counters": {
+        "total": "2",
+        "executed": "2",
+        "passed": "0",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 2
+      },
+      "purpose": "Expected regression failure control; production restored before qualification",
+      "times": {
+        "creation": "2026-11-06T00:55:20.6281363-05:00",
+        "queuing": "2026-11-06T00:55:20.6281364-05:00",
+        "start": "2026-11-06T00:55:19.9053575-05:00",
+        "finish": "2026-11-06T00:55:20.6307153-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Mixed_pickable_insertion_order_and_reentry_determine_the_last_correction(probeFirst: False)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Mixed_pickable_insertion_order_and_reentry_determine_the_last_correction(probeFirst: True)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/mutations/without-nohit/without-nohit.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 1
+      },
+      "purpose": "Expected regression failure control; production restored before qualification",
+      "times": {
+        "creation": "2026-11-06T00:55:17.0731228-05:00",
+        "queuing": "2026-11-06T00:55:17.0731228-05:00",
+        "start": "2026-11-06T00:55:16.3495365-05:00",
+        "finish": "2026-11-06T00:55:17.0770459-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.NoHit_excludes_only_the_identical_launcher_and_removed_buoys_leave_the_list"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/red/red.trx",
+      "counters": {
+        "total": "9",
+        "executed": "9",
+        "passed": "1",
+        "failed": "8",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Failed": 8,
+        "Passed": 1
+      },
+      "purpose": "Expected regression failure control; production restored before qualification",
+      "times": {
+        "creation": "2026-11-06T00:48:22.1625308-05:00",
+        "queuing": "2026-11-06T00:48:22.1625308-05:00",
+        "start": "2026-11-06T00:48:21.3584780-05:00",
+        "finish": "2026-11-06T00:48:22.1666821-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.NoHit_excludes_only_the_identical_launcher_and_removed_buoys_leave_the_list"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Same_seed_replays_both_random_points_and_the_candidate_index(free: True)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Same_seed_replays_both_random_points_and_the_candidate_index(free: False)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"missile\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"hidden buoy\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"treasure\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Mixed_pickable_insertion_order_and_reentry_determine_the_last_correction(probeFirst: True)"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P933TrainingPatrolTests.Complete_nonship_pickable_membership_corrects_patrol_points(kind: \"visible buoy\")"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P911TrainingArenaTests-1/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:36.3109173-05:00",
+        "queuing": "2026-11-06T06:45:36.3109174-05:00",
+        "start": "2026-11-06T06:45:34.8946267-05:00",
+        "finish": "2026-11-06T06:45:41.0045548-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P911TrainingArenaTests-2/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:44.2610157-05:00",
+        "queuing": "2026-11-06T06:45:44.2610157-05:00",
+        "start": "2026-11-06T06:45:42.7470152-05:00",
+        "finish": "2026-11-06T06:45:49.0449552-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P911TrainingArenaTests-3/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:52.2209729-05:00",
+        "queuing": "2026-11-06T06:45:52.2209729-05:00",
+        "start": "2026-11-06T06:45:50.7547680-05:00",
+        "finish": "2026-11-06T06:45:56.9513490-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P933TrainingPatrolTests-1/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:34.4300627-05:00",
+        "queuing": "2026-11-06T06:45:34.4300628-05:00",
+        "start": "2026-11-06T06:45:33.5885355-05:00",
+        "finish": "2026-11-06T06:45:34.5273840-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P933TrainingPatrolTests-2/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:42.2698198-05:00",
+        "queuing": "2026-11-06T06:45:42.2698198-05:00",
+        "start": "2026-11-06T06:45:41.3784735-05:00",
+        "finish": "2026-11-06T06:45:42.3788313-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/server-gc-focused/P933TrainingPatrolTests-3/focused.trx",
+      "counters": {
+        "total": "16",
+        "executed": "16",
+        "passed": "16",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 16
+      },
+      "times": {
+        "creation": "2026-11-06T06:45:50.2783941-05:00",
+        "queuing": "2026-11-06T06:45:50.2783942-05:00",
+        "start": "2026-11-06T06:45:49.3980045-05:00",
+        "finish": "2026-11-06T06:45:50.3956780-05:00"
+      },
+      "failures": [],
+      "serverGcEnvironment": "DOTNET_gcServer=1"
+    },
+    {
+      "path": ".scratch/p933/showcase-1/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:10:11.8955716-05:00",
+        "queuing": "2026-11-06T04:10:11.8955716-05:00",
+        "start": "2026-11-06T04:06:57.1437863-05:00",
+        "finish": "2026-11-06T04:10:11.9044058-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 190.3s, samples=1900, reached=24/30, longest speed<1 with target=2.109s, shots=9093, hits=4253, kills=23"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/showcase-2/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:13:17.9572834-05:00",
+        "queuing": "2026-11-06T04:13:17.9572835-05:00",
+        "start": "2026-11-06T04:10:12.2672220-05:00",
+        "finish": "2026-11-06T04:13:17.9661345-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 180.7s, samples=1805, reached=24/30, longest speed<1 with target=2.003s, shots=7769, hits=4199, kills=25"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/showcase-3/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:17:40.2568933-05:00",
+        "queuing": "2026-11-06T04:17:40.2568934-05:00",
+        "start": "2026-11-06T04:13:18.3284028-05:00",
+        "finish": "2026-11-06T04:17:40.2594329-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 257.2s, samples=2569, reached=24/30, longest speed<1 with target=1.914s, shots=1938, hits=831, kills=4"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/showcase-4/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:22:59.2815333-05:00",
+        "queuing": "2026-11-06T04:22:59.2815333-05:00",
+        "start": "2026-11-06T04:17:40.6519365-05:00",
+        "finish": "2026-11-06T04:22:59.2844384-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 314.0s, samples=3135, reached=24/30, longest speed<1 with target=2.405s, shots=14723, hits=7165, kills=55"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/showcase-5/showcase.trx",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1
+      },
+      "times": {
+        "creation": "2026-11-06T04:26:08.1177763-05:00",
+        "queuing": "2026-11-06T04:26:08.1177763-05:00",
+        "start": "2026-11-06T04:22:59.6542072-05:00",
+        "finish": "2026-11-06T04:26:08.1208808-05:00"
+      },
+      "failures": [],
+      "parking": [
+        "P700 local 15v15: 183.5s, samples=1833, reached=24/30, longest speed<1 with target=2.006s, shots=6104, hits=2924, kills=22"
+      ],
+      "purpose": "Default-GC functional/exploratory control; not the pinned performance baseline"
+    },
+    {
+      "path": ".scratch/p933/training/1/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "counters": {
+        "total": "255",
+        "executed": "253",
+        "passed": "249",
+        "failed": "4",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 249,
+        "Failed": 4,
+        "NotExecuted": 2
+      },
+      "times": {
+        "creation": "2026-11-06T01:01:26.0818561-05:00",
+        "queuing": "2026-11-06T01:01:26.0818561-05:00",
+        "start": "2026-11-06T01:01:25.1418874-05:00",
+        "finish": "2026-11-06T04:06:56.7418699-05:00"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 9)"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 10)"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 5)"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p933/training/1/Allegiance.ClientCore.Tests/training.trx",
+      "counters": {
+        "total": "118",
+        "executed": "118",
+        "passed": "118",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 118
+      },
+      "times": {
+        "creation": "2026-11-06T01:01:13.3025408-05:00",
+        "queuing": "2026-11-06T01:01:13.3025408-05:00",
+        "start": "2026-11-06T01:01:12.7648122-05:00",
+        "finish": "2026-11-06T01:01:24.7479159-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/window-isolation/1/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4
+      },
+      "times": {
+        "creation": "2026-11-06T04:54:44.7454310-05:00",
+        "queuing": "2026-11-06T04:54:44.7454310-05:00",
+        "start": "2026-11-06T04:52:54.4839291-05:00",
+        "finish": "2026-11-06T05:09:04.5308570-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/window-isolation/2/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4
+      },
+      "times": {
+        "creation": "2026-11-06T05:10:55.0658444-05:00",
+        "queuing": "2026-11-06T05:10:55.0658444-05:00",
+        "start": "2026-11-06T05:09:04.8961423-05:00",
+        "finish": "2026-11-06T05:27:55.1825783-05:00"
+      },
+      "failures": []
+    },
+    {
+      "path": ".scratch/p933/window-isolation/3/isolation.trx",
+      "counters": {
+        "total": "4",
+        "executed": "4",
+        "passed": "4",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4
+      },
+      "times": {
+        "creation": "2026-11-06T05:29:46.5107869-05:00",
+        "queuing": "2026-11-06T05:29:46.5107869-05:00",
+        "start": "2026-11-06T05:27:55.5416873-05:00",
+        "finish": "2026-11-06T05:46:31.0077710-05:00"
+      },
+      "failures": []
+    }
+  ],
+  "gates": [
+    {
+      "name": "tools-build",
+      "exitCode": "0",
+      "log": ".scratch/p933/tools-build.log"
+    },
+    {
+      "name": "focused-1",
+      "exitCode": "0",
+      "log": ".scratch/p933/focused-1.log"
+    },
+    {
+      "name": "arena-1",
+      "exitCode": "0",
+      "log": ".scratch/p933/arena-1.log"
+    },
+    {
+      "name": "focused-2",
+      "exitCode": "0",
+      "log": ".scratch/p933/focused-2.log"
+    },
+    {
+      "name": "arena-2",
+      "exitCode": "0",
+      "log": ".scratch/p933/arena-2.log"
+    },
+    {
+      "name": "focused-3",
+      "exitCode": "0",
+      "log": ".scratch/p933/focused-3.log"
+    },
+    {
+      "name": "arena-3",
+      "exitCode": "0",
+      "log": ".scratch/p933/arena-3.log"
+    },
+    {
+      "name": "training",
+      "exitCode": "1",
+      "log": ".scratch/p933/training.log"
+    },
+    {
+      "name": "showcase-1",
+      "exitCode": "0",
+      "log": ".scratch/p933/showcase-1.log"
+    },
+    {
+      "name": "showcase-2",
+      "exitCode": "0",
+      "log": ".scratch/p933/showcase-2.log"
+    },
+    {
+      "name": "showcase-3",
+      "exitCode": "0",
+      "log": ".scratch/p933/showcase-3.log"
+    },
+    {
+      "name": "showcase-4",
+      "exitCode": "0",
+      "log": ".scratch/p933/showcase-4.log"
+    },
+    {
+      "name": "showcase-5",
+      "exitCode": "0",
+      "log": ".scratch/p933/showcase-5.log"
+    },
+    {
+      "name": "fast",
+      "exitCode": "1",
+      "log": ".scratch/p933/fast.log"
+    },
+    {
+      "name": "aot",
+      "exitCode": "0",
+      "log": ".scratch/p933/aot.log"
+    }
+  ],
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 119,
+        "live": 3,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4739,
+        "live": 123,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2179,
+        "live": 176,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6106,
+        "live": 78,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 540.3826540199807,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 119,
+            "outcomes": {
+              "Passed": 119
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4739,
+            "outcomes": {
+              "Passed": 4736,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2179,
+            "outcomes": {
+              "Passed": 2177,
+              "Failed": 2
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6106,
+            "outcomes": {
+              "Passed": 6096,
+              "Failed": 10
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9411405835543766,
+          "referenceMs": 3.5481,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "outcome": "Failed",
+            "seconds": 38.185091
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.1702899
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "2 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.05921075399965048,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.05921075399965048,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "baseWindowBinaries": {
+    "base": {
+      "sha256": "41ca476ad62d6fe9af204d30c39b7446ca037da94b4bdd1ceafbbf8c130ce867",
+      "containsNewPickableView": false,
+      "singlePlayerSha256": "64f20e0e6209c8abfc8aebb49d925406dffc37b0e4e962777bc30c07ef14a80a",
+      "containsArenaRandomHook": false
+    },
+    "current": {
+      "sha256": "f9f01bf7251499b77aed97071a1470fcdbf05adc06f759dc944d534b918daac8",
+      "containsNewPickableView": true,
+      "singlePlayerSha256": "ab3298439cad4dd5788f6a8f51ec582fb9732fdaad672451286531d0985365a9",
+      "containsArenaRandomHook": true
+    }
+  },
+  "aotManifest": [
+    {
+      "file": "Allegiance.Core.pdb",
+      "bytes": 566160,
+      "sha256": "cdef4ae30d36a7728c7f4e5948ea5fbb10eca67892890d7f21edce3a14bcdb63"
+    },
+    {
+      "file": "Allegiance.Server",
+      "bytes": 17003216,
+      "sha256": "608ed49aa5cd917d33e2f078df692c498cb53d4702e6c419297e5392993cb9ba"
+    },
+    {
+      "file": "Allegiance.Server.dbg",
+      "bytes": 39979040,
+      "sha256": "608d5f1428ed2b02306b4bacdb6eadab82e80010a33f3d1eee50e421b3c8457e"
+    },
+    {
+      "file": "Allegiance.Update.pdb",
+      "bytes": 42464,
+      "sha256": "413038acd03199c64284cf2a16024fa5c8f33400d86a716ccbad9d89bedd61c4"
+    },
+    {
+      "file": "showcase-plans/PCore001/civ25-plan_a.json",
+      "bytes": 59526,
+      "sha256": "bcab387a2f2878110c5ee520b77767adcea5b7878274c9f826876ee96e044f50"
+    },
+    {
+      "file": "showcase-plans/PCore001/civ25-plan_b.json",
+      "bytes": 59526,
+      "sha256": "78a1cbef4385fd41b607e84a3b0738e1a488e284620b83fd63955dc6b4bbabee"
+    },
+    {
+      "file": "showcase-plans/PCore001/civ3-plan_a.json",
+      "bytes": 68637,
+      "sha256": "29771d32c5b740b8b50938b509a08316a95ac9c45e011606aaad0dc98ebb4b6e"
+    },
+    {
+      "file": "showcase-plans/PCore001/civ3-plan_b.json",
+      "bytes": 68637,
+      "sha256": "671aeaa1032165ad589fd2aa0ad82a326c33615ac39a6d6871753f685cd2ea07"
+    }
+  ],
+  "parkingComparison": {
+    "method": "Five alternating serial base/current pairs; DOTNET_gcServer=1; existing test and assertions unchanged",
+    "lanes": {
+      "base": {
+        "outcomes": {
+          "Failed": 1,
+          "Passed": 4
+        },
+        "runs": [
+          {
+            "run": 1,
+            "outcome": "Failed",
+            "observationSeconds": 480.0,
+            "samples": 4793,
+            "arrivals": 19,
+            "longestIdleWithTargetSeconds": 1.913,
+            "receipt": ".scratch/p933/baseline-parking/base-1/showcase.trx",
+            "failure": "Most showcase ships must reach their objectives"
+          },
+          {
+            "run": 2,
+            "outcome": "Passed",
+            "observationSeconds": 241.8,
+            "samples": 2415,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.804,
+            "receipt": ".scratch/p933/baseline-parking/base-2/showcase.trx"
+          },
+          {
+            "run": 3,
+            "outcome": "Passed",
+            "observationSeconds": 302.5,
+            "samples": 3021,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.612,
+            "receipt": ".scratch/p933/baseline-parking/base-3/showcase.trx"
+          },
+          {
+            "run": 4,
+            "outcome": "Passed",
+            "observationSeconds": 193.1,
+            "samples": 1929,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.904,
+            "receipt": ".scratch/p933/baseline-parking/base-4/showcase.trx"
+          },
+          {
+            "run": 5,
+            "outcome": "Passed",
+            "observationSeconds": 183.8,
+            "samples": 1836,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.911,
+            "receipt": ".scratch/p933/baseline-parking/base-5/showcase.trx"
+          }
+        ],
+        "longestIdleWithTargetSeconds": 1.913
+      },
+      "current": {
+        "outcomes": {
+          "Passed": 4,
+          "Failed": 1
+        },
+        "runs": [
+          {
+            "run": 1,
+            "outcome": "Passed",
+            "observationSeconds": 221.6,
+            "samples": 2213,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 2.204,
+            "receipt": ".scratch/p933/baseline-parking/current-1/showcase.trx"
+          },
+          {
+            "run": 2,
+            "outcome": "Passed",
+            "observationSeconds": 382.1,
+            "samples": 3816,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.403,
+            "receipt": ".scratch/p933/baseline-parking/current-2/showcase.trx"
+          },
+          {
+            "run": 3,
+            "outcome": "Passed",
+            "observationSeconds": 187.8,
+            "samples": 1876,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.91,
+            "receipt": ".scratch/p933/baseline-parking/current-3/showcase.trx"
+          },
+          {
+            "run": 4,
+            "outcome": "Failed",
+            "observationSeconds": 480.1,
+            "samples": 4793,
+            "arrivals": 17,
+            "longestIdleWithTargetSeconds": 0.802,
+            "receipt": ".scratch/p933/baseline-parking/current-4/showcase.trx",
+            "failure": "Most showcase ships must reach their objectives"
+          },
+          {
+            "run": 5,
+            "outcome": "Passed",
+            "observationSeconds": 266.2,
+            "samples": 2659,
+            "arrivals": 24,
+            "longestIdleWithTargetSeconds": 1.212,
+            "receipt": ".scratch/p933/baseline-parking/current-5/showcase.trx"
+          }
+        ],
+        "longestIdleWithTargetSeconds": 2.204
+      }
+    },
+    "hostLoad": [
+      {
+        "utc": "2026-11-06T11:05:53.491253+00:00",
+        "loadAverage": [
+          1.20654296875,
+          1.32763671875,
+          1.04296875
+        ]
+      },
+      {
+        "utc": "2026-11-06T11:23:50.014658+00:00",
+        "loadAverage": [
+          1.35693359375,
+          1.55810546875,
+          1.4248046875
+        ]
+      }
+    ],
+    "workingTreePostFailureFollowup": {
+      "runs": [
+        5,
+        6,
+        7
+      ],
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "skipped": 0,
+      "observationSeconds": [
+        266.2,
+        216.1,
+        209.1
+      ],
+      "longestIdleWithTargetSeconds": [
+        1.212,
+        2.003,
+        0.0
+      ],
+      "excludedFromOriginalPairs": [
+        6,
+        7
+      ]
+    }
+  },
+  "performance": {
+    "workload": "30 ordinary NPCs, 200 warmup ticks then five 1000-tick windows per process",
+    "settings": {
+      "immutableSnapshot": true,
+      "encodeOnce": true,
+      "parallelBuild": true,
+      "transport": "pool",
+      "shipUpdateModel": "native",
+      "nativeGotoPlan": true,
+      "serverGC": true
+    },
+    "method": "Three alternating base/current processes; last three windows per process summarized. Actual local simulation, no peers or synthetic load; no throughput/scaling claim.",
+    "hostLoad": [
+      {
+        "utc": "2026-11-06T10:55:28.520320+00:00",
+        "loadAverage": [
+          1.6884765625,
+          0.8193359375,
+          0.64892578125
+        ]
+      },
+      {
+        "utc": "2026-11-06T10:55:33.070628+00:00",
+        "loadAverage": [
+          1.7138671875,
+          0.83935546875,
+          0.65625
+        ]
+      },
+      {
+        "utc": "2026-11-06T10:55:37.676940+00:00",
+        "loadAverage": [
+          1.65625,
+          0.84228515625,
+          0.658203125
+        ]
+      }
+    ],
+    "lanes": {
+      "base": {
+        "samples": [
+          {
+            "process": 1,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 925.2609,
+            "allocatedBytes": 89815072,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 255.8145,
+            "allocatedBytes": 88027120,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 233.7381,
+            "allocatedBytes": 88882632,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 142.5746,
+            "allocatedBytes": 88668072,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 134.1851,
+            "allocatedBytes": 88536984,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-1.log"
+          },
+          {
+            "process": 2,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 882.9269,
+            "allocatedBytes": 89730440,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 346.3083,
+            "allocatedBytes": 89558048,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 224.0136,
+            "allocatedBytes": 88686048,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 173.9353,
+            "allocatedBytes": 88719064,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 165.4989,
+            "allocatedBytes": 88722568,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-2.log"
+          },
+          {
+            "process": 3,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 872.3618,
+            "allocatedBytes": 89823720,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 374.139,
+            "allocatedBytes": 88387320,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 321.8345,
+            "allocatedBytes": 88590096,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 175.9114,
+            "allocatedBytes": 88507040,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 150.5346,
+            "allocatedBytes": 88781432,
+            "ships": 30,
+            "source": ".scratch/p933/perf-base-3.log"
+          }
+        ],
+        "steady": {
+          "windows": 9,
+          "medianMsPer1000Ticks": 173.9353,
+          "minMsPer1000Ticks": 134.1851,
+          "maxMsPer1000Ticks": 321.8345,
+          "medianAllocatedBytesPerTick": 88686.048
+        },
+        "programSha256": "a88bdb8f913f0318996c22889c9c103a2edffe100cf29357a088c1eb1ce38e7a",
+        "assemblySha256": {
+          "p911-arena-proof.dll": "7f4f466d0af9acd8ba4517e91a2b8a8ebc6f143e9b46e78656ba4d343f52acb2",
+          "Allegiance.Core.dll": "c7d06c15349a742e6dca68ea808ae039165a1ae377442ee5ea111929a5ef0a9d",
+          "Allegiance.Server.dll": "db0a758d57bc8bbdd8d903490944dd84f6e2da91cacd6176d59caf3a62e455c2"
+        }
+      },
+      "current": {
+        "samples": [
+          {
+            "process": 1,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 852.0889,
+            "allocatedBytes": 89877072,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 518.3101,
+            "allocatedBytes": 89344280,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 193.5593,
+            "allocatedBytes": 89259424,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 192.5345,
+            "allocatedBytes": 89607648,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-1.log"
+          },
+          {
+            "process": 1,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 161.726,
+            "allocatedBytes": 89516112,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-1.log"
+          },
+          {
+            "process": 2,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 886.4784,
+            "allocatedBytes": 91318440,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 459.6992,
+            "allocatedBytes": 90545840,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 196.3838,
+            "allocatedBytes": 89872720,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 175.7768,
+            "allocatedBytes": 89900280,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-2.log"
+          },
+          {
+            "process": 2,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 181.2436,
+            "allocatedBytes": 90035672,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-2.log"
+          },
+          {
+            "process": 3,
+            "sample": 0,
+            "ticks": 1000,
+            "ms": 981.5324,
+            "allocatedBytes": 88603896,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 1,
+            "ticks": 1000,
+            "ms": 350.5324,
+            "allocatedBytes": 87460688,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 2,
+            "ticks": 1000,
+            "ms": 190.5177,
+            "allocatedBytes": 88346992,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 3,
+            "ticks": 1000,
+            "ms": 179.3088,
+            "allocatedBytes": 88518280,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-3.log"
+          },
+          {
+            "process": 3,
+            "sample": 4,
+            "ticks": 1000,
+            "ms": 139.5295,
+            "allocatedBytes": 88297536,
+            "ships": 30,
+            "source": ".scratch/p933/perf-current-3.log"
+          }
+        ],
+        "steady": {
+          "windows": 9,
+          "medianMsPer1000Ticks": 181.2436,
+          "minMsPer1000Ticks": 139.5295,
+          "maxMsPer1000Ticks": 196.3838,
+          "medianAllocatedBytesPerTick": 89516.112
+        },
+        "programSha256": "a88bdb8f913f0318996c22889c9c103a2edffe100cf29357a088c1eb1ce38e7a",
+        "assemblySha256": {
+          "p911-arena-proof.dll": "8ef3e90565d42025f61df43ffd68a8d1a0026010d17dcb94e3a3bf9a8760dc49",
+          "Allegiance.Core.dll": "7eabd6e13c59f194bae3e215ea4363f09e5019c4662df0a502984afdbe35de16",
+          "Allegiance.Server.dll": "f4b200baae4c4c40fb84fb87f244156b718da941feee4ec2943b534a8128ca83"
+        }
+      }
+    },
+    "medianElapsedChangePercent": 4.201734782991129
+  }
+}

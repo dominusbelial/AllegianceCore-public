@@ -974,6 +974,12 @@ public sealed partial class Mission : IMissionIgc
             else
                 sector.AttachStations([station], core); // retain the static-only fallback
         }
+        if (map.ImportedModelOrder is { } imported)
+        {
+            var order = imported.Select((key, index) => (key, index)).GroupBy(x => x.key)
+                .ToDictionary(g => g.Key, g => new Queue<int>(g.Select(x => x.index)));
+            foreach (var sector in sectors) sector.RestoreImportedPickableOrder(order);
+        }
         return mission;
     }
 

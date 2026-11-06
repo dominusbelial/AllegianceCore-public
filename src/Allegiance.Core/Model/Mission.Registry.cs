@@ -213,10 +213,28 @@ public sealed partial class Mission
     public Ship? GetShip(short id) => _shipRegistry.Get(id);
     public IReadOnlyList<Ship> GetShips() => _shipRegistry.View;
 
-    public void AddBuoy(Buoy value) { ObserveGotoBuoys(); AttachThingSite(value); _buoyRegistry.Add(value); }
+    public void AddBuoy(Buoy value)
+    {
+        ObserveGotoBuoys(); AttachThingSite(value); _buoyRegistry.Add(value);
+        AttachBuoyPickable(value);
+    }
+    private void AttachBuoyPickable(Buoy value)
+    {
+        // Igc/buoyigc.cpp:69-71: even hidden buoys enter the cluster pickable list.
+        if (value.PickableSector is null && GetCluster(value.Data.ClusterId) is { } sector)
+        {
+            value.PickableSector = sector;
+            sector.AddPickable(value);
+        }
+    }
     public void DeleteBuoy(Buoy value)
     {
         _buoyRegistry.Delete(value);
+        if (!_buoyRegistry.Contains(value))
+        {
+            value.PickableSector?.RemovePickable(value);
+            value.PickableSector = null;
+        }
     }
     public Buoy? GetBuoy(short id) { ObserveGotoBuoys(); return _buoyRegistry.Get(id); }
     public IReadOnlyList<Buoy> GetBuoys() { ObserveGotoBuoys(); return _buoyRegistry.View; }
@@ -254,6 +272,7 @@ public sealed partial class Mission
         var buoy = ship.MaterializeGotoBuoy();
         AttachThingSite(buoy);
         _buoyRegistry.Add(buoy);
+        AttachBuoyPickable(buoy);
     }
 
     internal void RegisterModel(Sim.Model model)

@@ -358,7 +358,11 @@ public sealed partial class Sector : IClusterIgc
         // station (existing docking/ripcord behaviour, no combat state).
         foreach (var s in stations)
             if (core.StationTypes.TryGetValue(s.StationTypeId, out var t))
-                _stationRuntimes.Add(new Station(s, t));
+            {
+                var station = new Station(s, t);
+                _stationRuntimes.Add(station);
+                AddPickable(station);
+            }
     }
     /// <summary>Register a runtime station (its static record + combat state)
     /// — synthetic injection for the loopback tests, mirroring
@@ -369,6 +373,7 @@ public sealed partial class Sector : IClusterIgc
     {
         _stations.Add(station.Data);
         _stationRuntimes.Add(station);
+        AddPickable(station);
         Mission?.AddStation(station);
     }
 
@@ -378,6 +383,8 @@ public sealed partial class Sector : IClusterIgc
     {
         _stationRuntimes.Remove(station);
         _stationRuntimes.Add(station);
+        RemovePickable(station);
+        AddPickable(station);
         _stations.RemoveAll(s => s.StationId == station.StationId);
         _stations.Add(station.Data);
     }
@@ -398,6 +405,7 @@ public sealed partial class Sector : IClusterIgc
     {
         Mission?.DeleteStation(station);
         Mission?.DetachThingSite(station);
+        RemovePickable(station);
         _stationRuntimes.Remove(station);
         bool removed = _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
         station.Mission?.Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
@@ -421,13 +429,19 @@ public sealed partial class Sector : IClusterIgc
     {
         ArgumentNullException.ThrowIfNull(warp);
         bool removed = _warps.Remove(warp);
+        if (removed) RemovePickable(warp);
         if (removed) { Mission?.DeleteWarp(warp); Mission?.DetachThingSite(warp); }
         return removed;
     }
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
         _asteroids.AddRange(asteroids);
-        foreach (var a in asteroids) _mineable.Add(new Asteroid(a) { Sector = this, Mission = Mission });   // one runtime model per static rock
+        foreach (var a in asteroids)
+        {
+            var asteroid = new Asteroid(a) { Sector = this, Mission = Mission };
+            _mineable.Add(asteroid);
+            AddPickable(asteroid);
+        }
     }
     /// <summary>Register a runtime asteroid for the mining pass (assembly wraps
     /// static ones; <see cref="Mission.PlaceAsteroid"/> uses this for synthetic
@@ -436,9 +450,14 @@ public sealed partial class Sector : IClusterIgc
     {
         _asteroids.Add(asteroid.Data);
         _mineable.Add(asteroid);
+        AddPickable(asteroid);
         Mission?.AddAsteroid(asteroid);
     }
-    internal void AttachWarp(ResolvedWarp warp) => _warps.Add(warp);
+    internal void AttachWarp(ResolvedWarp warp)
+    {
+        _warps.Add(warp);
+        AddPickable(warp);
+    }
 
     /// <summary>The models that live in this sector and tick with it, in insertion order.</summary>
     public IReadOnlyList<Model> Models => _models;
@@ -499,6 +518,11 @@ public sealed partial class Sector : IClusterIgc
         ArgumentNullException.ThrowIfNull(model);
         Mission?.RegisterModel(model);
         _models.Add(model);
+        // Projectile/chaff/effect carry c_mtNotPickable (projectileIGC.cpp:53,
+        // chaffigc.cpp:46, buildingeffectigc.h:94). Buoys attach via mission ownership.
+        // Native observer/turret ships reload as c_mtNotPickable (shipIGC.cpp:3632);
+        // the port keeps them listed, so consumers must filter ships themselves.
+        if (model is Ship or Missile or Probe or Mine or Treasure) AddPickable(model);
         _modelMembership.TryGetValue(model, out int copies);
         _modelMembership[model] = copies + 1;
         if (model is Probe { } addedProbe &&
@@ -517,6 +541,7 @@ public sealed partial class Sector : IClusterIgc
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
+        if (model is Ship or Missile or Probe or Mine or Treasure) RemovePickable(model);
         int copies = _modelMembership[model];
         if (copies == 1) _modelMembership.Remove(model);
         else _modelMembership[model] = copies - 1;
@@ -569,6 +594,7 @@ public sealed partial class Sector : IClusterIgc
         // (FedSrv.CPP:11459-11462). Keep the port's record and runtime lists in agreement.
         _asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId);
         bool removed = _mineable.Remove(asteroid);
+        if (removed) RemovePickable(asteroid);
         if (removed) { Mission?.DeleteAsteroid(asteroid); Mission?.DetachThingSite(asteroid); }
         if (removed && asteroid.BuildingEffect is { } effect)
             TerminateBuildingEffect(effect);
