@@ -1,0 +1,13 @@
+{
+  "task": "P951 — P928 crowded-sector golden made machine-independent (fixture format v2)",
+  "fixture_base_revision": "5ca9f37ac1e9799482122ac8dd8417df27d9375b (pre-refactor reference; generation tool copied in from the P951 worktree)",
+  "fixture_file_sha256": {
+    "tests/Allegiance.Core.Tests/Fixtures/P928Golden.csv": "021fc33782cf0e602be248acee5e807b462c7199ef25f83f776694f93b50c80a",
+    "tests/Allegiance.Core.Tests/Fixtures/P928SupplementalGolden.csv": "412a5e8c2752897fffc59b10821332cf2da1451c345529f3490c24209db84269"
+  },
+  "identity_checks": {
+    "base_5ca9f37a_vs_master_v2_trace": "byte-identical (both fixtures)",
+    "workstation_vs_runner_image_v2_trace": "identical except per-tick damage count on 20/500 ticks, max delta 1, total drift 20"
+  },
+  "raw_evidence": "~/allegiance-evidence/P951/"
+}
