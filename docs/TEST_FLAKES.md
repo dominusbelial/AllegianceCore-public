@@ -15,7 +15,7 @@ ledger entries plus one new host condition:
 
 | Test | Sweet | Alone | Notes |
 |---|---|---|---|
-| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | failed | **fail / fail / fail** (53/70/74 ms) | Not P945: the injected `TailscaleStatus = () => null` is bypassed by the engine's own tailnet scan, which finds a live Allegiance server on this workstation's tailnet (`100.75.197.111:6073`, 14 players). Environmental — the host has a running tailnet game. No discovery code changed by P945. |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | failed | **fail / fail / fail** (53/70/74 ms) | Not P945: the injected `TailscaleStatus = () => null` is bypassed by the engine's own tailnet scan, which finds a live Allegiance server on this workstation's tailnet (`<tailnet address>:6073`, 14 players). Environmental — the host has a running tailnet game. No discovery code changed by P945. |
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | failed | **pass / pass / pass** | Already ledged allocation intermittency. |
 | `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass / pass / pass** | Already ledged ballot-receipt family. |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed (38.8 s) | known open failure | Persistent ledger entry (P933/P935/P938 cohorts); no lock/tip code changed. |

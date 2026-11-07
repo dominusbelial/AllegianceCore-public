@@ -2,10 +2,10 @@
 
 **Task:** draw the native hangar art on the docked hangar screen, replacing the port's
 bottom row of text cells (`Game1.Hangar.cs`'s pre-P945 `DrawHangarControls`).
-**Worktree:** `/home/domingo/allegiance-pi-p945` (branch off Claude's master `9e51530a`).
+**Worktree:** `<worktree>` (branch off Claude's master `9e51530a`).
 Nothing committed — all changes are in the working tree.
-**Local env:** `local.env` present (`ALLEGIANCE_ARTWORK_PATH=/home/domingo/Development/Artwork`,
-`ALLEGIANCE_NATIVE_SRC_PATH=/home/domingo/Development/Allegiance`), so no corpus test skipped:
+**Local env:** `local.env` present (`ALLEGIANCE_ARTWORK_PATH=<artwork>`,
+`ALLEGIANCE_NATIVE_SRC_PATH=<native-src>`), so no corpus test skipped:
 the runs below report **Skipped: 0** except where noted.
 
 ---
