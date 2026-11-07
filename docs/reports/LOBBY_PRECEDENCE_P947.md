@@ -111,7 +111,7 @@ validation — two Fast sweeps, 2026-11-07 UTC"):
 * **Persistent, already-ledgered**: `NpcWingmanDefendLiveTests.Defender_disengages…` (both sweeps, fails on unmodified base too).
 * **Environment-dependent, new to the ledger**: `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent`
   — fails 3/3 alone on this workstation because a live Tailscale coordinator advertises a
-  server (100.75.197.111:6073); needs a skip guard. P947 changes no discovery code.
+  server (<tailnet address>:6073); needs a skip guard. P947 changes no discovery code.
 * **New genuine intermittent, unrelated**: `MissionRotationLiveTests.Finished_mission_rotates…`
   (`Assert.Contains` empty collection, `MissionRotationLiveTests.cs:181`) — 3 failures in 26
   isolated single-test runs (~12%), two later 10-run chains fully green. Core mission
