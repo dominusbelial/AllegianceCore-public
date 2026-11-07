@@ -271,6 +271,9 @@ public sealed partial class Game1
             return;
         }
 
+        SyncMouseCapture(composing);
+        if (composing || !IsActive) { _specMouseInit = false; return; }
+
         // Spectator camera active: the ship holds (neutral controls), no stray input.
         // Mouse capture + look.
         var ms = Mouse.GetState();
@@ -286,10 +289,11 @@ public sealed partial class Game1
 
         if (_freeCamActive)
         {
-            // mouse look
+            // Same relative capture and warp fallback as mouse flight.
+            var vp = GraphicsDevice.Viewport;
+            (dx, dy) = _relativeMouse.ReadDelta(ms.X, ms.Y, vp.Width / 2, vp.Height / 2, Mouse.SetPosition);
             if (dx != 0 || dy != 0)
                 _freeCam.Look(dx, dy);
-            RecenterMouse();
 
             // speed modifier: Shift boost, Ctrl slow (dedicated free-cam actions)
             _freeCam.SpeedModifier = 1f;
@@ -318,15 +322,6 @@ public sealed partial class Game1
                 CycleOrbitSubject();
             _orbitPgUpWasDown = pgUp;
         }
-    }
-
-    private void RecenterMouse()
-    {
-        var vp = GraphicsDevice.Viewport;
-        Mouse.SetPosition(vp.Width / 2, vp.Height / 2);
-        // reset the delta baseline to the centre to avoid a jump next frame
-        _specPrevMouseX = vp.Width / 2;
-        _specPrevMouseY = vp.Height / 2;
     }
 
     /// <summary>

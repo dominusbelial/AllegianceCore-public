@@ -954,6 +954,13 @@ list in **reverse**.
   (`keymap.json`: `{"layout":...,"bindings":{...}}`; a legacy flat file loads as
   the Port layout). Training prompts that name a key are audited against the
   native layout by `src/Allegiance.ClientCore/Training/TrainingPromptAudit.cs`.
+- **Relative mouse capture (P950)** — SDL2 relative pixel deltas for mouse flight
+  and spectator free-look, with centre-warp fallback in
+  `src/Allegiance.ClientCore.Game/Flight/RelativeMouse.cs`. Capture ownership and
+  UI/focus/exit release live in `src/Allegiance.ClientCore.Game/Game1.RelativeMouse.cs`;
+  virtual-stick response settings stay in `src/Allegiance.ClientCore.Game/Flight/MouseFlightController.cs`.
+  Native intent: `effect/efimage.cpp:182-209`, `engine/camera.cpp:408-425`;
+  platform adaptation and proof: `docs/reports/RELATIVE_MOUSE_P950.md`.
 - **Host LAN game (P901)** — explicit `SkirmishOptions.HostLan` exposes the embedded server
   on TCP+UDP with discovery; offline defaults remain loopback/ephemeral. Shared setup:
   `src/Allegiance.SinglePlayer/HostLanScreenModel.cs`,

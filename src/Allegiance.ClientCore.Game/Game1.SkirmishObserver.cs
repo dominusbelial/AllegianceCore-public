@@ -205,12 +205,13 @@ public sealed partial class Game1
         _orbitCam.AutoOrbit = true;
         _orbitCam.AutoOrbitSpeedRadPerSec = .12f;
         if (_freeCamActive && !wasFree) _freeCam.Teleport(_orbitCam.Eye);
-        if (_freeCamActive && !modal)
+        SyncMouseCapture(modal);
+        if (_freeCamActive && !modal && IsActive)
         {
             var mouse = Mouse.GetState();
-            if (_specMouseInit) _freeCam.Look(mouse.X - _specPrevMouseX, mouse.Y - _specPrevMouseY);
-            _specMouseInit = true;
-            RecenterMouse();
+            var vp = GraphicsDevice.Viewport;
+            var delta = _relativeMouse.ReadDelta(mouse.X, mouse.Y, vp.Width / 2, vp.Height / 2, Mouse.SetPosition);
+            if (delta.X != 0 || delta.Y != 0) _freeCam.Look(delta.X, delta.Y);
             _freeCam.SpeedModifier = ActionDown(keys, "FreeCamSpeedUp") ? 4 : ActionDown(keys, "FreeCamSpeedSlow") ? .25f : 1;
             _freeCam.Move((ActionDown(keys, "FreeCamForward") ? 1 : 0) - (ActionDown(keys, "FreeCamBack") ? 1 : 0),
                 (ActionDown(keys, "FreeCamRight") ? 1 : 0) - (ActionDown(keys, "FreeCamLeft") ? 1 : 0),

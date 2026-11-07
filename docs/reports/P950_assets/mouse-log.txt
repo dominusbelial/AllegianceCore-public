@@ -1,0 +1,14 @@
+[p950] pointer setup; SDL video=x11; Wayland desktop via Xwayland; no RDP; scripted pilot disabled
+[mouse] relative
+[p950] SDL relative flag=1 mouseFocus=True keyboardFocus=True
+[p950-motion] xrel=20 yrel=-10
+[p950-motion] xrel=20 yrel=-10
+[p950-motion] xrel=20 yrel=-10
+[p950] Classic relative=True yaw=-0.5730 pitch=0.1043 turnDegrees=87.65
+[p950] Modern relative=True yaw=-0.5730 pitch=0.1043 turnDegrees=35.42
+[p950] chat released pointer
+[p950] menu released pointer
+[p950] spectator free-look relative capture
+[p950] ToggleMouse off released pointer
+[p950] exit released pointer
+[p950-input] compositor virtual mouse: 20 motions of (+20, -10) pixels

@@ -250,6 +250,13 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        SyncMouseCapture();
+        try { UpdateFrame(gameTime); }
+        finally { SyncMouseCapture(); } // includes every menu/dock/observer early return
+    }
+
+    private void UpdateFrame(GameTime gameTime)
+    {
         UpdateSkirmish(Keyboard.GetState());
         UpdateSizingCalibration();
         if (UpdateBenchmark(ref gameTime)) { base.Update(gameTime); return; }
@@ -2077,13 +2084,17 @@ public sealed partial class Game1
         // for hit-testing, so a left-click can pick a sector. The collapsed mini-map
         // keeps mouse-flight steering (the default M-off free cursor also lets the
         // mini-map be clicked when the steering axis is not enabled).
-        if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive && !CommandCameraActive)
+        SyncMouseCapture(composing);
+        if (_mouseFlightEnabled && !composing && !_minimapExpanded && !SpectatorCameraActive && !CommandCameraActive
+            && (_proofEnabled || _relativeMouse.Owner == MouseCaptureOwner.Flight))
         {
             var ms = ReadProofMouse();
             int centerX = GraphicsDevice.Viewport.Width / 2;
             int centerY = GraphicsDevice.Viewport.Height / 2;
-            mouseDx = ms.X - centerX;
-            mouseDy = ms.Y - centerY;
+            // The scripted training pilot supplies pixel deltas through its existing
+            // centre-offset fixture. Real input always uses the capture owner.
+            (mouseDx, mouseDy) = _proofEnabled ? (ms.X - centerX, ms.Y - centerY)
+                : _relativeMouse.ReadDelta(ms.X, ms.Y, centerX, centerY, Mouse.SetPosition);
 
             var defl = _mouseFlight.Update(mouseDx, mouseDy);
 
@@ -2109,7 +2120,6 @@ public sealed partial class Game1
                 },
             };
 
-            Mouse.SetPosition(centerX, centerY);
         }
 
         // P380 — real analog joystick flight input, as a post-Translate override

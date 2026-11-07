@@ -6599,3 +6599,51 @@ The six failures present in every nightly 2026-11-05..07 were rerun 3x alone on 
 | `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` (both maps) | **fail / fail / fail** (`Clash` null on both sides) | 10-29 (same window) | **Real regression** (no resource clash forms) |
 | `SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides` | **fail / fail / fail** (SC-1 minimums not met) | 10-30 (once on 10-27) | **Real regression** |
 | `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` | **fail / fail / fail**, three different ways: no station destruction; `IndexOutOfRangeException` at `:119`; finale string now has `\nStation kills: …` (`Mission.StationKills.cs:36`, P924 `ad5c48f8`) vs the expected text at `:145` | 10-22 steady (once 10-19) | **Real:** stale string expectation plus a parse crash plus a missed station kill |
+
+
+## P950 mouse-capture qualification — 2026-11-07
+
+The single complete Fast run recorded **13,307 passed / 11 failed / 3 skipped**,
+plus **10 timing offenders** against its calibrated **10.227 s** ceiling. The
+three skips are the optional private Meshy-pack cases. No simulation, server,
+bot, discovery, bundle resolver or profile implementation changed in P950.
+
+| Failure group | Three isolated repetitions | Dispatch-base control / classification |
+|---|---|---|
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail, expected charge target / actual null | Same failure 3/3 on dispatch `9e51530a`; existing open assertion |
+| Five `PlayerBundlePathsTests` executions: Artwork executable fallback; Artwork/NativeSource missing defaults; native install-subdirectory guessing; local sky-config precedence | Every failing case fails 3/3; included companion theory cases pass | Same failures 3/3 on dispatch. Mandated scratch-local TMPDIR lets simulated outside-repository installs discover the ancestor `local.env`; same fixture obstruction ledgered in earlier lanes |
+| `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy` | pass / pass / pass | Existing shared-state/load signature; no flight/AI rule changed |
+| `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate` | pass / pass / pass | Existing live receipt/timing signature |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Sweep observed 31.4 simulated seconds versus the unchanged 28–31 assertion |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass / pass / pass with writable task-local XDG | Sweep tried to restore the existing read-only default profile; same sandbox fixture signature as earlier lanes |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | pass / pass / pass with a task-local absent-CLI stub | The null-returning status callback falls back to the real local CLI. Its unexpected non-loopback discovery stays only in private scratch logs; no remote proof was requested or intentionally run |
+
+Every failed assertion and slow method was selected individually in a fresh
+process three times. Timing selections additionally covered `P800HullProofGpuTests`,
+`SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts`,
+`P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats`,
+`P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured`,
+`WarpTransitServerTests.ShipBetweenRawAndVisualRadius_DoesNotPrematurelyTransit_AndPeerSeesNoSectorChange`,
+`P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`,
+`P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable`,
+`NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes`,
+and `TechTreeDevelopmentLiveTests.Side_attribute_change_broadcasts_whole_mission_but_not_across_missions`.
+They all passed their assertions. P777's actual TRX durations were
+**10.162 / 10.231 / 9.716 s**: its second isolated execution remains slightly
+over the original calibrated ceiling. Process elapsed time is not substituted
+for TRX test duration. One-minute load at isolated-process start ranged from
+**5.27 to 23.86** on the shared host; no artificial load was created. The Fast
+run remains **FAIL**, with no timing threshold or assertion relaxed.
+
+The final P950 new input methods and existing controller/response cohort pass
+**156/156 across three isolated repetitions**, zero skips. Compact evidence is
+in `reports/P950_assets/qualification.json`; raw TRX/logs stay in the task
+worktree's `.scratch/p950/`. Showcase results are recorded in the task report.
+
+### P950 showcase control — 2026-11-07
+
+Five authoritative alternating pinned-baseline pairs produced **dispatch 5/5 / working tree 3/5 full-test passes**, zero skips. Working-tree attempts 1 and 5 missed the unchanged arrival threshold: **23/30** and **18/30** at 480 seconds. All five working-tree attempts and all five dispatch attempts satisfied the five-second parking bound; working-tree maximum **3.614 s**. Same unseeded arrival signature already recorded for P940; no AI/server/simulation/test-fixture source changed in P950. The P700 path creates Server/BotManager and does not instantiate Game1 or the mouse capture helper.
+
+The three fresh isolated working-tree follow-ups passed **3/3**, zero skips, with maximum stopped interval **1.813 s**. They do not replace either failure in the original cohort. Exact arrivals, combat receipts and TRX durations are in [qualification.json](reports/P950_assets/qualification.json).
+
+All receipt values and original outcomes are retained in `reports/P950_assets/qualification.json`; raw TRX/logs are under the task worktree's `.scratch/p950/{showcase,showcase-retries}/`. No arrival or parking assertion, timeout or tuning value changed, and the original full-fixture cohort remains **FAIL**.
