@@ -6778,3 +6778,27 @@ Fast tests over the calibrated 10 s limit (all nine passed):
 The nine SLOW FAST entries (P800 hull-proof 11.6 s, P814 gunner 13.7 s, P796 varied-loadout 11.8 s, SC2 nanite
 14.1 s, P777 warp-exit 11.8 s, NpcDodge 10.7 s, P942 research 13.2 s, P750 asteroid types 17.0 s, P808 enrollment
 10.9 s) are the calibrated-limit timing guard under that load; every one passed.
+
+## P956 gate — 2026-11-07
+
+`tools/run-tests.sh --tier fast` (13,474 cases, 579.2 s fast-tier clock across
+the five projects: Update 28, Lobby 139, MonoGame 4,885 passed + 3 optional-pack
+skips, ClientCore 2,271, Core 6,145 passed + 3 failed), host load average 7–9 with other lanes'
+suites running. The three Core failures are the load-only families already
+recorded above; every one passed **3/3 alone** (19/19 cases in the three
+classes, 15 s each):
+
+| Test | Sweep signature | Alone | Verdict |
+| --- | --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | `Assert.Contains` missed the own-ship `SHIP_STATUS`; the collection held an initial miner's status (ShipId 8098, hull 1) instead | **3/3 pass** | Ledgered load/timing family (2026-11-07 rows above); P956 touches no warp/join-burst path |
+| `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | `Assert.Contains` over an empty collection (missing receipt) | **3/3 pass** | Ledgered load-only family; no reconnect/grace code changed |
+| `DockedStationUpdateLiveTests.Docked_player_receives_own_station_update_when_own_station_has_no_scanner` | station-update cadence value differed under load | **3/3 pass** | Ledgered 15-tick station-update cadence family (2026-10-24/27 rows) |
+
+The four SLOW FAST entries (P800 hull proof 12.3 s, SC2 nanite 10.8 s, P814
+gunner 10.6 s, P777 warp-exit 11.3 s) are the calibrated-limit timing guard
+under that load; every one passed. No drone-loadout, sim, spawn or broadcast
+failure appeared in the sweep; the P956 carts (`DroneSpawnLoadoutTests`, the
+armed-Wingman defend/attack fixtures, the miner/constructor/layer cohorts)
+passed 3/3 isolated runs and are clean in the sweep. Raw logs:
+`~/allegiance-evidence/P956/fast3/` and `~/allegiance-evidence/P956/nontask/`
+(TRX/log per project; fast-tier clock 579.2 s, `summary.json`).

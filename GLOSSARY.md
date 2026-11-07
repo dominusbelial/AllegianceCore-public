@@ -167,6 +167,17 @@ list in **reverse**.
   in `tests/Allegiance.Core.Tests/P872NativeBehaviourTests.cs` and the armed
   movement proof in `tests/Allegiance.Core.Tests/NpcWingmanDefendLiveTests.cs`.
   P872 bisect and fixture correction: `docs/reports/NPC_DEFEND_BISECT_P952.md`.
+- **Drone stock loadout (P956)** — every spawned drone carries its hull's
+  preferred parts: `Ship.MountPreferredParts` (`src/Allegiance.Core/Sim/Ship.Equipment.cs`)
+  is native `CreateDrone`'s fill (`Igc/common.cpp:2462-2480`), called by
+  `src/Allegiance.Server/Server.cs` `SpawnNpcShip` for every production spawn
+  (constructors, completed drone types/purchased drones, boot/rotation miners).
+  Parts reach clients through the same-side NPC `EXPORT` (P366), the cross-side
+  identity `EXPORT` (P349) and the spawn-time `LOADOUT_CHANGE` to same-side
+  in-sector peers (`src/Allegiance.Server/Server.Combat.cs`,
+  `FedSrv/fsship.cpp:511-542`). Proof:
+  `tests/Allegiance.Core.Tests/DroneSpawnLoadoutTests.cs`;
+  report `docs/reports/DRONE_LOADOUT_P956.md`.
 - **Flight model / physics** — acceleration, drag, turn rates, afterburner.
   Key: `src/Allegiance.Core/Sim/` (`Acceleration`, `Physics`, `TurnRate`…).
   *Native:* `shipIGC.cpp`, `rotvel.cpp`.

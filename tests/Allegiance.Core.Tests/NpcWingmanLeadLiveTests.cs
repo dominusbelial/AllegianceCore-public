@@ -273,10 +273,17 @@ public sealed class NpcWingmanLeadLiveTests
             Vector3 wp = ep - new Vector3(Math.Min(fireRange * 0.4f, 650f), 0f, 0f);
             var wingman = srv.SpawnNpcShip(mission, sector, npcSide, wp, wingDroneId);
             Assert.Equal(Ship.PilotTypeWingman, wingman.PilotType);
+            // P956 — a spawned Wingman now arrives with its hull's preferred
+            // parts (native CreateDrone, Igc/common.cpp:2462-2480). This fixture
+            // prescribes its own slow projectile and indexes Weapons[0], so clear
+            // the stock loadout first (the explicit-unarmed-ship pattern P872's
+            // guard test uses) and pin that the prescribed weapon is the only one.
+            wingman.ClearLoadout();
             wingman.ChangeHull(fhull);
             wingman.Energy = fhull.MaxEnergy * 100f;
             wingman.Ammo = 10000;
             wingman.MountWeapon(weapon);
+            Assert.Single(wingman.Weapons);
 
             // Acquire the enemy (ours is nearer than the parked peer at
             // (985,630,618), so the nearest-enemy search must choose it).
