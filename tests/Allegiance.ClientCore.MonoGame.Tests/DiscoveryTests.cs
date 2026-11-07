@@ -177,7 +177,9 @@ public class DiscoveryTests
             EnableLan = false,
             EnableSubnet = false,
             EnableTailscale = true,
-            TailscaleStatus = () => null,   // absent CLI → silent, no throw
+            // An injected probe is authoritative (P949); an empty result keeps this
+            // absence fixture from ever discovering real remote peers.
+            TailscaleStatus = () => string.Empty,
         };
         Assert.Empty(coord.Scan(opts));
     }

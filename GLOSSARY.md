@@ -662,6 +662,14 @@ list in **reverse**.
   `clintlib/appmsg.cpp:230-238` `FindTarget(… c_ttAnyCluster …, c_sabmRescue…)`),
   oxygen budget and docking. Reports P699/P699c; live test
   `P699HumanPodHomeLiveTests`.
+- **Player pod collision lifetime (P955)** — collision damage returns `Killed`
+  even after the synchronous server callback swaps the same ship to a live pod.
+  `src/Allegiance.Core/Model/Sector.cs` preserves that survivor in asteroid,
+  ship and station contacts, retaining sector simulation and mission registration.
+  Native: `Igc/shipIGC.cpp:1333-1334`, `FedSrv/FedSrv.CPP:11918-12021`.
+  TCP/UDP oxygen and docking proofs:
+  `tests/Allegiance.Core.Tests/P955PlayerPodLifetimeTests.cs`; report:
+  `docs/reports/PLAYER_POD_GHOST_P955.md`.
 - **Own small-hull effects (P915)** — `src/Allegiance.ClientCore.Game/Rendering/ShipEffectRules.cs`
   scales own external-view damage smoke from real hull length and camera distance,
   and gates afterburner trail/nozzle boost by the owner's mounted loadout (remote
