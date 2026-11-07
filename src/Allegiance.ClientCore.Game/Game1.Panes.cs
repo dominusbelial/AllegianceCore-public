@@ -120,7 +120,13 @@ public sealed partial class Game1
             if (!_dockedActive)
             {
                 _dockedActive = true;
-                _hangarOnly = false;
+                // P945 — native docks into the HANGAR screen (vmHangar,
+                // WinTrek.cpp:6565/9381 → CreateHangarScreen at :6706); the
+                // loadout screen is one click away (hangar.mdl's Loadout pane,
+                // OnButtonLoadout → SetViewMode(vmLoadout), hangarscreen.cpp:186-190).
+                // Pre-P945 the port opened the loadout view here, which is why the
+                // native hangar art was never the first docked screen.
+                _hangarOnly = true;
                 // P571 — entering the docked hangar tears down the P540 eject/pod
                 // autopilot (and any autopilot goto/target), so a freshly launched
                 // hull never resumes steering to the garrison after death. Native

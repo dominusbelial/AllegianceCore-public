@@ -313,6 +313,7 @@ public sealed partial class Game1
         // DejaVu Sans Bold at the native pixel sizes), one 1× + 2× pair per
         // native identity, passed to the classic HUD and classic chat renderers.
         var nativeFonts = LoadNativeFonts();
+        _nativeFonts = nativeFonts;   // P945 — the hangar hover text uses the native-classic bakes
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures,
             _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
             damageWash: _hudSettings.DamageWash, nativeHudTextures: _hudNativeTextures,

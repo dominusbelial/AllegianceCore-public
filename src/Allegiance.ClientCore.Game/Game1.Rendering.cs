@@ -1785,7 +1785,10 @@ public sealed partial class Game1
                 // exactly when a local tactical picture is wanted.
                 // P580 — suppressed while the director is recording (clean b-roll).
                 DrawCommandGrid(view, proj, cameraEye);
-                if (!_directorActive)
+                // P945 — the docked hangar screen is a full native screen: native
+                // sets the radar LOD to none in vmHangar (WinTrek.cpp:6719) and
+                // raises ofInHangar (:6836), so the flight HUD yields to it.
+                if (!_directorActive && !_nativeHangarScreen)
                     DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
 
                 // P576-B — the aleph destination-glimpse composites AFTER the
@@ -1800,8 +1803,13 @@ public sealed partial class Game1
                 }
             }
 
-            // 2D HUD overlay on top of the 3D scene (P211).
-            var hudModel = DrawHud();
+            // 2D HUD overlay on top of the 3D scene (P211). P945 — replaced by
+            // the hidden HUD model while the native hangar screen is up (the
+            // chat log below still uses the model, exactly like the spectating
+            // path).
+            var hudModel = _nativeHangarScreen
+                ? HudModelAdapter.Create(null, _cameraMode, hidden: true)
+                : DrawHud();
             DrawCommandHud(hudModel);
 
             // P501 — semi-transparent touch sticks + buttons, above the HUD but
@@ -1818,7 +1826,7 @@ public sealed partial class Game1
         // P580 — the director is a clean recording view: suppress the starmap /
         // mini-map pane (and the radar above) while it is active. DrawStarmap()
         // internally picks the view from _minimapExpanded.
-        if (!_directorActive)
+        if (!_directorActive && !_nativeHangarScreen)
             DrawStarmap(gameTime);
 
         // P214 — real chat overlay (log + composing line) on top of the HUD.
@@ -1997,7 +2005,10 @@ public sealed partial class Game1
         // a boarded player's loadout view names whose ship they are aboard —
         // "Observer of X" (state 1) / "Turret of X" + the in-turret badge
         // (state 2), in the viewer's side colour like native mySideColor.
-        if (_dockedActive && LoadoutBoardState() is { } board)
+        // P945 — both artefacts belong to the LOADOUT screen (ofInLoadout); the
+        // hangar screen shows only the native hangarinturretbmp badge, drawn by
+        // HangarScreenRenderer at its authored point (hangar.mdl:74-80, :102).
+        if (_dockedActive && !_hangarOnly && LoadoutBoardState() is { } board)
         {
             var world0 = _session.World;
             var side = new Color(1f, 1f, 1f);

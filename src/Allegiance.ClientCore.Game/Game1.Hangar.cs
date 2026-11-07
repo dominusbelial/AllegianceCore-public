@@ -18,6 +18,23 @@ public sealed partial class Game1
     private readonly ActionPressEdges _hangarEdges = new();
     private bool HangarDevelopments => _session.World.ResearchBriefing?.Settings.AllowDevelopments ?? true;
 
+    // P945 — the native hangar screen (hangar.mdl). The renderer owns the
+    // artwork; the launch pane's FrameImage animation lives in UpdateHangarControls
+    // so draw and hit-test share one clock. When the artwork is absent the
+    // pre-P945 text-row hangar stays as the fallback (never a blank screen).
+    private Rendering.HangarScreenRenderer? _hangarScreenRenderer;
+    private readonly Rendering.HangarLaunchAnimation _hangarLaunchAnimation = new();
+
+    /// <summary>P945 — whether the native hangar screen owns the window this
+    /// frame: docked AND in the hangar view (native vmHangar). Native hides the
+    /// flight HUD and sets the radar LOD to none there
+    /// (<c>WinTrek/WinTrek.cpp:6719</c>, <c>:6836</c>).</summary>
+    private bool _nativeHangarScreen => _dockedActive && _hangarOnly;
+
+    private Rendering.HangarScreenRenderer HangarScreenRendererRef =>
+        _hangarScreenRenderer ??= new Rendering.HangarScreenRenderer(
+            _spriteBatch, _whitePixel, _hudSmall, _nativeFonts, GraphicsDevice, _assets);
+
     private void LaunchFromHangar(ShipEntity ship)
     {
         if (_launchSent || _hangarLaunch.AwaitingDisembark) return;
@@ -165,13 +182,23 @@ public sealed partial class Game1
 
     private bool UpdateHangarControls(KeyboardState keys, bool composing)
     {
-        var mouse = Mouse.GetState();
+        // P945 — --auto-hangar scripts the pointer over the native panes for the
+        // real-window proof; inert unless the flag was passed.
+        StepHangarScript();
+        var mouse = HangarScriptMouse ?? Mouse.GetState();
         var vp = GraphicsDevice.Viewport;
         bool down = mouse.LeftButton == ButtonState.Pressed;
         bool click = down && !_hangarMouseDown;
         _hangarMouseDown = down;
         bool allowed = !composing && !_mainMenuVisible && !_helpVisible && !_keyBindVisible;
-        _hangarHover = allowed ? HangarControls.Hit(vp.Width, vp.Height, mouse.X, mouse.Y, HangarDevelopments) : HangarAction.None;
+        _hangarHover = allowed
+            ? HangarControls.Hit(vp.Width, vp.Height, mouse.X, mouse.Y, HangarDevelopments)
+            : HangarAction.None;
+        // P945 — the launch pane's FrameImage ramp (0.7 s in/out, no loop, no
+        // finish; engine/frameimage.cpp:420-456). It runs on the wall clock so a
+        // frame drop cannot stall the door half-open.
+        _hangarLaunchAnimation.Update(allowed && _hangarHover == HangarAction.Launch,
+            (float)(Environment.TickCount64 / 1000.0));
         if (_hangarQuitConfirm) return true;
         if (allowed && click && _hangarHover != HangarAction.None)
         {
@@ -199,8 +226,31 @@ public sealed partial class Game1
 
     private void DrawHangarControls()
     {
-        if (!_dockedActive || _state != ClientState.Flying || _cameraMode == CameraMode.Command) return;
+        // The native hangar screen IS the docked hangar view (vmHangar,
+        // WinTrek.cpp:6706-6718); the loadout view (vmLoadout) has its own screen.
+        if (!_dockedActive || !_hangarOnly || _state != ClientState.Flying
+            || _cameraMode == CameraMode.Command) return;
         var vp = GraphicsDevice.Viewport;
+        // P945 — native hangar art (hangar.mdl) scaled uniformly into the
+        // viewport; the same HangarScreen rectangles drive the pointer hit test
+        // in UpdateHangarControls. Missing artwork falls back to the pre-P945
+        // text row, never to a blank screen.
+        var renderer = HangarScreenRendererRef;
+        if (renderer.CanDrawNative)
+        {
+            renderer.Draw(vp, _hangarHover, _hangarLaunchAnimation, LoadoutBoardState()?.State,
+                HangarDevelopments);
+            return;
+        }
+        DrawHangarControlsTextFallback(vp);
+    }
+
+    /// <summary>The pre-P945 presentation, kept as the missing-artwork fallback:
+    /// one row of text cells at the bottom of the viewport plus the hover/quit
+    /// feedback line. Uses the same <see cref="HangarScreen"/> rectangles as the
+    /// native screen, so a click lands on the verb it is drawn over.</summary>
+    private void DrawHangarControlsTextFallback(Viewport vp)
+    {
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         foreach (var action in HangarControls.Actions(HangarDevelopments))
         {
