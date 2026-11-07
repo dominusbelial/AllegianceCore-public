@@ -93,6 +93,7 @@ public class LiveLifepodEnduranceDisplayTests
         private readonly List<Eject> _ejects = new();
         private readonly List<EnterLifepod> _pods = new();
         private readonly Dictionary<short, List<ServerShipUpdate>> _fuels = new();
+        private readonly Dictionary<short, List<float>> _heavyFuels = new();
 
         public LogonAck? Ack { get { lock (_gate) return _ack; } }
         public SetCluster? ShipAssignment { get { lock (_gate) return _set; } }
@@ -102,9 +103,14 @@ public class LiveLifepodEnduranceDisplayTests
         /// <summary>Latest observed fuel fraction for a ship (null = none yet).</summary>
         public float? LastFuel(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) && l.Count > 0 ? l[^1].FuelFraction : null; }
         /// <summary>How many fuel-bearing updates we've seen for a ship (0 = none).</summary>
-        public int FuelCount(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.Count : 0; }
+        public int FuelCount(short id) => Fuels(id).Count;
         /// <summary>All observed fuel fractions for a ship.</summary>
-        public IReadOnlyList<float> Fuels(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.Select(u => u.FuelFraction).ToArray() : Array.Empty<float>(); }
+        public IReadOnlyList<float> Fuels(short id)
+        {
+            lock (_gate)
+                return (_fuels.TryGetValue(id, out var singles) ? singles.Select(u => u.FuelFraction) : [])
+                    .Concat(_heavyFuels.TryGetValue(id, out var heavy) ? heavy : []).ToArray();
+        }
 
         public IReadOnlyList<ServerShipUpdate> Updates(short id)
         { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.ToArray() : []; }
@@ -137,6 +143,14 @@ public class LiveLifepodEnduranceDisplayTests
                         case SingleShipUpdate.Fmid:
                             var su = SingleShipUpdate.Decode(m);
                             (_fuels.TryGetValue(su.OidTarget, out var l) ? l : (_fuels[su.OidTarget] = new List<ServerShipUpdate>())).Add(su.Ship);
+                            break;
+                        case HeavyShipsUpdate.Fmid:
+                            // Native broadcast (the production default) relays
+                            // remote ships in HEAVY_SHIPS_UPDATE, not SINGLE.
+                            // Its per-ship fractions must not reveal own oxygen.
+                            foreach (var entry in HeavyShipsUpdate.Decode(m).HeavyShipEntries)
+                                (_heavyFuels.TryGetValue(entry.ShipId, out var fuels) ? fuels
+                                    : (_heavyFuels[entry.ShipId] = [])).Add(entry.FuelFraction);
                             break;
                     }
                 }

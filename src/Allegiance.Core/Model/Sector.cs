@@ -3068,12 +3068,13 @@ public sealed partial class Sector : IClusterIgc
         }
 
         // Native skips the position/velocity correction if either body was killed
-        // by the impact (shipIGC.cpp:963-966). Port death bookkeeping then applies
-        // (a dead ship / destroyed rock leaves the sector) exactly as the combat
-        // pass does for its own kills.
+        // by the impact (shipIGC.cpp:995-1001). ReceiveDamage returns Killed
+        // even when KillShipEvent synchronously swaps the ship to a live pod
+        // (shipIGC.cpp:1333-1334; FedSrv.CPP:11918-12021). Like the weapon
+        // path, terminate only a ship that is STILL dead after that callback.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) Terminate(ship);
+            if (dr1 == DamageResult.Killed && ship.Dead) Terminate(ship);
             if (dr2 == DamageResult.Killed) RemoveAsteroid(ast);
             return;
         }
@@ -3171,8 +3172,8 @@ public sealed partial class Sector : IClusterIgc
     /// positive so no re-slam, and a genuinely re-approaching pair re-triggers.</para>
     /// <para><b>Death handling.</b> Identical to P254 (<c>Sector.cs:2018-2027</c>):
     /// if either <c>ReceiveDamage</c> returns <c>Killed</c>, the position/velocity
-    /// correction for that pair is skipped and the port's death bookkeeping
-    /// (<c>_models.Remove(...)</c>) applies instead.</para>
+    /// correction for that pair is skipped. Only still-dead ships are terminated;
+    /// the site's live ejected survivors remain simulated (P955).</para>
     /// <para><b>Carrier-landing exclusion.</b> Native's third friendly special
     /// case (<c>shipIGC.cpp:1046-1059</c>, <c>LandOnCarrierEvent</c>/<c>InGarage</c>)
     /// is a ship-vs-ship carrier-landing mechanism. This port's carrier handling
@@ -3346,11 +3347,13 @@ public sealed partial class Sector : IClusterIgc
 
         // Death handling (P254 pattern, Sector.cs:2018-2027): if either ship was
         // killed by the impact, skip the correction and do the port's death
-        // bookkeeping instead.
+        // bookkeeping instead. Killed describes the hit, not the survivor:
+        // KillShipEvent may already have made a live pod (shipIGC.cpp:1333-1334;
+        // FedSrv.CPP:11918-12021). Preserve that ship just as the weapon path does.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) Terminate(ship1);
-            if (dr2 == DamageResult.Killed) Terminate(ship2);
+            if (dr1 == DamageResult.Killed && ship1.Dead) Terminate(ship1);
+            if (dr2 == DamageResult.Killed && ship2.Dead) Terminate(ship2);
             return;
         }
 
@@ -3430,9 +3433,9 @@ public sealed partial class Sector : IClusterIgc
     /// the overlap so an outgoing ship is not re-detected.</para>
     /// <para><b>Death handling.</b> Identical to P254: if either
     /// <c>ReceiveDamage</c> returns <c>Killed</c>, the position/velocity
-    /// correction is skipped and the port's death bookkeeping applies instead. A
-    /// ship death is the plain <c>_models.Remove</c> (the P254 ship-death
-    /// handling); a <b>station</b> death reuses the combat pass's station-kill
+    /// correction is skipped. Only still-dead ships are terminated; the site's
+    /// live ejected survivors remain simulated (P955). A <b>station</b> death
+    /// reuses the combat pass's station-kill
     /// bookkeeping (<c>Sector.cs:1853-1877</c>) — <see cref="Sector.RemoveStation"/>
     /// plus the host <see cref="IIgcSite.KillStationEvent"/> seam and the P191
     /// victory recompute — routed through the ramming ship's mission so the host
@@ -3567,14 +3570,16 @@ public sealed partial class Sector : IClusterIgc
 
         // Death handling (P254 pattern): if either body was killed by the impact,
         // skip the correction and do the port's death bookkeeping instead. A ship
-        // death reuses P254's _models.Remove; a STATION death reuses the combat
+        // death removes only a still-dead ship: KillShipEvent can have already
+        // swapped it to a live pod (shipIGC.cpp:1333-1334;
+        // FedSrv.CPP:11918-12021). A STATION death reuses the combat
         // pass's station-kill bookkeeping (RemoveStation + KillStationEvent + P191
         // victory recompute, Sector.cs:1853-1877) routed through the ramming
         // ship's mission, so the host broadcasts STATION_DESTROYED and vacates
         // docked ships exactly as a weapon kill does.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) Terminate(ship);
+            if (dr1 == DamageResult.Killed && ship.Dead) Terminate(ship);
             if (dr2 == DamageResult.Killed)
             {
                 RemoveStation(station);

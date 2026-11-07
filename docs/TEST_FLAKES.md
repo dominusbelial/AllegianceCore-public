@@ -6599,3 +6599,47 @@ The six failures present in every nightly 2026-11-05..07 were rerun 3x alone on 
 | `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` (both maps) | **fail / fail / fail** (`Clash` null on both sides) | 10-29 (same window) | **Real regression** (no resource clash forms) |
 | `SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides` | **fail / fail / fail** (SC-1 minimums not met) | 10-30 (once on 10-27) | **Real regression** |
 | `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` | **fail / fail / fail**, three different ways: no station destruction; `IndexOutOfRangeException` at `:119`; finale string now has `\nStation kills: …` (`Mission.StationKills.cs:36`, P924 `ad5c48f8`) vs the expected text at `:145` | 10-22 steady (once 10-19) | **Real:** stale string expectation plus a parse crash plus a missed station kill |
+
+## P955 local gate — 2026-11-07
+
+The single Fast invocation finished **13,422 passed / 10 failed / 3 skipped**
+(optional private Meshy-pack cases), plus **9 infrastructure checks passed**.
+Three passing executions exceeded the calibrated **10.288 s** Fast limit.
+Each failed/slow method received three fresh filtered processes, including all
+its theory rows. Qualification totals: **30 passed / 18 failed / 0 skipped**.
+
+| Method / family | Sweep observation | Three isolated invocations |
+| --- | --- | --- |
+| `PlayerBundlePathsTests`: Artwork executable fallback; Artwork/NativeSource missing defaults; NativeSource install-subdirectory guessing; local sky-config precedence | Five failing cases: fake outside-repo installs discover the mandatory worktree ancestor `local.env` through scratch-local `TMPDIR`. Same fixture obstruction as P909–P940. | Each failing case **fail / fail / fail**; passing theory companions still pass. Unchanged base Core also yields **4 passed / 5 failed / 0 skipped**, each of three whole-class controls. Resolver and fixtures remain unchanged. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Expected charge target; actual null. Existing P933/P935/P940 family. | **fail / fail / fail**; unchanged dispatch-base Core also **fail / fail / fail**. Remains open outside P955 pod lifetime. |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | Initial side expected team lobby (-2), observed side 0. | **pass / pass / pass**, zero skips. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | Join status expected docked (3), observed flying (2). | **pass / pass / pass**, zero skips. |
+| `P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame` | 39,748 ns versus its 20,000 ns per-frame threshold. | **pass / pass / pass**, zero skips; no threshold change. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Body passed; 12.142 s exceeded Fast budget. | **pass / pass / pass**, 4.156 / 3.972 / 3.762 s. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Body passed; civ 25 took 11.097 s. | Both civ rows **pass / pass / pass**, 3.217–4.470 s. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Body passed; 11.075 s exceeded Fast budget. | Body **pass / pass / pass**, 10.148 / 10.309 / 10.100 s; the middle isolation still exceeds the calibrated limit. Timing qualification remains non-green. |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | Injected null status fell back to the installed CLI and unexpectedly probed a real Tailscale peer, breaching P955's local-only constraint. | Test-only fixture now supplies an empty status; **pass / pass / pass**, zero skips. Production discovery is unchanged. Endpoint details remain only in ignored raw logs. |
+
+The affected oxygen-display fixture originally passed 1/3 and failed 2/3 alone
+because it only decoded SINGLE_SHIP_UPDATE, while the native broadcast default
+relays remote ships through HEAVY_SHIPS_UPDATE. Its recorder now includes those
+fuel fractions; final qualification **pass / pass / pass**, zero skips. The
+same-side watcher actually received 90 full-fuel relays while the owner's
+91 oxygen readings spanned 1.0 down to 0.1. P955's 76 targeted methods qualify
+at **297 passed / 0 failed / 0 skipped** across their final three invocations.
+
+Five unchanged-base `P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+runs returned **4 passed / 1 failed / 0 skipped**. The failure reached 23/30 ships
+versus the required 24, after 480 s; its longest speed-below-one interval with a
+target was 3.511 s. None of the five base runs failed the parking assertion.
+The five fixed-version runs also returned **4 passed / 1 failed / 0 skipped**.
+Fixed run 5 reached 21/30 versus the required 24 after 480 s; its longest
+speed-below-one interval with a target was 1.714 s. Both batches passed the
+parking assertion 5/5. Shared-host load varied; the five-run samples establish
+the recorded local comparison without a broader rate claim.
+
+Evidence: [P955 report](reports/PLAYER_POD_GHOST_P955.md),
+[portable qualification](reports/P955_assets/validation.json); ignored raw
+receipts under `.scratch/p955/` include `fast/`, `fast-retry-*.trx`,
+`base-npc-*.trx` and `base-bundle-*.trx`. This is a non-green broad gate with
+explicitly qualified existing failures, not a claim that the full suite passed.

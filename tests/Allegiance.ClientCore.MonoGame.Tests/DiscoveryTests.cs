@@ -177,7 +177,9 @@ public class DiscoveryTests
             EnableLan = false,
             EnableSubnet = false,
             EnableTailscale = true,
-            TailscaleStatus = () => null,   // absent CLI → silent, no throw
+            // A null status falls back to the installed CLI. Supply an empty
+            // result so this absence fixture cannot discover real remote peers.
+            TailscaleStatus = () => string.Empty,
         };
         Assert.Empty(coord.Scan(opts));
     }
