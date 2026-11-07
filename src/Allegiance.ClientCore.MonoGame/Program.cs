@@ -49,9 +49,11 @@ if (args.Contains("--check-assets") || args.Contains("--asset-census"))
 await ClientUpdateBootstrap.RunAsync(args);
 
 PlayerConfig? savedPlayer = null;
+bool lobbyFromSavedPlayer = false;   // P947 — the no-args --lobby seed is a saved value
 if (args.Length == 0)
 {
     var player = savedPlayer = PlayerConfig.Load();
+    lobbyFromSavedPlayer = true;
     // Keep P731's choice visible even after a multiplayer server was remembered.
     // InitIntro offers that server through Direct Connect; explicit host/port
     // arguments still take the direct-connect shortcut below.
@@ -583,6 +585,11 @@ else
 
 // A host+port pair selects the direct-connect (skip-the-lobby) shortcut.
 bool haveDirect = positional.Count >= 2;
+
+// P947 — the no-args head seeds `--lobby` from player.json itself; that is a
+// saved value, not a command-line pin. Leaving it flagged explicit would let
+// it beat a saved connect profile and mislabel the startup `[lobby]` log.
+if (lobbyFromSavedPlayer) lobbyUrlExplicit = false;
 
 // P498 — optional asset-manifest recording: wrap the desktop artwork source in
 // a recorder and have Game1 read through it, then dump the opened-file list on

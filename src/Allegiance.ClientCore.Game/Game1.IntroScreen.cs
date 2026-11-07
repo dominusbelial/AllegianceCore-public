@@ -377,7 +377,8 @@ public sealed partial class Game1
                 _skirmishError = "";
                 break;
             case IntroCommand.HostInternet:
-                _hostLanScreen.UseInternetLobby(string.IsNullOrWhiteSpace(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl);
+                // P947 — the resolved _lobbyUrl + the built-in default fallback.
+                _hostLanScreen.UseInternetLobby(LobbyUrl.EffectiveUrl(_lobbyUrl));
                 _introView = IntroView.HostLan;
                 _skirmishError = "";
                 break;

@@ -47,7 +47,10 @@ public sealed partial class Game1
     /// <summary>Enter the career screen (intro main menu "Career" item).</summary>
     private void EnterCareerScreen()
     {
-        string origin = string.IsNullOrEmpty(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl;
+        // P947 — the resolved _lobbyUrl already carries the precedence (explicit
+        // --lobby > saved profile/preferences > default); the empty case falls
+        // back to the built-in default here.
+        string origin = LobbyUrl.EffectiveUrl(_lobbyUrl);
         if (_careerClient is null || _careerOrigin != origin)
         {
             _careerClient?.Dispose();

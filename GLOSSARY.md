@@ -875,6 +875,14 @@ list in **reverse**.
   the eleven game filters and the filter dialog (native `gamescreen.cpp`). Key:
   `src/Allegiance.ClientCore.Game/ServerListing.cs`, `LobbyGameSort.cs`,
   `LobbyGameMetadata.cs` (`GameParams`/`NativeGameTypes`), `Game1.Session.cs`.
+- **Lobby URL precedence (P947)** — the lobby directory URL is resolved once at
+  startup with the precedence explicit `--lobby` (this session) > saved connect
+  profile / player.json preferences > `ServerListing.LobbyUrlDefault`, then read
+  by every consumer (host internet form, Play Online fetch, directory chat,
+  career/identity, new-game wizard, P944 join targets) with a one-time
+  `[lobby] using … (from …)` startup log. Key:
+  `src/Allegiance.ClientCore.Game/LobbyUrl.cs`, the resolution in the
+  `Game1` constructor (`Game1.cs`), `Game1.DirectoryChat.cs`.
 - **Chat composer / compose recipients** — the five native compose states and
   the recipient a compose sends to. Key:
   `src/Allegiance.ClientCore.Game/Rendering/ComposeMachine.cs`,
