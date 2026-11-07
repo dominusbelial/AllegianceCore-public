@@ -6682,3 +6682,15 @@ Fast tests over the calibrated 10 s limit (all nine passed):
 The nine SLOW FAST entries (P800 hull-proof 11.6 s, P814 gunner 13.7 s, P796 varied-loadout 11.8 s, SC2 nanite
 14.1 s, P777 warp-exit 11.8 s, NpcDodge 10.7 s, P942 research 13.2 s, P750 asteroid types 17.0 s, P808 enrollment
 10.9 s) are the calibrated-limit timing guard under that load; every one passed.
+
+## P954 gate — 2026-11-07
+
+`tools/run-tests.sh --tier fast` (13,473 tests, 586.0 s, shared 24-CPU host with other lanes' suites
+running) — three failures, none in P954's changed code (test files + `tools/allegiance-mcp` finale arm
+grace only):
+
+| Test | Fast-sweep symptom | Isolated outcome | Verdict |
+| --- | --- | --- | --- |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail | **fail / fail / fail** alone (1 s, expected charge target / actual null) | **Already-open real regression**, first seen 10-29 (`48cdb2de`), re-triaged at the P949 gate above; P954 changes no NPC/sim/bot policy code |
+| `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner(gunner: True)` | fail, 25.9 s (also a SLOW FAST timing offender) | **pass / pass / pass / pass** alone (2 s each) | Sweep load flake |
+| `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | fail, 21.7 s (also a SLOW FAST timing offender) | **pass / pass / pass** alone (10 s each) | Sweep load flake, same intermittency as the P934/P940 entries above |

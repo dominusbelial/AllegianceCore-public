@@ -97,7 +97,7 @@ internal sealed partial class BotManager
     // enemy base is until one of its ships has seen it (fsmission.cpp:4169-4250),
     // so the finale is registered once every side has observed an enemy station,
     // instead of failing the whole spawn when nothing is known yet.
-    private List<(ShowcaseFinale.Settings Settings, string[] Names)>? _pendingFinales;
+    private List<(ShowcaseFinale.Settings Settings, string[] Names, double PendingAt)>? _pendingFinales;
 
     public object ConfigureFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names)
     {
@@ -115,7 +115,7 @@ internal sealed partial class BotManager
         }
         if (stations is null)
         {
-            lock (_gate) (_pendingFinales ??= []).Add((settings, names.ToArray()));
+            lock (_gate) (_pendingFinales ??= []).Add((settings, names.ToArray(), Now()));
             Console.WriteLine($"[finale] armed for {names.Count} bots; waiting until every side has observed an enemy station (map discovery)");
             return new { enabled = true, pending = "waiting until every side has observed an enemy station" };
         }
@@ -185,13 +185,27 @@ internal sealed partial class BotManager
         return false;
     }
 
-    private void RegisterPendingFinales()
+    private void RegisterPendingFinales(double now)
     {
-        (ShowcaseFinale.Settings Settings, string[] Names)[] pending;
+        (ShowcaseFinale.Settings Settings, string[] Names, double PendingAt)[] pending;
         lock (_gate) pending = _pendingFinales?.ToArray() ?? [];
         foreach (var p in pending)
         {
-            if (StationsSeenByAnEnemy(p.Names) is not { } stations) continue;
+            if (StationsSeenByAnEnemy(p.Names) is not { } stations)
+            {
+                // P954 — fog must not keep a two-side match from ever arming its
+                // deadline either. After the recon budget expires with a side still
+                // blind, register exactly like the multi-side case above: the run
+                // exists, so the maturity trigger arms the bounded server deadline
+                // and the match gets its game over; a still-blind side arms with no
+                // target (P896) and picks one up when its own worlds report one.
+                if (now - p.PendingAt < ScoutOpening.PendingArmGraceSeconds) continue;
+                lock (_gate) _pendingFinales?.Remove(p);
+                RegisterFinale(p.Settings, p.Names, []);
+                Console.WriteLine($"[finale] registered after {now - p.PendingAt:F0}s without full enemy-station sightings "
+                    + "(P954 arm grace): a still-blind side arms with no target (P896) and strikes once it observes one");
+                continue;
+            }
             lock (_gate) _pendingFinales?.Remove(p);
             RegisterFinale(p.Settings, p.Names, stations);
             Console.WriteLine($"[finale] registered: every side has observed an enemy station");
@@ -715,7 +729,7 @@ internal sealed partial class BotManager
 
     private void UpdateFinales(double now)
     {
-        RegisterPendingFinales();
+        RegisterPendingFinales(now);
         RearmRotatedFinales(now);
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
