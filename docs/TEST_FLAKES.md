@@ -112,6 +112,29 @@ the 480 s window, longest idle with target 1.958 s) — no attempt reported `Par
 assertions passed. Same arrival-sensitive signature as the existing P942 cohort (patched 4/5, dispatch 5/5); parking
 behaviour unchanged.
 
+## P945 validation — one Fast sweep + isolated follow-ups, 2026-11-07 UTC
+
+One Fast sweep (and an earlier one taken before P945's own two findings were
+fixed): the P945 additions themselves are green — all 16 new
+`P945HangarArtTests` pass three times alone, and 133 affected
+hangar/docked/training tests pass. The sweep's failures are the standing
+ledger entries plus one new host condition:
+
+| Test | Sweet | Alone | Notes |
+|---|---|---|---|
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | failed | **fail / fail / fail** (53/70/74 ms) | Not P945: the injected `TailscaleStatus = () => null` is bypassed by the engine's own tailnet scan, which finds a live Allegiance server on this workstation's tailnet (`<tailnet address>:6073`, 14 players). Environmental — the host has a running tailnet game. No discovery code changed by P945. |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | failed | **pass / pass / pass** | Already ledged allocation intermittency. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass / pass / pass** | Already ledged ballot-receipt family. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed (38.8 s) | known open failure | Persistent ledger entry (P933/P935/P938 cohorts); no lock/tip code changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | failed | known baseline failure | Persistent null-target assertion, fails on the unmodified base too. |
+| `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(Classic, reminders)` | failed (9 m 3 s) | not re-run (20 min budget) | M2 prompt-sequence snapshot ("native prompts missing or out of order") taken from `ClientTrainingSite.Messages` — instructor messages posted by the training host; P945 changed only client presentation (docked view flag, HUD draw path). Same full-gate-only real-window family already ledged above. |
+| `P800HullProofGpuTests`, `SC2NaniteSupportTests`, `P814GunnerTests`, `P777WarpExitWobbleTests`, `P750NativeAsteroidTypesTests`, `WarpTransitServerTests`, `P942ResearchOrderingTests` | 8 executions over the calibrated 10 s Fast limit (10.5–38.8 s) | n/a | Host load average 11–14 on 24 CPUs (other lanes running); the same executions were 8–17 s in the earlier sweep. |
+
+Two real P945 regressions were found by the first sweep and fixed before the
+second: `RendererDisposalGuardTests` (the new `_hangarScreenRenderer` must be
+disposed in `UnloadContent`) and `PackagingManifestTests`
+(`packaging/artwork-{roots,manifest}.txt` regenerated for the hangar art stems).
+
 ## P942 validation — one Fast sweep and dispatch controls, 2026-11-07 UTC
 
 Exactly one Fast sweep: **13,287 passed / 10 failed / 3 optional Meshy-pack

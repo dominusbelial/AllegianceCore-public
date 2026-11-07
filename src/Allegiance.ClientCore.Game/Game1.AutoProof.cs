@@ -1038,7 +1038,7 @@ public sealed partial class Game1
     /// descriptive name (time + sector + camera). <paramref name="shotIndex"/>
     /// &gt;= 0 = the in-flight schedule; <paramref name="dockSweepStep"/> &gt;= 0
     /// labels a hangar-preview sweep shot.</summary>
-    private void ScheduleAutoshot(int shotIndex = -1, int dockSweepStep = -1)
+    private void ScheduleAutoshot(int shotIndex = -1, int dockSweepStep = -1, string? nameTag = null)
     {
         // P577b — --auto-credits: open the in-game Credits/Licences overlay so
         // the real-backbuffer shot (flushed at Draw end, after the overlay
@@ -1074,9 +1074,9 @@ public sealed partial class Game1
             _ => "chase",
         };
         string sector = CurrentSectorName();
-        string tag = shotIndex == LiveProof.AutoProofMachine.PostKillShotIndex
+        string tag = nameTag ?? (shotIndex == LiveProof.AutoProofMachine.PostKillShotIndex
             ? "postkill"
-            : dockSweepStep >= 0 ? $"sweep{dockSweepStep:00}" : $"t{t:000.0}";
+            : dockSweepStep >= 0 ? $"sweep{dockSweepStep:00}" : $"t{t:000.0}");
         _autoShotName = $"proof_{tag}_s{sector}_c{camera}";
         _autoShotScheduled = true;
         Console.WriteLine($"[autoproof] autoshot queued: {_autoShotName} (t={t:0.0}s after launch)");

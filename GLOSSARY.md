@@ -820,6 +820,21 @@ list in **reverse**.
   `tools/p946-intro-keys-proof/`; tests `tests/Allegiance.ClientCore.MonoGame.Tests/P946IntroKeysTests.cs` and
   `tests/Allegiance.ClientCore.MonoGame.Tests/IntroLayoutTests.cs`. Native is mouse-driven ButtonPanes with no key
   handler: `WinTrek/introscreen.cpp:1212-1228`.
+- **Native hangar screen (P945)** — the docked hangar view is the native
+  `hangar.mdl` screen: `src/Allegiance.ClientCore.Game/Rendering/HangarScreen.cs`
+  is the single geometry/string source (800×600 panes at their authored points,
+  hover text table, in-turret badge, port-only verb cells),
+  `HangarScreenRenderer.cs` draws it scaled and centred and
+  `HangarArt.cs` loads the binary `.mdl` art case-insensitively (the eight
+  button strips, the 800×600 background, the badge). The launch pane's
+  `FrameImage` animation is decoded by `src/Allegiance.Core/Data/MdlFrameImage.cs`
+  and driven by `HangarLaunchAnimation.cs` (0.7 s ramp in/out, 16 frames).
+  `--auto-hangar` (`LiveProof/HangarProofScript.cs`, `Game1.HangarProof.cs`)
+  scripts hover/click/screenshot steps for the real-window proof. Native:
+  `WinTrek/WinTrek.cpp:6565,6706-6718,6836`, `WinTrek/hangarscreen.cpp:36-300`,
+  `engine/button.cpp:108-290`, `engine/frameimage.cpp:110-500`. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P945HangarArtTests.cs`; report:
+  `HANGAR_ART_P945.md`.
 - **Native sound dispatch (P871)** — the numeric `SoundID` space and the
   cue/loop routing: the generated `soundList` table
   (`src/Allegiance.Core/Audio/NativeSoundCatalog.Generated.cs`, rebuilt by

@@ -546,6 +546,9 @@ public sealed partial class Game1 : Game
     private Texture2D _whitePixel = null!;
     private SpriteFont _hudSmall = null!;
     private SpriteFont _hudBig = null!;
+    /// <summary>FONT-1 — the native-classic font bakes (also used by P945's
+    /// native hangar hover text at the <c>hugeFont</c> cell height).</summary>
+    private Rendering.NativeFonts? _nativeFonts;
     private HudRenderer _hudRenderer = null!;
     private ModernHudRenderer _modernHudRenderer = null!;
     /// <summary>P833 — the OS display density (desktop scale) that drives the
@@ -2091,6 +2094,7 @@ public sealed partial class Game1 : Game
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
         _hudNativeTextures?.Dispose();  // HUD-10 — release compose/money/command/endurance art
         _slideshowArt?.Dispose();       // P943 — release the training slideshow bitmaps
+        _hangarScreenRenderer?.Dispose();   // P945 — release the native hangar screen art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
         _radarIconTextures?.Dispose();   // HUD-16 — release the native radar contact icons
         _preloader?.Dispose();           // P871 — release the preloaded core-type surfaces

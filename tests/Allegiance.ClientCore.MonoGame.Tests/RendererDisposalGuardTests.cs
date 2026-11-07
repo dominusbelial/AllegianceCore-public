@@ -61,6 +61,7 @@ public class RendererDisposalGuardTests
         "_shaders",
         "_nativeEffects",
         "_shipLodSpriteRenderer",   // P628 — far-tier sprite batcher
+        "_hangarScreenRenderer",    // P945 — native hangar screen art (hangar.mdl)
     };
 
     [Fact]

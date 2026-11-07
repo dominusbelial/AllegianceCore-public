@@ -180,6 +180,10 @@ public sealed class AutoProofPlan
     /// <summary>Output directory for the autoshots (<c>--autoshot-dir</c>).</summary>
     public string AutoshotDir = "";
 
+    /// <summary>P945 — scripted hangar-screen steps (<c>--auto-hangar</c>), timed
+    /// in seconds after the hangar screen first appeared. Empty = inert.</summary>
+    public HangarScriptStep[] HangarScript = Array.Empty<HangarScriptStep>();
+
     /// <summary>P584 — seconds after launch at which to send a suicide (the
     /// <c>K</c> key, TK_Suicide) so the death/eject HUD feedback (death banner,
     /// eject-pod panel) can be photographed in the real window. Multiple times
@@ -569,6 +573,14 @@ public sealed class AutoProofPlan
             {
                 plan.AutoshotSeconds = ParseSecondsList(a.Substring("--autoshots=".Length));
             }
+            else if (a == "--auto-hangar")
+            {
+                if (i + 1 < args.Count) plan.HangarScript = HangarProofScript.Parse(args[++i]);
+            }
+            else if (a.StartsWith("--auto-hangar=", StringComparison.Ordinal))
+            {
+                plan.HangarScript = HangarProofScript.Parse(a.Substring("--auto-hangar=".Length));
+            }
             else if (a == "--autoshot-dir")
             {
                 if (i + 1 < args.Count)
@@ -724,7 +736,7 @@ public sealed class AutoProofPlan
         TargetSequence.Length > 0 || AutoDropProbeAt.HasValue || AutoSummonEnemyAt.HasValue
             || AutoParkBotsSector.Length > 0
             || StopAfter.HasValue || AutoCarryProbe || AutoTreasureCode.HasValue ||
-        AutoHideChatHistory ||
+        AutoHideChatHistory || HangarScript.Length > 0 ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||
         !string.Equals(Camera, "cockpit", StringComparison.OrdinalIgnoreCase);
 

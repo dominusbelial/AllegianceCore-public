@@ -2,40 +2,33 @@ using Microsoft.Xna.Framework;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
-// Native hover values: WinTrek/hangarscreen.cpp:37-48,243-300.
+// Native hover values: WinTrek/hangarscreen.cpp:36-48,243-300.
 public enum HangarAction { None, Launch, Buy, Command, Loadout, Default, Invest, Help, Teleport, Team, Exit }
 
-/// <summary>Shared drawing/hit-test geometry for native hangar verbs.</summary>
+/// <summary>Shared drawing/hit-test geometry for native hangar verbs.
+///
+/// <para>P945 — the geometry is now the native <c>hangar.mdl</c> screen (800×600
+/// panes scaled uniformly and centred, see <see cref="HangarScreen"/>), not the
+/// pre-P945 bottom row of text cells. Every rectangle here is the one the
+/// renderer draws, so hit-testing and drawing cannot disagree.</para></summary>
 public static class HangarControls
 {
     public static IEnumerable<HangarAction> Actions(bool developments) =>
         Enum.GetValues<HangarAction>().Where(a => a != HangarAction.None && (developments || a != HangarAction.Invest));
 
-    public static Rectangle Bounds(int width, int height, HangarAction action)
-    {
-        int index = (int)action - 1;
-        int count = Enum.GetValues<HangarAction>().Length - 1;   // exclude None
-        int cell = Math.Max(1, (width - 32) / count);
-        return new Rectangle(16 + index * cell, height - 72, cell - 4, 30);
-    }
+    /// <summary>The viewport rectangle of a hangar verb (native pane for the
+    /// native verbs, the letterbox cell for the port-only ones).</summary>
+    public static Rectangle Bounds(int width, int height, HangarAction action) =>
+        HangarScreen.Rect(width, height, action);
 
     public static HangarAction Hit(int width, int height, int x, int y, bool developments) =>
-        Actions(developments).FirstOrDefault(a => Bounds(width, height, a).Contains(x, y));
+        HangarScreen.Hit(width, height, x, y, developments);
 
-    public static string Feedback(HangarAction action) => action switch
-    {
-        HangarAction.Launch => "Launch your ship",
-        HangarAction.Buy => "Buy this loadout (request money if short)",
-        HangarAction.Command => "View the station's sector in command view",
-        HangarAction.Loadout => "Configure your ship's hull and equipment",
-        HangarAction.Default => "Reset to this hull's default loadout",
-        HangarAction.Invest => "Invest in your team's developments and construction",
-        HangarAction.Help => "Open help and controls",
-        HangarAction.Teleport => "Teleport to a station or board a teammate",
-        HangarAction.Team => "View your team roster",
-        HangarAction.Exit => "Leave this mission",
-        _ => ""
-    };
+    /// <summary>The hover text for a verb — the native strings
+    /// (<c>hangar.mdl:26-72</c>) with the port's wording only for the two verbs
+    /// native's hangar has no button for.</summary>
+    public static string Feedback(HangarAction action) =>
+        HangarScreen.HoverText.TryGetValue(action, out var text) ? text : "";
 }
 
 /// <summary>Native clintlib.h:1389-1393; appmsg.cpp:1929-1938:
