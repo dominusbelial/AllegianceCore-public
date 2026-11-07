@@ -5,6 +5,36 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P946 validation — one Fast sweep, 2026-11-07 UTC
+
+One Fast sweep: **13,337 executions — 13,325 passed / 9 failed / 3 optional Meshy-pack skips**, infrastructure checks
+passed, 664.7 s, 11 executions over the calibrated 10 s limit, shared-host load average 10–16 while it ran. None of the
+nine failures touch P946's scope (intro keyboard mapping, focus drawing, intro layout; no Core, Server, sim, bot,
+miner, docking or network code changed), and each matches an existing ledger signature. Isolation ran in filtered
+processes after the sweep.
+
+| Sweep exception | Observation in the sweep | Isolated outcome |
+| --- | --- | --- |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | `Assert.Empty` got a real Tailscale node (`100.75.197.111`, `domingo-um690…ts.net`, LAN game on 6073) although the injected `TailscaleStatus` returned null | **fail / fail / fail** (61/55/60 ms) — environmental: this host's Tailscale interface is up, so the "absent" scan finds it; no discovery code changed |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.7 s, also over the guard) | "lock never reached full + partial tip (lock 1.000)" | **fail / fail / fail** in the isolated cohort (38–40 s, same 1.000 signature), then a further isolated run **passed** in 1 s — the existing intermittent partial-tip receipt failure; remains open |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | "B never saw A's death (IsDead never latched)" | **pass / pass / pass** (~1 s) — existing asynchronous death-receipt intermittency (also P903/P899/P896) |
+| `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | `Assert.Contains` missing the moved ship in the relay list | **pass / pass / pass** |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | `Assert.Same` expected ship, actual null | **fail / fail / fail** — the already-led persistent NPC wingman failure (unchanged code) |
+| `NpcPilotTypeGateLiveTests.Miner_idle_npc_still_picks_the_rock` (12 s) | "miner must travel toward the rock: travelled 0.0" | **pass / pass / pass** |
+| `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | "non-miner must not move from spawn: travelled 199.140" | **pass / pass / pass** |
+| `MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire` | "pool draw 0 should equal ship.Ore 20" | **pass / pass / pass** |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | "same-side watcher never received the driver pod's relayed update" | **pass / pass / pass** |
+
+Timing-only sweep exceptions (all previously led families, pass alone): P800 hull proof 11.633 s, MissileLock 38.733 s,
+P796 loadout 10.069 s, P814 gunner 11.181 s, SC2 Nanite 10.951 s, P777 warp-exit 12.787 s, NpcDodge ×3
+(10.552/10.510/11.137 s), NpcPilotTypeGate miner 12.549 s, P942 research ordering 10.257 s.
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`), five
+sequential attempts of only that method: **4 pass / 1 fail**. The failure is the known arrival assertion (19/30 inside
+the 480 s window, longest idle with target 1.958 s) — no attempt reported `Parked >5s`, and the `idleWithTarget`
+assertions passed. Same arrival-sensitive signature as the existing P942 cohort (patched 4/5, dispatch 5/5); parking
+behaviour unchanged.
+
 ## P942 validation — one Fast sweep and dispatch controls, 2026-11-07 UTC
 
 Exactly one Fast sweep: **13,287 passed / 10 failed / 3 optional Meshy-pack

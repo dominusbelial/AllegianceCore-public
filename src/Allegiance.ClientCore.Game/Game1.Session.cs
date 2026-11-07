@@ -1545,7 +1545,7 @@ public sealed partial class Game1
             {
                 if (c <= 126 && _lanJoinPassword.Length < 15) _lanJoinPassword.Append(c);
             }
-            else if (_introView == IntroView.Main && _introEditingPilot && _pilotBuf.Length < 24)
+            else if (_introView == IntroView.Main && IntroScreenModel.TypesPilotName(c, _introEditingPilot) && _pilotBuf.Length < 24)
                 _pilotBuf.Append(c);
             else if (_introView == IntroView.DirectConnect && _introEditingDirect && _directBuf.Length < 128)
                 _directBuf.Append(c);

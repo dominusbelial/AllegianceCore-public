@@ -812,6 +812,14 @@ list in **reverse**.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,
   Game1.IntroScreen.cs, Game1.ConnectScreen.cs).
+- **Intro screen (P731/P946)** — the port's keyboard intro menu: the button set/commands and the pure key→focus
+  mapping (arrows always move the selection, Tab toggles typed-text focus, Enter activates) in
+  `src/Allegiance.ClientCore.Game/IntroScreenModel.cs`, resolution-adaptive menu geometry (short viewports compress
+  instead of clipping) in `src/Allegiance.ClientCore.Game/IntroLayout.cs`, the views/drawing in
+  `src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs`, and the real-window key proof in
+  `tools/p946-intro-keys-proof/`; tests `tests/Allegiance.ClientCore.MonoGame.Tests/P946IntroKeysTests.cs` and
+  `tests/Allegiance.ClientCore.MonoGame.Tests/IntroLayoutTests.cs`. Native is mouse-driven ButtonPanes with no key
+  handler: `WinTrek/introscreen.cpp:1212-1228`.
 - **Native sound dispatch (P871)** — the numeric `SoundID` space and the
   cue/loop routing: the generated `soundList` table
   (`src/Allegiance.Core/Audio/NativeSoundCatalog.Generated.cs`, rebuilt by

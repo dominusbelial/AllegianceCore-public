@@ -51,14 +51,21 @@ public sealed partial class Game1
 
     /// <summary>Compose the proof's synthetic keys into the real keyboard state — the single choke
     /// point from which <see cref="Game1.FlightInput"/> reads its KeyboardState every frame. When the
-    /// proof is inactive this returns the raw hardware state unchanged (no behavioural change).</summary>
+    /// proof is inactive this returns the raw hardware state unchanged (no behavioural change).
+    /// P946 — the intro proof's keys (<see cref="_introProofKeys"/>) are merged too: the training
+    /// autoproof resets its own array every frame, so the intro proof cannot borrow it.</summary>
     private KeyboardState ReadProofKeyboard()
     {
         var real = Keyboard.GetState();
-        if (!_proofEnabled || _proofKeys is not { Length: > 0 } pk)
+        var trainingKeys = _proofEnabled ? _proofKeys : null;
+        var introKeys = _introProofKeys;
+        if (trainingKeys is not { Length: > 0 } && introKeys is not { Length: > 0 })
             return real;
         var set = new HashSet<Keys>(real.GetPressedKeys());
-        foreach (var k in pk) set.Add(k);
+        if (trainingKeys is { Length: > 0 } pk)
+            foreach (var k in pk) set.Add(k);
+        if (introKeys is { Length: > 0 } ik)
+            foreach (var k in ik) set.Add(k);
         var arr = new Keys[set.Count];
         set.CopyTo(arr);
         return new KeyboardState(arr);
