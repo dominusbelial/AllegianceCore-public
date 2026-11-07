@@ -1266,6 +1266,11 @@ public sealed partial class Game1
     /// </summary>
     private void UpdateFlying(KeyboardState ks, GameTime gameTime)
     {
+        // P949 — the one-time fresh-profile keys hint. Runs first so the frame
+        // the player launches sees it; the pure ControlHint rules own its 60 s /
+        // "any key" lifetime and the HUD model carries the visible line.
+        UpdateControlHint(ks, gameTime.ElapsedGameTime.TotalSeconds);
+
         // P785 — the training key gate (WinTrek.cpp:8753-8769): while a training mission
         // is running the six training keys route to Training::RecordKeyPress first
         // (pause/clock/finish/skip; a key the mission rejects is swallowed). Runs before
@@ -1294,6 +1299,12 @@ public sealed partial class Game1
         // composing-gated and the proof itself opens the F6 Controls popup.
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_P941_PROOF") == "1")
             RunP941Proof(gameTime.ElapsedGameTime.TotalSeconds);
+
+        // P949 — real-window proof of the fresh-profile default (Port keys +
+        // one-time hint) and the F6 preset labels. Also outside the flight-key
+        // block for the same reason: it opens the Controls popup.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_P949_PROOF") == "1")
+            RunP949Proof(gameTime.ElapsedGameTime.TotalSeconds);
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.

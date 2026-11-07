@@ -89,7 +89,12 @@ public sealed class DiscoveryCoordinator
         if (o.EnableTailscale)
         {
             string? json;
-            try { json = o.TailscaleStatus?.Invoke() ?? RunTailscaleStatus(); }
+            // A caller-supplied probe answer is authoritative: null means
+            // "tailscale absent", which must stay SILENT. Falling back to the
+            // real CLI here made the scan non-hermetic — on a host with
+            // tailscale installed it silently probed the operator's live tailnet
+            // (breaking the "silent when absent" contract and its test).
+            try { json = o.TailscaleStatus is { } probe ? probe() : RunTailscaleStatus(); }
             catch { json = null; }                       // absent/error → silent
             if (!string.IsNullOrWhiteSpace(json))
             {

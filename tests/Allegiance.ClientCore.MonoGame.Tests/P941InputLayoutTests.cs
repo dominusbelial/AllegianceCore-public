@@ -10,30 +10,71 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// P941 — the native default controls for a fresh profile, the "Port layout"
-/// preset, the F6 preset switch, the persistence/migration rules and the F1
-/// overview.
+/// P941, updated by P949 — the fresh-profile default controls, the "Classic
+/// Allegiance" preset, the F6 preset switch, the persistence/migration rules and
+/// the F1 overview.
 ///
-/// <para>Behaviour parity: the native layout is native's own
+/// <para>Behaviour parity: the Classic preset is native's own
 /// <c>Artwork/defaultinputmap.mdl</c> keyboard table (keyCommandMap, lines 3-107)
 /// plus its mouse/wheel map (mouseButtonCommandMap, lines 109-116), decoded by
 /// <see cref="DefaultInputMap"/>; the five mouse commands keep no keyboard chord.
-/// The pre-P941 port layout stays a named preset. A keymap file written before
-/// P941 has no layout marker, so it loads as the port layout — an existing saved
-/// profile's bindings do not move.</para>
+/// Native's stock map binds no key to TK_PitchUp/Down or TK_YawLeft/Right
+/// (igc.h:240-243), so it flies with the mouse/joystick. Since P949 a fresh
+/// profile (no keymap file) starts on the keyboard-first Port layout; the stock
+/// map is one F6 preset switch away, and a legacy flat keymap file (no layout
+/// marker) loads as the Port layout its untouched chords came from.</para>
 /// </summary>
 public sealed class P941InputLayoutTests
 {
+    /// <summary>A fresh profile: no layout argument — the P949 default (Port).</summary>
     private static ActionMap Fresh() => new(InputActionCatalog.Definitions);
 
     private static ActionMap Port() => new(InputActionCatalog.Definitions, InputLayout.Port);
 
-    // ── native defaults (keyboard) ────────────────────────────────────────
+    /// <summary>The "Classic Allegiance" preset: native's stock map.</summary>
+    private static ActionMap Classic() => new(InputActionCatalog.Definitions, InputLayout.Native);
+
+    // ── fresh-profile defaults (Port layout) ──────────────────────────────
 
     [Fact]
-    public void Fresh_profile_gets_the_native_keyboard_defaults()
+    public void Fresh_profile_gets_the_port_keyboard_defaults()
     {
         var map = Fresh();
+        Assert.Equal(InputLayout.Port, map.Layout);
+
+        // Movement: the port's keyboard scheme — W/S/A/D thrust, arrow steering,
+        // Q/E roll (the keys the fresh-install complaints named).
+        Assert.Equal(new KeyBinding(Keys.W, InputModifiers.None), map.BindingOf("ThrustForward"));
+        Assert.Equal(new KeyBinding(Keys.S, InputModifiers.None), map.BindingOf("ThrustBackward"));
+        Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), map.BindingOf("ThrustLeft"));
+        Assert.Equal(new KeyBinding(Keys.E, InputModifiers.None), map.BindingOf("ThrustRight"));
+        Assert.Equal(new KeyBinding(Keys.Up, InputModifiers.None), map.BindingOf("PitchUp"));
+        Assert.Equal(new KeyBinding(Keys.Down, InputModifiers.None), map.BindingOf("PitchDown"));
+        Assert.Equal(new KeyBinding(Keys.Left, InputModifiers.None), map.BindingOf("YawLeft"));
+        Assert.Equal(new KeyBinding(Keys.Right, InputModifiers.None), map.BindingOf("YawRight"));
+        Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), map.BindingOf("RollLeft"));
+        Assert.Equal(new KeyBinding(Keys.D, InputModifiers.None), map.BindingOf("RollRight"));
+        Assert.Equal(new KeyBinding(Keys.LeftShift, InputModifiers.None), map.BindingOf("FireBooster"));
+        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.Tab, InputModifiers.None), map.BindingOf("ToggleStarmap"));
+        Assert.Equal(new KeyBinding(Keys.M, InputModifiers.None), map.BindingOf("ToggleMouse"));
+
+        // Mouse flight is opt-in on the Port layout, ON only for the stock map.
+        Assert.False(InputLayouts.MouseFlightByDefault(InputLayout.Port));
+        Assert.True(InputLayouts.MouseFlightByDefault(InputLayout.Native));
+
+        // ...and the stock map's keys are NOT what a fresh profile gets.
+        Assert.NotEqual(new KeyBinding(Keys.Q, InputModifiers.None), map.BindingOf("RollLeft"));
+        Assert.NotEqual(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireBooster"));
+        Assert.NotEqual(new KeyBinding(Keys.V, InputModifiers.None), map.BindingOf("ToggleMouse"));
+    }
+
+    // ── the Classic preset reproduces the stock map ────────────────────────
+
+    [Fact]
+    public void Classic_preset_reproduces_the_stock_map()
+    {
+        var map = Classic();
         Assert.Equal(InputLayout.Native, map.Layout);
 
         // Movement: native A/D strafe, Q/E roll, Tab thrust forward, W/X vertical
@@ -47,9 +88,12 @@ public sealed class P941InputLayoutTests
         Assert.Equal(new KeyBinding(Keys.X, InputModifiers.None), map.BindingOf("ThrustDown"));
         Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireBooster"));
 
-        // The pre-P941 port scheme is NOT what a fresh profile gets.
-        Assert.NotEqual(new KeyBinding(Keys.A, InputModifiers.None), map.BindingOf("RollLeft"));
-        Assert.NotEqual(new KeyBinding(Keys.LeftShift, InputModifiers.None), map.BindingOf("FireBooster"));
+        // Native's stock table has no steering keys at all (TK 17-20 absent from
+        // keyCommandMap; VK 37-40 absent too), so the stock map flies with the
+        // mouse/joystick. The preset keeps the port's chord for commands native
+        // leaves unbound (no action loses its only binding).
+        Assert.Null(InputActionCatalog.Definitions.Single(d => d.Name == "PitchUp").NativeDefault);
+        Assert.Null(InputActionCatalog.Definitions.Single(d => d.Name == "YawLeft").NativeDefault);
 
         // Targeting / weapons / console modes sampled across the native table.
         Assert.Equal(new KeyBinding(Keys.T, InputModifiers.None), map.BindingOf("TargetFriendly"));
@@ -70,7 +114,7 @@ public sealed class P941InputLayoutTests
     [Fact]
     public void Every_native_default_in_the_catalogue_is_honoured()
     {
-        var map = Fresh();
+        var map = Classic();
         var kept = InputLayouts.Relocations.Select(r => r.Action).ToHashSet();
         foreach (var def in InputActionCatalog.Definitions)
         {
@@ -112,7 +156,7 @@ public sealed class P941InputLayoutTests
     [Fact]
     public void Mouse_left_fires_in_flight_and_target_picking_stays_reachable()
     {
-        var map = Fresh();
+        var map = Classic();
 
         // Left button = TK_FireWeapon (mdl:111). Native's keyboard table has NO
         // key for TK_FireWeapon, so the mouse is the only binding — and it is a
@@ -135,44 +179,49 @@ public sealed class P941InputLayoutTests
         Assert.Equal("-", map.LabelOf("ThrottleDown"));
 
         // Pointer picking (the "native way"): TK_ToggleMouse turns the virtual
-        // joystick off (WinTrek.cpp:9419-9431) and the console picks with the
+        // joystick off (WinTrek.cpp:9421-9435) and the console picks with the
         // pointer again (console.cpp:1857-1900 ResolvePick / :1912-1990
         // PickObject: left = same-side ships, right = the legal command target).
         Assert.Equal(new KeyBinding(Keys.V, InputModifiers.None), map.BindingOf("ToggleMouse"));
         Assert.Equal(new KeyBinding(Keys.M, InputModifiers.None), map.BindingOf("CycleView"));
+
+        // The fresh Port profile fires with Space and keeps the pointer (P949).
+        var fresh = Fresh();
+        Assert.Equal("Space", fresh.LabelOf("FireWeapon"));
+        Assert.True(fresh.BindingOf("FireMissile").Key != Keys.None);
     }
 
     // ── no action loses its only binding ──────────────────────────────────
 
     [Fact]
-    public void No_action_loses_its_only_binding_under_the_native_layout()
+    public void No_action_loses_its_only_binding_under_the_classic_layout()
     {
-        var port = Port();
-        var native = Fresh();
+        var port = Fresh();
+        var classic = Classic();
         foreach (var def in InputActionCatalog.Definitions)
         {
             bool portBound = port.BindingOf(def.Name).Key != Keys.None;
             if (!portBound) continue;
-            bool bound = native.BindingOf(def.Name).Key != Keys.None
-                         || native.MouseButtonOf(def.Name) is not null;
-            Assert.True(bound, $"{def.Name} lost its only binding in the native layout");
+            bool bound = classic.BindingOf(def.Name).Key != Keys.None
+                         || classic.MouseButtonOf(def.Name) is not null;
+            Assert.True(bound, $"{def.Name} lost its only binding in the Classic layout");
         }
     }
 
     [Fact]
-    public void Native_layout_has_no_duplicate_chords_inside_the_flight_categories()
+    public void Classic_layout_has_no_duplicate_chords_inside_the_flight_categories()
     {
         // The port legitimately shares a chord across CONTEXTS (Space = fire in
         // flight, select in menus). Inside the flight command groups a duplicate
-        // would make one action swallow the other's key, so the native layout
-        // must be collision-free there.
+        // would make one action swallow the other's key, so the stock map must
+        // be collision-free there.
         string[] flight =
         [
             "MOVEMENT", "CRUISE THROTTLE", "WEAPONS", "INVENTORY / CARGO",
             "TARGETING / AUTOPILOT", "QUEUED ORDERS (RECEIVED COMMAND)",
             "COMMANDED SHIP (DRONE)", "VOTE / COMMAND",
         ];
-        var map = Fresh();
+        var map = Classic();
         var seen = new Dictionary<(Keys, InputModifiers), string>();
         foreach (var def in InputActionCatalog.Definitions.Where(d => flight.Contains(d.Category)))
         {
@@ -184,28 +233,32 @@ public sealed class P941InputLayoutTests
         }
     }
 
-    // ── the port preset is preserved exactly ──────────────────────────────
+    // ── the Port preset is preserved exactly ──────────────────────────────
 
     [Fact]
     public void Port_layout_preset_is_the_pre_p941_catalogue()
     {
-        var map = Port();
-        Assert.Equal(InputLayout.Port, map.Layout);
-        foreach (var def in InputActionCatalog.Definitions)
-            Assert.Equal(def.Default, map.BindingOf(def.Name));
+        foreach (var map in new[] { Fresh(), Port() })
+        {
+            Assert.Equal(InputLayout.Port, map.Layout);
+            foreach (var def in InputActionCatalog.Definitions)
+                Assert.Equal(def.Default, map.BindingOf(def.Name));
+        }
 
-        // The reported symptoms map 1:1 to this preset (why it is opt-in now).
-        Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), map.BindingOf("RollLeft"));
-        Assert.Equal(new KeyBinding(Keys.D, InputModifiers.None), map.BindingOf("RollRight"));
-        Assert.Equal(new KeyBinding(Keys.LeftShift, InputModifiers.None), map.BindingOf("FireBooster"));
-        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireWeapon"));
-        Assert.Equal(new KeyBinding(Keys.LeftControl, InputModifiers.None), map.BindingOf("FireMissile"));
+        // The reported fresh-install symptoms are gone in this preset.
+        var fresh = Fresh();
+        Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), fresh.BindingOf("RollLeft"));
+        Assert.Equal(new KeyBinding(Keys.D, InputModifiers.None), fresh.BindingOf("RollRight"));
+        Assert.Equal(new KeyBinding(Keys.LeftShift, InputModifiers.None), fresh.BindingOf("FireBooster"));
+        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), fresh.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.LeftControl, InputModifiers.None), fresh.BindingOf("FireMissile"));
+        Assert.Equal(new KeyBinding(Keys.Tab, InputModifiers.None), fresh.BindingOf("ToggleStarmap"));
     }
 
     [Fact]
     public void Switching_preset_restores_that_presets_defaults()
     {
-        var map = Fresh();
+        var map = Classic();
         map.SetBinding("RollLeft", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         map.SetLayout(InputLayout.Port);
         Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), map.BindingOf("RollLeft"));
@@ -228,36 +281,46 @@ public sealed class P941InputLayoutTests
         var map = Fresh();
         map.SetBinding("RollLeft", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         var json = map.ToJson();
-        Assert.Contains("\"layout\": \"native\"", json);
+        Assert.Contains("\"layout\": \"port\"", json);
 
         var reloaded = Fresh();
         reloaded.ApplyJson(json);
-        Assert.Equal(InputLayout.Native, reloaded.Layout);
+        Assert.Equal(InputLayout.Port, reloaded.Layout);
         Assert.Equal(new KeyBinding(Keys.F15, InputModifiers.None), reloaded.BindingOf("RollLeft"));
-        // An untouched action is the native default, not the port one.
-        Assert.Equal(new KeyBinding(Keys.E, InputModifiers.None), reloaded.BindingOf("RollRight"));
+        // An untouched action is the Port default, not the stock-map one.
+        Assert.Equal(new KeyBinding(Keys.D, InputModifiers.None), reloaded.BindingOf("RollRight"));
+
+        // The stock-map preset round trips too.
+        var classic = Classic();
+        classic.SetBinding("RollLeft", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
+        var classicJson = classic.ToJson();
+        Assert.Contains("\"layout\": \"native\"", classicJson);
+        var classicReloaded = Fresh();
+        classicReloaded.ApplyJson(classicJson);
+        Assert.Equal(InputLayout.Native, classicReloaded.Layout);
+        Assert.Equal(new KeyBinding(Keys.E, InputModifiers.None), classicReloaded.BindingOf("RollRight"));
     }
 
     [Fact]
-    public void Legacy_flat_keymap_file_migrates_to_native_keeping_the_players_rebinds()
+    public void Legacy_flat_keymap_file_loads_as_the_port_layout_keeping_the_players_rebinds()
     {
-        // Exactly what the pre-P941 client wrote: only the player's rebinds.
-        // They are kept on top of the native defaults; everything untouched
-        // moves to native (the old port defaults broke the training prompts).
+        // Exactly what the pre-P941 client wrote: only the player's rebinds, on
+        // the Port chords it shipped. They are kept on top of the Port defaults;
+        // everything untouched stays where the player left it (P949).
         const string legacy = "{\"RollLeft\":[70,0]}";   // F, a user rebind
         var map = Fresh();
         map.ApplyJson(legacy);
 
-        Assert.Equal(InputLayout.Native, map.Layout);
+        Assert.Equal(InputLayout.Port, map.Layout);
         Assert.Equal(new KeyBinding(Keys.F, InputModifiers.None), map.BindingOf("RollLeft"));
-        var native = Fresh();
+        var port = Fresh();
         foreach (var def in InputActionCatalog.Definitions.Where(d => d.Name != "RollLeft"))
-            Assert.Equal(native.BindingOf(def.Name), map.BindingOf(def.Name));
+            Assert.Equal(port.BindingOf(def.Name), map.BindingOf(def.Name));
 
-        // A player who only pressed OK in F6 wrote "{}": plain native.
+        // A player who only pressed OK in F6 wrote "{}": plain Port.
         var ok = Fresh(); ok.ApplyJson("{}");
-        Assert.Equal(InputLayout.Native, ok.Layout);
-        Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), ok.BindingOf("RollLeft"));
+        Assert.Equal(InputLayout.Port, ok.Layout);
+        Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), ok.BindingOf("RollLeft"));
     }
 
     [Fact]
@@ -270,28 +333,57 @@ public sealed class P941InputLayoutTests
         Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", path);
         try
         {
-            // 1. Fresh profile (no file): native defaults.
+            // 1. Fresh profile (no file): Port defaults, and nothing is written —
+            //    the fallback stays unsaved until the player changes something.
             var fresh = new KeyBindingStore();
-            Assert.Equal(InputLayout.Native, fresh.Map.Layout);
-            Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), fresh.Map.BindingOf("RollLeft"));
+            Assert.Equal(InputLayout.Port, fresh.Map.Layout);
+            Assert.True(fresh.FreshProfile);
+            Assert.False(fresh.HasKeymap);
+            Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), fresh.Map.BindingOf("RollLeft"));
+            Assert.False(File.Exists(path));
 
-            // 2. A pre-P941 file: native layout, the player's rebind kept.
+            // 2. A pre-P941 file: Port layout, the player's rebind kept, and the
+            //    existing file is NOT rewritten by the load.
             File.WriteAllText(path, "{\"FireWeapon\":[71,0]}");    // G, a user rebind
+            string before = File.ReadAllText(path);
             var legacy = new KeyBindingStore();
-            Assert.Equal(InputLayout.Native, legacy.Map.Layout);
+            Assert.Equal(InputLayout.Port, legacy.Map.Layout);
             Assert.Equal(new KeyBinding(Keys.G, InputModifiers.None), legacy.Map.BindingOf("FireWeapon"));
-            Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), legacy.Map.BindingOf("RollLeft"));
+            Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), legacy.Map.BindingOf("RollLeft"));
+            Assert.Equal(before, File.ReadAllText(path));
+            Assert.False(legacy.FreshProfile);
 
             // 3. A P941 file keeps whatever preset it records.
-            legacy.CycleLayout();                                  // Native -> Port, persisted
-            Assert.Equal(InputLayout.Port, legacy.Map.Layout);
+            legacy.CycleLayout();                                  // Port -> Native, persisted
+            Assert.Equal(InputLayout.Native, legacy.Map.Layout);
             var reloaded = new KeyBindingStore();
-            Assert.Equal(InputLayout.Port, reloaded.Map.Layout);
-            Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), reloaded.Map.BindingOf("RollLeft"));
+            Assert.Equal(InputLayout.Native, reloaded.Map.Layout);
+            Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), reloaded.Map.BindingOf("RollLeft"));
         }
         finally
         {
             Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", previous);
+            try { Directory.Delete(dir, true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
+    public void Reload_without_a_readable_keymap_reverts_to_port_and_writes_nothing()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "p941-reload-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var store = new KeyBindingStore();
+            string missing = Path.Combine(dir, "absent.json");
+            store.Map.SetBinding("RollLeft", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
+            store.ReloadFrom(missing);
+            Assert.Equal(InputLayout.Port, store.Map.Layout);
+            Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), store.Map.BindingOf("RollLeft"));
+            Assert.False(File.Exists(missing));
+        }
+        finally
+        {
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
     }
@@ -303,53 +395,58 @@ public sealed class P941InputLayoutTests
     {
         var map = Fresh();
         var ctl = new KeyBindingController(map);
+        Assert.Equal(InputLayouts.PortName, ctl.LayoutName);
+
+        ctl.CycleLayout();
+        Assert.Equal(InputLayout.Native, map.Layout);
         Assert.Equal(InputLayouts.NativeName, ctl.LayoutName);
+        Assert.Equal("Classic Allegiance (stock map: mouse/joystick steering)", ctl.LayoutName);
+        Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), map.BindingOf("RollLeft"));
 
         ctl.CycleLayout();
         Assert.Equal(InputLayout.Port, map.Layout);
         Assert.Equal(InputLayouts.PortName, ctl.LayoutName);
         Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), map.BindingOf("RollLeft"));
 
-        ctl.CycleLayout();
-        Assert.Equal(InputLayout.Native, map.Layout);
-        Assert.Equal(InputLayouts.NativeName, ctl.LayoutName);
-
         // The preset swap is pending until OK, exactly like a rebind.
         ctl.CycleLayout();
         ctl.Cancel();   // back to Browse (no store: nothing to reload)
-        Assert.Equal(InputLayout.Port, map.Layout);
+        Assert.Equal(InputLayout.Native, map.Layout);
     }
 
     [Fact]
     public void F6_labels_follow_the_selected_preset()
     {
-        var native = Fresh();
-        var port = Port();
-        Assert.Equal("Q", native.LabelOf("RollLeft"));
-        Assert.Equal("A", native.LabelOf("ThrustLeft"));
-        Assert.Equal("Space", native.LabelOf("FireBooster"));
-        Assert.Equal("Mouse Left", native.LabelOf("FireWeapon"));
+        var port = Fresh();
+        var classic = Classic();
         Assert.Equal("A", port.LabelOf("RollLeft"));
         Assert.Equal("Q", port.LabelOf("ThrustLeft"));
-        // The port preset keeps Space on FireWeapon (mouse flight is opt-in there).
         Assert.Equal("Space", port.LabelOf("FireWeapon"));
         Assert.Equal("Shift", port.LabelOf("FireBooster"));
+        Assert.Equal("Q", classic.LabelOf("RollLeft"));
+        Assert.Equal("A", classic.LabelOf("ThrustLeft"));
+        Assert.Equal("Space", classic.LabelOf("FireBooster"));
+        Assert.Equal("Mouse Left", classic.LabelOf("FireWeapon"));
     }
 
     // ── training prompt/key audit (binding half) ──────────────────────────
 
     /// <summary>
-    /// P941 — the audit table's binding half: every prompt that names an input
-    /// must have that input bound to the action the prompt asks for in the
-    /// native-default profile. The graph half (each prompt really is in the
-    /// mission scripts, and the reminders repeat them) lives in
+    /// P941/P949 — the audit table's binding half: every prompt that names an
+    /// input must have that input bound to the action the prompt asks for. The
+    /// prompt text is native's own script text (training/mission*.cpp), so it
+    /// names the STOCK MAP's keys — the audit therefore pins the "Classic
+    /// Allegiance" preset (the fresh Port profile shows native's wording; the
+    /// presets are configuration and the prompt text is native behaviour). The
+    /// graph half (each prompt really is in the mission scripts, and the
+    /// reminders repeat them) lives in
     /// <c>Allegiance.ClientCore.Tests/P941PromptAuditTests.cs</c>, where the
     /// training fake site is available.
     /// </summary>
     [Fact]
-    public void Audited_training_prompt_keys_are_bound_to_their_action_in_the_native_default_profile()
+    public void Audited_training_prompt_keys_are_bound_to_their_action_in_the_classic_preset()
     {
-        var map = Fresh();   // fresh profile: native layout
+        var map = Classic();
         Assert.NotEmpty(TrainingPromptAudit.All);
         foreach (var prompt in TrainingPromptAudit.All)
         {
@@ -374,31 +471,33 @@ public sealed class P941InputLayoutTests
     }
 
     // ── F1 overview reflects the live preset ──────────────────────────────
+
     [Fact]
-    public void F1_overview_names_the_native_defaults()
+    public void F1_overview_names_the_preset_defaults()
     {
-        var map = Fresh();
-        var topics = HelpManualModel.BuildTopics(map);
+        var classic = Classic();
+        var topics = HelpManualModel.BuildTopics(classic);
         string flight = string.Join("\n", topics.First(t => t.Id == "hlpFlight").Lines);
         string combat = string.Join("\n", topics.First(t => t.Id == "hlpCombat").Lines);
 
-        // Native defaults, not the old port prose ("W/S throttle, A/D roll").
-        Assert.Contains("Q/E roll the craft", flight);  // roll
+        // Stock-map defaults.
+        Assert.Contains("Q/E roll the craft", flight);
         Assert.Contains("A/D", flight);                 // lateral thrust
-        Assert.Contains("Space fires the booster", flight);  // booster
+        Assert.Contains("Space fires the booster", flight);
         Assert.Contains("Mouse Left", combat);          // fire
         Assert.Contains("Mouse Middle", combat);        // missile
         Assert.Contains("V toggles mouse flight", flight);
 
         // The live key table carries the mouse rows too.
-        var rows = map.ToHelpGroups().SelectMany(g => g.Entries).ToList();
+        var rows = classic.ToHelpGroups().SelectMany(g => g.Entries).ToList();
         Assert.Contains(rows, e => e.Key == "Mouse Left" && e.Description.Contains("Fire weapons"));
         Assert.Contains(rows, e => e.Key == "Mouse Middle" && e.Description.Contains("missile"));
 
-        // The Port preset shows the old keys instead.
-        var portFlight = string.Join("\n", HelpManualModel.BuildTopics(Port()).First(t => t.Id == "hlpFlight").Lines);
+        // The fresh Port profile shows the keyboard keys instead.
+        var portFlight = string.Join("\n", HelpManualModel.BuildTopics(Fresh()).First(t => t.Id == "hlpFlight").Lines);
         Assert.Contains("A/D roll the craft", portFlight);
         Assert.Contains("Q/E lateral thrust", portFlight);
+        Assert.Contains("M toggles mouse flight", portFlight);
     }
 
     [Theory]
@@ -413,7 +512,7 @@ public sealed class P941InputLayoutTests
         _ = style;
         var lines = HelpManualModel.BuildTopics(Fresh())
             .SelectMany(t => t.Lines).ToList();
-        Assert.Contains(lines, l => l.Contains("Q/E"));
+        Assert.Contains(lines, l => l.Contains("A/D"));
         Assert.All(lines, l => Assert.All(l, ch => Assert.InRange(ch, '\u0020', '\u007e')));
     }
 }

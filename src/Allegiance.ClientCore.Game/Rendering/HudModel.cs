@@ -258,6 +258,10 @@ public sealed record HudContext
     /// NoTrainingOverlay returns immediately, indicator.cpp:486-488). Both HUD styles
     /// render it through the shared <see cref="HudTrainingCallout"/> table.</summary>
     public int TrainingOverlayId { get; init; }
+    /// <summary>P949 — the one-time fresh-profile keys hint line (null when it is
+    /// not due, already dismissed or expired). Drawn by the shared renderer in
+    /// both skins, directly under the native chat pane.</summary>
+    public string? ControlHint { get; init; }
 }
 
 /// <summary>A renderer-independent snapshot of one HUD frame. HudFrame is the

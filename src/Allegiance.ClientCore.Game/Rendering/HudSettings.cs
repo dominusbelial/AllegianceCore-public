@@ -105,6 +105,11 @@ public sealed class HudSettings
     }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
+    /// <summary>P949 — the one-time fresh-profile keys hint has already been
+    /// shown and dismissed (or the player has a keymap). Persisted here because
+    /// it is a HUD presentation decision that must survive restarts, exactly
+    /// like the style; the hint itself never shows again once this is true.</summary>
+    public bool ControlHintSeen { get; set; }
     /// <summary>P897 remote multiplayer preference; local lessons/skirmish use TCP.</summary>
     public Discovery.ClientTransportSetting Transport { get; set; } = Discovery.ClientTransportSetting.Auto;
     public void Normalize()

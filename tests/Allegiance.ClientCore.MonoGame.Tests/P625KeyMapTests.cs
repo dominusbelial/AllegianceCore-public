@@ -103,12 +103,14 @@ public class P625KeyMapTests
     [Fact]
     public void Overrides_IgnoreUnknownActionsAndBadCodes()
     {
-        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Port);
+        var map = new ActionMap(InputActionCatalog.Definitions, InputLayout.Native);
         map.ApplyJson("{\"NoSuchAction\":[65,0],\"FireWeapon\":[99999,0],\"ThrottleUp\":[38,0]}");
         // Unknown action ignored; out-of-range key code ignored. A flat (pre-P941)
-        // file migrates to the native layout, so FireWeapon keeps the native default.
-        Assert.Equal(InputLayout.Native, map.Layout);
+        // file loads on the Port layout its untouched chords came from (P949), so
+        // FireWeapon keeps the Port default (Space).
+        Assert.Equal(InputLayout.Port, map.Layout);
         Assert.Equal(new ActionMap(InputActionCatalog.Definitions).BindingOf("FireWeapon"), map.BindingOf("FireWeapon"));
+        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map.BindingOf("FireWeapon"));
         // Valid override applied.
         Assert.Equal(new KeyBinding(Keys.Up, InputModifiers.None), map.BindingOf("ThrottleUp"));
     }

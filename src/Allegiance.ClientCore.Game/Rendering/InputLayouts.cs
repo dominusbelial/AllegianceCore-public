@@ -6,21 +6,23 @@ using Microsoft.Xna.Framework.Input;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P941 — which default binding set a profile uses. Native's
-/// <c>defaultinputmap.mdl</c> (<see cref="Native"/>) is the default for a fresh
-/// profile; <see cref="Port"/> is the layout the port shipped before P941,
-/// kept as a named, selectable preset so existing players (and the tests that
-/// pin those keys) can keep it.
+/// P949 — which default binding set a profile uses. The <see cref="Port"/> layout
+/// (the keyboard flight scheme the port ships: WASD/arrows, F6 controls) is the
+/// default for a fresh profile, so a new player can fly without the mouse;
+/// native's <c>defaultinputmap.mdl</c> (<see cref="Native"/>) stays one F6 choice
+/// away as the "Classic Allegiance" preset.
 /// </summary>
 public enum InputLayout
 {
     /// <summary>Native's shipped map: the keyboard table in
     /// <c>Artwork/defaultinputmap.mdl</c> (keyCommandMap, lines 3-107) plus its
-    /// mouse/wheel map (mouseButtonCommandMap, lines 109-116).</summary>
+    /// mouse/wheel map (mouseButtonCommandMap, lines 109-116). The stock map
+    /// binds no key to TK_PitchUp/Down or TK_YawLeft/Right (igc.h:240-243), so
+    /// out of the box native steers with the mouse/joystick, not the keyboard.</summary>
     Native = 0,
 
     /// <summary>The pre-P941 port layout (the <see cref="InputActionDef.Default"/>
-    /// chord of every action).</summary>
+    /// chord of every action) — the fresh-profile default since P949.</summary>
     Port = 1,
 }
 
@@ -48,8 +50,19 @@ public readonly record struct MouseButtonBinding(int Button)
 }
 
 /// <summary>
-/// P941 — the two selectable default binding layouts and the native
+/// P941/P949 — the two selectable default binding layouts and the native
 /// mouse/wheel map.
+///
+/// <para><b>Fresh profile = Port.</b> Since P949 a profile with no keymap file
+/// starts on the <see cref="InputLayout.Port"/> layout (keyboard steering on the
+/// arrow keys, W/S/A/D thrust, F6 controls), so the reported fresh-install
+/// symptoms ("arrows not working, WASD not working, Tab not working") do not
+/// recur. Native's map is a named preset one F6 switch away: it can steer from
+/// the keyboard (<c>TK_PitchUp/Down</c>, <c>TK_YawLeft/Right</c> read through
+/// <c>IsTrekKeyDown</c>, WinTrek/WinTrek.cpp:10895-10912), but the stock
+/// <c>defaultinputmap.mdl</c> binds no key to those four TKs and none to the
+/// arrow keys (VK 37-40), so native itself flies fresh installs with the
+/// mouse/joystick.</para>
 ///
 /// <para><b>Native layout.</b> Every action takes its
 /// <see cref="InputActionDef.NativeDefault"/> (the chord decoded from
@@ -72,11 +85,22 @@ public readonly record struct MouseButtonBinding(int Button)
 /// </summary>
 public static class InputLayouts
 {
-    /// <summary>The preset names shown in the F6 Controls screen.</summary>
-    public const string NativeName = "Native layout";
+    /// <summary>The preset names shown in the F6 Controls screen. The native
+    /// preset is named for what it actually is (P949): native's stock map flies
+    /// with the mouse/joystick, so the label says so and the difference to the
+    /// keyboard-first Port layout is unmistakable.</summary>
+    public const string NativeName = "Classic Allegiance (stock map: mouse/joystick steering)";
     public const string PortName = "Port layout";
 
     public static string Name(InputLayout layout) => layout == InputLayout.Native ? NativeName : PortName;
+
+    /// <summary>P949 — whether the layout turns the virtual joystick (mouse
+    /// flight) ON when it is selected for a fresh profile. Only the native stock
+    /// map does (native's own startup toggles the virtual joystick on:
+    /// <c>LoadPreference("VirtualJoystick", TRUE)</c> → <c>ToggleVirtualJoystick()</c>,
+    /// WinTrek/WinTrek.cpp:3311-3312); the Port layout keeps the pointer and
+    /// makes mouse flight an opt-in key.</summary>
+    public static bool MouseFlightByDefault(InputLayout layout) => layout == InputLayout.Native;
 
     /// <summary>The F6 preset cycle order (Native -> Port -> Native).</summary>
     public static InputLayout Next(InputLayout layout) => layout == InputLayout.Native ? InputLayout.Port : InputLayout.Native;

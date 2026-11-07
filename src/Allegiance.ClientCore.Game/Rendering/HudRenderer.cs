@@ -391,6 +391,24 @@ public class HudRenderer
             DrawWarnings(model.Warnings, w, h);
             if (model.Warnings.Count > 0) ElementDrawn("Boundary and crowd warnings");
             DrawConsoleText(model, viewport);
+            // P949 — the one-time fresh-profile keys hint. One line in the empty
+            // band directly under the native chat pane (CommPane is SideTop(-160,
+            // -126), dialog.mdl:5394, so every chat-pane configuration ends at
+            // ChatPaneLayout.BottomFromTop = 126), i.e. over open 3-D view, never
+            // over a native HUD widget. Drawn by the SHARED renderer, so Classic
+            // and Modern both show it; the line is ASCII-only (baked spritefonts)
+            // and measured-fit rather than truncated.
+            if (model.FlightVisible && context.ControlHint is { Length: > 0 } hintLine)
+            {
+                var hintFont = NativeFontAt(NativeFont.MedVerdana);
+                float measured = hintFont.MeasureString(hintLine).X;
+                float hintScale = MathF.Min(TextScale,
+                    MathF.Max(0.65f, (w - 32f) / MathF.Max(1f, measured)));
+                DrawMeasuredText(hintFont, hintLine,
+                    new Vector2(w / 2f - measured * hintScale / 2f, ChatPaneLayout.BottomFromTop + 6f),
+                    TextMain, drawScale: hintScale);
+                ElementDrawn("Fresh-profile controls hint");
+            }
             DrawLivesKillsBadges(model, viewport);
 
             // HUD-3 — the native bottom target pane (dialog.mdl:5402, shown in
