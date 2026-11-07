@@ -1902,6 +1902,17 @@ public sealed partial class Server
             Console.WriteLine($"[combat] ship {victim.Id} — KILL_SHIP(105) bKillCredit={killCredit} bDeathCredit={bKilled} -> {killTargets.Length} mission peer(s)");
         }
 
+        // Telemetry only: the killing blow's source (native names no weapon). The
+        // logged killer type fixes the old "[combat] … killed by ship N" label, which
+        // also named mines, probes and stations as ships.
+        if (amount != 0)
+        {
+            var hit = victim.KillingHit.Time == now ? victim.KillingHit : default;
+            string credited = killerId < 0 ? "none" : $"{killerType.ToString().ToLowerInvariant()} {killerId}";
+            Console.WriteLine($"[kill] ship {victim.Id} side {victim.SideId} {(bKilled ? "killed" : "podded")} by {credited} via {hit.Describe()} dmgtype {hit.DamageType}");
+            if (victim.SideId is { } lossSide) victim.Mission?.RecordShipLoss(lossSide, bKilled, hit.Kind);
+        }
+
         // Native checks kills victory before eject/death (FedSrv.CPP:11872-11880),
         // but processes game-over later (fsmission.cpp:2691-2695,2508-2511). The port's
         // callback immediately rotates the mission and migrates peers. Publish

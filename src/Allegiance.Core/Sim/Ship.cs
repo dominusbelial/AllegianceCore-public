@@ -844,6 +844,16 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     public double TimeLastMineExplosion;
 
+    /// <summary>Telemetry only (not native state). A sector damage pass sets the
+    /// source of the hit it is about to apply; <see cref="ReceiveDamage"/> takes and
+    /// clears it, and stamps <see cref="KillingHit"/> when the hit is lethal.</summary>
+    public HitSource PendingHit;
+
+    /// <summary>Telemetry only: the source of the hit that killed or ejected this
+    /// ship, read by the server's kill log inside KillShipEvent. Compare its
+    /// <see cref="HitSource.Time"/> with the event time before trusting it.</summary>
+    public HitSource KillingHit { get; private set; }
+
     /// <summary>
     /// P117 — the carrier's round-robin launch-slot counter, the port of
     /// <c>CshipIGC::m_nextLaunchSlot</c> (<c>shipIGC.h:2168-2172</c>). Each
@@ -5291,6 +5301,8 @@ public sealed partial class Ship : Model, IShipIgc
         Vector3 position2,
         Model? launcher)
     {
+        var hit = PendingHit;
+        PendingHit = default;
         // Native shipIGC.cpp:1222-1228: friendly immunity only with FF off
         // and amount >= 0; self damage with FF on and repair both reach this path.
         if (BlastDamage.Suppressed(Mission, SideId, launcher, amount))
@@ -5425,6 +5437,12 @@ public sealed partial class Ship : Model, IShipIgc
                     }
                     RecordSkillDamage();
                     if (credit is Ship creditedShip) Mission?.Skills?.Record(creditedShip.SideId, ShowcaseSkill.ShipKills);
+                    KillingHit = hit with
+                    {
+                        // Collisions pass no source; their type is c_dmgidCollision row 0 (Sector.CollisionDamageType).
+                        Kind = hit.Kind == HitKind.None && type == 0 ? HitKind.Collision : hit.Kind,
+                        DamageType = type, Time = now,
+                    };
                     using (Allegiance.Core.Profiling.TickProfiler.Enter("combat.killEject"))
                         Mission?.Site.KillShipEvent(now, this, credit, amount, position1, position2);
                     dr = DamageResult.Killed;
@@ -9398,7 +9416,10 @@ public sealed partial class Ship : Model, IShipIgc
         if (_fraction > 0f)
             mission.Site.DamageShipEvent(now, this, null, 0, damage, damage, p, p * 2f);
         else if (old > 0f)
+        {
+            KillingHit = new(HitKind.OutOfBounds, null, 0, now);
             mission.Site.KillShipEvent(now, this, null, damage, p, p * 2f);
+        }
     }
 
     private bool _skillFlight, _skillAutopilot;
@@ -9452,6 +9473,7 @@ public sealed partial class Ship : Model, IShipIgc
             now > deadline)
         {
             Console.WriteLine($"[oxygen] lifepod ship {Id} oxygen exhausted at sim-t {now:R} (deadline {deadline:R}) — KillShipEvent(launcher NULL, amount 1.0) -> destroy + respawn");
+            KillingHit = new(HitKind.Oxygen, null, 0, now);
             Mission?.Site.KillShipEvent(now, this, null, 1.0f, Position, Vector3.Zero);
             // Fire-once guard: even if this death fails to relocate/dock the pod
             // (e.g. no friendly station anywhere — BroadcastKillShip's early

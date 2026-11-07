@@ -535,6 +535,53 @@ public sealed class MineCombatTests
         Console.WriteLine($"P452-NATIVE: hull 1→{enemy.Fraction:F4} (hand-computed {expected:F4}); mine survived");
     }
 
+    /// <summary>Telemetry: a ship killed by mine attrition records the mine as its
+    /// killing blow (kind, launcher name, damage type, time) for the server's kill
+    /// log. Native names no weapon; this never reaches the wire.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Mine_kill_records_the_mine_as_the_killing_blow()
+    {
+        Require.Artwork();
+        var hit = SingleTick.Value;
+        var d = AssembleTwoSide(hit.Hull);
+        var mine = DeployRemote(d, hit.Mine, Remote);
+        ArmPastDelay(d);
+        var enemy = AddEnemy(d, 812, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f));
+        enemy.SetFraction(0.0001f);
+
+        Step(d);
+
+        Assert.True(enemy.Dead);
+        Assert.Equal(HitKind.Mine, enemy.KillingHit.Kind);
+        Assert.Equal(mine.MineType.LauncherName, enemy.KillingHit.Name);
+        Assert.Equal(mine.MineType.DamageType, enemy.KillingHit.DamageType);
+        Assert.Equal(d.Mission.LastUpdate, enemy.KillingHit.Time, 6);
+        Assert.Equal(default, enemy.PendingHit);
+    }
+
+    /// <summary>Telemetry: the pending source is consumed by every hit, so a hit
+    /// without one (a collision, row 0) is never blamed on an earlier weapon.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Killing_blow_kind_comes_from_the_lethal_hit_only()
+    {
+        Require.Artwork();
+        var d = AssembleTwoSide(SingleTick.Value.Hull);
+        var gunned = AddEnemy(d, 813, Remote, Vector3.Zero);
+        gunned.PendingHit = new(HitKind.Gun, null, 3, d.Mission.LastUpdate);
+        gunned.ReceiveDamage(3, 1_000_000f, d.Mission.LastUpdate, Remote, Remote, d.Launcher);
+        Assert.Equal(HitKind.Gun, gunned.KillingHit.Kind);
+
+        var rammed = AddEnemy(d, 814, Remote + new Vector3(500f, 0f, 0f), Vector3.Zero);
+        rammed.PendingHit = new(HitKind.Missile, "Seeker", 4, d.Mission.LastUpdate);
+        rammed.ReceiveDamage(4, 0.001f, d.Mission.LastUpdate, Remote, Remote, d.Launcher);   // survives
+        Assert.False(rammed.Dead);
+        rammed.ReceiveDamage(0, 1_000_000f, d.Mission.LastUpdate, Remote, Remote, null);     // collision row 0
+        Assert.Equal(HitKind.Collision, rammed.KillingHit.Kind);
+        Assert.Null(rammed.KillingHit.Name);
+    }
+
     /// <summary>⭐ Requirement (c). Two cross-side ships in the same tick both
     /// take damage and the field survives with a reduced <see cref="Mine.Fraction"/>
     /// — the native multi-ship-per-tick behaviour (<c>mineigc.h:128</c>: “any

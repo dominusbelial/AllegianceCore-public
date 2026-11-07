@@ -2447,6 +2447,9 @@ public sealed partial class Sector : IClusterIgc
                 // Missiles use the identical single-target call — a missile is
                 // single-target this slice; BlastPower/BlastRadius (AoE) are read
                 // but not acted on (same honest-deferral as homing, P91).
+                ship.PendingHit = ord is Missile hitMissile
+                    ? new(HitKind.Missile, hitMissile.MissileType.LauncherName, ord.DamageType, now)
+                    : new(HitKind.Gun, null, ord.DamageType, now);
                 DamageResult shipDr = ship.ReceiveDamage(
                     ord.DamageType,
                     ord.Power * gaMul,
@@ -3964,6 +3967,7 @@ public sealed partial class Sector : IClusterIgc
                 ship.TimeLastMineExplosion = hit.Time;
                 ship.Mission?.Site.MineHitEvent(hit.Mine, hit.P1, hit.P2);
             }
+            ship.PendingHit = new(HitKind.Mine, hit.Mine.MineType.LauncherName, hit.Type, hit.Time);
             ship.ReceiveDamage(hit.Type, hit.Damage, hit.Time, hit.P1, hit.P2, hit.Launcher);
         }
     }
@@ -4117,6 +4121,7 @@ public sealed partial class Sector : IClusterIgc
             switch (target)
             {
                 case Ship ship:
+                    ship.PendingHit = new(HitKind.Blast, null, type, e.Time);
                     ship.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
                     if (ship.Dead) Remove(ship);
                     break;

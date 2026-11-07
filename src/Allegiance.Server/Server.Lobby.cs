@@ -551,6 +551,12 @@ public sealed partial class Server
         }
         if (sw is not null) SwMark(sw, "declare-start", mission, winnerId, 0);
 
+        // Telemetry only: ship losses by killing-blow kind, for every mission.
+        long lossMatch;
+        lock (_matchups) lossMatch = _matchups.TryGetValue(mission, out var lossMatchup) ? lossMatchup.Number : 0;
+        foreach (string line in mission.ShipLossSummary())
+            Console.WriteLine($"[kills] match {lossMatch} {line}");
+
         // P914: publish before rotation; CHATMESSAGE and GAME_OVER's existing reason
         // string carry the same frozen preset summary. This never selects a winner.
         if (mission.IsShowcasePreset)

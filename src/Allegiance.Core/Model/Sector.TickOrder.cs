@@ -100,6 +100,7 @@ public sealed partial class Sector
                     ship.TimeLastMineExplosion = hit.Time;
                     ship.Mission?.Site.MineHitEvent(hit.Mine, hit.P1, hit.P2);
                 }
+                ship.PendingHit = new(HitKind.Mine, hit.Mine.MineType.LauncherName, hit.Type, hit.Time);
                 ship.ReceiveDamage(hit.Type, hit.Damage, hit.Time, hit.P1, hit.P2, hit.Launcher);
             }
     }
