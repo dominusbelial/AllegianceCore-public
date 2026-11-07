@@ -18,7 +18,8 @@ public partial class Game1
         if (down && !_identityKey && _identityTask is { IsCompleted: false }) _identityCancellation?.Cancel();
         if (down && !_identityKey && _identityTask is not { IsCompleted: false })
         {
-            string origin = string.IsNullOrEmpty(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl;
+            // P947 — resolved _lobbyUrl + the built-in default fallback.
+            string origin = LobbyUrl.EffectiveUrl(_lobbyUrl);
             if (_identityClient is not null && _identityOrigin != origin && _identityClient.Account is null)
             {
                 _identityClient.Dispose(); _identityClient = null;

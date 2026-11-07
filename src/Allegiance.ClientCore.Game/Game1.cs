@@ -1791,13 +1791,15 @@ public sealed partial class Game1 : Game
         _connectStore = opts.ConnectStore;
         // P761 — the character sheet's persisted profile description (applied
         // edits go to the same file; native would send them to the club server).
-        _pilotProfile.Description = IntroPreferences.Load().PilotDescription;
+        var startupPrefs = IntroPreferences.Load();
+        _pilotProfile.Description = startupPrefs.PilotDescription;
         _textPrompt = opts.TextPrompt ?? new KeyboardTextPrompt();
         // P761 — native's browser boots through ResetFilters
         // (gamescreen.cpp:708-710 → :900-927): default sort is players
         // REVERSED (the big numbers on top).
         _lobbySort.ResetFilters();
 
+        ConnectProfile? connectProfile = null;
         if (_connectStore is not null)
         {
             // P500 — load the persisted connect profile (saved servers, name,
@@ -1805,22 +1807,43 @@ public sealed partial class Game1 : Game
             // player configured. connect.json was folded into the store by the
             // Android head on first run (first-run seed), so nothing is baked
             // into the binary anymore.
-            var profile = _connectStore.Load();
-            if (profile is not null)
+            connectProfile = _connectStore.Load();
+            if (connectProfile is not null)
             {
-                _savedServers = profile.Servers ?? new List<SavedServer>();
-                _lastUsedKey = profile.LastUsedKey;
-                if (!string.IsNullOrWhiteSpace(profile.PlayerName))
-                    _playerName = profile.PlayerName;
-                if (!string.IsNullOrWhiteSpace(profile.LobbyUrl))
-                    _lobbyUrl = profile.LobbyUrl;
+                _savedServers = connectProfile.Servers ?? new List<SavedServer>();
+                _lastUsedKey = connectProfile.LastUsedKey;
+                if (!string.IsNullOrWhiteSpace(connectProfile.PlayerName))
+                    _playerName = connectProfile.PlayerName;
             }
+        }
+
+        // P947 — resolve the lobby URL once with the documented precedence:
+        // an explicit --lobby (this session) beats the saved connect profile and
+        // the player.json preferences, which beat ServerListing.LobbyUrlDefault.
+        // The profile load used to overwrite the command line unconditionally
+        // (P936: both clients were started with `--lobby https://<vps>` yet the
+        // host internet form dialled http://127.0.0.1:5000 and failed with
+        // "Connection refused (127.0.0.1:5000)"). P871b fixed the same override
+        // for the preferences path (Game1.IntroScreen.cs) but missed this one.
+        // On the Android head the connect profile IS the saved value (an empty
+        // LobbyUrl deliberately means "manual connect only"), so the player.json
+        // preferences tier is only consulted when no connect store exists.
+        (_lobbyUrl, var lobbySource) = LobbyUrl.Resolve(
+            opts.LobbyUrl, opts.LobbyUrlExplicit,
+            connectProfile?.LobbyUrl,
+            _connectStore is null ? startupPrefs.Lobby : null);
+
+        if (_connectStore is not null)
+        {
             // Seed the combined row list now (saved servers are the bulk of the
             // Android list; the lobby fetch is a supplement when a URL is set).
             RebuildDisplay(restoreLastUsed: true);
         }
 
         string lobbyBase = string.IsNullOrEmpty(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl;
+        // P947 — make the source visible once at startup (the host internet form
+        // and Play Online already show the URL in use: Game1.HostLan.cs).
+        Console.WriteLine($"[lobby] using {LobbyUrl.Display(_lobbyUrl)} (from {lobbySource})");
         _http = new HttpClient
         {
             BaseAddress = new Uri(lobbyBase.EndsWith('/') ? lobbyBase : lobbyBase + "/", UriKind.Absolute),

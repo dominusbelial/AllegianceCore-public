@@ -4,6 +4,30 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P947 validation — two Fast sweeps, 2026-11-07 UTC
+
+Two Fast sweeps (the second after a final Resolve edge-case fix). Sweep 1:
+**13,341 executions, 6 failed / 13,335 passed / 3 NotExecuted**, 613.3 s; sweep
+2: **13,342 executions, 4 failed / 13,335 passed / 3 NotExecuted** (3 optional
+Meshy-pack skips), 629.9 s; both infrastructure-clean, 7 then 4 executions over
+the calibrated 10-second limit (P744 factor 1.038). None of the failures touch
+P947's scope (client lobby-URL precedence only; no Core, sim, NPC, discovery or
+flight code changed).
+
+| Method | Sweep observation | Isolation |
+| --- | --- | --- |
+| `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | Sweep 1 only, after 26 s (also the sweep's slowest execution) | **pass / pass / pass** alone (~1–2 s each); load-only |
+| `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | Sweep 1 only, under parallel load | **pass / pass / pass** alone; load-only |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 7) | Sweep 1 only, floating upper-bound signature, as led | **pass / pass / pass** (3 theory rows each); load-only |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | Sweep 1 only, under parallel load | **pass / pass / pass** alone; load-only |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (enabled: False) | Sweep 2 only, under parallel load | **pass ×3** alone (all 4 theory rows each); load-only |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | Sweep 2 only, under parallel load | **pass / pass / pass** alone (~3 s each); load-only |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Both sweeps, existing null-target assertion | **fail / fail / fail** alone, exactly as already led (fails on the unmodified base too) |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | Both sweeps; **fail / fail / fail** alone, 39–83 ms: the test expects an empty discovery set but this workstation runs a live Tailscale coordinator advertising a server (<tailnet address>:6073, "LAN game"). Environment-dependent, not load — it can only pass on a host without an active tailnet advertising games. P947 changes no discovery code. | Environment-dependent; needs a skip guard when a tailnet coordinator is actually reachable |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | Sweep 2, `Assert.Contains` empty collection (`MissionRotationLiveTests.cs:181`) | **genuine intermittent, not load**: 3 failures across 26 isolated single-test runs (~12%), two more 10-run chains fully green; unrelated to P947 (Core mission rotation; no Core source changed). New intermittent — track |
+
+Quarantine tier (separate from the gate): sweep 2 flagged `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` as a quarantine flake; its in-tier retry passed.
+
 
 ## P944 validation — Join links, 2026-11-07 UTC
 
