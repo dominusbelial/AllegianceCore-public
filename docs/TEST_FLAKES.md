@@ -15,7 +15,7 @@ processes after the sweep.
 
 | Sweep exception | Observation in the sweep | Isolated outcome |
 | --- | --- | --- |
-| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | `Assert.Empty` got a real Tailscale node (`100.75.197.111`, `domingo-um690…ts.net`, LAN game on 6073) although the injected `TailscaleStatus` returned null | **fail / fail / fail** (61/55/60 ms) — environmental: this host's Tailscale interface is up, so the "absent" scan finds it; no discovery code changed |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | `Assert.Empty` got a real Tailscale node (`<tailnet address>`, `domingo-um690…ts.net`, LAN game on 6073) although the injected `TailscaleStatus` returned null | **fail / fail / fail** (61/55/60 ms) — environmental: this host's Tailscale interface is up, so the "absent" scan finds it; no discovery code changed |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.7 s, also over the guard) | "lock never reached full + partial tip (lock 1.000)" | **fail / fail / fail** in the isolated cohort (38–40 s, same 1.000 signature), then a further isolated run **passed** in 1 s — the existing intermittent partial-tip receipt failure; remains open |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | "B never saw A's death (IsDead never latched)" | **pass / pass / pass** (~1 s) — existing asynchronous death-receipt intermittency (also P903/P899/P896) |
 | `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | `Assert.Contains` missing the moved ship in the relay list | **pass / pass / pass** |
