@@ -742,6 +742,17 @@ internal static class ScoutOpening
     /// <summary>How long the opening gives the enemy-home recon before it yields
     /// the scout back to ordinary frontier exploration (10 min opening budget).</summary>
     internal static readonly double ReconDeadlineSeconds = 480;
+    /// <summary>P954 — how long a pending showcase finale (armed, still waiting for
+    /// every side to observe an enemy station under P797 fog) may hold the match's
+    /// only deadline hostage. After this grace the run registers exactly like the
+    /// multi-side case already does (BotManager.Finale.ConfigureFinale: fog must
+    /// not keep an N-side match from ever arming its deadline): a still-blind side
+    /// arms with no target (P896) and picks one up when its own worlds report one,
+    /// while the bounded server deadline still guarantees a game over. Matches the
+    /// recon budget above: a side whose scouts could not find the enemy home in
+    /// 480 s has failed its discovery job, but the showcase must always have a
+    /// deadline (the same rule LogRearmGrace states for re-arm).</summary>
+    internal static readonly double PendingArmGraceSeconds = ReadDouble("ALLEGIANCE_P954_FINALE_ARM_GRACE", 480);
     internal static readonly int SweepWaypoints = 10;
     internal static readonly double ClashDelaySeconds = ReadDouble("ALLEGIANCE_P798_CLASH_DELAY", 75);
     internal static readonly double ClashFallbackSeconds = 420;

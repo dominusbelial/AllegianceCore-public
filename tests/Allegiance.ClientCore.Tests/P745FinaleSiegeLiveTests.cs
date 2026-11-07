@@ -55,10 +55,14 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                 var result = McpTools.Handle("spawn_scenario", args, manager);
                 Assert.False(result.IsError ?? false, JsonSerializer.Serialize(result));
                 var mission = server.Missions[0];
-                var stations = mission.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
                 var watch = Stopwatch.StartNew();
                 bool destroyed = false;
                 double? firstKill = null;
+                // Station ids sampled alive. A dead station is REMOVED from its
+                // sector (Sector.RemoveStation, the P125 death contract), so
+                // destruction shows up either as a runtime whose armor crossed
+                // zero or as a seen id vanishing between samples.
+                var seenStations = new HashSet<short>();
                 // Retiring the mission clears its side registry (Mission.Lifetime.cs), so keep
                 // the sides for the deadline ranking below.
                 var sides = mission.Sides.ToArray();
@@ -103,12 +107,28 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                             }
                         }
                     }
+                    var stations = mission.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
                     log.WriteLine($"[proof-stations] {string.Join(";", stations.Select(s => $"{s.StationId}:dead={s.Dead},shield={s.ShieldFraction:F4},hull={s.ArmorFraction:F4}"))}");
-                    destroyed = stations.Any(s => s.Dead);
+                    // P954 — destruction is judged from a LIVE sweep plus the mission
+                    // ledger (the same sim evidence the wire summary reports,
+                    // Mission.StationKills.cs:21-30). The previous spawn-time
+                    // runtime snapshot could only ever see the two home garrisons
+                    // die: a run whose bombers killed a constructor-built target
+                    // (run p954r3: Alpha=1, Bravo=1 on the wire summary) read as
+                    // "No station destruction".
+                    destroyed = stations.Any(s => s.Dead)
+                        || seenStations.Any(id => stations.All(s => s.StationId != id))
+                        || mission.Sides.Any(s => mission.StationKills(s.Id) > 0)
+                        || mission.UncreditedStationDestructions > 0;
+                    foreach (var s in stations) seenStations.Add(s.StationId);
                     if (destroyed) firstKill ??= watch.Elapsed.TotalSeconds;
                     Thread.Sleep(2000);
                 }
-                destroyed |= stations.Any(s => s.Dead);
+                var finalStations = mission.Sectors.SelectMany(s => s.StationRuntimes).ToArray();
+                destroyed |= finalStations.Any(s => s.Dead)
+                    || seenStations.Any(id => finalStations.All(s => s.StationId != id))
+                    || mission.Sides.Any(s => mission.StationKills(s.Id) > 0)
+                    || mission.UncreditedStationDestructions > 0;
                 string? reason = null;
                 var receipt = Stopwatch.StartNew();
                 while (string.IsNullOrWhiteSpace(reason) && receipt.Elapsed.TotalSeconds < 5)
@@ -116,9 +136,18 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                     lock (manager.Probe.Gate) reason = manager.Probe.World.GameOverResult?.GameoverMessage;
                     if (string.IsNullOrWhiteSpace(reason))
                     {
-                        var ended = JsonSerializer.SerializeToElement(manager.FinaleStatus()[0]);
-                        if (ended.GetProperty("gameOverReason").ValueKind == JsonValueKind.String)
-                            reason = ended.GetProperty("gameOverReason").GetString();
+                        // The mission can retire and rebuild between GAME_OVER and this
+                        // sample, retiring the finale run with it (see the race noted
+                        // below): never index an empty status array; the probe's wire
+                        // text stays the primary evidence either way.
+                        var statuses = manager.FinaleStatus();
+                        if (statuses.Length > 0)
+                        {
+                            var ended = JsonSerializer.SerializeToElement(statuses[0]);
+                            if (ended.TryGetProperty("gameOverReason", out var endedReason)
+                                && endedReason.ValueKind == JsonValueKind.String)
+                                reason = endedReason.GetString();
+                        }
                     }
                     if (string.IsNullOrWhiteSpace(reason)) Thread.Sleep(20);
                 }
@@ -141,8 +170,24 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                     var best = ranked[0];
                     Assert.True(best.Kills > 0, "The live deadline must see earned ship kills");
                     bool tied = ranked.Skip(1).Any(side => side.Kills == best.Kills && side.Deaths == best.Deaths);
+                    // Native's deadline reason leads verbatim: it is the whole GAME_OVER
+                    // blob (FedSrv/fsmission.cpp:3063-3065), ranked at fsmission.cpp:2468-2498
+                    // ("The clock has stopped. The winner: %s by %s" at :2497, the draw text
+                    // at :2502). P914's approved preset addition (docs/reports/P914_REPORT.md,
+                    // "Feed and score overlay") appends the station-kill tally to showcase
+                    // results only; assert that exact shape, not a bare equality that the
+                    // tally breaks. The mission may already be retired here, so pin the
+                    // documented line shape rather than re-reading the live ledger.
+                    Assert.NotNull(reason);
+                    string[] lines = reason.Split('\n');
                     Assert.Equal(tied ? "The clock has stopped. The game is a draw."
-                        : $"The clock has stopped. The winner: {best.Name} by kills", reason);
+                        : $"The clock has stopped. The winner: {best.Name} by kills", lines[0]);
+                    if (lines.Length > 1)
+                    {
+                        Assert.Equal(3, lines.Length);
+                        Assert.StartsWith("Station kills: ", lines[1]);
+                        Assert.StartsWith("Enemy base shattered: ", lines[2]);
+                    }
                     output.WriteLine($"P746 native deadline: {mission.CountdownValues("kills")}");
                 }
                 else if (!string.IsNullOrWhiteSpace(reason))
