@@ -3,7 +3,12 @@
 `P928Trace.cs` is compiled into both this executable and `P928AllocationTests`.
 The checked-in fixture was generated on the unmodified simulation at the base
 revision recorded in `docs/reports/P928_REPORT.md`, before any allocation cut.
-It must not be regenerated to accept an optimisation.
+It must not be regenerated to accept an optimisation. Since P951 the fixture
+format is **v2** (machine-independent); see
+`docs/reports/P928_GOLDEN_PORTABLE_P951.md` for the measured rationale and the
+current provenance. The v1 fixture was byte-identical between the v2 runs of
+the pre-refactor base and post-refactor master, so the identity proof carries
+over unchanged.
 
 With artwork configured in the environment:
 
@@ -12,10 +17,24 @@ dotnet run --project tools/p928-allocation-proof -c Release -- replay.csv
 dotnet test tests/Allegiance.Core.Tests --filter FullyQualifiedName~P928AllocationTests
 ```
 
-The CSV holds 500 independent SHA-256 digests of binary, little-endian float
-state, site callbacks in dispatch order, and encoded `SINGLE_SHIP_UPDATE`
-packets, plus cumulative seeded RNG draws and per-tick event counts. The core
-file SHA-256 is pinned in its header. No private artwork is included.
+The CSV holds 500 rows. Each row carries three independent SHA-256 digests
+plus cumulative seeded RNG draws and per-tick event counts:
+
+- **state-discrete** — model order, ids, visibility/eye bits, ship
+  dead/dock/parent/control-state, weapon mount/fire flags (planner-ship
+  `StateM` excepted: the native goto planner's thrust-bit decisions ride its
+  own machine-sensitive floats);
+- **events-discrete** — collision, kill and projectile-creation callbacks by
+  identity (kind + involved ids) in actual dispatch order;
+- **continuous** — the float state of every model except the twelve
+  goto-planner ships, ordnance and mine health (hit/miss knife edges),
+  quantized: positions/velocities to 0.01, orientation components and
+  fractions to 0.001, energy/ammo/fuel/ore to 0.01.
+
+The per-tick damage count is compared by the test with a measured tolerance
+(±2 per tick, ≤32 total) instead of hashed: a grazing projectile's hit/miss is
+a knife edge that ULP-scale environment noise flips. The core file SHA-256 is
+pinned in the header. No private artwork is included.
 
 The deterministic one-sector scene uses 240 flying ships (12 following native
 GotoPlan waypoints), 20 turret gunners, duplicate fixed/turret mounts, 8 sensor
@@ -25,15 +44,17 @@ use the existing injectable `Weapon` RNG, assigned by reflection because the
 ordinary `MountWeapon` entry point does not expose that argument. These are
 proof-only controls; production simulation has no new flags or hooks.
 
-State coverage includes model order, ids, clocks, position, velocity, all nine
-orientation floats, ship hull/shield/energy/ammo/fuel/control-state, weapon
-firing state, visibility/eye bits, mine/probe/missile fractions, probe ammo,
-retired/dead ships and live asteroid/station health. Ordered event coverage
-includes collision callbacks, damage (full arguments), ship kills, projectile
-creation and projectile impacts. The wire digest tests the real codec for
-all living ships; it does not claim to capture server per-viewer scheduling,
-visibility filtering, or transport framing. Existing broadcast identity tests
-cover those paths.
+State coverage: the state-discrete digest covers model order, ids, ship
+dead/dock/parent/control-state, weapon mount/fire flags, visibility/eye bits,
+retired/dead ships and the asteroid/station id list. The continuous digest
+covers quantized ship hull/shield/energy/ammo/fuel/ore, orientation, position,
+velocity, probe/mine fractions and probe ammo, asteroid ore/mining and station
+armor/shield. Damage and projectile-hit callbacks are counted per tick (with
+the test's tolerance) rather than hashed; the ordered event digest covers
+collision, kill and projectile-creation identity. The v1 wire digest of raw
+`SINGLE_SHIP_UPDATE` packets is retired — its raw position floats reproduce the
+same environment sensitivity the state digest now quantizes away; codec identity
+remains covered by the broadcast/wire tests.
 
 The RNG counter covers seeded scenario and weapon dispersion draws. The
 uncontrolled two draws in each sensor probe constructor are excluded because

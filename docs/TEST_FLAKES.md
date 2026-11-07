@@ -6539,9 +6539,45 @@ The six failures present in every nightly 2026-11-05..07 were rerun 3x alone on 
 
 | Test | 3x alone | First failing nightly | Verdict |
 | --- | --- | --- | --- |
-| `P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden` (both cases) | **pass / pass / pass** | 11-05 (`826a974d`, the P928 commit itself) | **Runner-only:** first hash of three differs on the Docker runner only — same machine-dependent float pattern as P939; needs an environment-independent golden, not a flake |
+| `P928AllocationTests.Crowded_sector_matches_pre_refactor_500_tick_golden` (both cases) | **pass / pass / pass** | 11-05 (`826a974d`, the P928 commit itself) | **FIXED by P951 (working tree, 2026-11-07):** v1 hashed raw float bits; the runner image reproduced locally diverged from tick 4 (goto-planner steering floats differ by libm ULPs, chaos spreads to ~5 m; one planner-ship `StateM` bit and grazing damage events also flip). Fixture format v2 hashes discrete state/event identity + quantized continuous state (planner ships' continuous state and per-tick damage counts excluded/with tolerance); regenerated from the pre-refactor base `5ca9f37a`, byte-identical to master, and passes 3× alone in the workstation and 3× inside the locally built runner image. See `docs/reports/P928_GOLDEN_PORTABLE_P951.md` |
 | `P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds` | **pass / pass / pass** (3m29–5m10) | 11-05 | load-only on the runner |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail** (`Assert.Same` expected ship, actual null) | 10-29 (`48cdb2de`; passed 10-28 `a2f73c13`) | **Real regression.** Window `a2f73c13..48cdb2de` (55 commits) includes P865b SIM-0663 carrier-relaunch Goto→Defend re-task (`30e814e4`) and P869b lazy ThingSite/registry (`5e23df09`) |
 | `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` (both maps) | **fail / fail / fail** (`Clash` null on both sides) | 10-29 (same window) | **Real regression** (no resource clash forms) |
 | `SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides` | **fail / fail / fail** (SC-1 minimums not met) | 10-30 (once on 10-27) | **Real regression** |
 | `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` | **fail / fail / fail**, three different ways: no station destruction; `IndexOutOfRangeException` at `:119`; finale string now has `\nStation kills: …` (`Mission.StationKills.cs:36`, P924 `ad5c48f8`) vs the expected text at `:145` | 10-22 steady (once 10-19) | **Real:** stale string expectation plus a parse crash plus a missed station kill |
+
+## P951 fast-sweep non-task failures — 2026-11-07
+
+P951's fast sweep (13,363 passed / 4 failed / 3 skipped) failed four unrelated
+tests; each was re-run 3× alone per the ledger rule. No product code changed
+(`git diff -- src/` empty; only the P928 golden fixture format and its test).
+
+- `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent`
+  (ClientCore.MonoGame): **fail / fail / fail**, 56 ms — environmental: a
+  Tailscale host (`domingo-um690.tail…ts.net`, LAN game, 13 players) was
+  discoverable on this workstation's tailnet during the run, so the
+  assert-empty discovery result cannot hold. The test needs either a
+  tailscale-absent precondition check or a skip marker when a tailnet is
+  present. No discovery code changed in P951.
+- `NpcWingmanDefendLiveTests.Defender_disengages…`: **fail / fail / fail** —
+  the known real regression recorded in "Recurring nightly failures —
+  isolation 2026-11-07" (also reproduced on the pristine tree there).
+- `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds`:
+  pass / pass / fail — the known intermittent receipt/clock boundary [28,31]
+  (recorded in P928/P931 sections).
+- `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over`:
+  pass / pass / pass alone — the known receipt-ordering intermittency
+  (line ~5043 above); it failed only inside the parallel sweep.
+
+Six Fast executions exceeded the calibrated 10 s guard (11.1–15.2 s: P777
+warp-exit, P814b turret seats, SC2 support, NpcDodge, ClientWarpApproach,
+P800 hull GPU) — timing-only, other lanes were building/testing concurrently
+(load average 6.3–8.8 during the later isolation runs). P777's guard exceeds
+are already recorded; the others are new one-off samples of the same
+load-only family.
+
+Showcase never-parks gate (`P924_swapped_showcase_never_parks…`): **6 pass /
+2 fail** over 8 single-case runs; both failures are the two slowest runs
+(8 m 3 s / 8 m 4 s), every faster run passed (3 m 43 s–7 m 38 s), confirming
+the recorded load-only sensitivity now also visible on the workstation under
+concurrent lanes (P928's base rate was 3/3 at lower load).

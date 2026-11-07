@@ -1,5 +1,15 @@
 # P928 — simulation allocation cuts, byte identity
 
+> **P951 update (2026-11-07):** the v1 golden (raw-float digests) was
+> machine-sensitive and failed on the Docker runner. It was replaced by the
+> machine-independent **v2** format — same scenario, seed and RNG order, with
+> discrete-state/event-identity digests plus quantized continuous state and a
+> tolerated damage count. The v2 fixtures were regenerated from the same
+> pre-refactor base `5ca9f37a`; base and master produce byte-identical v2
+> traces, and the replay passes 3× on the workstation and 3× inside the locally
+> built runner image. Details and measurements:
+> [P928_GOLDEN_PORTABLE_P951](P928_GOLDEN_PORTABLE_P951.md).
+
 The three alternating NativeAOT bench pairs reduce allocation from **808.7 to
 65.5 KiB/tick (91.9%)**, with the 400-ship population sustained. Their median
 tick times are 0.95–0.97 ms before and 0.81 ms after. No feature flag,
