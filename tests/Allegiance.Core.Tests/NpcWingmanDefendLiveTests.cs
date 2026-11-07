@@ -170,6 +170,17 @@ public sealed class NpcWingmanDefendLiveTests
             Vector3 wp = new(658f, 599f, 611f);
             var wingman = srv.SpawnNpcShip(mission, sector, npcSide, wp, wingDroneId);
             Assert.Equal(Ship.PilotTypeWingman, wingman.PilotType);
+
+            // P952: SpawnNpcShip supplies a bare hull. Native's Defend acquire
+            // branch requires a damaging weapon in mount 0 (Igc/shipIGC.cpp:2680),
+            // before the 1500-unit charge-centered scan (:2688-2695). P872
+            // correctly added that gate; this acquisition fixture must be armed.
+            var primary = core.PartTypes.Values.First(p =>
+                p.Type is DataPartTypeIGC.Weapon w
+                && core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectile)
+                && projectile.Power > 0f && wingman.HullType.CanMountPart(p, 0));
+            wingman.MountWeapon((DataPartTypeIGC.Weapon)primary.Type, 0);
+            Assert.True(wingman.HasDamagingPrimaryWeapon, "defend acquisition requires a damaging primary weapon");
             wingman.DefendTarget = charge;
 
             // Phase 1 — engage: the defending Wingman acquires the enemy NEAR THE

@@ -1,0 +1,14 @@
+# bad: [48cdb2deb0597daf3ebd128281a144dba085e683] Client core cache: a missing core returns null again (P869b's revision key read FileInfo.Length on a missing file and threw); P870 resolver test compares content, since sharing holds only while leased
+# good: [a2f73c131ca77f0bb67c827be1620b1651ef5d2c] Merge P860: root cause of the P480 rotation export flake (fixture race) + ballots-stage fix
+git bisect start '48cdb2de' 'a2f73c13'
+# good: [0295ecb680ccd3b0b97629914721447a832908cb] Merge pi-p865 (pending gate)
+git bisect good 0295ecb680ccd3b0b97629914721447a832908cb
+# good: [4d84fffd2c5b0887395d5b790955dd21bdbb0507] WIP p874b (hermes, spark deepseek-v4-flash) — pending Claude review
+git bisect good 4d84fffd2c5b0887395d5b790955dd21bdbb0507
+# bad: [9a8115db557513bae9f665abf5acb332fb3cdc12] Training matrix: renumber P873's proposed batches to P880a-c (framework), P881a-d (missions), P882a-d (integration) — P874/P875/P876 ids were taken
+git bisect bad 9a8115db557513bae9f665abf5acb332fb3cdc12
+# good: [be83e4f70e7dae89eec0f6a04374d53e020cc0c3] Merge codex-p873: training joins the real client to the trainee ship (in space, all 7 missions, Classic+Modern), narration callbacks + sound catalog, goal logging, training-matrix.csv (241 TRN rules), authoring tools
+git bisect good be83e4f70e7dae89eec0f6a04374d53e020cc0c3
+# bad: [0d71403120411e84dc0e2256439de06bc97db9c2] WIP p872 (Pi, zai/glm-5.3-flash) — pending Claude review
+git bisect bad 0d71403120411e84dc0e2256439de06bc97db9c2
+# first bad commit: [0d71403120411e84dc0e2256439de06bc97db9c2] WIP p872 (Pi, zai/glm-5.3-flash) — pending Claude review

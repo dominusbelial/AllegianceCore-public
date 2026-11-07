@@ -4,6 +4,102 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P952 validation — defender fixture correction, 2026-11-07 UTC
+
+The persistent defender null-acquisition failure is **resolved by correcting
+its fixture**: bisect identifies P872 `0d714031` (master merge `e13e22b5`),
+whose damaging-primary guard matches native `Igc/shipIGC.cpp:2680`.
+`SpawnNpcShip` provides a bare hull; the test now mounts a compatible damaging
+primary before expecting acquisition. Production behavior/defaults are unchanged.
+The fixed defender passes 3/3 alone on the lane baseline and passes in-tier;
+P865b 8/8, P869b 47/47 and P872 11/11 all pass ×3 with zero skips.
+
+One Fast tier: **13,383 Passed / 25 Failed / 3 Skipped**, 13,411 cases,
+1136.3 s; all nine infrastructure checks passed. The three skips are optional
+Meshy-pack checks. Eighteen executions exceeded the calibrated 11.138 s limit.
+The gate remains **FAIL**; it was not rerun or waived.
+
+The globally pinned baseline overrides used for this invocation conflicted
+with twelve unchanged tests that deliberately select legacy ship updates,
+snapshot-off, serial builds or thread-per-peer transport. All twelve reproduce
+under those overrides and pass three controls honoring their explicit fixture
+configuration (39/0/0 across 36 control invocations). These are invocation
+environment artifacts, not new production defects. No test/source defaults
+were changed for the controls.
+
+Every failed or over-time method ran three isolated invocations (35 methods;
+105 invocations, 80/52/0 case executions under the pinned environment). The
+52 failures include repeated intentional configuration conflicts and the
+already-ledgered bundle-path obstruction, not 52 distinct defects:
+
+- The five `PlayerBundlePathsTests` parameter cases across four methods still
+  fail because mandatory scratch TMPDIR is inside the repository and ancestor
+  `local.env` is discovered. Passing parameter cases are retained in the counts.
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+  is **pass/pass/fail** alone (failure: full lock reached, partial-tip condition
+  never satisfied); remains intermittent, not cleared as a load-only flake.
+- The six other assertion-failure methods pass three isolated runs. The profile
+  method also passes ×3 with writable scratch `XDG_CONFIG_HOME`; its sweep
+  failed restoring the read-only real profile, as already ledgered.
+- `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` passes assertions
+  ×3 but takes 11.206/10.945/11.383 s; two runs remain over this sweep’s limit.
+- The unchanged defender closer-threat switch failed once in an early
+  non-pinned control, then passed three isolated rechecks, all three pinned
+  runs and the Fast tier. Record the intermittent retarget observation; only
+  the acquisition fixture is corrected by P952.
+
+Counts below are **Passed/Failed/Skipped** per isolated invocation; theory
+filters retain every parameter row. Explicit-config controls remove conflicting
+process overrides and let the fixture’s own deliberate configuration apply.
+
+| Method | P/F/S in three baseline invocations | Max case seconds, each run | Explicit-config controls |
+| --- | --- | --- | --- |
+| `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | 1/0/0 ×3 | 0.009/0.009/0.009 | — |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | 1/0/0 ×3 | 0.058/0.071/0.081 | — |
+| `SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass` | 1/0/0 ×3 | 1.648/1.582/1.592 | — |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0, 1/0/0, 0/1/0 | 1.722/1.820/38.853 | — |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0 ×3 | 6.598/6.748/9.121 | — |
+| `P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production` | 3/0/0 ×3 | 3.705/4.942/4.676 | — |
+| `P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base` | 1/0/0 ×3 | 2.292/2.662/2.505 | — |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 1/0/0 ×3 | 1.851/1.812/1.873 | — |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 1/0/0 ×3 | 4.178/4.113/4.154 | — |
+| `P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals` | 1/0/0 ×3 | 8.033/6.985/8.127 | — |
+| `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot` | 0/1/0 ×3 | 0.171/0.203/0.158 | 1/0/0 ×3 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0 ×3 | 5.012/5.232/5.113 | — |
+| `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` | 1/0/0 ×3 | 2.064/1.976/2.057 | — |
+| `P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | 1/0/0 ×3 | 4.606/5.285/4.841 | — |
+| `P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement` | 1/0/0 ×3 | 3.718/4.748/3.710 | — |
+| `OwnShipCoalesceKeyTests.Owners_own_ship_update_has_a_distinct_guaranteed_coalesce_key_parallel_builder` | 0/1/0 ×3 | 0.192/0.272/0.204 | 1/0/0 ×3 |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | 0/1/0 ×3 | 0.015/0.015/0.015 | — |
+| `P780PodRescueProbeTests.Probe_rescue_pass_allocates_nothing` | 1/0/0 ×3 | 0.158/0.088/0.096 | — |
+| `ShipUpdateBudgetLiveTests.Locked_target_is_always_included_regardless_of_its_deviation` | 0/1/0 ×3 | 0.385/0.426/0.404 | 1/0/0 ×3 |
+| `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | 1/0/0 ×3 | 0.402/0.360/0.393 | — |
+| `PlayerBundlePathsTests.MissingDirectoryHasNoDefault` | 1/2/0 ×3 | 0.005/0.005/0.004 | — |
+| `TeammatePositionBroadcastTests.Teammates_commanded_movement_is_broadcast_to_observers_but_enemy_movement_is_not` | 0/1/0 ×3 | 9.344/9.135/9.148 | 1/0/0 ×3 |
+| `LiveTurretGunnerBindingTests.Board_binds_gunner_and_active_turret_update_roundtrips_live` | 0/1/0 ×3 | 3.182/3.297/2.835 | 1/0/0 ×3 |
+| `SimPassExceptionIsolationTests.SimPass_contains_a_throwing_export_stage_and_keeps_running` | 1/1/0 ×3 | 0.691/0.835/0.619 | 2/0/0 ×3 |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | 1/0/0 ×3 | 0.413/0.401/0.505 | — |
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository` | 1/1/0 ×3 | 0.004/0.005/0.005 | — |
+| `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate` | 1/0/0 ×3 | 0.575/0.714/0.705 | — |
+| `Transport.TcpTransportSendWorkerPoolTests.Explicit_thread_per_peer_config_boot_stays_thread_per_peer` | 0/1/0 ×3 | 0.188/0.184/0.175 | 1/0/0 ×3 |
+| `Transport.TcpTransportSendWorkerPoolTests.Boot_line_prints_the_active_transport_mode` | 0/1/0 ×3 | 0.199/0.207/0.236 | 1/0/0 ×3 |
+| `PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory` | 0/1/0 ×3 | 0.005/0.004/0.022 | — |
+| `ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count` | 0/1/0 ×3 | 0.357/0.349/0.375 | 1/0/0 ×3 |
+| `TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once` | 0/1/0 ×3 | 15.698/16.199/16.067 | 1/0/0 ×3 |
+| `OwnShipCoalesceKeyTests.Owners_own_ship_update_has_a_distinct_guaranteed_coalesce_key_serial_builder` | 0/1/0 ×3 | 0.244/0.184/0.212 | 1/0/0 ×3 |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 1/0/0 ×3 | 11.206/10.945/11.383 | — |
+| `ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation` | 0/1/0 ×3 | 0.346/0.462/0.421 | 1/0/0 ×3 |
+
+Showcase never-parks: **base 5/0/0, changed tree 4/1/0** (Passed/Failed/Skipped), five isolated runs each. Parking-limit failures: base 0/5, changed tree 0/5. The comparison was serial and alternated base/fixed using identical settings.
+The changed-tree failure was the 480 s arrival assertion (21/30 reached), with
+longest target idle 1.905 s; no production/P700 source differs. See the report
+and JSON for individual outcomes, starting load and idle measurements.
+
+Raw evidence stays in `.scratch/p952/`; compact public counts and measurements:
+[P952 validation JSON](reports/P952_assets/validation.json). Bisect/native
+analysis and P798 parent/culprit passes:
+[P952 report](reports/NPC_DEFEND_BISECT_P952.md). No commits or pushes.
+
 ## P947 validation — two Fast sweeps, 2026-11-07 UTC
 
 Two Fast sweeps (the second after a final Resolve edge-case fix). Sweep 1:

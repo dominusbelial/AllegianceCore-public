@@ -160,6 +160,13 @@ list in **reverse**.
   `tests/Allegiance.Core.Tests/P868EncryptedCoreTests.cs`.
 - **Ship** — player/bot vessel: flight, weapons, shields, cargo. Key:
   `src/Allegiance.Core/Sim/Ship.cs`. *Native:* `shipigc.cpp`, `fsship.cpp`.
+- **Wingman defend acquisition (P952 audit)** — a guard needs a damaging
+  primary weapon before acquiring threats near its protectee (native
+  `Igc/shipIGC.cpp:2680-2695`); the return-to-defend rule is at `:2373-2406`.
+  `src/Allegiance.Core/Sim/Ship.cs` implements it; armed/unarmed coverage lives
+  in `tests/Allegiance.Core.Tests/P872NativeBehaviourTests.cs` and the armed
+  movement proof in `tests/Allegiance.Core.Tests/NpcWingmanDefendLiveTests.cs`.
+  P872 bisect and fixture correction: `docs/reports/NPC_DEFEND_BISECT_P952.md`.
 - **Flight model / physics** — acceleration, drag, turn rates, afterburner.
   Key: `src/Allegiance.Core/Sim/` (`Acceleration`, `Physics`, `TurnRate`…).
   *Native:* `shipIGC.cpp`, `rotvel.cpp`.
