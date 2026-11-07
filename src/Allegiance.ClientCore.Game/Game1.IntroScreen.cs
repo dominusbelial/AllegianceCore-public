@@ -50,7 +50,7 @@ public sealed partial class Game1
     /// DirectConnect is a MODERN addition (native had no direct-IP field);
     /// Options←optionsButtonPane (:1223)/OnButtonOptions(:1847);
     /// Credits←creditsButtonPane (:1225)/OnButtonCredits(:1853);
-    /// Exit←exitButtonPane (:1238)/OnButtonExit(:1799).</summary>
+    /// Exit←exitButtonPane (:1227)/OnButtonExit(:1799).</summary>
     private static readonly string[] IntroMainLabels = IntroScreenModel.MainLabels;
 
     private readonly StringBuilder _pilotBuf = new();
@@ -77,6 +77,12 @@ public sealed partial class Game1
     private long _introProofDelayMs = -1;
     private long _introProofStartMs;
     private bool _introProofWaitExit;
+
+    /// <summary>P946 — proof-only synthetic intro keys (tools/p946-intro-keys-proof
+    /// sets this by reflection; empty = hardware only). Merged by
+    /// <see cref="ReadProofKeyboard"/>; separate from the training autoproof's
+    /// <c>_proofKeys</c>, which the training pump resets every frame.</summary>
+    private XnaKeys[] _introProofKeys = [];
 
     // P757 — the splash screen (native WinTrek/splashscreen.cpp). The native
     // constructor arms a timeout that advances to the intro screen — 0.01 s
@@ -255,13 +261,22 @@ public sealed partial class Game1
         switch (_introView)
         {
             case IntroView.Main:
-                if (tab && !_iTab && _identityScreen.Account is null) { _introEditingPilot = !_introEditingPilot; }
-                if (up && !_iUp && !_introEditingPilot)
-                    _introIndex = (_introIndex - 1 + IntroMainLabels.Length) % IntroMainLabels.Length;
-                if (down && !_iDown && !_introEditingPilot)
-                    _introIndex = (_introIndex + 1) % IntroMainLabels.Length;
-                if (enter && !_iEnter) ActivateIntroMain();
+            {
+                // P946 — Up/Down always move the menu. The pilot-name field never
+                // used the arrow keys, so taking them from the menu (the old
+                // `&& !_introEditingPilot`) only made the screen feel blocked;
+                // typing still goes to the name while the field has focus, and
+                // Enter keeps its meaning (activate the highlighted entry). Tab
+                // toggles the field only when there is no identity account.
+                bool tabAllowed = _identityScreen.Account is null;
+                var mainKeys = IntroScreenModel.MainMenuKeys(
+                    up && !_iUp, down && !_iDown, enter && !_iEnter, tab && !_iTab, tabAllowed);
+                if (mainKeys.ToggleFieldFocus) _introEditingPilot = !_introEditingPilot;
+                if (mainKeys.SelectionDelta != 0)
+                    _introIndex = IntroScreenModel.MoveSelection(_introIndex, IntroMainLabels.Length, mainKeys.SelectionDelta);
+                if (mainKeys.Activate) ActivateIntroMain();
                 break;
+            }
 
             case IntroView.FindServer:
                 if (up && !_iUp)
@@ -277,8 +292,12 @@ public sealed partial class Game1
                 if (enter && !_iEnter) JoinIntroFound();
                 if (esc && !_iEsc) LeaveIntroFindServer();
                 // P871 — native's server list also opened the Create Game wizard
-                // (NewGameScreen); N is the port's new-game key.
-                if (ks.IsKeyDown(XnaKeys.N) && !_iN) EnterCreateGame();
+                // (NewGameScreen); N is the port's new-game key. P946 — not while
+                // the password field owns typing (a password with an 'n' was
+                // silently opening the wizard instead of typing).
+                var findFocus = IntroScreenModel.FindServerFocus(_editingLanPassword);
+                if (IntroScreenModel.FindServerNewGameKey(findFocus)
+                    && ks.IsKeyDown(XnaKeys.N) && !_iN) EnterCreateGame();
                 break;
 
             case IntroView.HostLan:
@@ -738,6 +757,7 @@ public sealed partial class Game1
         var lay = IntroLayout.Compute(w, h, IntroMainLabels.Length);
         float y = lay.Rows.Length > 0 ? lay.Rows[0].Y + 4f : h * 0.24f;
         float rowH = lay.RowHeight;
+        float rowScale = lay.RowTextScale;
         for (int i = 0; i < IntroMainLabels.Length; i++)
         {
             string label = IntroMainLabels[i];
@@ -749,27 +769,59 @@ public sealed partial class Game1
                         (int)lay.Rows[i].Width, (int)lay.Rows[i].Height),
                     new Color(0.08f, 0.35f, 0.33f, 0.55f));
             }
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2(cx - sz.X / 2f, y + 2f),
-                sel ? titleCol : textCol);
+            _spriteBatch.DrawString(_hudSmall, label, new Vector2(cx - sz.X * rowScale / 2f, y + 2f),
+                sel ? titleCol : textCol, 0, Vector2.Zero, rowScale, SpriteEffects.None, 0);
             y += rowH;
         }
 
-        // Pilot name entry (native remembered the last character name,
-        // introscreen.cpp:1607; this is the port's pilot-name field).
-        var nameLabel = _identityScreen.PilotLabel(_pilotBuf.ToString() + (_introEditingPilot ? "_" : ""));
+        // P946 — pilot name entry (native remembered the last character name,
+        // introscreen.cpp:1604-1608; the field itself is the port's addition).
+        // The field shows a highlight box + caret while it owns typed text, so
+        // the screen makes its focus visible. With an identity account the
+        // label is the verified callsign and Tab does nothing, so the field is
+        // not shown as focused and typed keys are not invited.
+        bool tabAllowed = _identityScreen.Account is null;
+        bool pilotFocus = _introEditingPilot && tabAllowed;
+        string pilotText = _pilotBuf.ToString();
+        var nameLabel = _identityScreen.PilotLabel(pilotText);
         var nsz = _hudSmall.MeasureString(nameLabel);
-        _spriteBatch.DrawString(_hudSmall, nameLabel, new Vector2(cx - nsz.X / 2f, lay.PilotY),
-            _introEditingPilot ? titleCol : dimCol);
+        var field = IntroLayout.PilotField(w, h);
+        if (pilotFocus)
+        {
+            float fieldW = MathF.Min(w - 40f, MathF.Max(field.Width, nsz.X + 28f));
+            _spriteBatch.Draw(_whitePixel,
+                new Rectangle((int)(cx - fieldW / 2f), (int)field.Y, (int)fieldW, (int)field.Height),
+                new Color(0.10f, 0.42f, 0.39f, 0.65f));
+            _spriteBatch.Draw(_whitePixel,
+                new Rectangle((int)(cx - fieldW / 2f), (int)field.Bottom, (int)fieldW, 2), titleCol);
+        }
+        float textX = cx - nsz.X / 2f;
+        _spriteBatch.DrawString(_hudSmall, nameLabel, new Vector2(textX, lay.PilotY),
+            pilotFocus ? titleCol : dimCol);
+        if (pilotFocus)
+        {
+            // A real caret bar after the typed name: the "_" glyph sits on the
+            // text baseline, exactly where the field's underline is painted, so
+            // an explicit bar is what makes the insertion point visible.
+            float caretX = textX + _hudSmall.MeasureString("Pilot: " + pilotText).X;
+            _spriteBatch.Draw(_whitePixel, new Rectangle((int)caretX, (int)lay.PilotY + 1, 2, 17), titleCol);
+        }
 
         var identityLine = _identityScreen.ApprovalLine;
         var identitySize = _hudSmall.MeasureString(identityLine);
         float identityScale = Math.Min(1f, (w - 40f) / Math.Max(1f, identitySize.X));
-        _spriteBatch.DrawString(_hudSmall, identityLine, new Vector2((w - identitySize.X * identityScale) / 2f, lay.PilotY - 48),
+        _spriteBatch.DrawString(_hudSmall, identityLine, new Vector2((w - identitySize.X * identityScale) / 2f, lay.IdentityY),
             titleCol, 0, Vector2.Zero, identityScale, SpriteEffects.None, 0);
 
-        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER choose   TAB edit pilot   ESC quit");
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER choose   TAB edit pilot   ESC quit",
-            new Vector2((w - fsz.X) / 2f, lay.FooterY), dimCol);
+        // P946 — one line that says what the screen accepts: the arrows always
+        // move the menu, Enter selects, Tab switches typed-text focus (only
+        // when an account does not) and Esc leaves. The footer sits below the
+        // pilot field, so it never enters the button column.
+        string hint = IntroScreenModel.MainHint(tabAllowed);
+        var fsz = _hudSmall.MeasureString(hint);
+        float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, lay.FooterY),
+            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
     }
 
     private void DrawIntroFindServer(float w, float h, Color titleCol, Color dimCol, Color textCol)
@@ -817,27 +869,64 @@ public sealed partial class Game1
         if (_introFindError.Length > 0)
             _spriteBatch.DrawString(_hudSmall, _introFindError, new Vector2(50f, 96f), new Color(1f, 0.45f, 0.35f));
 
-        _spriteBatch.DrawString(_hudSmall, "TAB password: " + new string('*', _lanJoinPassword.Length) + (_editingLanPassword ? "_" : ""), new Vector2(50, h - 74), dimCol);
-        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)");
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)",
-            new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
+        // P946 — the password field's focus is visible (highlight + caret) and
+        // the hint names it, so neither the list keys nor the typed text is a
+        // surprise. Up/Down stay on the server list while it is open.
+        bool passwordFocused = IntroScreenModel.FindServerFocus(_editingLanPassword) == IntroScreenModel.TextField.ServerPassword;
+        string passwordLabel = (passwordFocused ? "Password: " : "TAB password: ")
+            + new string('*', _lanJoinPassword.Length) + (passwordFocused ? "_" : "");
+        var pwSize = _hudSmall.MeasureString(passwordLabel);
+        if (passwordFocused)
+            _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h - 74) - 4, (int)pwSize.X + 20, 24),
+                new Color(0.10f, 0.42f, 0.39f, 0.65f));
+        _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h - 74),
+            passwordFocused ? titleCol : dimCol);
+
+        string hint = IntroScreenModel.FindServerHint(passwordFocused);
+        var fsz = _hudSmall.MeasureString(hint);
+        float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 40f),
+            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
     }
 
     private void DrawIntroDirect(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
         DrawIntroTitle(w, "Direct Connect", "Type an address[:port]  -  a hostname, IPv4/IPv6, or a MagicDNS name", titleCol, dimCol);
 
-        var label = "Address: " + _directBuf.ToString() + (_introEditingDirect && !_editingLanPassword ? "_" : "");
-        var lsz = _hudSmall.MeasureString(label);
-        _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - lsz.X) / 2f, h * 0.42f),
-            _introEditingDirect ? titleCol : textCol);
-        _spriteBatch.Draw(_whitePixel, new Rectangle((int)(w / 2f - 170), (int)(h * 0.42f) + 14, 340, 2),
-            new Color(0.25f, 0.5f, 0.5f, 0.8f));
+        // P946 — whichever field owns typed text is highlighted and carries the
+        // caret; Tab moves typing between the address and the password.
+        var focus = IntroScreenModel.DirectConnectFocus(_introEditingDirect, _editingLanPassword);
+        bool addressFocused = focus == IntroScreenModel.TextField.DirectAddress;
+        bool passwordFocused = focus == IntroScreenModel.TextField.ServerPassword;
 
-        _spriteBatch.DrawString(_hudSmall, "TAB password: " + new string('*', _lanJoinPassword.Length) + (_editingLanPassword ? "_" : ""), new Vector2(50, h * .53f), dimCol);
-        var fsz = _hudSmall.MeasureString("TYPE address   ENTER connect   ESC back");
-        _spriteBatch.DrawString(_hudSmall, "TYPE address   ENTER connect   ESC back",
-            new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
+        var label = "Address: " + _directBuf.ToString() + (addressFocused ? "_" : "");
+        var lsz = _hudSmall.MeasureString(label);
+        if (addressFocused)
+        {
+            float boxW = MathF.Min(w - 40f, MathF.Max(340f, lsz.X + 28f));
+            _spriteBatch.Draw(_whitePixel,
+                new Rectangle((int)(w / 2f - boxW / 2f), (int)(h * 0.42f) - 4, (int)boxW, 24),
+                new Color(0.10f, 0.42f, 0.39f, 0.65f));
+        }
+        _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - lsz.X) / 2f, h * 0.42f),
+            addressFocused ? titleCol : textCol);
+        _spriteBatch.Draw(_whitePixel, new Rectangle((int)(w / 2f - 170), (int)(h * 0.42f) + 14, 340, 2),
+            addressFocused ? titleCol : new Color(0.25f, 0.5f, 0.5f, 0.8f));
+
+        string passwordLabel = (passwordFocused ? "Password: " : "TAB password: ")
+            + new string('*', _lanJoinPassword.Length) + (passwordFocused ? "_" : "");
+        var pwSize = _hudSmall.MeasureString(passwordLabel);
+        if (passwordFocused)
+            _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h * .53f) - 4, (int)pwSize.X + 20, 24),
+                new Color(0.10f, 0.42f, 0.39f, 0.65f));
+        _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h * .53f),
+            passwordFocused ? titleCol : dimCol);
+
+        string hint = IntroScreenModel.DirectConnectHint(passwordFocused);
+        var fsz = _hudSmall.MeasureString(hint);
+        float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 40f),
+            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
     }
 
     private void DrawIntroSkirmishSetup(float w, float h, Color titleCol, Color dimCol, Color textCol)
