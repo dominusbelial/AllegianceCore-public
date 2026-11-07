@@ -22,7 +22,11 @@ public sealed class P940BasicFlightInputTests
         Assert.Equal(source.TotalSamples, pcm.Frames);
         Assert.Contains(pcm.Data, value => value != 0);
         // Regression oracle: the previous runtime fallback used a WAVE-only API.
-        Assert.Throws<ArgumentException>(() => Microsoft.Xna.Framework.Audio.SoundEffect.FromFile(clip));
+        // Without audio hardware (headless test runners) FromFile fails before it
+        // reads the file, even after SoundEffect.Initialize() returns normally.
+        var rejected = Record.Exception(() => Microsoft.Xna.Framework.Audio.SoundEffect.FromFile(clip));
+        if (rejected is not Microsoft.Xna.Framework.Audio.NoAudioHardwareException)
+            Assert.IsType<ArgumentException>(rejected);
     }
 
     [SkippableFact, Trait("Requires", "Artwork")]

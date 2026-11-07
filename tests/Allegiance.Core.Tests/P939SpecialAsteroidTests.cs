@@ -195,9 +195,14 @@ public sealed class P939SpecialAsteroidTests
             $"{a.AsteroidId}:{a.ClusterId}:0x{a.AabmCapabilities:x2}:{a.Radius}:"
             + $"{a.Position[0]:R}:{a.Position[1]:R}:{a.Position[2]:R}:{a.Ore:R}:{a.ModelName}"));
 
+    // Pinned across machines, so the hash leaves positions out: single-float
+    // generation maths differs by ~0.3 mm between the Docker test runner and a
+    // workstation. An extra RNG draw still changes every later rock's model,
+    // radius, class and ore, which this keeps.
     private static string FingerprintHash(MissionMap map)
         => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(Fingerprint(map))));
+            System.Text.Encoding.UTF8.GetBytes(string.Join("\n", map.Asteroids.Select(a =>
+                FormattableString.Invariant($"{a.AsteroidId}:{a.ClusterId}:0x{a.AabmCapabilities:x2}:{a.Radius}:{a.Ore:R}:{a.ModelName}"))))));
 
     // ── The native table, all 8 path combinations ───────────────────────────
 
@@ -346,18 +351,19 @@ public sealed class P939SpecialAsteroidTests
     /// native rule draws nothing, so an expansion-only generated map is
     /// bit-for-bit the map the base generator produced for the same seed (which
     /// placed no path-specific rock and drew no offset). The pinned hashes are the
-    /// pre-change census of these seeds (docs/reports/P939_REPORT.md §evidence).</summary>
+    /// pre-change census of these seeds (docs/reports/P939_REPORT.md §evidence), re-pinned without positions when the exact
+    /// hash proved machine-dependent.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Single_path_maps_keep_the_base_map_exactly()
     {
         Require.Artwork();
         var singleRing = GenerateWithPaths(1123059318, MapGenType.SingleRing, expansion: true, tactical: false, supremacy: false);
-        Assert.Equal("CE5D9DC09A5CADB30A6F2ECB01F2D6691DF188C17139A5A49E89EB87AD3EE086", FingerprintHash(singleRing));
+        Assert.Equal("BB32EA026513339AC20AC3AEEC34890703C6FFAF3CD9FA230B5E7EE1725FF1DD", FingerprintHash(singleRing));
         Assert.All(singleRing.Asteroids.Where(IsSpecial), a => Assert.Equal(U, a.AabmCapabilities));
 
         var pinWheel = GenerateWithPaths(939, MapGenType.PinWheel, expansion: true, tactical: false, supremacy: false);
-        Assert.Equal("54C03DF1D1A4B98673B87200B776978623BFDFBF3C57057BE1A18364D90E952D", FingerprintHash(pinWheel));
+        Assert.Equal("B408149006054E8968A85EBF7836817A4CA43C338A2E4F42574B1A740F113D88", FingerprintHash(pinWheel));
         Assert.All(pinWheel.Asteroids.Where(IsSpecial), a => Assert.Equal(U, a.AabmCapabilities));
     }
 
