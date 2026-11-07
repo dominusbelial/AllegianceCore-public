@@ -1,36 +1,32 @@
 AllegianceCore: portable bundles plus Windows setup and Linux AppImage.
 
-## New since v0.1.1
+## New since v0.1.3
 
-**Training**: every native lesson now runs offline in a real game window: Basic Flight, Basic Weaponry,
-Enemy Engagement, Command View, Practice Arena (with its AI combat waves), Nanite and Free Flight, on their
-native setups, with the native order buoys, carrier loadout restore and lesson chat.
+This release fixes the problems testers reported with pilot training.
 
-**Multiplayer and lobby**
-- The native team lobby: side requests, team leaders, flush/randomize sides, team names and the
-  game-settings form for the host.
-- Private games by invitation, hidden games, a server allow-list and a richer server listing.
-- Host a LAN game straight from the client.
-- Optional UDP transport, with automatic transport selection (TCP stays the fallback).
-- Reconnect grace, and the fleet recovers after a server restart.
-- Squads, squad game results and career stats with a leaderboard.
+**Controls**
+- New players now get the original Allegiance default controls: left mouse fires, middle mouse fires
+  missiles, right mouse targets the centre, Q/E roll, SPACE boosts and the wheel sets the throttle.
+  These are the keys the training lessons teach.
+- The earlier AllegianceCore key set is kept as the "Port layout" preset (press P in the F6 controls
+  screen). Existing keymaps move to the new defaults and keep your own rebinds.
 
-**Game modes**: native game goals (prosperity, flags, artifacts, conquest, kills) with goal rotation,
-lives limits, random civilizations per match and the friendly-fire / allied-visibility options.
+**Training**
+- Training and skirmish no longer play like a slideshow: the game's own frames had been waiting on the
+  embedded server.
+- Basic Flight: after the speed demonstration the throttle is released to you again, and the SPACE
+  booster works. The lesson still unlocks steering and throttle in stages, as the original does.
+- The spoken instructions play again (the voice clips were being dropped silently). Spoken lines that
+  name the wrong key are no longer repeated by the 30-second reminder; the reminder repeats the
+  corrected on-screen text instead.
+- Lesson fixes: hangar refunds and loadouts, the Practice Arena target list, enemy visibility and the
+  Nanite wingman's default order now match the original.
 
-**Flight and HUD**
-- Positional 3-D sound: distance rolloff, Doppler and direction cones.
-- HUD scale and detail levels, radar label tiers and decluttering, a turret gunner HUD.
-- Every hull renders, with corrected mesh texture orientation and own-ship smoke and afterburner effects.
-- Autopilot no longer drops a starmap goto after an eject-home flight has docked.
+**Multiplayer**: player-hosted games over the internet (STUN and hole punching through the lobby) are
+in, off by default.
 
-**Bots and big battles**
-- Bots play every phase: scout openings and map discovery, ordered miner routines, bomber massing,
-  minelaying, turret gunners, finale strikes, and they play each game goal.
-- Server: native ship travel planning, a per-match tick budget, worker pools sized by cores and players,
-  and no heap growth across match rotation.
-
-**Server administration**: a local server console for AllSrv-style administration.
+**Simulation**: missiles explode with their blast size; native client/server time conversion; admin
+tech-bit overrides; native special-asteroid placement on generated maps.
 
 **Known limits**: the Android client is experimental and has no download. Behaviour parity with native
 Allegiance is about 97% of the tracked rules; the per-area scorecard is in `docs/parity/`.
