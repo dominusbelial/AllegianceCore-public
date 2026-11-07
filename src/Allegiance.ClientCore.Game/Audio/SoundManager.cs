@@ -1466,25 +1466,68 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// slide holds until the clip finishes). The port resolves the slide's native stem
     /// (tm_slide_*, the artwork corpus's training narration clips) first through the
     /// port's Content pack, then from the installed artwork corpus
-    /// (<c>SoundEffect.FromFile</c>); when neither is installed the clip is a silent
+    /// (Vorbis decoded to PCM); when neither is installed the clip is a silent
     /// no-op and the slide waits for a key press, as native does with an unplayable clip.
     /// Returns the playing instance (finish detection) or null.
     /// </summary>
+    private readonly Dictionary<string, Microsoft.Xna.Framework.Audio.SoundEffect> _artworkSlideSounds = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<SoundPcm>> _slidePcm = new();
+
+    private static string? ArtworkVoicePath(string stem)
+    {
+        try
+        {
+            string path = System.IO.Path.Combine(
+                Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork), stem + ".ogg");
+            return System.IO.File.Exists(path) ? path : null;
+        }
+        catch { return null; /* artwork corpus not installed */ }
+    }
+
+    /// <summary>Decode a mission's installed voices off the main thread before
+    /// the lesson needs them. Native binds every training voice before the
+    /// mission starts (WinTrek/soundinit.cpp:15-31); decoding on first play
+    /// stalled the training frame, which holds the host simulation lock.</summary>
+    public void PrewarmSlideSounds(IEnumerable<string> stems)
+    {
+        if (!IsLoaded) return;
+        foreach (string stem in stems)
+            if (!_artworkSlideSounds.ContainsKey(stem) && ArtworkVoicePath(stem) is { } path)
+                _slidePcm.GetOrAdd(stem, _ => Task.Run(() => TrainingVoicePcm.Read(path)));
+    }
+
+    /// <summary>Drop the decoded training voices when a lesson ends.</summary>
+    public void ReleaseSlideSounds()
+    {
+        foreach (var sfx in _artworkSlideSounds.Values) Safe(sfx.Dispose);
+        _artworkSlideSounds.Clear();
+        _slidePcm.Clear();
+    }
+
     public Microsoft.Xna.Framework.Audio.SoundEffectInstance? PlaySlideSound(string? stem)
     {
         if (!IsLoaded || stem is null) return null;
         Microsoft.Xna.Framework.Audio.SoundEffect? sound = null;
         try { sound = _content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>($"Sounds/{stem}"); }
         catch { /* not in the Content pack — try the artwork corpus */ }
-        if (sound is null)
+        if (sound is null && !_artworkSlideSounds.TryGetValue(stem, out sound))
         {
-            try
+            _slidePcm.TryRemove(stem, out var decode);
+            string? path = decode is null ? ArtworkVoicePath(stem) : null;
+            if (decode is not null || path is not null)
             {
-                string path = System.IO.Path.Combine(
-                    Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork), stem + ".ogg");
-                if (System.IO.File.Exists(path)) sound = Microsoft.Xna.Framework.Audio.SoundEffect.FromFile(path);
+                try
+                {
+                    // training/playsoundaction.cpp:41 uses StartSound, whose
+                    // template decodes the installed voice. FromFile only reads
+                    // WAVE and silently discarded every native .ogg here.
+                    var pcm = decode?.GetAwaiter().GetResult() ?? TrainingVoicePcm.Read(path!);
+                    sound = new Microsoft.Xna.Framework.Audio.SoundEffect(pcm.Data, pcm.SampleRate,
+                        (Microsoft.Xna.Framework.Audio.AudioChannels)pcm.Channels);
+                    _artworkSlideSounds.Add(stem, sound);
+                }
+                catch (Exception ex) { WarnOnce($"training voice {stem} unplayable: {ex.Message}"); }
             }
-            catch { /* artwork corpus not installed */ }
         }
         if (sound is null) return null;
         var instance = sound.CreateInstance();
@@ -2989,6 +3032,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             _drop?.Dispose();                  // P719
             _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();
+            ReleaseSlideSounds();
             // P614 — dispose any still-tracked one-shot instances not owned by
             // a dictionary above (loops are all covered by their dicts).
             foreach (var v in _managedVoices)

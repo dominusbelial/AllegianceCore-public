@@ -42,9 +42,8 @@ public sealed partial class Game1
     private bool _proofM3Killing;       // M3: in the shooting/targeting phase
     private bool _proofM3Docking;       // M3: final manual fly-home leg engaged
     private int _proofM3NextDerelict;   // M3: target cursor over 1000..1009
-    private const float _proofKillDeadband = 2.0f; // P886c: stop turning once within ~2° of target
     // prompt-edge counters (messages accumulate on the site; act once per NEW occurrence)
-    private int _pSpacebarSeen, _pSpaceKeySeen, _pBackslashSeen, _pWheelSeen,
+    private int _pSpacebarSeen, _pSpaceKeySeen,
         _pEnemyKeySeen, _pCenterSeen, _pBaseSeen, _pShotMarkers;
     // M3 manual fly-home (goal 13) bookkeeping
     private bool _proofThrottleSetFull; // the FULL-throttle key was tapped for the landing approach
@@ -386,44 +385,6 @@ public sealed partial class Game1
 
     // ── Mission 2 — Basic Flight ────────────────────────────────────────────
 
-    private void DriveMission2(ClientTrainingSite site, List<Keys> keys)
-    {
-        string goal = _trainingSession!.Mission.ActiveGoalPath;
-
-        // Goal 3 & 6: "Press the SPACEBAR" → tap SPACE (FireBooster action → TK_FireBooster(50)).
-        int sp = ProofCount(site, "Press the SPACEBAR");
-        if (sp > _pSpacebarSeen) { _pSpacebarSeen = sp; ProofTap(Keys.Space); ProofMaybeShot("M2 SPACEBAR"); }
-
-        // Goal 4: "Press BACKSLASH ... for full thrust" → tap BACKSLASH (ThrottleFull) → throttle 1.0.
-        int bs = ProofCount(site, "BACKSLASH");
-        if (bs > _pBackslashSeen) { _pBackslashSeen = bs; ProofTap(Keys.OemBackslash); ProofMaybeShot("M2 throttle full"); }
-
-        // Goal 5: "Use your scroll wheel ... to adjust thrust" → step the throttle down (not == 1.0).
-        int wh = ProofCount(site, "scroll wheel");
-        if (wh > _pWheelSeen) { _pWheelSeen = wh; ProofTap(Keys.OemMinus); }
-
-        // Goal 7: "Press and hold the SPACE key to fire the booster" → hold the booster through REAL
-        // key input. The FireBooster action is rebound to LeftShift for normal flight; the training
-        // gate ALSO recognises its native-default key (SPACEBAR), so holding Space routes
-        // TK_FireBooster to the mission AND holding LeftShift sets the applied AfterburnerButton bit
-        // through the flight input's own key reading (P886b: no injected bit — FlightInput.Translate
-        // folds Afterburner → AfterburnerButton from the held key).
-        int bk = ProofCount(site, "hold the SPACE key");
-        if (bk > _pSpaceKeySeen) { _pSpaceKeySeen = bk; _proofSpaceHeldM2 = true; ProofMaybeShot("M2 booster"); }
-        // Release the booster hold once the scripted demonstration moves on (afterburner bit registered).
-        if (_proofSpaceHeldM2 && goal.StartsWith("8", StringComparison.Ordinal))
-            _proofSpaceHeldM2 = false;
-        if (_proofSpaceHeldM2)
-        {
-            keys.Add(Keys.LeftShift);   // FireBooster binding → AfterburnerButton bit (real path)
-            keys.Add(Keys.Space);       // native default → TK_FireBooster to the mission (gate)
-        }
-
-        // Goals 8-9 (autopilot home + dock) are flown by the SCRIPT's SetAutopilotAction; the proof
-        // provides no steering — a player only watches the autopilot fly and dock.
-    }
-    private bool _proofSpaceHeldM2;
-
     // ── Mission 3 — Basic Weaponry ──────────────────────────────────────────
 
     private void DriveMission3(ClientTrainingSite site, List<Keys> keys)
@@ -486,43 +447,36 @@ public sealed partial class Game1
         if (_proofM3Docking)
             DriveManualLanding(keys);
 
-        // P886b — M3 pointing goals that have NO TurnToAction auto-turn (goal 7.9 "face the new
-        // target", goal 8.7 "face the next hull") require the PLAYER to turn the nose onto the
-        // current target by hand — the proof must steer with the real yaw/pitch keys exactly like a
-        // player.
-        //
-        // Track kill derelicts with the same local pose the player sees. P890
-        // restores that pose's authority at the host, including training's origin.
-        // Keep a small deadband and burst discipline for the low-frame-rate proof.
+        // The current port facing gate is one degree, but the small 800/801 hulls
+        // need finer aim for gunfire. Choose real mouse deltas from the local
+        // pose rather than stopping keyboard steering two degrees away.
         bool pointing7_8 = goal is "7.9" or "8.7" or "8.11";
         int kmajor = int.TryParse(goal.Split('.')[0], out var km) ? km : 0;
-        bool killPhase = _proofM3Killing && (kmajor is 6 or 8 or 9);
-        if (pointing7_8 && TryGetM3AimTarget(out var aimPt))
-            SteerTowards(aimPt, keys, .004f); // comfortably inside native's one-degree gate
-        else if (killPhase && TryGetKillDerelictPosition(out var kpos))
+        bool aimPhase = pointing7_8 || _proofM3Killing && (kmajor is 6 or 8 or 9);
+        bool aimed = false;
+        _proofMouse = new MouseState(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2, 0,
+            ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
+        if (aimPhase)
         {
-            if (OwnAimDegreesTo(kpos) > _proofKillDeadband)
-                SteerTowards(kpos, keys, deadband: .025f);
+            if (!_mouseFlightEnabled) { keys.Add(Keys.M); return; }
+            if (TryGetM3AimTarget(out var aimPt)) aimed = DrivePrecisionMouseM3(aimPt);
         }
+        else if (_mouseFlightEnabled) { keys.Add(Keys.M); return; }
 
-        // Shooting phase: fire only during the actual fire-gate/kill goals (conserves the weapon
-        // energy/ammo between the two demonstrations, exactly like the headless driver). Re-target
-        // the next live derelict after a kill with the native F targeting key.
-        int major = int.TryParse(goal.Split('.')[0], out var m) ? m : 0;
-        // Proof policy: preserve the 600 ms fire / 300 ms rest duty cycle to
-        // conserve resources while steering through the real keyboard path.
-        // P890 corrects pose authority; the gun does not apply a recoil impulse.
-        // Goal 5.9 only needs a WeaponsMask once, so that demonstration always fires.
-        bool inKillGoal = _proofM3Killing && (major is 6 or 8 or 9);
-        bool isFireDemo = _proofM3Killing && goal == "5.9";
+        // Fire at the actual native gates, not throughout narrated lessons:
+        // mission3.cpp:628-650,717-723,841-850,875-882,928-947,964-971.
+        // Preserve the ordinary 600 ms fire / 300 ms rest practice duty cycle.
+        bool inKillGoal = _proofM3Killing && goal is "6.7" or "8.9" or "9.7";
+        bool isFireDemo = _proofM3Killing && goal is "5.9" or "8.3" or "9.3";
         long burstPhase = nowMs % 900;
         bool burstOn = burstPhase < 600;
-        bool firing = isFireDemo || (inKillGoal && burstOn);
+        bool firing = isFireDemo || (inKillGoal && aimed && burstOn);
 
         if (_autoTarget is { Kind: TargetKind.Ship, Id: >= 1000 and <= 1009 } selected)
             _proofM3NextDerelict = selected.Id;
         if (_proofM3Killing && _embeddedHost is { } host && _proofM3NextDerelict >= 1000 && _proofM3NextDerelict <= 1009
-            && host.IsDestroyed(_proofM3NextDerelict))
+            && host.IsDestroyed(_proofM3NextDerelict)
+            && goal is "6.8" or "6.9" or "6.10" or "8.10" or "8.11" or "8.12" or "9.8" or "9.9" or "9.10" or "9.11")
         {
             int next = _proofM3NextDerelict + 1;
             while (next <= 1009 && host.IsDestroyed(next)) next++;
@@ -542,6 +496,52 @@ public sealed partial class Game1
             keys.Add(Keys.Space); // native full-cargo bug leaves lesson 9 without a magazine (P912)
             keys.Add(Keys.LeftControl);   // FireMissile → MissileFire bit + wire launch (M3 goal 09)
         }
+    }
+
+    private long _proofPrecisionNextLog;
+    // Pilot policy only: choose physical mouse deltas. The shipping mouse
+    // integration, deadzone, curve and ship physics still apply every sample.
+    private bool DrivePrecisionMouseM3(Vector3 target)
+    {
+        if (!TryOwnTrainingPose(out var pos, out var forward, out var up, out var right) || _ownSim.TurnHull is not { } hull) return false;
+        Vector3 delta = target - pos;
+        if (delta.LengthSquared() < .0001f) return false;
+        Vector3 direction = Vector3.Normalize(delta);
+        float cosine = Math.Clamp(Vector3.Dot(forward, direction), -1, 1);
+        float yawError, pitchError;
+        if (cosine < .98f && cosine > -.9999f)
+        {
+            Vector3 twist = Vector3.Normalize(Vector3.Cross(-forward, delta));
+            float angle = MathF.Acos(cosine);
+            yawError = -Vector3.Dot(twist, up) * angle;
+            pitchError = Vector3.Dot(twist, right) * angle;
+        }
+        else
+        {
+            yawError = MathF.Acos(Math.Clamp(Vector3.Dot(right, direction), -1, 1)) - MathF.PI / 2;
+            pitchError = MathF.Acos(Math.Clamp(Vector3.Dot(up, direction), -1, 1)) - MathF.PI / 2;
+        }
+        float yawRate = _ownSim.TurnRates[0], pitchRate = _ownSim.TurnRates[1];
+        float yaw = Math.Clamp((.7f * yawError - .5f * yawRate), -.65f, .65f);
+        float pitch = Math.Clamp((.7f * pitchError - .5f * pitchRate), -.65f, .65f);
+        float Stick(float output)
+        {
+            float response = _mouseFlight.LinearControls ? MathF.Abs(output) : MathF.Sqrt(MathF.Abs(output));
+            return output == 0 ? 0 : MathF.CopySign(_mouseFlight.Deadzone + (1 - _mouseFlight.Deadzone) * response, output);
+        }
+        var current = _mouseFlight.Current;
+        float sensitivity = _mouseFlight.Sensitivity * _mouseFlight.MouseSensitivity;
+        int dx = (int)MathF.Round((current.Yaw - Stick(yaw)) / sensitivity);
+        int dy = (int)MathF.Round((current.Pitch - Stick(pitch)) / sensitivity * (_mouseFlight.InvertPitch ? -1 : 1));
+        _proofMouse = new MouseState(GraphicsDevice.Viewport.Width / 2 + dx, GraphicsDevice.Viewport.Height / 2 + dy, 0,
+            ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
+        float degrees = MathF.Acos(cosine) * 57.29578f;
+        if (Environment.TickCount64 >= _proofPrecisionNextLog)
+        {
+            _proofPrecisionNextLog = Environment.TickCount64 + 2000;
+            Console.WriteLine(FormattableString.Invariant($"[p940] M3_AIM {_trainingSession!.Mission.ActiveGoalPath} aim={degrees:F4} rates={yawRate:F4}|{pitchRate:F4} mouse={dx}|{dy}"));
+        }
+        return degrees < .15f && MathF.Abs(yawRate) < .02f && MathF.Abs(pitchRate) < .02f;
     }
 
     /// <summary>M3 goal 13 — fly the ship home with real steering/throttle keys. Steers the nose onto

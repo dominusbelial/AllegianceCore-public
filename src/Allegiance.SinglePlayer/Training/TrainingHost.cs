@@ -531,6 +531,14 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
     /// </summary>
     public volatile bool Paused;
 
+    /// <summary>Native mission actions and simulation share one frame owner
+    /// (training/trainingmission.cpp:153-164,237-267). A waypoint and its
+    /// current/accepted orders must be installed without a tick in between.</summary>
+    public bool RunTrainingFrame(Func<bool> advance)
+    {
+        lock (_simGate) return advance();
+    }
+
     /// <summary>Manually advance the embedded sim once (deterministic headless driving).</summary>
     public void Tick()
     {
@@ -576,10 +584,12 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
 
     private void AdvanceAutopilot()
     {
-        // M4's routed NPC orders run in the real simulation. A position nudge in the source
-        // sector cannot implement intersector travel or retain collision response.
+        // Connected lessons run in the real simulation. The old adapter's
+        // per-call position nudge double-integrated M2's commander and could
+        // retire its waypoint before the narration's radius check began
+        // (training/mission2.cpp:232-239; Igc/shipIGC.cpp:2795-2807).
         if (StartSectorId == PracticeArena.StartSector
-            || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
+            || (_clientBound && (StartSectorId == BasicFlight.StartSector || StartSectorId == EnemyEngagement.StartSector
                 || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))) return;
         // Zero the sim ships' own throttle so the server does not integrate their Controls field
         // into unintended motion; movement is driven exclusively by the host autopilot pass below
@@ -791,9 +801,10 @@ public sealed partial class TrainingHost : ITrainingHost, IDisposable
         int? targetShipId = Id(IgcObjectType.Ship), targetBuoyId = Id(IgcObjectType.Buoy),
             targetStationId = Id(IgcObjectType.Station), targetAsteroidId = Id(IgcObjectType.Asteroid);
         // Connected combat/command lessons use real simulation plans.
-        // M2 and detached legacy script tests retain their movement owner.
+        // Detached legacy script tests retain their movement owner. Connected M2
+        // must use native physics too (mission2.cpp:232-239; Igc/shipIGC.cpp:2795-2807).
         if (ship.IsNpc && (StartSectorId == PracticeArena.StartSector
-            || (_clientBound && (StartSectorId == EnemyEngagement.StartSector
+            || (_clientBound && (StartSectorId == BasicFlight.StartSector || StartSectorId == EnemyEngagement.StartSector
                 || StartSectorId == CommandView.StartSector || StartSectorId == Nanite.StartSector))))
         {
             ship.AttackTarget = commandId == TrainingMissionIds.CmdAttack ? model as Ship : null;

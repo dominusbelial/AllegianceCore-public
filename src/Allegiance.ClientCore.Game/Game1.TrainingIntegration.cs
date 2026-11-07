@@ -78,6 +78,7 @@ public sealed partial class Game1
         _embeddedHost?.Dispose();
         _embeddedHost = null;
         _trainingSession = null;
+        _sound?.ReleaseSlideSounds();
     }
 
     // WinTrek.cpp:3559-3569,3601-3604: quitting a slideshow or lesson asks

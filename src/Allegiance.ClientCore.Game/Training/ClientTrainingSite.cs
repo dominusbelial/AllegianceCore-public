@@ -160,6 +160,18 @@ public sealed class ClientTrainingSite : ITrainingSite, ITrainingLifecycleSite, 
         => r.Type == ObjectType.Ship
             && (r.Id == TargetRef.Na ? World.MyShipId is not null : World.MyShipId == (short)r.Id);
 
+    internal bool RunTrainingFrame(Func<bool> advance)
+    {
+        // Keep the receive callback's existing client -> host lock order.
+        // The simulation never sees a partly executed native action list.
+        if (_f.Session is { } connection)
+        {
+            lock (connection.Gate) return Run();
+        }
+        return Run();
+        bool Run() => _f.Host is TrainingHost host ? host.RunTrainingFrame(advance) : advance();
+    }
+
     public float TimeSeconds => (float)(_f.ClockSeconds?.Invoke() ?? 0.0);
 
     /// <summary>The client's real frame delta (native <c>GetWindow()-&gt;GetDeltaTime()</c>).</summary>

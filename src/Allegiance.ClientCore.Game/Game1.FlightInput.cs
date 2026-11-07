@@ -2029,9 +2029,9 @@ public sealed partial class Game1
             // P220 — afterburner (TK_FireBooster): held, continuous (not
             // edge-triggered), reading either Shift key. Mirrors native's
             // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
-            // Shift is the recollection default since the native binding
-            // table isn't in this checkout (see KEYBINDING_AUDIT_P220.md).
-            Afterburner:     ActionDown(ks, "FireBooster") || _boosterToggled,
+            // SPACE on the native layout, Shift on the Port preset (P941).
+            // Basic Flight also accepts the prompted native SPACE (P940).
+            Afterburner:     BasicFlightBoosterDown(ks, KeyBindingStore.Instance.Map, Allegiance.ClientCore.Training.TrainingController.IsTraining && _trainingMissionId == 2) || _boosterToggled,
             // P221 — fire (TK_FireWeapon): held, continuous (not edge-triggered)
             // like afterburner, so a held Space keeps firing (native
             // IsTrekKeyDown sense). Bound to Space — unclaimed by every other
@@ -2521,6 +2521,7 @@ public sealed partial class Game1
         _ownShipSendArmed = sendArm;
         if (sendArm)
             StepOwnShipSimulation(gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
+        ObserveBasicFlightProof(gameTime.ElapsedGameTime.TotalSeconds);
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's

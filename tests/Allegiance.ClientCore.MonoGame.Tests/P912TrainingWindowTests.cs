@@ -12,6 +12,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class P912TrainingWindowTests(ITestOutputHelper output)
 {
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
+    [InlineData(2, "Classic")] [InlineData(2, "Modern")]
     [InlineData(3, "Classic")] [InlineData(3, "Modern")]
     [InlineData(4, "Classic")] [InlineData(4, "Modern")]
     [InlineData(5, "Classic")] [InlineData(5, "Modern")]
@@ -20,6 +21,13 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
     [InlineData(8, "Modern", "loss")]
     public async Task Every_lesson_completes_in_one_real_window_session(int mission, string style, string? policy = null)
         => await RunWindow(mission, style, policy);
+
+    [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
+    [InlineData("Classic", "muted")] [InlineData("Modern", "muted")]
+    [InlineData("Classic", "missing-audio")] [InlineData("Modern", "missing-audio")]
+    [InlineData("Classic", "reminders")] [InlineData("Modern", "reminders")]
+    public async Task Basic_flight_completes_with_muted_missing_or_repeated_narration(string style, string policy)
+        => await RunWindow(2, style, policy);
 
     [SkippableTheory, Trait("Requires", "Artwork"), Trait("Tier", "Live")]
     [InlineData("Classic")] [InlineData("Modern")]
@@ -71,7 +79,7 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         string proof = Path.Combine(root, "tools", "p912-training-proof", "bin", configuration, "net10.0", "p912-training-proof.dll");
         string content = Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame", "bin", configuration, "net10.0", "Content");
         Assert.True(File.Exists(proof), "Build tools/p912-training-proof before running the window tests.");
-        string directory = Path.Combine(root, ".scratch", "p931", "windows",
+        string directory = Path.Combine(root, ".scratch", mission == 2 ? "p940" : "p931", "windows",
             $"m{mission}-{style}-{policy ?? "default"}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         string dotnet = Environment.GetEnvironmentVariable("DOTNET")
@@ -117,6 +125,15 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
         output.WriteLine($"Evidence: {Path.GetRelativePath(root, directory)}");
         Assert.True(process.ExitCode == 0, $"Window failed: {directory}\n{log[^Math.Min(log.Length, 7000)..]}");
         Assert.Contains($"P912_{(lastLesson.HasValue || policy?.StartsWith("lesson=", StringComparison.Ordinal) == true ? "LESSON" : "WINDOW")}_PASS M{mission} {style}", log);
+        if (mission == 2)
+        {
+            Assert.Contains("[p940] M2_NATIVE_END docked=1010 completed=True prompts=5 stages=9", log);
+            if (policy == "reminders")
+            {
+                foreach (string voice in new[] { "tm_2_11r", "tm_2_16r", "tm_2_18r", "tm_2_24r", "tm_2_33" })
+                    Assert.True(log.Split($"[training] voice {voice} (mission 2)").Length - 1 >= (voice == "tm_2_33" ? 1 : 2), $"Missing 30-second reminder: {voice}");
+            }
+        }
         if (mission == 4 && policy != "lesson=1") Assert.Matches(@"quick-chat >> .* \(Everyone\)", log);
         if (mission == 8 && policy == "loss")
             Assert.Contains("[training] voice tm_8_15 (mission 8)", log); // native verdict, mission8.cpp:394-401

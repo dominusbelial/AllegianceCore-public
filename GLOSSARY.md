@@ -1078,6 +1078,28 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/P934TrainingVisibilityBindingTests.cs`;
   real-window captures: `tools/p934-training-proof/`; audit:
   `docs/reports/P934_REPORT.md` (TRN-0215 corrects an unsupported flee claim).
+- **Basic Flight input and narration proof (P940)** — the real-window pilot in
+  `src/Allegiance.ClientCore.Game/Game1.TrainingProof.BasicFlight.cs` checks native
+  staged locks through actual keyboard/mouse handlers, both backslash variants,
+  wheel and SPACE, then real docking in both HUD styles. Shared prompt-key routing
+  lives in `src/Allegiance.ClientCore.Game/Game1.Training.cs`; the demo reset is in
+  `src/Allegiance.ClientCore/Training/Mission2.cs`. Connected M2/M3 share simulation
+  movement in `src/Allegiance.SinglePlayer/Training/TrainingHost.cs`.
+  `src/Allegiance.ClientCore.Game/Training/TrainingRuntime.cs` and
+  `src/Allegiance.ClientCore.Game/Training/ClientTrainingSite.cs` serialize native
+  action lists with the host tick, preserving client-before-host lock order.
+  `src/Allegiance.ClientCore.Game/Audio/TrainingVoicePcm.cs` decodes installed
+  Vorbis narration for the sound manager's ordinary completion detection. The M3
+  pilot in `src/Allegiance.ClientCore.Game/Game1.TrainingProof.cs` aims with real
+  mouse deltas and fires at the native demonstration/kill gates, conserving ammo
+  while the restored narration plays (`training/mission3.cpp:717-723,875-882`).
+  Older loopback drivers in `tests/Allegiance.ClientCore.MonoGame.Tests/P881aTrainingMissionsTests.cs`
+  bind the M2 client autopilot callback and damp the M3 bay approach through real wire controls.
+  Proofs: `tools/p912-training-proof/`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P940BasicFlightInputTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs`.
+  Native: `training/mission2.cpp:157-163,298-301,391-396,516-521,585-613,725-765`,
+  `training/playsoundaction.cpp:35-43`. Report: `docs/reports/P940_REPORT.md`.
 - **Lesson universes and window completion (P912)** — M2 bounds use a private
   constants copy through `src/Allegiance.Core/Model/Mission.cs`; M8 cargo/tech
   and native M5 drone placement live in

@@ -311,7 +311,11 @@ public class Mission2 : TrainingMission
         ThrottledSpin(list, 0.5f, pitch: -0.5f);
         ThrottledSpin(list, 0.5f, yaw: 0.0f);
         list.AddGoal(new Goal(ElapsedTimeCondition.Create(0.5f, Site)));
-        ThrottledSpin(list, 0.5f, yaw: 0.0f);
+        // Native clears every forced control here, including throttle
+        // (training/mission2.cpp:585-590), before restoring player input.
+        var reset = new Goal(ElapsedTimeCondition.Create(0.5f, Site));
+        reset.AddStartAction(new SetControlsAction());
+        list.AddGoal(reset);
 
         list.AddGoal(CreatePlaySoundGoal(Tm2_22));
         list.AddGoal(new Goal(ElapsedTimeCondition.Create(0.2f, Site)));

@@ -52,6 +52,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         public readonly ActionMap Map = new(InputActionCatalog.Definitions, InputLayout.Port);
         public readonly TrainingInputGate Gate;
         public bool Eyeball;
+        public bool ScriptedAutopilotUsed;
         public Coll.Vector3? BayApproach;
         public Coll.Vector3 BayEntry;
         public bool BayAligned;
@@ -66,7 +67,9 @@ public sealed class P881aTrainingMissionsTests : IDisposable
                 Session = Connection,
                 Host = Host,
                 SetEyeball = shown => Eyeball = shown,
-                OwnAutopilot = variant == TrainingHost.EnemyEngagement
+                // M2 now has the same client-owned return path as shipping Game1.
+                // Native WinTrek.cpp:8345-8350 consumes client autopilot controls.
+                OwnAutopilot = variant == TrainingHost.EnemyEngagement || variant == TrainingHost.BasicFlight
                     ? (target, on) => _scriptedAutopilotTarget = on ? target : null : null,
                 ClockSeconds = () => Host.Mission.LastUpdate,
                 // The client's real own-ship kinematics: the replicated own pose supplies the
@@ -144,7 +147,19 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             if (_scriptedAutopilotTarget is { } ap && Site.Resolve(ap) is { } point)
             {
                 var pose = MyPose;
-                masked = AutopilotSteering.Pursue(pose.Position, pose.Orientation,
+                ScriptedAutopilotUsed = true;
+                if (Host.StartSectorId == TrainingHost.BasicFlight.StartSector && ap.Type == ObjectType.Station)
+                {
+                    // Reuse the fixture's real bay-entry controls: steering at
+                    // the station centre alone can collide with its outer ring.
+                    // No pose or dock state is supplied; the server must dock us.
+                    var home = Host.Mission.Sectors.SelectMany(sector => sector.StationRuntimes)
+                        .Single(station => station.StationId == ap.Id);
+                    var automatic = ManualBayLanding(this, home);
+                    masked = automatic.Controls;
+                    maskedState = automatic.StateM;
+                }
+                else masked = AutopilotSteering.Pursue(pose.Position, pose.Orientation,
                     new Coll.Vector3(point.Position.X, point.Position.Y, point.Position.Z));
             }
             TrainingOwnState.Set(masked, maskedState);
@@ -220,6 +235,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
         // The landing was the server's real dock latch, not a script call.
         Assert.True(t.Host.PlayerShip.StationId is not null, "trainee never docked at the home station");
         Assert.Equal((short)1010, t.Host.PlayerShip.StationId);
+        Assert.True(t.ScriptedAutopilotUsed, "the simulated client never consumed the native return order");
         Assert.True(t.Messages.Any(m => m.Contains("BACKSLASH")), "throttle lesson never ran");
     }
 
@@ -328,7 +344,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             {
                 var home = t.Host.Mission.Sectors.SelectMany(s => s.StationRuntimes)
                     .Single(s => s.StationId == 1010);
-                var bayCommand = ManualBayLanding(t, home);
+                var bayCommand = ManualBayLanding(t, home, damped: true);
                 controls = bayCommand.Controls;
                 stateM = bayCommand.StateM;
             }
@@ -780,7 +796,7 @@ public sealed class P881aTrainingMissionsTests : IDisposable
 
     // Headless controls cross the compact wire. Fly with digital keyboard inputs, as the
     // real-window driver does, so tiny analog pivot commands cannot round to zero at a bay.
-    private static Allegiance.ClientCore.MonoGame.Flight.FlightCommand ManualBayLanding(Trainee t, Station station)
+    private static Allegiance.ClientCore.MonoGame.Flight.FlightCommand ManualBayLanding(Trainee t, Station station, bool damped = false)
     {
         var pose = t.MyPose;
         var ship = t.Host.PlayerShip;
@@ -814,7 +830,27 @@ public sealed class P881aTrainingMissionsTests : IDisposable
             Throttle = !t.BayAligned && distance > Math.Max(400, stopping + 200) && cosine > .98f ? 1f : -1f,
             ThrottleForward = speed < 12 && cosine > .985f,
         };
-        return Allegiance.ClientCore.MonoGame.Flight.FlightInput.Translate(input);
+        var command = Allegiance.ClientCore.MonoGame.Flight.FlightInput.Translate(input);
+        if (!damped) return command;
+        // Pilot policy: steer from the replicated pose and cancel the host
+        // ship's turn rates. Full digital reversals oscillate at the bay approach.
+        var forward = pose.Orientation.GetForward();
+        float yawError, pitchError;
+        if (cosine < .98f && cosine > -.9999f)
+        {
+            var twist = Coll.Vector3.CrossProduct(-forward, delta).Normalize();
+            float angle = MathF.Acos(Math.Clamp(cosine, -1, 1));
+            yawError = -(twist * pose.Orientation.GetUp()) * angle;
+            pitchError = (twist * pose.Orientation.GetRight()) * angle;
+        }
+        else
+        {
+            yawError = MathF.Acos(Math.Clamp(pose.Orientation.GetRight() * direction, -1, 1)) - MathF.PI / 2;
+            pitchError = MathF.Acos(Math.Clamp(pose.Orientation.GetUp() * direction, -1, 1)) - MathF.PI / 2;
+        }
+        float yaw = Math.Clamp(.7f * yawError - .5f * ship.TurnRates[ControlData.AxisYaw], -.65f, .65f);
+        float pitch = Math.Clamp(.7f * pitchError - .5f * ship.TurnRates[ControlData.AxisPitch], -.65f, .65f);
+        return command with { Controls = command.Controls with { Yaw = yaw, Pitch = pitch } };
     }
 
 }

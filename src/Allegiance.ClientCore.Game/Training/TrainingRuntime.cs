@@ -86,15 +86,18 @@ public sealed class TrainingSession
     /// <summary>True once the mission's <c>Start()</c> (native CreateMission) has run.</summary>
     public bool Started { get; private set; }
 
-    public void Start()
+    public void Start() => _site.RunTrainingFrame(() =>
     {
         _mission.Start();
         Started = true;
         LogProgress();
-    }
+        return true;
+    });
 
     /// <summary>Advance the mission by one frame (native Frame()). Returns true once complete.</summary>
-    public bool Advance()
+    public bool Advance() => _site.RunTrainingFrame(AdvanceCore);
+
+    private bool AdvanceCore()
     {
         if (Finished) return true;
         if (!Started) return false;   // the mission starts once the player ship exists (Game1.UpdateTraining)

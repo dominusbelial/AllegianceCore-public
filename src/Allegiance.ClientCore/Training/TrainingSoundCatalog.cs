@@ -6,6 +6,10 @@ namespace Allegiance.ClientCore.Training;
 /// e.g. 3049 means different clips in Mission3 and Mission4.</summary>
 public static class TrainingSoundCatalog
 {
+    /// <summary>Every voice stem a mission can play (its local ids plus the shared ones).</summary>
+    public static IEnumerable<string> Stems(int missionId)
+        => Enumerable.Range(0, 10000).Select(id => Stem(missionId, id)).OfType<string>().Distinct();
+
     public static string? Stem(int missionId, int soundId) => (missionId, soundId) switch
     {
         (2, 2001) => "tm_2_01",

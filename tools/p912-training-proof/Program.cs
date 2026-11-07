@@ -63,25 +63,54 @@ if (args.Length >= 5 && args[4] is "hunt" or "sacrifice")
     Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", keymapPath);
     Console.WriteLine("[p931] isolated input profile: ThrustUp=NumPad8; native Insert=AcceptCommand retained");
 }
+if (mission == 2 && args.Length >= 5 && args[4] == "missing-audio")
+{
+    string source = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
+    string silentArtwork = Path.GetFullPath(Path.Combine(args[1], "artwork-without-voices"));
+    Directory.CreateDirectory(silentArtwork);
+    foreach (string entry in Directory.EnumerateFileSystemEntries(source))
+    {
+        string name = Path.GetFileName(entry);
+        if ((name.StartsWith("tm_2_", StringComparison.OrdinalIgnoreCase)
+            || name.StartsWith("tm_slide_2_", StringComparison.OrdinalIgnoreCase))
+            && name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)) continue;
+        string link = Path.Combine(silentArtwork, name);
+        if (Directory.Exists(entry)) Directory.CreateSymbolicLink(link, entry);
+        else File.CreateSymbolicLink(link, entry);
+    }
+    Environment.SetEnvironmentVariable(ExternalPaths.ArtworkEnvVar, silentArtwork);
+    Console.WriteLine("[p940] M2 voice clips absent; flight artwork retained through a local fixture");
+}
 using var game = new Game1(new Game1.LaunchOptions
 {
     Intro = true, PlayerName = "Training Pilot", WindowWidth = 800, WindowHeight = 480,
     // The shipping --fx native tier keeps software-rendered input responsive.
     // It changes presentation only; host time and combat remain real-time.
-    EffectsRequested = args.Length >= 5 && args[4] is "hunt" or "sacrifice" or "early"
+    EffectsRequested = mission == 2 || args.Length >= 5 && args[4] is "hunt" or "sacrifice" or "early"
         ? Allegiance.ClientCore.State.EffectsQuality.Native : null,
 });
 game.Content.RootDirectory = Path.GetFullPath(args[0]);
 int lastLesson = args.Length == 6 ? int.Parse(args[5]) : 0;
-if (lastLesson < 0 || lastLesson > (mission switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
+if (lastLesson < 0 || lastLesson > (mission switch { 2 => 9, 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
     throw new ArgumentException("Invalid last lesson.");
 var proof = new LessonObserver(game, Path.GetFullPath(args[1]), mission, style, args.Length >= 5 ? args[4] : null, lastLesson);
 game.Components.Add(proof);
 if (args.Length >= 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
 {
     if (!int.TryParse(args[4][7..], out int lesson) || lesson < 1
-        || lesson > (mission switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
+        || lesson > (mission switch { 2 => 9, 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
         throw new ArgumentException("Invalid lesson checkpoint.");
+}
+else if (args.Length >= 5 && mission == 2)
+{
+    if (args[4] == "reminders")
+        typeof(Game1).GetField("_proofM2Reminders", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, true);
+    else if (args[4] is "muted" or "missing-audio")
+    {
+        typeof(Game1).GetField("_proofM2Audio", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(game, args[4]);
+        if (args[4] == "muted") Microsoft.Xna.Framework.Audio.SoundEffect.MasterVolume = 0;
+    }
+    else throw new ArgumentException("unknown M2 policy");
 }
 else if (args.Length >= 5)
 {
@@ -129,11 +158,14 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
     private bool _bomberDestroyed;
     private int _endingMessageStart = -1;
     private string[] _endingMessages = [];
+    private double _nextBasicFlightTrace;
     private bool _combatRecipeWritten;
     private bool _naniteLeadShot;
     private double _nextCombatTrace;
     private string _lastGoal = "";
     private StreamWriter? _pilotTrace;
+    private TrainingSession? _basicFlightSession;
+    private string[] _basicFlightPrompts = [];
     private TimeSpan _pilotFrame = TimeSpan.MinValue;
 
     protected override void Dispose(bool disposing)
@@ -197,6 +229,18 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
             }
             string goal = session.Mission.ActiveGoalPath;
             TracePilot(gameTime, host, goal);
+            if (missionId == 2)
+            {
+                _basicFlightSession = session;
+                // Keep the real landing receipt before ReleaseTraining disposes the host.
+                _basicFlightPrompts = session.Site.Messages.ToArray();
+                if (_watch.Elapsed.TotalSeconds >= _nextBasicFlightTrace)
+                {
+                    _nextBasicFlightTrace = _watch.Elapsed.TotalSeconds + 5;
+                    var instructor = host.CommanderShip;
+                    Console.WriteLine($"[p940] FLIGHT goal={goal} wall={_watch.Elapsed.TotalSeconds:F3} clock={Get<double>("_trainingClock"):F3} host={host.Mission.LastUpdate:F3} frame={gameTime.ElapsedGameTime.TotalSeconds:F3} instructor={instructor.Position} velocity={instructor.Velocity} live={host.Mission.GetShip(instructor.Id) is not null} dead={instructor.Dead} hp={instructor.Fraction} station={instructor.StationId} sector={instructor.Sector?.Id} accepted={instructor.AcceptedShipCommandId}:{instructor.AcceptedShipTarget?.Id} current={instructor.CurrentCommandId}:{instructor.CommandTarget?.Id} plan={instructor.PlanCommandId}:{instructor.PlanCommandTarget?.Id} buoys={string.Join('|', host.Waypoints.Keys.Select(id => $"{id}:{host.BuoyConsumerCount(id)}"))}");
+                }
+            }
             var messages = ((ClientTrainingSite)session.Site).Messages;
             if (missionId == 8)
             {
@@ -314,7 +358,7 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
             if (!_started)
             {
                 _started = true;
-                Check(host.PlayerShip.HullType.HullId == missionId switch { 3 => 414, 4 => 486, 5 => 412, 8 => 685, _ => 0 }, "native starting hull");
+                Check(host.PlayerShip.HullType.HullId == missionId switch { 2 => 412, 3 => 414, 4 => 486, 5 => 412, 8 => 685, _ => 0 }, "native starting hull");
                 if (missionId == 3)
                 {
                     Check(host.PlayerShip.CargoHold.Select(p => p!.PartId).SequenceEqual(new short[] { 14, 25, 25, 24, 24 }), "native starting cargo differs");
@@ -405,6 +449,44 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
         }
         else if (_started && Get<bool>("_trainingSlideshowIsPost"))
         {
+            if (missionId == 2 && !Completed)
+            {
+                Check(_basicFlightSession is { Completed: true, Finished: true }, "native landing did not finish mission");
+                var connection = Get<ConnectionSession>("_session");
+                lock (connection.Gate)
+                {
+                    var world = connection.World;
+                    Check(world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+                        && own.StationId == 1010, "trainee did not really dock at station 1010");
+                }
+                Check(_basicFlightPrompts.SequenceEqual(new[] {
+                    "Press the SPACEBAR when you are ready to proceed.",
+                    "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust.",
+                    "Use your scroll wheel or joystick throttle to adjust thrust.",
+                    "Press the SPACEBAR when you are ready to proceed.",
+                    "Press and hold the SPACE key to fire the booster." }), "native prompts missing or out of order");
+                var voices = Get<HashSet<string>>("_proofM2Voices");
+                if (policy != "missing-audio")
+                    Check(new[] { "tm_2_01", "tm_2_08", "tm_2_20", "tm_2_23", "tm_2_26", "tm_2_38" }.All(voices.Contains), "installed narration never played through real audio");
+                File.WriteAllLines(Path.Combine(output, "voices.txt"), voices.Order());
+                var stages = Get<HashSet<string>>("_proofM2Stages");
+                Check(new[] { "intro-locked", "turn-only", "throttle-only", "forced-throttle", "cleared-locked", "all-axes", "scripted-booster", "player-booster", "booster-disabled" }.All(stages.Contains), "missing a native control stage");
+                if (policy is null or "reminders")
+                {
+                    var controls = Get<HashSet<string>>("_proofM2Observed");
+                    foreach (string stage in new[] { "intro-locked", "forced-throttle", "cleared-locked" })
+                        foreach (string probe in new[] { "keyboard-turn", "mouse-turn" })
+                            Check(controls.Contains(stage + "/" + probe), $"missing locked control input: {stage}/{probe}");
+                    foreach (string stage in new[] { "turn-only", "throttle-only", "all-axes" })
+                        foreach (string probe in new[] { "keyboard-turn", "mouse-turn", "throttle-zero", "throttle-up", "throttle-down", "wheel-up", "wheel-down", "reset-between-backslashes", "restore-stop", "space" })
+                            Check(controls.Contains(stage + "/" + probe), $"missing control input: {stage}/{probe}");
+                    foreach (string stage in new[] { "turn-only", "all-axes" })
+                        foreach (string probe in new[] { "full-iso", "full-us" })
+                            Check(controls.Contains(stage + "/" + probe), $"missing backslash variant: {stage}/{probe}");
+                }
+                File.WriteAllLines(Path.Combine(output, "controls.txt"), Get<List<string>>("_proofM2Receipts"));
+                Console.WriteLine("[p940] M2_NATIVE_END docked=1010 completed=True prompts=5 stages=9");
+            }
             if (missionId == 4)
             {
                 // Teardown has already disposed the embedded host. The real
@@ -447,7 +529,7 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                 else
                     Check(_bomberDestroyed && _endingMessages.SequenceEqual(new[] { "The bomber got destroyed, better luck next time." }), "bomber-loss ending differs from native");
             }
-            Check(Lessons.Count == missionId switch { 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }, "did not observe every lesson");
+            Check(Lessons.Count == missionId switch { 2 => 9, 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }, "did not observe every lesson");
             if (!Completed)
             {
                 Completed = true;

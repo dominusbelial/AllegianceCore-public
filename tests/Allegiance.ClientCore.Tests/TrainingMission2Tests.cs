@@ -125,6 +125,30 @@ public class TrainingMission2Tests
     }
 
     [Fact]
+    public void Motion_demo_clears_forced_throttle_before_all_axes_are_reenabled()
+    {
+        // training/mission2.cpp:585-590,608-613: an empty SetControlsAction,
+        // then all four scalars=1. A throttle-preserving spin at 6.9 is wrong.
+        var site = BuildSite();
+        var mission = new Mission2(site);
+        TrainingController.BeginMission(); mission.Start();
+        StepUntil(site, mission, () => mission.ActiveGoalPath == "3.6", 4000);
+        site.PressKey(KeyFireBooster);
+        StepUntil(site, mission, () => mission.ActiveGoalPath == "4.7", 4000);
+        site.SetShipControls(1, new ControlData(0, 0, 0, 1));
+        StepUntil(site, mission, () => mission.ActiveGoalPath == "5.3", 4000);
+        site.SetShipControls(1, new ControlData(0, 0, 0, .3f));
+        StepUntil(site, mission, () => mission.ActiveGoalPath == "6.9", 4000);
+        Assert.Equal("6.9", mission.ActiveGoalPath);
+        Assert.All(TrainingControlState.SetInputControls, value => Assert.Equal(TrainingControlState.Na, value));
+        StepUntil(site, mission, () => mission.ActiveGoalPath == "6.16", 4000);
+        Assert.Equal("6.16", mission.ActiveGoalPath);
+        var full = new ControlData(.4f, -.3f, .2f, 1);
+        Assert.Equal(full, TrainingController.ApproveControls(full));
+        Assert.Equal(-1, TrainingController.ApproveControls(full with { Throttle = -1 }).Throttle);
+    }
+
+    [Fact]
     public void GetControlActiveCondition_Throttle_FullForwardTranslation()
     {
         // getcontrolactivecondition.cpp:44-51 — throttle translated to 0..1 before the 0.1-band test

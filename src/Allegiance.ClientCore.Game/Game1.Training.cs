@@ -27,6 +27,15 @@ public sealed partial class Game1
         return autopilot ?? approved;
     }
 
+    // Native SenseJoystick reads the same TK_FireBooster that the key gate
+    // receives (WinTrek/WinTrek.cpp:10878; training/mission2.cpp:725-748).
+    // Basic Flight prompts name SPACE even when normal flight uses Shift.
+    // Combat lessons keep their configured firing bindings.
+    internal static bool BasicFlightBoosterDown(KeyboardState keys, Rendering.ActionMap map, bool basicFlight)
+        => map.IsDownMostSpecific(keys, "FireBooster")
+            || basicFlight && TrainingInputGate.NativeDefaultKeyDown(keys, "FireBooster")
+                && (map.ActionFilter?.Invoke("FireBooster") ?? true);
+
     private TrainingSession? _trainingSession;
     private TrainingHost? _embeddedHost;
     private string _trainingError = "";
@@ -45,6 +54,11 @@ public sealed partial class Game1
         string? stem = TrainingSoundCatalog.Stem(missionId, soundId);
         Console.WriteLine($"[training] voice {stem ?? soundId.ToString()} (mission {missionId})");
         var instance = _sound?.PlaySlideSound(stem);
+        if (_proofEnabled && missionId == 2)
+        {
+            Console.WriteLine($"[p940] VOICE {stem} started={instance is not null} policy={_proofM2Audio}");
+            if (instance is not null) _proofM2Voices.Add(stem ?? soundId.ToString());
+        }
         if (instance is null) return -1;
         // Release finished message voices too (they have no SoundFinishedCondition).
         foreach (int key in _trainingSounds.Where(kv => kv.Value.State == Microsoft.Xna.Framework.Audio.SoundState.Stopped).Select(kv => kv.Key).ToArray())
@@ -177,6 +191,7 @@ public sealed partial class Game1
         _trainingSession = session;
         _trainingStartDeadline = TrainingStartTimeoutSeconds;
         _trainingMissionId = missionId;
+        _sound?.PrewarmSlideSounds(TrainingSoundCatalog.Stems(missionId));
         _trainingSkipPostSlideshow = false;
         _trainingClock = TrainingClock.Advance(0);
 

@@ -6212,3 +6212,167 @@ as flakes here.
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / pass / pass | Existing unscoped status-history assertion includes another docked ship. Docking/status code unchanged. |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases pass 3/3 (3.215–5.463 s) | Passed in the sweep; civ 25 took 10.679 s, over the Fast limit. Timing only. |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass (3.605 / 3.469 / 3.521 s) | Passed in the sweep at 10.700 s, over the Fast limit. Timing only. |
+
+## P940 Fast sweep — 2026-11-06
+
+The one Fast sweep finished **13,210 passed / 16 failed / 3 optional private-Meshy-pack
+skips**, with 15 executions exceeding the calibrated 10.941-second limit and
+all nine infrastructure checks passing. Real training windows were running
+concurrently; load averaged 30–45 around qualification. No synthetic load was
+used. The observations below do not establish load as the cause. Each failure
+family received three fresh, filtered processes; no broad Fast rerun was used.
+
+| Method / family | Sweep observation | Three filtered isolation results |
+| --- | --- | --- |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | Expected zero allocation; observed 6,504 bytes. Existing P918 allocation intermittency. | **pass / pass / pass**, zero skips |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | Empty default `ExpandedPartData` instead of the granted launcher; existing receipt intermittency. | **fail / pass / pass**, zero skips; not a clean three-pass isolation |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | Timeout at line 116 waiting for the bot's own loadout; the helper's message says join. Same previously ledgered signature. | **pass / pass / pass**, zero skips |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Full lock 1.000 but the expected partial/full tip pair is absent. Persistent in P933/P935 as well. | **fail / fail / fail**, zero skips; remains open |
+| `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot` | The lane runner's baseline environment overrode this fixture's explicit serial/thread-per-peer configuration. | **fail / fail / fail** with only the parallel-build override cleared; **pass / pass / pass** with both build and transport overrides cleared, zero skips |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | Terminal travel 1247.78 m versus the full-lifespan expectation 1848.56 m. Existing earlier-destruction signature. | **pass / pass / pass**, zero skips |
+| `WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands` | Expected delayed-blast receipt collection was empty. | **pass / pass / pass**, zero skips |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | Clearance assertion, minimum distance 73.1 with obstacle radius 60. Same prior qualification family. | **pass / pass / pass**, zero skips |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Expected charge target, actual null. Persistent in P933/P935 and previously reproduced on dispatch-base sources. | **fail / fail / fail**, zero skips; remains open |
+| `TcpTransportSendWorkerPoolTests.Boot_line_prints_the_active_transport_mode`; `Explicit_thread_per_peer_config_boot_stays_thread_per_peer` | Forced pool environment overrode the tests' explicit legacy path. | Each **pass / pass / pass** with the transport override unset, zero skips; ordinary qualification retains pool/parallel settings |
+| `PlayerBundlePathsTests` five failed executions: Artwork executable fallback; Artwork/NativeSource missing defaults; NativeSource install-subdirectory guessing; local config precedence | Mandatory scratch-local `TMPDIR` makes fake outside-repo directories inherit the checkout's ancestor `local.env`. Same P935 fixture obstruction. | With a task-local empty solution-marker fence: first four executions **pass / pass / pass**; `LocalConfigWinsOverBundleWithBlankEnvironment` **fail / fail / fail**; all four companion executions pass each time, zero skips |
+
+The bundle-path fence shields the fake executable tree from the real checkout,
+but the resolver searches that executable tree before the fixture's configured
+working directory, so it still masks the latter's local config. This is an
+explicit environment control, not a product fix or a claim of a green path
+suite. Neither the fixtures nor `ExternalPaths` changed. P940 also changes no
+ordinary shop, missile/tip, ASR cursor/cache, Server or Core implementation.
+The two compatibility controls retain the tests' explicitly requested old path;
+they do not change production environment precedence.
+
+Raw receipts: `.scratch/p940/fast-results/`, `non-task-isolation/`,
+`non-task-client-isolation/`, `p889-intended-environment/` and
+`core-and-timing-isolation/` beneath `.scratch/p940/`.
+
+Passed sweep cases that exceeded the time limit also received three filtered
+invocations (all theory variants selected, all passed, zero skips). Times below
+are seconds; the three failed timing offenders are included in the failure table.
+
+| Passed timing offender | Sweep seconds | Isolated seconds, three runs |
+| --- | --- | --- |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)` | 15.870 | 7.430 / 7.069 / 7.657 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 18.393 | 5.213 / 5.758 / 5.039 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)` | 17.348 | 6.545 / 6.836 / 6.633 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 17.006 | 5.499 / 5.619 / 5.592 |
+| `P709CallbacksLiveTests.Money_request_arrives_without_payment_then_approval_uses_real_player_donate` | 12.025 | 2.185 / 2.283 / 2.225 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 17.464 | 4.782 / 4.816 / 4.614 |
+| `WarpTransitServerTests.ShipBetweenRawAndVisualRadius_DoesNotPrematurelyTransit_AndPeerSeesNoSectorChange` | 14.481 | 8.103 / 8.376 / 8.541 |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | 14.071 | 8.540 / 8.714 / 7.490 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 11.817 | 2.232 / 2.533 / 2.829 |
+| `TechTreeDevelopmentLiveTests.Side_attribute_change_broadcasts_whole_mission_but_not_across_missions` | 11.652 | 9.667 / 9.966 / 13.889 |
+| `StationUnderAttackAlertLiveTests.Second_hit_within_throttle_window_produces_no_second_alert` | 12.165 | 6.976 / 6.840 / 6.529 |
+| `ProsperityArtifactLiveTests.Prosperity_disabled_team_money_completion_does_not_end_game` | 11.004 | 9.283 / 8.902 / 8.799 |
+
+`TechTreeDevelopmentLiveTests` still took 13.889 seconds in the third isolated
+run; the functional assertions passed. No tiers, deadlines, timeouts or
+exclusions were weakened. A fresh checkout of the exact dispatch HEAD also reproduced the missile-tip
+failure, null defender target and all five bundle-path failures in one control
+per family (`.scratch/p940/base-failure-controls/`). The original Fast gate
+remains failed.
+
+## P940 showcase qualification — 2026-11-06
+
+Five alternating dispatch-base/working-tree pairs used the unchanged
+`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+with server GC, immutable snapshots, encode-once, parallel build, pooled
+transport, native ship updates and native GotoPlan. The full test passed
+**base 4/5, working tree 3/5**, zero skips. All three failures were
+`Most showcase ships must reach their objectives` at the eight-minute limit:
+base run 3 reached 15/30; working runs 2 and 5 reached 18/30 and 16/30.
+No five-second parking assertion failed in any observation.
+
+Three additional fresh, filtered invocations per tree were then run serially,
+separate from the original five-pair rate comparison:
+
+| Tree | Three filtered outcomes | Observation seconds | Longest idle with target, seconds |
+| --- | --- | --- | --- |
+| Dispatch base | pass / pass / pass | 332.3 / 222.5 / 251.0 | 1.625 / 2.015 / 1.928 |
+| Working tree | pass / pass / **fail** | 299.3 / 415.7 / 480.0 | 1.818 / 1.415 / 2.011 |
+
+The third working-tree follow-up reached 23/30 and failed the same arrival
+assertion; its longest idle with a target was 2.011 seconds. Across all sixteen
+observations, the largest idle with a target was 3.432 seconds. Arrival coverage
+therefore remains qualified, **not cleared by three passing working-tree
+isolations**. This matches the existing P933 arrival signature and occurs on
+the exact P940 dispatch base too. P940 changes no ordinary bot/Server/Core
+implementation; its movement change is confined to connected training hosts.
+These unseeded functional controls on a shared host do not establish a causal
+performance effect or explain the unequal small-sample rates. No assertion,
+scenario, deadline, tier or exclusion changed, and no further attempts were
+used to seek a clean three-pass result.
+
+Raw receipts: `.scratch/p940/parking-control/`,
+`.scratch/p940/parking-isolation/`; original dispatch HEAD
+`4e659544639571d7be42039c5a23f125156b91b7`.
+
+## P940 narration gate — resolved proof-pilot defect
+
+Restoring the installed Ogg narration exposed the existing M3 pilot's coarse
+firing aim and its continuous firing during spoken lessons. The original
+all-lesson invocation failed the Modern lesson-10 and lesson-11 prefixes at
+goal 8.9; the lesson-10
+backbuffer showed Gat Gun ammo 0/32767, “Ammo depleted,” and an undamaged
+Derelict03. Three fresh, filtered old-pilot replays all reached the unchanged
+20-minute guard: **fail / fail / fail**, ending at 8.9, 7.9 and 9.1. The last
+replay reached 9.1 only at elapsed 1190.1 seconds; that ending alone is not
+evidence of a stuck sound condition. This is a task-related proof defect,
+not a load flake to waive.
+
+The pilot repair uses real mouse deltas for fine aim, fires only at the native
+demonstration/destruction gates, and waits for the destruction condition before
+retargeting. It changes no actor, ammunition, condition, clock or deadline.
+The exact dispatch-base lesson-10 control passed in 183.4 seconds with the old
+silent audio loader; that is not a matched-audio timing comparison. Old and
+repaired-pilot results are kept separately, and the original training run's
+failures remain in its TRX.
+
+The repaired pilot passed **3/3 complete M3 courses per HUD style** and
+**3/3 of each Modern lesson-9/10/11 prefix**, fifteen passing filtered tests
+with zero skips. Three additional Classic lesson-10 real-window replays also
+passed. These outcomes resolve the pilot defect; the original all-lesson
+invocation retains its two old-pilot failures.
+
+Raw receipts: `.scratch/p940/training-failure-isolation/`,
+`.scratch/p940/base-training-control/`, `.scratch/p940/training-failure-green/`,
+`.scratch/p940/precision-m3-classic/`, `.scratch/p940/precision-m3-whole/` and
+`.scratch/p940/precision-m3-prefixes/`; final counts are in
+`docs/reports/P940_REPORT.md`.
+
+## P940 older loopback fixture repairs — 2026-11-06
+
+The original artwork-backed training invocation also failed two existing P881a
+completion cases at their unchanged four-minute limit: M2 at **8.6**, M3 at
+**13.2**. Both are task-related fixture failures, not load-flake waivers.
+
+M2's simulated client supplied `OwnAutopilot` only for M4; the old host movement
+adapter concealed that omission. Its fixture now consumes the M2 return order
+and sends its existing real bay-entry controls. The first corrected source
+passed **3/3**, zero skips (114.44 / 114.25 / 114.34 seconds), with six passing
+facility/target checks. The test now also requires evidence that its own
+client autopilot callback was used; the real server must still dock it.
+
+M3's existing digital bay steering failed **3/3** in isolation at 13.2
+(241.48 / 241.52 / 241.47 seconds including test startup). The exact dispatch
+base passed in 142.27 seconds; the broad failure therefore was not dismissed
+as pre-existing. A read-only trace showed repeated full yaw/pitch reversals
+on the approach. Its input driver now uses pose/rate damping while retaining
+the same waypoints, thrust policy, wire controls, landing condition and time
+limit. The first corrected trial passed in 146.69 seconds. Final-source
+repetition counts are recorded in `docs/reports/P940_REPORT.md` and the compact
+verification receipt; the original broad invocation retains all four failures.
+
+Final-root-source checks passed **M2 3/3 and M3 3/3**, zero skips.
+M2 took 114.46 / 114.45 / 114.41 seconds; M3 took
+146.70 / 147.25 / 147.09 seconds. These filtered checks resolve the
+task-related fixture failures without changing the historical broad result.
+
+Receipts: `.scratch/p940/fixture-return/`, `fixture-facilities/`,
+`legacy-m3-isolation/`, `base-legacy-m3-control/`, `legacy-m3-diagnostic/`,
+`legacy-m3-damped-bay/`, `final-fixture-m2/` and `final-fixture-m3/`, all beneath
+`.scratch/p940/`. Failed discovery/diagnostic setups and rejected controller
+experiments are retained separately and earn no qualification credit.
