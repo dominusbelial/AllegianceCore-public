@@ -7,6 +7,8 @@ using Allegiance.ClientCore.MonoGame.LiveProof;
 // exception handler BEFORE anything that can throw, so a crash always leaves a
 // report even when launched from Finder / a .desktop shortcut with no console.
 CrashLog.Install();
+// P944: isolate the untrusted OS argument BEFORE any parser or updater runs.
+var joinLaunch = Allegiance.ClientCore.Session.JoinLinkLaunch.Take(ref args);
 bool startTraining = Game1.LaunchOptions.TakeTrainingSwitch(ref args);
 
 // P889 — bounded per-machine sizing calibration. Parsed (and stripped) before
@@ -46,7 +48,7 @@ if (args.Contains("--check-assets") || args.Contains("--asset-census"))
 // load, then (opt-in via the lobby's /api/update/info advertisement or the
 // ALLEGIANCE_UPDATE_FEED env var) check the signed release feed and stage a
 // newer build for the next start. Never blocks or crashes the boot path.
-await ClientUpdateBootstrap.RunAsync(args);
+if (!joinLaunch.IsLinkLaunch) await ClientUpdateBootstrap.RunAsync(args);
 
 PlayerConfig? savedPlayer = null;
 if (args.Length == 0)
@@ -595,6 +597,7 @@ RecordingAssetSource? recorder = assetManifestPath is not null
 
 var opts = new Game1.LaunchOptions
 {
+    JoinLinkLaunch = joinLaunch,
     StartTraining = startTraining,
     Benchmark = benchmark,
     Calibration = calibration,
@@ -699,7 +702,14 @@ else
 CrashLog.SetMode(opts.DirectHost is { Length: > 0 } ? $"connect:{opts.DirectHost}:{opts.DirectPort}"
     : opts.Intro ? "intro" : opts.Capture is not null ? "capture" : "direct");
 
+// Install before SDL creates a window so a cold Finder URL event is captured too.
+var pendingMacLinks = new System.Collections.Concurrent.ConcurrentQueue<string>();
+using var macJoinLinks = MacJoinLinkEvents.Install(pendingMacLinks.Enqueue);
 using var game = new Game1(opts);
+game.Activated += (_, _) => { while (pendingMacLinks.TryDequeue(out var url)) game.ReceiveJoinLink(url); };
+game.Exiting += (_, _) => macJoinLinks?.Dispose();
+// SDL may deliver the Apple Event after Activated; drain it every frame as well.
+game.UrlOpenEvents = pendingMacLinks;
 if (recorder is not null)
 {
     // P498 — on exit, serialize the manifest of Artwork files the client

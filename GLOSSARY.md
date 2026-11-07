@@ -1417,6 +1417,19 @@ list in **reverse**.
   lobby-normalized start time, with `GET /api/servers/cores` (native master core list)
   and `GET /api/servers/stats` (native counters). Report `docs/reports/P894_REPORT.md`.
 
+- **Web lobby Join links (P944, port addition)** — version-1
+  `allegiance://join?lobby=<encoded HTTPS URL>&id=<listing id>&v=1` handoff:
+  pure parser/launch isolation in `src/Allegiance.ClientCore/Session/JoinLink.cs`,
+  bounded listing resolution and confirmation model in
+  `src/Allegiance.ClientCore.Game/JoinLinkConfirmation.cs`, shared UI in
+  `src/Allegiance.ClientCore.Game/Game1.JoinLink.cs`. Confirmation uses the browser's
+  `BeginConnect` with the resolved listing and a transient punch lobby origin;
+  saved lobby preferences stay unchanged. Desktop argv isolation lives in
+  `src/Allegiance.ClientCore.MonoGame/Program.cs`; Cocoa's zero-window SDL URL
+  event is captured by `src/Allegiance.ClientCore.MonoGame/MacJoinLinkEvents.cs`.
+  OS registrations live under `packaging/`; safe web links in
+  `src/Allegiance.Lobby/wwwroot/app.js`. Report: `docs/reports/P944_REPORT.md`.
+
 ## 6b. Auto-update (`src/Allegiance.Update`)
 
 - **Signed release feed** — `latest.json` + `manifest-<version>.json` (one

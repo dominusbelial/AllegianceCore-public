@@ -37,6 +37,24 @@ Then open the app again. Signing/notarization is outside this release.
 Linux desktop shortcut: run ./install-desktop.sh after placing the folder in its
 permanent location. Run it again if you move the folder.
 
+Join from the web: install the client, open your community's lobby page, then
+choose Join beside a server. Review the lobby, server, verification status and
+player count in the client. Enter confirms; Esc cancels to the intro. Use Up/Down
+to choose a mission on a server with several. Tab edits a password if needed;
+Enter finishes editing, then Enter confirms. A different lobby is shown plainly
+and does not overwrite your saved lobby. Unknown/expired listings and connection
+errors leave the client usable. A link may open another client instance.
+
+Linux portable: ./install-desktop.sh registers allegiance:// links for your user.
+For AppImage desktop integrations, keep the bundled MIME/URL fields and register
+the desktop entry with xdg-mime default <entry.desktop> x-scheme-handler/allegiance.
+Windows setup registers the link handler for the current user (removed on
+uninstall); portable Windows users can pass the entire link as one quoted argument
+to Allegiance.exe, play.bat or play.ps1. macOS app bundles handle URL open events.
+The Windows/macOS registration and URL event path need verification on those
+platforms; consult docs/reports/P944_REPORT.md in the source repository.
+Links use HTTPS lobbies (HTTP localhost/loopback is allowed for development).
+
 Connection: edit player.json in your per-user AllegianceCore config directory:
   Linux: ${XDG_CONFIG_HOME:-~/.config}/AllegianceCore/player.json
   Windows: %APPDATA%\AllegianceCore\player.json

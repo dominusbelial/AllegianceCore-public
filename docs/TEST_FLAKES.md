@@ -5,6 +5,59 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P944 validation — Join links, 2026-11-07 UTC
+
+Exactly one Fast sweep: **13,370 passed / 9 failed / 3 optional Meshy-pack
+skips**, 13,382 executions in **597.2 s**; all nine infrastructure checks passed.
+Eight executions exceeded the calibrated ten-second Fast limit. All P944 tests
+passed. The sweep remains **FAIL**; no second sweep or relaxed checks were used.
+Final source build was 0 warnings/errors, all 118 tool projects built, and the
+75-case affected C# cohort passed three times with zero skips. The final
+ordinary-lobby-switch and full-host-display refinements were built and checked
+in those three cohorts after the sweep. Packaging's 17-case unittest suite and
+DOM tests passed three times; pytest itself is absent from this offline lane.
+
+The fifteen failed/slow methods each ran three times in separate filtered
+processes after all other test processes from this lane had finished:
+
+| Control | Three isolated results | Maximum case duration in each run |
+|---|---|---|
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass/pass/pass | 5.349/5.451/6.212 s |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | pass/fail/pass | 4.446/4.511/4.525 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | pass/pass/pass | 5.425/5.410/5.341 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass/pass/pass | 3.245/3.193/3.283 s |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass/pass/pass | 1.656/1.620/1.663 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass/pass/pass | 4.192/4.146/4.131 s |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass | 1.021/1.116/1.046 s |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail | 1.239/1.186/1.236 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | pass/pass/pass | 1.722/1.675/1.812 s |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass | 9.389/9.340/9.525 s |
+| `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable` | pass/pass/pass | 1.064/1.009/1.017 s |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | fail/fail/fail | 0.015/0.015/0.015 s |
+| `PlayerBundlePathsTests.MissingDirectoryHasNoDefault` | fail/fail/fail | 0.004/0.004/0.004 s |
+| `PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory` | fail/fail/fail | 0.004/0.004/0.003 s |
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository` | fail/fail/fail | 0.004/0.004/0.005 s |
+
+- `PlayerBundlePathsTests`: the same five cases failed in every run, while the
+  other parameter cases passed. Mandatory task TMPDIR is inside the worktree and
+  ancestor `local.env` is found. This is the existing P942/earlier path-fixture
+  obstruction, already reproduced on unchanged libraries; no path resolver changed.
+- `NpcWingmanDefendLiveTests`: existing expected-ship/actual-null assertion,
+  persistent in prior dispatch controls; no NPC or simulation source changed.
+- `LiveSideSelectTests`: sweep 31.75 against [28,31], then 3/3 pass alone; existing
+  receipt/simulation-clock boundary. No seating policy or threshold changed.
+- `P660NextMatchLiveTests`: sweep disabled/off saw 14.65 against [14.94,15.06];
+  isolated disabled/off failed in attempt 2 at 14.85. Remains intermittent alone.
+- `P877MineDamageLiveTests`: existing loopback/loadout wait timed out at 31.704 s
+  in the sweep, then passed 3/3 in 1.620–1.663 s. No mine or bot code changed.
+- All seven other timing-only controls passed 3/3 with every isolated case below
+  ten seconds. This does not replace the sweep's timing failures.
+
+Raw evidence: `.scratch/p944/fast/`, `.scratch/p944/isolation/` (including load
+averages); concise public results and four reviewed-by-agent screenshots:
+`docs/reports/P944_assets/`. Media still needs Domingo's review before push.
+Report: `docs/reports/P944_REPORT.md`. No commits or pushes were made.
+
 ## P942 validation — one Fast sweep and dispatch controls, 2026-11-07 UTC
 
 Exactly one Fast sweep: **13,287 passed / 10 failed / 3 optional Meshy-pack

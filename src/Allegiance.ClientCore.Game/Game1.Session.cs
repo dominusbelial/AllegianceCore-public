@@ -67,6 +67,8 @@ public sealed partial class Game1
         /// <see cref="ServerListing.LobbyUrlDefault"/>.</summary>
         public string LobbyUrl = ServerListing.LobbyUrlDefault;
 
+        public Allegiance.ClientCore.Session.JoinLinkLaunch? JoinLinkLaunch;
+
         /// <summary>
         /// P731 — when true (no game-starting positional args, no capture, no
         /// inspect), boot into the intro screen ("choose single player or
@@ -1150,6 +1152,7 @@ public sealed partial class Game1
 
     private Discovery.DiscoveredServer? _connectDiscovery;
     private ServerListing? _connectListingTarget;
+    private string? _connectListingLobby;
     private string _transportReason = "not connected";
 
     private void ConfigureClientTransport(string host, ushort port, uint cookie, Discovery.DiscoveredServer? found)
@@ -1165,7 +1168,7 @@ public sealed partial class Game1
         }
         if (_connectListingTarget is { PlayerHosted: true } playerHost)
         {
-            _session.InternetJoinTarget = new(_lobbyUrl, playerHost.Id);
+            _session.InternetJoinTarget = new(_connectListingLobby ?? _lobbyUrl, playerHost.Id);
             _session.TransportProtocol = "udp";
             _session.UdpPort = (ushort?)playerHost.UdpPort;
             _transportReason = "player-hosted internet game; lobby introduction and UDP direct";
@@ -1173,7 +1176,7 @@ public sealed partial class Game1
         }
         ServerListing? listing;
         lock (_introLobbyLock)
-            listing = _servers.FirstOrDefault(s => !s.PlayerHosted && s.Address == host && s.Port == port && s.MissionCookie == cookie);
+            listing = _connectListingTarget ?? _servers.FirstOrDefault(s => !s.PlayerHosted && s.Address == host && s.Port == port && s.MissionCookie == cookie);
         var source = found?.Source ?? (listing is null ? Discovery.DiscoverySource.Manual : Discovery.DiscoverySource.Lobby);
         int? udp = found?.UdpPort ?? listing?.UdpPort;
         var choice = Discovery.ClientTransportPolicy.Resolve(_hudSettings.Transport, source, udp,
@@ -1185,7 +1188,7 @@ public sealed partial class Game1
         _transportReason = choice.Reason;
     }
 
-    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null)
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null, string? listingLobby = null)
     {
         if (!training) ReleaseTraining();
         _moderation.Reset();
@@ -1200,6 +1203,7 @@ public sealed partial class Game1
         _connectMissionCookie = missionCookie;
         _connectDiscovery = discovered;
         _connectListingTarget = listingTarget;
+        _connectListingLobby = listingLobby;
         _connectHost = host;
         _connectPort = port;
         // P789 — remote matches record their performance too (no wire change:
@@ -1230,11 +1234,13 @@ public sealed partial class Game1
             var logon = Request(_playerName);
             logon.DwCookie = missionCookie;
             logon.MissionPassword = _skirmish?.Options.HostLan == true ? _skirmish.Options.Password : _lanJoinPassword.ToString();
-            if (_skirmish is null && _identityClient?.Account is not null)
+            if (_skirmish is null && _identityClient?.Account is not null
+                && (listingLobby is null || (Uri.TryCreate(_lobbyUrl, UriKind.Absolute, out var savedLobby)
+                    && Uri.Equals(new Uri(listingLobby), savedLobby))))
             {
-                var listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified);
-                string? serverId = listing?.IdentityServerId;
-                if (serverId is null)
+                var listing = listingTarget ?? _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified);
+                string? serverId = listing is { Verified: true } ? listing.IdentityServerId : null;
+                if (serverId is null && listingTarget is null)
                     lock (_introFoundLock) serverId = _introFound.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified)?.IdentityServerId;
                 if (serverId is not null)
                     logon.ZoneTicket = System.Text.Encoding.UTF8.GetBytes(_identityClient.JoinTokenAsync(serverId).GetAwaiter().GetResult());
@@ -1317,7 +1323,7 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
             _connectFailureReason = null;
-            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget);
+            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby);
             return;
         }
         _connectRetryWasDown = retry;
@@ -1365,7 +1371,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
             bool prior = _returnToLobbyOnFailure;
             _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
-            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget); }
+            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby); }
             finally { _returnToLobbyOnFailure = prior; }
         }
     }
@@ -1541,7 +1547,7 @@ public sealed partial class Game1
         {
             if (_introView == IntroView.HostLan)
                 _hostLanScreen.Type(c);
-            else if (_introView is IntroView.FindServer or IntroView.DirectConnect && _editingLanPassword)
+            else if (_introView is IntroView.FindServer or IntroView.DirectConnect or IntroView.JoinLink && _editingLanPassword)
             {
                 if (c <= 126 && _lanJoinPassword.Length < 15) _lanJoinPassword.Append(c);
             }

@@ -7,5 +7,6 @@ if (-not (Test-Path -LiteralPath $configPath)) {
     Write-Host "Edit $configPath to remember your server and pilot. Launch without arguments to choose Single Player or Multiplayer."
 }
 Set-Location -LiteralPath $PSScriptRoot
+# Each argv element stays a single native argument (PowerShell 7 and Windows PowerShell).
 & (Join-Path $PSScriptRoot 'Allegiance.exe') @args
 exit $LASTEXITCODE

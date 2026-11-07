@@ -27,7 +27,7 @@ public sealed partial class Game1
     /// P785 adds the training slideshow screens (native ScreenIDTrainSlideshow /
     /// ScreenIDPostTrainSlideshow, Treki.h:31-32 — the port uses one view whose
     /// dismiss behaviour follows the slideshow kind).</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career, CreateGame, HostLan }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career, CreateGame, HostLan, JoinLink }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -168,11 +168,14 @@ public sealed partial class Game1
             _introView = IntroView.TrainingSuggest;
             Console.WriteLine("[intro] first-run training suggestion shown (Ui.ShowStartupTrainingSuggestion)");
         }
+        StartPendingJoinLink();
         Console.WriteLine($"[intro] remembered pilot '{_playerName}', server '{prefs.Server}:{prefs.Port}'");
     }
 
     private void UpdateIntro(KeyboardState ks)
     {
+        StartPendingJoinLink();
+        if (_introView == IntroView.JoinLink) { UpdateJoinLink(ks); return; }
         UpdateIdentity(ks);
         if (_trainingLaunchRequested)
         {
@@ -359,7 +362,7 @@ public sealed partial class Game1
         {
             if (_introEditingPilot && _introView == IntroView.Main && _pilotBuf.Length > 0)
                 _pilotBuf.Length--;
-            else if (_introView is IntroView.FindServer or IntroView.DirectConnect && _editingLanPassword && _lanJoinPassword.Length > 0)
+            else if (_introView is IntroView.FindServer or IntroView.DirectConnect or IntroView.JoinLink && _editingLanPassword && _lanJoinPassword.Length > 0)
                 _lanJoinPassword.Length--;
             else if (_introEditingDirect && !_editingLanPassword && _introView == IntroView.DirectConnect && _directBuf.Length > 0)
                 _directBuf.Length--;
@@ -689,6 +692,7 @@ public sealed partial class Game1
 
             switch (_introView)
             {
+                case IntroView.JoinLink: DrawJoinLink(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Settings: DrawPrivacySettings(w, h, titleCol, dimCol); break;
                 case IntroView.Benchmark:
                 case IntroView.BenchmarkOffer: DrawBenchmarkMenu(w, h, titleCol, dimCol, textCol); break;

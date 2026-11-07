@@ -1785,6 +1785,7 @@ public sealed partial class Game1 : Game
         // The console may be redirected/absent on some hosts; keep failures loud.
         try { Window.AllowUserResizing = true; } catch { /* headless/unsupported */ }
 
+        _joinLinkLaunch = opts.JoinLinkLaunch;
         _lobbyUrl = opts.LobbyUrl;
         _lobbyUrlExplicit = opts.LobbyUrlExplicit;
         _connectStore = opts.ConnectStore;
@@ -2122,6 +2123,8 @@ public sealed partial class Game1 : Game
         _identityCancellation?.Cancel();
         _identityClient?.Dispose();
         _session.Dispose();
+        _joinLinkCancellation?.Cancel();
+        _joinLinkCancellation?.Dispose();
         _http.Dispose();
         base.UnloadContent();
     }
