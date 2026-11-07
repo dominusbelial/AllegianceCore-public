@@ -2,7 +2,8 @@
 Type=Application
 Name=AllegianceCore
 Comment=Allegiance space combat client
-Exec=allegiance.sh
+Exec=allegiance.sh %u
 Icon=allegiance
 Terminal=false
 Categories=Game;ActionGame;
+MimeType=x-scheme-handler/allegiance;

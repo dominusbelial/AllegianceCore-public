@@ -40,5 +40,10 @@ Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Name: "{autoprograms}\AllegianceCore"; Filename: "{app}\Allegiance.exe"; WorkingDir: "{app}"
 Name: "{autodesktop}\AllegianceCore"; Filename: "{app}\Allegiance.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\allegiance"; ValueType: string; ValueName: ""; ValueData: "URL:Allegiance Join"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\allegiance"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\allegiance\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\Allegiance.exe"" ""%1"""
+
 [Run]
 Filename: "{app}\Allegiance.exe"; Description: "Launch AllegianceCore"; Flags: nowait postinstall skipifsilent runasoriginaluser

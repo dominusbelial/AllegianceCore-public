@@ -8,6 +8,8 @@ import tempfile
 import os
 import plistlib
 import struct
+import shutil
+import time
 import subprocess
 import zipfile
 import unittest
@@ -23,6 +25,74 @@ spec.loader.exec_module(smoke)
 
 
 class PackagingTests(unittest.TestCase):
+    def test_join_desktop_install_escapes_exec_and_registers_per_user(self):
+        with tempfile.TemporaryDirectory(prefix='join test ') as temp:
+            root = Path(temp)
+            bundle = root / 'space % dollar$ quote" backtick`'
+            bundle.mkdir()
+            for name in ('install-desktop.sh', 'allegiance.sh', 'allegiance.svg'):
+                (bundle / name).write_bytes((package.REPO / 'packaging' / name).read_bytes())
+            (bundle / 'allegiance.sh').chmod(0o755)
+            # Stub xdg-mime so the test never changes the user's real associations.
+            bin_dir = root / 'bin'
+            bin_dir.mkdir()
+            mime = bin_dir / 'xdg-mime'
+            mime.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$XDG_DATA_HOME/mime-call"\n')
+            mime.chmod(0o755)
+            data = root / 'data'
+            env = dict(os.environ, XDG_DATA_HOME=str(data), PATH=str(bin_dir) + os.pathsep + os.environ['PATH'])
+            subprocess.check_call(['bash', str(bundle / 'install-desktop.sh')], env=env, stdout=subprocess.DEVNULL)
+            desktop = data / 'applications/allegiance.desktop'
+            text = desktop.read_text()
+            self.assertIn('MimeType=x-scheme-handler/allegiance;', text)
+            exec_line = next(line for line in text.splitlines() if line.startswith('Exec='))
+            self.assertTrue(exec_line.endswith('" %u'))
+            self.assertIn('%%', exec_line)
+            self.assertIn('\\\\$', exec_line)
+            self.assertIn('\\\\`', exec_line)
+            self.assertEqual(['default', 'allegiance.desktop', 'x-scheme-handler/allegiance'],
+                             (data / 'mime-call').read_text().splitlines())
+            # The real shell launcher preserves even hostile URL text as one argument.
+            exe = bundle / 'Allegiance'
+            exe.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
+            exe.chmod(0o755)
+            url = 'allegiance://join?lobby=https%3A%2F%2Flobby.example.org&id=one&v=1'
+            config = root / 'config'
+            (config / 'AllegianceCore').mkdir(parents=True)
+            (config / 'AllegianceCore/player.json').write_text('{}')
+            output = subprocess.check_output(['bash', str(bundle / 'allegiance.sh'), url],
+                env=dict(env, XDG_CONFIG_HOME=str(config)), text=True).splitlines()
+            self.assertEqual([url], output)
+            if shutil.which('gio'):
+                # Exercise the actual Desktop Entry parser too: it probes the
+                # executable before %% expansion and normalizes join? to join/?.
+                receipt = root / 'argv'
+                exe.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$P944_ARGV_RECEIPT"\n')
+                subprocess.check_call(['gio', 'launch', str(desktop), url],
+                    env=dict(env, XDG_CONFIG_HOME=str(config), P944_ARGV_RECEIPT=str(receipt)))
+                for _ in range(30):
+                    if receipt.exists():
+                        break
+                    time.sleep(0.1)
+                self.assertEqual([url.replace('join?', 'join/?')], receipt.read_text().splitlines())
+
+    def test_join_desktop_templates_and_windows_registry_are_well_formed(self):
+        for name in ('allegiance.desktop', 'allegiance-appimage.desktop'):
+            smoke.validate_join_registration(package.REPO / 'packaging')
+            text = (package.REPO / 'packaging' / name).read_text()
+            self.assertIn('MimeType=x-scheme-handler/allegiance;', text)
+            self.assertTrue(next(line for line in text.splitlines() if line.startswith('Exec=')).endswith(' %u'))
+        installer = (package.REPO / 'packaging/windows.iss').read_text()
+        registry = installer.split('[Registry]')[1].split('[Run]')[0]
+        self.assertEqual(3, registry.count('Root: HKCU;'))
+        self.assertIn('ValueName: "URL Protocol"; ValueData: ""', registry)
+        self.assertIn('Flags: uninsdeletekey', registry)
+        self.assertIn('ValueData: """{app}\\Allegiance.exe"" ""%1"""', registry)
+        batch = (package.REPO / 'packaging/play.bat').read_text()
+        self.assertIn('"%~dp0Allegiance.exe" %*', batch)
+        self.assertNotIn('powershell.exe', batch)
+        self.assertIn("'Allegiance.exe') @args", (package.REPO / 'packaging/play.ps1').read_text())
+
     def test_manifest_rejects_unsafe_duplicate_and_empty_entries(self):
         with tempfile.TemporaryDirectory() as temp:
             manifest = Path(temp) / 'manifest.txt'
@@ -88,6 +158,10 @@ class PackagingTests(unittest.TestCase):
                 plist = plistlib.load(stream)
             self.assertEqual('org.allegiancecore.client', plist['CFBundleIdentifier'])
             self.assertTrue(plist['NSHighResolutionCapable'])
+            self.assertEqual(['allegiance'], plist['CFBundleURLTypes'][0]['CFBundleURLSchemes'])
+            url = 'allegiance://join?lobby=https%3A%2F%2Flobby.example.org&id=one&v=1'
+            output = subprocess.check_output([str(exe), url], cwd=root, text=True).splitlines()
+            self.assertEqual([str(resources), url], output)
 
     def test_mac_zip_preserves_executable_bits_resources_and_icon(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -157,7 +231,11 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual('{"Pilot":"remembered"}', player.read_text())
             self.assertFalse((payload / 'player.json').exists())
             self.assertEqual('allegiance.svg', os.readlink(appdir / '.DirIcon'))
-            self.assertIn('Exec=AppRun', (appdir / 'allegiance.desktop').read_text())
+            self.assertIn('Exec=AppRun %u', (appdir / 'allegiance.desktop').read_text())
+            smoke.validate_join_registration(appdir)
+            url = 'allegiance://join?lobby=https%3A%2F%2Flobby.example.org&id=one&v=1'
+            output = subprocess.check_output([str(exe), url], cwd=root, env=env, text=True).splitlines()
+            self.assertEqual([str(config / 'AllegianceCore'), url], output)
 
     def test_installer_compilers_receive_same_bundle_and_explicit_runtime(self):
         with tempfile.TemporaryDirectory() as temp:

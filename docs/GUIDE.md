@@ -829,6 +829,37 @@ firewall ports, custom-port discovery, internet/Tailscale connections and ending
 the session. Closing the host ends the game for everyone. Ordinary offline
 skirmishes still accept no LAN guests.
 
+## Join from a lobby web page
+
+Install the client from [Releases](https://github.com/dominusbelial/AllegianceCore-public/releases),
+then open your community's lobby web page and choose **Join** beside a server.
+The browser opens an `allegiance://join?lobby=<encoded URL>&id=<listing id>&v=1` link.
+The client looks up the current listing and shows the lobby host, server name,
+verification status, dedicated/player-hosted status and player count. Review these,
+use **Up/Down** to choose a mission when the server has several, and press **Enter**
+to confirm. **Tab** edits the password; Enter finishes editing, then Enter confirms.
+**Esc** cancels to the intro. A different lobby is identified explicitly and does
+not replace the lobby saved in `player.json`. Unknown or expired listings and
+unreachable lobbies show an error; Esc returns to the intro.
+
+Linux portable bundles register the URL handler with `./install-desktop.sh` after
+you place the bundle in its permanent folder. AppImage desktop integrations must
+retain the bundled `MimeType=x-scheme-handler/allegiance;` and `Exec=… %u` fields;
+select that desktop entry with `xdg-mime default <entry.desktop> x-scheme-handler/allegiance`.
+The Windows setup registers it for the current user and removes it on uninstall;
+portable Windows archives can open the same link as one quoted argument to
+`Allegiance.exe`, `play.bat` or `play.ps1`. macOS app bundles declare the scheme
+and handle SDL's URL Apple Event. Windows and macOS registration/runtime still
+need platform verification; see [P944 report](reports/P944_REPORT.md).
+
+Links support HTTPS lobbies, plus HTTP localhost/loopback for local development.
+Version 1 is assumed when `v` is omitted; unknown versions/actions are refused.
+The link carries a lobby and listing ID, never game connection parameters. The
+client ignores extra query fields, suppresses all other launch switches on a
+link launch, and asks before connecting. Dedicated and player-hosted listings
+use the same connection and punch flow as the in-client browser. Opening a link
+may start a second client; there is no forwarding to an existing process.
+
 ## Host for internet friends without router changes
 
 Start the client with `--lobby https://lobby.example.org` (use your community's

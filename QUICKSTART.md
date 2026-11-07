@@ -33,6 +33,17 @@ scripts/dev-stack.sh status
 scripts/dev-stack.sh down
 ```
 
+### Join from the lobby web page
+
+For a server configured to advertise to the local lobby, open
+`http://localhost:8080` and choose **Join** in its row after installing the client.
+Linux portable bundles register links with `./install-desktop.sh`; Windows setup
+and macOS app bundles include their platform registration. The client resolves
+the listing and asks for confirmation, including password entry with Tab. Enter
+joins, Esc cancels; your saved lobby stays unchanged. HTTPS is required for
+non-loopback lobbies. See [joining from the web](docs/GUIDE.md#join-from-a-lobby-web-page)
+for platform details and the Windows/macOS verification caveat.
+
 ### Common flags
 
 | Flag | Meaning |

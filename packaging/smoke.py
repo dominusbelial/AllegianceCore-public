@@ -26,7 +26,17 @@ def extract(archive, root):
     return bundle
 
 
+def validate_join_registration(bundle):
+    desktop = bundle / 'allegiance.desktop'
+    if desktop.exists():
+        text = desktop.read_text()
+        if 'MimeType=x-scheme-handler/allegiance;' not in text or not any(
+                line.startswith('Exec=') and line.endswith(' %u') for line in text.splitlines()):
+            raise ValueError('Missing Linux Join URL registration')
+
+
 def executable(bundle):
+    validate_join_registration(bundle)
     app = bundle / 'AllegianceCore.app'
     if app.exists():
         contents = app / 'Contents'
@@ -34,6 +44,10 @@ def executable(bundle):
             plist = plistlib.load(stream)
         if plist['CFBundlePackageType'] != 'APPL':
             raise ValueError('Not a macOS application bundle')
+        if plist.get('CFBundleURLTypes') != [{'CFBundleURLName': 'org.allegiancecore.join',
+                                               'CFBundleURLSchemes': ['allegiance'],
+                                               'CFBundleTypeRole': 'Viewer'}]:
+            raise ValueError('Missing macOS Join URL registration')
         exe = contents / 'MacOS' / plist['CFBundleExecutable']
         resources = contents / 'Resources'
         icon = resources / plist['CFBundleIconFile']

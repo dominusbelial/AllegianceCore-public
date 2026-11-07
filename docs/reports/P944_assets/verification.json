@@ -1,0 +1,117 @@
+{
+  "window": [
+    {
+      "style": "Classic",
+      "confirmationBeforeConnect": true,
+      "preferencesUnchanged": true,
+      "loggedOn": true,
+      "joinedCapture": "actual cockpit in Ceto"
+    },
+    {
+      "style": "Modern",
+      "confirmationBeforeConnect": true,
+      "preferencesUnchanged": true,
+      "loggedOn": true,
+      "joinedCapture": "actual cockpit in Ceto"
+    }
+  ],
+  "linuxRegistration": {
+    "association": "allegiance.desktop",
+    "desktopValidation": true,
+    "gioSingleArgument": true,
+    "normalizesEmptyPath": true,
+    "host": "Linux",
+    "sandboxedUserPaths": true
+  },
+  "screenshots": {
+    "confirmation-classic.png": 15710,
+    "confirmation-modern.png": 15710,
+    "joined-classic.png": 132640,
+    "joined-modern.png": 118817
+  },
+  "affectedCSharp": {
+    "runs": 3,
+    "parserPassPerRun": 47,
+    "uiAndP936PassPerRun": 14,
+    "lobbyAndPagePassPerRun": 14,
+    "failed": 0,
+    "skipped": 0
+  },
+  "packaging": {
+    "runs": 3,
+    "passedPerRun": 17,
+    "runner": "unittest (pytest module absent)"
+  },
+  "nativeReference": "WinTrek/introscreen.cpp:1812-1829",
+  "fast": {
+    "seconds": 597.239202188,
+    "outcomes": {
+      "Passed": 13370,
+      "NotExecuted": 3,
+      "Failed": 9
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 12.8457654
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 15.2003842
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 14.794068
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 11.9221877
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "outcome": "Failed",
+        "seconds": 31.7042969
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 12.1613328
+      },
+      {
+        "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "outcome": "Passed",
+        "seconds": 10.0436801
+      },
+      {
+        "name": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable(civ: 201)",
+        "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+        "outcome": "Passed",
+        "seconds": 13.6352182
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "8 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "infrastructureChecksPassed": 9
+  },
+  "toolProjectsBuilt": 118,
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "isolationMethods": 15,
+  "isolationEvidence": "isolation-summary.json"
+}

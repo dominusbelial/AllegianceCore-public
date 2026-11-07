@@ -23,6 +23,11 @@ public class BrowserPageTests
         Assert.Contains("createElement", js);
         Assert.Contains(".textContent", js);
         Assert.DoesNotContain("innerHTML", js);
+        Assert.Contains("document.createElement('a')", js);
+        Assert.Contains("encodeURIComponent(location.origin)", js);
+        Assert.Contains("encodeURIComponent(s.id)", js);
+        Assert.Contains("allegiance://join?lobby=", js);
+        Assert.Contains("&v=1", js);
     }
 
     [Fact]
@@ -35,6 +40,8 @@ public class BrowserPageTests
         Assert.True(html.IsSuccessStatusCode);
         var body = await html.Content.ReadAsStringAsync();
         Assert.Contains("servers", body);
+        Assert.Contains("Install the client first", body);
+        Assert.Contains("AllegianceCore-public/releases", body);
 
         var js = await client.GetAsync("/app.js");
         Assert.True(js.IsSuccessStatusCode);

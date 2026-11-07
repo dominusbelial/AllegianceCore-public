@@ -146,6 +146,9 @@ def mac_app(bundle):
             'CFBundleVersion': '1',
             'LSMinimumSystemVersion': '14.0',
             'NSHighResolutionCapable': True,
+            'CFBundleURLTypes': [{'CFBundleURLName': 'org.allegiancecore.join',
+                                  'CFBundleURLSchemes': ['allegiance'],
+                                  'CFBundleTypeRole': 'Viewer'}],
         }, stream)
     # Instructions are also visible without opening the application package.
     shutil.copyfile(resources / 'README-PLAYERS.txt', bundle / 'README-PLAYERS.txt')

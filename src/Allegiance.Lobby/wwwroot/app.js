@@ -30,7 +30,7 @@ async function refresh() {
     tbody.textContent = '';
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 8;
+    td.colSpan = 9;
     td.className = 'empty';
     td.textContent = 'Could not reach the lobby directory (' + err.message + ')';
     tr.appendChild(td);
@@ -44,7 +44,7 @@ async function refresh() {
   if (!Array.isArray(servers) || servers.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 8;
+    td.colSpan = 9;
     td.className = 'empty';
     td.textContent = 'No servers online right now.';
     tr.appendChild(td);
@@ -60,6 +60,13 @@ async function refresh() {
       tr.appendChild(cell(s.coreFile));
       tr.appendChild(cell(s.version));
       tr.appendChild(cell(s.lastSeenUtc ? new Date(s.lastSeenUtc).toLocaleString() : ''));
+      const joinCell = document.createElement('td');
+      const join = document.createElement('a');
+      join.textContent = 'Join';
+      join.href = 'allegiance://join?lobby=' + encodeURIComponent(location.origin) +
+        '&id=' + encodeURIComponent(s.id) + '&v=1';
+      joinCell.appendChild(join);
+      tr.appendChild(joinCell);
       tbody.appendChild(tr);
     }
   }
