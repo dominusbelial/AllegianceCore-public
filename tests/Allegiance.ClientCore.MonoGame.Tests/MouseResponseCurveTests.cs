@@ -122,7 +122,7 @@ public class MouseResponseCurveTests
         var c = new MouseFlightController();
         Assert.Equal(MouseFlightController.DeadZone, c.Deadzone, 5);   // 0.1 = "Small" preset
         Assert.False(c.LinearControls);                                  // quadratic is the default
-        Assert.Equal(1f, c.MouseSensitivity, 5);                         // port's neutral 1/512 feel
+        Assert.Equal(MouseFlightController.DefaultMouseSensitivity, c.MouseSensitivity, 5); // P948 — native 0.6
     }
 
     [Fact]
@@ -146,9 +146,11 @@ public class MouseResponseCurveTests
     [Fact]
     public void MouseSensitivity_MultipliesThePixelDelta()
     {
-        // S=0.01 base. At the default 1.0 sensitivity a 50px rightward push is a
+        // S=0.01 base. At the neutral 1.0 knob a 50px rightward push is a
         // yaw deflection of -0.5; doubling sensitivity doubles the deflection.
+        // (P948 made native's 0.6 the DEFAULT, so pin the neutral value here.)
         var c = new MouseFlightController(0.01f);
+        c.MouseSensitivity = 1f;
         Assert.Equal(-0.5f, c.Update(50f, 0f).Yaw, 4);
         c.Reset();
 

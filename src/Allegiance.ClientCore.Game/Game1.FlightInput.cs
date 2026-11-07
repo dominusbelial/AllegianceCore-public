@@ -369,6 +369,14 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] team lobby: local ship is on no side (-2) — team screen (pick a side)");
         }
         var ks = _benchmark is null ? ReadProofKeyboard() : new KeyboardState();
+        // P948 — real-window proof of the persisted mouse options on the in-game
+        // settings panel (Ctrl+F6). It runs HERE, not in UpdateFlying, because the
+        // modal panel makes UpdateGraphicsSettings swallow the flight update.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_P948_PROOF") == "1")
+            RunP948Proof(gameTime.ElapsedGameTime.TotalSeconds);
+        // P948 — age the transient sensitivity readout in every state, so it also
+        // expires when the value was changed on the intro Options screen.
+        UpdateMouseOptionNotice((float)gameTime.ElapsedGameTime.TotalSeconds);
         if (UpdateGraphicsSettings(ks))
         {
             // A modal settings panel must release the last movement/fire command.
@@ -836,8 +844,11 @@ public sealed partial class Game1
         _iKeyWasDown                   = ActionDown(ks, "InvertMouse");
         _mouseDzKeyWasDown             = ActionDown(ks, "MouseDeadzone");
         _mouseLinKeyWasDown            = ActionDown(ks, "MouseResponseCurve");
-        _mouseSensDownKeyWasDown       = ActionDown(ks, "MouseSensitivityDown");
-        _mouseSensUpKeyWasDown         = ActionDown(ks, "MouseSensitivityUp");
+        // P948 — the sensitivity keys auto-repeat while held, so the prime marks
+        // them held WITHOUT firing this frame (P523's rule for a key carried over
+        // from a pre-flight screen).
+        (_mouseSensRepeatDown ??= new KeyRepeat()).Prime(ActionDown(ks, "MouseSensitivityDown"));
+        (_mouseSensRepeatUp ??= new KeyRepeat()).Prime(ActionDown(ks, "MouseSensitivityUp"));
         _tabKeyWasDown                 = ActionDown(ks, "ToggleStarmap");
         _selPrevKeyWasDown             = ActionDown(ks, "SelectSectorPrev");
         _selNextKeyWasDown             = ActionDown(ks, "SelectSectorNext");
@@ -1469,30 +1480,20 @@ public sealed partial class Game1
         }
         _mKeyWasDown = mMouse;
 
-        // P342 — invert mouse pitch (I), edge-triggered exactly like the M
-        // toggle above and gated behind the same !composing check so typing in
-        // chat never flips it. Works whether or not mouse-flight is currently
-        // enabled — the flag just sits on the controller until Update runs.
-        // Session-scoped: no settings-persistence system exists yet, so this
-        // resets to normal on every restart. I is unclaimed (the binding table
-        // reserves W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/K/C/N/OemTilde/[ /]/LeftCtrl/
-        // Tab/, /./Enter/Back/Escape/Space and more; I is the natural mnemonic).
-        bool iInvert = ActionDown(ks, "InvertMouse");
-        if (!composing && iInvert && !_iKeyWasDown)
-        {
-            _mouseFlight.InvertPitch = !_mouseFlight.InvertPitch;
-            Console.WriteLine($"[monogame] mouse pitch {(_mouseFlight.InvertPitch ? "INVERTED" : "NORMAL")}");
-        }
-        _iKeyWasDown = iInvert;
+        // P948 — mouse options: InvertMouse flips AND SAVES native's FlipY; the
+        // sensitivity keys step native's 0.01 delta, auto-repeat while held, save
+        // and flash the value on the HUD. Native persists both in its preference
+        // blob (FlipY WinTrek.cpp:5297-5305; MouseSensitivity :5512-5531), so the
+        // port keeps them in player.json and applies them at startup.
+        UpdateMouseOptionKeys(ks, composing, (float)gameTime.ElapsedGameTime.TotalSeconds);
 
         // P506 — mouse-flight RESPONSE-CURVE settings (native's menu items,
-        // WinTrek.cpp:4534 / AdjustMouseSens :5512; this keyboard port has no
-        // menu, so the digit row D5-D8 — free, grep-verified — carries them).
-        // All edge-triggered + composing-gated like every other toggle here.
+        // WinTrek.cpp:4534; this keyboard port has no menu, so the digit row
+        // D5/D6 — free, grep-verified — carries them). Edge-triggered +
+        // composing-gated like every other toggle here. (D7/D8 = sensitivity are
+        // handled by UpdateMouseOptionKeys above, which adds repeat + saving.)
         //   D5  → cycle the deadzone preset Smallest(0.04)/Small(0.1)/Large(0.3)
         //   D6  → toggle linear vs quadratic response (native default quadratic)
-        //   D7  → mouse sensitivity −0.01   D8 → mouse sensitivity +0.01
-        //         (native range [0.1, 2.0], step c_fMouseSensDelta)
         bool dzKey = ActionDown(ks, "MouseDeadzone");
         if (!composing && dzKey && !_mouseDzKeyWasDown)
         {
@@ -1514,21 +1515,9 @@ public sealed partial class Game1
         }
         _mouseLinKeyWasDown = linKey;
 
-        bool sensDown = ActionDown(ks, "MouseSensitivityDown");
-        if (!composing && sensDown && !_mouseSensDownKeyWasDown)
-        {
-            _mouseFlight.MouseSensitivity -= MouseFlightController.MouseSensitivityStep;
-            Console.WriteLine($"[monogame] mouse sensitivity DOWN -> {_mouseFlight.MouseSensitivity:F2}");
-        }
-        _mouseSensDownKeyWasDown = sensDown;
-
-        bool sensUp = ActionDown(ks, "MouseSensitivityUp");
-        if (!composing && sensUp && !_mouseSensUpKeyWasDown)
-        {
-            _mouseFlight.MouseSensitivity += MouseFlightController.MouseSensitivityStep;
-            Console.WriteLine($"[monogame] mouse sensitivity UP -> {_mouseFlight.MouseSensitivity:F2}");
-        }
-        _mouseSensUpKeyWasDown = sensUp;
+        // P948 — the sensitivity keys moved into UpdateMouseOptionKeys (above),
+        // which adds native's 0.01 step auto-repeat, persistence and the HUD
+        // readout; the old edge-only block lived here.
 
         // P249 — whole-mission starmap overlay toggle (Tab), edge-triggered like
         // the M/V toggles above and gated behind the same composing check so

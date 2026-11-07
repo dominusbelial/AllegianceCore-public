@@ -1086,9 +1086,10 @@ public sealed partial class Game1 : Game
     private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
     private bool _iKeyWasDown; // edge-detect the I (invert mouse pitch) toggle so holding it doesn't re-fire
     // P506 — edge latches for the mouse-flight response-setting toggles (D5=DZ
-    // preset cycle, D6=linear/quadratic, D7/D8=mouse sensitivity −/+), so holding
-    // a digit never re-fires, exactly like every other toggle here.
-    private bool _mouseDzKeyWasDown, _mouseLinKeyWasDown, _mouseSensDownKeyWasDown, _mouseSensUpKeyWasDown;
+    // preset cycle, D6=linear/quadratic), so holding a digit never re-fires,
+    // exactly like every other toggle here. P948 — the D7/D8 sensitivity keys
+    // auto-repeat and use their own KeyRepeat state (Game1.MouseOptions.cs).
+    private bool _mouseDzKeyWasDown, _mouseLinKeyWasDown;
 
     // P380 — real analog joystick flight input, a port of native
     // SenseJoystick (WinTrek/WinTrek.cpp:10818-11016) onto MonoGame's real
@@ -1896,6 +1897,10 @@ public sealed partial class Game1 : Game
     protected override void Initialize()
     {
         base.Initialize();
+        // P948 — apply the persisted mouse options (native FlipY + MouseSensitivity)
+        // before the first flight frame, exactly where native reads them in
+        // TrekResources::Initialize (WinTrek.cpp:2809-2811,3048).
+        LoadMouseOptions();
         if (_launchBorderless)
         {
             Window.IsBorderless = true;

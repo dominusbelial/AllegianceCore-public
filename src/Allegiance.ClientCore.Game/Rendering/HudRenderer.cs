@@ -514,6 +514,13 @@ public class HudRenderer
                     ElementDrawn("Joystick turning indicator");
                 }
 
+            // P948 — the transient mouse-option readout ("MOUSE SENSITIVITY 60 %")
+            // after a sensitivity change. Shared: ModernHudRenderer inherits this
+            // Draw, so both styles show the same text at the same place. Drawn
+            // above the virtual-stick reticle so it never overlaps its caption.
+            if (model.MouseNoticeVisible && f.MouseNotice is { } mouseNotice)
+                DrawMouseOptionNotice(mouseNotice, w, model.TargetPaneVisible ? paneTop - 140f : h - 190f);
+
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
             // A genuine "blackscreen" (opaque, alpha = WarpFlash) as opposed to
@@ -3082,6 +3089,19 @@ public class HudRenderer
         string mode = v.LinearControls ? "LIN" : "QUAD";
         DrawText(NativeFontAt(NativeFont.MedVerdana), $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
             new Vector2(cx - 58f, cy + R + 6f), TextDim);
+    }
+
+    /// <summary>
+    /// P948 — the short-lived mouse-option readout centred above the
+    /// virtual-stick indicator. Alpha fades with the notice's remaining lifetime
+    /// (see <see cref="Flight.MouseFlightNotice"/>), so it clears itself without
+    /// any state in the renderer.
+    /// </summary>
+    private void DrawMouseOptionNotice(in MouseOptionNotice notice, float w, float y)
+    {
+        var font = NativeFontAt(NativeFont.MedVerdana);
+        float half = font.MeasureString(notice.Text).X * TextScale / 2f;
+        DrawText(font, notice.Text, new Vector2(w / 2f - half, y), TextDim * Math.Clamp(notice.Opacity, 0f, 1f));
     }
 
     /// <summary>

@@ -4,6 +4,39 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P948 validation — two Fast sweeps, 2026-11-07 UTC
+
+Two Fast sweeps of the persisted-mouse-options change (invert-Y + native 0.6 sensitivity in
+`player.json`; no Core/sim/NPC/discovery/flight-model change).
+
+* Sweep 1 (before the two test-harness fixes below): **13,440 passed / 6 failed / 3 NotExecuted**,
+  13,449 executions in 598.0 s; infrastructure checks passed; **7 executions over the calibrated
+  10 s limit** (P744 factor 1.072 — the P947 sweep measured 7 then 4 on the same base).
+* Sweep 2 (intermediate): **13,444 passed / 2 failed / 3 NotExecuted**, 13,449 executions in 624.5 s;
+  infrastructure checks passed; **4 executions over the calibrated 10 s limit** (P744 factor 0.980).
+* Sweep 3 (**final source**, after the notice-tick refactor): **13,444 passed / 2 failed / 3 NotExecuted**,
+  13,449 executions in 576.4 s; infrastructure checks passed; **4 executions over the calibrated 10 s limit**.
+  The 3 NotExecuted are the optional Meshy-pack skips (`ALLEGIANCE_MESHY_PACK_PATH` unset; the
+  worktree's `local.env` supplies artwork/native-source paths only).
+
+| Method | Sweep observation | Isolation (P948) |
+| --- | --- | --- |
+| `P931TrainingPilotTests.Actual_training_hulls_track_a_nearby_crossing_contact(mission: 4, sample: 0.5)` | Sweep 1 only: tracking error above the 1.5° bound | **Ours, fixed**: the test divided the wanted stick value by `mouse.Sensitivity` alone, which was the effective scale only while the port's knob defaulted to 1.0; P948's native 0.6 made it under-command. Now divides by `mouse.PixelScale` (`Sensitivity × MouseSensitivity`), exactly like the production training pilot. **pass / pass / pass** after the fix. |
+| `P740FlightInputTests.Rebound_preset_runs_production_handler_persists_and_suppresses_held_composed_and_primed_edges` (Throttle33/66) | Sweeps 1: `NullReferenceException` | **Ours, fixed**: the test builds `Game1` with `RuntimeHelpers.GetUninitializedObject` and calls `PrimeInFlightKeyLatches`, which now primes the sensitivity key-repeat state; the repeat/notice fields are created lazily (`??=`) so the headless harness cannot hit a null. **pass / pass / pass** after the fix. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Sweep 1 only, "B never saw A's death" | **pass / pass / pass** alone (~5 s each); load-only |
+| `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | Sweep 1 only (passed in sweep 2): the live tailnet advertised a LAN game | Environment-dependent, already led; no discovery code changed |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Both sweeps, expected-ship/actual-null | **fail / fail / fail** alone; the already-led persistent base failure |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | Sweep 2 only: `7.0000000000000009` against an inclusive 7 s upper bound | Already led floating-point upper-bound signature (P947 recorded the same row); no timer/bomb code changed |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | Sweep 3 only: `Assert.Equal` expected -2, actual 0 (the chat-receipt ordering at line 229) | **fail / pass / pass / fail / pass / pass** across six isolated runs — the ledgered intermittent signature (led as pass/fail/pass); no chat/session code changed |
+| Slow Fast executions (>10 s) | Sweep 2: P800 hull proof 13.08 s, P814 gunner 10.33 s, P777 warp-exit 11.42 s, P750 asteroid 11.93 s — all passed | Led timing-only families, also over the limit on the P947 base sweep |
+
+Showcase never-parks (`P700ShowcaseLiveTests`, both cases per run): the required five sequential runs
+were **4 fully green + 1 run with a single case failing** (the failing run's assertion line was not
+captured — its two immediate follow-up runs were **pass / pass**, both cases, 7 m 48 s and 11 m 32 s).
+Across every run whose output was inspected, each case reported `longest speed<1 with target` well
+inside the 5 s bound (no `Parked >5s`); the one failure is the already-led load-sensitive
+arrival/never-park intermittency (base rate previously led as 4/5 and 5/5). No parking-bound failure.
+
 ## P947 validation — two Fast sweeps, 2026-11-07 UTC
 
 Two Fast sweeps (the second after a final Resolve edge-case fix). Sweep 1:

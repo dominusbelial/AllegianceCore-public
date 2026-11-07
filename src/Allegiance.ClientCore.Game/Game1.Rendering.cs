@@ -3355,6 +3355,8 @@ public sealed partial class Game1
                             _mouseFlight.Current.Yaw, _mouseFlight.Current.Pitch,
                             _mouseFlight.Deadzone, _mouseFlight.LinearControls)
                         : null,
+                    // P948 — the transient sensitivity readout (null once faded).
+                    MouseNotice: MouseOptionNoticeView,
                     // P618 — the live sim time scale as a percent (100 = full
                     // speed). Hidden by the renderer at full speed; shown as
                     // "TIME DILATION nn%" when the server slows the game clock.

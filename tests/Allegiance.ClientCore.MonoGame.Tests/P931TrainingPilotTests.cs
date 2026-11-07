@@ -188,8 +188,13 @@ public sealed class P931TrainingPilotTests(ITestOutputHelper output)
             }
             float Stick(float control) => control == 0 ? 0 : MathF.CopySign(mouse.Deadzone
                 + (1 - mouse.Deadzone) * MathF.Sqrt(MathF.Abs(control)), control);
-            float dx = MathF.Round((mouse.Current.Yaw - Stick(turn.Yaw)) / mouse.Sensitivity);
-            float dy = MathF.Round((mouse.Current.Pitch - Stick(turn.Pitch)) / mouse.Sensitivity);
+            // P948 — divide by the EFFECTIVE per-pixel scale (image factor x the
+            // persisted sensitivity knob), exactly like the production training
+            // pilot (Game1.TrainingProof*), so the requested pixel delta really
+            // produces the intended stick deflection after the default changed
+            // from the old port-neutral 1.0 to native's 0.6.
+            float dx = MathF.Round((mouse.Current.Yaw - Stick(turn.Yaw)) / mouse.PixelScale);
+            float dy = MathF.Round((mouse.Current.Pitch - Stick(turn.Pitch)) / mouse.PixelScale);
             var deflection = mouse.Update(dx, dy);
             var mapped = MouseFlightController.MapResponse(deflection, mouse.Deadzone, mouse.LinearControls);
             var inputs = new ShipKinematics.Inputs(new(mapped.Yaw, mapped.Pitch, 0, -1), 0,

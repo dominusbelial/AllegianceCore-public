@@ -64,10 +64,10 @@ public sealed partial class Game1
     private IntroPreferences _optionsPrefs = new();
     private bool _optionsPrefsLoaded;
 
-    private void EnsureOptionsPrefs()
+    private void EnsureOptionsPrefs(string? path = null)
     {
         if (_optionsPrefsLoaded) return;
-        _optionsPrefs = IntroPreferences.Load();
+        _optionsPrefs = IntroPreferences.Load(path ?? _playerPrefsPath);
         _optionsPrefsLoaded = true;
     }
 
@@ -107,6 +107,7 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.OpenSoundMenu:
                 case OptionsMenuModel.OptionsCommand.OpenGameMenu:
                 case OptionsMenuModel.OptionsCommand.OpenChatMenu:
+                case OptionsMenuModel.OptionsCommand.OpenMouseMenu:
                     _optionsMenu.Activate(state);          // descend one level
                     break;
                 case OptionsMenuModel.OptionsCommand.MapKeysAndControls: // native idmConfigure 'C'
@@ -148,8 +149,10 @@ public sealed partial class Game1
                     break;
                 }
                 case OptionsMenuModel.OptionsCommand.ToggleFlipY:            // native idmToggleFlipY 'Y'
-                    _mouseFlight.InvertPitch = !_mouseFlight.InvertPitch;
-                    Console.WriteLine($"[intro] game options: flip Y -> {(_mouseFlight.InvertPitch ? "on" : "off")}");
+                    // P948 — persist it (native ToggleFlipY saves FlipY,
+                    // WinTrek.cpp:5297-5305) through the same setter the in-flight
+                    // key uses, so both paths write one value.
+                    SetInvertMouseY(!_mouseFlight.InvertPitch);
                     break;
                 case OptionsMenuModel.OptionsCommand.ToggleVirtualJoystick:  // native idmToggleVirtualJoystick 'J'
                     _mouseFlightEnabled = !_mouseFlightEnabled;
@@ -158,6 +161,15 @@ public sealed partial class Game1
                     break;
                 case OptionsMenuModel.OptionsCommand.ToggleForceFeedback:     // native idmToggleEnableFeedback 'E'
                     ToggleForceFeedback();
+                    break;
+                // P948 — native's Mouse Options items (idmMouseSensUp/Down,
+                // WinTrek.cpp:4612-4613 → AdjustMouseSens :5512-5531): one 0.01
+                // step, clamped to [0.1, 2.0], SAVED.
+                case OptionsMenuModel.OptionsCommand.MouseSensitivityUp:
+                    StepMouseSensitivity(+1);
+                    break;
+                case OptionsMenuModel.OptionsCommand.MouseSensitivityDown:
+                    StepMouseSensitivity(-1);
                     break;
             }
         }
@@ -210,7 +222,9 @@ public sealed partial class Game1
             ChatMuteTarget: NewestDirectoryLine?.Sender,
             ChatMuteTargetMuted: NewestDirectoryLine is { } newest
                 && _directoryChat.IsMuted(newest.SenderId),
-            AudioQuality: _sound?.Quality ?? _optionsPrefs.AudioQuality);
+            AudioQuality: _sound?.Quality ?? _optionsPrefs.AudioQuality,
+            // P948 — the live mouse sensitivity the Mouse Options labels act on.
+            MouseSensitivity: _mouseFlight.MouseSensitivity);
     }
 
     /// <summary>P871b — native <c>contextMute</c> (<c>WinTrek/WinTrek.cpp:3731-3734</c>,
@@ -295,6 +309,7 @@ public sealed partial class Game1
             OptionsMenuModel.Page.Sound => "Sound Options",
             OptionsMenuModel.Page.Game => "Game Options",
             OptionsMenuModel.Page.Chat => "Game Options / Chat, Mute, Filter",
+            OptionsMenuModel.Page.Mouse => "Game Options / Mouse Options",
             _ => "Graphics / Sound / Game / Controls",
         };
         DrawIntroTitle(width, "Options", subtitle, title, dim);

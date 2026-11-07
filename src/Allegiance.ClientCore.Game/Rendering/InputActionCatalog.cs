@@ -371,7 +371,12 @@ public static class InputActionCatalog
         new("ZoomIn", "CAMERA / VIEW", "Camera zoom in [TK_ZoomIn]", K(Keys.Add), K(Keys.Add)),
         new("ToggleHud", "CAMERA / VIEW", "Toggle HUD (hide/show overlays for clean frames) [P612]", C(Keys.F1), null),
         new("ToggleMouse", "CAMERA / VIEW", "Mouse flight toggle [TK_ToggleMouse]", K(Keys.M), K(Keys.V)),
-        new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch (session only)", C(Keys.M), null),
+        // P948 — native's Game Options → "Y Axis Not Flipped" (idmToggleFlipY 'Y',
+        // WinTrek.cpp:4536; ToggleFlipY saves FlipY :5297-5305), persisted in
+        // player.json and also shown on the Ctrl+F6 settings panel. No native
+        // KEYBOARD binding exists (native reaches it from the menu), so the
+        // catalog's native column stays empty.
+        new("InvertMouse", "CAMERA / VIEW", "Invert mouse pitch", C(Keys.M), null),
         new("ToggleStarmap", "CAMERA / VIEW", "Expand/collapse the always-on mini-map (full starmap)", K(Keys.Tab), null),
         new("SelectSectorPrev", "CAMERA / VIEW", "Starmap: previous sector (with map expanded)", K(Keys.OemComma), null),
         // P624 — starmap NEXT moved off '.' (OemPeriod) because native binds
@@ -385,8 +390,8 @@ public static class InputActionCatalog
         // to their Ctrl-chords (still rebindable via F6).
         new("MouseDeadzone", "CAMERA / VIEW", "Mouse flight: cycle deadzone preset", C(Keys.D5), null),
         new("MouseResponseCurve", "CAMERA / VIEW", "Mouse flight: toggle linear / quadratic response", C(Keys.D6), null),
-        new("MouseSensitivityDown", "CAMERA / VIEW", "Mouse flight: sensitivity down", C(Keys.D7), null),
-        new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", C(Keys.D8), null),
+        new("MouseSensitivityDown", "CAMERA / VIEW", "Mouse flight: sensitivity down (hold to repeat, saved)", C(Keys.D7), null),
+        new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up (hold to repeat, saved)", C(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
         // P761 — the character sheet's profile editor (native CharInfoScreen's

@@ -21,6 +21,7 @@ namespace Allegiance.ClientCore.MonoGame;
 /// sound: Music on/off | Music Volume Up | Music Volume Down
 /// game : Chat/Mute/Filter &gt; | Linear Controls | Dead Zone | Flip Y | Virtual Joystick | Map Keys and Controls
 /// chat : Filter Chats To All | Mute/Unmute &lt;newest directory sender&gt;
+/// mouse: Raise Mouse Sensitivity to NN % | Lower Mouse Sensitivity to NN %
 /// </code>
 ///
 /// <para><b>What each leaf drives.</b> Only items the port genuinely implements
@@ -53,7 +54,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed class OptionsMenuModel
 {
     /// <summary>Which native menu is open.</summary>
-    public enum Page { Root, Sound, Game, Chat }
+    public enum Page { Root, Sound, Game, Chat, Mouse }
 
     /// <summary>The action a leaf item performs (the screen executes it; the
     /// model stays static-data free).</summary>
@@ -63,6 +64,10 @@ public sealed class OptionsMenuModel
         OpenSoundMenu,
         OpenGameMenu,
         OpenChatMenu,
+        /// <summary>P948 — native's Game Options → "Mouse Options" submenu
+        /// (<c>idmMouseOptions</c> 'Q', <c>WinTrek.cpp:4539</c>, items built at
+        /// <c>:4606-4613</c>).</summary>
+        OpenMouseMenu,
         MapKeysAndControls,
         ToggleMusic,
         MusicVolumeUp,
@@ -76,6 +81,11 @@ public sealed class OptionsMenuModel
         ToggleFlipY,
         ToggleVirtualJoystick,
         ToggleForceFeedback,
+        /// <summary>P948 — native <c>idmMouseSensUp</c> ('U',
+        /// <c>WinTrek.cpp:4612</c>): +<c>c_fMouseSensDelta</c>, clamped, saved.</summary>
+        MouseSensitivityUp,
+        /// <summary>P948 — native <c>idmMouseSensDown</c> ('D', ':4613').</summary>
+        MouseSensitivityDown,
     }
 
     /// <summary>One menu line: its label (state included, like native's
@@ -100,7 +110,10 @@ public sealed class OptionsMenuModel
         // relayed sender's display name, or null when the log is empty.
         string? ChatMuteTarget = null,
         bool ChatMuteTargetMuted = false,
-        Audio.AudioQuality AudioQuality = Audio.AudioQuality.Medium);
+        Audio.AudioQuality AudioQuality = Audio.AudioQuality.Medium,
+        // P948 — the live, persisted mouse sensitivity (native MouseSensitivity,
+        // WinTrek.cpp:2809) so the Mouse Options labels show the value they act on.
+        float MouseSensitivity = Flight.MouseFlightController.DefaultMouseSensitivity);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -154,6 +167,10 @@ public sealed class OptionsMenuModel
                     new Row("Flip Y: " + OnOff(state.FlipY), OptionsCommand.ToggleFlipY, 'Y'),
                     new Row("Virtual Joystick: " + OnOff(state.VirtualJoystick), OptionsCommand.ToggleVirtualJoystick, 'J'),
                     new Row("Force Feedback: " + OnOff(state.ForceFeedback), OptionsCommand.ToggleForceFeedback, 'E'),
+                    // P948 — native's Mouse Options submenu (idmMouseOptions 'Q',
+                    // WinTrek.cpp:4539) holding the Raise/Lower sensitivity items
+                    // (:4612-4613). This is the persisted MouseSensitivity value.
+                    new Row("Mouse Options >", OptionsCommand.OpenMouseMenu, 'Q'),
                     new Row("Map Keys and Controls", OptionsCommand.MapKeysAndControls, 'C'),
                 };
             case Page.Chat:
@@ -176,6 +193,16 @@ public sealed class OptionsMenuModel
                             ? (state.ChatMuteTargetMuted ? "Unmute " : "Mute ") + target
                             : "Mute (no directory chat yet)",
                         OptionsCommand.ToggleMuteChatSender, 'M'),
+                };
+            case Page.Mouse:
+                // P948 — native's Mouse Options submenu: step and end stops are
+                // GetMouseSensMenuString's exact wording (WinTrek.cpp:5599-5615).
+                return new[]
+                {
+                    new Row(Flight.MouseOptions.StepLabel(state.MouseSensitivity, +1),
+                        OptionsCommand.MouseSensitivityUp, 'U'),
+                    new Row(Flight.MouseOptions.StepLabel(state.MouseSensitivity, -1),
+                        OptionsCommand.MouseSensitivityDown, 'D'),
                 };
             default:
                 return new[]
@@ -201,6 +228,7 @@ public sealed class OptionsMenuModel
             case OptionsCommand.OpenSoundMenu: Current = Page.Sound; Row0 = 0; return null;
             case OptionsCommand.OpenGameMenu: Current = Page.Game; Row0 = 0; return null;
             case OptionsCommand.OpenChatMenu: Current = Page.Chat; Row0 = 0; return null;
+            case OptionsCommand.OpenMouseMenu: Current = Page.Mouse; Row0 = 0; return null;
             default: return cmd;
         }
     }

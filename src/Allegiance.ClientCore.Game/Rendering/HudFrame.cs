@@ -152,4 +152,8 @@ public readonly record struct HudFrame(
     // GetModelTypeDesc(Me), dialog.mdl:4717-4733), used by the command-view ship
     // summary (cortCommandModeInfo, dialog.mdl:4997-5027). Null while the hull
     // is not resolved.
-    string? ShipTypeName = null);
+    string? ShipTypeName = null,
+    // P948 — the transient mouse-option readout (sensitivity value) shown briefly
+    // after a change; null once it fades. Trailing so every existing positional
+    // HudFrame construction keeps its meaning.
+    MouseOptionNotice? MouseNotice = null);
