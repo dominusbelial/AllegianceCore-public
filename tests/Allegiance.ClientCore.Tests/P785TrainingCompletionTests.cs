@@ -222,7 +222,7 @@ public class P785TrainingCompletionTests
         // tm_1_introduction namespace (WinTrek.cpp:2503). The tm_1_introduction.mdl
         // slides list carries 15 (image, SoundID) pairs, tm_slide_1_01..1_14 (04a/04b
         // split), extracted verbatim into TrainingSlideData.
-        var slides = TrainingSlides.Introduction;
+        var slides = TrainingSlides.Introduction();
         Assert.Equal(15, slides.Count);
         Assert.Equal("tm_slide_1_01", slides.Slides[0].SoundStem);
         Assert.Equal("tm_slide_1_04a", slides.Slides[3].SoundStem);

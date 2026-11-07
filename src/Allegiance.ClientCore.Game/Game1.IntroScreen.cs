@@ -483,7 +483,7 @@ public sealed partial class Game1
         else
         {
             var name = TrainingScreenModel.NameOf(missionId);
-            BeginTrainingSlideshow(TrainingSlides.PreMission(missionId, name), isPost: false, missionId);
+            BeginTrainingSlideshow(TrainingSlides.PreMission(missionId, name, _assets), isPost: false, missionId);
         }
     }
 
@@ -899,23 +899,17 @@ public sealed partial class Game1
     }
 
     // ── P785 — the training slideshow (native Slideshow/TrainingSlideshow/PostTrainingSlideshow).
-    // Native fills the screen with each slide's full-screen image; the port renders the
-    // slide's native narration text wrapped (visual parity — no tm_* slide art ships in
-    // the Content pack).
+    // P943 — native fills the screen with each slide's full-screen image expression; the port
+    // draws that parsed expression at the native 800×600 layout (DrawSlideArt). A slide whose
+    // art is absent falls back to its native narration caption, and an empty caption to the
+    // slideshow title, so no slide is ever blank.
     private void DrawIntroSlideshow(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        var slide = _trainingSlideshow?.Current;
-        if (slide is { } s)
+        if (_trainingSlideshow is { } slideshow && slideshow.Current is { } s)
         {
-            float textWidth = MathF.Min(w * 0.8f, 900f);
-            var lines = WrapText(s.Caption.Replace("\n", " "), textWidth);
-            var tsz = _hudSmall.MeasureString(lines.Count > 0 ? lines[0] : "");
-            float top = (h - lines.Count * (tsz.Y + 6f)) / 2f;
-            for (int i = 0; i < lines.Count; i++)
-            {
-                var size = _hudSmall.MeasureString(lines[i]);
-                _spriteBatch.DrawString(_hudSmall, lines[i], new Vector2((w - size.X) / 2f, top + i * (tsz.Y + 6f)), titleCol);
-            }
+            bool drewArt = s.Art is not null && DrawSlideArt(s.Art, w, h);
+            if (!drewArt)
+                DrawSlideCaption(s.Caption.Length > 0 ? s.Caption : slideshow.Title, w, h, titleCol);
         }
         var hint = $"{_trainingSlideshow?.Title}   {( (_trainingSlideshow?.Index ?? 0) + 1)}/{_trainingSlideshow?.Count ?? 0}   any key: next";
         var hsz = _hudSmall.MeasureString(hint);

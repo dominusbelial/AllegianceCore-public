@@ -66,6 +66,24 @@ complete qualification/parking account are in
 [the P942 report](reports/P942_REPORT.md) and
 [verification.json](reports/P942_assets/verification.json).
 
+## P943 validation — one Fast sweep, 2026-11-07 UTC
+
+One Fast sweep: **13,269 passed / 5 failed / 3 optional Meshy-pack skips**, infrastructure checks passed, 587.8 s.
+None of the five touch P943's scope (training slideshow rendering/captions; no Core, sim, miner, NPC, docking or audio
+code changed), and each matches its existing ledger signature:
+
+| Method | Sweep observation | Isolation |
+| --- | --- | --- |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | `Assert.Equal` 0 vs 6,552 bytes — the known allocation intermittency | **pass / pass / pass** alone |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 7) | Floating upper-bound signature | **pass / pass / pass** (3 theory rows each) |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Existing null-target assertion | **fail / fail / fail** alone, exactly as already led (fails on the unmodified base too) |
+| `MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock` | Miner-cycle intermittency (null base slot) | **pass / pass / pass** alone |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | Stale dock-status history (station 1051 vs −1) | **pass / fail / pass** alone, as led |
+
+Two existing executions also exceeded Fast's ten-second limit: `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` (46.863 s) and
+`MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock` (14.783 s) — both previously ledgered
+timing offenders on this shared host.
+
 ## P941 validation — one Fast sweep, 2026-11-06 UTC
 
 One Fast sweep (Claude, after Hermes's session ended): 13,241 tests, **FAIL**. Task-caused and fixed:

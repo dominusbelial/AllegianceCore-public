@@ -976,6 +976,20 @@ list in **reverse**.
   `tools/p873-training-audit.py`, `docs/reports/P873_REPORT.md`.
   Native training authoring commands (asteroid TSV and narration comments):
   `tools/p873-training-tools.py`.
+- **Training slideshow artwork (P943)** — the native slide images, not just captions.
+  Each mission's `tm_*.mdl` (native namespace table `SlideshowNamespaces`,
+  `WinTrek/WinTrek.cpp:2473-2522`) is parsed by
+  `src/Allegiance.ClientCore/Training/SlideshowScript.cs` (the slides list:
+  `ImportImage`/`GroupImage`/`TranslateImage`/`StringImage`/`Point`, plus the narration
+  comment block above each slide); `src/Allegiance.ClientCore/Training/SlideshowLayout.cs`
+  evaluates it at the native 800×600 y-up layout (GroupImage paints its first child
+  last, StringImage hangs below its point) and
+  `src/Allegiance.ClientCore.Game/Game1.Slideshow.cs` draws it through
+  `src/Allegiance.ClientCore.Game/Rendering/SlideshowArt.cs`, scaled to the window.
+  A slide whose bitmap is absent falls back to its narration caption. Tests:
+  `tests/Allegiance.ClientCore.Tests/P943SlideshowScriptTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P943SlideshowArtTests.cs`; captures:
+  `docs/reports/P943_assets/`; report: `docs/reports/P943_REPORT.md`.
 - **Local training lifecycle (P882a)** — `ITrainingLifecycleSite` in
   `src/Allegiance.ClientCore/Training/ITrainingLifecycleSite.cs` separates setup,
   authoritative respawn presence and death recovery from action/condition bindings.

@@ -13,13 +13,16 @@ namespace Allegiance.ClientCore.Training;
 /// (<c>WinTrek/TrainingSlideshow.cpp:30-50</c>) shows "Training simulation initiated..."
 /// and starts the mission, <c>PostTrainingSlideshow::Dismiss</c>
 /// (<c>WinTrek/PostTrainingSlideshow.cpp:25-29</c>) returns to the training screen.
-/// Native slide artwork/audio (tm_N_* namespaces, tm_slide_* clips) is not in the
-/// public install, so the port renders textual captions standing in for the bitmaps
-/// (visual parity: visuals may differ) and carries the native per-slide sound stems.
+/// P943 — the slide artwork IS in the artwork corpus (<c>tm_1_introduction.mdl</c>
+/// …): each slide carries the parsed native image expression
+/// (<see cref="Slide.Art"/>, <see cref="SlideshowScript"/>), which the slideshow
+/// screen renders at the native 800×600 layout (<see cref="SlideshowLayout"/>). The
+/// caption stays as the fallback narration when an image cannot be resolved.
 /// </summary>
 public sealed class SlideshowModel
 {
-    public sealed record Slide(string Caption, string? Detail, string SoundStem);
+    public sealed record Slide(string Caption, string? Detail, string SoundStem,
+        SlideshowImage? Art = null);
 
     /// <summary>The 1.0 s pause after a slide's sound finishes (Slideshow.cpp:133).</summary>
     public const double PostSoundDelaySeconds = 1.0;
@@ -33,8 +36,8 @@ public sealed class SlideshowModel
         Title = title;
     }
 
-    /// <summary>Screen title (native draws none — the slide image fills the screen;
-    /// the port labels the stand-in slide).</summary>
+    /// <summary>Screen title (native draws none — the slide image fills the screen; the
+    /// port shows it in the footer label, e.g. "Basic Flight  1/1  any key: next").</summary>
     public string Title { get; }
 
     /// <summary>Index of the slide being shown (the list cursor AFTER

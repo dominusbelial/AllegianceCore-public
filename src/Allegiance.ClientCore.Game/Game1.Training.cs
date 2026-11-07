@@ -127,7 +127,7 @@ public sealed partial class Game1
     {
         if (missionId == Tm1Introduction)
         {
-            BeginTrainingSlideshow(TrainingSlides.Introduction, isPost: true, missionId);
+            BeginTrainingSlideshow(TrainingSlides.Introduction(_assets), isPost: true, missionId);
             return;
         }
         _trainingError = "";
@@ -492,14 +492,14 @@ public sealed partial class Game1
             else
             {
                 var name = TrainingScreenModel.NameOf(_trainingMissionId);
-                BeginTrainingSlideshow(TrainingSlides.PostMission(_trainingMissionId, name),
+                BeginTrainingSlideshow(TrainingSlides.PostMission(_trainingMissionId, name, _assets),
                     isPost: true, _trainingMissionId);
             }
         }
     }
 
     /// <summary>P785 — open a training slideshow (native CreateTrainingSlideshow /
-    /// CreatePostTrainingSlideshow, WinTrek.cpp:2473-2510). <paramref name="isPost"/>
+    /// CreatePostTrainingSlideshow, WinTrek.cpp:2473-2517). <paramref name="isPost"/>
     /// selects the dismiss behaviour: post slideshows return to the training screen
     /// (PostTrainingSlideshow::Dismiss, PostTrainingSlideshow.cpp:25-29); the pre
     /// slideshow shows the "Training simulation initiated..." box and starts the

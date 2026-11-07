@@ -1,14 +1,19 @@
+using Allegiance.ClientCore.Training;
+
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
 /// P785 — the native slideshow slides, extracted verbatim from the artwork
 /// corpus's training MDLs (the commit pinned in packaging/sources.json): the
 /// <c>slides</c> list of each tm_*.mdl — native's (image, SoundID) pairs shown by
-/// WinTrek/Slideshow.cpp (namespaces chosen at WinTrek.cpp:2473-2510). The port
-/// draws each slide's native narration/on-screen text (a visual stand-in for the
-/// full-screen slide image) and plays the slide's tm_slide_* voice clip from the
-/// artwork install. An empty caption is a native image-only slide (the post-mission
-/// slides), drawn with the slideshow title only.
+/// WinTrek/Slideshow.cpp (namespaces chosen at WinTrek.cpp:2473-2517). The port
+/// draws each slide's native image expression when the artwork is installed
+/// (P943, <see cref="SlideshowScript"/>) and plays the slide's tm_slide_* voice
+/// clip from the artwork install. The caption is the slide's native narration —
+/// the text the MDL carries in the comments above each slide — used as the
+/// on-screen fallback when a slide's image cannot be resolved. Mission 6's post
+/// slide has no narration comment in its MDL (only the hangar bitmap), so it
+/// keeps an empty caption and is drawn by the title label alone.
 /// </summary>
 public static class TrainingSlideData
 {
@@ -34,13 +39,13 @@ public static class TrainingSlideData
                 ("Got all that? ? Remember, you can bring up the Help display at any time. Right now, they are waiting for you on the hangar deck. Get your gear and proceed to training mission 2, Basic Flight. Good luck.", "tm_slide_1_14"),
             },
             (2, true) => new (string, string)[] {
-                ("", "tm_slide_2_post_01"),
+                ("Now that you?ve learned some flight basics, it?s time to learn about the weapon systems carried by your craft. Proceed to training mission 3, Basic Weaponry.", "tm_slide_2_post_01"),
             },
             (2, false) => new (string, string)[] {
                 ("In this mission, you will receive a basic introduction to your controls and heads-up display and do a little bit of flying.", "tm_slide_2_01"),
             },
             (3, true) => new (string, string)[] {
-                ("", "tm_slide_3_post_01"),
+                ("Okay, Cadet, you?ve learned how to use your weapons and control you?re inventory. Now it?s time to go over a typical mission. Proceed to training mission 4, Enemy Engagement.", "tm_slide_3_post_01"),
             },
             (3, false) => new (string, string)[] {
                 ("Before launching into a combat scenario, you should select the ship you wish to fly and outfit it in the way best suited to the operation you are planning.", "tm_slide_3_01"),
@@ -58,7 +63,7 @@ public static class TrainingSlideData
                 ("Click the Launch button when you are ready.", "tm_slide_3_13"),
             },
             (4, true) => new (string, string)[] {
-                ("", "tm_slide_4_post_01"),
+                ("OK, Cadet, you?ve learned about sectors, alephs, and utility craft such as miners and constructors?. If you?re up for officer duty, proceed to training mission 5, Command View. If you?d rather stick it out as a pilot, proceed to training mission 6, Practice Arena, for some tense combat experience.", "tm_slide_4_post_01"),
             },
             (4, false) => new (string, string)[] {
                 ("The most important aspect of all our operations is the collection of the resource Helium3. Drone miners tend to the Helium3 asteroids located in deep space. When the miners return safely, we can expand our operations, by purchasing new equipment, ships, and stations.", "tm_slide_4_01"),
