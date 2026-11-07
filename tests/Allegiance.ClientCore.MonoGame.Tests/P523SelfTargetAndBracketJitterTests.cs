@@ -91,7 +91,7 @@ public class P523SelfTargetAndBracketJitterTests
         Assert.False(e2);
         Assert.False(r2);
 
-        var native = new ActionMap(InputActionCatalog.Definitions);
+        var native = new ActionMap(InputActionCatalog.Definitions, InputLayout.Native);
         var nativeHeld = new KeyboardState(Keys.Enter, Keys.OemTilde);
         var (nEnter, nQuick) = Game1.ComputeSharedEdgePrimes(nativeHeld, native);
         Assert.True(nEnter);

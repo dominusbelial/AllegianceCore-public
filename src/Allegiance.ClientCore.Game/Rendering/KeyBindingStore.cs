@@ -22,6 +22,25 @@ public sealed class KeyBindingStore
 
     public ActionMap Map { get; }
 
+    /// <summary>P949 — true when the store found a keymap file at construction
+    /// (a returning player). The P949 keys hint is for a fresh profile only.</summary>
+    public bool LoadedFromFile { get; private set; }
+
+    /// <summary>P949 — set by <see cref="Save"/>: once the player changes a
+    /// binding (or presses OK in F6) the profile is no longer fresh.</summary>
+    public bool SavedThisSession { get; private set; }
+
+    /// <summary>P949 — a profile has a user keymap (it was there at load or has
+    /// been written since). Fresh profiles have none: nothing has been persisted
+    /// yet, and the layout fallback is deliberately NOT written (native's
+    /// <c>LoadMap(INPUTMAP_FILE)</c> fallback to the default map writes nothing
+    /// either, trekinput.cpp:125-126,2439-2441).</summary>
+    public bool HasKeymap => LoadedFromFile || SavedThisSession;
+
+    /// <summary>P949 — a profile with no readable keymap file. The fresh-profile
+    /// keys hint shows once for it.</summary>
+    public bool FreshProfile => !HasKeymap;
+
     /// <summary>Absolute path of the keymap file in the user config or explicit directory
     /// (honours ALLEGIANCE_KEYMAP for tests/isolation).</summary>
     public static string ResolvePath(string? workingDir = null)
@@ -34,14 +53,17 @@ public sealed class KeyBindingStore
 
     public KeyBindingStore()
     {
-        // P941 — a fresh profile (no keymap file) gets the native
-        // defaultinputmap.mdl layout; a file written before P941 has no layout
-        // marker and ApplyJson migrates it to the native layout with the
-        // player's own rebinds kept on top.
+        // P949 — a fresh profile (no keymap file) starts on the Port layout
+        // (keyboard steering, the refreshed-install complaint this fixes); a file
+        // that records a preset keeps that preset, and a pre-P941 flat file (no
+        // layout marker) loads as the Port layout its untouched chords came from.
+        // The fallback is not written: the file stays absent until the player
+        // changes something (native's LoadMap fallback writes nothing).
         Map = new ActionMap(InputActionCatalog.Definitions);
         string path = ResolvePath();
         if (File.Exists(path))
         {
+            LoadedFromFile = true;
             try
             {
                 Map.ApplyJson(File.ReadAllText(path));
@@ -51,7 +73,8 @@ public sealed class KeyBindingStore
                 Console.WriteLine($"[keymap] failed to read {path}: {ex.Message}");
             }
         }
-        Console.WriteLine($"[keymap] layout preset: {InputLayouts.Name(Map.Layout)}");
+        Console.WriteLine($"[keymap] layout preset: {InputLayouts.Name(Map.Layout)}"
+            + (FreshProfile ? " (fresh profile, not saved)" : ""));
     }
 
     /// <summary>P941 — the F6 preset cycle. Switches the whole default map and
@@ -71,6 +94,7 @@ public sealed class KeyBindingStore
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
             File.WriteAllText(path, Map.ToJson());
+            SavedThisSession = true;
             Console.WriteLine($"[keymap] saved bindings -> {path}");
         }
         catch (Exception ex)
@@ -117,6 +141,7 @@ public sealed class KeyBindingStore
     {
         if (File.Exists(path))
         {
+            LoadedFromFile = true;
             try
             {
                 // Native LoadMap builds the map from the defaults + the file's
@@ -132,8 +157,11 @@ public sealed class KeyBindingStore
                 Console.WriteLine($"[keymap] failed to read {path}: {ex.Message} - falling back to defaults");
             }
         }
-        // Native falls back to LoadMap(DEFAULTINPUTMAP_FILE): the native layout.
-        Map.SetLayout(InputLayout.Native);
-        Console.WriteLine("[keymap] no readable keymap - reverted to the native default layout (not saved)");
+        // P949 — native falls back to LoadMap(DEFAULTINPUTMAP_FILE). The port's
+        // fresh-profile default is the Port layout (P949), so that is the
+        // fallback the Cancel path restores; it is NOT persisted, exactly as
+        // before P941 (the file stays as it was).
+        Map.SetLayout(InputLayout.Port);
+        Console.WriteLine("[keymap] no readable keymap - reverted to the Port default layout (not saved)");
     }
 }

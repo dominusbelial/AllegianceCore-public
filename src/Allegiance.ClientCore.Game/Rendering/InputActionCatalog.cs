@@ -9,17 +9,19 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 ///
 /// <see cref="Default"/> is the binding the pre-P941 port shipped (its
 /// WASD/pitch-yaw-roll flight scheme is a deliberate design, not a native
-/// omission; see the P625 report "Native behaviour classified" table). Since
-/// P941 it is the **"Port layout" preset** (`InputLayout.Port`,
-/// <see cref="InputLayouts"/>), kept selectable in the F6 Controls screen.
+/// omission; see the P625 report "Native behaviour classified" table). It is the
+/// **fresh-profile default** since P949: a new profile starts on the "Port
+/// layout" preset (<see cref="InputLayout.Port"/>, <see cref="InputLayouts"/>),
+/// so the player can fly from the keyboard without the mouse, and F6 Controls
+/// switches to native's map.
 /// <see cref="NativeDefault"/> is what <c>defaultinputmap.mdl</c> assigns to
 /// the same TK command (decoded via <see cref="DefaultInputMap"/>) and is the
-/// **fresh-profile default** (`InputLayout.Native`, P941): native's own map wins
-/// for a new player, and the five commands native wires to the mouse
-/// (mouseButtonCommandMap, defaultinputmap.mdl:109-116) are exposed by
-/// <see cref="InputLayouts.MouseMap"/>. Categories mirror native's
-/// <c>g_pCommandInfo</c> groupings (trekinput.cpp:1441-1621) translated to the
-/// port's established help headings.
+/// **"Classic Allegiance" preset** (`InputLayout.Native`, P941/P949): native's
+/// own map, whose stock table binds no key to the steering TKs, so it flies
+/// with the mouse/joystick; its five mouse commands (mouseButtonCommandMap,
+/// defaultinputmap.mdl:109-116) are exposed by <see cref="InputLayouts.MouseMap"/>.
+/// Categories mirror native's <c>g_pCommandInfo</c> groupings
+/// (trekinput.cpp:1441-1621) translated to the port's established help headings.
 ///
 /// NOTE the P625 rules (they hold in both layouts unless native claims the key):
 ///   - screenshot is PrintScreen (native's own TK_ScrnShot default,

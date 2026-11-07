@@ -17,11 +17,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// pages that describe the port's real controls. Pure and MonoGame-free so
 /// every navigation rule is headless-testable.
 ///
-/// <para>P941 — the gameplay pages that name keys are built from the LIVE
+/// <para>P941/P949 — the gameplay pages that name keys are built from the LIVE
 /// <see cref="ActionMap"/> bindings (<see cref="BuildTopics"/>), so the F1
-/// overview states the keys the player actually has: the fresh-profile native
-/// layout (Q/E roll, SPACE booster, left mouse fire) and the Port layout preset
-/// both read correctly, and a rebind shows up the next time the help opens.</para>
+/// overview states the keys the player actually has: the fresh-profile Port
+/// layout (W/S throttle, A/D roll, Space fires) and the "Classic Allegiance"
+/// native preset both read correctly, and a rebind shows up the next time the
+/// help opens.</para>
 /// </summary>
 public sealed class HelpManualModel
 {

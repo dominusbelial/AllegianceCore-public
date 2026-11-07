@@ -760,6 +760,13 @@ list in **reverse**.
   (sweeps 1920×1080, 2560×1440, 1280×720, 1600×900, 1366×768 × Size × both skins).
 - **HUD renderer** — `Rendering/HudRenderer.cs` (shared model +
   Classic), `Rendering/ModernHudRenderer.cs` (Modern override). P786 report.
+- **Fresh-profile keys hint (P949)** — `Rendering/ControlHint.cs` (pure text +
+  lifetime: 60 s or any key, once per profile), drawn by the shared
+  `HudRenderer` under the native chat pane so Classic and Modern both show it;
+  carried on `HudContext.ControlHint` and persisted as
+  `HudSettings.ControlHintSeen` in `hud.json`. Never shows for a profile with a
+  keymap (`KeyBindingStore.HasKeymap`). Wiring: `Game1.KeyBind.cs`
+  (`UpdateControlHint`), `Game1.FlightInput.cs` (`UpdateFlying`).
 - **Lead marker / aim predictor** — the client-solved lead and the native
   aim/missile indicators: `Rendering/ClientLead.cs` (gate + solve + the
   screen-space ramp), `Game1.Camera.cs` (`ComputeLeadIndicators`,
@@ -928,16 +935,21 @@ list in **reverse**.
   `tools/p853b-hostedit-proof/`, report `docs/reports/P853B_REPORT.md`.
 - **Input** — keyboard/mouse/joystick/gamepad rebindable.
   `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`, `Game1.KeyBind.cs`.
-  P941 **input layouts**: `Rendering/InputLayouts.cs` is the two selectable
-  default presets — `InputLayout.Native` (native's `defaultinputmap.mdl`
-  keyboard table plus its mouse/wheel map, the fresh-profile default) and
-  `InputLayout.Port` (the pre-P941 port keys, an F6-selectable preset) — and
-  `Rendering/InputBindings.cs` (`ActionMap`) resolves the live map from the
-  selected layout, including native mouse/wheel bindings
-  (`MouseButtonBinding`). Persistence is `Rendering/KeyBindingStore.cs`
-  (`keymap.json`: `{"layout":...,"bindings":{...}}`; a legacy flat file loads as
-  the Port layout). Training prompts that name a key are audited against the
-  native layout by `src/Allegiance.ClientCore/Training/TrainingPromptAudit.cs`.
+  P941/P949 **input layouts**: `Rendering/InputLayouts.cs` is the two selectable
+  default presets — `InputLayout.Port` (the port's keyboard flight scheme:
+  W/S/A/D + arrow steering, the fresh-profile default since P949) and
+  `InputLayout.Native` ("Classic Allegiance", native's `defaultinputmap.mdl`
+  keyboard table plus its mouse/wheel map, whose stock table binds no steering
+  key so it flies with the mouse/joystick). `Rendering/InputBindings.cs`
+  (`ActionMap`) resolves the live map from the selected layout, including native
+  mouse/wheel bindings (`MouseButtonBinding`). Persistence is
+  `Rendering/KeyBindingStore.cs` (`keymap.json`:
+  `{"layout":...,"bindings":{...}}`; a fresh profile writes nothing until the
+  player changes a binding, and a legacy flat file loads as the Port layout).
+  `Rendering/ControlHint.cs` is the one-time fresh-profile keys hint (60 s or any
+  key, persisted as `HudSettings.ControlHintSeen`). Training prompts that name a
+  key are audited against the Classic preset by
+  `src/Allegiance.ClientCore/Training/TrainingPromptAudit.cs`.
 - **Host LAN game (P901)** — explicit `SkirmishOptions.HostLan` exposes the embedded server
   on TCP+UDP with discovery; offline defaults remain loopback/ephemeral. Shared setup:
   `src/Allegiance.SinglePlayer/HostLanScreenModel.cs`,

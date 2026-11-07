@@ -102,15 +102,14 @@ public sealed class P757KeyBindOkCancelTests
 
         // A missing/unreadable file reverts to the DEFAULT map (native
         // LoadMap(DEFAULTINPUTMAP_FILE), trekinput.cpp:2437-2441) and does NOT
-        // write anything (the file stays absent). P941: the default map is the
-        // native layout, so FireWeapon is the left mouse button and ScreenShot is
-        // PrintScreen.
+        // write anything (the file stays absent). P949: the port's default map is
+        // the Port layout (the fresh-profile default), so FireWeapon is Space and
+        // ScreenShot is PrintScreen.
         string missing = Path.Combine(dir, "absent.json");
         map2.Map.SetBinding("FireWeapon", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
         map2.ReloadFrom(missing);
-        Assert.Equal(InputLayout.Native, map2.Map.Layout);
-        Assert.Equal(Keys.None, map2.Map.BindingOf("FireWeapon").Key);
-        Assert.Equal(MouseButtonBinding.Left, map2.Map.MouseButtonOf("FireWeapon")!.Value.Button);
+        Assert.Equal(InputLayout.Port, map2.Map.Layout);
+        Assert.Equal(new KeyBinding(Keys.Space, InputModifiers.None), map2.Map.BindingOf("FireWeapon"));
         Assert.Equal(new KeyBinding(Keys.PrintScreen, InputModifiers.None), map2.Map.BindingOf("ScreenShot"));
         Assert.False(File.Exists(missing));
     }

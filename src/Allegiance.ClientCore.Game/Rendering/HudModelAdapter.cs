@@ -28,7 +28,8 @@ public static class HudModelAdapter
         float targetPaneSlide = 1f, bool selectionBracket = false,
         HudSnapshotBuffers? buffers = null,
         bool showJoystickIndicator = true,
-        int trainingOverlayId = 0)
+        int trainingOverlayId = 0,
+        string? controlHint = null)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -55,6 +56,7 @@ public static class HudModelAdapter
             Contacts = contacts ?? Array.Empty<HudContact>(),
             InventorySlide = inventorySlide,
             TrainingOverlayId = trainingOverlayId,
+            ControlHint = controlHint,
             CentreHudVisible = centreHudVisible,
             TargetHudVisible = targetHudVisible,
             ChatHistoryVisible = chatHistoryVisible,

@@ -6545,3 +6545,16 @@ The six failures present in every nightly 2026-11-05..07 were rerun 3x alone on 
 | `P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources` (both maps) | **fail / fail / fail** (`Clash` null on both sides) | 10-29 (same window) | **Real regression** (no resource clash forms) |
 | `SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides` | **fail / fail / fail** (SC-1 minimums not met) | 10-30 (once on 10-27) | **Real regression** |
 | `P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` | **fail / fail / fail**, three different ways: no station destruction; `IndexOutOfRangeException` at `:119`; finale string now has `\nStation kills: …` (`Mission.StationKills.cs:36`, P924 `ad5c48f8`) vs the expected text at `:145` | 10-22 steady (once 10-19) | **Real:** stale string expectation plus a parse crash plus a missed station kill |
+
+## P949 gate — 2026-11-07
+
+`tools/run-tests.sh --tier fast` (13,392 tests, 628.8 s, load average 30.08 on 24 CPUs) — one failure plus nine
+Fast tests over the calibrated 10 s limit (all nine passed):
+
+| Test | Outcome | Verdict |
+| --- | --- | --- |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail in the fast sweep; **fail / fail / fail** alone (`Assert.Same` expected ship, actual null) | **Already-open real regression**, first seen 10-29 (`48cdb2de`) and re-triaged 2026-11-07 above; P949 changes no NPC/sim/bot code (input defaults + HUD hint only) |
+
+The nine SLOW FAST entries (P800 hull-proof 11.6 s, P814 gunner 13.7 s, P796 varied-loadout 11.8 s, SC2 nanite
+14.1 s, P777 warp-exit 11.8 s, NpcDodge 10.7 s, P942 research 13.2 s, P750 asteroid types 17.0 s, P808 enrollment
+10.9 s) are the calibrated-limit timing guard under that load; every one passed.

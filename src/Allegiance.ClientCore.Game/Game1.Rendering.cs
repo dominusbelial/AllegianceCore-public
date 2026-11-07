@@ -3420,6 +3420,8 @@ public sealed partial class Game1
             podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",
             roundRadar: _hudSettings.RoundRadar,
             showJoystickIndicator: _hudSettings.ShowJoystickIndicator,
+            // P949 — the one-time fresh-profile keys hint (null once dismissed).
+            controlHint: _controlHint?.VisibleText,
             buffers: _hudSnapshotBuffers);
         if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
         if (model.FlightVisible && model.Context.Contacts.Count > 0)

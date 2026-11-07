@@ -55,10 +55,15 @@ public sealed partial class Game1
     private KeyboardState ReadProofKeyboard()
     {
         var real = Keyboard.GetState();
-        if (!_proofEnabled || _proofKeys is not { Length: > 0 } pk)
+        // P949 — its own synthetic-key set (fresh-profile steering/thrust proof),
+        // independent of the training driver so either proof can run alone.
+        var extra = new List<Keys>();
+        if (_proofEnabled && _proofKeys is { Length: > 0 } pk) extra.AddRange(pk);
+        if (_p949ProofKeys is { Length: > 0 } k949) extra.AddRange(k949);
+        if (extra.Count == 0)
             return real;
         var set = new HashSet<Keys>(real.GetPressedKeys());
-        foreach (var k in pk) set.Add(k);
+        foreach (var k in extra) set.Add(k);
         var arr = new Keys[set.Count];
         set.CopyTo(arr);
         return new KeyboardState(arr);

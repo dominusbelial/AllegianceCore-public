@@ -65,10 +65,17 @@ public sealed class KeyBindingRenderer
             OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);
 
-            // Header: title + contextual instruction + P941 layout preset.
-            string title = PhaseHeader() + "   [" + _ctl.LayoutName.ToUpperInvariant() + "]";
+            // Header: title + contextual instruction, then the P941/P949 layout
+            // preset on its own line. P949 — the native preset's honest name
+            // ("Classic Allegiance (stock map: mouse/joystick steering)") is long
+            // enough that appending it to the phase title would overflow a
+            // 800x480 window, so it gets its own centred line here.
+            string title = PhaseHeader();
             var hs = _small.MeasureString(title);
-            Draw(title, new Vector2((w - hs.X) / 2f, panelY + 10f), HeaderColor, 1f);
+            Draw(title, new Vector2((w - hs.X) / 2f, panelY + 8f), HeaderColor, 1f);
+            string preset = "PRESET: " + _ctl.LayoutName.ToUpperInvariant();
+            var ps = _small.MeasureString(preset);
+            Draw(preset, new Vector2((w - ps.X) / 2f, panelY + 28f), HeaderColor, 1f);
 
             // -- scrollable command list ------------------------------------
             // Precompute display rows: a category header row per category change,

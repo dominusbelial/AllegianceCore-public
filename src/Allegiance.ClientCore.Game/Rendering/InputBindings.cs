@@ -144,11 +144,11 @@ public sealed record InputActionDef(
 /// <see cref="KeyboardState"/> to per-action press/held predicates that every
 /// Game1 input handler uses in place of raw <c>XnaKeys</c> literals.
 ///
-/// <para>P941 — the map also owns the selected <see cref="InputLayout"/>: a fresh
-/// profile starts on the native <c>defaultinputmap.mdl</c> layout
-/// (<see cref="InputLayouts.Defaults"/>), the pre-P941 port layout stays a
-/// selectable preset, and a legacy keymap file (which has no layout marker) keeps
-/// the port layout so a saved profile's bindings do not move under the player.</para>
+/// <para>P941/P949 — the map also owns the selected <see cref="InputLayout"/>: a
+/// fresh profile starts on the <see cref="InputLayout.Port"/> layout (keyboard
+/// steering, the default since P949), native's <c>defaultinputmap.mdl</c> stays a
+/// selectable preset, and a keymap file always records the preset it was saved
+/// with so a saved profile's bindings do not move under the player.</para>
 /// </summary>
 public sealed class ActionMap
 {
@@ -157,7 +157,7 @@ public sealed class ActionMap
     private readonly IReadOnlyDictionary<string, InputActionDef> _defs;
     private readonly Dictionary<string, KeyBinding> _current;
 
-    /// <summary>P941 — the selected default layout preset.</summary>
+    /// <summary>P941/P949 — the selected default layout preset.</summary>
     public InputLayout Layout { get; private set; }
 
     /// <summary>P941 — the layout's effective default per action (the target of
@@ -165,10 +165,10 @@ public sealed class ActionMap
     /// against). Regenerated when the preset changes.</summary>
     private Dictionary<string, KeyBinding> _defaults;
 
-    /// <param name="layout">P941 — the preset to start from. Fresh profiles pass
-    /// <see cref="InputLayout.Native"/> (the default); tests/services that pin the
-    /// pre-P941 port keys pass <see cref="InputLayout.Port"/> explicitly.</param>
-    public ActionMap(IReadOnlyCollection<InputActionDef> defs, InputLayout layout = InputLayout.Native)
+    /// <param name="layout">P941/P949 — the preset to start from. A fresh profile
+    /// passes <see cref="InputLayout.Port"/> (the default); tests or services that
+    /// want native's stock map pass <see cref="InputLayout.Native"/> explicitly.</param>
+    public ActionMap(IReadOnlyCollection<InputActionDef> defs, InputLayout layout = InputLayout.Port)
     {
         _defs = defs.ToDictionary(d => d.Name, d => d);
         Layout = layout;
@@ -297,8 +297,9 @@ public sealed class ActionMap
         _current[b] = ka;
     }
 
-    /// <summary>Restore every action to the CURRENT layout's default (native's
-    /// map for a fresh profile, the port preset for a legacy/port profile).</summary>
+    /// <summary>Restore every action to the CURRENT layout's default (the Port
+    /// preset for a fresh profile, native's stock map when the player picked
+    /// "Classic Allegiance").</summary>
     public void ResetToDefaults()
     {
         foreach (var name in _current.Keys.ToList())
@@ -368,9 +369,9 @@ public sealed class ActionMap
     /// Apply persisted bindings. Accepts both the P941 document
     /// (<c>{"layout":...,"bindings":{...}}</c>) and the pre-P941 flat override
     /// map (<c>{"Action":[key,mods]}</c>). A legacy flat file has no layout
-    /// marker; it holds only the player's own rebinds, so it migrates to the
-    /// NATIVE layout with those rebinds on top (the pre-P941 port defaults broke
-    /// the training prompts; a player who only pressed OK in F6 wrote "{}").
+    /// marker and was written by a pre-P941 port client whose untouched chords
+    /// were the Port layout, so it loads as <see cref="InputLayout.Port"/> (P949)
+    /// with the player's own rebinds on top — a saved profile is never changed.
     /// Unknown action names and out-of-range key codes are skipped defensively so
     /// a hand-edited or stale file can't crash the client.
     /// </summary>
@@ -393,10 +394,10 @@ public sealed class ActionMap
             }
             else
             {
-                // Legacy (< P941) flat override file: only the player's rebinds.
-                // Migrate to native defaults and keep those rebinds on top; the
-                // old port defaults stay one F6 preset switch away.
-                SetLayout(InputLayout.Native);
+                // Legacy (< P941) flat override file: only the player's rebinds,
+                // on the layout those untouched chords came from — Port. Native's
+                // stock map stays one F6 preset switch away.
+                SetLayout(InputLayout.Port);
             }
 
             var map = hasBindings

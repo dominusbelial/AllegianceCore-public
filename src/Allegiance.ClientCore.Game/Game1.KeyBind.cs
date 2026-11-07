@@ -26,17 +26,17 @@ public partial class Game1
 
     private void InitKeyBindingUi(SpriteBatch sb)
     {
-        // P941 — the scripted training-proof pilot (ALLEGIANCE_TRAIN_PROOF=1)
-        // drives the pre-P941 port key set (raw SPACE to fire, W / LeftShift to
-        // fly and boost), so a proof run pins the Port layout preset instead of
-        // the fresh-profile native default. The native layout is exercised by the
-        // P941 tests and by the ALLEGIANCE_P941_PROOF real-window pairs.
+        // P949 — the scripted training-proof pilot (ALLEGIANCE_TRAIN_PROOF=1)
+        // drives the keyboard Port key set (raw SPACE to fire, W / LeftShift to
+        // fly and boost). Since P949 that IS the fresh-profile default, so the
+        // pin below is normally a no-op; it stays as a guard for a profile that
+        // saved the "Classic Allegiance" preset earlier.
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_TRAIN_PROOF") == "1"
             && Rendering.KeyBindingStore.Instance.Map.Layout != InputLayout.Port)
         {
             Rendering.KeyBindingStore.Instance.Map.SetLayout(InputLayout.Port);
             // Persist it: the proof opens/closes the Controls popup, and Cancel
-            // (native Close -> reload) must not fall back to the native preset.
+            // (native Close -> reload) must not fall back to another preset.
             Rendering.KeyBindingStore.Instance.Save();
             Console.WriteLine("[keymap] training-proof run pins the Port layout preset");
         }
@@ -53,15 +53,15 @@ public partial class Game1
         _keyBindRenderer = new KeyBindingRenderer(sb, _whitePixel, _hudSmall, _keyBindController);
         _keyBindPrevKs = Keyboard.GetState();
 
-        // P941 — a fresh profile's native layout is the virtual-joystick mode
-        // native's training text assumes ("Left click to fire your main weapon",
-        // training/mission3.cpp:646): the mouse buttons follow
-        // mouseButtonCommandMap (WinTrek.cpp:9289-9298 enables the virtual
-        // joystick, Game1.MousePick.cs implements the same map). The pre-P941
-        // port layout keeps the pointer default (a click picks; mouse flight on V
-        // is opt-in), exactly as before.
+        // P941/P949 — the virtual-joystick default follows the LAYOUT: native's
+        // stock map flies with the mouse (native's startup toggles the virtual
+        // joystick on, LoadPreference("VirtualJoystick", TRUE) ->
+        // ToggleVirtualJoystick(), WinTrek.cpp:3311-3312; its training text says
+        // "left click to fire", training/mission3.cpp:646), while the Port layout
+        // — the fresh-profile default since P949 — keeps the pointer: left click
+        // picks, mouse flight is the opt-in ToggleMouse key.
         _keyBindLayoutSeen = _keyBindController.Map.Layout;
-        _mouseFlightEnabled = _keyBindLayoutSeen == InputLayout.Native;
+        _mouseFlightEnabled = InputLayouts.MouseFlightByDefault(_keyBindLayoutSeen);
         IsMouseVisible = CommandCameraActive || _minimapExpanded || !_mouseFlightEnabled;
         Console.WriteLine("[keymap] Controls popup ready (open: "
             + Rendering.KeyBindingStore.Instance.Map.BindingOf("OpenKeyBindings").Label + ")"
@@ -162,7 +162,7 @@ public partial class Game1
         if (layoutNow != _keyBindLayoutSeen)
         {
             _keyBindLayoutSeen = layoutNow;
-            _mouseFlightEnabled = layoutNow == InputLayout.Native;
+            _mouseFlightEnabled = InputLayouts.MouseFlightByDefault(layoutNow);
             IsMouseVisible = CommandCameraActive || _minimapExpanded || !_mouseFlightEnabled;
             if (_mouseFlightEnabled) _mouseFlight.Enable(); else _mouseFlight.Reset();
             Console.WriteLine($"[keymap] preset {_keyBindController.LayoutName} -> mouse flight {(_mouseFlightEnabled ? "ON" : "OFF")}");
@@ -270,7 +270,195 @@ public partial class Game1
         }
     }
 
-    // -- P941 real-window proof (ALLEGIANCE_P941_PROOF=1) --------------------
+    // -- P949 one-time fresh-profile keys hint (ALLEGIANCE_P949_PROOF=1) ------
+
+    private ControlHint? _controlHint;
+    private KeyboardState _controlHintPrevKs;
+
+    /// <summary>
+    /// P949 — the one-time hint for a fresh profile, first time in flight:
+    /// <c>Keys: W thrust | Up/Down/Left/Right steer | F6 controls (Classic
+    /// Allegiance keys available)</c>, built from the LIVE labels. It is shown
+    /// once per profile: dismissed by any key press or after 60 s (the pure
+    /// <see cref="ControlHint"/> rules), and never again once
+    /// <see cref="HudSettings.ControlHintSeen"/> is persisted or the player has a
+    /// keymap (F6 OK saves one -> <see cref="KeyBindingStore.HasKeymap"/>).
+    /// </summary>
+    private void UpdateControlHint(KeyboardState ks, double dtSeconds)
+    {
+        var store = KeyBindingStore.Instance;
+        if (_controlHint is null)
+        {
+            if (!ControlHint.ShouldShow(store.FreshProfile, _hudSettings.ControlHintSeen)) return;
+            if (_state != ClientState.Flying || _dockedActive) return;
+            // "First time in FLIGHT": the pre-launch mission briefing owns the
+            // screen until it is dismissed/expires, and its panel covers the
+            // hint band — start the 60 s only once the pilot can actually fly.
+            if (IsBriefingVisible(out _)) return;
+            string? text = ControlHint.TextFor(store.Map);
+            if (text is null) return;
+            _controlHint = new ControlHint(text);
+            _controlHintPrevKs = ks;
+            Console.WriteLine($"[keymap] fresh-profile keys hint shown ({InputLayouts.Name(store.Map.Layout)}): {text}");
+            return;
+        }
+
+        if (!_controlHint.Active) return;
+        bool anyKey = AnyNewKeyPressed(ks, _controlHintPrevKs);
+        _controlHintPrevKs = ks;
+        bool ended = _controlHint.Update(dtSeconds, anyKey);
+        // A keymap written while the hint was up (F6 OK) suppresses it too.
+        if (!ended && !store.FreshProfile) ended = _controlHint.Dismiss("saved");
+        if (!ended) return;
+
+        _hudSettings.ControlHintSeen = true;
+        SaveHudSettingsQuietly();
+        Console.WriteLine($"[keymap] fresh-profile keys hint dismissed ({_controlHint.DismissReason}) and marked seen");
+    }
+
+    /// <summary>True when any key went down since the previous frame ("any key"
+    /// dismisses the P949 hint; modifiers count, exactly as native treats any
+    /// input as "the player is flying").</summary>
+    private static bool AnyNewKeyPressed(KeyboardState now, KeyboardState previous)
+    {
+        foreach (var key in now.GetPressedKeys())
+            if (!previous.IsKeyDown(key)) return true;
+        return false;
+    }
+
+    // -- P949 real-window proof (ALLEGIANCE_P949_PROOF=1) ---------------------
+
+    private Keys[]? _p949ProofKeys;
+    private bool _p949ProofStarted;
+    private bool _p949ProofDone;
+    private double _p949ProofElapsed;
+    private double _p949ProofAirborneSeconds;
+    private double _p949ProofWaitSeconds;
+    private int _p949ProofStep;
+    private string _p949ProofControlsBefore = "";
+
+    /// <summary>
+    /// P949 — scripted real-window proof of the fresh-profile default: (1) the
+    /// keys hint appears over the fresh profile's Port layout in flight; (2) a
+    /// real held W + LEFT/UP key press steers and thrusts (the production input
+    /// path logs the resolved actions and the control vector it sends), which
+    /// also dismisses the hint ("until any key"); (3) F6 shows the preset labels
+    /// ("PORT LAYOUT", then "CLASSIC ALLEGIANCE (STOCK MAP: MOUSE/JOYSTICK
+    /// STEERING)"). Every step queues a named real-backbuffer PNG via
+    /// <c>--autoshot-dir</c>; the name carries the HUD style so the Classic and
+    /// Modern pairs can be captured.
+    /// </summary>
+    private void RunP949Proof(double dtSec)
+    {
+        if (_p949ProofDone) return;
+        _p949ProofWaitSeconds += dtSec;
+        _p949ProofAirborneSeconds = _dockedActive ? 0 : _p949ProofAirborneSeconds + dtSec;
+        if (!_p949ProofStarted)
+        {
+            if (_p949ProofAirborneSeconds < 1.0 && _p949ProofWaitSeconds < 45.0) return;
+            // A player closes native's pre-launch briefing with Enter (P271
+            // DismissBriefing is that path); the proof does the same so the hint
+            // band is free and the camera is actually in flight when it fires.
+            if (IsBriefingVisible(out var briefRemaining))
+            {
+                DismissBriefing();
+                Console.WriteLine($"[p949-proof] dismissed the mission briefing ({briefRemaining?.ToString() ?? "?"}s left)");
+                return;
+            }
+        }
+        _p949ProofElapsed += dtSec;
+        string style = _hudSettings.Style.ToString().ToLowerInvariant();
+        var map = KeyBindingStore.Instance.Map;
+
+        void Shot(string name)
+        {
+            _autoShotName = $"p949_{name}_{style}";
+            _autoShotScheduled = true;
+            Console.WriteLine($"[p949-proof] shot {_autoShotName}");
+        }
+
+        if (!_p949ProofStarted)
+        {
+            _p949ProofStarted = true;
+            _p949ProofElapsed = 0;
+            Shot("hint");
+            Console.WriteLine($"[p949-proof] in flight: layout={InputLayouts.Name(map.Layout)}, "
+                + $"hint='{_controlHint?.VisibleText ?? "(none)"}', "
+                + $"ThrustForward={map.LabelOf("ThrustForward")}, "
+                + $"steer={map.LabelOf("PitchUp")}/{map.LabelOf("PitchDown")}/"
+                + $"{map.LabelOf("YawLeft")}/{map.LabelOf("YawRight")}, "
+                + $"mouse flight {(_mouseFlightEnabled ? "ON" : "OFF")}");
+            _p949ProofStep = 1;
+            return;
+        }
+
+        switch (_p949ProofStep)
+        {
+            case 1:
+                if (_p949ProofElapsed > 2.0)
+                {
+                    // Hold the Port layout's thrust + steer keys through the real
+                    // input seam: W = ThrustForward, LEFT = YawLeft, UP = PitchUp.
+                    _p949ProofControlsBefore = DescribeSentControls();
+                    _p949ProofKeys = [XnaKeys.W, XnaKeys.Left, XnaKeys.Up];
+                    Console.WriteLine("[p949-proof] holding W + LEFT + UP (keyboard thrust/steer)");
+                    _p949ProofElapsed = 0;
+                    _p949ProofStep = 2;
+                }
+                break;
+            case 2:
+                if (_p949ProofElapsed > 1.5)
+                {
+                    var ks = ReadProofKeyboard();
+                    Console.WriteLine("[p949-proof] resolved actions: "
+                        + $"ThrustForward={map.IsDown(ks, "ThrustForward")}, "
+                        + $"YawLeft={map.IsDown(ks, "YawLeft")}, "
+                        + $"PitchUp={map.IsDown(ks, "PitchUp")}; "
+                        + $"controls before [{_p949ProofControlsBefore}] after [{DescribeSentControls()}]; "
+                        + $"hint now '{_controlHint?.VisibleText ?? "(dismissed)"}'");
+                    Shot("flight_keys");
+                    _p949ProofElapsed = 0;
+                    _p949ProofStep = 3;
+                }
+                break;
+            case 3:
+                if (_p949ProofElapsed > 1.5)
+                {
+                    _p949ProofKeys = null;   // release
+                    ToggleKeyBindings();     // F6 Controls on the fresh preset
+                    Shot("controls_" + (_keyBindController.Map.Layout == InputLayout.Native ? "classic" : "port"));
+                    Console.WriteLine($"[p949-proof] F6 Controls: preset '{_keyBindController.LayoutName}'");
+                    _p949ProofElapsed = 0;
+                    _p949ProofStep = 4;
+                }
+                break;
+            case 4:
+                if (_p949ProofElapsed > 2.0)
+                {
+                    _keyBindController.CycleLayout();   // P -> the Classic Allegiance preset
+                    Shot("controls_" + (_keyBindController.Map.Layout == InputLayout.Native ? "classic" : "port"));
+                    Console.WriteLine($"[p949-proof] F6 Controls: preset '{_keyBindController.LayoutName}'");
+                    _p949ProofElapsed = 0;
+                    _p949ProofStep = 5;
+                }
+                break;
+            case 5:
+                if (_p949ProofElapsed > 2.0)
+                {
+                    _keyBindController.Cancel();
+                    _keyBindVisible = false;
+                    _p949ProofDone = true;
+                    Console.WriteLine("[p949-proof] done (four real frames queued)");
+                }
+                break;
+        }
+    }
+
+    /// <summary>The control vector the pilot is currently SENDING (yaw/pitch/
+    /// throttle), formatted for the P949 proof log.</summary>
+    private string DescribeSentControls() =>
+        $"yaw={_lastSentControls.Yaw:0.00} pitch={_lastSentControls.Pitch:0.00} "
+        + $"throttle={_lastSentControls.Throttle:0.00}";
 
     private bool _p941ProofStarted;
     private bool _p941ProofDone;
@@ -280,13 +468,14 @@ public partial class Game1
     private int _p941ProofStep;
 
     /// <summary>
-    /// P941 — scripted real-window proof of the layout presets and the F1
-    /// overview. Sequence: (1) open Controls (F6) on the fresh profile's native
-    /// layout; (2) P cycles to the Port layout; (3) P cycles back, OK saves, close;
-    /// (4) open the help overview on its CONTROLS page (the live key table);
-    /// (5) the FLIGHT page (live prose). Each step queues a named real-backbuffer
-    /// PNG (<c>--autoshot-dir</c>) whose name carries the HUD style, so
-    /// live-proof.sh can capture the Classic and Modern pairs.
+    /// P941 (updated by P949) — scripted real-window proof of the layout presets
+    /// and the F1 overview. Sequence: (1) open Controls (F6) on the fresh
+    /// profile's default preset — the Port layout since P949; (2) P cycles to the
+    /// other preset ("Classic Allegiance", native's stock map); (3) P cycles back,
+    /// OK saves, close; (4) open the help overview on its CONTROLS page (the live
+    /// key table); (5) the FLIGHT page (live prose). Each step queues a named
+    /// real-backbuffer PNG (<c>--autoshot-dir</c>) whose name carries the layout
+    /// and HUD style, so live-proof.sh can capture the Classic and Modern pairs.
     /// </summary>
     private void RunP941Proof(double dtSec)
     {
@@ -310,12 +499,15 @@ public partial class Game1
             Console.WriteLine($"[p941-proof] shot {_autoShotName}");
         }
 
+        static string PresetSlug(InputLayout layout) =>
+            layout == InputLayout.Native ? "classic" : "port";
+
         if (!_p941ProofStarted)
         {
             _p941ProofStarted = true;
             _p941ProofElapsed = 0;
             ToggleKeyBindings();
-            Shot("controls_native");
+            Shot("controls_" + PresetSlug(_keyBindController.Map.Layout));
             Console.WriteLine($"[p941-proof] Controls open: {_keyBindController.LayoutName}, "
                 + $"FireWeapon={_keyBindController.Map.LabelOf("FireWeapon")}, "
                 + $"FireBooster={_keyBindController.Map.LabelOf("FireBooster")}");
@@ -329,7 +521,7 @@ public partial class Game1
                 if (_p941ProofElapsed > 2.0)
                 {
                     _keyBindController.CycleLayout();
-                    Shot("controls_port");
+                    Shot("controls_" + PresetSlug(_keyBindController.Map.Layout));
                     Console.WriteLine($"[p941-proof] preset now {_keyBindController.LayoutName}, "
                         + $"RollLeft={_keyBindController.Map.LabelOf("RollLeft")}");
                     _p941ProofElapsed = 0;
@@ -339,7 +531,7 @@ public partial class Game1
             case 2:
                 if (_p941ProofElapsed > 2.0)
                 {
-                    _keyBindController.CycleLayout();   // back to native
+                    _keyBindController.CycleLayout();   // back to the fresh preset
                     _keyBindController.Commit();        // OK: persist + close
                     _keyBindVisible = false;
                     _helpVisible = true;
