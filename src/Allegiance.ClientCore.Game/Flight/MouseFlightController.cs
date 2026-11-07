@@ -29,10 +29,10 @@ public readonly record struct MouseStickView(
 /// </summary>
 /// <remarks>
 /// <para><b>It is a relative-delta, integrating joystick, not an absolute
-/// cursor map.</b> Each frame the caller hands in the raw pixel offset of the
-/// OS cursor from the window centre (the original warps the cursor back to the
-/// centre every frame, so every subsequent reading is the delta since last
-/// frame). This class multiplies that delta by the sensitivity, then
+/// cursor map.</b> Each frame the caller hands in raw relative pixel motion,
+/// supplied by SDL relative mode or by the centre-offset/warp fallback. The
+/// original warps the cursor back to the centre every frame, making each
+/// subsequent offset a motion delta. This class multiplies the delta by the sensitivity, then
 /// <em>subtracts</em> it from the previously stored deflection — the deflection
 /// is <em>integrated</em>, not replaced, exactly as in the original:</para>
 /// <code>point.X = m_ppnumber[0] - dx;  point.Y = m_ppnumber[1] - dy;</code>
@@ -245,8 +245,8 @@ public sealed class MouseFlightController
     }
 
     /// <summary>
-    /// Apply one frame's raw cursor delta (in pixels, relative to the window
-    /// centre) and return the updated integrated deflection.
+    /// Apply one input sample's raw cursor delta (in pixels since the previous
+    /// sample) and return the updated integrated deflection.
     /// </summary>
     /// <remarks>
     /// Reproduces the original arithmetic exactly: native subtracts both

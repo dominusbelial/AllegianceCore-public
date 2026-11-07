@@ -1,0 +1,29 @@
+{
+  "desktop": "Wayland",
+  "sdlVideo": "x11 (Xwayland)",
+  "rdpTested": false,
+  "nativeWaylandTested": false,
+  "input": "compositor",
+  "physicalDeviceTested": false,
+  "focusLossSeen": false,
+  "results": [
+    {
+      "style": "Classic",
+      "input": "compositor",
+      "Yaw": -0.57296485,
+      "Pitch": 0.10427519,
+      "turnDegrees": 87.64767
+    },
+    {
+      "style": "Modern",
+      "input": "compositor",
+      "Yaw": -0.57296485,
+      "Pitch": 0.10427519,
+      "turnDegrees": 35.418518
+    }
+  ],
+  "chatReleased": true,
+  "menuReleased": true,
+  "freeLookRelative": true,
+  "toggleOffReleased": true
+}
