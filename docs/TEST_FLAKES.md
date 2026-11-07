@@ -6464,3 +6464,17 @@ experiments are retained separately and earn no qualification credit.
 | `ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts` | `Assert.Contains` filter not matched (`ChaffTests.cs:651`); first failure in the last eight mini runs | **pass / pass / pass** on the workstation; ledgered as a one-off |
 | `P939SpecialAsteroidTests.Single_path_maps_keep_the_base_map_exactly` | Failed on every mini run since P939 (2/2): the generated rocks' positions differ by ~0.3 mm between the Docker runner and the workstation (single-float generation maths), which changed the pinned hash | **Fixed, not a flake:** the pinned hash now omits positions and keeps id/cluster/class/radius/ore/model; same hash on both machines; an injected extra RNG draw still fails it |
 | `P940BasicFlightInputTests.Native_training_ogg_decodes_to_non_silent_pcm_with_the_original_duration` | `NoAudioHardwareException` instead of `ArgumentException` on the headless runner | **Fixed, not a flake:** the WAVE-only oracle is skipped only when MonoGame reports no audio hardware |
+
+## Mini runner nightly d8a1b89f — 2026-11-07
+
+Four failures were new against the 2026-11-06 nightly. Each was rerun 3x alone on the workstation at `14b74a24`.
+
+| Test | Nightly failure | 3x alone |
+| --- | --- | --- |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | Failed after 41 s in the parallel live sweep | **pass / pass / pass** (~0.6 s each); load-only |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | Failed in the parallel live sweep | **pass / pass / pass**; load-only |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | Failed in the fast sweep | **pass / pass / pass**; load-only |
+| `P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike` | Failed after 77 s in the parallel live sweep | **pass / pass / pass** (~57 s each); load-only |
+
+The six failures present in all three nightlies (2026-11-05..07) are older and were not re-triaged here: P700/P924 never-parks,
+P745 finale siege, P798 scout opening, SC4 research showcase, NpcWingmanDefend disengage, P928 crowded-sector golden.
