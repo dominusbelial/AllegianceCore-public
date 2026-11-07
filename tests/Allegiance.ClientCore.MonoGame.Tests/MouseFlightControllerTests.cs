@@ -17,7 +17,15 @@ public class MouseFlightControllerTests
     // it to hit lengths comfortably past 1.
     private const float S = 0.01f;
 
-    private static MouseFlightController Controller(float sens = S) => new(sens);
+    // P948 made native's 0.6 the default MouseSensitivity knob; these tests pin the
+    // fixed image factor's arithmetic, so they hold the knob at the neutral 1.0
+    // (the persisted-default parity is covered by P948MouseOptionsTests).
+    private static MouseFlightController Controller(float sens = S)
+    {
+        var c = new MouseFlightController(sens);
+        c.MouseSensitivity = 1f;
+        return c;
+    }
 
     private static void AssertClose((float Yaw, float Pitch) expected, MouseDeflection actual, int places = 4)
     {

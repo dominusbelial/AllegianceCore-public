@@ -56,6 +56,13 @@ public readonly record struct HudTargetPane(
     string? TimeToIntercept = null);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 
+/// <summary>P948 — the transient mouse-option readout ("MOUSE SENSITIVITY 60 %")
+/// the HUD shows for a moment after the sensitivity keys or the options panel
+/// change the value. <see cref="Opacity"/> fades 1 → 0 across the notice's tail
+/// so it does not linger. Style-independent: the shared <see cref="HudRenderer"/>
+/// draws it for Classic and (through inheritance) Modern.</summary>
+public readonly record struct MouseOptionNotice(string Text, float Opacity);
+
 /// <summary>HUD-6 resolved own-ship centre-HUD status (the
 /// <c>DefaultCenterHudOn</c> group, Artwork/dialog.mdl:2604-2623). Unknown
 /// telemetry stays null; renderers present only the available fields.</summary>
@@ -291,6 +298,10 @@ public sealed class HudModel
     public bool IndicatorsVisible => InstrumentsVisible && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalMissile;
     public bool ReticleVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit;
     public bool MouseStickVisible => IndicatorsVisible && Telemetry?.MouseStick is not null;
+    /// <summary>P948 — the transient mouse-option readout draws on any flight
+    /// frame (not only while mouse flight is enabled), so a pilot who changes the
+    /// sensitivity while flying with the keyboard still sees the value.</summary>
+    public bool MouseNoticeVisible => FlightVisible && Telemetry?.MouseNotice is not null;
     // Native RenderDirectionIndicator draws the velocity marker only in the
     // cockpit and only when the rounded source speed is non-zero
     // (indicator.cpp:130-148).

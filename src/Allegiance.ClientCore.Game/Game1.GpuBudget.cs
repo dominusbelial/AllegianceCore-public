@@ -43,8 +43,13 @@ public sealed partial class Game1
     /// <summary>P828 — the number of rows in the Ctrl+F6 settings panel (13 → 16
     /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
     /// declutter rows, 19 → 20 with the P836 HUD level row, 20 → 21 with native's
-    /// Debris cycle, 21 → 22 with P897 transport). Up/Down wrap on it.</summary>
-    private const int GraphicsRowCount = 22;
+    /// Debris cycle, 21 → 22 with P897 transport, 22 → 24 with P948's persisted
+    /// mouse options). Up/Down wrap on it.</summary>
+    private const int GraphicsRowCount = 24;
+    /// <summary>P948 — the panel rows for the persisted mouse options (native
+    /// FlipY and MouseSensitivity); the P948 real-window proof selects them.</summary>
+    private const int GraphicsRowInvertMouseY = 22;
+    private const int GraphicsRowMouseSensitivity = 23;
     private Action<long, bool, double>? _receiveGpu;
     private long _budgetStart;
     private double _budgetDuration;
@@ -173,6 +178,17 @@ public sealed partial class Game1
                 case 21:
                     _hudSettings.Transport = (Discovery.ClientTransportSetting)(((int)_hudSettings.Transport + direction + 3) % 3);
                     break;
+                // P948 — the persisted mouse options (player.json), the same live
+                // controls native's Game Options expose: FlipY ('Y',
+                // WinTrek.cpp:4536/5297-5305) and Mouse Options' Raise/Lower
+                // Sensitivity (:4612-4613/5512-5531). Left/Right toggles or steps
+                // native's 0.01; each change saves immediately.
+                case GraphicsRowInvertMouseY:
+                    SetInvertMouseY(!_mouseFlight.InvertPitch);
+                    break;
+                case GraphicsRowMouseSensitivity:
+                    StepMouseSensitivity(direction);
+                    break;
                 // Native Graphics Options "Debris Low/Medium/High/Off" (idmToggleDebris 'D',
                 // WinTrek.cpp:4511,4633-4653): one cycle step per press, saved, applied live.
                 case 20:
@@ -246,10 +262,14 @@ public sealed partial class Game1
                 // too when Auto is active.
                 $"HUD level: {_hudSettings.Level}{( _hudSettings.Level == Rendering.HudLevel.Auto ? $" → {_hudSettings.ActiveLevel}" : "")}",
                 Rendering.DebrisGeo.MenuLabel(_debrisGeo.Density),
-                $"Multiplayer transport: {_hudSettings.Transport} (next connection); active: {_session.ActiveTransportProtocol.ToUpperInvariant()}" };
+                $"Multiplayer transport: {_hudSettings.Transport} (next connection); active: {_session.ActiveTransportProtocol.ToUpperInvariant()}",
+                // P948 — persisted mouse options (player.json): the invert-Y toggle
+                // and the sensitivity row native's Game Options carry.
+                $"Invert mouse Y: {(_mouseFlight.InvertPitch ? "On" : "Off")}",
+                $"Mouse sensitivity: {Flight.MouseOptions.Percent(_mouseFlight.MouseSensitivity)}" };
             int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 64);
             _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
-            _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
+            _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD / Mouse (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             int visibleRows = Math.Max(1, (panelHeight - 105) / 46);
             int firstRow = Math.Clamp(_graphicsRow - visibleRows + 1, 0, Math.Max(0, rows.Length - visibleRows));
             _graphicsFirstRow = firstRow;
@@ -275,6 +295,10 @@ public sealed partial class Game1
     protected override void EndDraw()
     {
         if (_benchResult is null) DrawGpuBudgetOverlay();
+        // P948 — the settings panel is drawn in EndDraw (after Draw's ordinary
+        // autoshot flush), so the mouse-option proof latches its shot and flushes
+        // it here, once the panel is really on the backbuffer.
+        FlushP948ProofShot();
         if (_benchExitAfterDraw && _benchResult is not null && Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_SCREENSHOT") is { Length: > 0 } screenshot)
         {
             var parameters = GraphicsDevice.PresentationParameters;

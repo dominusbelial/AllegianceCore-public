@@ -73,14 +73,16 @@ public sealed class P806OptionsMenuTests
         menu.Activate(State);                            // open Game Options
         var rows = menu.Rows(State);
         // P871 restored native's Force Feedback switch (idmToggleEnableFeedback
-        // 'E', WinTrek.cpp:4599), so the Game submenu is the native seven rows.
-        Assert.Equal(7, rows.Count);
+        // 'E', WinTrek.cpp:4599); P948 added native's Mouse Options submenu
+        // (idmMouseOptions 'Q', :4541), so the Game submenu is the native eight rows.
+        Assert.Equal(8, rows.Count);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenChatMenu, rows[0].Command);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleLinearControls);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.CycleDeadzone);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleFlipY);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleVirtualJoystick);
         Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.ToggleForceFeedback);
+        Assert.Contains(rows, r => r.Command == OptionsMenuModel.OptionsCommand.OpenMouseMenu);
         Assert.Equal(OptionsMenuModel.OptionsCommand.MapKeysAndControls, rows[^1].Command);
 
         // Labels are state-bearing, like the native Get...MenuString helpers.
@@ -89,6 +91,45 @@ public sealed class P806OptionsMenuTests
         Assert.Contains(rows, r => r.Label == "Virtual Joystick: on");
         Assert.Contains(rows, r => r.Label == "Force Feedback: on");
         Assert.Contains(rows, r => r.Label.StartsWith("Mouse Dead Zone:"));
+    }
+
+    [Fact]
+    public void Mouse_submenu_steps_sensitivity_with_native_labels_and_end_stops()
+    {
+        // P948 — native's Game Options → "Mouse Options" submenu (idmMouseOptions
+        // 'Q', WinTrek.cpp:4541) with the Raise/Lower items (:4612-4613,
+        // AdjustMouseSens :5512-5531) and GetMouseSensMenuString's wording
+        // (:5599-5615).
+        var menu = new OptionsMenuModel();
+        menu.Row0 = 2;
+        menu.Activate(State);                            // Game Options
+        var gameRows = menu.Rows(State);
+        int mouseRow = gameRows.ToList().FindIndex(r => r.Command == OptionsMenuModel.OptionsCommand.OpenMouseMenu);
+        Assert.True(mouseRow >= 0);
+        Assert.Equal('Q', gameRows[mouseRow].Hotkey);
+        menu.Row0 = mouseRow;
+        Assert.Null(menu.Activate(State));               // submenu opens
+        Assert.Equal(OptionsMenuModel.Page.Mouse, menu.Current);
+
+        var rows = menu.Rows(State with { MouseSensitivity = 0.6f });
+        Assert.Equal(2, rows.Count);
+        Assert.Equal("Raise Mouse Sensitivity to 61 %", rows[0].Label);
+        Assert.Equal("Lower Mouse Sensitivity to 59 %", rows[1].Label);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.MouseSensitivityUp, rows[0].Command);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.MouseSensitivityDown, rows[1].Command);
+        Assert.Equal('U', rows[0].Hotkey);
+        Assert.Equal('D', rows[1].Hotkey);
+
+        // End stops use native's "(highest)"/"(lowest)" wording.
+        Assert.Equal("Raise Mouse Sensitivity (highest)",
+            menu.Rows(State with { MouseSensitivity = 2.0f })[0].Label);
+        Assert.Equal("Lower Mouse Sensitivity (lowest)",
+            menu.Rows(State with { MouseSensitivity = 0.1f })[1].Label);
+
+        // Activating a row returns its command and keeps the page open.
+        menu.Row0 = 0;
+        Assert.Equal(OptionsMenuModel.OptionsCommand.MouseSensitivityUp, menu.Activate(State));
+        Assert.Equal(OptionsMenuModel.Page.Mouse, menu.Current);
     }
 
     [Fact]
@@ -148,7 +189,10 @@ public sealed class P806OptionsMenuTests
             menu.CommandForHotkey('Z', State));
         Assert.Equal(OptionsMenuModel.OptionsCommand.MapKeysAndControls,
             menu.CommandForHotkey('C', State));
-        Assert.Null(menu.CommandForHotkey('Q', State));
+        // P948 — 'Q' is native's Mouse Options submenu (idmMouseOptions,
+        // WinTrek.cpp:4541); before P948 the port had no mouse page to open.
+        Assert.Equal(OptionsMenuModel.OptionsCommand.OpenMouseMenu,
+            menu.CommandForHotkey('Q', State));
     }
 
     [Fact]

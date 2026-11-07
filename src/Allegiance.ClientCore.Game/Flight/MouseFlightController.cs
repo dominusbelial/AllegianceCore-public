@@ -94,8 +94,24 @@ public sealed class MouseFlightController
     /// <summary>See <see cref="MinMouseSensitivity"/>.</summary>
     public const float MaxMouseSensitivity = 2.0f;
     /// <summary>The step <c>AdjustMouseSens</c> applies each toggle
-    /// (<c>c_fMouseSensDelta</c>).</summary>
+    /// (<c>c_fMouseSensDelta = 0.01f</c>, <c>WinTrek.cpp:88</c>).</summary>
     public const float MouseSensitivityStep = 0.01f;
+
+    /// <summary>P948 — native's DEFAULT mouse sensitivity, the value
+    /// <c>LoadPreference("MouseSensitivity", "0.6")</c> supplies on a fresh
+    /// install (<c>WinTrek.cpp:2809</c>) and hands to the DirectInput mouse with
+    /// <c>SetSensitivity</c> (<c>:2811</c>). This is the port's persisted default
+    /// too, so the effective per-pixel scale matches native's:
+    /// <code>port:   DefaultSensitivity (1/512) x DefaultMouseSensitivity (0.6) = 0.001171875
+    ///native: engine CalculateDelta(delta) = delta * 0.6 (dinput.cpp:386-394, no
+    ///        acceleration: MouseAcceleration default 0, WinTrek.cpp:3051)
+    ///        then JoystickImageImpl::MouseMove multiplies by 1/512
+    ///        (CreateJoystickImage(1.0f / 512.0f), WinTrek.cpp:2982; efimage.cpp:186-190)
+    ///        = delta * 0.6 / 512 = 0.001171875</code>
+    /// A pre-P948 profile without the field also loads this value (never the old
+    /// port-neutral 1.0), because 1.0 was ~1.67x more sensitive than native and
+    /// made the mouse feel hyper-sensitive (Domingo, 2026-11-07).</summary>
+    public const float DefaultMouseSensitivity = 0.6f;
 
     /// <summary>Native's autopilot manual-input disengage threshold —
     /// <c>c_fAutopilotDisengage = g_fJoystickDeadZone * 2.0f</c>
@@ -115,11 +131,12 @@ public sealed class MouseFlightController
     // passes through native's deadzone+rescale+quadratic curve (MapResponse)
     // before becoming ControlData yaw/pitch. Defaults are native's (deadzone 0.1
     // = Small, quadratic). _mouseSensitivity is native's adjustable MouseSensitivity
-    // preference (WinTrek.cpp:2809) folded in as a pixel-delta multiplier; defaults
-    // to 1.0 so the port's existing 1/512 feel is unchanged unless the pilot tunes it.
+    // preference (WinTrek.cpp:2809) folded in as a pixel-delta multiplier.
+    // P948 — it now defaults to native's 0.6 (not the old port-neutral 1.0) and is
+    // persisted in player.json, so the effective scale equals native's at default.
     private float _deadzone = DeadZone;
     private bool _linearControls;                 // false = quadratic (native default)
-    private float _mouseSensitivity = 1f;
+    private float _mouseSensitivity = DefaultMouseSensitivity;
 
     /// <param name="sensitivity">Raw pixel delta → axis multiplier, defaulting to
     /// the original's <see cref="DefaultSensitivity"/>. Must be &gt; 0.</param>
@@ -138,6 +155,13 @@ public sealed class MouseFlightController
     /// <c>m_sensitivity</c>).</summary>
     public float Sensitivity => _sensitivity;
 
+    /// <summary>P948 — the EFFECTIVE per-pixel axis scale applied by
+    /// <see cref="Update"/>: the fixed image factor times the adjustable,
+    /// persisted <see cref="MouseSensitivity"/>. At the native default this is
+    /// <c>(1/512) * 0.6 = 0.001171875</c> px→axis, exactly native's
+    /// <c>engine delta x 0.6 (dinput.cpp:386-394) x 1/512 (efimage.cpp:186-190)</c>.</summary>
+    public float PixelScale => _sensitivity * _mouseSensitivity;
+
     /// <summary>
     /// When true, each incoming <em>pitch delta</em> is negated before being
     /// integrated — the ubiquitous "invert mouse Y" preference. Default
@@ -151,9 +175,13 @@ public sealed class MouseFlightController
     /// the other direction — how every shipped invert-Y option behaves. The
     /// unit-circle clamp, the <c>_justEnabled</c> first-delta skip, and
     /// <see cref="DeflectionMovedPast"/>'s abs-based comparison all compose
-    /// unchanged with a sign flip (magnitude is preserved). Session-scoped:
-    /// there is no settings-persistence system in this client, so this resets
-    /// to <c>false</c> on every restart.
+    /// unchanged with a sign flip (magnitude is preserved).
+    /// <para>P948 — PERSISTED: native's Game Options → "Y Axis Not Flipped"
+    /// (<c>idmToggleFlipY</c> 'Y', <c>WinTrek.cpp:4536</c>; <c>ToggleFlipY</c>
+    /// <c>:5297-5305</c> saves <c>FlipY</c>; loaded at <c>:3048</c> with default
+    /// 0 and applied to the pitch axis at <c>:10849-10851</c>). The port stores
+    /// it in <c>player.json</c> and applies it at startup; a fresh profile starts
+    /// NOT inverted, like native's default 0.</para>
     /// </summary>
     public bool InvertPitch { get => _invertPitch; set => _invertPitch = value; }
 
@@ -184,8 +212,9 @@ public sealed class MouseFlightController
     /// <see cref="Update"/> as an extra multiplier on the pixel delta on top of
     /// the fixed <see cref="Sensitivity"/> image factor. Clamped to
     /// [<see cref="MinMouseSensitivity"/>, <see cref="MaxMouseSensitivity"/>].
-    /// Defaults to 1.0 so the port's existing 1/512 flight feel is unchanged
-    /// until the pilot tunes it.
+    /// P948 — defaults to native's <see cref="DefaultMouseSensitivity"/> (0.6) and
+    /// is persisted in <c>player.json</c>; see that constant for the parity
+    /// arithmetic.
     /// </summary>
     public float MouseSensitivity
     {

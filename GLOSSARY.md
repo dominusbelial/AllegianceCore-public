@@ -1003,6 +1003,19 @@ list in **reverse**.
   virtual-stick response settings stay in `src/Allegiance.ClientCore.Game/Flight/MouseFlightController.cs`.
   Native intent: `effect/efimage.cpp:182-209`, `engine/camera.cpp:408-425`;
   platform adaptation and proof: `docs/reports/RELATIVE_MOUSE_P950.md`.
+- **Mouse-flight options (P948)** — native's persisted `FlipY` (invert mouse Y)
+  and `MouseSensitivity` (default 0.6, 0.01 steps within [0.1, 2.0]) live in the
+  player's `player.json` beside the other client options
+  (`src/Allegiance.ClientCore.Game/IntroPreferences.cs`, `Normalize`) and drive
+  `src/Allegiance.ClientCore.Game/Flight/MouseFlightController.cs`. The pure
+  apply/step/label/key-repeat/notice rules are in
+  `src/Allegiance.ClientCore.Game/Flight/MouseOptions.cs`; the wiring (startup
+  load, save-on-change, the Ctrl+F6 settings rows and the in-flight
+  `InvertMouse`/`MouseSensitivityUp/Down` actions) is
+  `Game1.MouseOptions.cs`, and the intro Options → Game Options → Mouse Options
+  page is `OptionsMenuModel.cs`. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P948MouseOptionsTests.cs`.
+  Report: `docs/reports/MOUSE_OPTIONS_P948.md`.
 - **Host LAN game (P901)** — explicit `SkirmishOptions.HostLan` exposes the embedded server
   on TCP+UDP with discovery; offline defaults remain loopback/ephemeral. Shared setup:
   `src/Allegiance.SinglePlayer/HostLanScreenModel.cs`,

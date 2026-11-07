@@ -75,6 +75,22 @@ public sealed class IntroPreferences
     /// 3D mix can be A/B'd by ear against the pre-P893 curve mix.</summary>
     public bool Enable3DSound { get; set; } = true;
 
+    /// <summary>P948 — native's Game Options → "Y Axis Not Flipped"
+    /// (<c>m_bFlipY</c>, loaded from <c>LoadPreference("FlipY", 0)</c> at
+    /// <c>WinTrek.cpp:3048</c>, toggled+SAVED by <c>ToggleFlipY</c> at
+    /// <c>:5297-5305</c>, applied to the pitch axis at <c>:10849-10851</c>).
+    /// Default <c>false</c> = native's default 0 (not inverted). Inverts the
+    /// mouse-flight pitch axis (<c>MouseFlightController.InvertPitch</c>).</summary>
+    public bool InvertMouseY { get; set; }
+
+    /// <summary>P948 — native's <c>MouseSensitivity</c> preference
+    /// (<c>LoadPreference("MouseSensitivity", "0.6")</c>, <c>WinTrek.cpp:2809</c>;
+    /// ±0.01 within [0.1, 2.0] and SAVED by <c>AdjustMouseSens</c>,
+    /// <c>:5512-5531</c>). Missing on a legacy profile → native's 0.6, which is
+    /// also what restores native's effective mouse scale (see
+    /// <c>MouseFlightController.DefaultMouseSensitivity</c>).</summary>
+    public float MouseSensitivity { get; set; } = Flight.MouseFlightController.DefaultMouseSensitivity;
+
     /// <summary>Native midQuality default (ds3dengine.cpp:333), persisted by the
     /// shared Sound Options menu. OpenAL presets control voice count.</summary>
     public Audio.AudioQuality AudioQuality { get; set; } = Audio.AudioQuality.Medium;
@@ -90,7 +106,11 @@ public sealed class IntroPreferences
 
     public static string DirectoryPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AllegianceCore");
-    public static string FilePath => Path.Combine(DirectoryPath, "player.json");
+    /// <summary>P948 — <c>player.json</c>, overridable with
+    /// <c>ALLEGIANCE_PLAYER_SETTINGS</c> for an isolated run/test (the same
+    /// convention as <c>ALLEGIANCE_HUD_SETTINGS</c>/<c>ALLEGIANCE_GRAPHICS_SETTINGS</c>).</summary>
+    public static string FilePath => Environment.GetEnvironmentVariable("ALLEGIANCE_PLAYER_SETTINGS")
+        ?? Path.Combine(DirectoryPath, "player.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -106,7 +126,9 @@ public sealed class IntroPreferences
             if (!File.Exists(path)) return new IntroPreferences();
             var json = File.ReadAllText(path);
             if (string.IsNullOrWhiteSpace(json)) return new IntroPreferences();
-            return JsonSerializer.Deserialize<IntroPreferences>(json, JsonOptions) ?? new IntroPreferences();
+            var prefs = JsonSerializer.Deserialize<IntroPreferences>(json, JsonOptions) ?? new IntroPreferences();
+            prefs.Normalize();
+            return prefs;
         }
         catch (Exception)
         {
@@ -115,12 +137,25 @@ public sealed class IntroPreferences
         }
     }
 
+    /// <summary>P948 — keep the persisted mouse sensitivity inside native's
+    /// [0.1, 2.0] range and replace a non-finite value with the default, so a
+    /// hand-edited or corrupt <c>player.json</c> can never wedge the flight axes.</summary>
+    public void Normalize()
+    {
+        float fallback = Flight.MouseFlightController.DefaultMouseSensitivity;
+        MouseSensitivity = float.IsFinite(MouseSensitivity)
+            ? Math.Clamp(MouseSensitivity, Flight.MouseFlightController.MinMouseSensitivity,
+                Flight.MouseFlightController.MaxMouseSensitivity)
+            : fallback;
+    }
+
     public void Save(string? path = null)
     {
         path ??= FilePath;
         try
         {
-            Directory.CreateDirectory(DirectoryPath);
+            Normalize();
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
             File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions));
         }
         catch (Exception)
