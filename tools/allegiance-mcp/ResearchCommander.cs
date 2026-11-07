@@ -67,9 +67,25 @@ internal sealed partial class ResearchCommander
         TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false, double researchTimeScale = 1)
     {
         ResearchPlanCatalog.Validate(tree, plan.Core, plan);
-        Side = side; Epoch = epoch; _tree = tree; _plan = plan; _reservations = reservations; _loop = loop; _researchTimeScale = researchTimeScale;
+        Side = side; Epoch = epoch; _tree = tree; _plan = ResearchSchedule(tree, plan); _reservations = reservations; _loop = loop; _researchTimeScale = researchTimeScale;
         // Freeze costs with CIV base attributes, never the post-research GA snapshot (bucketigc.cpp:66-74).
         _buckets = BucketCatalog.Describe(tree.Core, initialTechs, GlobalAttributeSet.FromArray(tree.Civ.GasBaseAttributes));
+    }
+
+    private static ResearchPlan ResearchSchedule(ResearchTree tree, ResearchPlan plan)
+    {
+        // Authored plans keep their exact order. Recognize the canonical
+        // generated fallback by name and exact steps, so a custom authored
+        // plan called "generated" cannot silently acquire different semantics.
+        if (plan.Name != "generated") return plan;
+        var canonical = tree.Generate(plan.Core);
+        if (plan.Steps.Count != canonical.Steps.Count || !plan.Steps.Zip(canonical.Steps).All(pair =>
+                pair.First.Action == pair.Second.Action && pair.First.Id == pair.Second.Id
+                && pair.First.Name == pair.Second.Name && pair.First.AsteroidClass == pair.Second.AsteroidClass
+                && pair.First.WaitSeconds == pair.Second.WaitSeconds
+                && pair.First.RequiredTechs.SequenceEqual(pair.Second.RequiredTechs)
+                && pair.First.ExpectedUnlocks.SequenceEqual(pair.Second.ExpectedUnlocks))) return plan;
+        return tree.Generate(plan.Core, prioritizeResearch: true);
     }
 
     internal void ReleaseReservations()

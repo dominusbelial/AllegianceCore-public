@@ -1263,6 +1263,15 @@ list in **reverse**.
   commit a wave whose loadout cannot damage the target. Reports:
   `docs/reports/P801_BOMBER_MASSING.md`, `docs/reports/P896_REPORT.md`.
   Local measurement harness: `tools/p896-strike-proof/`.
+- **Generated research scheduling and receipts (P942)** — canonical generated
+  plans execute research before optional production through
+  `tools/allegiance-mcp/ResearchCommander.cs` and the opt-in priority in
+  `src/Allegiance.Core/Model/ResearchTree.cs`; authored plans retain their order.
+  Native purchase/prerequisite rules are unchanged. Log-only completion times
+  and per-match side totals live in `src/Allegiance.Server/Server.ResearchTelemetry.cs`.
+  Paired civilization combat and full research closure proofs:
+  `tests/Allegiance.ClientCore.Tests/P942ResearchCombatLiveTests.cs`;
+  report: `docs/reports/P942_REPORT.md`.
 - **Prosperity commander (P832b)** — when MISSIONDEF enables team money,
   `tools/allegiance-mcp/ResearchCommander.Prosperity.cs` grows/replaces miners,
   banks half observed income and funds the economic-victory bucket above a

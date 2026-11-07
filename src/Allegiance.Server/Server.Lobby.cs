@@ -556,6 +556,7 @@ public sealed partial class Server
         lock (_matchups) lossMatch = _matchups.TryGetValue(mission, out var lossMatchup) ? lossMatchup.Number : 0;
         foreach (string line in mission.ShipLossSummary())
             Console.WriteLine($"[kills] match {lossMatch} {line}");
+        WriteResearchSummary(mission, lossMatch);
 
         // P914: publish before rotation; CHATMESSAGE and GAME_OVER's existing reason
         // string carry the same frozen preset summary. This never selects a winner.

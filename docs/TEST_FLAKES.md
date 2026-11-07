@@ -4,6 +4,68 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+
+## P942 validation — one Fast sweep and dispatch controls, 2026-11-07 UTC
+
+Exactly one Fast sweep: **13,287 passed / 10 failed / 3 optional Meshy-pack
+skips**, 13,300 executions in 531.4 s. All nine infrastructure checks passed.
+No new P942 test failed. Six executions exceeded the calibrated 10-second
+limit. The sweep remains **FAIL**; no second Fast sweep ran, and no assertion,
+timeout or tier was relaxed.
+
+All failing methods and timing offenders ran three times in filtered processes
+after the live qualification cohort finished. The new P942 unit methods and
+P702 tree cohort also passed their final three isolated runs with no overlapping
+test process from this lane. The profile control alone redirects
+`XDG_CONFIG_HOME` into writable task scratch.
+
+| Sweep exception | Three isolated outcomes | Dispatch-library control / qualification |
+|---|---|---|
+| Five `PlayerBundlePathsTests` cases (Artwork executable fallback; Artwork/NativeSource missing defaults; local configuration precedence; native install-subdirectory guessing) | Each **fail/fail/fail** | The unchanged nine-case class on dispatch Core/Server libraries gives **5 failed / 4 passed ×3**. Existing mandatory in-worktree TMPDIR discovers ancestor `local.env`; no path-resolution source changed. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.180/1.154/1.149 s | **fail/fail/fail** on dispatch libraries, same expected-ship/actual-null assertion. Existing persistent baseline failure; no NPC movement/targeting code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.336/38.275/38.289 s | **fail/fail/fail** on the dispatch client test/runtime snapshot, same final lock 1.000 without required partial tip. Remains open and is also a Fast timing failure; not classified as cleared or solely load-induced. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **pass/pass/pass**, 0.071/0.070/0.059 s with writable scratch profile | Existing sandbox obstruction: sweep cannot restore the read-only real user profile. No product/profile edit or write to the real profile was made. |
+| `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | **pass/pass/pass**, 0.006/0.006/0.008 s | Sweep observed 2,360 allocated bytes over 10,000 frames. Existing allocation-under-parallel-load family; no HUD code changed. |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | All four parameter cases **pass/pass/pass** | Disabled/off sweep observed 14.90 against [14.94,15.06], the existing P813b/P887 clock-observation boundary signature. No clock or countdown code changed. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` (10.574 s in sweep) | **pass/pass/pass**, 3.762/4.262/4.231 s | Timing-only sweep exception; below ten seconds in each isolation. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (Bios 11.509 s) | All three civ cases **pass/pass/pass**; per-run maximum 5.175/5.283/5.523 s | Timing-only sweep exception; no loadout selector/ranking change. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (Iron Coalition 12.318 s) | Both civ cases **pass/pass/pass**; maximum 4.033/4.001/4.042 s | Timing-only sweep exception; support selection unchanged. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (13.115 s) | **pass/pass/pass**, 3.159/3.149/3.298 s | Timing-only sweep exception; turret policy unchanged. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.069 s) | **pass/pass/pass**, 9.134/9.091/9.141 s | Timing-only sweep exception; no warp/collision code changed. |
+
+### P942 original P700 parking/arrival control
+
+Required five-attempt cohorts: dispatch **5/5**, patched **4/5**. Patched
+attempt 4 reached 18/30 at 480.1 seconds against the unchanged 24-arrival
+requirement; its longest idle with target was 1.813 seconds. Every required
+attempt held the original five-second parking bound. No movement, scouting,
+arrival threshold or timer was edited.
+
+Three supplementary filtered runs per build, after all other lane tests,
+gave patched **3/3** and dispatch **2/3**. The third dispatch sample reproduced
+the arrival failure: 20/30 at 480.1 seconds, longest idle 1.311 seconds,
+4,428 shots / 1,483 hits / 14 kills. Patched observation windows were
+189.1/425.8/391.3 seconds (24 arrivals each); dispatch 244.6/276.5/480.1.
+This supports an existing arrival/trajectory-sensitive fixture flake. The
+exact route cause remains unestablished; the required patched gate remains
+**FAIL**, and the supplementary cohort does not replace it. Across all
+sixteen observations the parking bound held; each build passed 7/8 overall.
+
+The original method retains civs 25/3, unlocked tech and its existing test
+harness, with the required GC/broadcast/transport/native-update/GotoPlan
+performance baseline. Research-mode behavior is covered separately by P942's
+paired combat and full-tree proofs. Parking raw evidence and shared-host load
+receipts are `.scratch/p942/{before,after}-parking-*` and
+`.scratch/p942/{after,base}-isolation-parking-*`.
+
+Raw evidence: `.scratch/p942/fast/`, `isolate-*.{log,trx}`,
+`final-*.{log,trx}`, and `baseline-control-*.{log,trx}` under `.scratch/p942/`.
+The dispatch controls use the untouched failed methods with the dispatch
+product assemblies, not a modified implementation. Small receipts and the
+complete qualification/parking account are in
+[the P942 report](reports/P942_REPORT.md) and
+[verification.json](reports/P942_assets/verification.json).
+
 ## P941 validation — one Fast sweep, 2026-11-06 UTC
 
 One Fast sweep (Claude, after Hermes's session ended): 13,241 tests, **FAIL**. Task-caused and fixed:

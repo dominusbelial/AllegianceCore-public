@@ -89,7 +89,8 @@ public sealed class ResearchTree
             .OrderBy(i => i.Kind).ThenBy(i => i.Id).ToArray();
     }
 
-    public ResearchPlan Generate(string coreName, string name = "generated", bool expensiveFirst = false)
+    public ResearchPlan Generate(string coreName, string name = "generated", bool expensiveFirst = false,
+        bool prioritizeResearch = false)
     {
         var state = new ResearchState(this);
         var steps = new List<ResearchStep>();
@@ -97,7 +98,13 @@ public sealed class ResearchTree
         while (true)
         {
             var eligible = pending.Where(state.CanApply);
-            var node = (expensiveFirst ? eligible.OrderByDescending(n => n.Price) : eligible.OrderBy(n => n.Price))
+            // Optional commander strategy, not a native availability rule. A
+            // cheap utility constructor can spend minutes travelling while
+            // already-buyable combat research waits behind it (P942).
+            int Priority(ResearchNode n) => !prioritizeResearch ? 0 : n.Kind == "develop" ? 0
+                : n.Kind == "station" && !TechTreeBitMask.FromBytes(n.Effects).IsSubsetOf(state.Techs) ? 1 : 2;
+            var ranked = eligible.OrderBy(Priority);
+            var node = (expensiveFirst ? ranked.ThenByDescending(n => n.Price) : ranked.ThenBy(n => n.Price))
                 .ThenBy(n => n.Kind).ThenBy(n => n.Id).FirstOrDefault();
             if (node is null) break;
             var before = state.Unlocks;
