@@ -7,10 +7,10 @@ line numbers are the working tree at the end of this task.
 
 | Part | Verdict |
 | --- | --- |
-| 1 — why `required` 2-4 cannot kill a garrison | **Diagnosed with numbers** (§2). Four defects, all bot-side: the requirement was bounded by the hulls *alive that second* (pods excluded), it was sized from whichever hull happened to be armed (a 5-round heavy magazine), the wing was **never ordered** at the arm (only a relaunch made a bot a strike bomber), and the staging hold pointed the nose **away** from the station so the native missile lock never built. Measured: 4-6 hulls released per wave, 0-1 rounds landing. |
+| 1 — why `required` 2-4 cannot kill a garrison | **Diagnosed with numbers** (§2). Four defects, all bot-side: the requirement was bounded by the hulls *alive that second* (pods excluded), it was sized from whichever hull happened to be armed (a 5-round heavy magazine), the wing was **never ordered** at the arm (only a relaunch made a bot a strike bomber), and the staging hold pointed the nose **away** from the station so the native missile lock never built. Measured: 4-6 hulls released per wave, 0-2 rounds landing; 376,653 of 383,523 lock samples at `0.000`. |
 | 2 — corrected requirement | **Fixed.** `StrikeVolley.Compute` sizes every hull as the wing's weakest usable magazine, divides the ideal count by the measured landing share, and adds the survival extra (defenders / last-wave losses); default `finale_survival_margin` 0 -> **1**. 0 still reproduces the P801 arithmetic exactly (pinned). |
 | 3 — mass before committing | **Fixed.** The arm orders the whole wing (escorts included) to the target sector, commits only at the corrected requirement or when the deadline math forces it, grows the wing from spare fighters to `finale_max_wing` (18), and the flat 180 s cap never sends 2 at a full garrison. |
-| 4 — refit before, not during | **Fixed.** `ArmFinaleWing` sends every member without a station-damaging granted loadout to the ordinary dock-and-buy refit BEFORE it transits; `finale_prearm_minutes` (default 2) reserves + refits the wing before the window. |
+| 4 — refit before, not during | **Fixed.** `ArmFinaleWing` sends every member without a station-damaging granted loadout to the ordinary dock-and-buy refit BEFORE it transits; `finale_prearm_minutes` (opt-in, shipped default 0; proposed rig value 2) reserves + refits the wing before the window. |
 | 5 — earlier pressure | **New setting, default OFF** (`finale_early_pressure_minutes`; propose 18 for the rig A/B). One real strike wave through the same corrected requirement and massing, then the wing returns to ordinary duty and the finale re-arms it. |
 | 6 — scope | Bot-side only, showcase/skirmish preset-scoped. No server/sim/wire change; no server bug found that blocks station kills. |
 
@@ -51,7 +51,8 @@ The baseline arm (unmodified `master`, archived HEAD build) reproduces the rig: 
 | Before run | Commit required/assembled | Released | Died before release | Rounds landed | Garrison damage at the last commit | Refits in the finale window |
 | --- | --- | ---: | ---: | ---: | --- | ---: |
 | br2-1 | side0 5/6, side0 5/5, side1 5/5, side1 5/5 | 21 | 0 | 4 | garrisons 4328 hull 1.000->0.869, 4329 hull 1.000->0.760, shields 0 | 21 |
-| br2-2..5 / br3-1..5 | see §5 (same shape: every wave `assembled = required`, 0-2 rounds land, no garrison kill) | | | | | |
+| br2-2..5 (2-side) | see §5: 3-5 waves, every wave `assembled = required`; 1-5 station hits total; **one** garrison kill (br2-5 at 827 s) in five runs | | | | | |
+| br3-1..5 (3-side) | see §5: 3-7 waves of 3-10 hulls, 4-8 hits total, **2 garrison kills in every run** — the generated map's civil-war garrisons are weak enough for the old trickle, which is why the 3-side after arm is the honest trade-off (§5.3) | | | | | |
 
 The staging lines in the earlier 3-sector baseline (b2-1, research timescale 8) are the rig's
 snapshot verbatim — a 12-hull wing spread over three sectors, nothing at the target:
@@ -93,8 +94,8 @@ radially outward of the ship's own position, so with the brake throttle the nose
 lock only builds while the target is inside the missile's `LockAngle` of the nose
 (`Igc/magazineigc.cpp:148-167`), and the bot's fire rule waits for a full lock before spending a
 round (P558). Measured in the baseline br2-1 log: **383,523** `[missilelock]` lines, of which
-**376,653 (98%) report `lock 0.000`** — the lock never left zero while the wing held — and only
-**65** missiles were launched in the whole finale against **6** station hits. A released bomber
+**376,653 (98%) report `lock 0.000`** — the lock never left zero while the wing held — and the
+21 released bombers launched only **27 missiles for 5 station hits**. A released bomber
 therefore loses its first lock time (turn + buildup) and usually dies inside it; that is why 4-6
 releases produce 0-2 rounds.
 
@@ -106,7 +107,7 @@ next wave repeats it.
 
 ### 2.3 What each cause contributes to the rig's 7/13 zero-kill finales
 
-* (c)+(d) decide whether a wave exists at all and whether its rounds land: 4-6 releases -> 0-1 rounds.
+* (c)+(d) decide whether a wave exists at all and whether its rounds land: 4-6 releases -> 0-2 rounds.
 * (a)+(b) decide the *size*: 2-4 hulls, which cannot deliver the 7 rounds even if every one lands.
 * (e) converts the shortage into wasted waves instead of holding for the wing.
 
@@ -140,9 +141,11 @@ All bot-side, all showcase/skirmish preset-scoped; no server, sim or wire change
    * `OrderFinaleWingBot`, `FinaleWingTarget`, `FinalePrearmDue`, `FinaleEarlyPressureDue`,
      `FinaleWingMemberReady`, `FinaleRoundsOf` (pure, tested).
 3. **`tools/allegiance-mcp/BotManager.Finale.cs`**
-   * `ArmFinaleSide(run, side, bots, now)`: reserves the wing, assigns the escorts and calls
-     `ArmFinaleWing`, which orders every live member to the target sector/route and either flies its
-     granted strike loadout (`FinaleBomberActive/GrantVerified`) or starts the legal refit NOW.
+   * `ArmFinaleSide(run, side, bots, now)`: reserves the wing, assigns the escorts up front and calls
+     `ArmFinaleWing`, which saves each member's pre-strike state, orders the members that already
+     carry a legal strike loadout onto the target sector/route (`FinaleBomberActive/GrantVerified`),
+     and starts the legal refit for the rest at home (their relaunch orders them, so nobody flies to
+     the target and turns back).
    * `FinalePrearmTick`, `FinaleEarlyPressureTick`; `FinaleSideArmed` used by the relaunch/refit/hold/
      escort gates so the early wave runs the same machinery.
    * `PrepareFinaleRelaunch` re-selects the strike loadout for a member with no verified strike
@@ -150,7 +153,9 @@ All bot-side, all showcase/skirmish preset-scoped; no server, sim or wire change
 4. **`tools/allegiance-mcp/BotManager.Siege.cs`** — the refit driver also runs during the pre-arm
    window, and only starts the refit there (no strike duty until the arm).
 5. **`tools/allegiance-mcp/ShowcaseFinale.cs`** — settings: `SurvivalMargin` default 1,
-   `PrearmMinutes` 2, `EarlyPressureMinutes` 0, `MaxWing` 18, `DeadlineSeconds` 900; validation.
+   `PrearmMinutes` **0 (off)**, `EarlyPressureMinutes` **0 (off)**, `MaxWing` 18,
+   `DeadlineSeconds` 900; validation. The pre-arm lead is opt-in so the default deploy makes no
+   decision before the finale triggers (P656 pinned that); §5's after arm ran with 2.
    `SideSelected` for the early wave.
 6. **`tools/allegiance-mcp/McpTools.cs`** — schema + reader for `finale_prearm_minutes`,
    `finale_early_pressure_minutes`, `finale_max_wing`, `finale_deadline_seconds`;
@@ -161,7 +166,7 @@ All bot-side, all showcase/skirmish preset-scoped; no server, sim or wire change
 | Setting | Default implemented | Proposed rig value | Why |
 | --- | --- | --- | --- |
 | `finale_survival_margin` | **1** | A/B 0 / 1 / 1.5 | One extra hull per observed defender or previous-wave loss. Measured locally: with 3-13 defenders the ideal 5-hull wave cannot survive the run-in. 0 restores the exact P801 arithmetic. |
-| `finale_prearm_minutes` | **2** | A/B 0 / 2 / 4 | Refits the reserved wing before the window; the 229 in-window refit trips are the thing to watch. |
+| `finale_prearm_minutes` | **0 (off)** | A/B 0 / 2 / 4 | Refits the reserved wing before the window; the 229 in-window refit trips are the thing to watch. OFF by default because it changes pre-trigger decisions (P656's opening-decision parity pin); the local after arm in §5 ran with **2** (the proposed rig value), so the numbers show the feature, not the new default. |
 | `finale_early_pressure_minutes` | **0 (off)** | A/B 18 | One real strike wave at ~18 min of a 45-min match. OFF reproduces the old timeline. |
 | `finale_max_wing` | **18** | A/B 12 / 18 | Wing growth cap from spare fighters (legal purchases), bounded by `MaxPlannedBombers`. |
 | `finale_deadline_seconds` | **900** | rig value | Bot-side mirror of `finaleTimeoutSeconds` for the deadline math. |
@@ -174,7 +179,9 @@ code is exactly `1b405498`); **after** = the working tree. Same settings in both
 `m2xspiderw.igc` 15v15 (2-side) / generated `DiamondRing` seed 959 12v12 (3-side), research
 showcase `IncomeMultiplier 5000`, `ResearchTimeScale 64`, `finale_after_minutes 1`,
 `finale_seconds 3600`, `finale_bombers 12`, `loadout_mode varied`, wall cap 420 s, 5 runs per team
-count per arm, strictly sequential (one match at a time, no synthetic load). `--reveal-stations`
+count per arm, strictly sequential (one match at a time, no synthetic load). The after arm ran with
+the then-default `finale_prearm_minutes = 2` (now the proposed rig value; the shipped default is 0,
+so the numbers measure the feature enabled, not the default deploy). `--reveal-stations`
 measurement fixture, identical in both arms (§2.1). Each run is 915-927 s of sim, i.e. ~15 min of
 finale — the same length as the rig's finale window.
 
@@ -293,9 +300,10 @@ finale — the same length as the rig's finale window.
   tech gate` and holds (`finale holding`) rather than feeding fighters. Both arms show the same
   fixture variance (ar2-1, ar3-3).
 
-**Build note:** `ar2-1` and `ar3-1` were measured before the last two driver fixes (the "only a real
-strike selection makes a strike bomber" and the refit-loop guard). Every other after run is on the
-final working-tree build; those two are listed so no run is hidden.
+**Build note:** `ar2-1` and `ar3-1` were measured before the last driver refinements (the
+"carries a legal strike loadout" guard that stops the dock/re-buy loop, and the escort/relaunch
+ordering). Every other after run is on the final working-tree build; those two are listed so no run
+is hidden.
 
 **Limit of this measurement (stated up front):** one ~15 min local window per run, two map sizes,
 civilization matchups decide when the bomber tech lands. The deterministic arithmetic and the
@@ -318,7 +326,7 @@ of the trade-off. The rig A/B is Claude's.
 | `A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it` | Decision table: met -> `massed`; short with time left -> **hold** (including after the old 180 s cap); deadline inside lead+window+tail -> `deadline-forced`; never 1 hull; no early-side deadline. |
 | `The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap` | 15/12/18 -> 15, 20/12/18 -> 18, 3/12/18 -> 12 (never shrinks), degenerate caps. |
 | `A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first` | Real AB2 loadout damages the station (`DamagesStation`), an empty mount list does not; granted-hull mismatch -> refit; `RoundsInWindow` 2 for the real magazine. |
-| `Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged` | Default 0 -> the tick never fires at any match age; on -> exactly once inside its window, never at/after the finale; `PrearmMinutes` 2, `SurvivalMargin` 1, `MaxWing` 18, `DeadlineSeconds` 900. |
+| `Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged` | Default 0 -> the tick never fires at any match age; on -> exactly once inside its window, never at/after the finale; `PrearmMinutes` 0 (shipped default), `SurvivalMargin` 1, `MaxWing` 18, `DeadlineSeconds` 900. |
 | `Prearm_opens_only_inside_its_lead_and_never_for_zero` | 30 min finale / 2 min lead -> opens at 28 min; 0 = off; short finales get a lead at t=0. |
 | `The_selection_predicate_arms_the_sides_the_finale_will_use` | `all`/`both`/numeric/leader. |
 | `Settings_validate_the_new_knobs` | Ranges for max wing, deadline, pre-arm, early pressure. |
@@ -327,13 +335,21 @@ Baseline proof: the amended P801 case (the flat 180 s `staging-timeout` is now a
 is the only force) and the amended P896 default case (margin default 1, 0 still valid) fail on the old
 assertions — they are the deliberate behaviour changes of this task.
 
+### Amended existing pins (each annotated in the test)
+
+| Pin | Old contract | P959 contract | Why |
+| --- | --- | --- | --- |
+| `P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped` | at the trigger only reserve; **no** active/escort flags until a pod relaunch; engaged fighter never recruited by a relaunch | the arm assigns `EscortCap` escorts up front and orders the wing; activation still needs a real granted-loadout ack; a relaunch never recruits past the cap | the wing (escorts included) stages together — that is what makes a mass. The buy is still a dock-and-buy on the pod relaunch (asserted unchanged). The second-buy assertion compares parts **by value** (it compared a tuple holding a list, i.e. by reference, which only held when both relaunches shared an instance). |
+| `P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing` | snapshot taken AFTER `Mature()` and restored bit-for-bit | snapshot taken **before** `Mature()` (the pre-strike state), which is what the restore must return | the arm now sets `TargetSector`/`Role` at the trigger, so "original" must mean pre-arm; the restore itself is unchanged. |
+| `P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch` | verified after buying the existing hull | unchanged once "carries a legal strike loadout" is recognised (the fix in §3); the test is green | this is where the "armed fighter that can never hurt the station" loop came from. |
+
 ### Live, local only
 
 | Suite | Result |
 | --- | --- |
-| P959 + P896 + P801StrikeMassTests + P745SiegeDutyTests + P819FinaleOrderTests + P656ShowcaseFinaleTests, 3x alone | `<!--UNIT3-->` |
+| P959 + P896 + P801StrikeMassTests + P745SiegeDutyTests + P819FinaleOrderTests + P656ShowcaseFinaleTests + P682b, 3x alone | **PASS** — 73/73 each time |
 | `P745FinaleSiegeLiveTests` + `P778ABomberPushLiveTests`, 3x alone | `<!--LIVE3-->` |
-| Showcase never-parks 5x | `<!--NEVERPARKS-->` |
+| Showcase never-parks 5x | **PASS** — 5/5 (2m34s-4m46s each); the finale wing/prearm changes did not park the showcase |
 | Research showcase finales, 2-side and 3-side, 5x before / 5x after | §5 (20 runs, every run listed) |
 | Early pressure (2-side, finale at 12 min, wave at 8 min) | ae2-1: both sides armed at t=480 s (`[strike] side=N early pressure armed t=480s`); the corrected requirement (11-13 with the defenders seen) was not reachable inside the 4 min before the finale, so the early wave held and the finale's own waves killed 2 garrisons. The timing predicate is pinned by the unit table. |
 
@@ -342,13 +358,34 @@ assertions — they are the deliberate behaviour changes of this task.
 | Gate item | Result |
 | --- | --- |
 | `dotnet build AllegianceCore.slnx` | **PASS** — 0 warnings, 0 errors |
+| `dotnet build tools/p959-strike-proof` | **PASS** — 0 warnings, 0 errors |
 | `tools/build-tools.sh` | **PASS** — all 121 tool projects built (includes the new `tools/p959-strike-proof`) |
-| New/affected tests 3x alone | `<!--UNIT3-->` |
-| ONE `tools/run-tests.sh --tier fast` | `<!--FASTTIER-->` |
-| Showcase never-parks 5x | `<!--NEVERPARKS-->` |
-| Live finale suites 3x alone | `<!--LIVE3-->` |
+| New/affected tests 3x alone | **PASS** — 73/73 three times (P959 + P896 + P801StrikeMass + P745SiegeDuty + P819FinaleOrder + P656ShowcaseFinale + P682b) |
+| ONE `tools/run-tests.sh --tier fast` | **13,514 tests, 3 failures — all three already-ledgered Core flakes, each pass/pass/pass 3x alone** (`ConsoleLogNonBlockingTests.Verbose_gate…`, `LiveSideSelectTests.Flag_on_auto…`, `BallotVotingLiveTests.Resign_passing…`); no task test failed. `Allegiance.ClientCore.Tests` 2293/2293, MonoGame 4899, Lobby 139, Update 28, Core 6130/6133. Ledger entry added to `docs/TEST_FLAKES.md`. |
+| Showcase never-parks 5x | **PASS** — 5/5 (2m34s-4m46s each); the finale wing/prearm changes did not park the showcase |
+| Live finale suites 3x alone | `<!--LIVE3-->` (P745FinaleSiegeLiveTests + P778ABomberPushLiveTests) |
 | `tools/check-glossary-links.py` | **PASS** — 648 distinct paths |
 | AOT publish | **Not required**: no `src/Allegiance.Server` or `src/Allegiance.Core` file changed (bot policy + tests + a proof tool only), per the lane rule |
+
+## 8. What is unfinished / risks (honest list)
+
+1. **The 3-side trade-off is not resolved locally.** The corrected rule trades the old trickle for
+   fewer, bigger waves; on the generated 3-side map that is 9 kills vs the baseline's 10 over five
+   runs, and the 2-side is 7 vs 1. Claude's rig A/B decides which side of that trade-off ships.
+2. **The early-pressure wave did not actually commit locally** (ae2-1: armed at t=481 s, both sides,
+   but the corrected requirement with the defenders seen was not reachable in the 4 min before the
+   finale; the finale's own waves then killed 2 garrisons). The timing predicate is unit-pinned; the
+   "one real wave at ~15-20 min" claim is NOT yet demonstrated end-to-end on a live match.
+3. **`ar2-1` / `ar3-1` ran on a pre-final build** (the two driver refinements landed after them);
+   every other after run is on the shipped code (§5).
+4. **The landing share is sampled** from station pool drops (shield/armour deltas over one 20 s
+   window), floored at 0.2, EWMA-smoothed after the first wave. It is a delivery estimate, not a
+   per-missile count; a wave that already killed the station is scored 1 by definition.
+5. **No server-side cause was found** for "station kills don't matter": the server's
+   `stationKillsDecideDeadline` and `ArmResearchFinale` are untouched; the local baseline killed
+   garrison stations with the same server code, so the gap was bot policy.
+6. **Tuning is deliberately conservative**: `MaxPlannedBombers`/`finale_max_wing` 18, margin 1,
+   early pressure off. Nothing here is balanced for gameplay; the numbers are mechanism + direction.
 
 ## Native intent
 

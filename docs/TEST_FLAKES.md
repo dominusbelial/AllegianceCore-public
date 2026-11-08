@@ -6987,3 +6987,14 @@ armed-Wingman defend/attack fixtures, the miner/constructor/layer cohorts)
 passed 3/3 isolated runs and are clean in the sweep. Raw logs:
 `~/allegiance-evidence/P956/fast3/` and `~/allegiance-evidence/P956/nontask/`
 (TRX/log per project; fast-tier clock 579.2 s, `summary.json`).
+
+### P959 fast-tier sweep (`tiers-20261108T075742`)
+
+13,514 tests, 3 failures — all three are already-ledgered Core flakes, none touched by this task (no
+`src/Allegiance.Core` file changed):
+
+| Test | Sweep | 3x alone | Ledger |
+| --- | --- | --- | --- |
+| `Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines` | failed (process-global gate under load) | **pass/pass/pass** | existing `ConsoleLogNonBlockingTests` family |
+| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | **pass/pass/pass** | existing clock/receipt boundary vs [28,31] |
+| `Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass/pass/pass** | existing ballot-receipt family; unmodified base fails it too |

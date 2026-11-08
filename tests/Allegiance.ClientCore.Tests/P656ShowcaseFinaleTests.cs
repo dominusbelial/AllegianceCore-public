@@ -381,7 +381,10 @@ public sealed partial class BotFixRegressionTests
         {
             var fighter = rig.Bots[i];
             Call("PrepareFinaleRelaunch", null, fighter, rig.Started + 1801);
-            Assert.False(Get<bool>(fighter, "FinaleEscort")); // engaged fighter cannot be recruited
+            // P959 — the arm recruited the escorts up front (EscortCap), so a fighter
+            // INSIDE the cap is already one; a fighter outside it stays unrecruited, and
+            // a relaunch never recruits past the cap.
+            Assert.Equal(i == 2, Get<bool>(fighter, "FinaleEscort"));
             Set(fighter, "PodDocked", true);
             Call("PrepareFinaleRelaunch", null, fighter, rig.Started + 1802);
         }
