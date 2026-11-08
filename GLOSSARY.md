@@ -1705,6 +1705,11 @@ list in **reverse**.
 
 ## 9. Rig / runner / CI
 
+- **P807 handoff loopback diagnostics (P960)** — bounded simulation/receipt waits
+  and failure snapshots (match, condition, identities, readiness and captured console)
+  in `tests/Allegiance.ClientCore.Tests/P807GameOverHandoffTests.cs`.
+  Investigation and qualification: `docs/reports/P807_HANDOFF_HANG_P960.md`;
+  the historical workstation-only two-handoff timeout remains unconfirmed.
 - **`tools/run-tests.sh`** → `tools/test-tiers/runner.py` — the shared
   fast/live/perf tier runner (`--tier fast|live|perf|all`). Docs:
   `docs/reports/TT1_TEST_TIERS.md`, `docs/TEST_FLAKES.md`.

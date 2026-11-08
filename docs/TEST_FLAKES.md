@@ -7074,3 +7074,63 @@ passed 3/3 isolated runs and are clean in the sweep. Raw logs:
 | `Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines` | failed (process-global gate under load) | **pass/pass/pass** | existing `ConsoleLogNonBlockingTests` family |
 | `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | **pass/pass/pass** | existing clock/receipt boundary vs [28,31] |
 | `Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass/pass/pass** | existing ballot-receipt family; unmodified base fails it too |
+
+## 2026-11-08 — P960 P807 handoff investigation
+
+`P807GameOverHandoffTests.P807_two_consecutive_handoffs_still_work`'s historical
+workstation-only two-hour timeout remains **unreproduced / trigger unconfirmed**.
+Do not mark it resolved solely from passing reruns. Original-flow controls pass
+168 full method invocations; final qualification passes 10/10 alone, 3/3 at 16
+processors, and 4/4 in two paired-process batches, zero skips.
+
+The shared old helper does reproduce a different delivery stall at 394 peers:
+pending rotations are empty and the fresh server mission has 197 peers per
+side, while all clients remain Over with null ship IDs. Both 16- and 24-CPU
+controls hit its client-receipt wait at the 30-second diagnostic cap. P960 stops
+advancing simulation during pure receipt waits, bounds the helper, prints the
+condition/match plus full state and captured console on failure, locks identity
+reads, and disposes the sessions it owns. No production behavior changes.
+
+The 394-peer **timing** family remains open and its budgets are unchanged:
+the final three standalone runs give **fail / fail / fail** (phase
+116.2 / 98.8 / 91.0 ms against 76.5 / 77.4 / 76.9 ms; 164 migration ticks each).
+All correctness checks pass before those timing assertions. An earlier round
+was pass / pass / fail (11.7 / 12.2 / 115.6 ms); its failed burst coincided with
+101 ms of GC pause. Final qualification was repeated after synchronizing console
+snapshots and moving construction before redirection; its totals are
+**17 passed / 3 failed / 0 skipped**, and the earlier passes do not waive the
+final timing failures. A loaded candidate similarly fails phase
+96.0 > 77.3 ms. The dispatcher's separate receipt was declare sim work 160.8 ms
+(declare 229.7 minus GC 68.9), a different existing budget failure.
+
+Report and compact receipts: [P807_HANDOFF_HANG_P960.md](reports/P807_HANDOFF_HANG_P960.md),
+[P960 validation](reports/P960_assets/validation.json). The one Fast gate
+finishes **13,510 passed / 5 failed / 3 optional Meshy skips**, 604.935 s.
+All nine infrastructure checks pass; nine Fast executions exceed 10 s.
+The failed/timing methods were each repeated three times alone (42 case
+executions: **36 passed / 6 failed / 0 skipped**).
+
+
+| P960 Fast failure | Three exact-method standalone runs | Current disposition |
+|---|---|---|
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | pass / pass / pass | Existing launcher-grant receipt flake. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / fail | Existing final lock 1.000 without the expected partial-tip receipt; still intermittent alone. |
+| `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / fail / fail | Existing state-3/state-2 join receipt intermittency; not cleared. Wire constants are flying=3, docked=2. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | Existing auto-seat clock/receipt boundary; one isolation saw 32.0, another missed the ready receipt. |
+| `BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it` | pass / pass / pass | **New exact-method entry**: empty receipt collection in sweep; existing ballot family. No ballot code changed. |
+
+All seven Fast timing-offender methods also ran three times alone. `P796VariedLoadoutTests`
+(3 theory cases), `SC2NaniteSupportTests` (2 cases), `P814GunnerTests`, and
+`NpcDodgeLiveTests.Traveling_npc...` pass all repeats below 10 s per case.
+`P800HullProofGpuTests.Every_hull...` passes its assertions but takes
+9.519–16.322 s alone; `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured`
+passes but takes 9.601–11.393 s. Those timing offenders are not cleared merely
+by successful assertions. Missile lock is the overlapping failure/timing method.
+Full names, durations and cases are in the report/validation JSON.
+
+The supplementary Live-order probe was intentionally capped at 180 s per test
+and aborted in the unrelated `SC2SupportPhaseLiveTests` before P807. Its authored
+observation is 900 s; the abort is a diagnostic-cap mismatch, not an SC2
+assertion failure or a passing/completed Live suite. The historical two-handoff
+trigger and the full Fast gate therefore remain open; no production file or
+budget was changed.
