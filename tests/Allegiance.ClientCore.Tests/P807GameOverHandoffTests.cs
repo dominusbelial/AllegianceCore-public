@@ -32,6 +32,62 @@ namespace Allegiance.ClientCore.Tests;
 [Collection("LiveNetwork")]
 public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
 {
+    private readonly List<(ConnectionSession Peer, string Name)> _diagnosticPeers = [];
+    private readonly Dictionary<ConnectionSession, short> _priorIds = [];
+    private int _match;
+    private string _wait = "setup";
+    private int _waitIterations;
+    private bool _advancingSim;
+    private readonly Stopwatch _waitTime = new();
+    private readonly List<string> _completedWaits = [];
+
+    private void DumpState(Srv server)
+    {
+        output.WriteLine($"wait={_wait} match={_match} advanceSim={_advancingSim} iterations={_waitIterations} wallMs={_waitTime.Elapsed.TotalMilliseconds:0.0} " +
+            $"simNow={server.SimNow:0.000} processors={Environment.ProcessorCount} serverGc={System.Runtime.GCSettings.IsServerGC}");
+        output.WriteLine($"autoSeatSeconds={server.Config.SideSelectAutoSeatSeconds} simPassFailures={server.SimPassStageFailures}");
+        if (server.TestPublisher is { } publisher)
+            output.WriteLine($"snapshots built={server.SnapshotsBuilt} published={Interlocked.Read(ref publisher.PublishedSnapshots)} " +
+                $"coalesced={Interlocked.Read(ref publisher.CoalescedSnapshots)} failures={Interlocked.Read(ref publisher.EncodeFailures)}");
+        foreach (var mission in server.Missions)
+        {
+            output.WriteLine($"mission stage={mission.Stage} time={mission.LastUpdate:0.000}");
+            foreach (var side in mission.Sides)
+                output.WriteLine($"side={side.Id} ready={side.Ready} forceReady={side.ForceReady} active={side.Active} " +
+                    $"peers={server.Ships.Count(s => s.Ship.Mission == mission && s.Ship.SideId == side.Id)}");
+        }
+        foreach (var name in new[] { "_pendingRotations", "_playerReady", "_pendingSideSelect", "_startCountdownDeadline", "_autoRestartDeadline" })
+        {
+            var value = typeof(Srv).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(server)!;
+            output.WriteLine($"{name} count={((System.Collections.ICollection)value).Count}");
+            if (value is System.Collections.IDictionary map)
+                foreach (System.Collections.DictionaryEntry entry in map) output.WriteLine($"  {entry.Key}={entry.Value}");
+            else if (value is System.Collections.IEnumerable list)
+                foreach (var tail in list)
+                    foreach (var field in tail.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                        .Where(f => f.Name.EndsWith("Cursor", StringComparison.Ordinal) || f.Name == "LatchSweepStep"))
+                        output.WriteLine($"  {field.Name}={field.GetValue(tail)}");
+        }
+        foreach (var (peer, name) in _diagnosticPeers)
+        {
+            if (!Monitor.TryEnter(peer.Gate, TimeSpan.FromMilliseconds(100)))
+            {
+                output.WriteLine($"peer={name} state lock busy; connected={peer.Connected}");
+                continue;
+            }
+            try
+            {
+                output.WriteLine($"peer={name} connected={peer.Connected} old={(_priorIds.TryGetValue(peer, out var old) ? old.ToString() : "none")} " +
+                    $"current={peer.World.MyShipId?.ToString() ?? "null"} joined={peer.World.JoinedShipId?.ToString() ?? "null"} side={peer.World.MySideId?.ToString() ?? "null"} " +
+                    $"stage={peer.World.Mission?.Stage} countdown={peer.World.CountdownRemainingSeconds()} joinError={peer.World.JoinError} " +
+                    $"ready=[{string.Join(",", peer.World.Roster.ReadyByShipId.Select(p => $"{p.Key}:{p.Value}"))}]");
+            }
+            finally { Monitor.Exit(peer.Gate); }
+        }
+        foreach (var live in server.Ships)
+            output.WriteLine($"server ship={live.Ship.Id} side={live.Ship.SideId} fresh={server.Missions.Contains(live.Ship.Mission!)}");
+    }
+
     private const int ShowcasePeers = 394;   // the rig's 200v200 march (394 connected)
 
     private static ServerConfig Config(int peers, bool profiler = false) => new()
@@ -39,10 +95,10 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
         Port = 0,
         SideSelectAutoSeatSeconds = 0.2,   // ConnectionSession peers never send POSITIONREQ
         Transport = new() { MaxConnections = 1024, MaxConnectionsPerIp = 1024 },
-        // The rig's showcase pipeline: tiers keep the normal tick's O(peers²)
-        // teammate stream from drowning the handoff measurement at 394 in-process
-        // clients (the migration itself is measured by its own phase slices).
-        Broadcast = new() { ImmutableSnapshot = true, EncodeOnce = true, InterestTiers = true },
+        // Keep the 394-peer fixture's explicitly calibrated historical tiers path;
+        // its phase budgets measure migration, not the O(peers²) teammate stream.
+        // The 24-peer correctness fixture uses the current baseline (tiers off).
+        Broadcast = new() { ImmutableSnapshot = true, EncodeOnce = true, InterestTiers = profiler },
         Profiler = profiler
             ? new() { Enabled = true, SlowTickCapture = true, SlowTickMs = 40, ReportIntervalSeconds = 100_000 }
             : null,
@@ -61,19 +117,40 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
     private static T ReadValue<T>(ConnectionSession peer, Func<T> get)
     { lock (peer.Gate) return get(); }
 
-    private static void Pump(Srv server, Func<bool> done, int max = 100_000)
+    private static string CaptureLog(StringWriter log)
     {
-        for (int i = 0; i < max; i++)
-        {
-            if (done()) return;
-            server.TickSim(); Thread.Sleep(1);
-        }
-        Assert.True(done(), "loopback condition timed out");
+        // Console.SetOut wraps the writer in a synchronized TextWriter. Share
+        // its lock while reading the underlying buffer, which other threads append.
+        lock (Console.Out) return log.ToString();
     }
 
-    private static ConnectionSession Connect(Srv server, string name, ulong id)
+    // Simulation predicates need ticks; client receipt predicates only need the
+    // receive/publisher threads to drain work already offered. Advancing sim while
+    // awaiting receipt can build a fresh backlog faster than loopback decodes it.
+    private void Pump(Srv server, Func<bool> done, bool advanceSim = true,
+        [System.Runtime.CompilerServices.CallerArgumentExpression(nameof(done))] string condition = "")
+    {
+        _wait = condition;
+        _advancingSim = advanceSim;
+        _waitTime.Restart();
+        for (_waitIterations = 0; _waitIterations < 100_000 && _waitTime.Elapsed < TimeSpan.FromSeconds(30); _waitIterations++)
+        {
+            if (done())
+            {
+                if (_match > 0)
+                    _completedWaits.Add($"match={_match} advanceSim={advanceSim} simTicks={(advanceSim ? _waitIterations : 0)} iterations={_waitIterations} wallMs={_waitTime.Elapsed.TotalMilliseconds:0.0} wait={condition}");
+                return;
+            }
+            if (advanceSim) server.TickSim();
+            Thread.Sleep(1);
+        }
+        Assert.True(done(), $"loopback condition timed out: match={_match} wait={condition} advanceSim={advanceSim} iterations={_waitIterations} wallMs={_waitTime.Elapsed.TotalMilliseconds:0.0}");
+    }
+
+    private ConnectionSession Connect(Srv server, string name, ulong id)
     {
         var peer = new ConnectionSession();
+        _diagnosticPeers.Add((peer, name));
         peer.Connect(server.BoundPort, name);
         peer.SendLogonRequest(new()
         {
@@ -81,7 +158,9 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
             Time = 1, DwCookie = uint.MaxValue, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = id,
         });
-        Pump(server, () => Read(peer, () => peer.World.MyShipId is not null && peer.World.MySideId is not null));
+        Pump(server, () => server.Ships.Any(s => s.Ship.Name == name && s.Ship.SideId is >= 0));
+        var assigned = server.Ships.Single(s => s.Ship.Name == name).Ship;
+        Pump(server, () => Read(peer, () => peer.World.MyShipId == assigned.Id && peer.World.MySideId == assigned.SideId), advanceSim: false);
         return peer;
     }
 
@@ -116,11 +195,11 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
     {
         Require.Artwork();
         var saved = Console.Out;
-        var log = new StringWriter();
+        using var log = new StringWriter();
+        using var server = new Srv();
         Console.SetOut(log);
         try
         {
-            using var server = new Srv();
             server.SpawnInitialMinersAtBoot = false;
             server.Boot(Config(ShowcasePeers, profiler: true));
             var conns = new List<ConnectionSession>();
@@ -132,8 +211,10 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             for (int i = 0; i < 5; i++) { server.TickSim(); Thread.Sleep(50); }
             Thread.Sleep(500);
 
-            var oldIds = conns.Select(c => c.World.MyShipId!.Value).ToArray();
-            var oldSides = conns.Select(c => c.World.MySideId!.Value).ToArray();
+            var oldIds = conns.Select(c => ReadValue(c, () => c.World.MyShipId!.Value)).ToArray();
+            var oldSides = conns.Select(c => ReadValue(c, () => c.World.MySideId!.Value)).ToArray();
+            _match = 1;
+            for (int i = 0; i < conns.Count; i++) _priorIds[conns[i]] = oldIds[i];
             var old = server.Missions[0];
             old.Stage = MissionStage.Started;
 
@@ -174,7 +255,7 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             // world to hold the fresh ship (and its result screen) before reading.
             Pump(server, () => Enumerable.Range(0, ShowcasePeers).All(i =>
                 Read(conns[i], () => conns[i].World.MyShipId is { } id && id != oldIds[i]
-                    && conns[i].World.GameOverResult is not null)));
+                    && conns[i].World.GameOverResult is not null)), advanceSim: false);
             server.TestPublicationCapture = null;
 
             // Correctness: every peer still connected, got the result screen,
@@ -192,7 +273,7 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
                 Assert.Equal(oldSides[i], ship.SideId);
             }
             Assert.Equal(0, server.SimPassStageFailures);
-            Assert.DoesNotContain("[simpass]", log.ToString());
+            Assert.DoesNotContain("[simpass]", CaptureLog(log));
             Assert.Empty(orderViolations);
             Assert.Equal(ShowcasePeers, goSeen.Count);
             Assert.True(server.GameOverMigrationTicks > 0, "the migration must actually spread over ticks");
@@ -204,7 +285,7 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             double phaseBudget = PerfCalibration.Scale(80.0);
             double setupBudget = PerfCalibration.Scale(30.0);
             double migrationStepBudget = PerfCalibration.Scale(100.0);
-            var stepSamples = log.ToString().Split('\n')
+            var stepSamples = CaptureLog(log).Split('\n')
                 .Select(line => line.Contains("step:gameOverMigration=")
                     ? line[(line.IndexOf("step:gameOverMigration=", StringComparison.Ordinal)
                             + "step:gameOverMigration=".Length)..]
@@ -231,7 +312,19 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             Assert.True(declareMs - declareGcMs < PerfCalibration.Scale(150.0),
                 $"game-over declare sim work {declareMs - declareGcMs:0.0}ms exceeded budget");
         }
-        finally { Console.SetOut(saved); }
+        catch
+        {
+            output.WriteLine("Captured server console:\n" + CaptureLog(log));
+            try { DumpState(server); }
+            catch (Exception diagnosticError) { output.WriteLine($"State capture failed: {diagnosticError}"); }
+            throw;
+        }
+        finally
+        {
+            foreach (string wait in _completedWaits) output.WriteLine(wait);
+            try { foreach (var (peer, _) in _diagnosticPeers) peer.Dispose(); }
+            finally { Console.SetOut(saved); }
+        }
     }
 
     /// <summary>
@@ -248,10 +341,10 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
         const int peers = 24;
         var saved = Console.Out;
         using var log = new StringWriter();
+        using var server = new Srv();
         Console.SetOut(log);
         try
         {
-            using var server = new Srv();
             server.SpawnInitialMinersAtBoot = false;
             server.Boot(Config(peers));
             var conns = new List<ConnectionSession>();
@@ -260,7 +353,9 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
 
             for (int match = 1; match <= 2; match++)
             {
-                var oldIds = conns.Select(c => c.World.MyShipId!.Value).ToArray();
+                var oldIds = conns.Select(c => ReadValue(c, () => c.World.MyShipId!.Value)).ToArray();
+                _match = match;
+                for (int i = 0; i < peers; i++) _priorIds[conns[i]] = oldIds[i];
                 var old = server.Missions[0];
                 old.Stage = MissionStage.Started;
                 End(server, $"P807 rotation {match}");
@@ -270,7 +365,7 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
 
                 Pump(server, () => PendingRotationsEmpty(server));
                 Pump(server, () => Enumerable.Range(0, peers).All(i =>
-                    Read(conns[i], () => conns[i].World.MyShipId is { } id && id != oldIds[i])));
+                    Read(conns[i], () => conns[i].World.MyShipId is { } id && id != oldIds[i])), advanceSim: false);
                 for (int i = 0; i < peers; i++)
                 {
                     short newId = ReadValue(conns[i], () => conns[i].World.MyShipId!.Value);
@@ -288,6 +383,18 @@ public sealed class P807GameOverHandoffTests(ITestOutputHelper output)
             Assert.Equal(0, server.SimPassStageFailures);
             output.WriteLine($"peers={peers} two rotations drained; second match started; simPassFailures=0");
         }
-        finally { Console.SetOut(saved); }
+        catch
+        {
+            output.WriteLine("Captured server console:\n" + CaptureLog(log));
+            try { DumpState(server); }
+            catch (Exception diagnosticError) { output.WriteLine($"State capture failed: {diagnosticError}"); }
+            throw;
+        }
+        finally
+        {
+            foreach (string wait in _completedWaits) output.WriteLine(wait);
+            try { foreach (var (peer, _) in _diagnosticPeers) peer.Dispose(); }
+            finally { Console.SetOut(saved); }
+        }
     }
 }
