@@ -623,6 +623,19 @@ list in **reverse**.
   Operator/Docker usage: `docs/GUIDE.md`; proof:
   `tests/Allegiance.ClientCore.Tests/P913ServerConsoleTests.cs`; report:
   `docs/reports/P913_REPORT.md`.
+- **Console sink / verbosity gate (P318, P619c, P964)** — all routed
+  diagnostic lines, and after `Install` every plain `Console.WriteLine`, go
+  through one bounded queue drained by one background thread
+  (`src/Allegiance.Core/ConsoleLog.cs`); a full queue drops instead of blocking
+  the sim thread. The gate (`ConsoleLog.Verbose`, from
+  `serverConfig.consoleVerbose`) silences the high-frequency per-tick lines but
+  still counts the attempts. Test seams: `Install`/`Uninstall`,
+  `PointSinkForTest`, `Flush` (waits until the drain has **written** everything
+  enqueued, not merely dequeued it), `ResetForTest` (installs a fresh queue
+  *generation*, so a left-over drain cannot count against it) and
+  `OpenProbeForTest` (per-thread attribution of `Write` attempts/emissions — use
+  it instead of asserting deltas of the process-global counters). Report:
+  `docs/reports/VERBOSE_GATE_FLAKE_P964.md`.
 - **Cheats / debug** — `Server.AdminCheats.cs`, `Server.Privileges.cs`;
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,

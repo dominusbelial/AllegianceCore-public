@@ -4,6 +4,67 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P964 — `ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines` **root-caused and fixed**, 2026-11-08
+
+**The old label "process-global gate under load" was wrong.** The `LiveNetwork`
+collection is `[CollectionDefinition("LiveNetwork", DisableParallelization = true)]`
+(`tests/Allegiance.Core.Tests/LiveCombatWireTests.cs:28`), so xunit runs it
+**exclusively**: no other test in the process can write to `ConsoleLog`, capture
+`Console.Out` or flip the gate while this test runs (measured: 0 samples of
+`Verbose`/`IsInstalled` in 7.4 M samples from a parallel noise collection, while a
+control pair of ordinary collections did overlap).
+
+**Real cause — `ConsoleLog.Flush()` was a dequeue barrier, not a delivery barrier.**
+The drain thread dequeues a line and then performs the I/O; `Flush` waited on
+`_queue.Count == 0`, which happens at the **dequeue**, so it returned with the last
+line still in flight and the test then read an empty sink — while the preceding
+`Assert.Equal(1, EmittedWrites - emBefore2)` had already passed. Reproduced
+**4/70 isolated invocations** (process restart per run, including 1/20 while a second
+Core test process ran) with `Assert.Contains() Failure: Sub-string not found /
+String: "" / Not found: "[p433-diag]"`; that also matches the sweep, nightly and
+v0.1.5 release-gate sightings, where preemption widens the dequeue→write window.
+
+**Resolution (fixed, this task).** `ConsoleLog` now gives the sink a *generation*
+(queue + `Enqueued`/`Written` counters), `Flush` waits until the drain has **written**
+everything enqueued, a superseded drain stops instead of replaying a stale backlog
+into the next test's sink, and a new per-thread counting scope
+(`ConsoleLog.OpenProbeForTest`) lets a test attribute `Write` attempts/emissions to
+its own lines. The test asserts on a per-run marker in the capture sink plus that
+scope (all counts exact, no `≥`); the same hazard in
+`P655GameStateIntegrityTests.H31_Verbose_turret_flood_has_bounded_logs_and_still_applies_valid_input`
+(the only other global `TotalWrites` delta in `tests/`) is fixed the same way. No
+production path changes. Evidence: the two fixed tests **50/50 alone**, three whole
+`Allegiance.Core.Tests` assembly runs with parallel Core processes **0 failures**, and
+the solution CI-filter run green — see
+[reports/VERBOSE_GATE_FLAKE_P964.md](reports/VERBOSE_GATE_FLAKE_P964.md). Older rows
+below that list this method as a load flake (2026-10-28 P860, 2026-10-29 P871b,
+2026-11-08 P959) are superseded by this entry: they were the same dequeue race.
+
+**P964 gate observations (non-task failures).** The three whole-assembly rounds
+(each with two more Core test processes running in parallel, load 4-11) failed **8
+methods once each, none of them the fixed test**. Every one is already ledgered above
+and none is touched by this change (`src/Allegiance.Core/ConsoleLog.cs` test seams +
+two test files); each ran three times alone:
+
+| Method | Round | Message | 3x alone |
+| --- | --- | --- | --- |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 1 | 7.0000000000000009 > 7 | 3/3 pass (also the one failure of the pre-fix full run) |
+| `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | 1 | "NPC diverter did not reach and rescue the pod" | 3/3 pass |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 1 | 31.65 outside (28,31) | 3/3 pass |
+| `BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it` | 1 | empty receipt collection | 3/3 pass |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | 1 | one AsteroidMined arrived | 3/3 pass |
+| `LiveP388DebugNoGameOverTests.Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling` | 2 | 0 cycles in 240,000 ticks | 3/3 pass |
+| `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | 2 | unscoped status history: ship 8098 docked at 1051 | fail/pass/pass (the existing unscoped-assertion entry) |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | 3 | d0=190.3 -> d1=221.7 | 3/3 pass |
+
+The solution-wide CI-filter run (same gate the v0.1.5 release used) added one more:
+`Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction`
+(2 m 43 s) threw `NullReferenceException` at `Game1.EngageAutopilotToward`
+(`src/Allegiance.ClientCore.Game/Game1.Eject.cs:165`) from `HandleOwnShipEject`. **New
+observation, 3/3 pass alone** (10 m 5 s each under the gate's own load) — a load-only
+observation of the eject/autopilot path, which P964 does not touch; it is entered here
+rather than fixed by this task.
+
 ## P953 validation — resource opening and defensive-field fixture, 2026-11-08 UTC
 
 P798's null-clash and split-frontier mechanisms are repaired in the existing

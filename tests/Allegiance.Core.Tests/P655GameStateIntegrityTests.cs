@@ -597,18 +597,22 @@ public sealed class P655GameStateIntegrityTests
         w.Ship.TurretId = 0;
         bool previous = ConsoleLog.Verbose;
         ConsoleLog.Verbose = true;
+        // P964 — count only THIS thread's gated writes. ConsoleLog.TotalWrites is a
+        // process-global counter, so a background thread left over from an earlier test
+        // in this collection (a server sim loop, a bot worker) would inflate the delta
+        // and break the exact bound below; the probe scope attributes the count to the
+        // writes this test issues through w.Send().
+        var probe = ConsoleLog.OpenProbeForTest();
         try
         {
-            long before = Interlocked.Read(ref ConsoleLog.TotalWrites);
             for (uint time = 10000; time < 10205; time++)
                 w.Send(new ActiveTurretUpdate { TimeUpdate = time, Atu = ClientActiveTurretUpdate.From(time, ControlData.Neutral, Orientation.Identity) });
-            long writes = Interlocked.Read(ref ConsoleLog.TotalWrites) - before;
-            Assert.InRange(writes, 1, 8);
+            Assert.InRange(probe.Attempts, 1, 8);
             Assert.Equal(ShipControlState.WeaponsMask, w.Ship.StateM);
             var pu = w.Call("EnsurePeerUpdate", w.Conn)!;
             Assert.Equal(10204u, pu.GetType().GetField("LastClientTime")!.GetValue(pu));
         }
-        finally { ConsoleLog.Verbose = previous; }
+        finally { ConsoleLog.CloseProbeForTest(); ConsoleLog.Verbose = previous; }
     }
 
     [SkippableFact]

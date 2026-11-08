@@ -30,8 +30,14 @@ public static class ConsoleLog
     public static volatile bool Verbose;
 
     private const int Capacity = 8192;
-    private static BlockingCollection<string> _queue = new(Capacity);
-    private static Thread _drain = StartDrain();
+    // P964 — the sink is ONE queue "generation": the queue plus the enqueue/written
+    // progress counters Flush() waits on. StartDrain binds the drain thread to the
+    // generation it serves, and ResetForTest installs a fresh one, so a drain left
+    // running against a superseded queue (a stalled sink it never finished) can never
+    // be mistaken for progress on the current queue, and never replays that
+    // generation's backlog into a later test's sink.
+    private static Gen _gen = new();
+    private static Thread _drain = StartDrain(_gen);
     // P619c — the queued writer currently installed over Console.Out/Error (null
     // until Install()). Its Passthrough is where the drain emits, so a redirected
     // Console.Out never recurses into the queue.
@@ -51,6 +57,17 @@ public static class ConsoleLog
     // server's [egress] window line can report the per-window drop count.
     public static long DroppedWrites;
 
+    // P964 test seam — per-scope counting. TotalWrites/EmittedWrites above are
+    // process-global: a background thread left over from an earlier test (a server
+    // sim loop, a bot worker) moves them while a test measures a delta, and the
+    // "exactly N lines" proof then fails for reasons that have nothing to do with
+    // the gate. A scope tallies the Write() attempts/emissions made by the thread
+    // that opened it, so a test can assert on ITS OWN lines exactly. Cost in
+    // production: one volatile int read per gated write (the thread-static scope is
+    // only touched while a test has one open).
+    private static int _probeScopes;
+    [ThreadStatic] private static Probe? _threadProbe;
+
     /// <summary>
     /// P619c — install the bounded, queued writer as <c>Console.Out</c> /
     /// <c>Console.Error</c>. Called once at server process startup
@@ -66,7 +83,7 @@ public static class ConsoleLog
     {
         if (_installed) return;
         _installed = true;
-        var w = new QueuedConsoleWriter(_queue, Console.Out);
+        var w = new QueuedConsoleWriter(Console.Out);
         _writer = w;
         // P829 — ONE synchronised wrapper for both streams. Console.SetOut/SetError
         // wrap a plain writer separately (two SyncTextWriters, two locks), and
@@ -116,15 +133,15 @@ public static class ConsoleLog
     {
         if (_drain.IsAlive)
         {
-            try { _queue.CompleteAdding(); } catch { /* already completed */ }
+            try { _gen.Queue.CompleteAdding(); } catch { /* already completed */ }
             _drain.Join(joinMs);
         }
         Uninstall();
     }
 
-    private static Thread StartDrain()
+    private static Thread StartDrain(Gen gen)
     {
-        var t = new Thread(Drain) { IsBackground = true, Name = "console-log-drain" };
+        var t = new Thread(() => Drain(gen)) { IsBackground = true, Name = "console-log-drain" };
         t.Start();
         return t;
     }
@@ -139,9 +156,21 @@ public static class ConsoleLog
     public static void Write(string line)
     {
         Interlocked.Increment(ref TotalWrites);
+        var probe = Volatile.Read(ref _probeScopes) > 0 ? _threadProbe : null;
+        if (probe is not null) probe.Attempts++;
         if (!Verbose) return;
-        if (_queue.TryAdd(line)) Interlocked.Increment(ref EmittedWrites);
-        else Interlocked.Increment(ref DroppedWrites);
+        var gen = _gen;
+        if (gen.Queue.TryAdd(line))
+        {
+            Interlocked.Increment(ref gen.Enqueued);
+            Interlocked.Increment(ref EmittedWrites);
+            if (probe is not null) probe.Emitted++;
+        }
+        else
+        {
+            Interlocked.Increment(ref DroppedWrites);
+            if (probe is not null) probe.Dropped++;
+        }
     }
 
     /// <summary>
@@ -168,10 +197,15 @@ public static class ConsoleLog
         return sb.ToString();
     }
 
-    private static void Drain()
+    private static void Drain(Gen gen)
     {
-        foreach (var line in _queue.GetConsumingEnumerable())
+        foreach (var line in gen.Queue.GetConsumingEnumerable())
         {
+            // P964 — ResetForTest can retire a generation while its drain is still
+            // stuck writing into a stalled sink. Drop that generation's backlog
+            // instead of replaying it into whatever sink a LATER test installs (and
+            // instead of grinding 20 ms per stale line).
+            if (!ReferenceEquals(Volatile.Read(ref _gen), gen)) return;
             try
             {
                 // Emit to the installed writer's Passthrough when we are
@@ -185,16 +219,69 @@ public static class ConsoleLog
                 else Console.Out.WriteLine(line);
             }
             catch { /* a broken console must never kill the drain thread */ }
+            // P964 — count the line only AFTER the sink took it (see Flush).
+            Interlocked.Increment(ref gen.Written);
         }
     }
 
-    /// <summary>Test seam: wait until the drain queue is empty (background thread
-    /// has written everything enqueued so far to the current sink).</summary>
+    /// <summary>Test seam: wait until the background drain thread has WRITTEN
+    /// everything enqueued so far to the current sink (not merely dequeued it).</summary>
     internal static void Flush(int timeoutMs = 5000)
     {
+        // P964 — the queue's Count reaches 0 when the drain DEQUEUES a line, not when
+        // it has written it, so the old wait could return with the last line still in
+        // flight: a test then saw an empty sink for a line EmittedWrites had already
+        // counted (ConsoleLogNonBlockingTests.Verbose_gate… failing 1-in-20 alone).
+        // Wait on the drain's own delivery counter instead.
+        var gen = _gen;
         var deadline = Environment.TickCount64 + timeoutMs;
-        while (_queue.Count > 0 && Environment.TickCount64 < deadline)
+        while (Environment.TickCount64 < deadline
+               && Interlocked.Read(ref gen.Written) < Interlocked.Read(ref gen.Enqueued))
             Thread.Sleep(1);
+    }
+
+    /// <summary>
+    /// P964 test seam — open a counting scope for the CALLING THREAD. Every
+    /// <see cref="Write"/> attempt made by that thread while the scope is open is
+    /// tallied in the returned <see cref="Probe"/>, tagged with whether the gate let
+    /// it through, so a test can prove the gate on its own lines without reading the
+    /// process-global counters (which any leftover background thread moves).
+    /// </summary>
+    internal static Probe OpenProbeForTest()
+    {
+        var probe = new Probe();
+        if (_threadProbe is null) Interlocked.Increment(ref _probeScopes);
+        _threadProbe = probe;
+        return probe;
+    }
+
+    /// <summary>P964 test seam — close the scope opened by <see cref="OpenProbeForTest"/>.</summary>
+    internal static void CloseProbeForTest()
+    {
+        if (_threadProbe is null) return;
+        _threadProbe = null;
+        Interlocked.Decrement(ref _probeScopes);
+    }
+
+    /// <summary>P964 test seam — tallies for one thread's <see cref="Write"/> calls:
+    /// attempts (every call), emitted (enqueued past the gate), dropped (gate let it
+    /// through but the queue was full).</summary>
+    internal sealed class Probe
+    {
+        public long Attempts;
+        public long Emitted;
+        public long Dropped;
+        public override string ToString() => $"attempts {Attempts}, emitted {Emitted}, dropped {Dropped}";
+    }
+
+    /// <summary>P964 — one sink generation: the bounded queue and the drain progress
+    /// counters <see cref="Flush"/> waits on. Enqueued counts every line the drain
+    /// still owes; Written counts the lines it has handed to the sink.</summary>
+    private sealed class Gen
+    {
+        public readonly BlockingCollection<string> Queue = new(Capacity);
+        public long Enqueued;
+        public long Written;
     }
 
     /// <summary>
@@ -207,10 +294,13 @@ public static class ConsoleLog
     internal static void ResetForTest(int joinMs = 8000)
     {
         Verbose = false;
-        _queue.CompleteAdding();
-        _drain.Join(Math.Min(joinMs, Math.Max(50, (int)(_queue.Count * 2 + 50))));
-        _queue = new BlockingCollection<string>(Capacity);
-        _drain = StartDrain();
+        CloseProbeForTest();                    // a leaked scope must not count the next test
+        var old = _gen;
+        old.Queue.CompleteAdding();
+        _drain.Join(Math.Min(joinMs, Math.Max(50, (int)(old.Queue.Count * 2 + 50))));
+        var next = new Gen();
+        Volatile.Write(ref _gen, next);          // retires `old` (its drain stops by itself)
+        _drain = StartDrain(next);
         Interlocked.Exchange(ref TotalWrites, 0);
         Interlocked.Exchange(ref EmittedWrites, 0);
         Interlocked.Exchange(ref DroppedWrites, 0);
@@ -233,16 +323,11 @@ public static class ConsoleLog
     /// <c>ArgumentOutOfRangeException ('chunkLength')</c> (rig batch 35, 2026-10-26).</para>
     private sealed class QueuedConsoleWriter : TextWriter
     {
-        private readonly BlockingCollection<string> _queue;
         private readonly StringBuilder _buf = new();
         private readonly object _gate = new();
         public TextWriter Passthrough;
 
-        public QueuedConsoleWriter(BlockingCollection<string> queue, TextWriter passthrough)
-        {
-            _queue = queue;
-            Passthrough = passthrough;
-        }
+        public QueuedConsoleWriter(TextWriter passthrough) => Passthrough = passthrough;
 
         public override Encoding Encoding => Console.OutputEncoding;
 
@@ -250,7 +335,14 @@ public static class ConsoleLog
         {
             string line = _buf.ToString();
             _buf.Clear();
-            if (_queue.TryAdd(line)) Interlocked.Increment(ref EmittedWrites);
+            // P964 — enqueue onto the CURRENT generation, so a redirected console keeps
+            // working across a ResetForTest that replaced the queue under an Install().
+            var gen = _gen;
+            if (gen.Queue.TryAdd(line))
+            {
+                Interlocked.Increment(ref gen.Enqueued);
+                Interlocked.Increment(ref EmittedWrites);
+            }
             else Interlocked.Increment(ref DroppedWrites);
         }
 

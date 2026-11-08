@@ -212,46 +212,77 @@ public sealed class ConsoleLogNonBlockingTests
     /// enqueued), and flipping Verbose on re-enables them — without touching the
     /// synchronous lifecycle lines (plain Console.WriteLine is unaffected by the
     /// gate). This is the failing-first proof for item 5's log hygiene.
+    /// <para>
+    /// P964 — this test used to assert <b>exact deltas of the process-global</b>
+    /// <c>ConsoleLog.TotalWrites</c>/<c>EmittedWrites</c> and then look for the
+    /// marker in the captured sink after <c>ConsoleLog.Flush()</c>. Both were
+    /// non-deterministic: the counters are global (any leftover background thread
+    /// — a server sim loop or a bot worker from an earlier test in this exclusive
+    /// collection — moves them), and <c>Flush()</c> used to return as soon as the
+    /// drain DEQUEUED a line, so the marker assertion could run while the last
+    /// line was still in flight (observed 4 times in 70 isolated runs: sink empty,
+    /// "Assert.Contains() Failure", while the counter had already counted it).
+    /// It now asserts on lines attributable to THIS run only: a per-run unique
+    /// marker in the sink, plus <see cref="ConsoleLog.OpenProbeForTest"/>, a
+    /// per-thread counting scope, for the counted-but-not-emitted half. Every
+    /// count stays exact (no "≥").
+    /// </para>
     /// </summary>
     [Fact]
     public void Verbose_gate_silences_and_reenables_routed_diag_lines()
     {
+        // P964 — a per-run token so both halves of the proof count ONLY lines this
+        // run produced: ConsoleLog and Console.Out are process-global.
+        string marker = $"[p433-diag] P964-{Guid.NewGuid():N}";
         var sink = new LockedStringWriter();
         try
         {
             ConsoleLog.ResetForTest();
             Assert.False(ConsoleLog.Verbose);      // default OFF (production bot default)
             ConsoleLog.PointSinkForTest(sink);
+            var probe = ConsoleLog.OpenProbeForTest();   // counts this thread's Write() calls
 
             // OFF: every Write is counted (observability) but NONE is emitted.
             ConsoleLog.Verbose = false;
-            long totBefore = ConsoleLog.TotalWrites, emBefore = ConsoleLog.EmittedWrites;
-            for (int i = 0; i < 100; i++) ConsoleLog.Write($"[p433-diag] bot b{i} ...");
+            for (int i = 0; i < 100; i++) ConsoleLog.Write($"{marker} bot b{i} ...");
             ConsoleLog.Flush();
-            Assert.Equal(100, ConsoleLog.TotalWrites - totBefore);   // still measured
-            Assert.Equal(0, ConsoleLog.EmittedWrites - emBefore);    // nothing emitted
-            // P647 — previously asserted the global sink is empty (Length == 0). That is
-            // wrong under full-suite load: OTHER tests running in parallel write to the
-            // process-global Console.Out, which PointSinkForTest has pointed at this
-            // sink, so unrelated lines appear. The gated lines are identified by the
-            // [p433-diag] marker — assert none of THOSE reached the wire (the actual
-            // behaviour under test), ignoring unrelated parallel console noise.
-            Assert.Equal(0, sink.ToString().Split('\n').Count(l => l.Contains("[p433-diag]")));
+            Assert.Equal(100, probe.Attempts);     // still measured
+            Assert.Equal(0, probe.Emitted);        // nothing enqueued past the gate
+            Assert.Equal(0, probe.Dropped);        // and nothing was lost to a full queue
+            // P647/P964 — the gated lines are identified by this run's marker; assert
+            // none of THOSE reached the wire (ignoring unrelated console noise).
+            Assert.Empty(MarkedLines(sink, marker));
 
-            // ON: the same routed lines ARE emitted.
+            // The un-gated lifecycle path is NOT affected by the gate: a plain
+            // Console.WriteLine still reaches the same sink with the gate OFF.
+            Console.WriteLine($"{marker} plain line, gate off");
+            ConsoleLog.Flush();   // no-op unless something installed the queued writer
+            Assert.Single(MarkedLines(sink, marker));
+
+            // ON: the same routed lines ARE emitted (enqueued and written).
             ConsoleLog.Verbose = true;
-            long emBefore2 = ConsoleLog.EmittedWrites;
-            ConsoleLog.Write("[p433-diag] bot verbose line");
+            ConsoleLog.Write($"{marker} bot verbose line");
             ConsoleLog.Flush();
-            Assert.Equal(1, ConsoleLog.EmittedWrites - emBefore2);
-            Assert.Contains("[p433-diag]", sink.ToString());
+            Assert.Equal(101, probe.Attempts);
+            Assert.Equal(1, probe.Emitted);
+            Assert.Equal(0, probe.Dropped);
+            var marked = MarkedLines(sink, marker);
+            Assert.Equal(2, marked.Length);
+            Assert.Contains(marked, l => l.EndsWith("bot verbose line", StringComparison.Ordinal));
+            Assert.Contains(marked, l => l.EndsWith("plain line, gate off", StringComparison.Ordinal));
         }
         finally
         {
+            ConsoleLog.CloseProbeForTest();
             ConsoleLog.Uninstall();
             ConsoleLog.ResetForTest();
         }
     }
+
+    /// <summary>P964 — the lines in <paramref name="sink"/> that carry this run's marker.
+    /// Thread-safe read: <see cref="LockedStringWriter"/> locks its ToString().</summary>
+    private static string[] MarkedLines(TextWriter sink, string marker) =>
+        (sink.ToString() ?? string.Empty).Split('\n').Where(l => l.Contains(marker, StringComparison.Ordinal)).ToArray();
 
     /// <summary>A sink that checks every emitted line is one whole line written by one
     /// caller (no interleaving, no torn halves). Thread-safe: the drain thread writes.</summary>
