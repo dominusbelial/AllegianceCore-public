@@ -7297,3 +7297,42 @@ Raw sweep summary is `.scratch/p961/fast/summary.json`; qualification receipts
 are `fast-client-isolate-*`, `profile-isolate-*`, `paths-isolate-*`, and
 `wobble-isolate-*` under `.scratch/p961/test-results/`. The broad gate remains
 non-green with these explicit qualifications; no task-specific test failed.
+
+## 2026-11-08 — P965 restart migration barrier qualification
+
+One complete Fast invocation: **13,508 passed / 6 failed / 4 skipped**,
+13,518 cases in 525.4 seconds after the shared runner lock wait. All nine
+infrastructure checks pass. Four passing executions exceed the calibrated
+10-second guard. Every failed/slow method received three standalone invocations
+(45 case results: **30 passed / 15 failed / 0 skipped**, including companions).
+
+| Sweep failure / timing family | Three isolated invocations | Classification |
+|---|---|---|
+| Five `PlayerBundlePathsTests` cases: Artwork executable fallback; Artwork/NativeSource missing defaults; native install-subdirectory guessing; local sky-config precedence | Each failing case fails 3/3; six companion case executions pass | Existing mandated scratch-local TMPDIR exposes the checkout's ancestor `local.env` to the simulated outside-repository installs. Same fixture obstruction as P909–P960; resolver and fixtures unchanged. |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | 3/3 pass, no skips | Sweep saw bomber credit 0.000 instead of 1.000. Existing wire-credit timing family (also P935); no repair/score implementation changed. |
+| P800 hull GPU, P796 varied purchases, SC2 nanite selection, P814b gunner preferences | All cases pass 3/3; maximum individual durations 4.000 / 5.945 / 4.591 / 3.603 s, respectively | Sweep-only calibrated timing exceedances (11.031 / 11.742 / 12.703 / 13.099 s), below the 10-second limit alone. |
+
+The four skips are three optional private Meshy-pack cases and P940 installed
+voice playback without an audio device. Every P965/P807/P660/P765 targeted
+handoff invocation has zero skips.
+
+P807's unchanged 394-peer test passes correctness before its budget assertions
+in all nine changed/base invocations. Initial changed runs: **1 passed / 2 failed**,
+max phase 104.5 / 86.4 / 41.0 ms versus scaled 76.5 / 78.0 / 78.1 ms budgets.
+An alternating dispatch-base/changed comparison gives **base 2 passed / 1 failed**,
+**changed 0 passed / 3 failed**. The base failure's 89.4 ms phase falls in a tick
+with 76 ms GC pause; changed follow-up phases 90.2 / 109.3 / 93.4 ms fall in ticks
+with 79 / 97 / 81 ms pauses. Initial changed failures record 92 / 75 ms pauses.
+This reproduces the existing P807/P960 phase-budget family; it is not a claim
+of equal failure rates or a rig performance A/B. No timing budget, migration
+batch size, join-burst work or test wait changed. The 24-peer two-handoff method passes 3/3;
+no wait hang or sim-pass failure occurred.
+
+New P965 cases pass **21/21**; other affected cohorts pass **144/144**
+(P660 33, P765 3, P598/P739/P762/P480 108). Normal-home never-parks passes **5/5**,
+matching the saved P956 5/5 cohort; every run reaches 24/30, observes combat,
+has zero sim-pass failures, and holds the parking limit (maximum 1.915 s).
+
+Report: [RESTART_MIGRATION_BARRIER_P965.md](reports/RESTART_MIGRATION_BARRIER_P965.md).
+Compact receipts: [validation.json](reports/P965_assets/validation.json).
+Raw ignored evidence: `.scratch/p965/` in the task worktree.

@@ -775,8 +775,6 @@ public sealed partial class Server
             _autoRestartDeadline[fresh] = _simNow + (next.Enabled
                 ? next.IntermissionSeconds : gc.RestartCountdownSeconds ?? 60.0);
         SpawnInitialMiners(fresh);
-        if (_config.LiveSettings?.DebugMode == true)
-            TryAutoStart(fresh);
 
         // P480 — migrate the old mission's still-connected peers into the fresh
         // mission, exactly as native Vacate()+Reset(true) leaves them: still
@@ -786,6 +784,8 @@ public sealed partial class Server
         // new world's clusters/stations/exports and the NotStarted stage).
         var swMigrate = swR is not null ? Stopwatch.StartNew() : null;
         MigrateConnectedPeersIntoRotatedMission(mission, fresh);
+        if (_config.LiveSettings?.DebugMode == true)
+            TryAutoStart(fresh);
         if (swMigrate is not null)
         {
             LastRotateMigrateSetupMs = swMigrate.Elapsed.TotalMilliseconds;
@@ -841,6 +841,16 @@ public sealed partial class Server
     // migration cost. Empty in the normal case; a queue only if two missions
     // end within a few ticks of each other. Drains via <see cref="DrainPendingRotation"/>.
     private readonly List<PendingRotationTail> _pendingRotations = new();
+
+    // P965 — native resets every player and the mission before its next start
+    // check (FedSrv/fsmission.cpp:3433-3546; FedSrv/FedSrv.CPP:8234-8241).
+    // Preserve that prerequisite while the port spreads migration over ticks.
+    private bool HasPendingRotation(Mission mission)
+    {
+        foreach (var tail in _pendingRotations)
+            if (ReferenceEquals(tail.Fresh, mission)) return true;
+        return false;
+    }
 
     // P807 — last measured handoff numbers, for the perf gate test (and the
     // report). Updated only while the verbose/profiler timing is enabled, so
@@ -1177,8 +1187,8 @@ public sealed partial class Server
         // of native re-reading rgfReady[] after the side aggregate was reset at
         // ProcessGameOver, fsmission.cpp:3501). A side whose every connected
         // peer was still ready before the game-over comes back aggregate-ready,
-        // and RecomputeSideReady's flip fires TryAutoStart, so the rotated
-        // mission auto-starts without anyone having to re-click ready — the
+        // and TryAutoStart is retried after removing the migration barrier, so
+        // the mission auto-starts without anyone having to re-click ready — the
         // P598 bug (a rebuilt NotStarted mission that never auto-started until a
         // server restart). Runs AFTER the bursts so every migrated peer's fresh-
         // joiner join burst (MISSION_STAGE NotStarted etc.) is already on the
@@ -1203,6 +1213,11 @@ public sealed partial class Server
         // broadcasts are detached (native destructor: missionigc.cpp:3033-3053).
         _retiredMissions.Enqueue(tail.Old);
         _pendingRotations.RemoveAt(0);
+        // Ready changes during migration (including the recompute above) were
+        // held by the barrier. Re-evaluate once, after all trailing work, even
+        // if no side's ready flag needs another edge. Small synchronous
+        // handoffs retain their immediate ready-up start (P660/P807).
+        TryAutoStart(tail.Fresh);
     }
 
 
@@ -1887,10 +1902,10 @@ public sealed partial class Server
     /// unready side of the same id).</para></summary>
     private void TryAutoStart(Mission mission)
     {
-        if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
+        if (HasPendingRotation(mission) || mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
             return;   // intermission holds even when everybody is ready
         var settings = GameSettings(mission);
-        // P762 / SIM-0142 — native bAutoStart gate (FedSrv.CPP:8223): the
+        // P762 / SIM-0142 — native bAutoStart gate (FedSrv.CPP:8226): the
         // ready-up auto-start only exists when the mission parameter enables it.
         if (!settings.AutoStart) return;
         // P180 — the port's readiness gate (every occupied side aggregate-ready)
@@ -1920,7 +1935,7 @@ public sealed partial class Server
         // (AdvanceStartCountdowns → CompleteStartCountdown →
         // BroadcastEnterGameToMission), not here; StartCountdown emits the
         // SET_START_TIME countdown announcement and sets Stage = Starting.
-        // P762 — native StartCountdown(fStartCountdown), FedSrv.CPP:8225.
+        // P762 — native StartCountdown(fStartCountdown), FedSrv.CPP:8228.
         Console.WriteLine("[ready] FAllReady — mission auto-start begins countdown");
         StartCountdown(mission, (float)(settings.StartCountdownSeconds ?? BriefingCountdownSeconds));
     }
@@ -2060,9 +2075,12 @@ public sealed partial class Server
     /// The eventual <c>Starting → Started</c> transition + <c>ENTER_GAME</c>
     /// broadcast is driven by <see cref="AdvanceStartCountdowns"/> on a later
     /// tick once the target time passes.</summary>
-    private void StartCountdown(Mission mission, float countdownSeconds)
+    private void StartCountdown(Mission mission, float countdownSeconds) =>
+        StartCountdownAt(mission, _simNow + countdownSeconds);
+
+    private void StartCountdownAt(Mission mission, double target)
     {
-        if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
+        if (HasPendingRotation(mission) || mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
             return;   // intermission is authoritative; native allows re-starting from STAGE_STARTING too, but
                       // this port has no re-trigger path — refuse
 
@@ -2074,7 +2092,6 @@ public sealed partial class Server
                     SendSideTechToPeer(peer.Key, side);
         mission.Stage = MissionStage.Starting;
         MarkLobbyDirty("stage-starting");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
-        double target = _simNow + countdownSeconds;
         _startCountdownDeadline[mission] = target;
 
         // P309 — native CFSMission::StartCountdown ends in
@@ -2085,7 +2102,7 @@ public sealed partial class Server
         BroadcastMissionStageToMission(mission, MissionStage.Starting);
 
         int n = SendToMissionPeers(mission, CountdownPacket(target));
-        Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown begun ({countdownSeconds}s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to {n} peer(s)");
+        Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown begun ({Math.Max(0, target - _simNow)}s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to {n} peer(s)");
     }
 
     // SET_START_TIME is native (fsmission.cpp:1931-1938, 3539-3546).
@@ -2111,9 +2128,10 @@ public sealed partial class Server
     {
         foreach (var m in _missions)
         {
+            if (HasPendingRotation(m)) continue;
             if (m.Stage != MissionStage.Starting) continue;
             if (!_startCountdownDeadline.TryGetValue(m, out var target)) continue;
-            if (now <= target) continue; // FedSrv.CPP:8238, strict expiry
+            if (now <= target) continue; // FedSrv.CPP:8235, strict expiry
             if (!GameSettings(m).AllowEmptyTeams && !HasMissionPlayers(m)) continue;
             CompleteStartCountdown(m, now);
         }
@@ -2135,6 +2153,7 @@ public sealed partial class Server
     {
         foreach (var m in _missions)
         {
+            if (HasPendingRotation(m)) continue;
             if (m.Stage != MissionStage.NotStarted) { _autoRestartDeadline.Remove(m); _restartWarnings.Remove(m); continue; }
             if (!_autoRestartDeadline.TryGetValue(m, out var deadline)) continue;
             var settings = GameSettings(m);
@@ -2174,7 +2193,11 @@ public sealed partial class Server
             foreach (var peer in _peerShips.Values.Where(v => ReferenceEquals(v.Ship.Mission, m)).ToArray())
                 RecomputeSideReady(peer.Ship);
             _autoRestartDeadline.Remove(m);
-            StartCountdown(m, arenaNextMatch ? BriefingCountdownSeconds : (float)Math.Max(0, deadline - now));
+            // Keep the original absolute target while migration holds the
+            // drivers. Native's restart target is timeStart (fsmission.cpp:3541);
+            // P660 adds its briefing after the intermission deadline.
+            double startTarget = arenaNextMatch ? deadline + BriefingCountdownSeconds : deadline;
+            StartCountdownAt(m, startTarget);
         }
     }
 
