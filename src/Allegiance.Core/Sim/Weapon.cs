@@ -52,7 +52,7 @@ public sealed class Weapon
     private readonly DataPartTypeIGC.Weapon _type;
     private readonly DataProjectileTypeIGC _projectileType;
     private short _mountId;
-    private readonly Random _rng;          // dispersion source (weaponIGC.cpp:259-262)
+    private readonly Random? _rng;          // dispersion source (weaponIGC.cpp:259-262)
 
     // The ship riding this turret mount as gunner (native m_pshipGunner,
     // weaponIGC.h:260) — null for a fixed gun, and null for a turret gun with
@@ -71,7 +71,7 @@ public sealed class Weapon
     /// <param name="type">The decoded weapon part type.</param>
     /// <param name="projectileType">The decoded projectile type the weapon fires.</param>
     /// <param name="mountId">The mount/hardpoint index this weapon occupies.</param>
-    /// <param name="rng">Optional RNG for dispersion; defaults to <see cref="Random.Shared"/>.</param>
+    /// <param name="rng">Optional RNG for dispersion; defaults to the ship's mission generator.</param>
     public Weapon(Ship ship, DataPartTypeIGC.Weapon type, DataProjectileTypeIGC projectileType,
                   short mountId, Random? rng = null)
     {
@@ -79,7 +79,7 @@ public sealed class Weapon
         _type = type;
         _projectileType = projectileType;
         _mountId = mountId;
-        _rng = rng ?? Random.Shared;
+        _rng = rng;
         _nextFire = ship.LastUpdate;   // armed: subject only to cooldown/selection/energy from the first tick
     }
 
@@ -428,5 +428,5 @@ public sealed class Weapon
     }
 
     /// <summary>A uniform draw in [min, max) — the C++ <c>random(min,max)</c> (zlib) used for dispersion.</summary>
-    private float NextRandom(float min, float max) => min + (float)(_rng.NextDouble() * (max - min));
+    private float NextRandom(float min, float max) => min + (float)((_rng ?? _ship.Mission?.Random ?? Random.Shared).NextDouble() * (max - min));
 }

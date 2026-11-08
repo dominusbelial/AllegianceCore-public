@@ -662,7 +662,7 @@ public sealed class Probe : Model, IProbeIgc
 
     /// <summary>A uniform draw in [min, max) — the C++ <c>random(min,max)</c>
     /// (zlib) used for dispersion, identical to <see cref="Weapon"/>'s.</summary>
-    private float NextRandom(float min, float max) => min + (float)(_rng.NextDouble() * (max - min));
+    private float NextRandom(float min, float max) => min + (float)((Mission?.Random ?? _rng).NextDouble() * (max - min));
 
     /// <summary>
     /// <c>GetDamageConstant(type, defenseType)</c> — the probe's own private

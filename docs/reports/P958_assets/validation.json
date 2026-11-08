@@ -1,0 +1,446 @@
+{
+  "base": "692c84d4",
+  "worktreeBranch": "codex/p958",
+  "commitsMade": 0,
+  "pushesMade": 0,
+  "builds": {
+    "solution": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "toolProjects": 120,
+    "toolWarnings": 0,
+    "toolErrors": 0,
+    "nativeAot": "passed; no IL2026/IL3050"
+  },
+  "serialQualification": [
+    {
+      "label": "affected-1",
+      "returncode": 0,
+      "seconds": 3.643054246902466,
+      "loadStart": 14.13916015625,
+      "loadEnd": 14.13916015625,
+      "passed": 220,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "affected-2",
+      "returncode": 0,
+      "seconds": 3.8544516563415527,
+      "loadStart": 14.13916015625,
+      "loadEnd": 13.3271484375,
+      "passed": 220,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "affected-3",
+      "returncode": 0,
+      "seconds": 3.873490333557129,
+      "loadStart": 13.3271484375,
+      "loadEnd": 13.060546875,
+      "passed": 220,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "pod-load-1",
+      "returncode": 0,
+      "seconds": 76.95096778869629,
+      "loadStart": 13.060546875,
+      "loadEnd": 7.93017578125,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "pod-load-2",
+      "returncode": 0,
+      "seconds": 75.70997285842896,
+      "loadStart": 7.93017578125,
+      "loadEnd": 8.40576171875,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "pod-load-3",
+      "returncode": 0,
+      "seconds": 78.25562167167664,
+      "loadStart": 8.40576171875,
+      "loadEnd": 9.9619140625,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "determinism-1",
+      "returncode": 0,
+      "seconds": 225.80732131004333,
+      "loadStart": 9.9619140625,
+      "loadEnd": 6.2060546875,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "determinism-2",
+      "returncode": 0,
+      "seconds": 222.6674201488495,
+      "loadStart": 6.2060546875,
+      "loadEnd": 5.69580078125,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "determinism-3",
+      "returncode": 0,
+      "seconds": 220.97012853622437,
+      "loadStart": 5.69580078125,
+      "loadEnd": 6.18603515625,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "label": "never-parks-base-1",
+      "returncode": 0,
+      "seconds": 199.17476844787598,
+      "loadStart": 6.18603515625,
+      "loadEnd": 8.7314453125,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 194.0s, samples=1935, reached=24/30, longest speed<1 with target=2.007s, shots=7527, hits=3986, kills=24"
+    },
+    {
+      "label": "never-parks-changed-1",
+      "returncode": 0,
+      "seconds": 202.15200281143188,
+      "loadStart": 8.7314453125,
+      "loadEnd": 4.86328125,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 197.2s, samples=1968, reached=24/30, longest speed<1 with target=2.015s, shots=1734, hits=1066, kills=7"
+    },
+    {
+      "label": "never-parks-base-2",
+      "returncode": 0,
+      "seconds": 197.36734318733215,
+      "loadStart": 4.86328125,
+      "loadEnd": 7.0576171875,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 192.8s, samples=1921, reached=24/30, longest speed<1 with target=2.105s, shots=5635, hits=2993, kills=23"
+    },
+    {
+      "label": "never-parks-changed-2",
+      "returncode": 0,
+      "seconds": 405.63721776008606,
+      "loadStart": 7.0576171875,
+      "loadEnd": 4.97216796875,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 400.5s, samples=3992, reached=24/30, longest speed<1 with target=2.005s, shots=2065, hits=764, kills=7"
+    },
+    {
+      "label": "never-parks-base-3",
+      "returncode": 0,
+      "seconds": 178.17283940315247,
+      "loadStart": 4.97216796875,
+      "loadEnd": 5.3896484375,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 173.5s, samples=1731, reached=24/30, longest speed<1 with target=1.503s, shots=4336, hits=2212, kills=15"
+    },
+    {
+      "label": "never-parks-changed-3",
+      "returncode": 0,
+      "seconds": 272.06498503685,
+      "loadStart": 5.3896484375,
+      "loadEnd": 5.9912109375,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 267.2s, samples=2665, reached=24/30, longest speed<1 with target=0.607s, shots=1148, hits=509, kills=2"
+    },
+    {
+      "label": "never-parks-base-4",
+      "returncode": 0,
+      "seconds": 197.18972611427307,
+      "loadStart": 5.9912109375,
+      "loadEnd": 5.455078125,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 192.2s, samples=1917, reached=24/30, longest speed<1 with target=3.007s, shots=6634, hits=3312, kills=21"
+    },
+    {
+      "label": "never-parks-changed-4",
+      "returncode": 0,
+      "seconds": 202.69743466377258,
+      "loadStart": 5.455078125,
+      "loadEnd": 4.98486328125,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 197.8s, samples=1972, reached=24/30, longest speed<1 with target=1.906s, shots=4434, hits=2305, kills=15"
+    },
+    {
+      "label": "never-parks-base-5",
+      "returncode": 0,
+      "seconds": 199.2037537097931,
+      "loadStart": 4.98486328125,
+      "loadEnd": 7.60888671875,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 194.6s, samples=1940, reached=24/30, longest speed<1 with target=1.403s, shots=5028, hits=2309, kills=13"
+    },
+    {
+      "label": "never-parks-changed-5",
+      "returncode": 0,
+      "seconds": 368.7127265930176,
+      "loadStart": 7.60888671875,
+      "loadEnd": 6.43896484375,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "P700 local 15v15: 364.0s, samples=3629, reached=24/30, longest speed<1 with target=1.313s, shots=3718, hits=1608, kills=13"
+    }
+  ],
+  "telemetrySha256": {
+    "Hundred_pods_per_side_return_with_native_rescue_capable_launch_traffic": [
+      "42af1577e74bd396bbd77671c1099615b5c0741e11acef0258860f27d6e834ca",
+      "42af1577e74bd396bbd77671c1099615b5c0741e11acef0258860f27d6e834ca",
+      "42af1577e74bd396bbd77671c1099615b5c0741e11acef0258860f27d6e834ca"
+    ],
+    "Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic": [
+      "3413d64f8ae9aeefce1a41fa5b3cca28fb7ffbc1b7b0fcb6c400361f72ceba18",
+      "3413d64f8ae9aeefce1a41fa5b3cca28fb7ffbc1b7b0fcb6c400361f72ceba18",
+      "3413d64f8ae9aeefce1a41fa5b3cca28fb7ffbc1b7b0fcb6c400361f72ceba18"
+    ]
+  },
+  "parallelQualification": [
+    {
+      "label": "parallel-pods-1",
+      "returncode": 0,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "load": 9.6015625
+    },
+    {
+      "label": "parallel-pods-2",
+      "returncode": 0,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "load": 9.23291015625
+    }
+  ],
+  "parallelTelemetryIdentical": {
+    "1": true,
+    "2": true
+  },
+  "fastTier": {
+    "tier": "fast",
+    "seconds": 594.1334956730061,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 139,
+        "outcomes": {
+          "Passed": 139
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 4902,
+        "outcomes": {
+          "Passed": 4899,
+          "NotExecuted": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2271,
+        "outcomes": {
+          "Passed": 2270,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6154,
+        "outcomes": {
+          "Passed": 6149,
+          "Failed": 5
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9768965517241379,
+      "referenceMs": 3.6829,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+        "outcome": "Passed",
+        "seconds": 11.4343802
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 11.5345872
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 23.1802796
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 21.6529257
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "outcome": "Passed",
+        "seconds": 11.8182094
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 19.5175667
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 23.8037823
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+        "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+        "outcome": "Passed",
+        "seconds": 12.4643248
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production(civ: 5)",
+        "method": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+        "outcome": "Passed",
+        "seconds": 12.0800049
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production(civ: 4)",
+        "method": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+        "outcome": "Passed",
+        "seconds": 12.0330904
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+        "method": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+        "outcome": "Passed",
+        "seconds": 10.5305744
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+        "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+        "outcome": "Passed",
+        "seconds": 10.886002
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 20.0441834
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+        "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+        "outcome": "Passed",
+        "seconds": 12.0752232
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+        "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+        "outcome": "Passed",
+        "seconds": 12.5435053
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production(civ: 18)",
+        "method": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+        "outcome": "Passed",
+        "seconds": 11.0670635
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.4948538
+      },
+      {
+        "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+        "method": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+        "outcome": "Passed",
+        "seconds": 10.3681653
+      },
+      {
+        "name": "Allegiance.Core.Tests.PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core",
+        "method": "Allegiance.Core.Tests.PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core",
+        "outcome": "Passed",
+        "seconds": 11.8723176
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.9739011
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "20 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06363552599941613,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "nonTaskIsolation": {
+    "methodFamilies": 19,
+    "invocations": 57,
+    "outcomes": {
+      "Passed": 65,
+      "Failed": 16
+    },
+    "timingViolations": 6,
+    "familiesWithTimingViolations": [
+      "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "Allegiance.Core.Tests.PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core"
+    ]
+  }
+}

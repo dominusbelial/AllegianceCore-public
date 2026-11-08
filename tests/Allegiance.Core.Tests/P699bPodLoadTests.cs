@@ -10,9 +10,13 @@ using Srv = Allegiance.Server.Server;
 
 namespace Allegiance.Core.Tests;
 
+// Fixed seed 23 replays the worst legacy failure in P958's sweep. Strict
+// per-pod checks remain; this is not an all-seed throughput guarantee.
 [Trait("Tier", "Live")]
 public sealed class P699bPodLoadTests(ITestOutputHelper output)
 {
+    internal const int SimulationSeed = 23;
+
     [SkippableFact, Trait("Requires", "Artwork")]
     public void Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic() => Run(false);
 
@@ -21,8 +25,22 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
 
     private void Run(bool rescueTraffic)
     {
+        int seed = int.TryParse(Environment.GetEnvironmentVariable("P958_SEED"), out int selected) ? selected : SimulationSeed;
+        bool legacySteering = Environment.GetEnvironmentVariable("P958_LEGACY_STEERING") == "1";
+        Validate(Simulate(rescueTraffic, seed, legacySteering));
+    }
+
+    internal sealed record PodRun(bool RescueTraffic, PodTripTelemetry.Result[] Results,
+        int Launched, long SimFailures, Dictionary<int, int> BayUsage)
+    {
+        internal string Signature => string.Join('\n', Results.OrderBy(r => r.Ship)
+            .Select(r => System.Text.Json.JsonSerializer.Serialize(r, PodTripJsonContext.Default.Result)));
+    }
+
+    internal PodRun Simulate(bool rescueTraffic, int seed, bool legacySteering = false)
+    {
         Require.Artwork();
-        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        using var server = new Srv { SpawnInitialMinersAtBoot = false, SimulationRandom = new Random(seed) };
         server.Boot(new ServerConfig
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc", Port = 0,
@@ -30,6 +48,7 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                 CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }]
         });
         var mission = server.Missions[0]; mission.Stage = MissionStage.Started;
+        output.WriteLine($"P958_RANDOM seed={seed} serverGc={System.Runtime.GCSettings.IsServerGC}");
         // File maps retain their authored station types regardless of selected civs.
         // Use each side's actual initial garrison, as generated maps and the rig do.
         foreach (var sector in mission.Sectors)
@@ -73,12 +92,32 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                 release[ship] = i / 25 * 800; // 50-pod waves; native crowding remains enabled
                 pods.Add((ship, homes[side]));
             }
+        var traceIds = (Environment.GetEnvironmentVariable("P958_TRACE") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(short.Parse).ToHashSet();
+        static float[] V(Vector3 v) => [v.X, v.Y, v.Z];
+        void Trace(string kind, object data) => output.WriteLine("P958_TRACE " + kind + " " + System.Text.Json.JsonSerializer.Serialize(data));
+        if (traceIds.Count > 0) mission.CollisionResolved = c =>
+        {
+            if (!traceIds.Contains(c.Ship.Id)) return;
+            string other = c.Other switch { Ship sh => $"ship:{sh.Id}", Station st => $"station:{st.StationId}", Asteroid a => $"asteroid:{a.Data.AsteroidId}", _ => c.Other.GetType().Name };
+            Trace("collision", new { now = server.SimNow, ship = c.Ship.Id, other, sector = c.Ship.Sector?.Id,
+                c.CoincidentCenters, p = V(c.Position), v = V(c.Velocity), contact = V(c.ContactPosition), separated = V(c.SeparatedPosition),
+                separation = V(c.SeparatedPosition - c.ContactPosition), deltaVelocity = V(c.NewVelocity - c.Velocity), afterVelocity = V(c.NewVelocity) });
+        };
+        if (traceIds.Count > 0) ((ServerHost)mission.Site).ShipWarped += (ship, from, to) =>
+        {
+            if (traceIds.Contains(ship.Id)) Trace("warp", new { now = server.SimNow, ship = ship.Id, from = from.Id, to = to.Id,
+                alreadyHome = from.Id == homes[ship.SideId!.Value].Data.ClusterId, p = V(ship.Position), v = V(ship.Velocity) });
+        };
         var results = new Dictionary<short, PodTripTelemetry.Result>();
         server.PodTrips.Completed += result => results[result.Ship] = result;
+        var navigationObstacles = new List<NativeGotoPlan.Obstacle>();
         var bayUsage = new Dictionary<int, int>();
+        var lastBay = new Dictionary<short, int>();
         int launched = 0;
         var traffic = new List<Ship>();
         bool baseline = Environment.GetEnvironmentVariable("P699B_BASELINE") == "1";
+        legacySteering |= baseline;
         var launch = typeof(Srv).GetMethod("UndockShipState", BindingFlags.Instance | BindingFlags.NonPublic)!;
         var cache = start.StationLandingBays!;
         for (int tick = 0; tick < 8500; tick++)
@@ -105,8 +144,23 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                         bays, bays.Length, rest, speed > .1f ? ship.Position + ship.Velocity * (rest / speed) : ship.Position,
                         home.Radius + ship.HullType.Length / 2 + 10, ship.TurnRates[ControlData.AxisYaw],
                         ship.TurnRates[ControlData.AxisPitch], false, baseline ? 0 : ship.Id);
-                    ship.Controls = DockApproach.Steer(step, ship.Position, ship.Orientation, ship.Velocity, rest, dt: .05f, turnState: DockApproach.TurnState.FromShip(ship));
-                    ship.StateM = DockApproach.MovementButtons(step, ship.Position, ship.Orientation, ship.Velocity, DockApproach.TurnState.FromShip(ship));
+                    if (legacySteering)
+                    {
+                        ship.Controls = DockApproach.Steer(step, ship.Position, ship.Orientation, ship.Velocity, rest, dt: .05f, turnState: DockApproach.TurnState.FromShip(ship));
+                        ship.StateM = DockApproach.MovementButtons(step, ship.Position, ship.Orientation, ship.Velocity, DockApproach.TurnState.FromShip(ship));
+                    }
+                    else
+                    {
+                        var target = new NativeGotoPlan.Target(Ship.NativeKey(NativeGotoPlan.Kind.Station, home.StationId),
+                            home.Data.ClusterId, NativeGotoPlan.Kind.Station, NativeGotoPlan.Objective.Enter, home.Center, home.Radius);
+                        var navigation = NativeControls(ship, target, bays, navigationObstacles);
+                        ship.Controls = navigation.Controls;
+                        ship.StateM = navigation.Buttons;
+                        step = navigation.Step;
+                    }
+                    lastBay[ship.Id] = step.BayIndex;
+                    if (traceIds.Contains(ship.Id) && tick % 10 == 0)
+                        Trace("dock", new { now = server.SimNow, ship = ship.Id, step.Mask, step.BayIndex, goal = V(step.Goal), facing = V(step.Facing), rest });
                     if (step.IsEnter()) bayUsage[step.BayIndex] = bayUsage.GetValueOrDefault(step.BayIndex) + 1;
                 }
                 else
@@ -120,12 +174,25 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                         mouth = ship.Sector.Warps.First(w => w.Destination!.Id == next).Warp;
                     }
                     else mouth = PodReturnNavigation.NextWarp(warps, ship.Sector.Id, home.Data.ClusterId, ship.Position, home.Center);
+                    if (traceIds.Contains(ship.Id) && tick % 10 == 0)
+                        Trace("route", new { now = server.SimNow, ship = ship.Id, sector = ship.Sector.Id, home = home.Data.ClusterId, mouth = mouth?.WarpId });
                     Assert.NotNull(mouth);
                     var w = mouth!.Value;
-                    // Use the real MCP transit controller: docking's native
-                    // turn/brake gate must not brake a pod inside an aleph.
-                    ship.Controls = AutopilotSteering.Pursue(ship.Position, ship.Orientation,
-                        new(w.Position[0], w.Position[1], w.Position[2]));
+                    if (legacySteering)
+                    {
+                        // Original P699b: MCP transit control without native Dodge.
+                        ship.Controls = AutopilotSteering.Pursue(ship.Position, ship.Orientation,
+                            new(w.Position[0], w.Position[1], w.Position[2]));
+                    }
+                    else
+                    {
+                        var target = new NativeGotoPlan.Target(Ship.NativeKey(NativeGotoPlan.Kind.Warp, w.WarpId),
+                            ship.Sector.Id, NativeGotoPlan.Kind.Warp, NativeGotoPlan.Objective.Enter,
+                            new(w.Position[0], w.Position[1], w.Position[2]), w.Radius);
+                        var navigation = NativeControls(ship, target, [], navigationObstacles);
+                        ship.Controls = navigation.Controls;
+                        ship.StateM = navigation.Buttons;
+                    }
                 }
             }
             // Continuous physical launch traffic through production launch frames.
@@ -155,6 +222,11 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                 foreach (var flyer in pods.Select(p => p.Ship).Concat(traffic))
                     if (!flyer.Dead && flyer.Sector is not null && flyer.StationId is null)
                         server.AdvanceWarpHandshakeOnAcceptedUpdate(flyer);
+            foreach (var (pod, home) in pods)
+                if (traceIds.Contains(pod.Id) && !results.ContainsKey(pod.Id) && pod.Sector is { } current && tick % 10 == 0)
+                    Trace("pose", new { now = server.SimNow, ship = pod.Id, sector = current.Id, p = V(pod.Position), v = V(pod.Velocity),
+                        stationDistance = (pod.Position - home.Center).Length(), pod.StateM,
+                        warps = current.Warps.Select(w => new { id = w.Warp.WarpId, to = w.Destination?.Id, distance = (pod.Position - new Vector3(w.Warp.Position[0], w.Warp.Position[1], w.Warp.Position[2])).Length(), radius = w.Warp.Radius }).ToArray() });
             server.TickSim();
             if (results.Count == 200) break;
         }
@@ -162,20 +234,48 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
             output.WriteLine($"FAILED ship={r.Ship} outcome={r.Outcome} route={string.Join(',', r.Route.Select(v => v.Sector))} homeAt={r.HomeAt} radiusAt={r.RadiusAt} endPosition={string.Join(',', r.EndPosition)} seconds={r.Seconds}");
         server.PodTrips.Flush(server.SimNow);
         var times = results.Values.Where(r => r.Outcome is "docked" or "rescued").Select(r => r.Seconds).Order().ToArray();
-        output.WriteLine($"baseline={baseline} rescueTraffic={rescueTraffic} docked={results.Values.Count(r => r.Outcome == "docked")} rescued={results.Values.Count(r => r.Outcome == "rescued")} total={times.Length}/200 oxygen={results.Values.Count(r => r.Outcome == "oxygen")} other={results.Values.Count(r => r.Outcome != "docked" && r.Outcome != "rescued" && r.Outcome != "oxygen")} homeReached={results.Values.Count(r => r.HomeAt is not null)} launchTraffic={launched} median={(times.Length > 0 ? times[times.Length / 2] : 0):F2} p95={(times.Length > 0 ? times[(int)(times.Length * .95)] : 0):F2} bays={string.Join(",", bayUsage.Select(x => $"{x.Key}:{x.Value}"))}");
-        Assert.True(launched >= 20);
-        Assert.Equal(200, results.Count);
-        Assert.DoesNotContain(results.Values, r => r.Outcome != "docked" && r.Outcome != "rescued" && r.Outcome != "oxygen");
-        Assert.Equal(0, results.Values.Count(r => r.Outcome == "oxygen"));
-        Assert.DoesNotContain(results.Values, r => r.Outcome == "oxygen" && r.RadiusAt is not null);
-        Assert.All(results.Values, r => Assert.Equal(300, r.OxygenAllowance, 5));
-        if (!rescueTraffic)
+        output.WriteLine($"baseline={baseline} legacySteering={legacySteering} rescueTraffic={rescueTraffic} docked={results.Values.Count(r => r.Outcome == "docked")} rescued={results.Values.Count(r => r.Outcome == "rescued")} total={times.Length}/200 oxygen={results.Values.Count(r => r.Outcome == "oxygen")} other={results.Values.Count(r => r.Outcome != "docked" && r.Outcome != "rescued" && r.Outcome != "oxygen")} homeReached={results.Values.Count(r => r.HomeAt is not null)} launchTraffic={launched} median={(times.Length > 0 ? times[times.Length / 2] : 0):F2} p95={(times.Length > 0 ? times[(int)(times.Length * .95)] : 0):F2} bays={string.Join(",", bayUsage.Select(x => $"{x.Key}:{x.Value}"))}");
+        foreach (var result in results.Values.OrderBy(r => r.Ship))
+            output.WriteLine("P958_POD " + System.Text.Json.JsonSerializer.Serialize(result, PodTripJsonContext.Default.Result));
+        output.WriteLine("P958_BAYS " + string.Join(",", results.Values.Where(r => r.Outcome == "docked")
+            .GroupBy(r => (r.Side, Bay: lastBay.GetValueOrDefault(r.Ship, -1)))
+            .OrderBy(g => g.Key.Side).ThenBy(g => g.Key.Bay).Select(g => $"side{g.Key.Side}/bay{g.Key.Bay}:{g.Count()}")));
+        return new(rescueTraffic, results.Values.OrderBy(r => r.Ship).ToArray(), launched,
+            server.SimPassStageFailures, bayUsage);
+    }
+
+    // Use the same native controller and Ignore-filtered obstacle packing as
+    // production drones. GotoPlan gives Dodge first priority (common.cpp:1999-2020),
+    // including on the station approach; Enter | NoDodge still charges the bay.
+    internal static NativeGotoPlan.Result NativeControls(Ship ship, NativeGotoPlan.Target target,
+        DockApproach.DockBay[] bays, List<NativeGotoPlan.Obstacle>? obstacles = null)
+    {
+        var mover = new NativeGotoPlan.Mover(ship.Position, ship.Velocity, ship.Orientation, ship.Radius,
+            DockApproach.TurnState.FromShip(ship), ship.EffectiveMaxTurnRate(ControlData.AxisRoll),
+            ship.EffectiveTurnTorque(ControlData.AxisRoll), ship.TurnRates[ControlData.AxisRoll]);
+        obstacles ??= [];
+        ship.FillNativeObstacles(ship.Sector!, obstacles);
+        return NativeGotoPlan.Execute(mover, target, bays, System.Runtime.InteropServices.CollectionsMarshal.AsSpan(obstacles),
+            .05f, ship.HullType.BackMultiplier);
+    }
+
+    internal static void Validate(PodRun run)
+    {
+        var results = run.Results;
+        var times = results.Where(r => r.Outcome is "docked" or "rescued").Select(r => r.Seconds).Order().ToArray();
+        Assert.True(run.Launched >= 20);
+        Assert.Equal(200, results.Length);
+        Assert.DoesNotContain(results, r => r.Outcome != "docked" && r.Outcome != "rescued" && r.Outcome != "oxygen");
+        Assert.Equal(0, results.Count(r => r.Outcome == "oxygen"));
+        Assert.DoesNotContain(results, r => r.Outcome == "oxygen" && r.RadiusAt is not null);
+        Assert.All(results, r => Assert.Equal(300, r.OxygenAllowance, 5));
+        if (!run.RescueTraffic)
         {
-            Assert.All(results.Values, r => { Assert.Equal("docked", r.Outcome); Assert.True(r.Route.Length >= 3);
+            Assert.All(results, r => { Assert.Equal("docked", r.Outcome); Assert.True(r.Route.Length >= 3);
                 Assert.NotNull(r.HomeAt); Assert.NotNull(r.RadiusAt); Assert.NotNull(r.BayAt); });
         }
         Assert.True(times[^1] < 300);
-        Assert.Equal(0, server.SimPassStageFailures);
+        Assert.Equal(0, run.SimFailures);
     }
 
     [SkippableFact, Trait("Requires", "Artwork")]
