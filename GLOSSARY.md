@@ -1705,6 +1705,14 @@ list in **reverse**.
 
 ## 9. Rig / runner / CI
 
+- **Restart migration barrier (P965)** — `src/Allegiance.Server/Server.Lobby.cs`
+  holds countdown, auto-restart, ready and manual starts while that fresh mission
+  has a `PendingRotationTail`; completion retries preserved readiness and keeps
+  absolute restart/briefing targets. Native synchronous reset precedes the next
+  start check (`FedSrv/fsmission.cpp:3433-3546`, `FedSrv/FedSrv.CPP:8234-8241`).
+  Loopback event-order proof (24/64 peers):
+  `tests/Allegiance.ClientCore.Tests/P965RestartMigrationBarrierTests.cs`;
+  report: `docs/reports/RESTART_MIGRATION_BARRIER_P965.md`.
 - **P807 handoff loopback diagnostics (P960)** — bounded simulation/receipt waits
   and failure snapshots (match, condition, identities, readiness and captured console)
   in `tests/Allegiance.ClientCore.Tests/P807GameOverHandoffTests.cs`.
