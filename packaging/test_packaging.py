@@ -65,7 +65,9 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual([url], output)
             if shutil.which('gio'):
                 # Exercise the actual Desktop Entry parser too: it probes the
-                # executable before %% expansion and normalizes join? to join/?.
+                # executable before %% expansion. Newer GLib (2.88) normalizes join? to
+                # join/?, older GLib (2.80, Ubuntu 24.04 CI) passes it unchanged; the
+                # client accepts both forms (JoinLink.TryParse).
                 receipt = root / 'argv'
                 exe.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$P944_ARGV_RECEIPT"\n')
                 subprocess.check_call(['gio', 'launch', str(desktop), url],
@@ -74,7 +76,7 @@ class PackagingTests(unittest.TestCase):
                     if receipt.exists():
                         break
                     time.sleep(0.1)
-                self.assertEqual([url.replace('join?', 'join/?')], receipt.read_text().splitlines())
+                self.assertIn(receipt.read_text().splitlines(), ([url], [url.replace('join?', 'join/?')]))
 
     def test_join_desktop_templates_and_windows_registry_are_well_formed(self):
         for name in ('allegiance.desktop', 'allegiance-appimage.desktop'):
