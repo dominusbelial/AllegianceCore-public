@@ -1393,6 +1393,15 @@ list in **reverse**.
   (`finale_early_pressure_minutes`, default 0 = off). Reports:
   `docs/reports/P801_BOMBER_MASSING.md`, `docs/reports/P896_REPORT.md`,
   `docs/reports/FINALE_STRIKE_MASS_P959.md`.
+  P961's opt-in `finale_reachable_strike` counts threats near the staging/release
+  path, caps requirements at live armed reserved hulls with a known route before
+  the deadline, retargets unreachable volleys and commits useful assembly plateaus.
+  The reachable subset's planner also owns the logged kill count and delivery
+  feedback coefficients. Pure decisions: `tools/allegiance-mcp/FinaleAssembly.cs`; client-world adapter:
+  `tools/allegiance-mcp/BotManager.ReachableStrike.cs`. Clash assignments preserve
+  the committed wing's destination; legal fallback loadouts do not trigger upgrade
+  trips, and one preparation refit is allowed per prearm/arm cycle. Report:
+  `docs/reports/FINALE_REACHABLE_STRIKE_P961.md`.
   Local measurement harnesses: `tools/p896-strike-proof/`, `tools/p959-strike-proof/`.
 - **Generated research scheduling and receipts (P942)** — canonical generated
   plans execute research before optional production through

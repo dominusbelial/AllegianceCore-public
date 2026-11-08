@@ -1,0 +1,95 @@
+{
+  "BaseCommit": "48950527",
+  "Branch": "codex/p961",
+  "NoCommitsOrPushes": true,
+  "SolutionBuild": {
+    "Warnings": 0,
+    "Errors": 0
+  },
+  "ToolsBuild": {
+    "Projects": 121,
+    "Warnings": 0,
+    "Errors": 0
+  },
+  "NewP961Cases": 21,
+  "FocusedRuns": [
+    [
+      132,
+      0,
+      0
+    ],
+    [
+      132,
+      0,
+      0
+    ],
+    [
+      132,
+      0,
+      0
+    ]
+  ],
+  "P959AloneRuns": [
+    [
+      14,
+      0,
+      0
+    ],
+    [
+      14,
+      0,
+      0
+    ],
+    [
+      14,
+      0,
+      0
+    ]
+  ],
+  "RequiredLiveRuns": [
+    [
+      3,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0
+    ]
+  ],
+  "FullFast": {
+    "Passed": 13527,
+    "Failed": 8,
+    "Skipped": 3,
+    "InfrastructureChecksPassed": 9,
+    "QualifiedNonTaskFailures": true,
+    "OverallGreen": false
+  },
+  "ShowcaseRuns": 20,
+  "ShowcaseStageOver": 20,
+  "Commits": 66,
+  "TickMilliseconds": 50,
+  "DefenderObservationVersion": 2,
+  "EveryEnabledCommitMeetsUsefulMinimum": true,
+  "EveryEnabledRequirementWithinReachableCap": true,
+  "MaxAfterPreparationTripsPerPilotCycle": 1,
+  "GlossaryPaths": 656,
+  "ParityValid": true,
+  "WorktreeHygiene": {
+    "ChangedFiles": 24,
+    "Findings": [],
+    "NewMedia": 0
+  },
+  "RawEvidenceIgnored": true,
+  "ResidualHostCleanup": {
+    "DiagnosticSocket": "/tmp/dotnet-diagnostic-364-9629894-socket",
+    "NamespacePidIsNotHostPid": true,
+    "Reason": "Discarded pre-fix proof console-monitor deadlock; parent session unavailable; verified process-handle termination returned EINVAL."
+  }
+}

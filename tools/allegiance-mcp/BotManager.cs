@@ -3647,7 +3647,12 @@ bool isThreat =
                         bot.FinaleProtectedSince = null; bot.FinaleGrantVerified = false;
                         // P896 — the wave-sizing loss count: bombers of this side lost
                         // since its last commit (see FinaleVolleyRequirement).
-                        if (finale.Plans.TryGetValue(bot.Side, out var lossPlan)) lossPlan.WaveLosses++;
+                        if (finale.Plans.TryGetValue(bot.Side, out var lossPlan))
+                        {
+                            lossPlan.WaveLosses++;
+                            if (!bot.FinaleReleaseLogged && !lossPlan.WaveEndLogged
+                                && lossPlan.GoMembers.Contains(bot.ShipId)) lossPlan.WaveKilledBeforeRelease++;
+                        }
                         // P778a — a strike that ends without reaching launch range
                         // still logs its summary once, with survival = false.
                         if (finale.Plans.TryGetValue(bot.Side, out var deadPlan) && !deadPlan.SummaryLogged)
@@ -4911,6 +4916,9 @@ bool isThreat =
 
         MaybeUseDispensers(bot, cs, now);
 
+        if (HasFinaleDestination(bot) && bot.Finale is { } strikeRun
+            && strikeRun.Plans.TryGetValue(bot.Side, out var strikePlan) && bot.TargetSector != strikePlan.Sector)
+            OrderFinaleWingBot(bot, strikeRun, strikePlan, now);
         if (TryDriveResearchFinaleRefit(bot, cs, now)) return;
         AdvanceResearchSiegeDuty(bot, cs);
         // P877 — aleph-field duty: a duty bot with a field-grade mine flies to
@@ -4982,7 +4990,7 @@ bool isThreat =
         // engage it instead of flying past (the P727 live test's two nine-bot
         // fleets crossed the map without a shot). Large fleets keep the P539d
         // staging/transit discipline untouched.
-        if (bot.MeetingEngagement && VisibleEnemyInSector(bot, cs, cur) is not null)
+        if (bot.MeetingEngagement && !HasFinaleDestination(bot) && VisibleEnemyInSector(bot, cs, cur) is not null)
         {
             EngageCombat(bot, now, prep);
             bot.LastCluster = cur;
@@ -6272,6 +6280,8 @@ bool isThreat =
         public bool FinaleRefitting, FinaleRefitLaunchPending, FinaleKeepsPayday;
         public double FinaleRefitCheckAt = double.NegativeInfinity;
         public long FinaleMissileLaunchBase;
+        // P961: persists through death/relaunch; prearm and arm share one preparation.
+        public bool FinalePreparationRefitUsed;
         public double? FinaleProtectedSince;
         // ── P814 — bot turret gunners ──
         // The gunner's own server-clock estimate (fed from FM_CS_PING echoes via

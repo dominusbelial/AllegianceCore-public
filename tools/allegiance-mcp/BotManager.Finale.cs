@@ -61,6 +61,7 @@ internal sealed partial class BotManager
         internal const short NoTarget = -1;
         internal short TargetId = targetId, TargetSide = targetSide, Sector = sector;
         internal short TargetTypeId = targetTypeId;
+        internal Vector3? TargetPosition;
         internal ShowcaseFinale.StrikeLoadout? Loadout = loadout;
         // P896 — this side really observed its target (so its later disappearance
         // is evidence); whether the no-target line was logged; wave sizing inputs.
@@ -71,6 +72,11 @@ internal sealed partial class BotManager
         internal bool TargetHeldBySide;
         internal string? KilledEvidence;
         internal int WaveLosses, DefenderCount;
+        internal int EngagingDefenders, SectorDefenders, ReleaseLosses;
+        internal int AssemblyPeak, ReachableBombers, MinimumUseful;
+        internal double? LastAssemblyGrowthAt;
+        internal FinaleAssembly.Demand Demand;
+        internal double LastRetargetAt = double.NegativeInfinity;
         // P896 — the survival part of this wave's requirement (0 with the margin off).
         internal int SurvivalBombers;
         internal double? KilledAt;
@@ -107,7 +113,7 @@ internal sealed partial class BotManager
         internal double DeadlineAt = double.PositiveInfinity;
         internal double? PrearmAt;
         internal bool EarlyWave;
-        internal int WaveCommitted, WaveReleased, WaveExpectedRounds;
+        internal int WaveCommitted, WaveReleased, WaveExpectedRounds, WaveKilledBeforeRelease;
         internal double WaveRounds;
         internal float WaveShieldBefore = -1, WaveShieldAfter = -1;
         internal float WaveHullBefore = -1, WaveHullAfter = -1;
@@ -272,7 +278,8 @@ internal sealed partial class BotManager
                 continue;
             }
             var loadout = SelectFinaleLoadout(sideBots[0], core.StationTypes[home.StationTypeId], stations);
-            plans[side] = new(home.StationId, home.SideId, home.ClusterId, home.StationTypeId, loadout);
+            plans[side] = new(home.StationId, home.SideId, home.ClusterId, home.StationTypeId, loadout)
+                { TargetPosition = home.Position is { Length: 3 } p ? Vec3(p) : null };
         }
         var run = new FinaleRun(settings, Now(), bots, plans);
         run.Maturity = plans.Keys.Order().Select(side => new ShowcaseFinale.Maturity(side,
@@ -352,6 +359,7 @@ internal sealed partial class BotManager
             if (HasMultipleEnemies && plan.TargetId != FinalePlan.NoTarget
                 && (!MultiSideActive(plan.TargetSide) || plan.KilledAt is not null))
             {
+                if (plan.KilledAt is not null) CloseFinaleWave(plan, side, Now());
                 run.Plans[side] = plan = new(FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, FinalePlan.NoTarget, null);
                 foreach (var bot in sideBots) { bot.TargetId = null; bot.OrderedTargetId = null; }
                 Console.WriteLine($"[finale] side={side} target side eliminated or station lost; selecting next living enemy");
@@ -359,7 +367,13 @@ internal sealed partial class BotManager
             if (plan.TargetId != FinalePlan.NoTarget)
             {
                 plan.TargetHeldBySide = observed.Any(s => s.StationId == plan.TargetId);
-                if (plan.TargetHeldBySide) plan.ObservedTarget = true;
+                if (plan.TargetHeldBySide)
+                {
+                    plan.ObservedTarget = true;
+                    var current = observed.First(s => s.StationId == plan.TargetId);
+                    plan.TargetTypeId = current.StationTypeId;
+                    plan.TargetPosition = current.Position is { Length: 3 } p ? Vec3(p) : null;
+                }
                 continue;
             }
             if (PickSideFinaleTarget(core, side, observed, sideBots) is not { } home)
@@ -375,6 +389,7 @@ internal sealed partial class BotManager
             plan.TargetSide = home.SideId;
             plan.Sector = home.ClusterId;
             plan.TargetTypeId = home.StationTypeId;
+            plan.TargetPosition = home.Position is { Length: 3 } position ? Vec3(position) : null;
             plan.ObservedTarget = plan.TargetHeldBySide = true;
             // No station list: `observed` holds enemy stations only, and the loadout
             // needs the side's OWN stations for its shop and tech.
@@ -419,14 +434,13 @@ internal sealed partial class BotManager
             escort.FinaleOriginal ??= new(escort.HullId, escort.HullName, escort.Parts, escort.WeaponPartId,
                 escort.LauncherPartId, escort.MissileReadyTime, escort.WingmanBehaviour, escort.TargetSector,
                 escort.RouteIndex, escort.Role);
-            escort.TargetSector = plan.Sector;
-            escort.TargetId = escort.OrderedTargetId = null;
-            escort.RoutePath = null; escort.RouteIndex = -1;
-            EndDefense(escort);
+            OrderFinaleWingBot(escort, run, plan, now);
         }
         // P801 — fresh mass for this strike. Every relaunch joins the wave
         // forming now; none of them flies at the station alone. The measured
         // landing share survives (it is a property of this side's loadouts).
+        plan.AssemblyPeak = 0;
+        plan.LastAssemblyGrowthAt = null;
         plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
         plan.GoTime = null;
         plan.GoMembers.Clear();
@@ -466,7 +480,7 @@ internal sealed partial class BotManager
             bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
                 bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector,
                 bot.RouteIndex, bot.Role);
-            var loadout = StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts);
+            var loadout = FinaleGrantedStrikeLoadout(bot);
             bool legal = loadout is not null
                 && FinaleWingMemberReady(StrikeVolley.DamagesStation(profile, loadout),
                     bot.Granted.HullId == ActualHullId(bot));
@@ -492,6 +506,7 @@ internal sealed partial class BotManager
             }
             ordered++;
         }
+        if (ready > 0) run.StrikeStartedAt ??= now;
         Console.WriteLine($"[strike] side={side} finale wing arm ordered={ordered} ready={ready} "
             + $"refits={refits} wing={run.Bots.Count(b => b.Side == side && b.FinaleBomberReserved)} "
             + $"escorts={plan.EscortBudget} target=station#{plan.TargetId} sector={plan.Sector} (P959)");
@@ -527,7 +542,7 @@ internal sealed partial class BotManager
                 {
                     if (bot.Side != side || bot.IsPod || bot.Cs is null || !bot.FinaleBomberReserved
                         || !IsParticipating(bot) || ResearchFinale(bot) is false) continue;
-                    var loadout = StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts);
+                    var loadout = FinaleGrantedStrikeLoadout(bot);
                     if (loadout is not null && StrikeVolley.DamagesStation(profile, loadout)
                         && bot.Granted.HullId == ActualHullId(bot)) continue;
                     bot.FinaleRefitCheckAt = now;   // dock + buy a legal strike loadout now
@@ -1220,6 +1235,7 @@ internal sealed partial class BotManager
             bot.FinaleReleaseAt = null;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = bot.FinaleKeepsPayday = false;
             bot.FinaleMissileLaunchBase = 0;
+            bot.FinalePreparationRefitUsed = false;
             bot.FinaleProtectedSince = null;
             bot.FinaleGrantVerified = false;
             bot.CompletedPodCycles = 0;

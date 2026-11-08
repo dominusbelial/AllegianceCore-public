@@ -62,7 +62,7 @@ internal static class StrikeVolley
     internal readonly record struct Requirement(
         int BombersRequired, int KillBombers, int ShotsToKill, double WindowSeconds,
         double ShieldRefillSeconds, float ShieldDamagePerRound, float ArmorDamagePerRound,
-        int LoadoutCount, int SurvivalBombers = 0, double LandingShare = 1);
+        int LoadoutCount, int SurvivalBombers = 0, double LandingShare = 1, bool CanKill = true);
 
     /// <summary>P801 tunable: all rounds of one massed strike must land inside this
     /// window. 20 s covers a five-round SRM magazine (load time 4 s = 16 s of
@@ -244,6 +244,7 @@ internal static class StrikeVolley
             shotsToKill = result.ShotsFired;
             break;
         }
+        bool canKill = kill > 0;
         if (kill == 0)
         {
             // Even the whole roster cannot kill it inside one window: ask for the
@@ -269,7 +270,7 @@ internal static class StrikeVolley
         int total = Math.Clamp(landed + survival, 1, available);
         return new(total, Math.Max(1, kill), shotsToKill, window,
             ShieldRefillSeconds(station), cleanShieldDamage, cleanArmorDamage, usable.Length,
-            Math.Max(0, total - ideal), landing);
+            Math.Max(0, total - ideal), landing, canKill);
     }
 
     private static float TotalDamage(Loadout l) => l.Mounts.Sum(m => m.Power * m.Shots);

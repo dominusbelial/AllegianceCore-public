@@ -1,0 +1,191 @@
+[
+  {
+    "Teams": 2,
+    "Arm": "base",
+    "Kills": [
+      0,
+      1,
+      4,
+      0,
+      3
+    ],
+    "Garrisons": [
+      0,
+      1,
+      2,
+      0,
+      2
+    ],
+    "Reasons": {
+      "massed": 10,
+      "deadline-forced": 3
+    },
+    "Sizes": [
+      11,
+      8,
+      2,
+      11,
+      8,
+      3,
+      9,
+      10,
+      9,
+      11,
+      2,
+      10,
+      12
+    ],
+    "PreparationInside": 73,
+    "PreparationOutside": 565,
+    "ResupplyInside": 71,
+    "ResupplyOutside": 0,
+    "MaxPrepPerBot": 38,
+    "FirstGarrisonMedianSinceArm": 473.75,
+    "NoGarrisonKill": 2
+  },
+  {
+    "Teams": 2,
+    "Arm": "P961",
+    "Kills": [
+      0,
+      2,
+      4,
+      3,
+      1
+    ],
+    "Garrisons": [
+      0,
+      0,
+      0,
+      2,
+      0
+    ],
+    "Reasons": {
+      "massed": 7,
+      "plateau": 3
+    },
+    "Sizes": [
+      2,
+      5,
+      5,
+      4,
+      4,
+      4,
+      9,
+      7,
+      5,
+      5
+    ],
+    "PreparationInside": 9,
+    "PreparationOutside": 119,
+    "ResupplyInside": 56,
+    "ResupplyOutside": 0,
+    "MaxPrepPerBot": 1,
+    "FirstGarrisonMedianSinceArm": 423.05,
+    "NoGarrisonKill": 4
+  },
+  {
+    "Teams": 3,
+    "Arm": "base",
+    "Kills": [
+      2,
+      1,
+      1,
+      2,
+      6
+    ],
+    "Garrisons": [
+      1,
+      1,
+      1,
+      1,
+      3
+    ],
+    "Reasons": {
+      "massed": 18
+    },
+    "Sizes": [
+      5,
+      5,
+      6,
+      7,
+      13,
+      5,
+      6,
+      13,
+      4,
+      6,
+      10,
+      13,
+      10,
+      13,
+      13,
+      9,
+      9,
+      13
+    ],
+    "PreparationInside": 183,
+    "PreparationOutside": 0,
+    "ResupplyInside": 21,
+    "ResupplyOutside": 0,
+    "MaxPrepPerBot": 1,
+    "FirstGarrisonMedianSinceArm": 468.85,
+    "NoGarrisonKill": 0
+  },
+  {
+    "Teams": 3,
+    "Arm": "P961",
+    "Kills": [
+      4,
+      3,
+      5,
+      5,
+      5
+    ],
+    "Garrisons": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "Reasons": {
+      "massed": 21,
+      "plateau": 4
+    },
+    "Sizes": [
+      12,
+      11,
+      13,
+      1,
+      6,
+      13,
+      13,
+      4,
+      7,
+      6,
+      11,
+      12,
+      1,
+      1,
+      10,
+      3,
+      11,
+      12,
+      1,
+      1,
+      12,
+      12,
+      12,
+      1,
+      1
+    ],
+    "PreparationInside": 180,
+    "PreparationOutside": 0,
+    "ResupplyInside": 16,
+    "ResupplyOutside": 0,
+    "MaxPrepPerBot": 1,
+    "FirstGarrisonMedianSinceArm": 397.55,
+    "NoGarrisonKill": 0
+  }
+]
