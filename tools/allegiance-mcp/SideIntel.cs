@@ -802,6 +802,20 @@ internal static class ScoutOpening
     internal static readonly double ScanIntervalSeconds = 1;
     internal static readonly double SupportWindowSeconds = 20;
     internal static readonly double RaidLingerSeconds = 90;
+    /// <summary>Finish the existing opening's recon before leaving its main
+    /// rendezvous unscouted. Both destinations are public topology; contents
+    /// still have to be observed by this side. A raid gets its existing linger
+    /// opportunity before an unobserved rendezvous takes the recon slot.</summary>
+    internal static short? ReconDestination(short ownHome, short enemyHome,
+        double firstEnemyStationAt, int minerRaids, double now, double openingElapsed,
+        short? automaticRendezvous, bool rendezvousKnown)
+    {
+        if (firstEnemyStationAt < 0 && enemyHome >= 0 && enemyHome != ownHome
+            && openingElapsed <= ReconDeadlineSeconds) return enemyHome;
+        if (firstEnemyStationAt >= 0 && (minerRaids > 0 || now - firstEnemyStationAt >= RaidLingerSeconds)
+            && automaticRendezvous is { } target && target != ownHome && !rendezvousKnown) return target;
+        return null;
+    }
     internal static readonly double SightRetentionSeconds = 300;
     internal static readonly int MaxHullSightings = 256;
     // Clash-scoring weights (P798 design; documented in the report).

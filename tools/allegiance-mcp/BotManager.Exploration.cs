@@ -40,6 +40,7 @@ internal sealed partial class BotManager
     private SideIntelStore? _intelStore;
     private SideIntelStore _intel => _intelStore ??= new();
     private readonly Dictionary<(uint Cookie, short Side), ClashChoice> _clash = [];
+    private readonly Dictionary<(uint Cookie, short Side), int> _clashRockCounts = [];
     private readonly HashSet<(uint Cookie, short Side)> _clashLogged = [];
     private readonly HashSet<(uint Cookie, short Side)> _exploreDoneLogged = [];
     private readonly Dictionary<string, double> _laneStarted = [];
@@ -411,19 +412,21 @@ internal sealed partial class BotManager
                 // station, miners) is still only what its own scanners saw.
                 short enemyHome = ResolveEnemyHome(intel, graph, ownHome, HasMultipleEnemies);
                 double elapsed = now - (_openingStartedAt < 0 ? 0 : _openingStartedAt);
-                bool reconNeeded = enemyHome >= 0 && enemyHome != ownHome
-                    && intel.FirstEnemyStationAt < 0 && elapsed <= ScoutOpening.ReconDeadlineSeconds;
+                short? automaticRendezvous = _mapBattleTarget && _battleTargetQuery is null ? _scenarioTargetOverride : null;
+                short? reconTarget = ScoutOpening.ReconDestination(ownHome, enemyHome,
+                    intel.FirstEnemyStationAt, intel.MinerRaids, now, elapsed, automaticRendezvous,
+                    automaticRendezvous is { } rendezvous && intel.KnownSectors.Contains(rendezvous));
                 // Sticky: keep the scout that is already on the recon (that is what
                 // keeps it flying its route instead of handing the mission back and
                 // forth to whichever scout happens to be one hop closer this pass).
                 int? reconId = null;
-                if (reconNeeded)
+                if (reconTarget is { } reconSector)
                 {
-                    var already = group.FirstOrDefault(b => b.ReconTarget is not null && b.ReconTarget == enemyHome);
+                    var already = group.FirstOrDefault(b => b.ReconTarget == reconSector);
                     reconId = already is not null && posts.Any(p => p.Id == already.BotId)
                         ? already.BotId
                         : ExplorationPlanner.PickReconScout(posts,
-                            (from, to) => graph is null ? -1 : ExplorationPlanner.Hops(graph, from, to), enemyHome);
+                            (from, to) => graph is null ? -1 : ExplorationPlanner.Hops(graph, from, to), reconSector);
                 }
                 // P798 — a sector counts as explored only once a scout has SWEPT
                 // it (or it is home): merely seeing one rock/station would stop
@@ -456,7 +459,7 @@ internal sealed partial class BotManager
                     // seen, even if every other sector is already swept.
                     bool raiding = now - bot.LastMinerRaidAt < ScoutOpening.RaidLingerSeconds;
                     bool recon = reconId is { } rid && bot.BotId == rid;
-                    bot.ReconTarget = recon ? enemyHome : null;
+                    bot.ReconTarget = recon ? reconTarget : null;
                     // P830 — the opening window is a FLOOR, not a cutoff: as
                     // long as the map is not complete the scouts keep exploring
                     // after ScoutOpening.OpeningSeconds. Before P830 the window
@@ -495,9 +498,10 @@ internal sealed partial class BotManager
                 if (reconId is { } reconBotId)
                 {
                     var reconBot = scouts.FirstOrDefault(b => b.BotId == reconBotId);
-                    if (reconBot is not null && _reconLogged.Add((cookie, side, enemyHome)))
-                        Console.WriteLine($"[opening] t={now:F0}s side {side} recon: scout {reconBot.Name} sent to the enemy home sector {enemyHome} "
-                            + $"({ExplorationPlanner.Hops(graph!, CsSectorOf(reconBot), enemyHome)} hops; no enemy station seen yet)");
+                    if (reconBot is not null && reconTarget is { } goal && _reconLogged.Add((cookie, side, goal)))
+                        Console.WriteLine($"[opening] t={now:F0}s side {side} recon: scout {reconBot.Name} sent to "
+                            + $"{(intel.FirstEnemyStationAt < 0 ? "enemy home" : "unscouted rendezvous")} sector {goal} "
+                            + $"({ExplorationPlanner.Hops(graph!, CsSectorOf(reconBot), goal)} hops)");
                 }
                 if (complete || lanes.Count == 0) continue;
 
@@ -574,7 +578,10 @@ internal sealed partial class BotManager
     /// enemy home when the side has resolved one).</summary>
     private void AssignClashTargets(ActiveBot[] bots, double now)
     {
-        if (_scenarioTargetOverride is not null)
+        // An operator target owns the objective. P926's automatically derived
+        // rendezvous is only a starting point: let the P798 resource opening
+        // replace it once this side has actually scouted a contested area.
+        if (_scenarioTargetOverride is not null && (!_mapBattleTarget || _battleTargetQuery is not null))
         {
             // A map-derived rendezvous still honors the small skirmish's
             // meeting-engagement option: travel while fighting, no wing hold.
@@ -606,7 +613,11 @@ internal sealed partial class BotManager
             // rig's big fleets keep the P539d staging/transit discipline.
             bool meetingEngagement = MeetingEngagementEnabled
                 && combatBots < ScoutOpening.MeetingEngagementCombatBots;
-            foreach (var b in group) b.MeetingEngagement = meetingEngagement;
+            foreach (var b in group)
+            {
+                b.MeetingEngagement = meetingEngagement;
+                if (meetingEngagement) b.UseStaging = false;
+            }
             if (combatBots < ScoutOpening.MinFleetForExploration
                 && !FinalePendingFor(group) && !FinaleAwaitingRearm(group))
                 continue;
@@ -625,10 +636,16 @@ internal sealed partial class BotManager
                 // the rig's opening window and still fight inside its battle.
                 double clashDelay = meetingEngagement
                     ? ScoutOpening.ClashDelaySecondsFor(combatBots) : ScoutOpening.ClashDelaySeconds;
-                bool upgrade = !have || (chosen.Resource <= 0 && elapsed >= clashDelay);
+                // A positive first choice can still be provisional: native
+                // file-map population puts resources on early scout frontiers.
+                // Re-score when this side discovers more rocks, so the richer
+                // shared area found later can replace that first frontier.
+                bool upgrade = !have || chosen.Resource <= 0
+                    || intel.Rocks.Count > _clashRockCounts.GetValueOrDefault((cookie, side));
                 if (upgrade)
                 {
                     if (elapsed < clashDelay) continue;
+                    _clashRockCounts[(cookie, side)] = intel.Rocks.Count;
                     var pick = ClashScoring.Choose(graph, ownHome, intel.EnemyHome, intel.KnownSectors,
                         intel.Rocks.Values, intel.OwnMiners.Values, intel.EnemyMiners.Values, intel.EnemyStations.Values,
                         // P837 — the midpoint fallback is scaled to the side's fleet
@@ -638,13 +655,15 @@ internal sealed partial class BotManager
                         topologyFallback: elapsed >= (meetingEngagement
                             ? ScoutOpening.ClashFallbackSecondsFor(combatBots) : ScoutOpening.ClashFallbackSeconds));
                     if (pick is null) continue;
-                    // A provisional topology fallback (no resource seen yet) is
-                    // replaced the moment the side actually sees a resource area.
-                    if (have && chosen.Resource > 0 && pick.Value.Resource <= 0) pick = chosen;
+                    // Only upgrade a resource commitment to a richer area.
+                    // Miner movement or depleted ore must not churn the fleet's
+                    // objective back to an earlier, poorer frontier.
+                    if (have && chosen.Resource > 0 && pick.Value.Resource <= chosen.Resource) pick = chosen;
                     if (!have || pick.Value.Sector != chosen.Sector || pick.Value.Resource > chosen.Resource)
                     {
                         chosen = pick.Value;
                         _clash[(cookie, side)] = chosen;
+                        _clashLogged.Remove((cookie, side));
                     }
                     have = true;
                 }
@@ -671,8 +690,15 @@ internal sealed partial class BotManager
                         // Follow the computed clash; only overwrite a target this
                         // manager assigned (never a finale/research objective).
                         bool mine = bot.TargetSector is null
+                            || (_mapBattleTarget && _battleTargetQuery is null && bot.TargetSector == _scenarioTargetOverride)
                             || (bot.AssignedClashSector is { } prev && bot.TargetSector == prev);
-                        if (mine) { bot.TargetSector = chosen.Sector; bot.AssignedClashSector = chosen.Sector; }
+                        if (mine)
+                        {
+                            bool scoutingRendezvous = _mapBattleTarget && _battleTargetQuery is null
+                                && _scenarioTargetOverride is { } route && !intel.KnownSectors.Contains(route);
+                            bot.TargetSector = scoutingRendezvous ? _scenarioTargetOverride : chosen.Sector;
+                            bot.AssignedClashSector = scoutingRendezvous ? null : chosen.Sector;
+                        }
                     }
                     if (bot.TargetSector is not null) bot.UseStaging = !meetingEngagement;
                 }
@@ -738,6 +764,7 @@ internal sealed partial class BotManager
             if (_mapBattleTarget) _intel.Clear();
             _nextIntelScan = _nextExplorerAssign = _nextClashCheck = double.NegativeInfinity;
             _clash.Clear();
+            _clashRockCounts.Clear();
             _clashLogged.Clear();
             _exploreDoneLogged.Clear();
             _openingAlephed.Clear();
@@ -856,7 +883,9 @@ internal sealed partial class BotManager
         // 1) Scouts hunt the enemy miners they have actually found (Domingo's
         //    opening: "scouts attacking miners"). The normal selector never
         //    picks miners (IgnoreMinerTargets), so this is an explicit raid.
-        if (FindVisibleEnemyMiner(cs, bot, cur) is { } miner)
+        bool rendezvousRecon = _mapBattleTarget && _battleTargetQuery is null
+            && bot.ReconTarget is { } reconGoal && reconGoal == _scenarioTargetOverride && reconGoal != cur;
+        if (!rendezvousRecon && FindVisibleEnemyMiner(cs, bot, cur) is { } miner)
         {
             bool newRaid = bot.TargetId != miner;
             bot.TargetId = miner;
@@ -879,7 +908,7 @@ internal sealed partial class BotManager
             return true;
         }
 
-        // 2) Enemy-base recon: fly the topology path to the enemy home, sweeping
+        // 2) Opening recon: fly the topology path to its destination, sweeping
         //    each sector until the aleph to the next hop is seen. Nothing here
         //    reads the station/rock data of a sector that was not swept: the
         //    route is topology (CLUSTERINFO) and the sweep is this scout's own
@@ -888,11 +917,10 @@ internal sealed partial class BotManager
         {
             if (cur == recon)
             {
-                // Arrived at the enemy home: sweep it for the station, its rocks
-                // and any miners. The recon assignment is cleared by the next
-                // AssignExplorers pass once an enemy station is in the intel.
+                // Sweep the recon destination. AssignExplorers clears the assignment
+                // after the requested enemy or rendezvous observation arrives.
                 if (_reconProgress.Add($"{bot.Name}:at:{cur}"))
-                    Console.WriteLine($"[opening] t={now:F0}s side {bot.Side} recon scout {bot.Name} reached the enemy home sector {cur} — sweeping for the station");
+                    Console.WriteLine($"[opening] t={now:F0}s side {bot.Side} recon scout {bot.Name} reached sector {cur} — sweeping its contents");
                 SweepSector(bot, cs, cur, now, lane: null);
                 return true;
             }
@@ -902,7 +930,7 @@ internal sealed partial class BotManager
                 if (TransitWarp(cs, bot, cur, next))
                 {
                     if (_reconProgress.Add($"{bot.Name}:warp:{cur}:{next}"))
-                        Console.WriteLine($"[opening] t={now:F0}s side {bot.Side} recon scout {bot.Name} flying {cur}->{next} (toward enemy home {recon})");
+                        Console.WriteLine($"[opening] t={now:F0}s side {bot.Side} recon scout {bot.Name} flying {cur}->{next} (toward recon sector {recon})");
                     return true;
                 }
                 // The mouth aleph is not known yet: sweep this sector for it.

@@ -1,0 +1,4082 @@
+{
+  "status": "complete",
+  "baseRevision": "05ede8f4",
+  "nativeRevision": "052f5179",
+  "rows": [
+    {
+      "run": "controlled-window-end",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Failed",
+          "duration": "00:08:02.7103745",
+          "error": "Assert.Single() Failure: The collection contained 2 items\nCollection: [1054, 1058]"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=480s side 0: sectorsSeen=61 % alephs=34/44 (77%) rocks=282 firstEnemyStation=144s minerRaid=True supportCall=True clash=1054 resource=0.2",
+        "[p798] map=m2xspiderw.igc t=480s side 1: sectorsSeen=61 % alephs=22/44 (50%) rocks=194 firstEnemyStation=189s minerRaid=True supportCall=True clash=1058 resource=0.2",
+        "[p798-rocks] side 0: 282 rock(s) in sectors [1050:23,1051:23,1052:134,1053:2,1054:25,1055:25,1057:25,1059:25] \u2014 282 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 194 rock(s) in sectors [1050:23,1051:23,1053:25,1054:25,1055:25,1056:24,1057:24,1058:25] \u2014 194 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=476, leaks=0",
+        "[p798] main clash sector(s): 1054,1058 after 480s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)"
+      ],
+      "startingLoadAverage": [
+        7.96,
+        8.33,
+        8.56
+      ]
+    },
+    {
+      "run": "controlled-window-start",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Failed",
+          "duration": "00:08:03.6323098",
+          "error": "clash 1050 must be chosen from resources (scoring is logged in [clash])"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=480s side 0: sectorsSeen=69 % alephs=32/44 (73%) rocks=134 firstEnemyStation=112s minerRaid=True supportCall=True clash=1052 resource=855.0",
+        "[p798] map=m2xspiderw.igc t=480s side 1: sectorsSeen=54 % alephs=26/44 (59%) rocks=0 firstEnemyStation=170s minerRaid=True supportCall=True clash=1050 resource=0.0",
+        "[p798-rocks] side 0: 134 rock(s) in sectors [1052:134] \u2014 134 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 0 rock(s) in sectors [] \u2014 0 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)"
+      ],
+      "startingLoadAverage": [
+        7.66,
+        7.1,
+        8.73
+      ]
+    },
+    {
+      "run": "never-parks-base-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:19.0682162",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 254.5s, samples=2537, reached=24/30, longest speed<1 with target=0.802s, shots=1813, hits=517, kills=1"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.63,
+        8.92,
+        8.76
+      ]
+    },
+    {
+      "run": "never-parks-base-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:05:04.7795253",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 300.7s, samples=3000, reached=24/30, longest speed<1 with target=1.112s, shots=1920, hits=768, kills=4"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.13,
+        7.89,
+        8.02
+      ]
+    },
+    {
+      "run": "never-parks-base-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:49.6388498",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 285.7s, samples=2848, reached=24/30, longest speed<1 with target=2.508s, shots=6645, hits=3805, kills=25"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        7.79,
+        8.91,
+        8.41
+      ]
+    },
+    {
+      "run": "never-parks-base-4",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:39.2199487",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 215.4s, samples=2149, reached=24/30, longest speed<1 with target=1.620s, shots=4836, hits=2114, kills=13"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        5.08,
+        7.03,
+        7.72
+      ]
+    },
+    {
+      "run": "never-parks-base-5",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:46.5979063",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 282.9s, samples=2816, reached=24/30, longest speed<1 with target=1.713s, shots=3001, hits=1034, kills=7"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.14,
+        4.92,
+        6.72
+      ]
+    },
+    {
+      "run": "never-parks-fixed-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:32.6900167",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 269.0s, samples=2685, reached=24/30, longest speed<1 with target=0.000s, shots=1666, hits=341, kills=0"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.33,
+        4.88,
+        4.92
+      ]
+    },
+    {
+      "run": "never-parks-fixed-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:36.4275469",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 272.0s, samples=2714, reached=25/30, longest speed<1 with target=0.301s, shots=145, hits=2, kills=0"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.88,
+        4.72,
+        4.91
+      ]
+    },
+    {
+      "run": "never-parks-fixed-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Failed",
+          "duration": "00:08:03.7586658",
+          "error": "Most showcase ships must reach their objectives"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 480.1s, samples=4788, reached=20/30, longest speed<1 with target=1.914s, shots=1225, hits=492, kills=5"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.7,
+        5.48,
+        5.13
+      ]
+    },
+    {
+      "run": "never-parks-fixed-4",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:18.7258898",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 254.9s, samples=2540, reached=24/30, longest speed<1 with target=0.100s, shots=1430, hits=545, kills=4"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        5.4,
+        3.98,
+        4.35
+      ]
+    },
+    {
+      "run": "never-parks-fixed-5",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:06:47.3178631",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 403.5s, samples=4025, reached=24/30, longest speed<1 with target=1.604s, shots=3119, hits=1396, kills=8"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.56,
+        4.05,
+        4.18
+      ]
+    },
+    {
+      "run": "opening-policy-fixed-1",
+      "counters": {
+        "total": "43",
+        "executed": "43",
+        "passed": "43",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Clash_delays_scale_from_the_skirmish_to_the_rig",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018152",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Small, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000090",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Lane_is_kept_across_passes_while_valid_and_taken_again_only_when_it_really_changed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023434",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Rearm_grace_scales_down_for_a_small_rotated_finale",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009704",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002551",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 15)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000011",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Coverage_counters_attribute_escape_and_aleph_mine_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066944",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Healthy_bot_with_parity_ignores_a_pursuer_that_the_low_hull_bot_mines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0549467",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.A_sides_own_home_is_never_the_clash_objective",
+          "outcome": "Passed",
+          "duration": "00:00:00.0099808",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Epic, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0094867",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0154586",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Held_lane_only_released_for_a_free_lane_beating_it_by_the_switch_margin",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026878",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_never_uses_unknown_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003444",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003115",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Wingman_flag_and_coverage_still_gate_escape_drops",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009025",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Grand, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000090",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Escape_mine_drops_behind_but_not_ahead_opening_or_out_of_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016871",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019780",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022169",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Medium, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002591",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Enemy_home_recon_picks_one_scout_by_scanner_then_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0094654",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002692",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000012",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Side_intel_store_keeps_each_sides_knowledge_isolated",
+          "outcome": "Passed",
+          "duration": "00:00:00.0121876",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_is_the_same_sector_for_both_sides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071088",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0055890",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 200, assigned: 0, cap: 0, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002317",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0086447",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Each_scout_gets_a_distinct_lane_and_keeps_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0047823",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 3, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000035",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001844",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_work_on_two_generated_maps_of_different_sizes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0235349",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0034410",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_prefers_rich_contested_sectors_and_discounts_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015374",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Large, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000134",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_needs_no_knowledge_at_all",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004375",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045750",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039997",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001806",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_No_churn_when_the_frontier_scores_jitter_and_explorers_are_unchanged",
+          "outcome": "Passed",
+          "duration": "00:00:00.0141366",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093315",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 10, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015053",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 20, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000023",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        2.72,
+        4.37,
+        5.48
+      ]
+    },
+    {
+      "run": "opening-policy-fixed-2",
+      "counters": {
+        "total": "43",
+        "executed": "43",
+        "passed": "43",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003624",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Escape_mine_drops_behind_but_not_ahead_opening_or_out_of_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011375",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Epic, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072848",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Small, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000058",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045391",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Clash_delays_scale_from_the_skirmish_to_the_rig",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016135",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021182",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Medium, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001666",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 10, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0011105",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.A_sides_own_home_is_never_the_clash_objective",
+          "outcome": "Passed",
+          "duration": "00:00:00.0070449",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0035837",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022784",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003357",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0150200",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Wingman_flag_and_coverage_still_gate_escape_drops",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008796",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0016779",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0070474",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 20, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000009",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_work_on_two_generated_maps_of_different_sizes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0206306",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 3, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000040",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0095724",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Grand, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000054",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Side_intel_store_keeps_each_sides_knowledge_isolated",
+          "outcome": "Passed",
+          "duration": "00:00:00.0097941",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002476",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Enemy_home_recon_picks_one_scout_by_scanner_then_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0073891",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_No_churn_when_the_frontier_scores_jitter_and_explorers_are_unchanged",
+          "outcome": "Passed",
+          "duration": "00:00:00.0107133",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Coverage_counters_attribute_escape_and_aleph_mine_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0068173",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Each_scout_gets_a_distinct_lane_and_keeps_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0049645",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Healthy_bot_with_parity_ignores_a_pursuer_that_the_low_hull_bot_mines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0460749",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Held_lane_only_released_for_a_free_lane_beating_it_by_the_switch_margin",
+          "outcome": "Passed",
+          "duration": "00:00:00.0025856",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_prefers_rich_contested_sectors_and_discounts_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0017079",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052035",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003858",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 15)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000008",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_never_uses_unknown_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003820",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000012",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_needs_no_knowledge_at_all",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003874",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Large, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000095",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_is_the_same_sector_for_both_sides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0055071",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Lane_is_kept_across_passes_while_valid_and_taken_again_only_when_it_really_changed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0022152",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006156",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 200, assigned: 0, cap: 0, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001974",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Rearm_grace_scales_down_for_a_small_rotated_finale",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007924",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        5.84,
+        4.7,
+        5.16
+      ]
+    },
+    {
+      "run": "opening-policy-fixed-3",
+      "counters": {
+        "total": "43",
+        "executed": "43",
+        "passed": "43",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002765",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 20, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000020",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Medium, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002502",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Healthy_bot_with_parity_ignores_a_pursuer_that_the_low_hull_bot_mines",
+          "outcome": "Passed",
+          "duration": "00:00:00.0560368",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Large, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000152",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Enemy_home_recon_picks_one_scout_by_scanner_then_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0096849",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Wingman_flag_and_coverage_still_gate_escape_drops",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009532",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Each_scout_gets_a_distinct_lane_and_keeps_it",
+          "outcome": "Passed",
+          "duration": "00:00:00.0042744",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 10, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015525",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0082711",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Intel_generation_detects_restart_without_resetting_for_late_joiners_or_repeated_samples",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026909",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000013",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 20, assigned: 3, cap: 30, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000041",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Valid_target_on_same_map_preserves_trial_behavior_and_changed_map_activates_intel_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093776",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_needs_no_knowledge_at_all",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004656",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2x3amber.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002741",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001528",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Map_rendezvous_preserves_small_skirmish_meeting_engagement",
+          "outcome": "Passed",
+          "duration": "00:00:00.0046069",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037619",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_work_on_two_generated_maps_of_different_sizes",
+          "outcome": "Passed",
+          "duration": "00:00:00.0236635",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Clash_delays_scale_from_the_skirmish_to_the_rig",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018579",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 200, assigned: 0, cap: 0, share: 0.14999999999999999, expected: 0)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002463",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Frontiers_are_adjacent_to_known_sectors_and_still_unseen(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0042154",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P926_Showcase_rederives_missing_named_target_on_each_new_map",
+          "outcome": "Passed",
+          "duration": "00:00:00.0161351",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Midpoint_fallback_is_the_same_sector_for_both_sides",
+          "outcome": "Passed",
+          "duration": "00:00:00.0075698",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020177",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Recon_next_hop_is_a_topology_edge_that_shortens_the_distance(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001978",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Miner_support_call_uses_the_same_share_and_cap_budget(population: 100, assigned: 0, cap: 30, share: 0.14999999999999999, expected: 15)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000011",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_never_uses_unknown_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002920",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Epic, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0096928",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2xspiderw.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021249",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Escape_mine_drops_behind_but_not_ahead_opening_or_out_of_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010772",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Lane_is_kept_across_passes_while_valid_and_taken_again_only_when_it_really_changed",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019899",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Grand, warpsRevealed: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000116",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_Held_lane_only_released_for_a_free_lane_beating_it_by_the_switch_margin",
+          "outcome": "Passed",
+          "duration": "00:00:00.0023945",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.A_sides_own_home_is_never_the_clash_objective",
+          "outcome": "Passed",
+          "duration": "00:00:00.0092357",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.P830_No_churn_when_the_frontier_scores_jitter_and_explorers_are_unchanged",
+          "outcome": "Passed",
+          "duration": "00:00:00.0142246",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Skirmish_map_reveal_scales_with_the_match(size: Small, warpsRevealed: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000126",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Side_intel_store_keeps_each_sides_knowledge_isolated",
+          "outcome": "Passed",
+          "duration": "00:00:00.0118482",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_location_is_a_seen_resource_sector_with_every_term_logged(file: \"m2scatter.igc\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003078",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningTests.Clash_scoring_prefers_rich_contested_sectors_and_discounts_distance",
+          "outcome": "Passed",
+          "duration": "00:00:00.0015163",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P877DispenserTests.Coverage_counters_attribute_escape_and_aleph_mine_damage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0081111",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P837BotEngagementScaleTests.Rearm_grace_scales_down_for_a_small_rotated_finale",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010112",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        8.79,
+        5.84,
+        5.37
+      ]
+    },
+    {
+      "run": "p798-base-spider",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Failed",
+          "duration": "00:08:02.7444747",
+          "error": "Assert.All() Failure: 2 out of 2 items in the collection did not pass.\n[0]: Item:  SideProgress { Share = 0.846, Alephs = 34, Raid = True, Support = True, Clash = , Resource = 0, FirstStation = 155.6, Rocks = 378 }\n     Error: Assert.NotNull() Failure: Value of type 'Nullable<short>' does not have a value\n[1]: Item:  SideProgress { Share = 0.538, Alephs = 20, Raid = True, Support = True, Clash = , Resource = 0, FirstStation = 173.1, Rocks = 170 }\n     Error: Assert.NotNull() Failure: Value of type 'Nullable<short>' does not have a value"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=480s side 0: sectorsSeen=85 % alephs=34/44 (77%) rocks=378 firstEnemyStation=156s minerRaid=True supportCall=True clash=pending resource=0.0",
+        "[p798] map=m2xspiderw.igc t=480s side 1: sectorsSeen=54 % alephs=20/44 (45%) rocks=170 firstEnemyStation=173s minerRaid=True supportCall=True clash=pending resource=0.0",
+        "[p798-rocks] side 0: 378 rock(s) in sectors [1050:23,1051:23,1052:134,1053:25,1054:25,1055:25,1058:23,1059:25,1060:25,1061:25,1062:25] \u2014 378 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 170 rock(s) in sectors [1050:22,1051:23,1053:25,1054:25,1055:25,1056:25,1058:25] \u2014 170 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=548, leaks=0"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        7.3,
+        9.61,
+        11.04
+      ]
+    },
+    {
+      "run": "p798-base-training-server",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"training_6.igc\", minutes: 6, minSectorShare: 0.90000000000000002, minAlephPercent: 40, stationMinutes: 3)",
+          "outcome": "Failed",
+          "duration": "00:06:02.9228861",
+          "error": "Assert.All() Failure: 2 out of 2 items in the collection did not pass.\n[0]: Item:  SideProgress { Share = 1, Alephs = 4, Raid = True, Support = False, Clash = , Resource = 0, FirstStation = 45.8, Rocks = 67 }\n     Error: Assert.NotNull() Failure: Value of type 'Nullable<short>' does not have a value\n[1]: Item:  SideProgress { Share = 1, Alephs = 4, Raid = False, Support = True, Clash = , Resource = 0, FirstStation = 40.7, Rocks = 67 }\n     Error: Assert.NotNull() Failure: Value of type 'Nullable<short>' does not have a value"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=training_6.igc t=360s side 0: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=46s minerRaid=True supportCall=False clash=pending resource=0.0",
+        "[p798] map=training_6.igc t=360s side 1: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=41s minerRaid=False supportCall=True clash=pending resource=0.0",
+        "[p798-rocks] side 0: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        13.4,
+        14.54,
+        12.67
+      ]
+    },
+    {
+      "run": "p798-fixed-spider-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Passed",
+          "duration": "00:05:09.3711690",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=306s side 0: sectorsSeen=54 % alephs=30/44 (68%) rocks=280 firstEnemyStation=157s minerRaid=True supportCall=False clash=1052 resource=878.3",
+        "[p798] map=m2xspiderw.igc t=306s side 1: sectorsSeen=54 % alephs=24/44 (55%) rocks=273 firstEnemyStation=169s minerRaid=True supportCall=True clash=1052 resource=849.5",
+        "[p798-rocks] side 0: 280 rock(s) in sectors [1050:23,1051:23,1052:134,1053:25,1054:25,1055:25,1059:25] \u2014 280 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 273 rock(s) in sectors [1050:23,1051:23,1052:129,1054:25,1055:24,1058:25,1059:24] \u2014 273 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=553, leaks=0",
+        "[p798] main clash sector(s): 1052 after 306s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.34,
+        4.18,
+        5.33
+      ]
+    },
+    {
+      "run": "p798-fixed-spider-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Passed",
+          "duration": "00:04:53.5342383",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=291s side 0: sectorsSeen=61 % alephs=28/44 (64%) rocks=283 firstEnemyStation=158s minerRaid=True supportCall=False clash=1052 resource=878.3",
+        "[p798] map=m2xspiderw.igc t=291s side 1: sectorsSeen=61 % alephs=28/44 (64%) rocks=298 firstEnemyStation=173s minerRaid=True supportCall=True clash=1052 resource=852.8",
+        "[p798-rocks] side 0: 283 rock(s) in sectors [1050:23,1051:23,1052:134,1053:25,1054:25,1055:25,1059:25,1061:3] \u2014 283 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 298 rock(s) in sectors [1050:23,1051:23,1052:130,1054:23,1055:25,1058:25,1059:24,1061:25] \u2014 298 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=581, leaks=0",
+        "[p798] main clash sector(s): 1052 after 291s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.35,
+        5.12,
+        5.27
+      ]
+    },
+    {
+      "run": "p798-fixed-spider-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Passed",
+          "duration": "00:05:02.1745575",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=299s side 0: sectorsSeen=69 % alephs=34/44 (77%) rocks=320 firstEnemyStation=154s minerRaid=True supportCall=True clash=1052 resource=878.3",
+        "[p798] map=m2xspiderw.igc t=299s side 1: sectorsSeen=54 % alephs=24/44 (55%) rocks=274 firstEnemyStation=174s minerRaid=True supportCall=True clash=1052 resource=849.5",
+        "[p798-rocks] side 0: 320 rock(s) in sectors [1050:23,1051:23,1052:134,1053:21,1054:25,1055:25,1059:25,1060:20,1061:24] \u2014 320 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 274 rock(s) in sectors [1050:23,1051:23,1052:129,1054:24,1055:25,1058:25,1059:25] \u2014 274 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=594, leaks=0",
+        "[p798] main clash sector(s): 1052 after 299s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        6.26,
+        5.65,
+        5.33
+      ]
+    },
+    {
+      "run": "p798-fixed-training-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"training_6.igc\", minutes: 6, minSectorShare: 0.90000000000000002, minAlephPercent: 40, stationMinutes: 3)",
+          "outcome": "Passed",
+          "duration": "00:01:16.3049137",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=training_6.igc t=74s side 0: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=44s minerRaid=True supportCall=False clash=2081 resource=36.3",
+        "[p798] map=training_6.igc t=74s side 1: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=40s minerRaid=False supportCall=True clash=2081 resource=36.3",
+        "[p798-rocks] side 0: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0",
+        "[p798] main clash sector(s): 2081 after 74s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        2.72,
+        4.37,
+        5.48
+      ]
+    },
+    {
+      "run": "p798-fixed-training-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"training_6.igc\", minutes: 6, minSectorShare: 0.90000000000000002, minAlephPercent: 40, stationMinutes: 3)",
+          "outcome": "Passed",
+          "duration": "00:01:16.0984613",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=training_6.igc t=74s side 0: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=46s minerRaid=True supportCall=False clash=2081 resource=36.3",
+        "[p798] map=training_6.igc t=74s side 1: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=40s minerRaid=False supportCall=True clash=2081 resource=36.3",
+        "[p798-rocks] side 0: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0",
+        "[p798] main clash sector(s): 2081 after 74s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        5.84,
+        4.7,
+        5.16
+      ]
+    },
+    {
+      "run": "p798-fixed-training-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"training_6.igc\", minutes: 6, minSectorShare: 0.90000000000000002, minAlephPercent: 40, stationMinutes: 3)",
+          "outcome": "Passed",
+          "duration": "00:01:16.3216585",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=training_6.igc t=74s side 0: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=45s minerRaid=True supportCall=False clash=2081 resource=36.3",
+        "[p798] map=training_6.igc t=74s side 1: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=42s minerRaid=False supportCall=True clash=2081 resource=36.3",
+        "[p798-rocks] side 0: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0",
+        "[p798] main clash sector(s): 2081 after 74s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 5 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (20 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        8.41,
+        5.8,
+        5.36
+      ]
+    },
+    {
+      "run": "p798-window-end-training-server",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"training_6.igc\", minutes: 6, minSectorShare: 0.90000000000000002, minAlephPercent: 40, stationMinutes: 3)",
+          "outcome": "Passed",
+          "duration": "00:01:16.0140548",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=training_6.igc t=74s side 0: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=44s minerRaid=True supportCall=False clash=2081 resource=36.3",
+        "[p798] map=training_6.igc t=74s side 1: sectorsSeen=100 % alephs=4/4 (100%) rocks=67 firstEnemyStation=39s minerRaid=False supportCall=True clash=2081 resource=36.3",
+        "[p798-rocks] side 0: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 67 rock(s) in sectors [2080:25,2081:23,2082:19] \u2014 67 audited, 0 not SeenBySide(1)",
+        "[p798-rocks] total audited=134, leaks=0",
+        "[p798] main clash sector(s): 2081 after 74s"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)"
+      ],
+      "startingLoadAverage": [
+        12.62,
+        10.32,
+        9.17
+      ]
+    },
+    {
+      "run": "p798-window-start-spider-server",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P798ScoutOpeningLiveTests.Fogged_showcase_scouts_open_the_map_and_the_clash_forms_on_resources(map: \"m2xspiderw.igc\", minutes: 8, minSectorShare: 0.29999999999999999, minAlephPercent: 40, stationMinutes: 6)",
+          "outcome": "Failed",
+          "duration": "00:03:09.1937264",
+          "error": "at least one side must have seen rocks on these maps"
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p798] map=m2xspiderw.igc t=187s side 0: sectorsSeen=39 % alephs=18/44 (41%) rocks=0 firstEnemyStation=111s minerRaid=True supportCall=False clash=1051 resource=0.0",
+        "[p798] map=m2xspiderw.igc t=187s side 1: sectorsSeen=39 % alephs=18/44 (41%) rocks=0 firstEnemyStation=169s minerRaid=True supportCall=True clash=1050 resource=0.0",
+        "[p798-rocks] side 0: 0 rock(s) in sectors [] \u2014 0 audited, 0 not SeenBySide(0)",
+        "[p798-rocks] side 1: 0 rock(s) in sectors [] \u2014 0 audited, 0 not SeenBySide(1)"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)"
+      ],
+      "startingLoadAverage": [
+        12.11,
+        8.85,
+        8.28
+      ]
+    },
+    {
+      "run": "p953-fixed-1",
+      "counters": {
+        "total": "10",
+        "executed": "10",
+        "passed": "10",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: null, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003198",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Automatic_rendezvous_preserves_meeting_engagement_before_a_clash_is_available",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010671",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 3, assignedClash: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006615",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: null, resourceClash: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031988",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Recon_completes_enemy_sighting_and_raid_then_scouts_the_existing_rendezvous",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002540",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 4, enemyHome: 0, frontier: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007320",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: False, query: null, resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002907",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: \"Rendezvous\", resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008003",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 2, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0389306",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 0, enemyHome: 4, frontier: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003748",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        2.69,
+        4.39,
+        5.5
+      ]
+    },
+    {
+      "run": "p953-fixed-2",
+      "counters": {
+        "total": "10",
+        "executed": "10",
+        "passed": "10",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Automatic_rendezvous_preserves_meeting_engagement_before_a_clash_is_available",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009604",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 4, enemyHome: 0, frontier: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007404",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: null, resourceClash: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036789",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 0, enemyHome: 4, frontier: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003404",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 3, assignedClash: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0010681",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: False, query: null, resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002642",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 2, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0494047",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: null, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004603",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: \"Rendezvous\", resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007018",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Recon_completes_enemy_sighting_and_raid_then_scouts_the_existing_rendezvous",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002679",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        5.84,
+        4.7,
+        5.16
+      ]
+    },
+    {
+      "run": "p953-fixed-3",
+      "counters": {
+        "total": "10",
+        "executed": "10",
+        "passed": "10",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 3, assignedClash: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008257",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: 2, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0439036",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: \"Rendezvous\", resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0169849",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Recon_completes_enemy_sighting_and_raid_then_scouts_the_existing_rendezvous",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002570",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 0, enemyHome: 4, frontier: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003994",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: False, query: null, resourceClash: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005437",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Later_richer_observed_resources_replace_the_first_frontier_without_churn(ownHome: 4, enemyHome: 0, frontier: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0014899",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Only_an_automatic_rendezvous_yields_to_the_scouted_resource_clash(mapTarget: True, query: null, resourceClash: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0028342",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Automatic_rendezvous_preserves_meeting_engagement_before_a_clash_is_available",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019786",
+          "error": null
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P953_Early_frontier_does_not_divert_the_automatic_march_before_rendezvous_is_scouted(initialTarget: null, assignedClash: null)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0006244",
+          "error": null
+        }
+      ],
+      "gcModes": [],
+      "measurements": [],
+      "baselineReceipts": [],
+      "startingLoadAverage": [
+        8.79,
+        5.84,
+        5.37
+      ]
+    },
+    {
+      "run": "parking-arrival-triage-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:57.1252861",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 233.2s, samples=2324, reached=24/30, longest speed<1 with target=2.311s, shots=6294, hits=3159, kills=22"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.05,
+        4.07,
+        4.14
+      ]
+    },
+    {
+      "run": "parking-arrival-triage-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:24.5614213",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 261.1s, samples=2603, reached=24/30, longest speed<1 with target=2.306s, shots=2846, hits=899, kills=3"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.71,
+        4.36,
+        4.22
+      ]
+    },
+    {
+      "run": "parking-arrival-triage-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:07:48.1928672",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 463.9s, samples=4628, reached=24/30, longest speed<1 with target=1.815s, shots=3288, hits=1267, kills=6"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.12,
+        4.24,
+        4.26
+      ]
+    },
+    {
+      "run": "sc4-base-server",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Failed",
+          "duration": "00:10:01.5030617",
+          "error": "SC-1 unscaled minimums: chaff >=10, probes >=10, mines >=5 on EACH side; plus actual models at defended alephs/contested sectors."
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        13.09,
+        9.49,
+        10.66
+      ],
+      "showcase": {
+        "wallSeconds": 600.2384776,
+        "simSeconds": 1016.6499999996231,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            241,
+            25,
+            35
+          ],
+          [
+            114,
+            30,
+            26
+          ]
+        ],
+        "homeMines": [
+          0
+        ],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "SimPassStageFailures": 0,
+        "enough": false,
+        "homeFieldModels": []
+      }
+    },
+    {
+      "run": "sc4-bisect-f52bd5590c164f139128c28a30852ecd000176fe",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Failed",
+          "duration": "00:10:01.2932555",
+          "error": "SC-1 unscaled minimums: chaff >=10, probes >=10, mines >=5 on EACH side; plus actual models at defended alephs/contested sectors."
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (experimental NPC travel)"
+      ],
+      "startingLoadAverage": [
+        6.1,
+        6.96,
+        8.03
+      ],
+      "showcase": {
+        "wallSeconds": 600.190326,
+        "simSeconds": 1044.4499999995978,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            192,
+            30,
+            38
+          ],
+          [
+            78,
+            30,
+            26
+          ]
+        ],
+        "homeMines": [],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "SimPassStageFailures": 0,
+        "enough": false,
+        "homeFieldModels": []
+      }
+    },
+    {
+      "run": "sc4-fixed-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:01:12.1368128",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p953-home-field] side=1 {\"DroneId\":8223,\"Command\":\"build\",\"TargetDesc\":\"warp:3\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":2,\"SectorAfter\":2,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":38,\"DroneReply\":\"Affirmative.\"}",
+        "[p953-home-field] side=0 {\"DroneId\":8224,\"Command\":\"build\",\"TargetDesc\":\"warp:0\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":0,\"SectorAfter\":0,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":44,\"DroneReply\":\"Affirmative.\"}"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.62,
+        4.07,
+        5.01
+      ],
+      "showcase": {
+        "wallSeconds": 71.0313754,
+        "simSeconds": 130.99999999999554,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            34,
+            11,
+            5
+          ],
+          [
+            19,
+            12,
+            7
+          ]
+        ],
+        "homeMines": [
+          0,
+          1
+        ],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "defensiveLayers": {
+          "1": 8223,
+          "0": 8224
+        },
+        "defendedWarps": {
+          "0": 0,
+          "1": 3
+        },
+        "SimPassStageFailures": 0,
+        "enough": true,
+        "homeFieldModels": [
+          {
+            "kind": "mine",
+            "side": 1,
+            "sector": 2,
+            "sim": 126.99999999999493,
+            "model": 20303,
+            "launcher": 8223,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 276.12537,
+            "position": [
+              3275.673,
+              11.4993725,
+              -10.831949
+            ]
+          },
+          {
+            "kind": "mine",
+            "side": 0,
+            "sector": 0,
+            "sim": 130.89999999999552,
+            "model": 21081,
+            "launcher": 8224,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 273.4225,
+            "position": [
+              3273.067,
+              13.599721,
+              -3.0602827
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "run": "sc4-fixed-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:01:16.3674034",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p953-home-field] side=1 {\"DroneId\":8223,\"Command\":\"build\",\"TargetDesc\":\"warp:3\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":2,\"SectorAfter\":2,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":35,\"DroneReply\":\"Affirmative.\"}",
+        "[p953-home-field] side=0 {\"DroneId\":8224,\"Command\":\"build\",\"TargetDesc\":\"warp:0\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":0,\"SectorAfter\":0,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":39,\"DroneReply\":\"Affirmative.\"}"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        2.44,
+        3.91,
+        4.74
+      ],
+      "showcase": {
+        "wallSeconds": 75.0813068,
+        "simSeconds": 134.24999999999628,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            32,
+            13,
+            7
+          ],
+          [
+            13,
+            13,
+            7
+          ]
+        ],
+        "homeMines": [
+          0,
+          1
+        ],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "defensiveLayers": {
+          "1": 8223,
+          "0": 8224
+        },
+        "defendedWarps": {
+          "0": 0,
+          "1": 3
+        },
+        "SimPassStageFailures": 0,
+        "enough": true,
+        "homeFieldModels": [
+          {
+            "kind": "mine",
+            "side": 1,
+            "sector": 2,
+            "sim": 127.09999999999492,
+            "model": 20870,
+            "launcher": 8223,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 275.51752,
+            "position": [
+              3275.0232,
+              12.63088,
+              -10.611275
+            ]
+          },
+          {
+            "kind": "mine",
+            "side": 0,
+            "sector": 0,
+            "sim": 134.04999999999623,
+            "model": 22915,
+            "launcher": 8224,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 276.791,
+            "position": [
+              3276.186,
+              -6.3084188,
+              -17.167421
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "run": "sc4-fixed-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:01:20.6700889",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "[p953-home-field] side=1 {\"DroneId\":8223,\"Command\":\"build\",\"TargetDesc\":\"warp:3\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":2,\"SectorAfter\":2,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":35,\"DroneReply\":\"Affirmative.\"}",
+        "[p953-home-field] side=0 {\"DroneId\":8224,\"Command\":\"build\",\"TargetDesc\":\"warp:0\",\"Sent\":true,\"AffirmativeObserved\":true,\"StateBefore\":\"disabled\",\"StateAfter\":\"disabled\",\"SectorBefore\":0,\"SectorAfter\":0,\"Note\":\"replied \\u0022Affirmative.\\u0022 but no sector/state change within the window (e.g. already at target / awaiting build time) \\u2014 the ack is the primary signal.\",\"ChatsSeen\":40,\"DroneReply\":\"Affirmative.\"}"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.78,
+        4.17,
+        4.72
+      ],
+      "showcase": {
+        "wallSeconds": 79.6230922,
+        "simSeconds": 144.54999999999862,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            44,
+            14,
+            7
+          ],
+          [
+            16,
+            13,
+            7
+          ]
+        ],
+        "homeMines": [
+          0,
+          1
+        ],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "defensiveLayers": {
+          "1": 8223,
+          "0": 8224
+        },
+        "defendedWarps": {
+          "0": 0,
+          "1": 3
+        },
+        "SimPassStageFailures": 0,
+        "enough": true,
+        "homeFieldModels": [
+          {
+            "kind": "mine",
+            "side": 1,
+            "sector": 2,
+            "sim": 127.04999999999492,
+            "model": 20450,
+            "launcher": 8223,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 275.52155,
+            "position": [
+              3275.027,
+              12.366613,
+              -10.922008
+            ]
+          },
+          {
+            "kind": "mine",
+            "side": 0,
+            "sector": 0,
+            "sim": 129.34999999999516,
+            "model": 21088,
+            "launcher": 8224,
+            "lifetime": 600,
+            "home": true,
+            "alephDistance": 274.8715,
+            "position": [
+              3274.4805,
+              14.6331835,
+              -0.8247306
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "run": "sc4-p877-parent-server",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC4ShowcaseLiveTests.Research_showcase_deploys_chaff_probes_and_defensive_mines_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:08:34.0650679",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 23 workers); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers)",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.43,
+        6.85,
+        7.67
+      ],
+      "showcase": {
+        "wallSeconds": 513.0034084,
+        "simSeconds": 886.8999999997411,
+        "mode": "research",
+        "researchScale": 16,
+        "combatPeersPerSide": 60,
+        "counts": [
+          [
+            251,
+            28,
+            44
+          ],
+          [
+            74,
+            35,
+            58
+          ]
+        ],
+        "homeMines": [
+          0,
+          1
+        ],
+        "contestedProbes": [
+          0,
+          1
+        ],
+        "SimPassStageFailures": 0,
+        "enough": true,
+        "homeFieldModels": []
+      }
+    }
+  ],
+  "parking": {
+    "never-parks-base-": {
+      "outcomes": {
+        "Passed": 5
+      },
+      "runs": [
+        {
+          "run": "never-parks-base-1",
+          "outcome": "Passed",
+          "duration": "00:04:19.0682162",
+          "idleSeconds": 0.802,
+          "measurement": "P700 local 15v15: 254.5s, samples=2537, reached=24/30, longest speed<1 with target=0.802s, shots=1813, hits=517, kills=1",
+          "startingLoadAverage": [
+            6.63,
+            8.92,
+            8.76
+          ]
+        },
+        {
+          "run": "never-parks-base-2",
+          "outcome": "Passed",
+          "duration": "00:05:04.7795253",
+          "idleSeconds": 1.112,
+          "measurement": "P700 local 15v15: 300.7s, samples=3000, reached=24/30, longest speed<1 with target=1.112s, shots=1920, hits=768, kills=4",
+          "startingLoadAverage": [
+            6.13,
+            7.89,
+            8.02
+          ]
+        },
+        {
+          "run": "never-parks-base-3",
+          "outcome": "Passed",
+          "duration": "00:04:49.6388498",
+          "idleSeconds": 2.508,
+          "measurement": "P700 local 15v15: 285.7s, samples=2848, reached=24/30, longest speed<1 with target=2.508s, shots=6645, hits=3805, kills=25",
+          "startingLoadAverage": [
+            7.79,
+            8.91,
+            8.41
+          ]
+        },
+        {
+          "run": "never-parks-base-4",
+          "outcome": "Passed",
+          "duration": "00:03:39.2199487",
+          "idleSeconds": 1.62,
+          "measurement": "P700 local 15v15: 215.4s, samples=2149, reached=24/30, longest speed<1 with target=1.620s, shots=4836, hits=2114, kills=13",
+          "startingLoadAverage": [
+            5.08,
+            7.03,
+            7.72
+          ]
+        },
+        {
+          "run": "never-parks-base-5",
+          "outcome": "Passed",
+          "duration": "00:04:46.5979063",
+          "idleSeconds": 1.713,
+          "measurement": "P700 local 15v15: 282.9s, samples=2816, reached=24/30, longest speed<1 with target=1.713s, shots=3001, hits=1034, kills=7",
+          "startingLoadAverage": [
+            3.14,
+            4.92,
+            6.72
+          ]
+        }
+      ]
+    },
+    "never-parks-fixed-": {
+      "outcomes": {
+        "Passed": 4,
+        "Failed": 1
+      },
+      "runs": [
+        {
+          "run": "never-parks-fixed-1",
+          "outcome": "Passed",
+          "duration": "00:04:32.6900167",
+          "idleSeconds": 0.0,
+          "measurement": "P700 local 15v15: 269.0s, samples=2685, reached=24/30, longest speed<1 with target=0.000s, shots=1666, hits=341, kills=0",
+          "startingLoadAverage": [
+            6.33,
+            4.88,
+            4.92
+          ]
+        },
+        {
+          "run": "never-parks-fixed-2",
+          "outcome": "Passed",
+          "duration": "00:04:36.4275469",
+          "idleSeconds": 0.301,
+          "measurement": "P700 local 15v15: 272.0s, samples=2714, reached=25/30, longest speed<1 with target=0.301s, shots=145, hits=2, kills=0",
+          "startingLoadAverage": [
+            3.88,
+            4.72,
+            4.91
+          ]
+        },
+        {
+          "run": "never-parks-fixed-3",
+          "outcome": "Failed",
+          "duration": "00:08:03.7586658",
+          "idleSeconds": 1.914,
+          "measurement": "P700 local 15v15: 480.1s, samples=4788, reached=20/30, longest speed<1 with target=1.914s, shots=1225, hits=492, kills=5",
+          "startingLoadAverage": [
+            6.7,
+            5.48,
+            5.13
+          ]
+        },
+        {
+          "run": "never-parks-fixed-4",
+          "outcome": "Passed",
+          "duration": "00:04:18.7258898",
+          "idleSeconds": 0.1,
+          "measurement": "P700 local 15v15: 254.9s, samples=2540, reached=24/30, longest speed<1 with target=0.100s, shots=1430, hits=545, kills=4",
+          "startingLoadAverage": [
+            5.4,
+            3.98,
+            4.35
+          ]
+        },
+        {
+          "run": "never-parks-fixed-5",
+          "outcome": "Passed",
+          "duration": "00:06:47.3178631",
+          "idleSeconds": 1.604,
+          "measurement": "P700 local 15v15: 403.5s, samples=4025, reached=24/30, longest speed<1 with target=1.604s, shots=3119, hits=1396, kills=8",
+          "startingLoadAverage": [
+            6.56,
+            4.05,
+            4.18
+          ]
+        }
+      ]
+    }
+  },
+  "sourceHashes": [
+    "da1a3eb43c1e6be833242a74ea66da5d685299bfde0f2145d7034bc1d49a86b6  tools/allegiance-mcp/BotManager.Exploration.cs",
+    "71d5b1d78680a26119adaaa2199379ab134f9d4abb25efda49a57463830ae3cb  tools/allegiance-mcp/SideIntel.cs",
+    "8b2c7edf7b3e02e7fdc037fa512c4a8fa669d0d95f24d819a39dbaf7149a9c61  tests/Allegiance.ClientCore.Tests/P953ShowcaseRegressionTests.cs",
+    "ab7a80f08e18e64bbe4f9f192b8f24c51f295042280b5953e7afc6146d982f0d  tests/Allegiance.ClientCore.Tests/P798ScoutOpeningLiveTests.cs",
+    "288edc6fd991b6faa7e2da4652befc5cc2a6fb2269b4d518c2da54f55eefbff5  tests/Allegiance.ClientCore.Tests/SC4ShowcaseLiveTests.cs"
+  ],
+  "fastGate": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 139,
+        "live": 6,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4888,
+        "live": 135,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2281,
+        "live": 179,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6145,
+        "live": 78,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 944.062171603,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 139,
+            "outcomes": {
+              "Passed": 139
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4888,
+            "outcomes": {
+              "Passed": 4885,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2281,
+            "outcomes": {
+              "Passed": 2280,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6145,
+            "outcomes": {
+              "Passed": 6143,
+              "Failed": 2
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9481962864721485,
+          "referenceMs": 3.5747,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 11.3697282
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+            "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+            "outcome": "Passed",
+            "seconds": 10.2253956
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+            "outcome": "Passed",
+            "seconds": 11.2852374
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 13.0328965
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "4 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.0636641300006886,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.0636641300006886,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "nonTaskTriage": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+      "reason": "failed",
+      "runs": [
+        {
+          "run": "triage-00-1",
+          "exit": 1,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "0",
+            "failed": "1",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+              "duration": "00:00:01.0640472",
+              "outcome": "Failed"
+            }
+          ],
+          "errors": [
+            "Assert.Equal() Failure: Values differ\nExpected: -2\nActual:   0"
+          ]
+        },
+        {
+          "run": "triage-00-2",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+              "duration": "00:00:01.8736042",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-00-3",
+          "exit": 1,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "0",
+            "failed": "1",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+              "duration": "00:00:01.0760350",
+              "outcome": "Failed"
+            }
+          ],
+          "errors": [
+            "Assert.Equal() Failure: Values differ\nExpected: -2\nActual:   0"
+          ]
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "reason": "slow",
+      "runs": [
+        {
+          "run": "triage-01-1",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "duration": "00:00:03.6250820",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-01-2",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "duration": "00:00:03.6569643",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-01-3",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+              "duration": "00:00:03.7116106",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "reason": "slow",
+      "runs": [
+        {
+          "run": "triage-02-1",
+          "exit": 0,
+          "counters": {
+            "total": "2",
+            "executed": "2",
+            "passed": "2",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "duration": "00:00:04.5424920",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "duration": "00:00:03.3095906",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-02-2",
+          "exit": 0,
+          "counters": {
+            "total": "2",
+            "executed": "2",
+            "passed": "2",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "duration": "00:00:04.4823263",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "duration": "00:00:03.3320451",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-02-3",
+          "exit": 0,
+          "counters": {
+            "total": "2",
+            "executed": "2",
+            "passed": "2",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "duration": "00:00:03.3705284",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "duration": "00:00:04.6796160",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "reason": "failed",
+      "runs": [
+        {
+          "run": "triage-03-1",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "duration": "00:00:01.0505184",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-03-2",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "duration": "00:00:00.9937844",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-03-3",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "duration": "00:00:01.0256581",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "reason": "failed",
+      "runs": [
+        {
+          "run": "triage-04-1",
+          "exit": 0,
+          "counters": {
+            "total": "3",
+            "executed": "3",
+            "passed": "3",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "duration": "00:00:00.4790254",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "duration": "00:00:00.1926119",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "duration": "00:00:00.2282749",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-04-2",
+          "exit": 0,
+          "counters": {
+            "total": "3",
+            "executed": "3",
+            "passed": "3",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "duration": "00:00:00.1935913",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "duration": "00:00:00.2003195",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "duration": "00:00:00.4995689",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-04-3",
+          "exit": 0,
+          "counters": {
+            "total": "3",
+            "executed": "3",
+            "passed": "3",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "duration": "00:00:00.1515331",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "duration": "00:00:00.5195880",
+              "outcome": "Passed"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "duration": "00:00:00.1582266",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "reason": "slow",
+      "runs": [
+        {
+          "run": "triage-05-1",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "duration": "00:00:09.8474443",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-05-2",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "duration": "00:00:09.8458646",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "run": "triage-05-3",
+          "exit": 0,
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "seconds": [
+            {
+              "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+              "duration": "00:00:09.7914092",
+              "outcome": "Passed"
+            }
+          ],
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "fullGateStart": {
+    "loadAverage": [
+      2.05126953125,
+      3.43017578125,
+      3.8974609375
+    ],
+    "cpus": 24
+  },
+  "fastSkippedCases": [
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+  ],
+  "parkingArrivalTriage": [
+    {
+      "run": "parking-arrival-triage-1",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:57.1252861",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 233.2s, samples=2324, reached=24/30, longest speed<1 with target=2.311s, shots=6294, hits=3159, kills=22"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.05,
+        4.07,
+        4.14
+      ]
+    },
+    {
+      "run": "parking-arrival-triage-2",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:24.5614213",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 261.1s, samples=2603, reached=24/30, longest speed<1 with target=2.306s, shots=2846, hits=899, kills=3"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        4.71,
+        4.36,
+        4.22
+      ]
+    },
+    {
+      "run": "parking-arrival-triage-3",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:07:48.1928672",
+          "error": null
+        }
+      ],
+      "gcModes": [
+        "server/concurrent"
+      ],
+      "measurements": [
+        "P700 local 15v15: 463.9s, samples=4628, reached=24/30, longest speed<1 with target=1.815s, shots=3288, hits=1267, kills=6"
+      ],
+      "baselineReceipts": [
+        "[boot] broadcast.immutableSnapshot = True",
+        "[boot] broadcast.encodeOnce = True",
+        "[boot] broadcast.parallelBuild = true \u2014 per-peer broadcast building runs in parallel (max 13 workers, env); payloads are byte-identical to serial mode; see P603.",
+        "[boot] transport mode = pool (24 workers) [env]",
+        "[boot] broadcast.shipUpdateModel = native \u2014 native deviation-ranked HEAVY/LIGHT ship-update budget (no per-tick teammate SingleShipUpdate posBatch); see P604.",
+        "[boot] gc = server/concurrent (server GC: multi-heap, scales with cores; recommended for 300+ players)",
+        "[boot] sim.nativeGotoPlan = true (native NPC travel; false = legacy port steering)"
+      ],
+      "startingLoadAverage": [
+        3.12,
+        4.24,
+        4.26
+      ]
+    }
+  ],
+  "lightGatePassed": false
+}

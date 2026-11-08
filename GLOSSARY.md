@@ -1330,6 +1330,18 @@ list in **reverse**.
   report: `docs/reports/P821_ROLE_RESOLUTION.md`.
 - **Scenario spawning** — `tools/allegiance-mcp/BotManager.Scenarios.cs`,
   `SkirmishDriver.cs`, `Showcase.cs`, `ScenarioPlanner.cs`.
+- **Showcase resource opening and defensive-field proof (P953)** — an automatic
+  topology rendezvous yields to a side-observed resource clash after discovery.
+  If still unscouted after enemy recon and the opening raid opportunity, it
+  reuses the recon slot in `tools/allegiance-mcp/SideIntel.cs` and
+  `tools/allegiance-mcp/BotManager.Exploration.cs`. Later rock discoveries can
+  upgrade the clash to a richer area; explicit operator targets retain ownership.
+  The research
+  coverage fixture in `tests/Allegiance.ClientCore.Tests/SC4ShowcaseLiveTests.cs`
+  orders its normally produced mine-layer drones to defend home alephs, retaining
+  both-side chaff/probe/mine minimums and requiring long-lived defensive models.
+  Native layers request a location (`FedSrv/FedSrv.CPP:11518-11543`). Report:
+  `docs/reports/SHOWCASE_REGRESSIONS_P953.md`.
 - **Desired fleet / recovery epoch (P900)** — multiplayer showcase retains
   scenario arguments and per-side slots at the supervisor, detects corroborated
   probe loss, replaces worker processes with bounded backoff, and replays only

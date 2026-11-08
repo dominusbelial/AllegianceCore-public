@@ -1,0 +1,73 @@
+using System.Reflection;
+using System.Text.Json;
+using Allegiance.Core;
+using Allegiance.Core.Model;
+using Allegiance.Core.Wire;
+using Allegiance.TestInfra;
+using Allegiance.Tools.McpSpawner;
+using Srv = Allegiance.Server.Server;
+
+namespace Allegiance.ClientCore.Tests;
+
+public sealed partial class BotFixRegressionTests
+{
+    [SkippableFact]
+    public void P953_Historical_native_map_resource_observation_replay()
+    {
+        Require.Artwork();
+        using var server = (Srv)typeof(P798ScoutOpeningLiveTests).GetMethod("Boot", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, ["m2xspiderw.igc"])!;
+        var mission = server.Missions[0];
+        var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(Catalog.ArtRoot, "m2xspiderw.igc")));
+        var results = new List<(short Side, short? Target)>();
+        for (short sideId = 0; sideId < 2; sideId++)
+        {
+            short own = (short)(1050 + sideId), enemy = (short)(1051 - sideId), frontier = sideId == 0 ? (short)1054 : (short)1058;
+            using var cs = Session(connected: true);
+            cs.World.Apply(new ClusterInfo
+            {
+                Clusters = map.Clusters.Select(c => new ClusterInfo.ClusterEntry(c.ClusterId, c.HomeSector)).ToArray(),
+                Warps = map.Warps.Select(w => new ClusterInfo.WarpEdge(w.ClusterId,
+                    map.Warps.Single(p => p.WarpId == w.DestinationId).ClusterId)).ToArray()
+            });
+            var bots = Enumerable.Range(1, 4).Select(i => Bot(cs, (short)i)).ToArray();
+            foreach (var bot in bots) Set(bot, "Side", sideId);
+            var manager = Manager(bots);
+            Set(manager, "_openingStartedAt", 0.0);
+            var choices = new Dictionary<(uint, short), ClashChoice>();
+            Set(manager, "_clash", choices);
+            Set(manager, "_clashLogged", new HashSet<(uint, short)>());
+            typeof(BotManager).GetField("_clashRockCounts", BindingFlags.Instance | BindingFlags.NonPublic)?
+                .SetValue(manager, new Dictionary<(uint, short), int>());
+            var store = new SideIntelStore(); Set(manager, "_intelStore", store);
+            var intel = store.Get(0, sideId); intel.OwnHome = own; intel.EnemyHome = enemy;
+            void Observe(short sector, double now)
+            {
+                intel.MarkSector(sector, now);
+                foreach (var rock in mission.Sectors.Single(s => s.Id == sector).Mineable)
+                {
+                    var d = rock.Data;
+                    intel.ObserveRock(new(d.AsteroidId, d.ClusterId, d.Ore, d.OreMax, d.AabmCapabilities), now);
+                }
+            }
+            var array = Array.CreateInstance(BotType, bots.Length);
+            for (int i = 0; i < bots.Length; i++) array.SetValue(bots[i], i);
+            Observe(frontier, 100);
+            Call("AssignClashTargets", manager, array, 100.0);
+            short? initial = Get<short?>(bots[0], "TargetSector");
+            double initialResource = choices.TryGetValue((0, sideId), out var first) ? first.Resource : 0;
+            Observe(1052, 101);
+            Call("AssignClashTargets", manager, array, 101.0);
+            short? target = Get<short?>(bots[0], "TargetSector");
+            Console.WriteLine("[p953-replay] " + JsonSerializer.Serialize(new
+            {
+                side = sideId, frontier, frontierRocks = mission.Sectors.Single(s => s.Id == frontier).Mineable.Count,
+                initial, initialResource, target, knownRocks = intel.Rocks.Count,
+                resource = choices.TryGetValue((0, sideId), out var last) ? last.Resource : 0,
+                gcServer = System.Runtime.GCSettings.IsServerGC
+            }));
+            results.Add((sideId, target));
+        }
+        Assert.All(results, row => Assert.Equal((short?)1052, row.Target));
+    }
+}
