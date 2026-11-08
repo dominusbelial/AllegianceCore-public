@@ -348,7 +348,7 @@ assertions — they are the deliberate behaviour changes of this task.
 | Suite | Result |
 | --- | --- |
 | P959 + P896 + P801StrikeMassTests + P745SiegeDutyTests + P819FinaleOrderTests + P656ShowcaseFinaleTests + P682b, 3x alone | **PASS** — 73/73 each time |
-| `P745FinaleSiegeLiveTests` + `P778ABomberPushLiveTests`, 3x alone | `<!--LIVE3-->` |
+| `P745FinaleSiegeLiveTests` + `P778ABomberPushLiveTests`, 3x alone | **PASS** — 3/3, 3/3, 3/3 (19m34s, 16m43s, 15m33s) |
 | Showcase never-parks 5x | **PASS** — 5/5 (2m34s-4m46s each); the finale wing/prearm changes did not park the showcase |
 | Research showcase finales, 2-side and 3-side, 5x before / 5x after | §5 (20 runs, every run listed) |
 | Early pressure (2-side, finale at 12 min, wave at 8 min) | ae2-1: both sides armed at t=480 s (`[strike] side=N early pressure armed t=480s`); the corrected requirement (11-13 with the defenders seen) was not reachable inside the 4 min before the finale, so the early wave held and the finale's own waves killed 2 garrisons. The timing predicate is pinned by the unit table. |
@@ -363,7 +363,7 @@ assertions — they are the deliberate behaviour changes of this task.
 | New/affected tests 3x alone | **PASS** — 73/73 three times (P959 + P896 + P801StrikeMass + P745SiegeDuty + P819FinaleOrder + P656ShowcaseFinale + P682b) |
 | ONE `tools/run-tests.sh --tier fast` | **13,514 tests, 3 failures — all three already-ledgered Core flakes, each pass/pass/pass 3x alone** (`ConsoleLogNonBlockingTests.Verbose_gate…`, `LiveSideSelectTests.Flag_on_auto…`, `BallotVotingLiveTests.Resign_passing…`); no task test failed. `Allegiance.ClientCore.Tests` 2293/2293, MonoGame 4899, Lobby 139, Update 28, Core 6130/6133. Ledger entry added to `docs/TEST_FLAKES.md`. |
 | Showcase never-parks 5x | **PASS** — 5/5 (2m34s-4m46s each); the finale wing/prearm changes did not park the showcase |
-| Live finale suites 3x alone | `<!--LIVE3-->` (P745FinaleSiegeLiveTests + P778ABomberPushLiveTests) |
+| Live finale suites 3x alone | **PASS** — P745FinaleSiegeLiveTests + P778ABomberPushLiveTests 3/3 three times |
 | `tools/check-glossary-links.py` | **PASS** — 648 distinct paths |
 | AOT publish | **Not required**: no `src/Allegiance.Server` or `src/Allegiance.Core` file changed (bot policy + tests + a proof tool only), per the lane rule |
 
