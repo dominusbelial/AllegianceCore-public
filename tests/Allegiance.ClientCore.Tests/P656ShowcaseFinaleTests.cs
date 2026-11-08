@@ -334,7 +334,13 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal(2, FinaleJson(rig.Manager).GetProperty("maturity").GetArrayLength());
         rig.Mature();
         Assert.Single(rig.Bots, b => Get<bool>(b, "FinaleBomberReserved"));
-        Assert.All(rig.Bots, b => { Assert.False(Get<bool>(b, "FinaleBomberActive")); Assert.False(Get<bool>(b, "FinaleEscort")); });
+        // P959 — the arm assigns the escorts up front (the whole formation stages
+        // together); it still activates nobody, because activation needs a REAL granted
+        // strike loadout ack and this rig has none. The buy still happens on the pod
+        // relaunch below (no grant, no pre-buy).
+        Assert.All(rig.Bots, b => Assert.False(Get<bool>(b, "FinaleBomberActive")));
+        Assert.Equal(1, rig.Bots.Count(b => Get<bool>(b, "FinaleEscort")));
+        Assert.All(rig.Bots, b => Assert.False(Get<bool>(b, "FinaleRefitting")));
         var bomber = rig.Bots[0]; var cs = rig.Sessions[0];
         Assert.Equal(rig.Bomber.HullId, Get<short>(bomber, "HullId"));
         cs.World.Apply(new DockedNotify { StationId = 100 });
@@ -359,7 +365,11 @@ public sealed partial class BotFixRegressionTests
         Call("UpdatePodState", null, bomber, cs, rig.Started + 1803);
         Call("RelaunchDockedPod", null, bomber, cs, rig.Started + 1804, send);
         Assert.Equal(2, buys.Count);
-        Assert.Equal(buy, buys[1]); // normal second death buys the same strike again
+        // P959 — compare by value: the tuple's third element is a list, so equality by
+        // reference would only hold when the two relaunches happened to share an instance.
+        Assert.Equal(buy.Hull, buys[1].Hull);
+        Assert.Equal(buy.Launch, buys[1].Launch);
+        Assert.Equal(buy.Parts.ToArray(), buys[1].Parts.ToArray()); // same strike again
         Assert.False(Get<bool>(bomber, "FinaleGrantVerified"));
         ((Allegiance.Core.Transport.ITransportSite)cs).OnReceive(Allegiance.Core.Transport.ConnectionId.Server,
             FedPacket.Pack([new BuyLoadoutAck { HullId = buy.Hull,
@@ -371,7 +381,10 @@ public sealed partial class BotFixRegressionTests
         {
             var fighter = rig.Bots[i];
             Call("PrepareFinaleRelaunch", null, fighter, rig.Started + 1801);
-            Assert.False(Get<bool>(fighter, "FinaleEscort")); // engaged fighter cannot be recruited
+            // P959 — the arm recruited the escorts up front (EscortCap), so a fighter
+            // INSIDE the cap is already one; a fighter outside it stays unrecruited, and
+            // a relaunch never recruits past the cap.
+            Assert.Equal(i == 2, Get<bool>(fighter, "FinaleEscort"));
             Set(fighter, "PodDocked", true);
             Call("PrepareFinaleRelaunch", null, fighter, rig.Started + 1802);
         }

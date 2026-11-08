@@ -11,7 +11,12 @@ internal static class ShowcaseFinale
     internal sealed record Settings(double AfterMinutes = 30, string Side = "leader",
         double MinRelaunchShare = .5, int MinKillsLastFiveMinutes = 5, int Bombers = 12,
         double EscortShare = .1, int EscortCap = 12, float EscortRadius = 1500, float Leash = 2500,
-        double SurvivalMargin = 0)
+        double SurvivalMargin = 1,
+        // P959 — wing preparation before the finale, the one early pressure wave,
+        // the wing-growth cap and the server's finale-deadline length (all
+        // bot-side policy; no server, sim or wire change).
+        double PrearmMinutes = 0, double EarlyPressureMinutes = 0, int MaxWing = 18,
+        double DeadlineSeconds = 900)
     {
         public bool Enabled => AfterMinutes > 0;
         internal void Validate()
@@ -25,8 +30,18 @@ internal static class ShowcaseFinale
                 || !float.IsFinite(Leash) || Leash < EscortRadius
                 // P896 — 0 keeps the P801/AIX-comparable wave (bare kill + one
                 // spare); above 0 also carries expected run-in losses / defenders.
-                || !double.IsFinite(SurvivalMargin) || SurvivalMargin < 0 || SurvivalMargin > 2)
-                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0..5/both/all, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2)");
+                // P959 default is 1: one extra hull per observed defender/loss
+                // (one defender really does account for about one wave hull —
+                // see docs/reports/FINALE_STRIKE_MASS_P959.md). The pre-arm lead is
+                // OFF by default: it reserves/refits before the trigger, which the
+                // default deploy must not do (P656's opening-decision parity pin);
+                // the rig A/B sets it (proposed 2).
+                || !double.IsFinite(SurvivalMargin) || SurvivalMargin < 0 || SurvivalMargin > 2
+                || !double.IsFinite(PrearmMinutes) || PrearmMinutes < 0
+                || !double.IsFinite(EarlyPressureMinutes) || EarlyPressureMinutes < 0
+                || MaxWing is < 1 or > StrikeVolley.MaxPlannedBombers
+                || !double.IsFinite(DeadlineSeconds) || DeadlineSeconds < 0 || DeadlineSeconds > 7200)
+                throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0..5/both/all, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2, max wing >= bombers, deadline 0..7200 s)");
         }
         internal int EscortBudget(int fighters) => Math.Min(EscortCap, (int)Math.Floor(fighters * EscortShare));
     }
@@ -35,6 +50,17 @@ internal static class ShowcaseFinale
     {
         public double RelaunchShare => CombatBots == 0 ? 0 : (double)Relaunched / CombatBots;
     }
+
+    /// <summary>P959 — does this finale selection arm <paramref name="side"/>?
+    /// "all"/"both" arm every side; a numeric token names one; "leader" is decided
+    /// at the trigger and pre-arms every side (P819 gives both sides the same
+    /// opportunity, so neither is handicapped by the preparation).</summary>
+    internal static bool SideSelected(string selection, short side) => selection switch
+    {
+        "all" or "both" => true,
+        var token when short.TryParse(token, out short id) => id == side,
+        _ => true,
+    };
 
     internal static short[] TriggerSides(Settings settings, double elapsedSeconds,
         IReadOnlyList<Maturity> sides, int recentKills)
