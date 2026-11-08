@@ -154,7 +154,7 @@ addition move the quantized continuous digest or the strict counts.
     isolation 2026-11-07");
   - `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent`
     fail/fail/fail — environmental: a Tailscale host
-    (`domingo-um690.tail…ts.net`, 13 players) is currently discoverable on
+    (`<tailnet host>`, 13 players) is currently discoverable on
     this workstation's tailnet; the test asserts an empty discovery result;
     no discovery code changed;
   - `LiveSideSelectTests.Flag_on_auto_seats…` fail once (pass/pass/fail
