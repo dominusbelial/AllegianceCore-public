@@ -31,6 +31,19 @@ public sealed class SC4ShowcaseLiveTests(ITestOutputHelper output)
         var sampled = new Dictionary<(string, short), int>();
         var homeMines = new HashSet<short>();
         var contestedProbes = new HashSet<short>();
+        var defensiveLayers = new Dictionary<short, short>();
+        var orderedLayers = new HashSet<short>();
+        // P877 deliberately reserves quiet-aleph pre-laying for long-lived
+        // fields. These civilizations cannot buy the Rixian player launcher;
+        // their authored research plans already produce native mine layers.
+        // Give those layers the location they request (FedSrv.CPP:11518-11543),
+        // through the ordinary commander order path, and observe the field.
+        var mineLayerHulls = mission.Core.DroneTypes.Values
+            .Where(d => d.PilotType == Ship.PilotTypeLayer && mission.Core.MineTypes.ContainsKey(d.EtidLaid))
+            .Select(d => d.HullTypeId).ToHashSet();
+        var defendedWarps = mission.Sides.ToDictionary(s => s.Id, s => mission.Sectors
+            .Where(c => c.StationRuntimes.Any(st => st.SideId == s.Id))
+            .SelectMany(c => c.Warps).OrderBy(w => w.Warp.WarpId).First().Warp.WarpId);
         Exception? tickFailure = null;
         using var stop = new CancellationTokenSource();
         var ticker = new Thread(() =>
@@ -57,7 +70,8 @@ public sealed class SC4ShowcaseLiveTests(ITestOutputHelper output)
                             bool home = sector.StationRuntimes.Any(s => s.SideId == side);
                             float alephDistance = sector.Warps.Select(w => (new Vector3(w.Warp.Position[0], w.Warp.Position[1], w.Warp.Position[2])
                                 - model.Position).Length()).DefaultIfEmpty(float.MaxValue).Min();
-                            if (kind == "mine" && home && alephDistance < 3000) homeMines.Add(side);
+                            if (kind == "mine" && home && alephDistance < 3000
+                                && lifetime >= Showcase.PreLaidMineMinLifespan) homeMines.Add(side);
                             if (kind == "probe" && !home) contestedProbes.Add(side);
                             var key = (kind, side);
                             sampled.TryGetValue(key, out int count);
@@ -87,6 +101,18 @@ public sealed class SC4ShowcaseLiveTests(ITestOutputHelper output)
             double nextProgress = 0;
             while (watch.Elapsed.TotalSeconds < 600 && tickFailure is null)
             {
+                foreach (short side in new short[] { 0, 1 })
+                {
+                    if (defensiveLayers.ContainsKey(side)) continue;
+                    foreach (var layer in manager.ListDrones(side, null).Drones
+                        .Where(d => mineLayerHulls.Contains(d.HullId) && !orderedLayers.Contains(d.ShipId)))
+                    {
+                        var order = manager.OrderDrone(layer.ShipId, "build", $"warp:{defendedWarps[side]}");
+                        output.WriteLine($"[p953-home-field] side={side} {JsonSerializer.Serialize(order)}");
+                        orderedLayers.Add(layer.ShipId);
+                        if (order.AffirmativeObserved) { defensiveLayers[side] = layer.ShipId; break; }
+                    }
+                }
                 lock (sync)
                 {
                     counts = new short[] { 0, 1 }.Select(side => new[] { ShowcaseSkill.Chaff, ShowcaseSkill.Probes, ShowcaseSkill.Mines }
@@ -114,6 +140,7 @@ public sealed class SC4ShowcaseLiveTests(ITestOutputHelper output)
                 var summary = new { wallSeconds = watch.Elapsed.TotalSeconds, simSeconds = server.SimNow,
                     mode = "research", researchScale = 16, combatPeersPerSide = 60,
                     counts, homeMines = homeMines.Order().ToArray(), contestedProbes = contestedProbes.Order().ToArray(),
+                    defensiveLayers, defendedWarps,
                     samples, server.SimPassStageFailures, enough };
                 string json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
                 output.WriteLine(json);
@@ -124,6 +151,7 @@ public sealed class SC4ShowcaseLiveTests(ITestOutputHelper output)
                 }
             }
             Assert.Null(tickFailure);
+            Assert.Equal(2, defensiveLayers.Count);
             Assert.True(enough, "SC-1 unscaled minimums: chaff >=10, probes >=10, mines >=5 on EACH side; plus actual models at defended alephs/contested sectors.");
             Assert.Equal(0, server.SimPassStageFailures);
         }

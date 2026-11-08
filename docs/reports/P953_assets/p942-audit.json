@@ -1,0 +1,25 @@
+{
+  "commit": "14c31d438f78bd0a879a13e2d7f119c152be2043",
+  "selectedPlans": [
+    {
+      "side": 0,
+      "civ": 25,
+      "name": "plan_a",
+      "steps": 157,
+      "sameBytesAsBeforeP942": true,
+      "sha256": "bcab387a2f2878110c5ee520b77767adcea5b7878274c9f826876ee96e044f50",
+      "canonicalGeneratedSchedulingApplies": false
+    },
+    {
+      "side": 1,
+      "civ": 3,
+      "name": "plan_a",
+      "steps": 181,
+      "sameBytesAsBeforeP942": true,
+      "sha256": "29771d32c5b740b8b50938b509a08316a95ac9c45e011606aaad0dc98ebb4b6e",
+      "canonicalGeneratedSchedulingApplies": false
+    }
+  ],
+  "receiptSource": "sc4-base and sc4-development TRX research-plan boot receipts",
+  "schedulerGuard": "tools/allegiance-mcp/ResearchCommander.cs:80"
+}

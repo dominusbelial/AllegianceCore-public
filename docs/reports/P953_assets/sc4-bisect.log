@@ -1,0 +1,6 @@
+# bad: [72f04522b2d862d457db7584f13fbcd91bed5ed4] Merge pi-p877: bot minelaying tactics (escape mines behind a pursuer when in danger; aleph-field duty bots with field-grade mines at the enemy arrival aleph; mine coverage counters) — bot policy only, no src/ change
+# good: [ea132a30018d73974cadc3289e68c564ca8ca22c] Merge pi-p881a: training lessons Basic Flight + Basic Weaponry through the real client path
+git bisect start '72f04522' 'ea132a30'
+# bad: [f52bd5590c164f139128c28a30852ecd000176fe] WIP p877 (Pi, zai/glm-5.3-flash) — pending Claude review
+git bisect bad f52bd5590c164f139128c28a30852ecd000176fe
+# first bad commit: [f52bd5590c164f139128c28a30852ecd000176fe] WIP p877 (Pi, zai/glm-5.3-flash) — pending Claude review

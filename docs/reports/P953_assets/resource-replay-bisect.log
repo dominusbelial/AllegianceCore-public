@@ -1,0 +1,14 @@
+# bad: [48cdb2deb0597daf3ebd128281a144dba085e683] Client core cache: a missing core returns null again (P869b's revision key read FileInfo.Length on a missing file and threw); P870 resolver test compares content, since sharing holds only while leased
+# good: [a2f73c131ca77f0bb67c827be1620b1651ef5d2c] Merge P860: root cause of the P480 rotation export flake (fixture race) + ballots-stage fix
+git bisect start '48cdb2de' 'a2f73c13'
+# bad: [0295ecb680ccd3b0b97629914721447a832908cb] Merge pi-p865 (pending gate)
+git bisect bad 0295ecb680ccd3b0b97629914721447a832908cb
+# good: [f12a8fa965c08d56c578cb970432e28bd40bfaa6] Merge P862b: aleph glimpse resolves the partner warp's sector (was drawing nothing), pre-warmed glimpse skies, deferred batched flare occlusion readback
+git bisect good f12a8fa965c08d56c578cb970432e28bd40bfaa6
+# bad: [a3b8819f1c86ff86dbfd069465cef1f735a3aa2d] Merge codex-p864c (pending combined gate)
+git bisect bad a3b8819f1c86ff86dbfd069465cef1f735a3aa2d
+# bad: [4873bc315490ddee2829acf83c95c84653306ecb] WIP p864c (Codex) — pending Claude review
+git bisect bad 4873bc315490ddee2829acf83c95c84653306ecb
+# good: [f6e9e480fab8f446d0fafa0ec3caed61675ee3c6] Merge P864: game-over experience balance (GetExpMult wired), commander command time on leader change
+git bisect good f6e9e480fab8f446d0fafa0ec3caed61675ee3c6
+# first bad commit: [4873bc315490ddee2829acf83c95c84653306ecb] WIP p864c (Codex) — pending Claude review

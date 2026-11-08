@@ -4,6 +4,68 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P953 validation — resource opening and defensive-field fixture, 2026-11-08 UTC
+
+P798's null-clash and split-frontier mechanisms are repaired in the existing
+showcase opening. SC4 now issues ordinary Build orders to its normally produced
+mine layers and requires actual long-lived home fields. Original resource,
+visibility and per-side deployment coverage remains. P798 passes **3/3 alone on
+each map**, SC4 **3/3 alone**; ten new policy cases **10/0/0 ×3** and 43 affected
+cases **43/0/0 ×3**, with no skips. All final Live receipts show server/concurrent
+GC and the required performance baseline. Historical Live-bracket limitations,
+independent causal replay and native citations are in the report.
+
+One Fast sweep: **13,475 Passed / 3 Failed / 3 Skipped**,
+944.1 s; 4 executions over the calibrated
+10.000 s limit. Infrastructure:
+9 checks, exit 0.
+The gate is **FAIL** and was not rerun or waived.
+
+Every failed or over-time method ran three isolated invocations (6
+methods; 18 invocations): **25/2/0** case executions across 27 parameter rows.
+Original timing and assertion failures remain visible in the JSON;
+passing isolated repeats do not erase the original failed sweep.
+
+The full-session chat failure repeats **fail/pass/fail** with the previously
+ledgered `ChatTarget` receipt race (`-2` expected, `0` received); it remains
+intermittent. The side-seat failure is the existing simulated-clock/receipt
+boundary (a ship already exists when the fixture expects none); all three
+isolated rechecks pass. The timer failure is the existing delay-7 floating upper
+bound (`7.0000000000000009 > 7`); every delay row passes in all three rechecks.
+No chat, seating or timer implementation/fixture is changed. All three slow
+methods pass three isolated rechecks below this sweep's 10-second limit.
+
+| Method | Sweep trigger | P/F/S in three isolated runs | Max case seconds, each run |
+| --- | --- | --- | --- |
+| `Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | failed | 0/1/0, 1/0/0, 0/1/0 | 1.064/1.874/1.076 |
+| `Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow | 1/0/0, 1/0/0, 1/0/0 | 3.625/3.657/3.712 |
+| `Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow | 2/0/0, 2/0/0, 2/0/0 | 4.542/4.482/4.680 |
+| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | 1/0/0, 1/0/0, 1/0/0 | 1.051/0.994/1.026 |
+| `Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | failed | 3/0/0, 3/0/0, 3/0/0 | 0.479/0.500/0.520 |
+| `Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | slow | 1/0/0, 1/0/0, 1/0/0 | 9.847/9.846/9.791 |
+
+Parking comparison: **base 5/0/0, fixed 4/1/0**; maximum target idle
+2.508/1.914 seconds respectively. The fixed failure is the arrival assertion:
+20/30 reached at 480.1 seconds, longest target idle 1.914 seconds. Its three
+required isolated rechecks pass **1/0/0 ×3**, with observation durations
+233.2/261.1/463.9 seconds and longest idles 2.311/2.306/1.815 seconds.
+All five runs per tree use the same baseline and actual server GC; starting load,
+arrival counts, durations and individual idle measurements are retained.
+Parking-limit violations are **0/5 on both trees**. Overall assertion outcomes
+differ because of the arrival failure; equal arrival performance is not claimed.
+The original arrival failure remains recorded, as does P952's earlier occurrence.
+
+The Fast invocation honors explicit legacy-path fixture configurations instead
+of overriding them globally. Scratch temporary paths use a `/proc` descriptor
+alias into workspace storage, avoiding ancestor `local.env` discovery; the writable
+profile stays in workspace scratch. No production configuration is altered by
+these invocation controls. Optional-pack skip details and all non-task outcomes
+are recorded in the report and compact JSON.
+
+[P953 report](reports/SHOWCASE_REGRESSIONS_P953.md) ·
+[Validation JSON](reports/P953_assets/validation.json).
+Raw evidence remains in `.scratch/p953/`; no commits or pushes.
+
 ## P952 validation — defender fixture correction, 2026-11-07 UTC
 
 The persistent defender null-acquisition failure is **resolved by correcting

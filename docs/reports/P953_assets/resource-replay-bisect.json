@@ -1,0 +1,328 @@
+{
+  "firstBad": "4873bc315490ddee2829acf83c95c84653306ecb",
+  "meaning": "First revision whose native file-map population exposes the positive-resource clash latch in this controlled observation replay; not the first ever failing unmodified Live test.",
+  "rows": [
+    {
+      "run": "replay-bisect-0295ecb680ccd3b0b97629914721447a832908cb",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 25,
+          "initial": 1054,
+          "initialResource": 0.22641510009765625,
+          "target": 1054,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 25,
+          "initial": 1058,
+          "initialResource": 0.22641510009765625,
+          "target": 1058,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-bisect-4873bc315490ddee2829acf83c95c84653306ecb",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 25,
+          "initial": 1054,
+          "initialResource": 0.22641510009765625,
+          "target": 1054,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 25,
+          "initial": 1058,
+          "initialResource": 0.22641510009765625,
+          "target": 1058,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-bisect-a3b8819f1c86ff86dbfd069465cef1f735a3aa2d",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 25,
+          "initial": 1054,
+          "initialResource": 0.22641510009765625,
+          "target": 1054,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 25,
+          "initial": 1058,
+          "initialResource": 0.22641510009765625,
+          "target": 1058,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-bisect-f12a8fa965c08d56c578cb970432e28bd40bfaa6",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-bisect-f6e9e480fab8f446d0fafa0ec3caed61675ee3c6",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-window-end",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 25,
+          "initial": 1054,
+          "initialResource": 0.22641510009765625,
+          "target": 1054,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 25,
+          "initial": 1058,
+          "initialResource": 0.22641510009765625,
+          "target": 1058,
+          "knownRocks": 159,
+          "resource": 0.22641510009765625,
+          "gcServer": true
+        }
+      ]
+    },
+    {
+      "run": "replay-window-start",
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "serverGc": true,
+      "observations": [
+        {
+          "side": 0,
+          "frontier": 1054,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        },
+        {
+          "side": 1,
+          "frontier": 1058,
+          "frontierRocks": 0,
+          "initial": null,
+          "initialResource": 0,
+          "target": 1052,
+          "knownRocks": 134,
+          "resource": 878.2884000000004,
+          "gcServer": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "seed": 953,
+  "rendezvous": 1052,
+  "facts": [
+    {
+      "Id": 1050,
+      "HomeSector": true,
+      "Name": "Ganymede",
+      "authoredRocks": 0,
+      "rocks": 23,
+      "resource": 0.11320755004882813
+    },
+    {
+      "Id": 1051,
+      "HomeSector": true,
+      "Name": "Organia",
+      "authoredRocks": 0,
+      "rocks": 23,
+      "resource": 0.11320755004882813
+    },
+    {
+      "Id": 1052,
+      "HomeSector": false,
+      "Name": "Alderan",
+      "authoredRocks": 134,
+      "rocks": 134,
+      "resource": 878.2884000000004
+    },
+    {
+      "Id": 1053,
+      "HomeSector": false,
+      "Name": "Omega",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1054,
+      "HomeSector": false,
+      "Name": "Bug Nebula",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1055,
+      "HomeSector": false,
+      "Name": "Tellus",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1056,
+      "HomeSector": false,
+      "Name": "Cirrus",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1057,
+      "HomeSector": false,
+      "Name": "Terra",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1058,
+      "HomeSector": false,
+      "Name": "Aurora",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1059,
+      "HomeSector": false,
+      "Name": "Rigel",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1060,
+      "HomeSector": false,
+      "Name": "Plato",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1061,
+      "HomeSector": false,
+      "Name": "Juniper",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    },
+    {
+      "Id": 1062,
+      "HomeSector": false,
+      "Name": "Gaia",
+      "authoredRocks": 0,
+      "rocks": 25,
+      "resource": 0.22641510009765625
+    }
+  ],
+  "choices": [
+    {
+      "own": 1050,
+      "enemy": 1051,
+      "frontier": 1054,
+      "initial": {
+        "Sector": 1054,
+        "Score": 0.9017758088953355,
+        "Why": "resources=0.2, hops own=1 enemy=2",
+        "Resource": 0.22641510009765625,
+        "OwnMiners": 0,
+        "EnemyMiners": 0,
+        "EnemyStation": false,
+        "OwnHops": 1,
+        "EnemyHops": 2
+      },
+      "later": {
+        "Sector": 1052,
+        "Score": 594.113783783784,
+        "Why": "resources=878.3, hops own=2 enemy=2",
+        "Resource": 878.2884000000004,
+        "OwnMiners": 0,
+        "EnemyMiners": 0,
+        "EnemyStation": false,
+        "OwnHops": 2,
+        "EnemyHops": 2
+      }
+    },
+    {
+      "own": 1051,
+      "enemy": 1050,
+      "frontier": 1058,
+      "initial": {
+        "Sector": 1058,
+        "Score": 0.9017758088953355,
+        "Why": "resources=0.2, hops own=1 enemy=2",
+        "Resource": 0.22641510009765625,
+        "OwnMiners": 0,
+        "EnemyMiners": 0,
+        "EnemyStation": false,
+        "OwnHops": 1,
+        "EnemyHops": 2
+      },
+      "later": {
+        "Sector": 1052,
+        "Score": 594.113783783784,
+        "Why": "resources=878.3, hops own=2 enemy=2",
+        "Resource": 878.2884000000004,
+        "OwnMiners": 0,
+        "EnemyMiners": 0,
+        "EnemyStation": false,
+        "OwnHops": 2,
+        "EnemyHops": 2
+      }
+    }
+  ]
+}

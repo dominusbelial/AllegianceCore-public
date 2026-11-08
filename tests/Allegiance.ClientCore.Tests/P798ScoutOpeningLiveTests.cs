@@ -125,9 +125,13 @@ public sealed class P798ScoutOpeningLiveTests(ITestOutputHelper output)
                         Math.Max(prev.Resource, resource), firstStation ?? prev.FirstStation, Math.Max(prev.Rocks, rocks));
                 }
                 if (best.Count == 2 && best.Values.All(v =>
-                        v.Clash is not null && v.Share >= minSectorShare && v.Alephs * 100 >= totalAlephs * minAlephPercent
+                        v.Clash is not null && v.Resource > 0 && v.Share >= minSectorShare && v.Alephs * 100 >= totalAlephs * minAlephPercent
                         && v.FirstStation is not null
-                        && best.Values.Any(x => x.Raid) && best.Values.Any(x => x.Support)))
+                        && best.Values.Any(x => x.Raid) && best.Values.Any(x => x.Support))
+                    // A newly discovered richer area can replace an early
+                    // frontier. Wait for the same shared resource objective
+                    // that the final assertions require, within the same bound.
+                    && best.Values.Select(v => v.Clash).Distinct().Count() == 1)
                     break;
                 Thread.Sleep(500);
             }
