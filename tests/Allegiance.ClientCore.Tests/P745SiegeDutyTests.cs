@@ -112,7 +112,7 @@ public sealed partial class BotFixRegressionTests
     }
 
     [SkippableFact]
-    public void P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber()
+    public void P745_P961_Accepted_legal_strike_fallback_keeps_flying_without_an_upgrade_trip()
     {
         Require.Artwork(); using var reads = new DefenseLiveReads(); using var rig = new FinaleRig(new(Bombers: 1));
         var bot = rig.Bots[0]; var cs = rig.Sessions[0];
@@ -135,8 +135,12 @@ public sealed partial class BotFixRegressionTests
         Set(bot, "FinaleBomberActive", true); Set(bot, "FinaleGrantVerified", true);
         cs.World.Apply(new ExportShip { ShipId = 1, SideId = 0, HullId = accepted.HullId });
         rig.Mature();
-        Assert.True((bool)Call("TryDriveResearchFinaleRefit", rig.Manager, bot, cs, rig.Started + 1801)!);
-        Assert.True(Get<bool>(bot, "FinaleRefitting"));
+        // P961 intentionally removes the upgrade trip: legal station-damaging
+        // hardware already belongs in the wing. A death's ordinary relaunch may
+        // buy a newer bomber; preparation must not keep recalling this fighter.
+        Assert.False((bool)Call("TryDriveResearchFinaleRefit", rig.Manager, bot, cs, rig.Started + 1801)!);
+        Assert.False(Get<bool>(bot, "FinaleRefitting"));
+        Assert.Equal(accepted.HullId, Get<short>(bot, "HullId"));
         Assert.Equal(0, Get<int>(bot, "RelaunchAttempts")); Assert.Equal((short)1, Get<short>(bot, "ShipId"));
     }
 

@@ -109,7 +109,11 @@ internal sealed partial class BotManager
     {
         bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
             bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Role);
-        bot.Role = "bomber";
+        if (!bot.FinaleEscort) bot.Role = "bomber";
+        bot.UseStaging = false;
+        bot.MeetingEngagement = false;
+        bot.IsExplorer = false;
+        bot.ReconTarget = null;
         bot.TargetSector = plan.Sector;
         bot.TargetId = null;
         bot.OrderedTargetId = null;
@@ -171,7 +175,7 @@ internal sealed partial class BotManager
             if (reserved + added >= target) break;
             bot.FinaleBomberReserved = true;
             bool ready = profile is { } stationProfile
-                && StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts) is { } loadout
+                && FinaleGrantedStrikeLoadout(bot) is { } loadout
                 && FinaleWingMemberReady(StrikeVolley.DamagesStation(stationProfile, loadout),
                     bot.Granted.HullId == ActualHullId(bot));
             if (ready)
@@ -321,10 +325,14 @@ internal sealed partial class BotManager
                     }
                 }
             }
-            else
+            else if (plan.GoTime is null || plan.WaveEndLogged)
             {
                 plan.AssignedLoneWolves = LiveLoneWolves(run, side);
-                plan.DefenderCount = run.Settings.SurvivalMargin > 0 ? FinaleDefendersInSector(run, side, plan) : 0;
+                var threats = ObserveFinaleThreats(run, side, plan, now);
+                plan.SectorDefenders = threats.Sector;
+                plan.EngagingDefenders = threats.Engaging;
+                plan.DefenderCount = run.Settings.SurvivalMargin <= 0 ? 0 : run.Settings.ReachableStrike
+                    ? threats.Engaging : FinaleDefendersInSector(run, side, plan);
                 var requirement = FinaleVolleyRequirement(run, plan, side, armed);
                 // P959 — the requirement is the wing's, not the live body count's. A
                 // depleted roster no longer shrinks it to "whatever relaunched" (rig:
@@ -359,12 +367,34 @@ internal sealed partial class BotManager
                 }
             }
 
+            if (run.Settings.ReachableStrike && plan.GoTime is null)
+            {
+                plan.Demand = ReachableFinaleDemand(run, plan, side, armed, now);
+                // The reachable subset owns BOTH the commit law and its feedback.
+                // Keeping the all-armed planner here logged contradictory kill
+                // counts and converted observed pool drops with the wrong round.
+                var activePlanner = plan.Demand.Planner;
+                plan.PlannerKill = activePlanner.KillBombers;
+                plan.ShotsNeeded = activePlanner.ShotsToKill;
+                plan.ShieldDamagePerRound = activePlanner.ShieldDamagePerRound;
+                plan.ArmorDamagePerRound = activePlanner.ArmorDamagePerRound;
+                plan.RequiredBombers = plan.Demand.Required;
+                plan.ReachableBombers = plan.Demand.Reachable;
+                plan.MinimumUseful = plan.Demand.MinimumUseful;
+                plan.SurvivalBombers = plan.Demand.ThreatExtra;
+                if (!plan.Demand.ReachableKill && TryRetargetReachableFinale(run, plan, side, armed, now))
+                    continue;
+            }
+
             // `assembled` = armed and in the target sector (they are holding at the
             // standoff point). Reading each own world keeps per-side knowledge.
             var assembled = new List<short>();
             foreach (var bot in armed)
             {
                 if (bot.Cs is not { } cs) continue;
+                if (run.Settings.ReachableStrike && (StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId) is not { } targetProfile
+                    || FinaleGrantedStrikeLoadout(bot) is not { } realLoadout
+                    || !StrikeVolley.DamagesStation(targetProfile, realLoadout))) continue;
                 lock (cs.Gate)
                     if (cs.World.Ships.TryGetValue(bot.ShipId, out var own) && !own.IsDead
                         && own.StationId < 0 && own.SectorId == plan.Sector && own.Latest is not null
@@ -389,11 +419,18 @@ internal sealed partial class BotManager
                     LogFinaleStaging(run, plan, side, armed, assembled.Count, plan.RequiredBombers, now);
                 }
                 plan.StagingSince = assembled.Count == 0 ? null : plan.StagingSince ?? now;
-                if (FinaleCommitReason(assembled.Count, plan.RequiredBombers, plan.StagingSince, now,
-                        plan.DeadlineAt) is { } reason)
-                    CommitFinaleWave(run, plan, side, assembled, now, reason, armed);
+                if (assembled.Count > plan.AssemblyPeak)
+                {
+                    plan.AssemblyPeak = assembled.Count;
+                    plan.LastAssemblyGrowthAt = now;
+                }
+                string? commit = run.Settings.ReachableStrike
+                    ? FinaleAssembly.CommitReason(assembled.Count, plan.Demand, plan.StagingSince,
+                        plan.LastAssemblyGrowthAt, now, ReachableFinaleDeadline(run, plan), run.Settings.PlateauSeconds)
+                    : FinaleCommitReason(assembled.Count, plan.RequiredBombers, plan.StagingSince, now, plan.DeadlineAt);
+                if (commit is { } reason) CommitFinaleWave(run, plan, side, assembled, now, reason, armed);
             }
-            else if (now >= plan.GoTime + FinaleWaveWindowSeconds)
+            else if (plan.WaveEndLogged && now >= plan.GoTime + FinaleWaveWindowSeconds + FinaleWaveTailSeconds)
             {
                 // The window is spent. If un-released bombers remain (a fresh
                 // relaunch), form a NEW mass rather than letting them attack alone.
@@ -404,6 +441,8 @@ internal sealed partial class BotManager
                     plan.GoMembers.Clear();
                     plan.MassLogged = false;
                     plan.StagingSince = null;
+                    plan.LastAssemblyGrowthAt = null;
+                    plan.AssemblyPeak = 0;
                     plan.HitsInWindow = 0;
                     plan.HullAtGo = plan.ShieldAtGo = -1;
                     if (HasMultipleEnemies)
@@ -466,7 +505,12 @@ internal sealed partial class BotManager
     private static void CloseFinaleWave(FinalePlan plan, short side, double now)
     {
         if (plan.WaveEndLogged || plan.GoTime is not { } go) return;
-        if (now < go + FinaleWaveWindowSeconds + FinaleWaveTailSeconds) return;
+        if (now < go + FinaleWaveWindowSeconds + FinaleWaveTailSeconds && plan.KilledAt is null) return;
+        if (plan.KilledAt is not null)
+        {
+            plan.WaveShieldAfter = plan.WaveHullAfter = 0;
+            plan.ShieldNow = plan.HullNow = 0;
+        }
         plan.WaveEndLogged = true;
         int committed = plan.WaveCommitted;
         int released = plan.WaveReleased;
@@ -480,6 +524,7 @@ internal sealed partial class BotManager
         double prior = plan.LandingShare;
         plan.LandingShare = plan.WavesMeasured == 0 ? measured : .5 * prior + .5 * measured;
         plan.WavesMeasured++;
+        plan.ReleaseLosses = plan.WaveKilledBeforeRelease;
         Console.WriteLine($"[strike] side={side} finale wave end target=station#{plan.TargetId} sector={plan.Sector} "
             + $"required={plan.RequiredBombers} committed={committed} released={released} "
             + $"killedBeforeRelease={Math.Max(0, committed - released)} hits={plan.HitsInWindow} "
@@ -487,7 +532,8 @@ internal sealed partial class BotManager
             + $"/{plan.WaveExpectedRounds} "
             + $"shield={Fraction(plan.WaveShieldBefore)}->{Fraction(plan.WaveShieldAfter)} "
             + $"hull={Fraction(plan.WaveHullBefore)}->{Fraction(plan.WaveHullAfter)} "
-            + $"defenders={plan.DefenderCount} plannerKill={plan.PlannerKill} shotsNeeded={plan.ShotsNeeded} "
+            + $"defenders={plan.DefenderCount} engaging={plan.EngagingDefenders} sectorDefenders={plan.SectorDefenders} "
+            + $"releaseLosses={plan.ReleaseLosses} plannerKill={plan.PlannerKill} shotsNeeded={plan.ShotsNeeded} "
             + $"landing={plan.LandingShare.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} "
             + $"wing={plan.WingCap}");
         plan.WaveCommitted = plan.WaveReleased = 0;
@@ -519,6 +565,7 @@ internal sealed partial class BotManager
             bot.FinaleReleaseLogged = false;
             bot.FinaleStrikeSpent = false;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
+            bot.FinalePreparationRefitUsed = false;
             bot.TargetSector = null;
             bot.RoutePath = null;
             bot.RouteIndex = -1;
@@ -557,10 +604,22 @@ internal sealed partial class BotManager
             else if (sector == plan.Sector) inSector++;
             else elsewhere[sector] = elsewhere.GetValueOrDefault(sector) + 1;
         }
+        int escorts = 0, escortsInSector = 0, misordered = 0;
+        foreach (var bot in run.Bots.Where(b => b.Side == side && (b.FinaleBomberReserved || b.FinaleEscort)))
+        {
+            if (bot.TargetSector != plan.Sector && !bot.IsPod && bot.FinaleBomberActive) misordered++;
+            if (!bot.FinaleEscort || bot.IsPod || bot.Cs is not { } cs) continue;
+            escorts++;
+            lock (cs.Gate)
+                if (cs.World.Ships.TryGetValue(bot.ShipId, out var own) && own.StationId < 0
+                    && own.SectorId == plan.Sector && !own.IsDead) escortsInSector++;
+        }
         string where = elsewhere.Count == 0 ? "-" : string.Join(",", elsewhere.Select(kv => $"{kv.Key}:{kv.Value}"));
         Console.WriteLine($"[strike] side={side} finale staging reserved={reserved} armed={armed.Length} "
             + $"assembled={assembled} required={required} inSector={inSector} docked={docked} pods={pods} "
-            + $"unarmed={unarmed} elsewhere={where} target=station#{plan.TargetId} sector={plan.Sector} "
+            + $"unarmed={unarmed} elsewhere={where} reachable={plan.ReachableBombers} minimum={plan.MinimumUseful} "
+            + $"engaging={plan.EngagingDefenders} sectorDefenders={plan.SectorDefenders} "
+            + $"escorts={escortsInSector}/{escorts} misordered={misordered} target=station#{plan.TargetId} sector={plan.Sector} "
             + $"staging={(plan.StagingSince is { } since ? $"{now - since:F0}s" : "-")}");
     }
 
@@ -600,6 +659,7 @@ internal sealed partial class BotManager
         // magazines could deliver inside one window (the landing-share denominator),
         // and the station state at the go time.
         plan.WaveCommitted = members.Count;
+        plan.WaveKilledBeforeRelease = 0;
         plan.WaveReleased = 0;
         plan.WaveRounds = 0;
         plan.WaveExpectedRounds = 0;
@@ -608,7 +668,8 @@ internal sealed partial class BotManager
         var profile = StrikeVolley.Profile(core, plan.TargetTypeId);
         foreach (var bot in armed)
             if (plan.GoMembers.Contains(bot.ShipId) && profile is { } stationProfile
-                && StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts) is { } loadout)
+                && (run.Settings.ReachableStrike ? FinaleGrantedStrikeLoadout(bot)
+                    : StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts)) is { } loadout)
                 plan.WaveExpectedRounds += StrikeVolley.RoundsInWindow(loadout, stationProfile);
         foreach (var bot in armed)
             if (plan.GoMembers.Contains(bot.ShipId)) { bot.FinaleReleaseLogged = false; bot.FinaleReleaseAt = null; }
@@ -631,12 +692,14 @@ internal sealed partial class BotManager
                 + $"goIn={ResearchTactics.StrikeGoLeadSeconds:F0}s wait={now - (plan.StagingSince ?? now):F1}s "
                 + $"stationHull={Fraction(hull)} stationShield={Fraction(shield)} reason={reason} "
                 + $"plannerKill={plan.PlannerKill} shotsNeeded={plan.ShotsNeeded} "
-                + $"wing={plan.WingCap} landing={plan.LandingShare.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}"
+                + $"wing={plan.WingCap} landing={plan.LandingShare.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} "
+                + $"reachable={plan.ReachableBombers} minimum={plan.MinimumUseful} engaging={plan.EngagingDefenders} "
+                + $"sectorDefenders={plan.SectorDefenders} memberIds={string.Join(',', members)} t={now - run.Created:F1} "
                 // P896 — only when the survival margin is on, so a default (0) run's
                 // lines stay byte-identical to the AIX baseline.
                 + (run.Settings.SurvivalMargin > 0
                     ? $" survival={plan.SurvivalBombers}"
-                        + $"(margin={run.Settings.SurvivalMargin:F2},losses={lastWaveLosses},defenders={plan.DefenderCount})"
+                        + $"(margin={run.Settings.SurvivalMargin:F2},losses={(run.Settings.ReachableStrike ? plan.ReleaseLosses : lastWaveLosses)},defenders={plan.DefenderCount})"
                     : ""));
         }
     }

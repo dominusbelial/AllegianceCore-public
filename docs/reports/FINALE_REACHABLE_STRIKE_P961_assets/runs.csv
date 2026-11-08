@@ -1,0 +1,21 @@
+run,teams,policy,stage,station_kills,garrison_kills,commits,sizes_reasons,prep_refits_inside,prep_refits_outside,resupplies_inside,resupplies_outside,max_prep_per_bot,first_garrison_sim,first_garrison_since_arm,finale_armed_sim,elapsed_sim,server_gc,tick_ms
+qualified-before-2-1,2,P959 base,Over,0,0,3,11 massed; 8 massed; 2 deadline-forced,22,0,2,0,1,,,196.6,1098.3,True,50
+qualified-before-2-2,2,P959 base,Over,1,1,3,11 massed; 8 massed; 3 deadline-forced,23,0,10,0,1,1082.0,889.5,192.5,1094.3,True,50
+qualified-before-2-3,2,P959 base,Over,4,2,2,9 massed; 10 massed,2,84,26,0,10,901.95,473.75,428.2,1330,True,50
+qualified-before-2-4,2,P959 base,Over,0,0,3,9 massed; 11 massed; 2 deadline-forced,25,0,8,0,1,,,188.4,1090.1,True,50
+qualified-before-2-5,2,P959 base,Over,3,2,2,10 massed; 12 massed,1,481,25,0,38,1103.55,438.15,665.4,1567.1,True,50
+qualified-after-2-1,2,P961,Over,0,0,2,2 massed; 5 massed,2,24,4,0,1,,,463.2,1365,True,50
+qualified-after-2-2,2,P961,Over,2,0,2,5 massed; 4 massed,2,24,7,0,1,,,487.45,1389.3,True,50
+qualified-after-2-3,2,P961,Over,4,0,2,4 plateau; 4 plateau,1,23,16,0,1,,,383.1,1285,True,50
+qualified-after-2-4,2,P961,Over,3,2,2,9 massed; 7 plateau,2,24,23,0,1,798.45,423.05,375.4,1277.2,True,50
+qualified-after-2-5,2,P961,Over,1,0,2,5 massed; 5 massed,2,24,6,0,1,,,393.3,1295,True,50
+qualified-before-3-1,3,P959 base,Over,2,1,5,5 massed; 5 massed; 6 massed; 7 massed; 13 massed,37,0,0,0,1,504.1,412.75,91.35,997.2,True,50
+qualified-before-3-2,3,P959 base,Over,1,1,3,5 massed; 6 massed; 13 massed,35,0,0,0,1,826.85,726.45,100.4,1005.9,True,50
+qualified-before-3-3,3,P959 base,Over,1,1,4,4 massed; 6 massed; 10 massed; 13 massed,38,0,0,0,1,584.4,468.85,115.55,1020.6,True,50
+qualified-before-3-4,3,P959 base,Over,2,1,3,10 massed; 13 massed; 13 massed,36,0,0,0,1,570.95,474.35,96.6,998.5,True,50
+qualified-before-3-5,3,P959 base,Over,6,3,3,9 massed; 9 massed; 13 massed,37,0,21,0,1,534.0,435.55,98.45,1000.4,True,50
+qualified-after-3-1,3,P961,Over,4,2,4,12 massed; 11 plateau; 13 massed; 1 massed,34,0,2,0,1,526.15,437.6,88.55,994.1,True,50
+qualified-after-3-2,3,P961,Over,3,2,4,6 massed; 13 massed; 13 massed; 4 massed,38,0,3,0,1,509.35,409.55,99.8,1005.1,True,50
+qualified-after-3-3,3,P961,Over,5,2,6,7 massed; 6 massed; 11 plateau; 12 massed; 1 massed; 1 massed,37,0,6,0,1,456.45,359.2,97.25,1002.2,True,50
+qualified-after-3-4,3,P961,Over,5,2,6,10 massed; 3 massed; 11 plateau; 12 plateau; 1 massed; 1 massed,35,0,5,0,1,489.2,388.0,101.2,1006.8,True,50
+qualified-after-3-5,3,P961,Over,5,2,5,12 massed; 12 massed; 12 massed; 1 massed; 1 massed,36,0,0,0,1,490.25,397.55,92.7,999.5,True,50

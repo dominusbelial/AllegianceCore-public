@@ -7134,3 +7134,49 @@ observation is 900 s; the abort is a diagnostic-cap mismatch, not an SC2
 assertion failure or a passing/completed Live suite. The historical two-handoff
 trigger and the full Fast gate therefore remain open; no production file or
 budget was changed.
+
+## P961 local qualification — 2026-11-08
+
+`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`:
+unchanged-base **5 passed / 0 failed / 0 skipped**; changed **4 passed / 1 failed /
+0 skipped** over the required five attempts. Changed attempt 3 missed only the
+existing arrival quota: **20/30** versus 24 at 480 seconds. Its longest
+speed-below-one interval with a target was **0.501 s**; both idle-with-target
+counters were zero. All ten original attempts passed the five-second parking
+bound. Three subsequent isolated repeats were **pass / pass / pass**, zero
+skips (2m36, 3m20, 4m08). This is the same unseeded arrival signature previously
+recorded for P940/P950/P955, not evidence that the finale-free fixture parked a
+wing. The fixture explicitly disables finales.
+
+A repeated all-tools gate also had an MSBuild infrastructure failure at
+`tools/strobe-proof`: child nodes 6 and 2 exited prematurely (`MSB4166`), without
+compiler diagnostics or surviving failure files at the advertised temporary
+path. That project built **pass / pass / pass** alone, with zero warnings and
+errors (about 1.2 s each). Earlier all-121-tools invocations passed. No source
+change was needed for this failure; the final qualification uses one MSBuild
+node to avoid depending on child-node reuse. The cause of the premature exits
+was not established.
+
+Evidence: [P961 report](reports/FINALE_REACHABLE_STRIKE_P961.md); ignored raw
+TRX/logs under `.scratch/p961/test-results/` (`neverparks-before-*`,
+`neverparks-after-*`, `neverparks-isolate-*`), and
+`.scratch/p961/build-tools-prearm-final.log`, `strobe-isolate-*.log`,
+`build-tools-qualification.log`.
+
+The one P961 Fast sweep discovered **13,538** cases: **13,527 passed / 8 failed /
+3 skipped**, plus 9 passing infrastructure checks. Three optional Meshy-pack
+cases skipped; artwork-dependent task coverage did not skip. The non-task
+failures were qualified without changing fixtures, resolver code or tiers:
+
+| Failure / timing signature | Three isolated repeats | Attribution |
+| --- | --- | --- |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` (expected side 1, saw lobby side -2) | pass / fail / pass; the middle repeat assigned peer 2 to side 0 after logon drain reordering | Existing seating/logon timing signature. A further three runs of this method alone passed 1/0/0 each; the initial middle failure remains part of the qualification record. |
+| `BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights` (pod case did not fight again; 16.323 s) | Both data cases pass in each repeat; combined counts with the seeded case were **3/0/0, 2/1/0, 3/0/0**, 6–7 s total | Existing pod/relaunch timing signature; no finale is configured. |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` (default profile restoration is read-only) | pass / pass / pass with task-local `XDG_CONFIG_HOME`, zero skips | Existing sandbox profile-restoration obstruction. |
+| Five `PlayerBundlePathsTests` failures | Whole class **4 passed / 5 failed / 0 skipped** in each repeat | Existing scratch-local `TMPDIR`/ancestor `local.env` fixture obstruction, as in P909–P955; Core runtime bytes match the archived baseline exactly. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (body passed; 10.213 s exceeded Fast limit) | pass / pass / pass, **9.899 / 9.831 / 9.911 s** | Existing timing-only signature; no tier or limit changed. |
+
+Raw sweep summary is `.scratch/p961/fast/summary.json`; qualification receipts
+are `fast-client-isolate-*`, `profile-isolate-*`, `paths-isolate-*`, and
+`wobble-isolate-*` under `.scratch/p961/test-results/`. The broad gate remains
+non-green with these explicit qualifications; no task-specific test failed.

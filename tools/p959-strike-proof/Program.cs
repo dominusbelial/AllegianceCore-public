@@ -1,4 +1,8 @@
 using System.Diagnostics;
+using System.Collections;
+using System.Reflection;
+using System.Collections.Concurrent;
+using Allegiance.Core.Collision;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -19,10 +23,13 @@ using Srv = Allegiance.Server.Server;
 //        [--teams 2|3] [--count 15] [--label L] [--seconds 600]
 //        [--game-seconds 2400] [--finale-seconds 3600] [--finale-minutes 1]
 //        [--early-minutes 0] [--bombers 12] [--survival-margin -1]
+//        [--tick-ms 20] (50 = paced native clock; 20 = P959 accelerated fixture)
 //        [--prearm-minutes 2] [--loadout varied] [--map m2xspiderw.igc]
 var directory = Path.GetFullPath(Option("--output", ".scratch/p959/proof"));
 Directory.CreateDirectory(directory);
 int teams = int.Parse(Option("--teams", "2"), CultureInfo.InvariantCulture);
+int tickMilliseconds = int.Parse(Option("--tick-ms", "20"), CultureInfo.InvariantCulture);
+if (tickMilliseconds is < 1 or > 1000) throw new ArgumentException("--tick-ms must be 1..1000");
 int wallLimit = int.Parse(Option("--seconds", "600"), CultureInfo.InvariantCulture);
 int gameSeconds = int.Parse(Option("--game-seconds", "2400"), CultureInfo.InvariantCulture);
 int finaleSeconds = int.Parse(Option("--finale-seconds", "3600"), CultureInfo.InvariantCulture);
@@ -30,6 +37,7 @@ double finaleMinutes = double.Parse(Option("--finale-minutes", "1"), CultureInfo
 double earlyMinutes = double.Parse(Option("--early-minutes", "0"), CultureInfo.InvariantCulture);
 int bombers = int.Parse(Option("--bombers", "12"), CultureInfo.InvariantCulture);
 double survivalMargin = double.Parse(Option("--survival-margin", "-1"), CultureInfo.InvariantCulture);
+bool reachable = args.Contains("--reachable-strike");
 double prearmMinutes = double.Parse(Option("--prearm-minutes", "2"), CultureInfo.InvariantCulture);
 string loadout = Option("--loadout", "varied");
 string map = Option("--map", "m2xspiderw.igc");
@@ -40,6 +48,16 @@ int researchScale = int.Parse(Option("--research-scale", "64"), CultureInfo.Inva
 string label = Option("--label", $"t{teams}-m{marginTag()}");
 string marginTag() => survivalMargin < 0 ? "default" : survivalMargin.ToString(CultureInfo.InvariantCulture);
 string[] civs = teams == 3 ? ["18", "4", "5"] : ["25", "3"];
+
+if (args.Contains("--catalog"))
+{
+    var core = Catalog.RepresentativeCore();
+    Console.WriteLine(JsonSerializer.Serialize(core.StationTypes.Values.OrderBy(t => t.StationTypeId)
+        .Select(t => new { Id = t.StationTypeId, t.Name, t.ClassId, Armor = t.MaxArmorHitPoints,
+            Shield = t.MaxShieldHitPoints, ArmorRegen = t.ArmorRegeneration, ShieldRegen = t.ShieldRegeneration }),
+        new JsonSerializerOptions { WriteIndented = true }));
+    return;
+}
 
 var progress = Console.Out;
 var tee = new Tee(Path.Combine(directory, label + ".log"));
@@ -62,11 +80,46 @@ server.Boot(new()
     LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { Enabled = false } },
     Games = [game],
 });
+// Observe the existing public damage delegate through the private host type.
+// No server code or simulation state changes: retain the production handler and
+// append a proof observer. The ordinary trace is throttled to one hit per 5 s;
+// this seam records every damaging hit and samples post-tick health explicitly.
+var pendingHits = new ConcurrentQueue<PendingHit>();
+var site = server.Missions[0].Site;
+var damageHook = site.GetType().GetField("StationDamaged")
+    ?? throw new InvalidOperationException("station damage observation seam unavailable");
+Action<Station, Model?, byte, float> observeDamage = (station, launcher, type, amount) =>
+{
+    if (launcher is not Ship ship || ship.SideId == station.SideId || amount <= 0) return;
+    var damage = StrikeVolley.RoundDamage(StrikeVolley.StationProfile.From(server.Missions[0].Core, station.Type), type, amount);
+    if (damage.Armor <= 0 && damage.Shield <= 0) return;
+    pendingHits.Enqueue(new(station, ship, type, station.ShieldFraction, station.ArmorFraction));
+};
+damageHook.SetValue(site, Delegate.Combine((Delegate?)damageHook.GetValue(site), observeDamage));
 using var stop = new CancellationTokenSource();
 Exception? tickFailure = null;
 var ticker = new Thread(() =>
 {
-    try { while (!stop.IsCancellationRequested) { server.TickSim(); Thread.Sleep(20); } }
+    try
+    {
+        var tickWatch = Stopwatch.StartNew();
+        long nextTick = 0;
+        while (!stop.IsCancellationRequested)
+        {
+            server.TickSim();
+            while (pendingHits.TryDequeue(out var hit))
+            {
+                var st = hit.Station;
+                Console.WriteLine(FormattableString.Invariant($"[p961-hit] t={server.SimNow:0.###} side={st.SideId} station={st.StationId}:{st.Data.Name} attackerSide={hit.Ship.SideId} ship={hit.Ship.Id} hull={hit.Ship.HullType.HullId}:{hit.Ship.HullType.Name} weapon=damage-seam damageType={hit.Type} shield={hit.Shield:0.0000}->{st.ShieldFraction:0.0000} hull={hit.Armor:0.0000}->{st.ArmorFraction:0.0000} killed={st.Dead}"));
+            }
+            if (tickMilliseconds == 20) Thread.Sleep(20); // preserve P959's accelerated fixture
+            else
+            {
+                nextTick += tickMilliseconds;
+                Thread.Sleep(Math.Max(1, (int)(nextTick - tickWatch.Elapsed.TotalMilliseconds)));
+            }
+        }
+    }
     catch (Exception ex) { tickFailure = ex; }
 }) { IsBackground = true };
 ticker.Start();
@@ -94,6 +147,7 @@ try
         scenario["count_a"] = JsonSerializer.SerializeToElement(count);
         scenario["count_b"] = JsonSerializer.SerializeToElement(count);
     }
+    if (reachable) scenario["finale_reachable_strike"] = JsonSerializer.SerializeToElement(true);
     if (survivalMargin >= 0) scenario["finale_survival_margin"] = JsonSerializer.SerializeToElement(survivalMargin);
     if (earlyMinutes > 0) scenario["finale_early_pressure_minutes"] = JsonSerializer.SerializeToElement(earlyMinutes);
     if (prearmMinutes >= 0) scenario["finale_prearm_minutes"] = JsonSerializer.SerializeToElement(prearmMinutes);
@@ -121,9 +175,48 @@ try
                 ShieldRegen = st.Type.ShieldRegeneration }).ToArray() }).ToArray(),
     }, new JsonSerializerOptions { WriteIndented = true }));
     double next = 0;
+    int observedCommits = 0;
+    var observations = new List<object>();
     while (watch.Elapsed.TotalSeconds < wallLimit && mission.Stage != MissionStage.Over)
     {
         if (tickFailure is not null) throw new InvalidOperationException("Simulation failed", tickFailure);
+        var commitLines = tee.Commits();
+        if (commitLines.Length > observedCommits)
+        {
+            var fleet = manager.ActiveBots();
+            foreach (var commit in commitLines.Skip(observedCommits))
+            {
+                short attackingSide = Side(commit);
+                short targetSector = (short)Int(commit, "sector");
+                var committed = Field(commit, "memberIds").Split(',').Select(id => short.TryParse(id, out short value) ? (short?)value : null)
+                    .OfType<short>().ToHashSet();
+                bool idsInLog = committed.Count > 0;
+                if (!idsInLog) committed = CommittedIds(manager, attackingSide);
+                var wing = fleet.Where(b => b.Side == attackingSide && b.Sector == targetSector
+                    && (committed.Count > 0 ? committed.Contains(b.ShipId) : b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))).ToArray();
+                var enemies = fleet.Where(b => b.Side != attackingSide && b.Sector == targetSector
+                    && !b.Hull.Contains("pod", StringComparison.OrdinalIgnoreCase)).ToArray();
+                double Distance(BotManager.ActiveBotView a, BotManager.ActiveBotView b)
+                    => Math.Sqrt(a.Position.Zip(b.Position).Sum(pair => Math.Pow(pair.First - pair.Second, 2)));
+                var actors = mission.Sectors.Where(s => s.Id == targetSector).SelectMany(s => s.Models.ToArray().OfType<Ship>())
+                    .Where(s => s.SideId >= 0 && s.SideId != attackingSide && !s.Dead && s.StationId is null
+                        && !Catalog.IsLifepodHull(s.HullType.HullId)).ToArray();
+                bool Engages(Ship enemy) => enemy.CommandTarget is Ship target && wing.Any(b => b.ShipId == target.Id)
+                    || fleet.Any(b => b.ShipId == enemy.Id && b.Target is { } id && wing.Any(w => w.ShipId == id));
+                bool Near(Ship enemy) => wing.Any(b => (enemy.Position - new Vector3((float)b.Position[0],
+                    (float)b.Position[1], (float)b.Position[2])).LengthSquared() <= 2500 * 2500);
+                observations.Add(new { Commit = commit, SimAt = server.SimNow,
+                    MembershipBasis = idsInLog ? "commit log" : committed.Count > 0 ? "coordinator snapshot" : "bomber-role fallback",
+                    CommittedIds = committed.Order().ToArray(),
+                    ServerSectorDefenders = actors.Length, ServerEngagingWing = actors.Count(Engages),
+                    ServerWithin2500OfWing = actors.Count(Near),
+                    SectorEnemies = enemies.Length,
+                    EngagingWing = enemies.Count(e => e.Target is { } t && wing.Any(b => b.ShipId == t)),
+                    Within2500OfWing = enemies.Count(e => wing.Any(b => Distance(e, b) <= 2500)),
+                    Wing = wing.Select(b => new { b.ShipId, b.Hull, b.Sector, b.TargetSector, b.State }).ToArray() });
+            }
+            observedCommits = commitLines.Length;
+        }
         if (watch.Elapsed.TotalSeconds >= next)
         {
             progress.WriteLine($"{label}: wall={watch.Elapsed.TotalSeconds:F0}s sim={server.SimNow:F0}s "
@@ -134,8 +227,10 @@ try
         Thread.Sleep(250);
     }
     Thread.Sleep(1500);   // let the bots receive GAME_OVER
+    File.WriteAllText(Path.Combine(directory, label + "-observations.json"), JsonSerializer.Serialize(observations,
+        new JsonSerializerOptions { WriteIndented = true }));
     var summary = Summarize(tee.Snapshot(), mission, manager.FinaleStatus(), label, teams,
-        survivalMargin, earlyMinutes, server.SimNow, garrisonIds);
+        survivalMargin, earlyMinutes, server.SimNow, garrisonIds, reachable, tickMilliseconds);
     File.WriteAllText(Path.Combine(directory, label + "-summary.json"), JsonSerializer.Serialize(summary,
         new JsonSerializerOptions { WriteIndented = true }));
     File.WriteAllText(Path.Combine(directory, label + "-finale.json"), JsonSerializer.Serialize(manager.FinaleStatus(),
@@ -150,11 +245,31 @@ finally
     tee.Dispose();
 }
 
-static object Summarize(string log, Mission mission, object[] finale, string label, int teams,
-    double margin, double earlyMinutes, double simSeconds, IReadOnlyCollection<short> bootGarrisons)
+// Read the same coordinator membership for legacy builds that do not log ids.
+// Copy the run list under its manager lock, then take only the run lock; no
+// client gate is acquired here, matching FinaleStatus's lock ordering.
+static HashSet<short> CommittedIds(BotManager manager, short side)
 {
+    const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+    object Read(object value, string name) => value.GetType().GetField(name, fields)?.GetValue(value)
+        ?? throw new InvalidOperationException($"proof membership field unavailable: {name}");
+    object[] runs;
+    lock (Read(manager, "_gate")) runs = ((IEnumerable)Read(manager, "_finales")).Cast<object>().ToArray();
+    foreach (var run in runs)
+        lock (Read(run, "Sync"))
+        {
+            var plans = (IDictionary)Read(run, "Plans");
+            if (plans[side] is { } plan) return ((IEnumerable)Read(plan, "GoMembers")).Cast<short>().ToHashSet();
+        }
+    return [];
+}
+
+static object Summarize(string log, Mission mission, object[] finale, string label, int teams,
+    double margin, double earlyMinutes, double simSeconds, IReadOnlyCollection<short> bootGarrisons, bool reachable, int tickMilliseconds)
+{
+    bool exactHits = true; // this harness always installs the unthrottled observation seam
     var stationDamage = new Regex(
-        @"\[station-damage\] t=(?<t>[\d.]+) side=(?<side>-?\d+) station=(?<id>\d+):(?<name>.*?) attackerSide=(?<aside>-?\d+) ship=(?<ship>-?\d+) hull=(?<hull>\d+):(?<hn>.*?) weapon=(?<weapon>.*?) damageType=(?<dmg>\d+) shield=(?<sb>[\d.-]+)->(?<sa>[\d.-]+) hull=(?<hb>[\d.-]+)->(?<ha>[\d.-]+) killed=(?<killed>True|False)",
+        @"\[(?:station-damage|p961-hit)\] t=(?<t>[\d.]+) side=(?<side>-?\d+) station=(?<id>\d+):(?<name>.*?) attackerSide=(?<aside>-?\d+) ship=(?<ship>-?\d+) hull=(?<hull>\d+):(?<hn>.*?) weapon=(?<weapon>.*?) damageType=(?<dmg>\d+) shield=(?<sb>[\d.-]+)->(?<sa>[\d.-]+) hull=(?<hb>[\d.-]+)->(?<ha>[\d.-]+) killed=(?<killed>True|False)",
         RegexOptions.Compiled);
     var lines = log.Split('\n');
     // Line index per station-damage event so wave windows (which are delimited by
@@ -162,6 +277,7 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
     var damageByLine = new SortedDictionary<int, Hit>();
     for (int i = 0; i < lines.Length; i++)
     {
+        if (exactHits && !lines[i].Contains("[p961-hit]")) continue;
         var m = stationDamage.Match(lines[i]);
         if (!m.Success) continue;
         damageByLine[i] = new Hit(
@@ -201,17 +317,26 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
     for (int w = 0; w < commits.Count; w++)
     {
         var (line, text) = commits[w];
-        int end = w + 1 < commits.Count ? commits[w + 1].Line
-            : waveEnds.Count > 0 ? waveEnds.Select(e => e.Line).Where(x => x > line).DefaultIfEmpty(lines.Length).Min()
-            : lines.Length;
         short side = Side(text);
+        // Other sides' simultaneous commits must not truncate this wave.
+        int nextCommit = commits.Skip(w + 1).Where(c => Side(c.Text) == side)
+            .Select(c => c.Line).DefaultIfEmpty(lines.Length).First();
+        // A target can die on the sim thread just before the coordinator logs
+        // its wave end. The post-tick hit observer may log that lethal hit after
+        // the end line, so delimit by this side's next commit and attribute hits
+        // only to the ships whose releases were observed.
+        int end = nextCommit;
         var targetMatch = Regex.Match(text, @"target=station#(\d+)");
         short station = targetMatch.Success ? short.Parse(targetMatch.Groups[1].Value, CultureInfo.InvariantCulture) : (short)-1;
         var members = releases.Where(r => r.Line > line && r.Line < end && r.Side == side).ToArray();
+        var releasedIds = members.Select(m => m.Ship).ToHashSet();
         var waveHits = damageByLine.Where(kv => kv.Key > line && kv.Key < end && kv.Value.StationId == station
-            && kv.Value.AttackerSide == side).Select(kv => kv.Value).ToArray();
-        var waveEnd = waveEnds.FirstOrDefault(e => e.Line > line && e.Line < end).Text;
-        int killedBefore = members.Count(m => deaths.Any(d => d.Line < m.Line && d.Line > line && d.Ship == m.Ship));
+            && kv.Value.AttackerSide == side && releasedIds.Contains(kv.Value.Ship)).Select(kv => kv.Value).ToArray();
+        var waveEnd = waveEnds.FirstOrDefault(e => e.Line > line && e.Line < end && Side(e.Text) == side).Text;
+        var committedIds = Field(text, "memberIds").Split(',').Select(id => short.TryParse(id, out short value) ? (short?)value : null)
+            .OfType<short>().ToArray();
+        int? killedBefore = committedIds.Length == 0 ? null : committedIds.Count(id => deaths.Any(d => d.Ship == id
+            && d.Line > line && d.Line < members.Where(m => m.Ship == id).Select(m => m.Line).DefaultIfEmpty(end).Min()));
         int killedAfter = members.Count(m => deaths.Any(d => d.Line > m.Line && d.Line < end && d.Ship == m.Ship));
         waves.Add(new
         {
@@ -220,10 +345,15 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
             Required = Int(text, "required"), Assembled = Int(text, "assembled"),
             Visible = Int(text, "visible"), LoneWolves = Int(text, "loneWolves"),
             StationHullAtCommit = Field(text, "stationHull"), StationShieldAtCommit = Field(text, "stationShield"),
+            PlannerKill = Int(text, "plannerKill"), ShotsNeeded = Int(text, "shotsNeeded"),
+            Survival = Field(text, "survival"), Defenders = Field(text, "defenders"),
+            Engaging = Int(text, "engaging"), Reachable = Int(text, "reachable"),
             Wait = Field(text, "wait"), Reason = Field(text, "reason"),
             Released = members.Length, ReleasedShips = members.Select(m => m.Ship).ToArray(),
-            KilledBeforeRelease = killedBefore, KilledAfterRelease = killedAfter,
-            AliveAtRelease = members.Length - killedBefore,
+            KilledBeforeRelease = killedBefore,
+            NotReleased = Math.Max(0, Int(text, "assembled") - members.Length),
+            KilledAfterRelease = killedAfter,
+            AliveAtRelease = members.Length,
             HitsLanded = waveHits.Length,
             ShieldFirst = waveHits.Length > 0 ? waveHits[0].ShieldBefore : (float?)null,
             ShieldLast = waveHits.Length > 0 ? waveHits[^1].ShieldAfter : (float?)null,
@@ -256,6 +386,13 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
     return new
     {
         Label = label,
+        ReachableStrike = reachable,
+        TickMilliseconds = tickMilliseconds,
+        BotAssemblyHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(typeof(BotManager).Assembly.Location))),
+        ExactDamageSeam = exactHits,
+        DefenderObservationVersion = 2,
+        PostHitHealthSampling = "end of simulation tick (same-tick hits share the final pools)",
+        ServerGC = System.Runtime.GCSettings.IsServerGC,
         Teams = teams,
         Margin = margin,
         EarlyMinutes = earlyMinutes,
@@ -267,6 +404,8 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
         WaveCount = waves.Count,
         RefitTripsTotal = refits.Count,
         RefitTripsInFinaleWindow = refitInWindow,
+        RefitTripsOutsideFinaleWindow = refits.Count - refitInWindow,
+        StationKillCount = hits.Where(h => h.Killed).Select(h => h.StationId).Distinct().Count(),
         EarlyPressureLines = earlyWaves,
         Garrisons = mission.Sectors.SelectMany(s => s.StationRuntimes).Where(st => st.Type.ClassId == 0)
             .Select(st => new { st.StationId, st.SideId, Hits = hits.Count(h => h.StationId == st.StationId) }).ToArray(),
@@ -299,7 +438,7 @@ static short Side(string line)
 
 static string Field(string line, string key)
 {
-    var m = Regex.Match(line, Regex.Escape(key) + @"=(\S+)");
+    var m = Regex.Match(line, @"\b" + Regex.Escape(key) + @"[= ](\S+)");
     return m.Success ? m.Groups[1].Value.TrimEnd(',') : "";
 }
 
@@ -311,25 +450,45 @@ string Option(string name, string fallback)
     return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback;
 }
 
+internal sealed record PendingHit(Station Station, Ship Ship, byte Type, float Shield, float Armor);
+
 internal sealed record Hit(double T, short StationSide, short StationId, string Name, short AttackerSide,
     short Ship, string Weapon, float ShieldBefore, float ShieldAfter, float HullBefore, float HullAfter, bool Killed);
 
-/// <summary>Console tee: every bot/server line goes to stdout AND to the run log,
-/// so the in-memory summary is parsed from exactly what was logged.</summary>
+/// <summary>Ordered proof sink: file plus memory, with progress on the original
+/// writer. Never forward through that writer: .NET's Unix console stream takes
+/// the CURRENT Console.Out monitor, reversing the original/current writer lock
+/// order and deadlocking concurrent progress and ConsoleLog.Drain.</summary>
 internal sealed class Tee : TextWriter
 {
-    private readonly TextWriter _inner;
     private readonly StreamWriter _file;
     private readonly StringBuilder _all = new();
-    internal Tee(string path)
-    {
-        _inner = Console.Out;
-        _file = new StreamWriter(path) { AutoFlush = true };
-    }
+    private readonly List<string> _commits = new();
+    private bool _disposed;
+    internal Tee(string path) => _file = new StreamWriter(path) { AutoFlush = true };
     public override Encoding Encoding => Encoding.UTF8;
-    public override void Write(char value) { _inner.Write(value); _file.Write(value); lock (_all) _all.Append(value); }
-    public override void Write(string? value) { _inner.Write(value); _file.Write(value); lock (_all) _all.Append(value); }
-    public override void WriteLine(string? value) { _inner.WriteLine(value); _file.WriteLine(value); lock (_all) _all.Append(value).Append('\n'); }
+    internal string[] Commits() { lock (_all) return _commits.ToArray(); }
+    public override void Write(char value)
+    {
+        lock (_all) { if (_disposed) return; _file.Write(value); _all.Append(value); }
+    }
+    public override void Write(string? value)
+    {
+        lock (_all) { if (_disposed) return; _file.Write(value); _all.Append(value); }
+    }
+    public override void WriteLine(string? value)
+    {
+        lock (_all)
+        {
+            if (_disposed) return;
+            _file.WriteLine(value); _all.Append(value).Append('\n');
+            if (value is not null && value.Contains(" finale commit ")) _commits.Add(value);
+        }
+    }
     internal string Snapshot() { lock (_all) return _all.ToString(); }
-    protected override void Dispose(bool disposing) { if (disposing) _file.Dispose(); base.Dispose(disposing); }
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) lock (_all) { if (!_disposed) { _disposed = true; _file.Dispose(); } }
+        base.Dispose(disposing);
+    }
 }

@@ -34,19 +34,25 @@ internal sealed partial class BotManager
         {
             bool resupply;
             lock (cs.Gate) resupply = ResearchSiegeNeedsResupply(bot, cs, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
-            bool upgradingFallback = armed && bot.FinaleBomberActive && bot.FinaleGrantVerified
-                && Catalog.RepresentativeCore().HullTypes.TryGetValue(hullId, out var currentHull)
-                && Showcase.ClassifyHull(currentHull) != Showcase.HullRole.Bomber;
             // P959 — a member that ALREADY carries a granted strike loadout has nothing
             // to refit: without this check the driver docked and re-bought every payday
             // (80 refit trips in one 900 s run), starving the wing of transit time.
             var stationProfile = StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId);
             bool carriesStrike = stationProfile is { } target
-                && StrikeVolley.FromParts(Catalog.RepresentativeCore(), hullId, bot.Parts) is { } carriedLoadout
+                && FinaleGrantedStrikeLoadout(bot) is { } carriedLoadout
                 && StrikeVolley.DamagesStation(target, carriedLoadout)
                 && bot.Granted.HullId == hullId;
-            if (carriesStrike && !resupply && !upgradingFallback)
+            if (carriesStrike && !resupply)
             {
+                // Preparation keeps the purchased magazine for the shared arm.
+                // Otherwise ordinary combat can spend it during the lead and
+                // leave a once-refitted pilot empty when the finale starts.
+                if (!armed && run.TriggeredAt is null)
+                {
+                    bot.TargetId = bot.OrderedTargetId = null;
+                    LoiterCombat(bot, now);
+                    return true;
+                }
                 if (armed && !(bot.FinaleBomberActive && bot.FinaleGrantVerified))
                 {
                     bot.FinaleBomberActive = true;
@@ -57,7 +63,7 @@ internal sealed partial class BotManager
             }
             // Pre-arm: a member without a legal strike loadout starts the ordinary refit
             // below; strike duty (the activation/route block) waits for the arm.
-            if (armed && !resupply && !upgradingFallback && bot.PreviousLegalLoadout is { Strike: not null } accepted && accepted.HullId == hullId
+            if (armed && !resupply && bot.PreviousLegalLoadout is { Strike: not null } accepted && accepted.HullId == hullId
                 && bot.Granted.HullId == hullId && bot.Granted.Parts is { } granted
                 && accepted.Parts.All(p => granted.Contains(p)))
             {
@@ -77,11 +83,11 @@ internal sealed partial class BotManager
                 Console.WriteLine($"[finale-duty] {bot.Name} ship={bot.ShipId} hull={hullId}: accepted strike takes station duty target={plan.TargetId} sector={plan.Sector}");
                 return false;
             }
+            if (!FinaleAssembly.ShouldRefit(carriesStrike, resupply, bot.FinalePreparationRefitUsed)) return false;
             if (now < bot.FinaleRefitCheckAt) return false;
             bot.FinaleRefitCheckAt = now + 5;
             var available = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
-            if (available is null || (upgradingFallback
-                && Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[available.HullId]) != Showcase.HullRole.Bomber)) return false;
+            if (available is null) return false;
             if (available.Price > money)
             {
                 if (!bot.FinaleKeepsPayday)
@@ -96,6 +102,7 @@ internal sealed partial class BotManager
                 return false;
             }
             bot.FinaleRefitting = true;
+            if (!resupply) bot.FinalePreparationRefitUsed = true;
             bot.TargetId = bot.OrderedTargetId = null; EndDefense(bot);
             bot.PodStationId = bot.PodStationSector = -1;
             Console.WriteLine($"[finale-duty] {bot.Name} ship={bot.ShipId}: return to dock for legal strike {(resupply ? "resupply" : "refit")} target={plan.TargetId}");
@@ -120,7 +127,7 @@ internal sealed partial class BotManager
     private static bool ResearchSiegeNeedsResupply(ActiveBot bot, ConnectionSession cs, DataStationTypeIGC target)
     {
         if (!bot.FinaleBomberActive || !bot.FinaleGrantVerified || !ResearchFinale(bot)
-            || bot.PreviousLegalLoadout?.Strike is null || bot.Granted.Parts is not { } parts) return false;
+            || bot.Granted.Parts is not { } parts) return false;
         var core = Catalog.RepresentativeCore();
         bool DamagesStation(byte type, float power) => power > 0
             && core.Constants.DamageConstants[type & 0x1f][target.DefenseTypeArmor] > 0

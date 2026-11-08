@@ -480,7 +480,7 @@ internal sealed partial class BotManager
                         // this in the decision order, so an explorer flag on a
                         // FinaleEscort bot starves the push (the staged P778a live
                         // gate lost its pusher to the lane sweeps after P798/P830).
-                        && !bot.FinaleEscort;
+                        && !bot.FinaleEscort && !HasFinaleDestination(bot);
                     if (recon)
                     {
                         if (bot.ExploreLane is not null) _laneStarted.Remove(bot.Name);
@@ -675,6 +675,7 @@ internal sealed partial class BotManager
                 foreach (var bot in group)
                 {
                     if (bot.IsPod || bot.PodDocked) continue;
+                    if (HasFinaleDestination(bot)) continue;
                     if (bot.ReconTarget is not null) continue;   // scouts keep scouting, not marching
                     if (bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(bot.Cs!) && !KillsGame(bot.Cs!))
                     {

@@ -1,0 +1,2943 @@
+{
+  "FocusedReceipts": {
+    "affected-final-proof": [
+      {
+        "Run": 1,
+        "Passed": 132,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000086"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0632250"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001223"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Wave_inventory_uses_granted_rounds_minus_confirmed_launches",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0009095"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0373027"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0877666"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001419"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Preparation_has_one_trip_and_legal_fallbacks_never_upgrade_via_an_extra_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000785"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"unlocked\", advances: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0473634"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000365"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0497982"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Active_planner_and_delivery_feedback_use_the_reachable_subset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0423153"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"unlocked\", recalls: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0979764"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000944"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0672539"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003282"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0189874"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000537"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0040687"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004805"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0239105"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"unlocked\", active: True, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002473"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: False, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Reachable_cap_never_mislabels_two_hulls_as_a_garrison_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007623"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: True, dodges: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007087"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0377621"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0052684"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 6, now: 110, deadline: 1000, expected: \"massed\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000010"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0398789"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000266"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007567"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1579504"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.1141703"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: True, ghostDodged: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0021668"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0061904"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_P961_Accepted_legal_strike_fallback_keeps_flying_without_an_upgrade_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0801922"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001050"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0722217"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000035"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 965, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000010"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000036"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000054"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004466"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005136"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005978"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000033"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: True, refits: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0648727"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0358282"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001860"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0011500"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0104476"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0387027"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006487"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003017"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000067"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002369"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"unlocked\", active: True, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001607"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0008480"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003070"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 500, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000033"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0014322"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: False, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0096563"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0547389"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0012889"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 145, deadline: 1000, expected: \"plateau\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003226"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0154910"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0013056"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0565136"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0414536"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 0, now: 960, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002001"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0024252"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000983"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0500656"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: True, interrupts: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0023896"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_only_the_deadline_forces_a_short_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001821"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002574"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Preparation_latch_survives_death_and_clears_for_the_next_mission",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0471416"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.New_strategy_is_opt_in_and_settings_are_bounded",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0045059"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002765"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004914"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 960, deadline: 1000, expected: \"deadline-forced\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000009"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0238380"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0073855"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0012618"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0867956"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0069178"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1094271"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.4879522"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0477046"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0456812"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0850808"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"unlocked\", tech: True, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0453515"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0596865"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000043"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0564964"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003027"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004363"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"research\", recalls: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1012105"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0362924"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003417"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0463880"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Arrival_requires_a_live_armed_reserved_hull_and_time_for_its_volley",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001091"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000071"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_CapitalWithBomberRoleCannotBeReserved",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0357793"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000092"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002404"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 145, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0013316"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_validate_their_range_and_default_to_one",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0706584"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000036"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002217"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0641828"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0030860"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: False, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004380"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_strike_visible_bombers_share_the_shortest_enemy_home_entry",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0814711"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"research\", advances: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0471305"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0374805"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001191"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0359111"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001034"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001580"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"unlocked\", active: True, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003551"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0061313"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Crowded_idle_garrison_and_outpost_use_only_threats_to_the_path",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0251832"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0409446"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Prearm_preserves_the_legal_magazine_without_another_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0467331"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0014579"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 144, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000010"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0016865"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002886"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: False, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0060030"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0008800"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002770"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 132,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0026547"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: True, ghostDodged: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0044542"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: False, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0081315"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000387"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0580027"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001404"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0423064"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0755731"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0075248"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"unlocked\", active: True, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002461"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0890416"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005475"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0418998"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 6, now: 110, deadline: 1000, expected: \"massed\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000009"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0699042"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002966"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0814332"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0685820"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Prearm_preserves_the_legal_magazine_without_another_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0636580"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000427"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 144, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000008"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000061"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0285452"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002621"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 0, now: 960, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002018"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004063"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000092"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Active_planner_and_delivery_feedback_use_the_reachable_subset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0500053"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0456072"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0024488"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0097986"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000999"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: True, dodges: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0011264"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.1320112"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Arrival_requires_a_live_armed_reserved_hull_and_time_for_its_volley",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001398"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_only_the_deadline_forces_a_short_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001539"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"unlocked\", recalls: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1492470"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: False, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001984"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001836"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0365646"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0242196"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0719660"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_strike_visible_bombers_share_the_shortest_enemy_home_entry",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0933340"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0010311"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0052094"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001694"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Crowded_idle_garrison_and_outpost_use_only_threats_to_the_path",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0249623"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0015468"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 145, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0024201"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0235970"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"unlocked\", active: True, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003193"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0374944"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001909"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0040926"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006102"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"unlocked\", tech: True, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0511561"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_P961_Accepted_legal_strike_fallback_keeps_flying_without_an_upgrade_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0919251"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Preparation_latch_survives_death_and_clears_for_the_next_mission",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0691626"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002171"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0791535"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Reachable_cap_never_mislabels_two_hulls_as_a_garrison_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0018989"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0443125"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000043"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0769002"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"unlocked\", active: True, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006066"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004577"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_validate_their_range_and_default_to_one",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0702019"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004147"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007492"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0077611"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0664339"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001131"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"unlocked\", advances: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0704740"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003263"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001878"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0142839"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.5063754"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0863018"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0014397"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"research\", advances: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0703010"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004508"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000982"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0617368"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0071655"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 960, deadline: 1000, expected: \"deadline-forced\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000007"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002849"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 500, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000039"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: False, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005061"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 145, deadline: 1000, expected: \"plateau\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003507"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0626829"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0059596"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: True, interrupts: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0026108"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0015574"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0496426"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1830124"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002969"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000044"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0015020"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004614"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 965, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000008"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0015423"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"research\", recalls: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1576357"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: True, refits: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0846631"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1160565"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000295"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000086"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006752"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0573326"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007592"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000068"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.New_strategy_is_opt_in_and_settings_are_bounded",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0045913"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0020323"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006780"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Wave_inventory_uses_granted_rounds_minus_confirmed_launches",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007208"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0519854"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0822868"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0726239"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Preparation_has_one_trip_and_legal_fallbacks_never_upgrade_via_an_extra_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000734"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1787090"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: False, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0081773"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000046"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002395"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001741"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001962"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002316"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_CapitalWithBomberRoleCannotBeReserved",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0433850"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004822"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0799163"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 132,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Active_planner_and_delivery_feedback_use_the_reachable_subset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0457824"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0008470"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0574788"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 0, now: 960, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001925"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0559324"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_strike_visible_bombers_share_the_shortest_enemy_home_entry",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0845270"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"research\", recalls: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1555416"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Preparation_latch_survives_death_and_clears_for_the_next_mission",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0775927"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Gunship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Cruiser\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000086"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"both\", expected: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005258"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0016983"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: False, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001644"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005761"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002213"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001162"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0105050"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0220677"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 6, now: 110, deadline: 1000, expected: \"massed\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000006"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006859"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Prearm_preserves_the_legal_magazine_without_another_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0485081"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"unlocked\", advances: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0709843"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004358"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0690962"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000062"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001207"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002872"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Crowded_idle_garrison_and_outpost_use_only_threats_to_the_path",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0219441"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001104"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0852927"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0017455"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"unlocked\", active: True, dodges: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004077"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003043"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"research\", advances: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0698618"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0590150"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0376714"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"1\", expected: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004647"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.5109254"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0697919"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"unlocked\", active: True, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002201"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: False, ghostDodged: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004951"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1147274"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0039311"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Carrier\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002314"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0480672"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0332592"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"unlocked\", active: True, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002453"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Capital\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000046"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Preparation_has_one_trip_and_legal_fallbacks_never_upgrade_via_an_extra_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000680"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0364146"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0335796"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Corvette\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000933"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0561823"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0024351"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.New_strategy_is_opt_in_and_settings_are_bounded",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0051946"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Reachable_cap_never_mislabels_two_hulls_as_a_garrison_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0008333"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005449"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003017"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: False, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0080452"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"0\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000087"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.1404522"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0690547"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001526"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001737"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Destroyer\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Arrival_requires_a_live_armed_reserved_hull_and_time_for_its_volley",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001368"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0384523"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001594"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0076885"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0393339"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_P961_Accepted_legal_strike_fallback_keeps_flying_without_an_upgrade_trip",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0840444"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006828"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0609769"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0663677"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0546751"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0011647"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Survival_margin_settings_validate_their_range_and_default_to_one",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0686128"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0013339"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005000"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0176804"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0410569"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0240195"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000363"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 500, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000033"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0006060"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0058171"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Heavy\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002598"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001763"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0480727"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002153"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: \"leader\", expected: 0)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000399"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0677609"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0405764"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0903732"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 965, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000007"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Wave_inventory_uses_granted_rounds_minus_confirmed_launches",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007392"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 145, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0024370"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0025563"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: True, dodges: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007934"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0015065"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Frigate\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000045"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: False, interrupts: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0084353"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0010071"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"unlocked\", recalls: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1462842"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0376178"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"unlocked\", tech: True, refits: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0473010"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000065"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 144, deadline: 1000, expected: null)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000008"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0013781"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0227805"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0110612"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0063003"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 960, deadline: 1000, expected: \"deadline-forced\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000015"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000270"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004409"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_only_the_deadline_forces_a_short_wave",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001977"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: \"Flagship\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 145, deadline: 1000, expected: \"plateau\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002796"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0018041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.1660911"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001380"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007266"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002806"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0446700"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0711187"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003099"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001287"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: True, refits: True)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0657491"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_CapitalWithBomberRoleCannotBeReserved",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0416082"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: True, interrupts: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0031264"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: True, ghostDodged: False)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0042027"
+          }
+        ]
+      }
+    ],
+    "p959-alone": [
+      {
+        "Run": 1,
+        "Passed": 14,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001015"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0029284"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002160"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000756"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0019650"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007041"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000797"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001447"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0296853"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0016044"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001413"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0013143"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0004931"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001922"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 14,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0014312"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001438"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002334"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0030242"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001025"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001379"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001327"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0009455"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0296823"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0017362"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0020810"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001008"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005787"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002022"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 14,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0020495"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Settings_validate_the_new_knobs",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0007195"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0345465"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0035832"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000848"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001006"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001445"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002615"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0000965"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001951"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0012712"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0001463"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0019486"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0005663"
+          }
+        ]
+      }
+    ],
+    "live-final": [
+      {
+        "Run": 1,
+        "Passed": 3,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+            "Outcome": "Passed",
+            "Duration": "00:13:07.9127892"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike",
+            "Outcome": "Passed",
+            "Duration": "00:02:36.5557449"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Natural_research_finale_push_counts_evidence_only",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0039975"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 3,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike",
+            "Outcome": "Passed",
+            "Duration": "00:02:37.4484122"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Natural_research_finale_push_counts_evidence_only",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0048691"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+            "Outcome": "Passed",
+            "Duration": "00:12:14.2537493"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 3,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Staged_finale_pushers_contact_the_bomber_and_do_not_slow_the_strike",
+            "Outcome": "Passed",
+            "Duration": "00:02:38.0419728"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+            "Outcome": "Passed",
+            "Duration": "00:12:48.0050304"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.P778ABomberPushLiveTests.Natural_research_finale_push_counts_evidence_only",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0040709"
+          }
+        ]
+      }
+    ],
+    "neverparks-before": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:05.8996673"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:02:54.9192712"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:02:54.1425640"
+          }
+        ]
+      },
+      {
+        "Run": 4,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:04:30.4334124"
+          }
+        ]
+      },
+      {
+        "Run": 5,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:04:07.1229669"
+          }
+        ]
+      }
+    ],
+    "neverparks-after": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:24.4846718"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:07.0000721"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 0,
+        "Failed": 1,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Failed",
+            "Duration": "00:08:03.5715284"
+          }
+        ]
+      },
+      {
+        "Run": 4,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:05.0002485"
+          }
+        ]
+      },
+      {
+        "Run": 5,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:42.4256166"
+          }
+        ]
+      }
+    ],
+    "neverparks-isolate": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:02:35.9543857"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:03:20.2308827"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+            "Outcome": "Passed",
+            "Duration": "00:04:07.5460412"
+          }
+        ]
+      }
+    ],
+    "profile-isolate": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0728754"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0630472"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0622311"
+          }
+        ]
+      }
+    ],
+    "fast-client-isolate": [
+      {
+        "Run": 1,
+        "Passed": 3,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0861378"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)",
+            "Outcome": "Passed",
+            "Duration": "00:00:03.9989581"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: False, botCount: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.2724169"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 2,
+        "Failed": 1,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "Outcome": "Failed",
+            "Duration": "00:00:01.0575071"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)",
+            "Outcome": "Passed",
+            "Duration": "00:00:04.4014350"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: False, botCount: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.5387875"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 3,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)",
+            "Outcome": "Passed",
+            "Duration": "00:00:04.7134082"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: False, botCount: 1)",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.5566568"
+          },
+          {
+            "Name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+            "Outcome": "Passed",
+            "Duration": "00:00:01.0876534"
+          }
+        ]
+      }
+    ],
+    "paths-isolate": [
+      {
+        "Run": 1,
+        "Passed": 4,
+        "Failed": 5,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0001848"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0144070"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002865"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003698"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0010126"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0005068"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0002552"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0004913"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0052017"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 4,
+        "Failed": 5,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0001722"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003011"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0048253"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0004812"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0003636"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0004188"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0142426"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0002556"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0010791"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 4,
+        "Failed": 5,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0011093"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002762"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0002976"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0051415"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0003009"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+            "Outcome": "Passed",
+            "Duration": "00:00:00.0141603"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0001644"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0004120"
+          },
+          {
+            "Name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+            "Outcome": "Failed",
+            "Duration": "00:00:00.0004479"
+          }
+        ]
+      }
+    ],
+    "wobble-isolate": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "Outcome": "Passed",
+            "Duration": "00:00:09.8992270"
+          }
+        ]
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "Outcome": "Passed",
+            "Duration": "00:00:09.8313314"
+          }
+        ]
+      },
+      {
+        "Run": 3,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0,
+        "Cases": [
+          {
+            "Name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "Outcome": "Passed",
+            "Duration": "00:00:09.9112651"
+          }
+        ]
+      }
+    ],
+    "seeded-alone": [
+      {
+        "Run": 1,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0
+      },
+      {
+        "Run": 2,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0
+      },
+      {
+        "Run": 3,
+        "Passed": 1,
+        "Failed": 0,
+        "Skipped": 0
+      }
+    ]
+  },
+  "FullFast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 139,
+        "live": 6,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 28,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 4902,
+        "live": 135,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2315,
+        "live": 179,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6154,
+        "live": 90,
+        "perf": 67
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 541.7975829779898,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 139,
+            "outcomes": {
+              "Passed": 139
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 28,
+            "outcomes": {
+              "Passed": 28
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 4902,
+            "outcomes": {
+              "Passed": 4898,
+              "NotExecuted": 3,
+              "Failed": 1
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2315,
+            "outcomes": {
+              "Passed": 2313,
+              "Failed": 2
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6154,
+            "outcomes": {
+              "Passed": 6149,
+              "Failed": 5
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9861007957559682,
+          "referenceMs": 3.7176,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)",
+            "method": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights",
+            "outcome": "Failed",
+            "seconds": 16.3234942
+          },
+          {
+            "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+            "outcome": "Passed",
+            "seconds": 10.2131101
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.MonoGame.Tests: main failed",
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "2 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.06413650698959827,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06413650698959827,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "SolutionBuild": "solution-qualified-final.log",
+  "ToolsBuild": "build-tools-observer-final.log",
+  "FinalFocusedBuild": "affected-final-proof-build.log",
+  "ProofBuild": "proof-defender-observer-build.log"
+}

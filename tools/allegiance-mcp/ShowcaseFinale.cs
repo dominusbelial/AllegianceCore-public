@@ -16,7 +16,9 @@ internal static class ShowcaseFinale
         // the wing-growth cap and the server's finale-deadline length (all
         // bot-side policy; no server, sim or wire change).
         double PrearmMinutes = 0, double EarlyPressureMinutes = 0, int MaxWing = 18,
-        double DeadlineSeconds = 900)
+        double DeadlineSeconds = 900,
+        // P961 experimental requirement/plateau/retarget policy; rig A/B decides defaults.
+        bool ReachableStrike = false, double PlateauSeconds = 45, float EngagementRange = 2500)
     {
         public bool Enabled => AfterMinutes > 0;
         internal void Validate()
@@ -39,6 +41,8 @@ internal static class ShowcaseFinale
                 || !double.IsFinite(SurvivalMargin) || SurvivalMargin < 0 || SurvivalMargin > 2
                 || !double.IsFinite(PrearmMinutes) || PrearmMinutes < 0
                 || !double.IsFinite(EarlyPressureMinutes) || EarlyPressureMinutes < 0
+                || !double.IsFinite(PlateauSeconds) || PlateauSeconds < 0 || PlateauSeconds > 600
+                || !float.IsFinite(EngagementRange) || EngagementRange <= 0 || EngagementRange > 10000
                 || MaxWing is < 1 or > StrikeVolley.MaxPlannedBombers
                 || !double.IsFinite(DeadlineSeconds) || DeadlineSeconds < 0 || DeadlineSeconds > 7200)
                 throw new ArgumentException("spawn_scenario: invalid finale settings (nonnegative minutes, side leader/0..5/both/all, shares 0..1, positive kill floor/bombers/radius, leash >= radius, survival margin 0..2, max wing >= bombers, deadline 0..7200 s)");
