@@ -4,6 +4,62 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P962 resolution — stale spawn-docked SHIP_STATUS behind the test's status reset, 2026-11-08 UTC
+
+`DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` is **fixed**, and it was a test race,
+not a server bug. Since P653 H-06 a fresh default spawn is DOCKED at the side's base hangar
+(`FedSrv/fsmission.cpp:791-796`, `FedSrv/fsship.cpp:437-445`), and the join burst puts that DOCKED
+`SHIP_STATUS(90)` on the wire (`Server.Lobby.cs:5451-5457`). The test cleared the bot's status
+accumulator *before* sending the launch, so whenever the receive thread had not yet decoded that
+frame the decode appended it after the clear: item `[0]`, docked at station 1051, the ledgered
+`Expected: -1 / Actual: 1051`. The earlier diagnosis ("the all-status assertion includes another
+ship") was wrong — the assertion is already scoped to `shipId` and the failing item is the probe's
+own ship. The stale doc comment claiming a station-less first sector is corrected too.
+
+Fresh evidence: the unmodified test failed **6/10** and **12/30** isolated runs; in all 12
+diagnostic failures the own docked status was absent at the reset and landed immediately afterwards
+as item `[0]` (first decoded 1–2 pumps later, once after the server had already undocked). No
+docked status is emitted after the launch: `MakeOwnShipStatus` derives the docked bit from
+`StationId` at build time (`Server.Broadcast.cs:1680,1706-1708`), the undock clears it inside the
+`BUY_LOADOUT` tick (`Server.ShipCommands.cs:2950-2953`, `Server.Docking.cs:2286-2320`),
+`PerformUndock` sends only `SET_CLUSTER` (`Server.Docking.cs:2369-2394`), and native's
+`ShipStatusLaunched` overwrites the same per-side latch before the periodic export
+(`FedSrv/FedSrv.CPP:6282-6292,13184-13191`, `FedSrv/fsship.cpp:175-184,427-435`,
+`FedSrv/fsmission.cpp:4303-4322`). Production code is unchanged.
+
+Resolution: the test launches first and clears only after the **first post-launch flying own
+status** — a frame that can only be built once `StationId` is cleared, and connection order proves
+every earlier frame (the docked spawn) is already decoded. It still requires ≥3 flying statuses with
+`StationID` NA after the launch, every own status flying/NA, and a null server-side `StationId`.
+The same barrier is applied to the two siblings with the identical clear-before-launch shape:
+`MiningTests.Loopback_default_spawn_is_unaffected_and_statuses_stay_normal` and
+`ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` (the P960 "state-3/state-2 join
+receipt intermittency" is this same race; the unmodified test failed 1/20 alone). Each fixed method
+passes **20/20 alone** plus **2 rounds of two concurrent processes**; one full
+`Allegiance.Core.Tests` run and the Fast gate are in
+[reports/DOCK_STATUS_RACE_P962.md](reports/DOCK_STATUS_RACE_P962.md).
+
+Fast gate (`tools/run-tests.sh --tier fast`): **13,518 tests, 533.0 s, FAIL** — three non-task
+failures and one Fast execution over the calibrated 10.244 s limit, all of which pass **3/3 alone**
+(load flakes on a host carrying load average 6–9 from other lanes):
+`MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts`
+(empty receipt collection), `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout`
+(tick-78 Δ 7.62), `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable`
+(10.338 s vs 10.244 s, 10/10 rows pass in each isolated run), and
+`DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore; the
+already-ledgered loopback death-latch timing case). The fixed dock/status methods are inside
+`Allegiance.Core.Tests` (6152 passed, 2 failed — both the non-task ones above, 0 skipped) and
+passed in-suite.
+
+Separately, the required **full `Allegiance.Core.Tests` project run aborted on this box (host
+OOM)** after **5557 passed / 0 failed / 0 skipped** in 18 m 27 s: the pre-existing Perf-tier
+`P694MassEventTickTests.Launch_point_mass_events` (195 ships, `coincident: true`) grows
+`CollisionQueue.Add` until `List.AddWithResize` fails, and a Perf-tier-only diagnostic run
+reproduced the same `System.OutOfMemoryException` (stack: `CollisionQueue.cs:18` ←
+`CollisionDetector.Detect` ← `Sector.ResolveShipShipCollisions` ← `P694MassEventTickTests.RunWorld:221`;
+ten budget/`Assert.Equal(0 vs 7)` misses preceded it under load). It is unrelated to docking/status
+and stays open; it was not repeated three times because each repeat kills the shared host process.
+
 ## P953 validation — resource opening and defensive-field fixture, 2026-11-08 UTC
 
 P798's null-clash and split-frontier mechanisms are repaired in the existing

@@ -520,8 +520,18 @@ public class MiningTests
         // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
         // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the status
         // assertions below observe the ordinary FLYING state, not the docked spawn.
-        bot.ResetShipStatuses();
         bot.SendBuyLoadout(live.HullType.HullId, fLaunch: true);
+        // P962 — clear only AFTER the first post-launch flying status has been
+        // decoded. That frame can only be built once the undock cleared
+        // StationId (MakeOwnShipStatus, Server.Broadcast.cs:1701-1712;
+        // Server.Docking.cs:2286-2320), and the receive thread appends in
+        // connection order, so its arrival proves the join-burst DOCKED spawn
+        // status is already in the list. Clearing before the launch raced that
+        // frame and left it behind the reset as a stale docked item (the
+        // ledgered "Expected -1 / Actual 1051" failure).
+        PumpUntil(server, () => live.StationId is null && bot.ShipStatuses.Any(s => s.ShipId == shipId
+            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 4000);
+        bot.ResetShipStatuses();
         PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == shipId
             && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
 

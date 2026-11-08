@@ -317,17 +317,16 @@ public class DockDockingTests
             s => s.ShipId == shipId && (s.StationId != -1 || s.State == ShipStatusMessage.StateDocked));
     }
 
-    /// <summary>⭐ A ship nowhere near any station (default spawn — the first
-    /// sector of this map, Arrokoth, has zero stations) is completely unaffected:
-    /// it keeps broadcasting normal flying SHIP_STATUS(90)s with StationID NA,
-    /// and its server-side docked state stays null. No regression to ordinary
-    /// flight/status broadcasting.</summary>
+    /// <summary>⭐ A ship that ends up nowhere near any station is completely
+    /// unaffected: after its launch it keeps broadcasting normal flying
+    /// SHIP_STATUS(90)s with StationID NA, and its server-side docked state
+    /// stays null. No regression to ordinary flight/status broadcasting.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Ship_nowhere_near_a_station_is_unaffected()
     {
         Require.Artwork();
-        using var server = new Srv();   // default spawn: first sector (no stations)
+        using var server = new Srv();   // default spawn: DOCKED at the side's base hangar (P653 H-06)
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
@@ -339,18 +338,38 @@ public class DockDockingTests
 
         PumpUntil(server, () => server.Ships.Any(s => s.Ship.Id == shipId), 4000);
         // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
-        // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the "ordinary
-        // flight unaffected" check observes the FLYING state, not the docked spawn.
+        // (native FedSrv/fsmission.cpp:791-796), and the join burst puts that
+        // DOCKED SHIP_STATUS(90) on the wire (Server.Lobby.cs:5451-5457). Launch
+        // the probe so the "ordinary flight unaffected" check observes the
+        // FLYING state, not the docked spawn.
         var probe = server.Ships.First(s => s.Ship.Id == shipId).Ship;
-        bot.ResetShipStatuses();
         bot.SendBuyLoadout(probe.HullType.HullId, fLaunch: true);
+
+        // P962 — the launch's own ack in wire terms is the FIRST post-launch
+        // status: a status frame's docked/flying choice is `StationId != null`
+        // at build time (MakeOwnShipStatus, Server.Broadcast.cs:1701-1712), and
+        // the undock clears StationId inside the tick that processes BUY_LOADOUT
+        // (Server.Docking.cs:2286-2320). So a flying own-ship status observed
+        // while the server-side latch is already null can only have been built
+        // AFTER the launch — and because the receive thread appends frames in
+        // connection order, seeing it also proves the join-burst docked frame is
+        // already decoded. Clearing HERE (not before the launch) is what makes
+        // the assertion set exactly the post-launch statuses; a pre-launch clear
+        // raced the receive thread and left that docked frame as item [0] (P962
+        // diag: 7/24 alone), the ledgered "Expected -1 / Actual 1051" failure.
+        PumpUntil(server, () => probe.StationId is null && bot.ShipStatuses.Any(s => s.ShipId == shipId
+            && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying), 4000);
+        bot.ResetShipStatuses();
         PumpUntil(server,
             () => bot.ShipStatuses.Count(s => s.ShipId == shipId
                 && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying) >= 3, 4000);
         // P382: the port now spawns one docked initial miner per side at its home
         // station at boot, so a peer also hears those docked NPCs' SHIP_STATUSs —
         // scope the "ordinary flight unaffected" check to the player's own ship.
-        Assert.All(bot.ShipStatuses.Where(s => s.ShipId == shipId),
+        var postLaunch = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
+        Assert.True(postLaunch.Count(s => s.StationId == -1 && s.State == ShipStatusMessage.StateFlying) >= 3,
+            $"expected at least 3 post-launch flying SHIP_STATUS(90) frames, saw {postLaunch.Count} own status(es)");
+        Assert.All(postLaunch,
             s => { Assert.Equal(-1, s.StationId); Assert.Equal(ShipStatusMessage.StateFlying, s.State); });
         Assert.Null(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);
     }

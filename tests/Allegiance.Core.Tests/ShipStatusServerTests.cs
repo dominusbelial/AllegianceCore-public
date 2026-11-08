@@ -85,12 +85,20 @@ public class ShipStatusServerTests
         // P653 H-06: fresh default-spawn ships start DOCKED at the base hangar
         // (native FedSrv/fsmission.cpp:791-796). Launch the probe so the sanity
         // frame below observes the ordinary FLYING status, not the docked spawn.
-        bot.ResetShipStatuses();
         short probeShipId = bot.ShipAssignment!.Ship.ShipId;
         var probeHull = server.Ships.First(s => s.Ship.Id == probeShipId).Ship.HullType.HullId;
         bot.SendBuyLoadout(probeHull, fLaunch: true);
-        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == probeShipId
-            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
+        // P962 — clear only after the FIRST post-launch flying status, which can
+        // only be built once the undock cleared StationId (MakeOwnShipStatus,
+        // Server.Broadcast.cs:1701-1712; Server.Docking.cs:2286-2320). Frames are
+        // appended in connection order, so its arrival also proves the
+        // join-burst DOCKED spawn status is already decoded — clearing before the
+        // launch raced that frame and left a stale docked item in the list.
+        PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == probeShipId).Ship.StationId is null
+            && bot.ShipStatuses.Any(s => s.ShipId == probeShipId
+                && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
+        bot.ResetShipStatuses();
+        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == probeShipId), 800);
         Assert.NotEmpty(bot.ShipStatuses);
         var status = bot.ShipStatuses.First(s => s.ShipId == probeShipId);
         Assert.Equal(probeShipId, status.ShipId);
