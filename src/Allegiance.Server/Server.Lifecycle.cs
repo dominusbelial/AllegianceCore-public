@@ -65,7 +65,7 @@ public sealed partial class Server
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
-        _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
+        _rand = SimulationRandom ?? (config.BenchmarkSeed is { } seed ? new Random(seed) : new Random());
         _config.ResolveShowcaseMode();
         // Preserve corpus-independent broadcast validation. Its profiler callback
         // only requests a deferred flush; it never reads the not-yet-bound host.
@@ -837,7 +837,9 @@ public sealed partial class Server
         // Server._rand (a different stream: 'WARP' in little-endian) so the
         // benchmark seed makes exits reproducible without shifting any other
         // seeded draw.
-        if (_config.BenchmarkSeed is { } warpSeed)
+        if (SimulationRandom is { } simulationRandom)
+            _host.WarpExitRandom = simulationRandom;
+        else if (_config.BenchmarkSeed is { } warpSeed)
             _host.WarpExitRandom = new Random(warpSeed ^ 0x57415250);
         Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
@@ -1373,7 +1375,7 @@ public sealed partial class Server
         if (fromMapGen)
         {
             // Generated station types must belong to the receiving civilization.
-            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed,
+            var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed ?? mg!.Seed ?? SimulationRandom?.Next(),
                 ResearchSettingsFor(g));
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
@@ -1424,7 +1426,7 @@ public sealed partial class Server
             AllowShipyardPath = g.AllowShipyardPath, AllowExpansionPath = g.AllowExpansionPath,
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
-        }, goals, techOverrides ?? g.ResolveTechBitOverrides());
+        }, goals, techOverrides ?? g.ResolveTechBitOverrides(), SimulationRandom);
         // Research/rotating showcase and offline skirmish are authored presets.
         // A lobby-created world or LAN host keeps ordinary native deadline policy.
         mission.IsShowcasePreset = isShowcasePreset;
@@ -1495,7 +1497,7 @@ public sealed partial class Server
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
         if (fromMapGen) mission.PopulateGoalObjects(_simNow);
-        else mission.PopulateFileMap(_simNow, MapGenParams.FileMapDefaults(g.Teams, selectedMap?.Seed));
+        else mission.PopulateFileMap(_simNow, MapGenParams.FileMapDefaults(g.Teams, selectedMap?.Seed ?? SimulationRandom?.Next()));
 
         if (mg is not null)
         {

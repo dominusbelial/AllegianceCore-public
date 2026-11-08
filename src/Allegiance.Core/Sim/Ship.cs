@@ -4653,10 +4653,10 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>A uniform random unit vector — the port of <c>Vector::RandomDirection()</c>
     /// (<c>zlib/vector.h</c>, used at <c>FedSrv.CPP:4329</c>), sampled on the
     /// unit sphere via the equirectangular (latitude/longitude) construction.</summary>
-    private static Vector3 RandomDirection()
+    private Vector3 RandomDirection()
     {
-        double u = Random.Shared.NextDouble() * 2.0 - 1.0;   // z ∈ [-1, 1]
-        double phi = Random.Shared.NextDouble() * 2.0 * Math.PI;
+        double u = (Mission?.Random ?? Random.Shared).NextDouble() * 2.0 - 1.0;   // z ∈ [-1, 1]
+        double phi = (Mission?.Random ?? Random.Shared).NextDouble() * 2.0 * Math.PI;
         double r = Math.Sqrt(Math.Max(0.0, 1.0 - u * u));
         return new Vector3((float)(r * Math.Cos(phi)), (float)(r * Math.Sin(phi)), (float)u);
     }
@@ -5143,7 +5143,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// caller can broadcast the <c>FM_S_MISSILE_SPOOFED(110)</c>. A missile whose
     /// <c>ChaffResistance</c> is <c>0</c> always spoofs (cm = 0 ⇒
     /// <c>random(0,0)=0 &lt;= f</c>), which is how the tests force a deterministic
-    /// outcome; <paramref name="rng"/> (default <see cref="Random.Shared"/>) is the
+    /// outcome; <paramref name="rng"/> (default the mission generator) is the
     /// injectable uniform source for the roll, mirroring <see cref="Weapon"/>'s
     /// injectable dispersion RNG (<c>Sim/Weapon.cs:52,72,378</c>). The spoof does not
     /// re-derive an orientation or accelerate the chaff; and per the task's scope
@@ -5178,7 +5178,7 @@ public sealed partial class Ship : Model, IShipIgc
         sector.Add(chaff);
         mission.Skills?.Record(SideId, ShowcaseSkill.Chaff);
 
-        var r = rng ?? Random.Shared;
+        var r = rng ?? Mission?.Random ?? Random.Shared;
         var spoofed = new List<Missile>();
         foreach (var m in sector.Models.OfType<Missile>())
         {
@@ -8608,7 +8608,7 @@ public sealed partial class Ship : Model, IShipIgc
         if (now < _lastComplaint + _complaintInterval) return;
         _lastComplaint = now;
         if (_complaintInterval < 600f)
-            _complaintInterval *= 1.5f + Random.Shared.NextSingle();
+            _complaintInterval *= 1.5f + (Mission?.Random ?? Random.Shared).NextSingle();
         SendDroneChat(DroneTooCrowdedSound, "Miner requesting unoccupied He3 asteriod.");
     }
 
@@ -8626,7 +8626,7 @@ public sealed partial class Ship : Model, IShipIgc
         if (now < _lastComplaint + _complaintInterval) return;
         _lastComplaint = now;
         if (_complaintInterval < 600f)
-            _complaintInterval *= 1.5f + Random.Shared.NextSingle();
+            _complaintInterval *= 1.5f + (Mission?.Random ?? Random.Shared).NextSingle();
 
         switch (PilotType)
         {

@@ -1,0 +1,211 @@
+[
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "label": "P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 5.5870367,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "label": "MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "pattern": "pass / fail / pass",
+    "passed": 2,
+    "failed": 1,
+    "skipped": 0,
+    "maxCaseSeconds": 38.7791208,
+    "timingViolations": 1,
+    "disposition": "Known missing partial-tip receipt; remains intermittent"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+    "label": "P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 4.2284529,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+    "label": "P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+    "pattern": "pass / pass / pass",
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 7.8974833,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "label": "P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 3.6629323,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+    "label": "P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 2.0548677,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+    "label": "P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 4.2983263,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+    "label": "P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 8.4367714,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+    "label": "P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 1.7997265,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+    "label": "P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+    "pattern": "pass / pass / pass",
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 3.2262838,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "label": "SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "pattern": "pass / pass / pass",
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 4.6332379,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+    "label": "SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 1.4967025,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "label": "P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 10.2880141,
+    "timingViolations": 2,
+    "disposition": "Assertions pass 3/3; 2 isolated case executions still exceed 10 s"
+  },
+  {
+    "method": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+    "label": "P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 7.088084,
+    "timingViolations": 0,
+    "disposition": "Assertions and timing pass in all isolated repeats"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core",
+    "label": "PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core",
+    "pattern": "pass / pass / pass",
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "maxCaseSeconds": 11.9966093,
+    "timingViolations": 3,
+    "disposition": "Assertions pass 3/3; 3 isolated case executions still exceed 10 s"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "label": "PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "pattern": "fail / fail / fail",
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "maxCaseSeconds": 0.0148477,
+    "timingViolations": 0,
+    "disposition": "Known ancestor-local.env fixture obstruction"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "label": "PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "pattern": "fail / fail / fail",
+    "passed": 3,
+    "failed": 6,
+    "skipped": 0,
+    "maxCaseSeconds": 0.0050235,
+    "timingViolations": 0,
+    "disposition": "Known ancestor-local.env fixture obstruction"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "label": "PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "pattern": "fail / fail / fail",
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "maxCaseSeconds": 0.0050448,
+    "timingViolations": 0,
+    "disposition": "Known ancestor-local.env fixture obstruction"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "label": "PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "pattern": "fail / fail / fail",
+    "passed": 3,
+    "failed": 3,
+    "skipped": 0,
+    "maxCaseSeconds": 0.0052485,
+    "timingViolations": 0,
+    "disposition": "Known ancestor-local.env fixture obstruction"
+  }
+]

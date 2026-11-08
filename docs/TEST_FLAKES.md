@@ -4,6 +4,79 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P958 resolution — seeded pod load and complete native controls, 2026-11-08 UTC
+
+The P699b entries below (P708/P866/P912 and recurrences) are resolved as a
+**nondeterministic fixture with incomplete native steering**, not a wall-clock
+load flake. A shared optional simulation RNG is installed before assembly,
+including previously unseeded file-map asteroid top-up, launch jitter and warp
+exits. Default production randomness remains unseeded.
+
+The original 30-seed-per-case sweep reproduced **14/30 ordinary failures** and
+**2/30 rescue-traffic failures**. Worst seed **23** lost **50 / 36** pods. Its
+large loss was repeated ramming of generated rock 3610 during the 1062 leg, not
+bay-slot occupancy. Separately, traced launch traffic reversed a homed pod into
+the arrival aleph; the harness kept selecting the station. It had ignored native
+Dodge/diversion and combined partial docking controls with MCP pursuit.
+
+The corrected harness uses production `NativeGotoPlan.Execute` and native
+Ignore-filtered obstacles for both station and warp targets. Seed **23**, the
+worst old failure in both cases, now completes **200 docked / 159 docked + 41
+rescued**, with **zero expiries**. It is pinned permanently. **Every existing
+assertion is retained**, including 300 s allowance, zero expiries, the radius/bay
+checks, all outcomes and sim-stage failures. The 100-pods/one-bay/one-tick proof
+is unchanged. Broader native crowding can still consume the finite allowance;
+this fixed-seed regression does not claim an all-seed completion guarantee.
+
+Serial qualification: affected RNG/physics/navigation cohort **220/0/0 three
+times**, **660/0/0 total** (Passed/Failed/Skipped); strict pinned P699b **9/0/0**
+over three invocations, with identical per-pod telemetry; complete same/different
+seed determinism **6/0/0** over three invocations. The five alternating normal-home showcase pairs pass **base 5/0/0, current
+5/0/0**. The bounded two-process pod proof passes **4/0/0**, with every complete per-pod
+telemetry record identical to the serial reference (load 9.23–9.60). The single Fast gate remains **FAIL: 13,485 passed / 6 failed / 3 skipped**, with
+**20 timing violations**. All 9 infrastructure checks pass. The skips are the
+existing optional private Meshy-pack cases; no P958/artwork proof was skipped.
+
+All failed/timing-offender families ran three times alone (**19 families / 57
+invocations**). The five bundle-path executions remain reproducible ancestor
+`local.env` / in-repo `TMPDIR` fixture failures. Missile lock is **pass/fail/pass**,
+with full lock 1.000 but missing partial-tip receipt on the failed run; it remains
+open. Twelve timing families recover below 10 s. Warp-exit sampling still exceeds
+budget in 2/3 isolated runs (10.288/10.052/9.789 s), and treasure-offset corpus
+decoding in 3/3 (11.997/10.695/10.643 s); both pass assertions and remain open
+as timing failures. No unrelated
+source, assertion, tier or budget changed. The isolated totals and evidence do
+not turn the Fast sweep green.
+
+| Non-task method / theory family | Three isolated invocations | P/F/S | Max case (s) | Disposition |
+| --- | --- | --- | --- | --- |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass / pass / pass | 3/0/0 | 5.587 | Assertions and timing pass in all isolated repeats |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | 2/1/0 | 38.779 | Known missing partial-tip receipt; remains intermittent |
+| `P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | pass / pass / pass | 3/0/0 | 4.228 | Assertions and timing pass in all isolated repeats |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | pass / pass / pass | 9/0/0 | 7.897 | Assertions and timing pass in all isolated repeats |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass | 3/0/0 | 3.663 | Assertions and timing pass in all isolated repeats |
+| `P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base` | pass / pass / pass | 3/0/0 | 2.055 | Assertions and timing pass in all isolated repeats |
+| `P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement` | pass / pass / pass | 3/0/0 | 4.298 | Assertions and timing pass in all isolated repeats |
+| `P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals` | pass / pass / pass | 3/0/0 | 8.437 | Assertions and timing pass in all isolated repeats |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass / pass / pass | 3/0/0 | 1.800 | Assertions and timing pass in all isolated repeats |
+| `P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production` | pass / pass / pass | 9/0/0 | 3.226 | Assertions and timing pass in all isolated repeats |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass / pass / pass | 6/0/0 | 4.633 | Assertions and timing pass in all isolated repeats |
+| `SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass` | pass / pass / pass | 3/0/0 | 1.497 | Assertions and timing pass in all isolated repeats |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | 3/0/0 | 10.288 | Assertions pass 3/3; 2 isolated case executions still exceed 10 s |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | pass / pass / pass | 3/0/0 | 7.088 | Assertions and timing pass in all isolated repeats |
+| `PayloadDecodeTests.TreasureSet_offsets_cross_reference_same_core` | pass / pass / pass | 3/0/0 | 11.997 | Assertions pass 3/3; 3 isolated case executions still exceed 10 s |
+| `PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment` | fail / fail / fail | 0/3/0 | 0.015 | Known ancestor-local.env fixture obstruction |
+| `PlayerBundlePathsTests.MissingDirectoryHasNoDefault` | fail / fail / fail | 3/6/0 | 0.005 | Known ancestor-local.env fixture obstruction |
+| `PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory` | fail / fail / fail | 0/3/0 | 0.005 | Known ancestor-local.env fixture obstruction |
+| `PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository` | fail / fail / fail | 3/3/0 | 0.005 | Known ancestor-local.env fixture obstruction |
+
+Full counts and compact isolation evidence are in the linked P958 report and
+`reports/P958_assets/non-task-isolation-summary.json`.
+
+Evidence, native citations, 120 seeded runs and traces:
+[report](reports/POD_LOAD_P958.md), [legacy sweep](reports/P958_assets/legacy-sweep.csv),
+[native sweep](reports/P958_assets/native-sweep.csv). No commits or pushes.
+
 ## P952 validation — defender fixture correction, 2026-11-07 UTC
 
 The persistent defender null-acquisition failure is **resolved by correcting
@@ -1011,7 +1084,7 @@ and `P745` are the known set. New to this sweep:
 | test | sweep result | isolated, master `ff075743` | verdict |
 | --- | --- | --- | --- |
 | `TurretServerClockLiveTests.Turret_gunner_updates_stamped_from_the_ping_clock_are_accepted_and_fire` | no turret projectiles (13 s), first time in 14 mini sweeps | 3/3 pass | Load flake, watch. |
-| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | one of 200 pods ran out of oxygen | 2/3 pass | Known flake, same signature as the earlier ledger entries, not a broadcast failure. |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | one of 200 pods ran out of oxygen | 2/3 pass | Historical P699b classification; resolved by P958 seeded fixture/native-controller correction (see current entry), not a broadcast failure. |
 
 ## 2026-10-31 Claude triage: batch sweep `5ebf01c4` (P897, P898)
 
@@ -2783,7 +2856,7 @@ reported **4,727 pass / 2 fail / 0 skip**. Both failed methods then passed
 
 | Method | Full-suite failure | Isolated evidence |
 | --- | --- | --- |
-| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | One of 200 pods exhausted oxygen; 199 docked and all 200 reached home. | `P708_assets/suite-retry-001-{1,2,3}.trx.gz`: 3/3 pass |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | One of 200 pods exhausted oxygen; 199 docked and all 200 reached home. Resolved by P958 (current entry). | `P708_assets/suite-retry-001-{1,2,3}.trx.gz`: 3/3 pass |
 | `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | B did not receive the mine EXPORT before the original deadline. | `P708_assets/suite-retry-000-{1,2,3}.trx.gz`: 3/3 pass |
 
 ClientCore passed **1,073/1,073**; MonoGame passed **2,234** with **0 failures**
@@ -4117,7 +4190,7 @@ classification rule.
 
 | Test | Full-suite observation | Final isolation |
 | --- | --- | --- |
-| `Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 199/200 pods docked and one oxygen expiry; `Assert.Equal` expected zero expiries, actual one (line 160). | 3/3 pass |
+| `Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | 199/200 pods docked and one oxygen expiry; `Assert.Equal` expected zero expiries, actual one (line 160). Resolved by P958 (current entry). | 3/3 pass |
 | `Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour` | `never crossed: sectors=[0]` (line 119). | 3/3 pass |
 
 No assertions, deadlines, quarantine traits, simulation rules, or transport
@@ -5062,7 +5135,7 @@ local timings: [P863_REPORT.md](reports/P863_REPORT.md).
 | 2026-10-28 | Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact; ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live | P864 fast-tier gate (this worktree): MonoGame reported these 2 fails in the full fast run (interrupted once during Core.Tests under shared-host load ~7-11 procs); Core.Tests re-run below | 2/2 x3 alone clean | load flakes — P864 touches game-over/GetExpMult/leadership (server sim) only; no HUD rendering/allocation or shop-launcher path |
 | 2026-10-28 | SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25) (16.286 s) | 20261028 nightly fast tier: exceeded the calibrated 10 s fast limit (mini runner, fast tier runs 4 projects concurrently on slower cores, P744 factor ≈1.5) | 3/3 alone on the 24-core workstation, whole filtered class (2 cases) in 6–7 s — 5× under the mini's slowest observed | load flake (runner) |
 | 2026-10-28 | P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats (17.319 s) | 20261028 nightly fast tier: exceeded the calibrated 10 s fast limit (same runner conditions) | 3/3 alone on the workstation, both class cases in ~3 s per run | load flake (runner) |
-| 2026-10-28 | P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic | P866 full-project sweep (Allegiance.Core.Tests, load ~3–5, four lanes): one pod oxygen expiry vs the expected zero (same signature as the 2026-10-19/P708 entries above) | 3/3 alone clean | load flake (recurrence) |
+| 2026-10-28 | P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic | P866 full-project sweep (Allegiance.Core.Tests, load ~3–5, four lanes): one pod oxygen expiry vs the expected zero (same signature as the 2026-10-19/P708 entries above) | 3/3 alone clean | Historical load-flake classification superseded by P958: seeded fixture and complete native controls; see current resolution above. |
 | 2026-10-28 | ConsoleVerbosityLiveTests.Stalled_stdout_does_not_block_the_sim_thread_even_verbose_on | P866 full-project sweep, same window | 3/3 alone clean (documented shared-static console class above) | load flake (recurrence) |
 | 2026-10-28 | P746KillCreditOnEjectionTests.Winning_kill_finishes_wire_and_victim_score_before_mission_rotation | P866 full-project sweep then 1/3 class runs: `Results.Entries.Single(CharacterName == "P746-1")` found no entry while the game-over snapshot was being built; no P866 line touches results/rotation (event audiences, lobby publication, counters) | 8/8 single-theory isolated runs + 12/12 whole-class pass | load flake (rotation/results timing) |
 | 2026-10-28 | BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes (4 golden cases) | P866 full-suite: the expected-prefix golden hashes mismatch while `offHash == onHash == sharedHash` in every case — the recorded actual is `D0ED7EEB…`, exactly the dispatch/master value in `docs/reports/P788C_assets/verification.json` | pre-existing stale golden (P788c entry above); no P866 change regenerates it. Reconfirmed after reverting the only MISSIONDEF-affecting experiment: still `D0ED7EEB…` | stale golden baseline (pre-existing, not a flake) |
@@ -5912,7 +5985,10 @@ whether windows run in the runner container is still unproven. Rerun 3× alone o
 
 P699b is intermittent, not a P912 regression. Alternated alone over 13 runs: 10 passes before P912 (`fb040bb5`), 8 on master. Both trees show the same
 all-or-part outcome; the worst run, 43 expiries, was on the pre-P912 tree. Pods reached home and then ran out of oxygen queued near the station.
-The cause of the bimodal pile-up is not established. `SC3Cloak`, `SC2SupportPhase`, `P745`, `P798`, `MissileLock`, `NpcWingmanDefend`, `MusicLoading` and
+Historical note, superseded by P958: the bimodal loss is reproduced by seeded
+file-map rocks obstructing the long return leg while the fixture omits native
+Dodge/diversion. P958 pins the worst old seed and retains all strict assertions;
+see the current resolution and report above. `SC3Cloak`, `SC2SupportPhase`, `P745`, `P798`, `MissileLock`, `NpcWingmanDefend`, `MusicLoading` and
 `LiveSideSelect` also failed; not rerun here, not cleared.
 
 ## P917 training-branch gates — 2026-11-02

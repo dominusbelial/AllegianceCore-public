@@ -148,7 +148,9 @@ public static class Separate
     /// <param name="fEqualBounce">Both bodies bounce (ship↔ship); else only body-1 moves.</param>
     /// <param name="htsA"><paramref name="a"/>'s concrete sub-shape from detection (<c>entry.m_hts1</c>).</param>
     /// <param name="htsB"><paramref name="b"/>'s concrete sub-shape (<c>entry.m_hts2</c>).</param>
-    public static Result SeparateColliders(Collider a, Collider b, float tCollision, bool fEqualBounce, int htsA, int htsB, ProbeCache? probeCache = null)
+    /// <param name="probeCache">Optional per-pass support-offset cache.</param>
+    /// <param name="random">Mission RNG for coincident centres; ambient when omitted.</param>
+    public static Result SeparateColliders(Collider a, Collider b, float tCollision, bool fEqualBounce, int htsA, int htsB, ProbeCache? probeCache = null, Random? random = null)
     {
         // Collision-time positions (shipIGC.cpp:523-526): body-2 only moves when
         // equal-bounce; a static body stays at its position.
@@ -158,7 +160,7 @@ public static class Separate
         Vector3 dP = position1 - position2;
         if (dP.X == 0f && dP.Y == 0f && dP.Z == 0f)
         {
-            dP = RandomDirection();
+            dP = RandomDirection(random ?? Random.Shared);
             position1 += dP;
         }
 
@@ -240,10 +242,10 @@ public static class Separate
 
     /// <summary>A uniform random unit vector — native <c>Vector::RandomDirection()</c>
     /// (<c>zlib/vector.cpp:37-46</c>), used when the centres coincide.</summary>
-    private static Vector3 RandomDirection()
+    private static Vector3 RandomDirection(Random random)
     {
-        double u = Random.Shared.NextDouble() * 2.0 - 1.0;
-        double phi = Random.Shared.NextDouble() * 2.0 * Math.PI;
+        double u = random.NextDouble() * 2.0 - 1.0;
+        double phi = random.NextDouble() * 2.0 * Math.PI;
         double r = Math.Sqrt(Math.Max(0.0, 1.0 - u * u));
         return new Vector3((float)(r * Math.Cos(phi)), (float)(r * Math.Sin(phi)), (float)u);
     }

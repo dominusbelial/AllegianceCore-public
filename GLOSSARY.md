@@ -321,8 +321,17 @@ list in **reverse**.
   No simulation rule or flag changes. Pre-refactor 500-tick byte-identity fixture:
   `tests/Allegiance.Core.Tests/Fixtures/P928Golden.csv`; replay and allocation
   reporter: `tools/p928-allocation-proof/`; report `docs/reports/P928_REPORT.md`.
-- **Random / determinism** — the seeded RNG abstraction behind reproducible
-  generation. `src/Allegiance.Core/MapGen/MapRandom.cs`.
+- **Random / determinism (P958)** — `Mission.Random` in
+  `src/Allegiance.Core/Model/Mission.cs` defaults to the ambient generator;
+  `Server.SimulationRandom` in `src/Allegiance.Server/Server.cs` optionally shares
+  a seeded stream across assembly, ejection, warp exits, separation, launches,
+  drops, chaff, complaints, weapons, probes and treasures. Existing map-seed
+  precedence stays in `src/Allegiance.Core/MapGen/MapRandom.cs`; an explicitly
+  seeded server also seeds otherwise-unseeded map resource generation.
+  `tests/Allegiance.Core.Tests/P958SimulationRandomTests.cs` compares complete
+  200-pod telemetry; `tools/p958-pod-load.py` sweeps seeds and records traces.
+  Native shared `rand`/`srand`: `zlib/zmath.h:114-129`,
+  `FedSrv/FedSrv.CPP:10245`. Report: `docs/reports/POD_LOAD_P958.md`.
 
 ## 2. Wire / FEDMSG (`src/Allegiance.Core/Wire`)
 

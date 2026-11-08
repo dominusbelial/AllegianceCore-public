@@ -132,7 +132,7 @@ public sealed partial class Ship
         return false;
     }
 
-    private static int NativeKey(G.Kind kind, short id) => ((int)kind + 1) * 65536 + (ushort)id;
+    internal static int NativeKey(G.Kind kind, short id) => ((int)kind + 1) * 65536 + (ushort)id;
     private bool TryNativeTarget(out G.Target target, out Station? station, out Ship? carrier)
     {
         target = default; station = null; carrier = null;
@@ -393,7 +393,7 @@ public sealed partial class Ship
     /// <summary>Ignore common.cpp:1642-1690. Index loops avoid interface
     /// enumerator boxing. Lower-ID allied drones have right of way unless
     /// mining/ripcording; enemy ships, allied mines and rescue pairs are ignored.</summary>
-    private void FillNativeObstacles(Sector sector, List<G.Obstacle> obstacles)
+    internal void FillNativeObstacles(Sector sector, List<G.Obstacle> obstacles)
     {
         obstacles.Clear();
         for (int i = 0; i < sector.Models.Count; i++)

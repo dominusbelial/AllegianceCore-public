@@ -29,7 +29,7 @@ public sealed partial class Mission
     /// (Igc/missionigc.cpp:4125-4214; Igc/treasuresetigc.h:100-117).</summary>
     public Treasure? GenerateTreasure(double now, Sector sector, short setId, Random? random = null)
     {
-        random ??= Random.Shared;
+        random ??= Random;
         TreasureCode code;
         short payload;
         if (setId >= 0)
@@ -120,7 +120,7 @@ public sealed partial class Mission
     /// despite its comment, native does not exclude clusters already containing flags.</summary>
     public Treasure? RespawnArtifact(double now, Random? random = null)
     {
-        random ??= Random.Shared;
+        random ??= Random;
         var neutral = Sectors.Where(s => !s.Cluster.HomeSector).ToArray();
         return neutral.Length == 0 ? null : GenerateTreasure(now, neutral[random.Next(neutral.Length)], -2, random);
     }

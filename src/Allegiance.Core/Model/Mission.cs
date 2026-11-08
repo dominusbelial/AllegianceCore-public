@@ -26,6 +26,19 @@ using Allegiance.Core.Sim;
 /// </remarks>
 public sealed partial class Mission : IMissionIgc
 {
+    /// <summary>Simulation random draws. Production retains the ambient generator;
+    /// deterministic drivers may supply a seeded Random before advancing the world.
+    /// Native uses the process-wide rand()/srand() stream (zlib/zmath.h:114-129;
+    /// FedSrv/FedSrv.CPP:10245). Mission ownership isolates seeded test worlds.
+    /// Consume on the simulation thread, as with all mutable mission state.</summary>
+    public Random Random { get; set; } = Random.Shared;
+
+    // Optional sim-thread diagnostics; no collision state is changed by observers.
+    internal Action<CollisionMotion>? CollisionResolved { get; set; }
+    internal readonly record struct CollisionMotion(Ship Ship, object Other,
+        Vector3 Position, Vector3 Velocity, Vector3 ContactPosition,
+        Vector3 SeparatedPosition, Vector3 NewVelocity, bool CoincidentCenters = false);
+
     /// <summary>Lobby identity, owned by the server (FedSrv/fsmission.h:229-235).
     /// A reset retains it; managed world replacement copies it (fsmission.cpp:3490-3527).</summary>
     public uint Cookie { get; set; }
@@ -862,7 +875,8 @@ public sealed partial class Mission : IMissionIgc
         double initialTime = 0,
         ResearchSettings? research = null,
         MissionGoals? goals = null,
-        TechBitOverrides? techOverrides = null)
+        TechBitOverrides? techOverrides = null,
+        Random? random = null)
     {
         if (!double.IsFinite(initialTime) || initialTime < 0)
             throw new ArgumentOutOfRangeException(nameof(initialTime));
@@ -959,7 +973,9 @@ public sealed partial class Mission : IMissionIgc
         // Native CmissionIGC::Initialize(now) seeds m_lastUpdate (missionigc.cpp:3055-3059).
         // Seed BEFORE any ship placement or countdown can observe this world.
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
-        { LastUpdate = initialTime, Goals = goals, Research = research, AllowDevelopments = research.AllowDevelopments,
+        {
+            Random = random ?? Random.Shared,
+            LastUpdate = initialTime, Goals = goals, Research = research, AllowDevelopments = research.AllowDevelopments,
             TechOverrides = techOverrides };
         mission.DamageClock.Initialize(initialTime);
         foreach (var sector in sectors)

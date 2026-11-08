@@ -219,6 +219,12 @@ public sealed partial class Server : IDisposable
     // local benchmarks can seed this server instance.
     private Random _rand = new();
 
+    /// <summary>Optional sim-thread RNG injection, supplied before Boot. A seeded
+    /// driver shares it with all missions, ejections and warp exits, like native's
+    /// global rand() stream (zlib/zmath.h:114-129; FedSrv/FedSrv.CPP:10245).
+    /// Null preserves the existing unseeded production streams and benchmark hook.</summary>
+    public Random? SimulationRandom { get; init; }
+
     // Ships assigned to peers on validated logon (step 3). This map is owned
     // exclusively by the simulation thread (written in ProcessDatagram, which
     // Drain runs on the sim thread, and read in the broadcast step of SimPass),

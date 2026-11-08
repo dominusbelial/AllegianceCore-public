@@ -92,7 +92,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// </summary>
     public void Launch(Ship ship, HullLandingBayGeometry? geometry, double now, Random? random = null)
     {
-        random ??= Random.Shared;
+        random ??= ship.Mission?.Random ?? Random.Shared;
         const float maxOffset = 5;
         float Jitter() => (float)(random.NextDouble() * (2 * maxOffset) - maxOffset);
         var position = new Vector3(Jitter(), Jitter(), Jitter());

@@ -2945,7 +2945,7 @@ public sealed partial class Sector : IClusterIgc
         var htsShip = shipIsA ? ev.HtsA : ev.HtsB;
         var htsAst = shipIsA ? ev.HtsB : ev.HtsA;
 
-        var sep = Separate.SeparateColliders(shipC, astC, ev.TCollision, fEqualBounce: false, htsShip, htsAst);
+        var sep = Separate.SeparateColliders(shipC, astC, ev.TCollision, fEqualBounce: false, htsShip, htsAst, random: Mission?.Random);
         var normal = sep.Normal;
         var position1 = sep.Position1;
 
@@ -3083,6 +3083,9 @@ public sealed partial class Sector : IClusterIgc
         // (s = distanceBest − 0.5, shipIGC.cpp:601). Separate already displaced
         // position1 along the convex-hull contact normal; apply it and the
         // reflected velocity.
+        Mission?.CollisionResolved?.Invoke(new(ship, ast, ship.Position, velocity1,
+            shipC.Position + shipC.Velocity * ev.TCollision, position1, newVelocity1,
+            (shipC.Position + shipC.Velocity * ev.TCollision).Equals(astC.Position)));
         ship.Position = position1;
         ship.Velocity = newVelocity1;
     }
@@ -3258,7 +3261,7 @@ public sealed partial class Sector : IClusterIgc
         // formulas below accelerate the forward ship.
         Separate.Result sep;
         using (TickProfiler.Enter("collision.ship.separate"))
-            sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
+            sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache, Mission?.Random);
         var normal = sep.Normal;
 
         var velocity1 = ship1.Velocity;
@@ -3361,6 +3364,15 @@ public sealed partial class Sector : IClusterIgc
         // symmetrically (fEqualBounce = true, half-and-half, shipIGC.cpp:526,
         // 610-615) along the convex-hull contact normal to just-touching + 0.5
         // clearance (s = distanceBest − 0.5, shipIGC.cpp:608). Apply it.
+        if (Mission?.CollisionResolved is { } trace)
+        {
+            trace(new(ship1, ship2, ship1.Position, velocity1,
+                ev.A.Position + ev.A.Velocity * ev.TCollision, sep.Position1, newVelocity1,
+                (ev.A.Position + ev.A.Velocity * ev.TCollision).Equals(ev.B.Position + ev.B.Velocity * ev.TCollision)));
+            trace(new(ship2, ship1, ship2.Position, velocity2,
+                ev.B.Position + ev.B.Velocity * ev.TCollision, sep.Position2, newVelocity2,
+                (ev.A.Position + ev.A.Velocity * ev.TCollision).Equals(ev.B.Position + ev.B.Velocity * ev.TCollision)));
+        }
         ship1.Position = sep.Position1;
         ship2.Position = sep.Position2;
 
@@ -3515,7 +3527,7 @@ public sealed partial class Sector : IClusterIgc
         var htsShip = shipIsA ? ev.HtsA : ev.HtsB;
         var htsSt = shipIsA ? ev.HtsB : ev.HtsA;
 
-        var sep = Separate.SeparateColliders(shipC, stC, ev.TCollision, fEqualBounce: false, htsShip, htsSt);
+        var sep = Separate.SeparateColliders(shipC, stC, ev.TCollision, fEqualBounce: false, htsShip, htsSt, random: Mission?.Random);
         var normal = sep.Normal;
         var position1 = sep.Position1;
 
@@ -3598,6 +3610,9 @@ public sealed partial class Sector : IClusterIgc
         // (s = distanceBest − 0.5, shipIGC.cpp:601). Separate already displaced
         // position1 along the convex-hull contact normal; apply it and the
         // reflected velocity.
+        Mission?.CollisionResolved?.Invoke(new(ship, station, ship.Position, velocity1,
+            shipC.Position + shipC.Velocity * ev.TCollision, position1, newVelocity1,
+            (shipC.Position + shipC.Velocity * ev.TCollision).Equals(stC.Position)));
         ship.Position = position1;
         ship.Velocity = newVelocity1;
     }
