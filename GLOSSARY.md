@@ -542,6 +542,16 @@ list in **reverse**.
   death/eject/missile/relaunch transcript and per-step measurements live in
   `tests/Allegiance.Core.Tests/P863bSurgeBudgetTests.cs`; report
   `docs/reports/P863b_REPORT.md`.
+- **Pending publisher stream index (P968, experiment)** — default-off
+  `broadcast.pendingStreamIndex` / `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX`
+  indexes the coalesced pending snapshot by `(ConnectionId, Key)` in
+  `src/Allegiance.Server/BroadcastSnapshot.cs`, skipping key-zero freshness checks
+  while preserving per-delivery decisions and reliable order. Configuration:
+  `src/Allegiance.Server/ServerConfig.cs`,
+  `src/Allegiance.Server/Server.BroadcastSnapshot.cs`. Proofs:
+  `tests/Allegiance.Core.Tests/P968PublisherStreamIndexTests.cs`; report:
+  `docs/reports/PUBLISHER_STREAM_INDEX_P968.md`. Modern scheduling optimization;
+  no new native rule.
 - **Broadcast reuse and failure containment (P899)** — cross-thread snapshot
   and single-delivery packet reuse uses explicitly locked stacks in
   `src/Allegiance.Server/BroadcastPool.cs`, consumed by

@@ -832,6 +832,12 @@ public sealed class BroadcastConfig
     /// ALLEGIANCE_BROADCAST_ENCODE_ONCE=0 turns it off.</summary>
     public bool EncodeOnce { get; set; } = true;
 
+    /// <summary>P968 experiment, default OFF: index the pending snapshot's
+    /// (peer, key) streams for constant-time per-delivery freshness checks and
+    /// bypass checks for ordered key-zero events. Only used by ImmutableSnapshot.
+    /// ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX overrides (0/1 or false/true).</summary>
+    public bool PendingStreamIndex { get; set; }
+
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>
     public bool InterestTiers { get; set; }

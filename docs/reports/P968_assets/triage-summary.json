@@ -1,0 +1,248 @@
+{
+  "retry-Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane-flag0": [
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.8553296
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.8497263
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.7652781
+    }
+  ],
+  "retry-Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases-flag0": [
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 5.7791579
+    },
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 5.8385926
+    },
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 5.8676786
+    }
+  ],
+  "retry-Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats-flag0": [
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.9480649
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.5998815
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 3.6800042
+    }
+  ],
+  "retry-Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts-flag0": [
+    {
+      "outcomes": {
+        "Passed": 2
+      },
+      "maxCaseSeconds": 4.4891519
+    },
+    {
+      "outcomes": {
+        "Passed": 2
+      },
+      "maxCaseSeconds": 4.482335
+    },
+    {
+      "outcomes": {
+        "Passed": 2
+      },
+      "maxCaseSeconds": 4.4255198
+    }
+  ],
+  "retry-Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity-flag1": [
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 1.7938949
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 1.8282542
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 1.8058164
+    }
+  ],
+  "retry-Allegiance.Core.Tests.LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores-flag0": [
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.4421965
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.47148
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.4582392
+    }
+  ],
+  "retry-Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission-flag0": [
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 0.4714398
+    },
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 0.4618154
+    },
+    {
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 0.4427798
+    }
+  ],
+  "retry-Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured-flag0": [
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 9.826527
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 10.1481024
+    },
+    {
+      "outcomes": {
+        "Passed": 1
+      },
+      "maxCaseSeconds": 10.2576907
+    }
+  ],
+  "retry-Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment-flag0": [
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0145226
+    },
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0150481
+    },
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0146955
+    }
+  ],
+  "retry-Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault-flag0": [
+    {
+      "outcomes": {
+        "Failed": 2,
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.003987
+    },
+    {
+      "outcomes": {
+        "Failed": 2,
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.0041464
+    },
+    {
+      "outcomes": {
+        "Failed": 2,
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.0037786
+    }
+  ],
+  "retry-Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory-flag0": [
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0044924
+    },
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.005012
+    },
+    {
+      "outcomes": {
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0044939
+    }
+  ],
+  "retry-Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository-flag0": [
+    {
+      "outcomes": {
+        "Passed": 1,
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0053707
+    },
+    {
+      "outcomes": {
+        "Failed": 1,
+        "Passed": 1
+      },
+      "maxCaseSeconds": 0.0043151
+    },
+    {
+      "outcomes": {
+        "Passed": 1,
+        "Failed": 1
+      },
+      "maxCaseSeconds": 0.0047
+    }
+  ]
+}

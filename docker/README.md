@@ -360,3 +360,11 @@ listings remain unverified unless the existing enrollment path authenticates
 them. HTTPS protects endpoint receipts and introduction secrets. Internet joins
 require direct UDP and have no TCP/relay fallback. No public STUN dependency,
 UPnP or NAT-PMP traffic is introduced.
+
+P968's publisher experiment is default off. Set `broadcast.pendingStreamIndex`
+in the mounted server JSON, or `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX=1`
+before starting Compose, to index the pending snapshot's `(peer, key)` streams
+and bypass freshness checks for ordered events. The environment override accepts
+`0`/`1` or `false`/`true`; empty preserves JSON. It applies only when immutable
+snapshots are enabled and does not change transport or broadcast scheduling.
+See [the P968 measurements](../docs/reports/PUBLISHER_STREAM_INDEX_P968.md).

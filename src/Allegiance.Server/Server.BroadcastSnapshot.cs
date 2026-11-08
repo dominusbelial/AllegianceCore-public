@@ -48,6 +48,17 @@ public sealed partial class Server
         return enabled;
     }
 
+    internal static bool ResolvePendingStreamIndexFlag(bool configured, string? environment)
+        => environment?.Trim().ToLowerInvariant() switch
+        {
+            null or "" => configured,
+            "1" or "true" => true,
+            "0" or "false" => false,
+            _ => throw new InvalidDataException("ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX must be 0/1 or false/true"),
+        };
+
+    private bool _broadcastPendingStreamIndex;
+
     private void ResolveBroadcastSnapshot()
     {
         _broadcastInterestTiersEnabled = ResolveInterestTiersFlag(_config.Broadcast?.InterestTiers ?? false,
@@ -56,6 +67,9 @@ public sealed partial class Server
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SNAPSHOT")) || _broadcastInterestTiersEnabled;
         _broadcastEncodeOnceEnabled = ResolveEncodeOnceFlag(_config.Broadcast?.EncodeOnce ?? true,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_ENCODE_ONCE"), _broadcastSnapshotEnabled) || _broadcastInterestTiersEnabled;
+        _broadcastPendingStreamIndex = ResolvePendingStreamIndexFlag(_config.Broadcast?.PendingStreamIndex ?? false,
+            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX"));
+        Console.WriteLine($"[boot] broadcast.pendingStreamIndex = {_broadcastPendingStreamIndex}");
         Console.WriteLine($"[boot] broadcast.interestTiers = {_broadcastInterestTiersEnabled}");
         Console.WriteLine($"[boot] broadcast.immutableSnapshot = {_broadcastSnapshotEnabled}");
         Console.WriteLine($"[boot] broadcast.encodeOnce = {_broadcastEncodeOnceEnabled}");
@@ -65,7 +79,7 @@ public sealed partial class Server
     {
         if (!_broadcastSnapshotEnabled) return;
         _broadcastPublisher = new BroadcastPublisher((delivery, bytes) =>
-            PublishMemory(delivery.Peer, bytes, delivery.Key, delivery.Guaranteed), _broadcastMaxParallelism, true)
+            PublishMemory(delivery.Peer, bytes, delivery.Key, delivery.Guaranteed), _broadcastMaxParallelism, true, _broadcastPendingStreamIndex)
         {
             OnError = e => Console.Error.WriteLine($"[broadcast-publish] {e}"),
         };

@@ -107,6 +107,8 @@ services:
       # (docs/reports/P817_NATIVE_GOTOPLAN.md); 0 selects legacy steering.
       ALLEGIANCE_SIM_NATIVE_GOTOPLAN: "${ALLEGIANCE_SIM_NATIVE_GOTOPLAN:-1}"
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
+      # P968 — pending-stream freshness index (default off pending rig A/B).
+      ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX: "${ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX:-}"
       # P788c — native broadcast-before-update scheduling.
       ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER: "${ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER:-0}"
       # P813d — the reliable one-shot park lane (docs/reports/P813D_RELIABLE_TIER_AUDIT.md).

@@ -4,6 +4,46 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P968 qualification — publisher index, 2026-11-08 UTC
+
+The new default-off publisher index has **129/129 new/changed cases passing**
+across three isolated repetitions of every affected method. The three flag-on
+broadcast cohorts yielded **156/1/0, 157/0/0, 157/0/0** (pass/fail/skip); the
+single Fast suite with the server flag off yielded **13,562 passed / 7 failed /
+3 skipped** in 528.7 s. Infrastructure and coverage checks passed. The three
+skips are the optional absent Meshy pack. Six existing passing executions also
+exceeded the calibrated **10.081 s** Fast limit.
+
+Every non-task failing or over-limit method received three standalone runs,
+including all theory rows. The sources for these fixtures and the systems they
+test were not changed. Exact logs/TRX are under `.scratch/p968/`; concise data
+and the gate are in [the P968 report](reports/PUBLISHER_STREAM_INDEX_P968.md).
+
+| Method/family | Three isolated repetitions | Observation |
+|---|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **pass/pass/pass**, flag on; 1.794/1.828/1.806 s | First broadcast sweep received two queued ASTEROID_MINED reports after the empty-receipt check. Existing mining receipt intermittency; both later sweeps pass. |
+| `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` | **pass/pass/pass**, 0.442/0.471/0.458 s | Fast sweep missed KILL_SHIP within its observation budget; existing receipt timeout. |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | **3/3 theory cases pass in each repetition**; case maxima 0.471/0.462/0.443 s | Same existing floating upper-bound signature: sweep delay 5 computed `5.0000000000000009 > 5`. |
+| Five `PlayerBundlePathsTests` cases across four methods | Same five **fail/fail/fail**; two companion cases pass in each repetition | Required worktree-local TMPDIR lets ostensibly external fixtures discover ancestor `local.env`. Persistent known fixture obstruction; no resolver change. Methods: `UsesExecutableDirectoryOutsideRepository` (Artwork), `MissingDirectoryHasNoDefault` (Artwork/NativeSource), `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory`. |
+| `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, 3.855/3.850/3.765 s | Sweep 10.697 s; isolated executions below original calibrated limit. |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | All three civ cases **pass in each repetition**; case maxima 5.779/5.839/5.868 s | Sweep civ 35: 11.512 s; isolated executions below original limit. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.948/3.600/3.680 s | Sweep 13.791 s; isolated executions below original limit. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases **pass in each repetition**; case maxima 4.489/4.482/4.426 s | Sweep civs 3/25: 10.542/12.493 s; isolated executions below original limit. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Assertions **pass/pass/pass**, 9.827/10.148/10.258 s | Sweep 10.284 s. Repetitions 2/3 remain above the original 10.081 s limit: **open timing issue**, not cleared by passing assertions. |
+
+Isolation totals: **45 passed / 15 failed / 0 skipped** across 60 theory cases
+in 36 method invocations; all 15 failed cases are the five path fixtures ×3.
+The original Fast gate remains **FAIL**. No test was weakened, retagged, skipped,
+or removed to alter that result.
+
+Showcase never-parks, alternating serial controls at the requested baseline:
+**flag off 5/5, flag on 5/5**, no failures/skips. All ten runs reached 24/30 and
+observed real shots/hits. Maximum stopped-with-target interval: **2.510 s off /
+2.009 s on**, below the unchanged 5 s limit. Full test durations: off
+330.988/187.244/275.487/191.607/273.074 s; on
+337.032/320.404/275.245/342.836/196.231 s. These are regression checks, not a rig
+performance A/B. No synthetic CPU load or remote game hosts were used.
+
 ## P962 resolution — stale spawn-docked SHIP_STATUS behind the test's status reset, 2026-11-08 UTC
 
 `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` is **fixed**, and it was a test race,
