@@ -461,6 +461,18 @@ public sealed partial class Server
     internal static PassengerData PassengerRecord(Ship child) =>
         new(child.Id, (byte)(child.TurretId ?? -1));
 
+    /// <summary>
+    /// P956 — the NPC leg of <see cref="BroadcastLoadoutChange"/>: a drone has no
+    /// owning peer and no teammate EXPORT latch, so it reaches every SAME-SIDE
+    /// peer flying in its own sector instead — native's
+    /// <c>GetGroupSectorFlying(cluster)</c> recipient of a ship's arrival-time
+    /// <c>QueueLoadoutChange</c> (<c>FedSrv/fsship.cpp:511-542</c>). This is how
+    /// the CreateDrone preferred parts (<c>Igc/common.cpp:2462-2480</c>) mounted
+    /// by <c>Server.SpawnNpcShip</c> get to the clients that render the drone (the
+    /// same-side NPC EXPORT, P366, carries them too, one-shot). Kept same-side,
+    /// the scope every LOADOUT_CHANGE in this port has; enemies learn the parts
+    /// from the cross-side identity EXPORT (P349).
+    /// </summary>
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
     {
         if (pship is not Ship ship)
@@ -513,6 +525,16 @@ public sealed partial class Server
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
         int n = 0;
+        // P956 — an NPC has no owning peer and no teammate EXPORT latch, so the
+        // latched teammate path below can never deliver a drone's loadout at all.
+        // Native sends a newly created drone's QueueLoadoutChange to the sector's
+        // flying group when the ship joins its cluster (CFSShip::SetCluster,
+        // FedSrv/fsship.cpp:511-542 — "Everyone already in the sector now knows
+        // about the player's ship"), so an NPC reaches every SAME-SIDE peer
+        // flying in its sector (the port's GetGroupSectorFlying equivalent,
+        // same-side scope as this broadcast has always had; enemies instead
+        // learn the parts from the cross-side identity EXPORT, P349).
+        Sector? npcSector = ship.IsNpc ? ship.Sector : null;
         foreach (var kv in _peerShips)
         {
             // Changed ship's own peer always receives it (that peer owns it).
@@ -524,7 +546,11 @@ public sealed partial class Server
             bool isVisibleTeammate = !isOwner
                                      && kv.Value.Ship.SideId == shipSide
                                      && _teammateExportSent.Contains((kv.Key, ship.Id));
-            if (isOwner || isVisibleTeammate)
+            bool isVisibleNpcViewer = npcSector is not null
+                                      && !isOwner
+                                      && kv.Value.Ship.SideId == shipSide
+                                      && ReferenceEquals(kv.Value.Ship.Sector, npcSector);
+            if (isOwner || isVisibleTeammate || isVisibleNpcViewer)
             {
                 SendPeer(kv.Key, packet);
                 n++;

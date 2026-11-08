@@ -171,16 +171,16 @@ public sealed class NpcWingmanDefendLiveTests
             var wingman = srv.SpawnNpcShip(mission, sector, npcSide, wp, wingDroneId);
             Assert.Equal(Ship.PilotTypeWingman, wingman.PilotType);
 
-            // P952: SpawnNpcShip supplies a bare hull. Native's Defend acquire
-            // branch requires a damaging weapon in mount 0 (Igc/shipIGC.cpp:2680),
-            // before the 1500-unit charge-centered scan (:2688-2695). P872
-            // correctly added that gate; this acquisition fixture must be armed.
-            var primary = core.PartTypes.Values.First(p =>
-                p.Type is DataPartTypeIGC.Weapon w
-                && core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectile)
-                && projectile.Power > 0f && wingman.HullType.CanMountPart(p, 0));
-            wingman.MountWeapon((DataPartTypeIGC.Weapon)primary.Type, 0);
-            Assert.True(wingman.HasDamagingPrimaryWeapon, "defend acquisition requires a damaging primary weapon");
+            // P956 — SpawnNpcShip now ports native CreateDrone's preferred-part
+            // fill (Igc/common.cpp:2462-2480), so a purchased Wingman arrives
+            // with its hull's preferred weapons already mounted. That is what
+            // satisfies native's Defend acquire guard (a damaging weapon in
+            // mount 0, Igc/shipIGC.cpp:2680) before the 1500-unit charge-centred
+            // scan (:2688-2695) — no hand-arming here any more (P952's fixture
+            // needed it because the spawn was bare).
+            Assert.True(wingman.HasDamagingPrimaryWeapon,
+                "a spawned Wingman must already carry its hull's damaging primary weapon (CreateDrone preferred parts)");
+            Assert.Contains(wingman.Parts, p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 0);
             wingman.DefendTarget = charge;
 
             // Phase 1 — engage: the defending Wingman acquires the enemy NEAR THE

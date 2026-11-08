@@ -6900,3 +6900,28 @@ grace only):
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail | **fail / fail / fail** alone (1 s, expected charge target / actual null) | **Already-open real regression**, first seen 10-29 (`48cdb2de`), re-triaged at the P949 gate above; P954 changes no NPC/sim/bot policy code |
 | `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner(gunner: True)` | fail, 25.9 s (also a SLOW FAST timing offender) | **pass / pass / pass / pass** alone (2 s each) | Sweep load flake |
 | `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | fail, 21.7 s (also a SLOW FAST timing offender) | **pass / pass / pass** alone (10 s each) | Sweep load flake, same intermittency as the P934/P940 entries above |
+
+
+## P956 gate — 2026-11-07
+
+`tools/run-tests.sh --tier fast` (13,474 cases, 579.2 s fast-tier clock across
+the five projects: Update 28, Lobby 139, MonoGame 4,885 passed + 3 optional-pack
+skips, ClientCore 2,271, Core 6,145 passed + 3 failed), host load average 7–9 with other lanes'
+suites running. The three Core failures are the load-only families already
+recorded above; every one passed **3/3 alone** (19/19 cases in the three
+classes, 15 s each):
+
+| Test | Sweep signature | Alone | Verdict |
+| --- | --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | `Assert.Contains` missed the own-ship `SHIP_STATUS`; the collection held an initial miner's status (ShipId 8098, hull 1) instead | **3/3 pass** | Ledgered load/timing family (2026-11-07 rows above); P956 touches no warp/join-burst path |
+| `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | `Assert.Contains` over an empty collection (missing receipt) | **3/3 pass** | Ledgered load-only family; no reconnect/grace code changed |
+| `DockedStationUpdateLiveTests.Docked_player_receives_own_station_update_when_own_station_has_no_scanner` | station-update cadence value differed under load | **3/3 pass** | Ledgered 15-tick station-update cadence family (2026-10-24/27 rows) |
+
+The four SLOW FAST entries (P800 hull proof 12.3 s, SC2 nanite 10.8 s, P814
+gunner 10.6 s, P777 warp-exit 11.3 s) are the calibrated-limit timing guard
+under that load; every one passed. No drone-loadout, sim, spawn or broadcast
+failure appeared in the sweep; the P956 carts (`DroneSpawnLoadoutTests`, the
+armed-Wingman defend/attack fixtures, the miner/constructor/layer cohorts)
+passed 3/3 isolated runs and are clean in the sweep. Raw logs:
+`~/allegiance-evidence/P956/fast3/` and `~/allegiance-evidence/P956/nontask/`
+(TRX/log per project; fast-tier clock 579.2 s, `summary.json`).

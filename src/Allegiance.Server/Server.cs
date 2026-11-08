@@ -1210,17 +1210,17 @@ public sealed partial class Server : IDisposable
     /// drawn from the same counter).
     /// </para>
     /// <para>
-    /// Deliberately minimal: no <c>_peerShips</c> entry, no weapon mount, no
-    /// movement/AI/command behavior — it sits still. <b>P160:</b> it <em>does</em>
-    /// carry a <c>PilotType</c> — derived from the spawned drone-type's
-    /// definition (see below) — because that is the one decision
-    /// <see cref="Ship.OnUpdate"/> acts on (the miner gate). It never goes
-    /// through <c>ExportShip</c>, so the
-    /// <c>PilotTypePlayer</c>-only assertion at ExportShip.cs:181 is untouched;
-    /// visibility is proven purely via the heavy update, which carries no pilot
-    /// type at all (HeavyShipsUpdate.cs:50-178). Currently called only by the
-    /// P147 loopback live test — a real, callable server primitive whose only
-    /// call site today is a test, stated honestly (not a fake production site).
+    /// <b>P956 — native CreateDrone's preferred loadout.</b> The spawned ship
+    /// gets its hull's <c>GetPreferredPartTypes()</c> mounted by
+    /// <see cref="Ship.MountPreferredParts"/> (the port of
+    /// <c>Igc/common.cpp:2462-2480</c>) and is put on autopilot
+    /// (<c>:2484</c>) before it is announced, so a Wingman/other armed drone
+    /// passes native's damaging-primary guard (<c>Igc/shipIGC.cpp:2680</c>)
+    /// and any role part (weapon, shield, cloak, …) is present. Still
+    /// deliberately minimal otherwise: no <c>_peerShips</c> entry, no
+    /// movement/command behavior of its own — it ticks via the sector model
+    /// loop and behaves through <see cref="Ship.OnUpdate"/>'s pilot-type
+    /// decision cycle.
     /// </para>
     /// <para>
     /// <b>P160 — drone-type derivation.</b> Pilot type is a property of the
@@ -1284,6 +1284,21 @@ public sealed partial class Server : IDisposable
         ship.SideId = sideId;                               // drones are side-owned in native
         ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;   // P378: consistent live-settings override
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
+        // P956 — native CreateDrone fills every new drone with its hull's preferred
+        // part types before it is announced (Igc/common.cpp:2462-2480: for each
+        // pht->GetPreferredPartTypes() entry mount it in every free socket it fits
+        // — ET_Weapon up to GetMaxWeapons(), anything else mount 0 — with
+        // CreateAndAddPart(ppt, i, 0x7fff), "Ignore price & availability"), and
+        // ends with SetAutopilot(true) (:2484). Mounting here (not at a call site)
+        // covers every production drone spawn — constructors (FedSrv.CPP:11351),
+        // completed drone types (:11524) and the boot/rotation miner — and is what
+        // arms a purchased Wingman for native's damaging-primary defend guard
+        // (Igc/shipIGC.cpp:2680). The mounts are published on the normal loadout
+        // paths: LOADOUT_CHANGE to same-side peers seeing the ship, and the
+        // EXPORT parts tail (same-side NPC export P366 / cross-side identity
+        // export P349) — exactly the ways a player loadout reaches clients.
+        int preferredParts = ship.MountPreferredParts();
+        ship.Autopilot = true;                              // CreateDrone's SetAutopilot(true), common.cpp:2484
         // P775 — native announces a new drone to the whole mission at creation
         // (SendPlayerInfo in CreateStockDrone, FedSrv.CPP:2269; training does
         // the same when it creates the drone's player info,
@@ -1291,7 +1306,7 @@ public sealed partial class Server : IDisposable
         // spawn, most tests) this sends nothing — later joiners learn the
         // drone through the join burst (fsmission.cpp:3958-3968) instead.
         AnnounceNewShip(ship);
-        Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position} (pilotType {pilotType})");
+        Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position} (pilotType {pilotType}, preferred parts {preferredParts})");
         return ship;
     }
 

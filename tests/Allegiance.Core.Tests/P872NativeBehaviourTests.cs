@@ -102,13 +102,17 @@ public sealed class P872NativeBehaviourTests
 
     /// <summary>P872/SIM-0261 — the acquire branch is gated on a mounted,
     /// damaging primary weapon (shipIGC.cpp:2683); an unarmed guard neither
-    /// acquires nor chats.</summary>
+    /// acquires nor chats. P956 — <c>Server.SpawnNpcShip</c> now mounts the
+    /// hull's preferred parts (native CreateDrone, <c>Igc/common.cpp:2462-2480</c>),
+    /// so this guard is built EXPLICITLY unarmed: a <see cref="Ship"/>
+    /// constructed and placed directly, never through the drone spawn path.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Unarmed_guard_neither_acquires_nor_chats_on_defend_acquire()
     {
         Require.Artwork(); var site = new RecordingIgcSite(); var m = Domain(site);
         var s = Place(m, 100, 0); s.Name = "Winger";           // NO weapon mounted
+        Assert.Empty(s.Parts);                                 // explicitly unarmed hull
         var charge = Place(m, 101, 0, x: 100); charge.Name = "Charge";
         var threat = Place(m, 102, 1, z: -1200); threat.Name = "Threat";
         threat.SideVisibility.SetSideVisibility(0, true);
