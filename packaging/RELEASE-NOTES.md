@@ -1,32 +1,42 @@
 AllegianceCore: portable bundles plus Windows setup and Linux AppImage.
 
-## New since v0.1.3
+## New since v0.1.4
 
-This release fixes the problems testers reported with pilot training.
+This release makes joining games easier and fixes the controls testers found hard to start with.
+
+**Joining games**
+- `allegiance://` join links: the lobby page has a Join column, and clicking a link opens the game and
+  asks before joining. The Windows installer and the Linux per-user installer register the link
+  handler; on macOS the app declares it.
+- An explicit `--lobby` address now always wins over the saved connect profile.
+- Intro screen: the arrow keys always move through the menu, the pilot-name field shows when it has
+  focus, and Find Server no longer swallows what you type into the password box.
 
 **Controls**
-- New players now get the original Allegiance default controls: left mouse fires, middle mouse fires
-  missiles, right mouse targets the centre, Q/E roll, SPACE boosts and the wheel sets the throttle.
-  These are the keys the training lessons teach.
-- The earlier AllegianceCore key set is kept as the "Port layout" preset (press P in the F6 controls
-  screen). Existing keymaps move to the new defaults and keep your own rebinds.
+- New players can fly from the keyboard again: fresh profiles start on the Port layout (W/S/A/D thrust,
+  arrow keys pitch and yaw), with a one-time hint in flight. The original Allegiance default map, which
+  binds no steering keys, is one press away as the "Classic Allegiance" preset in the F6 controls screen.
+  Existing keymaps are not changed.
+- Mouse flight and free-look capture the mouse properly on Wayland and over remote desktop.
+- Mouse options are saved: invert Y and sensitivity (default matches the original). Holding a
+  sensitivity key repeats it and shows the new value on the HUD.
 
-**Training**
-- Training and skirmish no longer play like a slideshow: the game's own frames had been waiting on the
-  embedded server.
-- Basic Flight: after the speed demonstration the throttle is released to you again, and the SPACE
-  booster works. The lesson still unlocks steering and throttle in stages, as the original does.
-- The spoken instructions play again (the voice clips were being dropped silently). Spoken lines that
-  name the wrong key are no longer repeated by the 30-second reminder; the reminder repeats the
-  corrected on-screen text instead.
-- Lesson fixes: hangar refunds and loadouts, the Practice Arena target list, enemy visibility and the
-  Nanite wingman's default order now match the original.
+**Screens**
+- The docked hangar uses the original hangar art: background, button strips, the launch animation,
+  hover captions and the turret badge.
+- Training slideshows show the original slide images.
 
-**Multiplayer**: player-hosted games over the internet (STUN and hole punching through the lobby) are
-in, off by default.
+**Gameplay**
+- A lifepod is no longer destroyed when it bumps into a station, an asteroid or another ship right after
+  ejecting.
+- Drones launch with their hull's standard loadout, as in the original, and other pilots on the same side
+  see it.
 
-**Simulation**: missiles explode with their blast size; native client/server time conversion; admin
-tech-bit overrides; native special-asteroid placement on generated maps.
+**Bots and showcase games** (skirmish and showcase servers only)
+- Bot commanders research first on generated maps instead of queuing expensive buildings ahead of
+  research they could already buy.
+- Bots pick resources and lay mine fields again in showcase games, and the showcase game-over text
+  matches the original's.
 
 **Known limits**: the Android client is experimental and has no download. Behaviour parity with native
 Allegiance is about 97% of the tracked rules; the per-area scorecard is in `docs/parity/`.
