@@ -1,0 +1,33 @@
+P967 bounded loopback proof - tools/p967-shutdown-proof (production TcpTransport, real loopback sockets).
+Run: dotnet run --project tools/p967-shutdown-proof -c Release
+Raw logs: ~/allegiance-evidence/P967/proof-before.log (master, earlier driver revision) and proof-after.log.
+
+== BEFORE (master 2cdfd100; the same driver before the B2600 scenario was added) ==
+[A/ThreadPerPeer] shutdownMs=3 joinedAtShutdownReturn=0 joinedAfterLateGreet=1 livePeers=0 liveThreads=0 pendingGreets=0
+[A/ThreadPerPeer] FAIL: post-shutdown join ids=[1]
+[A/Pool] shutdownMs=0 joinedAtShutdownReturn=0 joinedAfterLateGreet=1 livePeers=0 liveThreads=0 pendingGreets=0
+[A/Pool] FAIL: post-shutdown join ids=[1]
+[B/ThreadPerPeer] cycles=40 joined=40 left=40 peers=0 threads=1 endedMarkers=40 closingMarkers=0
+[B/ThreadPerPeer] FAIL: ended-marker storage grew with churn (40)
+[B/Pool] cycles=40 joined=40 left=40 peers=0 threads=1 endedMarkers=40 closingMarkers=0
+[B/Pool] FAIL: ended-marker storage grew with churn (40)
+[C/ThreadPerPeer] shutdownMs=0 trackedThreads=0 pendingGreets=0 greetSocketClosed=True joined=1 (was 0)
+[C/Pool] shutdownMs=8 trackedThreads=0 pendingGreets=0 greetSocketClosed=True joined=1 (was 0)
+PROOF_RESULT: FAIL (4 assertion(s))
+
+== AFTER (final tree, final driver) ==
+[A/ThreadPerPeer] shutdownMs=8 joinedAtShutdownReturn=0 joinedAfterLateGreet=0 livePeers=0 liveThreads=0 pendingGreets=0
+[A/ThreadPerPeer] OK: no post-shutdown join
+[A/Pool] shutdownMs=2 joinedAtShutdownReturn=0 joinedAfterLateGreet=0 livePeers=0 liveThreads=0 pendingGreets=0
+[A/Pool] OK: no post-shutdown join
+[B40/ThreadPerPeer] cycles=40 joined=40 left=40 ms=410 peers=0 threads=1 livePerConnectionState=0 [_peers=0 _peerIpById=0 _closingPeers=0] endedMarkers=40 endedRetireQueue=40
+[B40/ThreadPerPeer] IsPeerClosed newest=True oldest(1)=True
+[B2600/ThreadPerPeer] cycles=2600 joined=2600 left=2600 ms=26631 peers=0 threads=1 livePerConnectionState=0 [_peers=0 _peerIpById=0 _closingPeers=0] endedMarkers=2048 endedRetireQueue=2048
+[B2600/ThreadPerPeer] IsPeerClosed newest=True oldest(1)=False
+[B40/Pool] cycles=40 joined=40 left=40 ms=408 peers=0 threads=1 livePerConnectionState=0 [_peers=0 _peerIpById=0 _closingPeers=0] endedMarkers=40 endedRetireQueue=40
+[B40/Pool] IsPeerClosed newest=True oldest(1)=True
+[B2600/Pool] cycles=2600 joined=2600 left=2600 ms=26630 peers=0 threads=1 livePerConnectionState=0 [_peers=0 _peerIpById=0 _closingPeers=0] endedMarkers=2048 endedRetireQueue=2048
+[B2600/Pool] IsPeerClosed newest=True oldest(1)=False
+[C/ThreadPerPeer] shutdownMs=0 trackedThreads=0 pendingGreets=0 greetSocketClosed=True joined=0 (was 0)
+[C/Pool] shutdownMs=0 trackedThreads=0 pendingGreets=0 greetSocketClosed=True joined=0 (was 0)
+PROOF_RESULT: PASS (all scenarios held)

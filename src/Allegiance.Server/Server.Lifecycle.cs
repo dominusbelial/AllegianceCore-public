@@ -2191,6 +2191,15 @@ public sealed partial class Server
         _harnessAuthenticated.Remove(id);
         _spectateSector.Remove(id);
         _peerShipUpdate.Remove(id); // P507 — release the per-peer ship-update cookie/counters with the peer
+        // P967 (P963-07) — the P654 (H-24) chat-token budget is connection-scoped
+        // state and native retires it with the player object (the budget lives on
+        // CFSPlayer, fsship.cpp:950-978). It was removed only by the graceful
+        // LOGOFF handler, so every abruptly disconnected peer that had chatted
+        // left one permanent entry per historical connection id. Remove it here,
+        // before the parked/early-return branches, so EVERY release path (drop,
+        // LOGOFF, reconnect-grace park, second idempotent release) retires it
+        // exactly once.
+        RemoveChatBudget(id);
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own

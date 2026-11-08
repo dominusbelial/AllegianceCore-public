@@ -1930,7 +1930,9 @@ public sealed partial class Server
                     // (the P646 one-logon bypass). Closing the socket makes any
                     // later frame on it ineligible; the transport's OnPeerLeft
                     // fires and ReleasePeer runs again as an idempotent no-op.
-                    RemoveChatBudget(from);
+                    // (P967 — the chat budget is now retired by
+                    // ReleasePeerWithReason, the single owner of connection-scoped
+                    // peer state, not here.)
                     // The echo may still sit in the broadcast snapshot being
                     // built (default since the 2026-10-27 rig A/B): close only
                     // after it reaches the transport, or the client never sees it.
