@@ -29,7 +29,10 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   Nanite and the Free Flight dev mission, with the Introduction and its slideshows.
 - **Multiplayer**: lobby server discovery (sort/find), ready check and
   briefing, scoreboard and pilot info. After game over a scoreboard
-  intermission runs, then the next match starts automatically.
+  intermission runs, then the next match starts automatically. A lobby web
+  page lists live games with a **Join** link (`allegiance://`) that opens the
+  installed client and asks before joining; password-protected games ask for
+  the game password in the client, never in the link.
 - **Showcase**: the intro's Showcase entry launches big AI battles (Small
   5v5 up to Grand 200v200 at Showcase pacing) plus the fixed-seed settings
   tune (seed 729, 5v5, 150 s ×3) that suggests and applies graphics settings.
@@ -101,26 +104,29 @@ architecture, and troubleshooting.
 
 ## Parity status
 
-How much of the original game's behaviour the port reproduces, as of 2026-11-02. Each row of the
+How much of the original game's behaviour the port reproduces, as of 2026-11-08: **98.33 %
+weighted, 1,785 of 1,816 tracked rules** across all matrices. Each row of the
 [matrices](docs/parity/) cites the native source, and a row only earns credit with production code and
 a test. [`scripts/parity-scorecard.py`](scripts/parity-scorecard.py) validates them and produces these
 numbers, weighting rows by importance.
 
 | Area | Weighted | Rows complete |
 |---|---:|---:|
-| Core game systems (`parity-matrix.csv`) | 100.00 % | 659 / 659 |
+| Core game systems (`parity-matrix.csv`) | 100.00 % | 671 / 671 |
 | Lobby | 98.72 % | 29 / 30 |
-| Simulation rules | 98.51 % | 790 / 805 |
+| Simulation rules | 99.02 % | 798 / 806 |
 | Effects | 100.00 % | 8 / 8 |
 | Sound engine | 100.00 % | 22 / 22 |
 | Bots | 100.00 % | 21 / 21 |
 | AllSrv admin UI | 100.00 % | 16 / 16 |
-| Training missions | 85.90 % | 199 / 235 |
+| Training missions | 92.79 % | 213 / 235 |
 | Model tools | 100.00 % | 7 / 7 |
+| **All matrices** | **98.33 %** | **1,785 / 1,816** |
 
-Work is ongoing, so these are not final. Three simulation rows (tick order, collision order and
-broadcast order) are implemented behind default-off flags and stay partial until a 200v200 comparison
-decides them. Model tools earn offline-tool credit: their export/import and optimize commands
+Work is ongoing, so these are not final. Eight simulation rows are partial: three (tick order,
+collision order and broadcast order) are implemented behind default-off flags and stay partial until a
+200v200 comparison decides them, and five failed the P904 certification (the cluster-site callbacks
+and the IGC dump/export paths are not reached the way native reaches them). Model tools earn offline-tool credit: their export/import and optimize commands
 write native assets the game loads. Text-MDL compilation and the native test viewer use approved
 glTF design replacements; the broken native animation compressor is excluded as a bug.
 See the [modding workflow](docs/GUIDE.md#model-modding) for commands and format limitations.
@@ -140,7 +146,9 @@ works offline. See the included `README-PLAYERS.txt` for installation, unsigned
 SmartScreen/Gatekeeper steps and multiplayer configuration. F1 shows help; F6
 rebinds keys. Verify downloads against the release's `SHA256SUMS.txt`.
 
-The first public release, **v0.1.0**, is out. For local packaging and the release checklist, see
+The latest release is **v0.1.5** (2026-11-08); each release's notes list what changed. To join a
+web-listed game, install the client first, then use the lobby page's **Join** link. For local
+packaging and the release checklist, see
 [`packaging/README.md`](packaging/README.md).
 
 ## Quick start
