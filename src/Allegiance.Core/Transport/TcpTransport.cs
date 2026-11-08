@@ -321,8 +321,41 @@ public sealed class TcpTransport : IServerTransport
     internal static TransportMode DefaultMode { get; set; } = TransportMode.ThreadPerPeer;
     // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
     // read loop and the overflow/disconnect path (DropPeer) try to reap it.
+    // P967 — this set is now purely the GRACEFUL-CLOSE ("retire, then flush")
+    // marker: it is added by ClosePeerAfterFlush and removed by the raise, so it
+    // is bounded by peers currently draining.
     private readonly ConcurrentDictionary<ConnectionId, byte> _closingPeers = new();
+    // P311 introduced the ended-peer table as the exactly-once OnPeerLeft guard;
+    // P654 (H-14) made it the late-packet suppression predicate IsPeerClosed
+    // reads ("queued inbound packets must not rearm it"). P967 keeps those two
+    // jobs but BOUNDS the table and gives each entry a lifecycle:
+    //   0 = the peer left while its receive side was still draining;
+    //   1 = the receive side has fully drained (the received frame stream for
+    //       this id is over), so the marker may be retired.
+    // Only drained markers enter _endedOrder, which is trimmed to
+    // MaxEndedRetention: connection ids are minted monotonically
+    // (Interlocked.Increment, no reuse), so a bounded RECENT window is enough
+    // for suppression and for the server's per-connection lifecycle reads
+    // (P765's migration guards check IsPeerClosed a few batches after a
+    // departure), while a long-uptime process can no longer retain one entry per
+    // historical connection. The exactly-once raise no longer depends on this
+    // table at all (it lives on PeerSender.Ended), so retirement cannot cause a
+    // second OnPeerLeft.
     private readonly ConcurrentDictionary<ConnectionId, byte> _peerEnded = new();
+    private readonly Queue<ConnectionId> _endedOrder = new();   // guarded by _gate
+    internal const int MaxEndedRetention = 2048;
+    // P967 — greeting-phase ownership. Every accepted socket that is still in
+    // its greeting read (P312 gives it its own thread) is recorded here so
+    // <see cref="Shutdown"/> can close the socket and join the thread BEFORE it
+    // tears down the sender pool. Guarded by _gate.
+    private readonly HashSet<TcpClient> _greetSockets = new();
+    private readonly List<Thread> _greetThreads = new();
+    // P967 — shutdown generation. Incremented under _gate by every Shutdown so a
+    // greeting that already passed its running check cannot publish
+    // <see cref="ITransportSite.OnPeerJoined"/> after Shutdown has torn the
+    // transport down; HandlePeer re-checks it before inserting the peer and
+    // again before the callback.
+    private long _generation;
     // P606 — per-window disconnect counts by reason. Incremented on every peer
     // disconnect (reader thread / sender thread), drained by the server each
     // report window via <see cref="DrainDisconnectCounts"/> so the profiler log
@@ -568,20 +601,39 @@ public sealed class TcpTransport : IServerTransport
         // (which unwinds as we close the socket) does NOT raise OnSessionLost: a
         // deliberate Shutdown is not a connection loss.
         _intentionalShutdown = true;
-        _running = false;
         IsConnected = false;
-        try { _listener?.Stop(); } catch { /* already stopped */ }
 
+        TcpClient[] greets;
+        Thread[] greetThreads;
         PeerSender[] senders;
         Thread[] threads;
         lock (_gate)
         {
+            // P967 — the running flag flips UNDER _gate, the same gate the accept
+            // path takes before it adopts an accepted socket and the gate
+            // HandlePeer takes before it inserts a peer. Either a greeting is
+            // registered before this snapshot (so it is closed and joined below)
+            // or its accept path sees _running == false and never starts one.
+            _running = false;
+            _generation++;
+            greets = _greetSockets.ToArray();
+            _greetSockets.Clear();
+            greetThreads = _greetThreads.ToArray();
+            _greetThreads.Clear();
             senders = _peers.Values.Append(_clientSender!)
                               .Where(s => s is not null).Distinct().ToArray();
             _peers.Clear();
             _clientSender = null;
             threads = _threads.ToArray();
         }
+        try { _listener?.Stop(); } catch { /* already stopped */ }
+        // P967 — a greeting in flight is still ours: close its socket so the
+        // greeting read fails closed (no peer, no OnPeerJoined, no workers), and
+        // join its thread BEFORE the sender pool goes away. Previously these
+        // sockets/threads were untracked and a late greeting could publish
+        // OnPeerJoined after Shutdown returned.
+        foreach (var g in greets) { try { g.Dispose(); } catch { /* best effort */ } }
+        foreach (var th in greetThreads) th.Join(500);
         foreach (var s in senders) s.Close();
         foreach (var th in threads) th.Join(500);
         // P605 — stop the worker pool (joins its N threads) so no pooled send
@@ -609,32 +661,58 @@ public sealed class TcpTransport : IServerTransport
                 // ~390 bots all come from one MAC host, so its recommended
                 // config raises MaxConnectionsPerIp (see README).
                 var remote = RemoteIpOf(client);
-                bool accepted;
+                bool accepted = false;
+                bool stopping = false;
+                Thread? greet = null;
                 lock (_gate)
                 {
-                    int live = _peers.Count + _pendingGreets;
-                    int perIp = _activeByIp.TryGetValue(remote, out var c) ? c : 0;
-                    if (live >= MaxConnections)
+                    if (!_running || !ReferenceEquals(l, _listener))
                     {
-                        accepted = false;
-                        LogCapRefusal(client, $"total connection cap {MaxConnections} reached");
-                    }
-                    else if (perIp >= MaxConnectionsPerIp)
-                    {
-                        accepted = false;
-                        LogCapRefusal(client, $"per-IP cap {MaxConnectionsPerIp} reached for {remote}");
-                    }
-                    else if (_pendingGreets >= MaxPendingHandshake)
-                    {
-                        accepted = false;
-                        LogCapRefusal(client, $"pending-handshake cap {MaxPendingHandshake} reached");
+                        // P967 — Shutdown won between the loop check and this
+                        // accept: never adopt the socket (no greet thread may be
+                        // started after the shutdown snapshot).
+                        stopping = true;
                     }
                     else
                     {
-                        accepted = true;
-                        _pendingGreets++;
-                        _activeByIp[remote] = perIp + 1;
+                        int live = _peers.Count + _pendingGreets;
+                        int perIp = _activeByIp.TryGetValue(remote, out var c) ? c : 0;
+                        if (live >= MaxConnections)
+                        {
+                            LogCapRefusal(client, $"total connection cap {MaxConnections} reached");
+                        }
+                        else if (perIp >= MaxConnectionsPerIp)
+                        {
+                            LogCapRefusal(client, $"per-IP cap {MaxConnectionsPerIp} reached for {remote}");
+                        }
+                        else if (_pendingGreets >= MaxPendingHandshake)
+                        {
+                            LogCapRefusal(client, $"pending-handshake cap {MaxPendingHandshake} reached");
+                        }
+                        else
+                        {
+                            accepted = true;
+                            _pendingGreets++;
+                            _activeByIp[remote] = perIp + 1;
+                            // P967 — adopt the greeting socket and its thread while
+                            // holding the same gate Shutdown snapshots under, so
+                            // the two can never miss each other.
+                            _greetSockets.Add(client);
+                            greet = new Thread(() => HandleGreet(client, remote))
+                            { IsBackground = true, Name = "greet" };
+                            _greetThreads.Add(greet);
+                            _threads.Add(greet);
+                            // P967 — start it HERE, under the gate: a thread that
+                            // is registered must already be started, or Shutdown's
+                            // Join would race an unstarted Thread.
+                            greet.Start();
+                        }
                     }
+                }
+                if (stopping)
+                {
+                    try { client.Dispose(); } catch { /* best effort */ }
+                    return;
                 }
                 if (!accepted)
                 {
@@ -649,9 +727,8 @@ public sealed class TcpTransport : IServerTransport
                 // silently blocked every new join (review finding C2). With the
                 // read off the accept loop, a stalled greet blocks only that
                 // connection's own thread and the loop keeps accepting.
-                var greet = new Thread(() => HandlePeer(client, remote))
-                { IsBackground = true, Name = "greet" };
-                greet.Start();
+                // (P967 — the thread was adopted and started under _gate above,
+                // so Shutdown owns it.)
             }
         }
         catch (SocketException) { /* listener stopped */ }
@@ -685,7 +762,9 @@ public sealed class TcpTransport : IServerTransport
     {
         NetworkStream? stream = null;
         ConnectionId id = default;
+        PeerSender? sender = null;
         bool established = false;
+        bool joined = false;
         try
         {
             stream = client.GetStream();
@@ -714,7 +793,7 @@ public sealed class TcpTransport : IServerTransport
             // never produce the same id. (_nextPeerId starts at 0 and
             // Interlocked.Increment yields 1 for the first peer.)
             id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
-            var sender = new PeerSender(stream, client, r => DropPeer(id, r))
+            sender = new PeerSender(stream, client, r => DropPeer(id, r))
             {
                 Counters = _sendCounters,
                 Egress = Egress,
@@ -724,13 +803,38 @@ public sealed class TcpTransport : IServerTransport
                 ServerCounters = ServerCounters,
                 BatchWrites = TcpBatchWrites && _mode == TransportMode.Pool,
             };
+            long gen;
+            bool live;
             lock (_gate)
             {
-                _peers[id] = sender;
-                _peerIpById[id] = remote;   // P654 (H-15) — attribute the IP for the per-IP cap
-                established = true;          // this connection survived the greeting
+                // P967 — the greeting phase ends here: this socket is no longer a
+                // pending greet for Shutdown to own, it is a peer (or refused).
+                _greetSockets.Remove(client);
+                gen = _generation;
+                live = _running;
+                if (live)
+                {
+                    _peers[id] = sender;
+                    _peerIpById[id] = remote;   // P654 (H-15) — attribute the IP for the per-IP cap
+                    established = true;          // this connection survived the greeting
+                }
+            }
+            if (!live)
+            {
+                // P967 — Shutdown began while this greeting was already past the
+                // read: fail closed. No peer is inserted, no OnPeerJoined is
+                // raised, and no sender/reader thread is created.
+                CloseQuiet(stream); client.Dispose();
+                RecordDisconnectRaw(DisconnectReason.Shutdown, "greeting completed after shutdown");
+                return;
             }
             StartOrPool(id, sender);
+            if (!IsEstablishedPeer(id, sender, gen))
+            {
+                AbandonLatePeer(id, sender, stream, client);
+                established = false;   // the finally below releases the per-IP slot
+                return;
+            }
             // P866 / SIM-0579 — the whole native OnNewConnection body is a debug
             // log of the connection id and its source IP (FedSrv.CPP:4536-4546,
             // "we don't do anything until they login"); the port mints the id at
@@ -739,8 +843,12 @@ public sealed class TcpTransport : IServerTransport
             Console.WriteLine($"[conn] new connection ID: {id} IP: {remote} name '{name}' (FedSrv.CPP:4536-4546)");
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
             // greeting above was consumed internally; OnReceive cannot fire
-            // until this call has returned.
+            // until this call has returned. (P967 — the second generation check
+            // above means a callback that starts after Shutdown began is
+            // impossible; Shutdown also joins this greet thread, so one already
+            // inside this window completes before Shutdown returns.)
             _site.OnPeerJoined(id, name);
+            joined = true;
         }
         catch (Exception ex)
         {
@@ -750,6 +858,9 @@ public sealed class TcpTransport : IServerTransport
             DisconnectReason gr;
             if (ex is EndOfStreamException) gr = DisconnectReason.ReadErrorOrEof;
             else if (IsSocketTimeout(ex)) gr = DisconnectReason.GreetTimeout;
+            // P967 — Shutdown closed this greeting socket on purpose: that is a
+            // shutdown, not a protocol violation.
+            else if (_intentionalShutdown) gr = DisconnectReason.Shutdown;
             else gr = DisconnectReason.ProtocolError;
             if (stream != null) CloseQuiet(stream);
             client.Dispose();
@@ -762,7 +873,7 @@ public sealed class TcpTransport : IServerTransport
             // pending-handshake slot. A connection that FAILED the greeting is
             // also released from the per-IP tally (it never became a peer); an
             // established peer keeps its per-IP entry until reaped
-            // (RaisePeerLeftIfFirst).
+            // (RaisePeerLeftOnce).
             lock (_gate)
             {
                 if (_pendingGreets > 0) _pendingGreets--;
@@ -774,9 +885,10 @@ public sealed class TcpTransport : IServerTransport
             }
         }
 
+        if (!joined) return;
         NetworkStream peer = stream!;
         ConnectionId peerId = id;
-        PeerSender peerSender = _peers[peerId];
+        PeerSender peerSender = sender!;
         Spawn(() =>
         {
             try
@@ -786,17 +898,75 @@ public sealed class TcpTransport : IServerTransport
             finally
             {
                 // The read loop ending (remote closed / socket error) also reaps
-                // the peer; OnPeerLeft fires exactly once thanks to _peerEnded.
+                // the peer; OnPeerLeft fires exactly once thanks to the per-peer
+                // exactly-once flag on PeerSender (P967).
                 lock (_gate) _peers.Remove(peerId);
                 if (_mode == TransportMode.Pool) _pool?.Unassign(peerSender);
                 peerSender.Close();
                 // P606 — the read loop terminating IS a disconnect; record its
                 // reason (a clean server Shutdown is the only non-error close).
                 bool intentional = _intentionalShutdown;
-                RaisePeerLeftIfFirst(peerId, intentional ? DisconnectReason.Shutdown : DisconnectReason.ReadErrorOrEof,
-                                     logLine: !intentional);
+                RaisePeerLeftOnce(peerSender, peerId, intentional ? DisconnectReason.Shutdown : DisconnectReason.ReadErrorOrEof,
+                                  logLine: !intentional);
+                // P967 — the receive side for this id is over: its ended-peer
+                // marker may now be retired by the bounded window.
+                MarkReceiveDrained(peerId);
             }
         }, $"peer-{peerId}");
+    }
+
+    /// <summary>P967 — entry point of a tracked greeting thread: runs
+    /// <see cref="HandlePeer"/> and retires the thread from the accept-path
+    /// accounting whether the greeting succeeded or failed, so
+    /// <see cref="TrackedThreadCount"/> and Shutdown's snapshot stay bounded by
+    /// the threads that are actually live.</summary>
+    private void HandleGreet(TcpClient client, IPAddress remote)
+    {
+        try
+        {
+            HandlePeer(client, remote);
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _greetThreads.Remove(Thread.CurrentThread);
+                _threads.Remove(Thread.CurrentThread);
+            }
+        }
+    }
+
+    /// <summary>P967 — is the peer that <paramref name="sender"/> belongs to
+    /// still the live peer for <paramref name="id"/> in the shutdown generation
+    /// <paramref name="gen"/>? Used to close the establishment-vs-Shutdown race
+    /// before <see cref="ITransportSite.OnPeerJoined"/>.</summary>
+    private bool IsEstablishedPeer(ConnectionId id, PeerSender sender, long gen)
+    {
+        lock (_gate)
+        {
+            return _running && _generation == gen
+                && _peers.TryGetValue(id, out var current) && ReferenceEquals(current, sender);
+        }
+    }
+
+    /// <summary>P967 — tear down a peer that was established a moment before
+    /// Shutdown began. It is dropped WITHOUT <see cref="ITransportSite.OnPeerLeft"/>:
+    /// no <c>OnPeerJoined</c> was ever raised for it, so the two callbacks stay
+    /// paired.</summary>
+    private void AbandonLatePeer(ConnectionId id, PeerSender sender, NetworkStream stream, TcpClient client)
+    {
+        lock (_gate)
+        {
+            _peers.Remove(id);
+            _peerIpById.Remove(id);
+        }
+        // P654 (H-15) — the peer slot this peer charged is released by
+        // HandlePeer's finally (it is no longer "established").
+        if (_mode == TransportMode.Pool) _pool?.Unassign(sender);
+        sender.Close();
+        CloseQuiet(stream);
+        try { client.Dispose(); } catch { /* best effort */ }
+        RecordDisconnectRaw(DisconnectReason.Shutdown, "peer abandoned before join (shutdown)");
     }
 
     /// <summary>P605 — start a peer's send path according to the transport's
@@ -818,20 +988,21 @@ public sealed class TcpTransport : IServerTransport
     /// on a stalled socket.</summary>
     private void DropPeer(ConnectionId id, DisconnectReason reason)
     {
-        PeerSender? ps = null;
-        lock (_gate) { if (_peers.TryGetValue(id, out ps)) _peers.Remove(id); }
+        PeerSender? ps;
+        lock (_gate)
+        {
+            if (!_peers.TryGetValue(id, out ps)) return;   // already reaped (raise done)
+            _peers.Remove(id);
+        }
         // Attribute the reason BEFORE tearing down the socket: Close() wakes the
         // peer's read loop with a socket error, and the read loop would otherwise
         // race to reap this peer with ReadErrorOrEof — hiding the real send-side
         // cause (NoWriteProgress / QueueOverCapacity / SendTimeout). Recording
         // first guarantees the exactly-once attribution is the initiating path's
         // reason.
-        RaisePeerLeftIfFirst(id, reason, logLine: true);
-        if (ps != null)
-        {
-            if (_mode == TransportMode.Pool) _pool?.Unassign(ps);
-            ps.Close();
-        }
+        RaisePeerLeftOnce(ps, id, reason, logLine: true);
+        if (_mode == TransportMode.Pool) _pool?.Unassign(ps);
+        ps.Close();
     }
 
     /// <summary>P654 (H-14) — proactively disconnect one host-side peer by id
@@ -847,8 +1018,15 @@ public sealed class TcpTransport : IServerTransport
     }
 
     /// <summary>True once a host peer has logically departed, including while
-    /// its final replies are draining. Queued inbound packets must not rearm it.</summary>
-    public bool IsPeerClosed(ConnectionId id) => _closingPeers.ContainsKey(id) || _peerEnded.ContainsKey(id);
+    /// its final replies are draining. Queued inbound packets must not rearm it.
+    /// <para>P967 — the P311/P654 tombstone is now BOUNDED: a departed id stays
+    /// closed for the recent window (<see cref="MaxEndedRetention"/> drained
+    /// departures, plenty for a queued-packet drain and for P765's migration
+    /// guards) instead of forever, and a marker is retired only once its receive
+    /// side has fully drained (<see cref="MarkReceiveDrained"/>). The old table
+    /// kept one entry per historical connection for the life of the process.</para></summary>
+    public bool IsPeerClosed(ConnectionId id)
+        => _closingPeers.ContainsKey(id) || _peerEnded.ContainsKey(id);
 
     /// <summary>P866 — the source address recorded when this peer's greeting was
     /// accepted (the same value the accept-time log prints, the port's whole
@@ -881,33 +1059,92 @@ public sealed class TcpTransport : IServerTransport
         lock (_gate) return _peers.Count + _pendingGreets;
     }
 
+    /// <summary>P967 test seam: the number of per-connection LIVE lifecycle
+    /// entries the transport holds (live peers, their per-IP attribution,
+    /// graceful-close markers, pending greetings, greeting sockets). It returns
+    /// to 0 once every peer has left; the ended-peer tombstones are separate and
+    /// bounded (<see cref="EndedMarkerCount"/>).</summary>
+    internal int PerConnectionStateCount()
+    {
+        lock (_gate) return _peers.Count + _peerIpById.Count + _closingPeers.Count + _pendingGreets + _greetSockets.Count;
+    }
+
+    /// <summary>P967 test seam: ended-peer tombstones retained (must never exceed
+    /// <see cref="MaxEndedRetention"/> plus the peers whose receive side is still
+    /// draining).</summary>
+    internal int EndedMarkerCount => _peerEnded.Count;
+
+    /// <summary>P967 — the receive side for <paramref name="id"/> is over (its
+    /// read thread exited and no further inbound frame can be produced), so its
+    /// tombstone may now be retired by the bounded recent-window trim. Called
+    /// from the read loop's finally, after the exactly-once raise.</summary>
+    private void MarkReceiveDrained(ConnectionId id)
+    {
+        if (!_peerEnded.TryGetValue(id, out var state) || state == 1) return;
+        lock (_gate)
+        {
+            if (!_peerEnded.TryUpdate(id, 1, 0)) return;   // already drained/retired
+            _endedOrder.Enqueue(id);                       // arm it for retirement
+            TrimEndedLocked();
+        }
+    }
+
+    /// <summary>P967 — evict the oldest DRAINED tombstones past the bound. Only
+    /// drained entries are ever queued, so a marker can never be retired while
+    /// its receive side still holds packets for that id.</summary>
+    private void TrimEndedLocked()
+    {
+        while (_endedOrder.Count > MaxEndedRetention)
+            _peerEnded.TryRemove(_endedOrder.Dequeue(), out _);
+    }
+
+    /// <summary>P967 test seam: add an ended-peer tombstone through the production
+    /// path (drained = receive side already exited), for the bounded-window proof.</summary>
+    internal void AddEndedMarkerForTesting(ConnectionId id)
+    {
+        _peerEnded.TryAdd(id, 0);
+        MarkReceiveDrained(id);
+    }
+
+    /// <summary>P967 test seam: add a tombstone whose receive side is still
+    /// draining (state 0), to prove such a marker is never retired.</summary>
+    internal void PendingMarkerForTesting(ConnectionId id) => _peerEnded.TryAdd(id, 0);
+
     /// <summary>Raise <see cref="ITransportSite.OnPeerLeft"/> exactly once per
     /// peer, whichever of the read-loop finally / DropPeer gets there first.
     /// The <paramref name="reason"/> is counted into the per-window disconnect
     /// summary (and, unless suppressed for a benign close, logged one line per
     /// peer) the FIRST time this peer is reaped — so exactly one reason is
-    /// attributed to each disconnect.</summary>
-    private void RaisePeerLeftIfFirst(ConnectionId id, DisconnectReason reason, bool logLine)
+    /// attributed to each disconnect.
+    /// <para>P967 — the exactly-once flag lives on the peer's own
+    /// <see cref="PeerSender"/> (released with the peer) instead of in the
+    /// unbounded, never-pruned ended-peer dictionary: the flag must survive
+    /// exactly as long as some reaping path can still reference this peer, and
+    /// no longer.</para></summary>
+    private void RaisePeerLeftOnce(PeerSender sender, ConnectionId id, DisconnectReason reason, bool logLine)
     {
-        if (_peerEnded.TryAdd(id, 0))
+        if (Interlocked.Exchange(ref sender.Ended, 1) != 0) return;
+        // P967 — a tombstone is added here (not as the raise guard) so
+        // IsPeerClosed keeps answering "departed" for late queued packets. It is
+        // retired only after the receive side drained (MarkReceiveDrained) and
+        // only past the bounded recent window.
+        _peerEnded.TryAdd(id, 0);
+        _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+        // P654 (H-15) — release the established peer's per-IP accounting so
+        // the per-IP tally stays accurate across the data session (this
+        // peer's slot was held since accept, or since it became a peer).
+        lock (_gate)
         {
-            _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
-            // P654 (H-15) — release the established peer's per-IP accounting so
-            // the per-IP tally stays accurate across the data session (this
-            // peer's slot was held since accept, or since it became a peer).
-            lock (_gate)
+            if (_peerIpById.Remove(id, out var ip) && _activeByIp.TryGetValue(ip, out var cnt))
             {
-                if (_peerIpById.Remove(id, out var ip) && _activeByIp.TryGetValue(ip, out var cnt))
-                {
-                    if (cnt > 1) _activeByIp[ip] = cnt - 1;
-                    else _activeByIp.Remove(ip);
-                }
+                if (cnt > 1) _activeByIp[ip] = cnt - 1;
+                else _activeByIp.Remove(ip);
             }
-            _closingPeers.TryRemove(id, out _);
-            if (logLine)
-                Console.WriteLine($"[conn-drop] peer {id} left reason={reason}");
-            _site.OnPeerLeft(id);
         }
+        _closingPeers.TryRemove(id, out _);
+        if (logLine)
+            Console.WriteLine($"[conn-drop] peer {id} left reason={reason}");
+        _site.OnPeerLeft(id);
     }
 
     /// <summary>P654 (H-15) — the source IP of an accepted socket, for the
@@ -1486,6 +1723,12 @@ public sealed class TcpTransport : IServerTransport
         // update/read it without tearing (DateTime is not volatile-able).
         private long _lastWriteProgressUtcTicks;
         private volatile bool _disconnected;
+        /// <summary>P967 — exactly-once <c>OnPeerLeft</c> flag (0 = not yet
+        /// raised, 1 = raised). Lives on the peer object so the exactly-once
+        /// guard is released together with the peer, after every reaping path
+        /// (read-loop finally, sender/overflow DropPeer) that holds this
+        /// reference has finished.</summary>
+        internal int Ended;
         private bool _closeAfterDrain;
         private Timer? _drainCloseTimer;
         private volatile DisconnectReason _reason;

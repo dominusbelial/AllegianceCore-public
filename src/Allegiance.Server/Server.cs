@@ -164,7 +164,9 @@ public sealed partial class Server : IDisposable
     private LobbyGameParams? _liveGameParams;
     private IReadOnlyList<LobbyMissionListing> _liveMissions = Array.Empty<LobbyMissionListing>();
     public IReadOnlyList<LobbyMissionListing> LiveMissions { get { lock (_statsLock) return _liveMissions; } }
-    private readonly List<short> _bucketCompletions = new();
+    // P967 (P963-09) — bounded diagnostic seam, see BucketCompletions.
+    internal const int BucketCompletionHistoryLimit = 64;
+    private readonly Queue<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
     // P315 (review finding H3) — rate-limits the per-message "unsupported fmid"
@@ -899,8 +901,41 @@ public sealed partial class Server : IDisposable
 
     /// <summary>Bucket ids that have become fully funded AND fully
     /// time-invested (the P119 completion-detection seam), in completion order,
-    /// guarded by <c>_statsLock</c>. Detection-only — nothing is built.</summary>
+    /// guarded by <c>_statsLock</c>. Detection-only — nothing is built.
+    /// <para>P967 (P963-09) — BOUNDED and per-mission: only the most recent
+    /// <see cref="BucketCompletionHistoryLimit"/> completions of the live
+    /// mission(s) are retained, and the history is retired with the mission at
+    /// game-over rotation. The old unbounded list grew for the life of the
+    /// process and every read copied it in full.</para></summary>
     public IReadOnlyList<short> BucketCompletions { get { lock (_statsLock) return _bucketCompletions.ToArray(); } }
+
+    /// <summary>P967 (P963-09) — append one completion to the bounded history
+    /// (oldest dropped past <see cref="BucketCompletionHistoryLimit"/>). Runs on
+    /// the sim thread; <c>_statsLock</c> keeps off-thread readers coherent.</summary>
+    private void RecordBucketCompletion(short id)
+    {
+        lock (_statsLock)
+        {
+            _bucketCompletions.Enqueue(id);
+            while (_bucketCompletions.Count > BucketCompletionHistoryLimit) _bucketCompletions.Dequeue();
+        }
+    }
+
+    /// <summary>P967 (P963-09) — the completion history belongs to the missions it
+    /// was recorded for: a game-over rotation retires it (native's rotation
+    /// discards the mission and its bucket objects, fsmission.cpp:3527-3546).</summary>
+    private void RetireBucketCompletionHistory()
+    {
+        lock (_statsLock) _bucketCompletions.Clear();
+    }
+
+    /// <summary>P967 test seam: record a completion id without a live bucket, so
+    /// the storage bound can be proven deterministically.</summary>
+    internal void RecordBucketCompletionForTesting(short id) => RecordBucketCompletion(id);
+
+    /// <summary>P967 test seam: the number of completion ids actually retained
+    /// (must stay at <see cref="BucketCompletionHistoryLimit"/>).</summary>
+    internal int BucketCompletionStorageCount { get { lock (_statsLock) return _bucketCompletions.Count; } }
 
     /// <summary>Simulation time advanced so far, seconds.</summary>
     public double SimNow { get { lock (_statsLock) return _simNow; } }
@@ -932,7 +967,7 @@ public sealed partial class Server : IDisposable
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
               int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick,
               int NextTeammateRefreshTick, int TeammatePositionSent,
-              int CrossSideShipStatusSeen) ConnectionScopedCacheCounts()
+              int CrossSideShipStatusSeen, int ChatBudgets) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
@@ -940,7 +975,7 @@ public sealed partial class Server : IDisposable
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
             _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count,
             _nextTeammateRefreshTick.Count, _teammatePositionSent.Count,
-            _crossSideShipStatusSeen.Count);
+            _crossSideShipStatusSeen.Count, _chatBudgets.Count);
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }

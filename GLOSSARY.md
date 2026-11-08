@@ -473,6 +473,19 @@ list in **reverse**.
   `tests/Allegiance.Core.Tests/Transport/P898TcpWriteTests.cs`; private-container
   kernel-netem sweep: `tools/p895-transport-proof/run-tcp-delay-matrix.py`.
   Report: `docs/reports/P898_REPORT.md`.
+- **Connection lifecycle / shutdown ownership (P967)** — one owner per connection
+  phase. A greeting socket and its thread are adopted by the accept path and are
+  closed and joined by `Shutdown` before the sender pool goes away; a greeting that
+  completes after the shutdown generation bump fails closed (no `OnPeerJoined`, no
+  workers). Departed-peer bookkeeping is bounded: the `IsPeerClosed` tombstone keeps
+  a recent window of *receive-drained* departures (`MaxEndedRetention`) instead of
+  one entry per historical connection, and the exactly-once `OnPeerLeft` flag lives
+  on the peer object. Connection-scoped server state (the chat budget) is retired by
+  `ReleasePeerWithReason`, and the bucket-completion diagnostic is a bounded ring
+  retired with its mission. `src/Allegiance.Core/Transport/TcpTransport.cs`,
+  `src/Allegiance.Server/Server.Lifecycle.cs`; proof `tools/p967-shutdown-proof/`,
+  tests `tests/Allegiance.Core.Tests/Transport/P967ShutdownOwnershipTests.cs`;
+  report `docs/reports/TRANSPORT_SHUTDOWN_LEAKS_P967.md`.
 - **Worker-pool sizing / host profile (P889)** — one resolver turns logical
   cores × expected players × `hostProfile` (`dedicated` | `shared`) into the
   parallel-build and transport-pool sizes, replacing the independent

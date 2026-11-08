@@ -55,7 +55,8 @@ public class ConnectionCacheCleanupTests
     }
 
     /// <summary>True once every connection-scoped cache has drained to zero —
-    /// the M1 invariant after all peers leave.</summary>
+    /// the M1 invariant after all peers leave. P967 adds the P654 (H-24) chat
+    /// budget, which only the graceful LOGOFF path used to clear.</summary>
     private static bool AllDrained(Srv server)
     {
         var c = server.ConnectionScopedCacheCounts();
@@ -66,7 +67,8 @@ public class ConnectionCacheCleanupTests
             && c.TeammateLoadoutVersionSent == 0 && c.TeammateLoadoutCache == 0
             && c.CrossSideExportSent == 0
             && c.LastTeammateStatusTick == 0
-            && c.NextTeammateRefreshTick == 0;
+            && c.NextTeammateRefreshTick == 0
+            && c.ChatBudgets == 0;
     }
 
     [Trait("Requires", "Artwork")]
@@ -92,10 +94,18 @@ public class ConnectionCacheCleanupTests
                 int got = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
                 Assert.True(got < 4000, $"cycle {cycle}: no ship assignments");
 
-                // Let the per-tick broadcast passes populate the caches.
+                // P967 — make the peers actually SPEND chat budget (P654 H-24):
+                // the abrupt-disconnect leak only existed for peers that had
+                // chatted, so a connect/disconnect-only cycle would miss it.
+                for (int i = 0; i < bots.Length; i++)
+                    bots[i].SendChat($"P967 budget cycle {cycle} peer {i}");
+
+                // Let the per-tick broadcast passes and the dispatch charge run.
                 PumpUntil(server, () => false, 400);
 
                 var before = server.ConnectionScopedCacheCounts();
+                Assert.True(before.ChatBudgets >= bots.Length,
+                    $"cycle {cycle}: chat budgets never charged ({before})");
                 // Non-vacuous: the connection-keyed status caches and the
                 // same-side teammate caches must actually have grown, so this
                 // test is exercising the leak rather than asserting on empty

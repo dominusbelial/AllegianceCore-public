@@ -161,7 +161,32 @@ observation, 3/3 pass alone** (10 m 5 s each under the gate's own load) — a lo
 observation of the eject/autopilot path, which P964 does not touch; it is entered here
 rather than fixed by this task.
 
+## P967 validation — transport/server lifecycle cleanup, one Fast sweep, 2026-11-08 UTC
+
+P963-04/07/08/09 are repaired (transport greeting ownership at shutdown, chat-budget
+retirement on every release path, a bounded receive-drained ended-peer window, and a
+bounded per-mission bucket-completion history). One Fast sweep: **13,528 tests,
+538.7 s** → 13,522 passed / 3 failed / 3 not executed; 9/9 infrastructure checks
+passed and **no timing offenders**. All three failures are previously ledgered flake
+families and each passed three isolated invocations:
+
+| Method | Sweep observation | Alone, 3× |
+| --- | --- | --- |
+| `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | "proactively-assigned diverter did not rescue the pod", 7 s | 3/3 pass (0.86/0.92/0.91 s) — existing rescue-tick-budget family |
+| `MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure` | client queue held `IsMining=True, AsteroidId=0` when the assert ran, 837 ms | 3/3 pass (0.54/0.56/0.54 s) — first ledger entry for this method: bounded 400-tick observation window, mining/placement path unchanged |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 simulated s against the fixture's [28, 31] window | 3/3 pass (1 s each) — existing receipt/simulation-clock boundary |
+
+The P967 work changes no mining, seating, rescue or tick path, and the three isolated
+rechecks reproduce the already-recorded signatures. A discarded earlier sweep of the
+same day (13,526 tests) is **not** part of the gate: it ran against an intermediate
+P967 design (an `IsPeerClosed` derived from live-peer membership) that made the
+in-process dispatch harnesses drop injected datagrams for synthetic peers (148
+Core.Tests + 1 ClientCore.Tests failures); the final design keeps the ended-peer
+predicate and bounds it instead, and `P869DispatchTests` / `P867DispatchCertificationTests`
+/ `P653EconomyLoadoutIntegrityTests` pass 99/99.
+
 ## P953 validation — resource opening and defensive-field fixture, 2026-11-08 UTC
+
 
 P798's null-clash and split-frontier mechanisms are repaired in the existing
 showcase opening. SC4 now issues ordinary Build orders to its normally produced

@@ -737,7 +737,9 @@ public sealed partial class Server
         if (bucketIfc is not Bucket bucket)
             return;
         short id = bucket.Id;
-        lock (_statsLock) _bucketCompletions.Add(id);
+        // P967 (P963-09) — bounded history: ids repeat across worlds, so this
+        // seam only needs the recent completions of the live mission(s).
+        RecordBucketCompletion(id);
 
         // The owning side is resolved by scanning the world missions' bucket
         // lists (a bucket carries no side back-ref, and completion is a rare

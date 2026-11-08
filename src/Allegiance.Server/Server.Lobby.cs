@@ -720,6 +720,10 @@ public sealed partial class Server
         // also covers ships destroyed earlier in the match (no longer in any
         // registry). See Server.WorldRetirement.cs.
         RetirePerWorldShipState(mission);
+        // P967 (P963-09) — the P119 bucket-completion diagnostic history belongs
+        // to the mission being retired; the fresh mission starts with an empty
+        // history instead of the whole process's completion list.
+        RetireBucketCompletionHistory();
         // P813c — a parked (reconnect-grace) seat belongs to THIS world; a game
         // over during the gap ends the grace (a peer that reconnects afterwards
         // gets a normal fresh logon into the rotated mission).
