@@ -37,7 +37,7 @@ public sealed class P927SpawnPlanLiveTests
             if (teams == 2)
             {
                 string receipt = (string)typeof(Srv).GetMethod("MatchupDetails", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(server, [server.Missions[0]])!;
-                Assert.Equal("match=1 seed=927 side0=25:Iron Coalition(none) side1=25:Iron Coalition(none) homeSwap=off homeMatch=1 homes=0,1 home0=0 home1=2", receipt);
+                Assert.Equal("match=1 seed=927 side0=25:Iron Coalition(none) side1=25:Iron Coalition(none) homeSwap=off homeMatch=1 homes=0,1 home0=0 home1=2 cap=0", receipt); // cap= since P930 (showcase.matchCapSeconds; 0 = no countdown on this fixture)
                 var legacy = Call("""{"preset":"showcase","count_a":10,"count_b":11,"finale_after_minutes":0}""");
                 Assert.False(legacy.IsError, legacy.Data.ToString());
                 Assert.Equal("""{"sideA":{"side":0,"requested":4,"spawned":0,"failed":4,"refilled":0},"sideB":{"side":1,"requested":4,"spawned":0,"failed":4,"refilled":0},"slots":[],"totals":[{"side":0,"requested":10},{"side":1,"requested":11}]}""", legacy.Data.GetRawText());
