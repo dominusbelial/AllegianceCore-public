@@ -318,14 +318,19 @@ public sealed class P801StrikeMassTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void A_finale_wave_never_commits_a_single_bomber_and_its_cap_starts_at_the_first_arrival()
+    public void A_finale_wave_never_commits_a_single_bomber_and_only_the_deadline_forces_a_short_wave()
     {
         // Rig 221 batch 23b (2026-10-24): the staging clock started when the first bomber was armed at
         // home, so 25 of 31 finale waves committed one bomber at a time (staging-timeout, assembled=1).
         Assert.Null(BotManager.FinaleCommitReason(assembled: 0, required: 5, stagingSince: null, now: 900));
         Assert.Null(BotManager.FinaleCommitReason(1, 5, stagingSince: 100, now: 100 + 784));   // one bomber: keep holding
         Assert.Null(BotManager.FinaleCommitReason(2, 5, 100, 100 + 179));                     // cap not reached yet
-        Assert.Equal("staging-timeout", BotManager.FinaleCommitReason(2, 5, 100, 100 + BotManager.FinaleStagingHardCapSeconds));
+        // P959 — the flat 180 s cap is GONE (FINALE_STRIKE_MASS_P959): it released the two assembled
+        // bombers against a full-health garrison, which cannot kill it and leaves the shield regenerated.
+        // A short wave now holds until the requirement is met or the deadline math forces it.
+        Assert.Null(BotManager.FinaleCommitReason(2, 5, 100, 100 + BotManager.FinaleStagingHardCapSeconds));
+        Assert.Null(BotManager.FinaleCommitReason(2, 5, 100, 100 + 3600));
+        Assert.Equal("deadline-forced", BotManager.FinaleCommitReason(2, 5, 100, now: 4, deadlineAt: 25));
         Assert.Equal("massed", BotManager.FinaleCommitReason(5, 5, 100, 101));
         Assert.Equal("massed", BotManager.FinaleCommitReason(1, 1, 100, 100));                // a one-bomber requirement
     }

@@ -54,13 +54,15 @@ internal static class StrikeVolley
     internal sealed record Shot(double Time, float Power, byte DamageType);
 
     /// <summary>Planner output. <see cref="BombersRequired"/> already includes the
-    /// margin described on <see cref="Compute"/>; <see cref="KillBombers"/> is the
-    /// bare mathematical minimum. <see cref="SurvivalBombers"/> is the P896 extra
-    /// (0 when the survival margin is off).</summary>
+    /// landing and survival corrections described on <see cref="Compute"/>;
+    /// <see cref="KillBombers"/> is the bare mathematical minimum (every round
+    /// landing, full-health station). <see cref="SurvivalBombers"/> is the extra
+    /// beyond that bare minimum (0 when the survival margin is off and the
+    /// measured landing share is 1).</summary>
     internal readonly record struct Requirement(
         int BombersRequired, int KillBombers, int ShotsToKill, double WindowSeconds,
         double ShieldRefillSeconds, float ShieldDamagePerRound, float ArmorDamagePerRound,
-        int LoadoutCount, int SurvivalBombers = 0);
+        int LoadoutCount, int SurvivalBombers = 0, double LandingShare = 1);
 
     /// <summary>P801 tunable: all rounds of one massed strike must land inside this
     /// window. 20 s covers a five-round SRM magazine (load time 4 s = 16 s of
@@ -74,8 +76,18 @@ internal static class StrikeVolley
     internal const double HalfShieldRefill = .5;
 
     /// <summary>P801 tunable: minimum meaningful magazine for planning (a hull
-    /// with no station-damaging weapon is not a strike bomber).</summary>
-    internal const int MaxPlannedBombers = 12;
+    /// with no station-damaging weapon is not a strike bomber). P959 raises the
+    /// bound from 12 to 18 so the corrected wave can also be GROWN from spare
+    /// fighters inside the same one-window mass (a full garrison with defenders
+    /// needs more hulls than the old ideal-case arithmetic asked for).</summary>
+    internal const int MaxPlannedBombers = 18;
+
+    /// <summary>P959 — the lowest delivery share the planner will plan with. A
+    /// wave that measurably lands less than a fifth of the rounds its hulls
+    /// carry cannot be fixed by sizing alone (the press would need an
+    /// unassembleable wing), so the requirement saturates there and the commit
+    /// rule keeps holding/sending the whole wing instead of requesting more.</summary>
+    internal const double LandingFloor = 0.2;
 
     /// <summary>Build one bomber's real anti-base loadout from an expanded loadout
     /// list (the parts the server actually granted). Missile launchers use their
@@ -141,13 +153,37 @@ internal static class StrikeVolley
                 yield return new Shot(i * mount.LoadTime, mount.Power, mount.DamageType);
     }
 
+    /// <summary>P959 — station-damaging rounds this loadout can put inside one
+    /// volley window (the denominator of the measured landing share). Only rounds
+    /// whose real damage matrix reaches the station count: a gun burst that the
+    /// station's defense zeroes (or a dispensers/chaff mount) must not inflate the
+    /// expectation to thousands of rounds.</summary>
+    internal static int RoundsInWindow(Loadout loadout, StationProfile station, double window = VolleyWindowSeconds)
+        => Schedule(loadout).Count(s => s.Time <= window && RoundDamage(station, s.DamageType, s.Power).Shield > 0);
+
+    /// <summary>P959 — does this REAL granted loadout damage the station at all
+    /// (the same both-pools gate <see cref="Compute"/> uses)? The arm path uses it
+    /// to decide whether a live wing member already carries a strike loadout
+    /// (fly it now) or must dock for a legal refit before it transits.</summary>
+    internal static bool DamagesStation(StationProfile station, Loadout loadout)
+    {
+        foreach (var mount in loadout.Mounts)
+        {
+            if (mount.Power <= 0 || mount.Shots <= 0) continue;
+            var (armor, shield) = RoundDamage(station, mount.DamageType, mount.Power);
+            if (shield > 0 && (station.MaxShield == 0 || armor > 0)) return true;
+        }
+        return false;
+    }
+
     /// <summary>Smallest number of these bombers that kills the station within
     /// <see cref="VolleyWindowSeconds"/>, plus one spare bomber when the roster
     /// can field it (the "margin": a reserve hull for a miss, a ram or a
-    /// defender kill). Repeatedly uses the strongest loadouts. Returns a
-    /// requirement of at least 1 for a strike-capable side.
+    /// defender kill). Sizes every hull as the WEAKEST usable loadout in the list
+    /// (P959: a real wing is mixed, so the conservative plan is the only honest
+    /// one), and returns a requirement of at least 1 for a strike-capable side.
     ///
-    /// <para><b>P896 survival margin (default off).</b> <paramref name="survivalMargin"/> = 0
+    /// <para><b>P896 survival margin.</b> <paramref name="survivalMargin"/> = 0
     /// is exactly the P801 behaviour above. Above 0 the wave also carries
     /// <c>ceil(margin × max(losses, defenders))</c> extra bombers, where
     /// <paramref name="losses"/> is how many of this side's strike bombers were
@@ -157,10 +193,19 @@ internal static class StrikeVolley
     /// side's reserved bomber budget (<paramref name="hullsAvailable"/>, already
     /// capped by <c>ShowcaseFinale.Settings.Bombers</c>) and by
     /// <see cref="MaxPlannedBombers"/>, so a bigger wave can still be assembled
-    /// inside the staging cap instead of out-waiting the deadline.</para></summary>
+    /// inside the staging cap instead of out-waiting the deadline.</para>
+    ///
+    /// <para><b>P959 landing share.</b> <paramref name="landingShare"/> is the
+    /// measured share of one committed bomber's rounds that really reach the
+    /// station (released-and-alive × guided-and-hit, see
+    /// <c>BotManager.FinaleLandingShare</c>). It divides the ideal hull count:
+    /// the planner no longer assumes every magazine round lands. 1 (the default,
+    /// and what an unmeasured wave uses) reproduces the arithmetic above exactly;
+    /// the count is clamped to <see cref="LandingFloor"/>..1 and the result never
+    /// exceeds <paramref name="hullsAvailable"/>.</para></summary>
     internal static Requirement Compute(StationProfile station,
         IReadOnlyList<Loadout?> loadouts, int hullsAvailable, double window = VolleyWindowSeconds,
-        double survivalMargin = 0, int losses = 0, int defenders = 0)
+        double survivalMargin = 0, int losses = 0, int defenders = 0, double landingShare = 1)
     {
         // A mount only counts when the core's matrix says it damages BOTH the
         // station's shield and (after the shield is down) its armor — the same
@@ -170,11 +215,17 @@ internal static class StrikeVolley
             var (armor, shield) = RoundDamage(station, m.DamageType, m.Power);
             return m.Power > 0 && m.Shots > 0 && shield > 0 && (station.MaxShield == 0 || armor > 0);
         }
+        // P959 — plan with the WEAKEST usable loadout first. A wing is mixed in
+        // practice (the rig's waves flew 2-round SRM Anti-Base stealth bombers while
+        // the planner had been sized on whichever 5-round hull happened to be armed
+        // that second), so sizing every hull as the weakest member is the only
+        // conservative reading of "these bombers": the strongest-first plan asked for
+        // 3 hulls that really carried 2-round magazines.
         var usable = loadouts.OfType<Loadout>()
             .Where(l => l.Mounts.Length > 0 && l.Mounts.Any(Damages))
-            .OrderByDescending(TotalDamage).ThenBy(l => l.HullId).ToArray();
+            .OrderBy(TotalDamage).ThenBy(l => l.HullId).ToArray();
         if (usable.Length == 0) return new(1, 1, 0, window,
-            ShieldRefillSeconds(station), 0, 0, 0);
+            ShieldRefillSeconds(station), 0, 0, 0, 0, 1);
         int available = Math.Clamp(hullsAvailable <= 0 ? usable.Length : hullsAvailable, 1, MaxPlannedBombers);
 
         int kill = 0;
@@ -182,7 +233,10 @@ internal static class StrikeVolley
         int shotsToKill = 0;
         for (int n = 1; n <= available; n++)
         {
-            var group = Enumerable.Range(0, n).Select(i => usable[i % usable.Length]).ToArray();
+            // P959 — every hull in the search carries the WEAKEST usable magazine:
+            // sizing a mixed wing by its best hull asked for 3 bombers while the
+            // wave that formed carried 2-round SRM Anti-Base magazines.
+            var group = Enumerable.Range(0, n).Select(_ => usable[0]).ToArray();
             var result = Simulate(station, group, window);
             if (n == 1) { cleanShieldDamage = result.FirstShieldDamage; cleanArmorDamage = result.FirstArmorDamage; }
             if (!result.Killed) continue;
@@ -196,19 +250,26 @@ internal static class StrikeVolley
             // whole roster, released together, rather than a stream that cannot
             // concentrate any better.
             kill = available;
-            var group = Enumerable.Range(0, available).Select(i => usable[i % usable.Length]).ToArray();
+            var group = Enumerable.Range(0, available).Select(_ => usable[0]).ToArray();
             shotsToKill = Simulate(station, group, window).ShotsFired;
         }
-        int required = kill < available ? kill + 1 : kill;
+        int ideal = kill < available ? kill + 1 : kill;
+        // P959 — the planner's ideal count assumes every magazine round lands on
+        // the station. Reality does not: hulls die on the run-in and missiles are
+        // spent/missed, so a wave of `ideal` hulls delivers only `landing` of
+        // them. Divide by the measured share (floored, never above 1) so the
+        // requirement predicts a KILL instead of a scratch.
+        double landing = double.IsFinite(landingShare) ? Math.Clamp(landingShare, LandingFloor, 1) : 1;
+        int landed = (int)Math.Ceiling(ideal / landing);
         // P896 — survival margin: expected losses on the run in (observed last-wave
         // losses) or the defenders standing in the target sector, whichever is
         // bigger, scaled by the setting; never past the reserved budget.
         int survival = survivalMargin <= 0 ? 0
             : (int)Math.Ceiling(survivalMargin * Math.Max(0, Math.Max(losses, defenders)));
-        int total = Math.Clamp(required + survival, 1, available);
+        int total = Math.Clamp(landed + survival, 1, available);
         return new(total, Math.Max(1, kill), shotsToKill, window,
             ShieldRefillSeconds(station), cleanShieldDamage, cleanArmorDamage, usable.Length,
-            Math.Max(0, total - required));
+            Math.Max(0, total - ideal), landing);
     }
 
     private static float TotalDamage(Loadout l) => l.Mounts.Sum(m => m.Power * m.Shots);

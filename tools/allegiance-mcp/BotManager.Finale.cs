@@ -26,6 +26,13 @@ internal sealed partial class BotManager
         internal ShowcaseFinale.Maturity[] Maturity = [];
         internal short[] Sides = [];
         internal double? TriggeredAt, StrikeStartedAt, GameOverAt;
+        // P959 — sides whose early pressure wave is armed BEFORE the finale
+        // trigger (settings.EarlyPressureMinutes), and when it armed. The strike
+        // machinery treats those sides exactly as if the finale had triggered:
+        // same corrected requirement, same massing, one wave, then the wing is
+        // released back to ordinary duty and the finale later re-arms it.
+        internal readonly HashSet<short> EarlySides = new();
+        internal double? EarlyArmedAt;
         internal short? Winner;
         internal string? EndReason;
         internal double LastUpdate = double.NegativeInfinity;
@@ -88,6 +95,30 @@ internal sealed partial class BotManager
         internal double LastNoStrikeLogAt = double.NegativeInfinity;
         internal float HullAtGo = -1, ShieldAtGo = -1, HullNow = -1, ShieldNow = -1;
         internal int HitsInWindow;
+        // ── P959 — corrected delivery + per-wave telemetry ──────────────────────
+        // What one committed hull really contributes: rounds landed / rounds the
+        // wave's magazines could have landed inside one window. 1 until a wave has
+        // been measured (the ideal case); an EWMA after that.
+        internal double LandingShare = 1;
+        internal int WavesMeasured;
+        // The server's finale deadline this side is racing (arming time + the
+        // showcase timeout), and the per-wave accounting used for the [strike]
+        // wave-end line and the landing measurement.
+        internal double DeadlineAt = double.PositiveInfinity;
+        internal double? PrearmAt;
+        internal bool EarlyWave;
+        internal int WaveCommitted, WaveReleased, WaveExpectedRounds;
+        internal double WaveRounds;
+        internal float WaveShieldBefore = -1, WaveShieldAfter = -1;
+        internal float WaveHullBefore = -1, WaveHullAfter = -1;
+        internal bool WaveEndLogged;
+        // Real station pools for turning measured shield/hull drops into rounds.
+        internal float TargetMaxShield, TargetMaxArmor;
+        internal float ShieldDamagePerRound, ArmorDamagePerRound;
+        // P959 — the planner's own answer for the last computed requirement (the
+        // "predicted kill" the diagnosis table compares with what really landed)
+        // and the wing cap this side may grow to.
+        internal int PlannerKill, ShotsNeeded, WingCap = 12;
     }
 
     private sealed record FinaleOriginal(short Hull, string Name, IReadOnlyList<ExpandedPartData>? Parts,
@@ -357,25 +388,183 @@ internal sealed partial class BotManager
 
     /// <summary>P896 — commit one side to the strike: reserve its bomber wing and
     /// reset this strike's mass state. Extracted from the trigger so a side whose
-    /// target is observed only AFTER the trigger arms identically.</summary>
-    private void ArmFinaleSide(FinaleRun run, short side, ActiveBot[] bots)
+    /// target is observed only AFTER the trigger arms identically.
+    ///
+    /// <para>P959 — the arm now also ORDERS the live wing: the reserved bombers get
+    /// the target sector and an entry route immediately, and each one either flies
+    /// the legal strike loadout it already carries or docks for a legal refit NOW
+    /// (before the transit) instead of discovering it at the target. Escorts are
+    /// assigned and sent with the wing. P801 only set <c>FinaleBomberReserved</c>,
+    /// and <c>FinaleBomberActive</c> was reachable solely through a RELAUNCH, so the
+    /// wing only ever existed as a stream of freshly relaunched stragglers.</para></summary>
+    private void ArmFinaleSide(FinaleRun run, short side, ActiveBot[] bots, double? at = null)
     {
+        double now = at ?? Now();
         var plan = run.Plans[side];
         var bombers = bots.Where(b => b.Side == side && !IsSupport(b) && (IsFinaleBomber(b) || ResearchFinale(b)))
             .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
             .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
         foreach (var bot in bombers) bot.FinaleBomberReserved = true;
-        plan.BomberBudget = bombers.Length;
-        plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
+        plan.BomberBudget = Math.Max(bombers.Length,
+            run.Bots.Count(b => b.Side == side && b.FinaleBomberReserved && IsParticipating(b)));
+        // P959 — the escorts ride WITH the wing: assigned at the arm and ordered to
+        // the strike sector, so the staging point holds the whole formation (P801
+        // assigned escort flags lazily, on a docked pod's first relaunch).
+        var fighters = bots.Where(b => b.Side == side && !IsSupport(b) && !b.FinaleBomberReserved
+            && IsFinaleFighter(b) && IsParticipating(b)).ToArray();
+        plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(fighters.Length);
+        foreach (var escort in fighters.OrderBy(b => b.ShipId).Take(plan.EscortBudget))
+        {
+            escort.FinaleEscort = true;
+            escort.FinaleOriginal ??= new(escort.HullId, escort.HullName, escort.Parts, escort.WeaponPartId,
+                escort.LauncherPartId, escort.MissileReadyTime, escort.WingmanBehaviour, escort.TargetSector,
+                escort.RouteIndex, escort.Role);
+            escort.TargetSector = plan.Sector;
+            escort.TargetId = escort.OrderedTargetId = null;
+            escort.RoutePath = null; escort.RouteIndex = -1;
+            EndDefense(escort);
+        }
         // P801 — fresh mass for this strike. Every relaunch joins the wave
-        // forming now; none of them flies at the station alone.
+        // forming now; none of them flies at the station alone. The measured
+        // landing share survives (it is a property of this side's loadouts).
         plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
         plan.GoTime = null;
         plan.GoMembers.Clear();
         plan.MassLogged = plan.OutcomeLogged = false;
         plan.HitsInWindow = 0;
         plan.WaveLosses = 0;        // P896 — wave sizing measures THIS strike's losses
+        plan.WaveCommitted = plan.WaveReleased = plan.WaveExpectedRounds = 0;
+        plan.WaveRounds = 0;
+        plan.WaveEndLogged = false;
         plan.HullAtGo = plan.ShieldAtGo = plan.HullNow = plan.ShieldNow = -1;
+        // P959 — the deadline this side is racing (server finale timeout, bot-side
+        // mirror; the commit rule uses it so a short wave only goes when waiting
+        // longer would lose the window). An early pressure wave has no deadline.
+        plan.DeadlineAt = plan.EarlyWave ? double.PositiveInfinity : now + run.Settings.DeadlineSeconds;
+        ArmFinaleWing(run, side, bots, now);
+    }
+
+    /// <summary>P959 — order every live wing member onto the strike and put each one
+    /// on the legal path: a member whose GRANTED loadout really damages the target
+    /// flies it now (verified strike hardware, no purchase); any other member starts
+    /// the ordinary dock-and-buy refit at home BEFORE it transits. Counts are logged
+    /// once per arm so a rig log shows whether the wing left home armed.</summary>
+    private void ArmFinaleWing(FinaleRun run, short side, ActiveBot[] bots, double now)
+    {
+        var plan = run.Plans[side];
+        var core = Catalog.RepresentativeCore();
+        if (!core.StationTypes.TryGetValue(plan.TargetTypeId, out var stationType)) return;
+        var profile = StrikeVolley.StationProfile.From(core, stationType);
+        int ready = 0, refits = 0, ordered = 0;
+        foreach (var bot in run.Bots)
+        {
+            if (bot.Side != side || bot.IsPod || bot.Cs is null || !bot.FinaleBomberReserved
+                || !IsParticipating(bot)) continue;
+            // Save the pre-strike hardware/role/sector for EVERY reserved member
+            // before the arm mutates any of it, so RestoreFinaleForNextMission puts the
+            // bot back exactly as it was (P682b).
+            bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
+                bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector,
+                bot.RouteIndex, bot.Role);
+            var loadout = StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts);
+            bool legal = loadout is not null
+                && FinaleWingMemberReady(StrikeVolley.DamagesStation(profile, loadout),
+                    bot.Granted.HullId == ActualHullId(bot));
+            if (legal)
+            {
+                bot.FinaleBomberActive = true;
+                bot.FinaleGrantVerified = true;
+                bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                AssignFinaleLoneWolf(bot, run, ActualHullId(bot), bot.Parts);
+                OrderFinaleWingBot(bot, run, plan, now);
+                ready++;
+            }
+            else
+            {
+                // Refit BEFORE, not during: docking is a real purchase/ACK/relaunch
+                // through the ordinary path (FedSrv.CPP:6189-6303), never a grant. The
+                // relaunch (PrepareFinaleRelaunch) orders it onto the wing afterwards,
+                // so it never flies to the target and turns back.
+                bot.FinaleBomberActive = false;
+                bot.FinaleGrantVerified = false;
+                bot.FinaleRefitCheckAt = now;
+                refits++;
+            }
+            ordered++;
+        }
+        Console.WriteLine($"[strike] side={side} finale wing arm ordered={ordered} ready={ready} "
+            + $"refits={refits} wing={run.Bots.Count(b => b.Side == side && b.FinaleBomberReserved)} "
+            + $"escorts={plan.EscortBudget} target=station#{plan.TargetId} sector={plan.Sector} (P959)");
+    }
+
+    /// <summary>P959 — pre-arm: reserve the wing and start its legal refits a short
+    /// lead before the finale so the hulls are already in strike loadouts when the
+    /// strike arms (refit trips inside the window then drop sharply). Only the wing
+    /// reservation and the dock-and-buy orders change; no target, no attack.</summary>
+    private void FinalePrearmTick(FinaleRun run, ActiveBot[] bots, double now)
+    {
+        double lead = Math.Min(run.Settings.PrearmMinutes, run.Settings.AfterMinutes) * 60;
+        if (!FinalePrearmDue(run.Settings.PrearmMinutes, run.Settings.AfterMinutes, now - run.Created)) return;
+        var core = Catalog.RepresentativeCore();
+        foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
+        {
+            if (plan.PrearmAt is not null || plan.TargetId == FinalePlan.NoTarget) continue;
+            if (HasMultipleEnemies && !MultiSideActive(side)) continue;
+            plan.PrearmAt = now;
+            var bombers = bots.Where(b => b.Side == side && !IsSupport(b) && (IsFinaleBomber(b) || ResearchFinale(b)))
+                .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+                .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
+            foreach (var bot in bombers) bot.FinaleBomberReserved = true;
+            var fighters = bots.Where(b => b.Side == side && !IsSupport(b) && !b.FinaleBomberReserved
+                && IsFinaleFighter(b) && IsParticipating(b)).ToArray();
+            plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(fighters.Length);
+            foreach (var escort in fighters.OrderBy(b => b.ShipId).Take(plan.EscortBudget)) escort.FinaleEscort = true;
+            int refits = 0;
+            if (core.StationTypes.TryGetValue(plan.TargetTypeId, out var stationType))
+            {
+                var profile = StrikeVolley.StationProfile.From(core, stationType);
+                foreach (var bot in run.Bots)
+                {
+                    if (bot.Side != side || bot.IsPod || bot.Cs is null || !bot.FinaleBomberReserved
+                        || !IsParticipating(bot) || ResearchFinale(bot) is false) continue;
+                    var loadout = StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts);
+                    if (loadout is not null && StrikeVolley.DamagesStation(profile, loadout)
+                        && bot.Granted.HullId == ActualHullId(bot)) continue;
+                    bot.FinaleRefitCheckAt = now;   // dock + buy a legal strike loadout now
+                    refits++;
+                }
+            }
+            Console.WriteLine($"[strike] side={side} finale prearm reserved={bombers.Length} escorts={plan.EscortBudget} "
+                + $"refitsStarted={refits} lead={lead:F0}s target=station#{plan.TargetId} (P959)");
+        }
+    }
+
+    /// <summary>P959 — the one early pressure wave (behind
+    /// <c>finale_early_pressure_minutes</c>, default OFF): arm the SAME strike
+    /// machinery at 15-20 min of a research showcase, so the enemy has to defend
+    /// its station before the finale and the wing has flown a real mass once. One
+    /// wave per side; afterwards the wing returns to ordinary duty and the finale
+    /// re-arms it.</summary>
+    private void FinaleEarlyPressureTick(FinaleRun run, ActiveBot[] bots, double now)
+    {
+        if (!FinaleEarlyPressureDue(run.Settings.EarlyPressureMinutes, run.Settings.AfterMinutes,
+                now - run.Created, run.EarlyArmedAt is not null)) return;
+        bool any = false;
+        foreach (var (side, plan) in run.Plans.OrderBy(kv => kv.Key))
+        {
+            if (!ShowcaseFinale.SideSelected(run.Settings.Side, side)) continue;
+            if (plan.TargetId == FinalePlan.NoTarget || plan.KilledAt is not null) continue;
+            if (HasMultipleEnemies && !MultiSideActive(side)) continue;
+            plan.EarlyWave = true;
+            run.EarlySides.Add(side);
+            ArmFinaleSide(run, side, bots, now);
+            Console.WriteLine($"[strike] side={side} early pressure armed t={now - run.Created:F0}s "
+                + $"target=station#{plan.TargetId} sector={plan.Sector} wing={plan.BomberBudget} (P959)");
+            any = true;
+        }
+        if (!any) return;
+        run.EarlyArmedAt = now;
+        run.StrikeStartedAt ??= now;
     }
 
     public object[] FinaleStatus()
@@ -809,6 +998,11 @@ internal sealed partial class BotManager
             // group assemble at the standoff point, and set one shared go time.
             FinaleStrikeMassTick(run, bots, now);
             if (run.TriggeredAt is not null || run.GameOverAt is not null) continue;
+            // P959 — wing preparation (legal refits before the window) and the one
+            // early pressure wave run BEFORE the trigger, behind their settings
+            // (prearm default 2 min, early pressure default OFF = the old timeline).
+            FinalePrearmTick(run, bots, now);
+            FinaleEarlyPressureTick(run, bots, now);
             var sides = ShowcaseFinale.TriggerSides(run.Settings, now - run.Created, run.Maturity, run.Kills.Count);
             if (sides.Length == 0)
             {
@@ -836,6 +1030,10 @@ internal sealed partial class BotManager
             }
             run.Sides = sides;
             run.TriggeredAt = now;
+            // P959 — the finale now owns the strike: an early pressure wave ends here
+            // and the wing re-arms with the real deadline.
+            run.EarlySides.Clear();
+            foreach (var plan in run.Plans.Values) plan.EarlyWave = false;
             Console.WriteLine($"[finale] trigger sides=[{string.Join(",", sides)}] at t={now - run.Created:F0}s: "
                 + string.Join("; ", run.Maturity.Select(m =>
                     $"side {m.Side} combat={m.CombatBots} relaunched={m.Relaunched} share={m.RelaunchShare:F2} kills={m.Kills}"))
@@ -860,7 +1058,7 @@ internal sealed partial class BotManager
                         + "no strike committed (P896)");
                     continue;
                 }
-                ArmFinaleSide(run, side, bots);
+                ArmFinaleSide(run, side, bots, now);
             }
         }
     }
@@ -886,16 +1084,27 @@ internal sealed partial class BotManager
         if (bot.Finale is not { } run || !bot.PodDocked) return;
         lock (run.Sync)
         {
-            if (run.TriggeredAt is null || run.GameOverAt is not null || run.Rotated || !run.Sides.Contains(bot.Side)) return;
+            // P959 — an early-pressure side is armed too (FinaleSideArmed); during the
+            // PRE-ARM window (Settings.PrearmMinutes) the wing already refits legally,
+            // but strike duty and the target route stay with the arm.
+            if (run.GameOverAt is not null || run.Rotated) return;
             var plan = run.Plans[bot.Side];
-            if (bot.FinaleOriginal is not null) return; // subsequent purchases retain the assigned wing/loadout
+            bool armed = FinaleSideArmed(run, bot.Side);
+            if (!armed && plan.PrearmAt is null) return;
             if (plan.TargetId == FinalePlan.NoTarget) return;   // P896 — nothing legal to strike yet
             if (!bot.FinaleBomberReserved && !bot.FinaleEscort
                 && IsFinaleFighter(bot) && run.Bots.Count(b => b.Side == bot.Side && b.FinaleEscort) < plan.EscortBudget)
                 bot.FinaleEscort = true;
             if (!bot.FinaleBomberReserved && !bot.FinaleEscort) return;
+            // Save the pre-strike hardware the first time this member is given strike
+            // duty (the arm may already have done it; relaunch keeps the original).
             bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
                 bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Role);
+            // P959 — a wing member ordered at the arm already has its ORIGINAL saved
+            // but no strike loadout yet: the selection below is exactly what its
+            // dock-and-buy refit needs. Only a member that already carries a
+            // verified strike loadout skips re-selection.
+            if (bot.FinaleOriginal is not null && bot.FinaleGrantVerified) return;
             if (bot.FinaleBomberReserved)
             {
                 // P814b scope 1 — split the strike BEFORE picking the loadout so
@@ -916,10 +1125,24 @@ internal sealed partial class BotManager
                     bot.MineDispenserPartId = null;
                     bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
                 }
-                bot.Role = "bomber";
-                bot.FinaleBomberActive = true;
-                AssignFinaleLoneWolf(bot, run, bot.HullId, bot.Parts);
+                // P959 — a strike bomber needs REAL station-damaging hardware: either the
+                // newly selected strike loadout, or the legal strike loadout it already
+                // carries (P656b's "using existing bomber loadouts" path). Any other hull
+                // stays unverified, or the wing parks as "armed" fighters that can never
+                // hurt the station (the b59 unarmed-wave signature).
+                bool carriesStrike = loadout is not null;
+                if (!carriesStrike
+                    && StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId) is { } stationType
+                    && StrikeVolley.FromParts(Catalog.RepresentativeCore(), ActualHullId(bot), bot.Parts) is { } carried)
+                    carriesStrike = StrikeVolley.DamagesStation(stationType, carried);
+                bot.FinaleBomberActive = armed && carriesStrike;
+                if (bot.FinaleBomberActive)
+                {
+                    bot.Role = "bomber";
+                    AssignFinaleLoneWolf(bot, run, bot.HullId, bot.Parts);
+                }
             }
+            if (!armed) return;   // pre-arm: hardware bought, no strike order yet
             EndDefense(bot);
             bot.TargetSector = plan.Sector;
             bot.RoutePath = null; bot.RouteIndex = -1;

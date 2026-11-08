@@ -81,11 +81,16 @@ public sealed class P896SurvivalMarginTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void P896_Survival_margin_settings_default_off_and_validate_their_range()
+    public void P896_Survival_margin_settings_validate_their_range_and_default_to_one()
     {
         var defaults = new ShowcaseFinale.Settings();
-        Assert.Equal(0, defaults.SurvivalMargin);
+        // P959 — the default is now 1 (one extra hull per observed defender or
+        // previous-wave loss): the measured wave never delivered the ideal-case
+        // count it was sized for, so 0 no longer predicts a kill. 0 still restores
+        // the exact P801/AIX arithmetic (pinned by the test above).
+        Assert.Equal(1, defaults.SurvivalMargin);
         defaults.Validate();
+        new ShowcaseFinale.Settings(SurvivalMargin: 0).Validate();
         new ShowcaseFinale.Settings(SurvivalMargin: 0.5).Validate();
         new ShowcaseFinale.Settings(SurvivalMargin: 2).Validate();
         Assert.Throws<ArgumentException>(() => new ShowcaseFinale.Settings(SurvivalMargin: -0.1).Validate());
@@ -99,7 +104,8 @@ public sealed class P896SurvivalMarginTests(ITestOutputHelper output)
         Dictionary<string, JsonElement> Parse(string json) =>
             JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)!;
         Assert.Equal(0.5, McpTools.ReadFinaleSettings(Parse("{\"finale_survival_margin\":0.5}"), true).SurvivalMargin);
-        Assert.Equal(0, McpTools.ReadFinaleSettings(Parse("{}"), true).SurvivalMargin);
+        Assert.Equal(1, McpTools.ReadFinaleSettings(Parse("{}"), true).SurvivalMargin);
+        Assert.Equal(0, McpTools.ReadFinaleSettings(Parse("{\"finale_survival_margin\":0}"), true).SurvivalMargin);
         Assert.Throws<ArgumentException>(() =>
             McpTools.ReadFinaleSettings(Parse("{\"finale_survival_margin\":3}"), true));
     }

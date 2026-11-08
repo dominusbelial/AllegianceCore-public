@@ -14,11 +14,14 @@ public sealed partial class BotFixRegressionTests
         Require.Artwork();
         using var reads = new DefenseLiveReads();
         using var rig = new FinaleRig(new(Bombers: 1, EscortShare: 1, EscortCap: 1), 3);
-        rig.Mature();
         var bomber = rig.Bots[0];
         var fighter = rig.Bots[2];
+        // P959 — the snapshot is the PRE-STRIKE state, taken before the arm orders the
+        // wing (the arm sets TargetSector/Role); that is exactly what the restore must
+        // bring back on the next mission.
         var originals = new[] { bomber, fighter }.Select(b => (Bot: b, Hull: Get<short>(b, "HullId"),
             Role: Get<string>(b, "Role"), Target: Get<short?>(b, "TargetSector"))).ToArray();
+        rig.Mature();
         for (int match = 1; match <= 2; match++)
         {
             foreach (var bot in new[] { bomber, fighter })

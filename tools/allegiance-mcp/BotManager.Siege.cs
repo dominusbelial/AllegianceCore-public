@@ -16,7 +16,13 @@ internal sealed partial class BotManager
     private bool TryDriveResearchFinaleRefit(ActiveBot bot, ConnectionSession cs, double now)
     {
         if (!bot.FinaleBomberReserved || !ResearchFinale(bot) || bot.Finale is not { Rotated: false } run
-            || run.TriggeredAt is null || run.GameOverAt is not null || !run.Plans.TryGetValue(bot.Side, out var plan)) return false;
+            || run.GameOverAt is not null || !run.Plans.TryGetValue(bot.Side, out var plan)) return false;
+        // P959 — the arm orders the wing; the PRE-ARM window (Settings.PrearmMinutes)
+        // only starts the legal dock-and-buy so the hulls are in strike loadouts when
+        // the strike arms. Both must be able to run this driver.
+        bool armed = FinaleSideArmed(run, bot.Side);
+        bool prearmed = plan.PrearmAt is not null;
+        if (!armed && !prearmed) return false;
         short hullId, stationId;
         long money;
         lock (cs.Gate)
@@ -28,10 +34,30 @@ internal sealed partial class BotManager
         {
             bool resupply;
             lock (cs.Gate) resupply = ResearchSiegeNeedsResupply(bot, cs, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
-            bool upgradingFallback = bot.FinaleBomberActive && bot.FinaleGrantVerified
+            bool upgradingFallback = armed && bot.FinaleBomberActive && bot.FinaleGrantVerified
                 && Catalog.RepresentativeCore().HullTypes.TryGetValue(hullId, out var currentHull)
                 && Showcase.ClassifyHull(currentHull) != Showcase.HullRole.Bomber;
-            if (!resupply && !upgradingFallback && bot.PreviousLegalLoadout is { Strike: not null } accepted && accepted.HullId == hullId
+            // P959 — a member that ALREADY carries a granted strike loadout has nothing
+            // to refit: without this check the driver docked and re-bought every payday
+            // (80 refit trips in one 900 s run), starving the wing of transit time.
+            var stationProfile = StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId);
+            bool carriesStrike = stationProfile is { } target
+                && StrikeVolley.FromParts(Catalog.RepresentativeCore(), hullId, bot.Parts) is { } carriedLoadout
+                && StrikeVolley.DamagesStation(target, carriedLoadout)
+                && bot.Granted.HullId == hullId;
+            if (carriesStrike && !resupply && !upgradingFallback)
+            {
+                if (armed && !(bot.FinaleBomberActive && bot.FinaleGrantVerified))
+                {
+                    bot.FinaleBomberActive = true;
+                    bot.FinaleGrantVerified = true;
+                    bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                }
+                return false;
+            }
+            // Pre-arm: a member without a legal strike loadout starts the ordinary refit
+            // below; strike duty (the activation/route block) waits for the arm.
+            if (armed && !resupply && !upgradingFallback && bot.PreviousLegalLoadout is { Strike: not null } accepted && accepted.HullId == hullId
                 && bot.Granted.HullId == hullId && bot.Granted.Parts is { } granted
                 && accepted.Parts.All(p => granted.Contains(p)))
             {

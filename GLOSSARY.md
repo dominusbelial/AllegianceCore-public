@@ -1370,14 +1370,21 @@ list in **reverse**.
   native fog only means "not observed" (`Fsmission.cpp:4169-4250`).
   `src/Allegiance.ClientCore/State/ClientWorld.cs`, `tools/allegiance-mcp/BotManager.Finale.cs`;
   report: `docs/reports/P896_REPORT.md`.
-- **Strike wave sizing (P801, P896)** — `tools/allegiance-mcp/StrikeVolley.cs`
+- **Strike wave sizing (P801, P896, P959)** — `tools/allegiance-mcp/StrikeVolley.cs`
   computes the massed wave from the real station type and granted loadouts against
   the native damage/regen law; `tools/allegiance-mcp/BotManager.StrikeMass.cs`
-  holds the wing at a standoff, sizes it from observed losses/defenders behind
-  `finale_survival_margin` (default 0 = bare kill + one spare), and refuses to
-  commit a wave whose loadout cannot damage the target. Reports:
-  `docs/reports/P801_BOMBER_MASSING.md`, `docs/reports/P896_REPORT.md`.
-  Local measurement harness: `tools/p896-strike-proof/`.
+  holds the wing at a standoff (nose on the station, so the native missile lock
+  builds before the go time), sizes it from observed losses/defenders behind
+  `finale_survival_margin` (P959 default 1 = one hull per seen defender/loss;
+  0 = the bare P801 kill + one spare), divides the ideal hull count by the
+  measured landing share, and refuses to commit a wave whose loadout cannot damage
+  the target. P959 also arms the live wing at the finale (`ArmFinaleWing`), refits
+  it legally before the window (`finale_prearm_minutes`), grows it from spare
+  fighters up to `finale_max_wing` and can fly one early pressure wave
+  (`finale_early_pressure_minutes`, default 0 = off). Reports:
+  `docs/reports/P801_BOMBER_MASSING.md`, `docs/reports/P896_REPORT.md`,
+  `docs/reports/FINALE_STRIKE_MASS_P959.md`.
+  Local measurement harnesses: `tools/p896-strike-proof/`, `tools/p959-strike-proof/`.
 - **Generated research scheduling and receipts (P942)** — canonical generated
   plans execute research before optional production through
   `tools/allegiance-mcp/ResearchCommander.cs` and the opt-in priority in

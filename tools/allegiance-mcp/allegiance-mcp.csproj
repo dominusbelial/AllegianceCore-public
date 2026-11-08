@@ -31,6 +31,7 @@
     <InternalsVisibleTo Include="p655-proof" />
     <InternalsVisibleTo Include="p819-side-bias-proof" />
     <InternalsVisibleTo Include="p896-strike-proof" />
+    <InternalsVisibleTo Include="p959-strike-proof" />
     <InternalsVisibleTo Include="p925-home-geometry" />
   </ItemGroup>
 
