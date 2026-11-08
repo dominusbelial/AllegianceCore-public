@@ -22,12 +22,14 @@ public sealed class P899PublisherTests
         Assert.True(task.Wait(TimeSpan.FromSeconds(10)), "publication must keep draining after a failure");
     }
 
-    [Fact]
-    public void Return_failure_releases_every_lease_once_reports_errors_and_keeps_publishing()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Return_failure_releases_every_lease_once_reports_errors_and_keeps_publishing(bool indexed)
     {
         var errors = new ConcurrentQueue<Exception>();
         int sent = 0;
-        using var publisher = new BroadcastPublisher((_, _) => Interlocked.Increment(ref sent), 2);
+        using var publisher = new BroadcastPublisher((_, _) => Interlocked.Increment(ref sent), 2, indexed);
         publisher.OnError = e => { errors.Enqueue(e); throw new Exception("broken error logger"); };
         var broken = new Lease(true);
         var healthy = new Lease();
@@ -50,11 +52,13 @@ public sealed class P899PublisherTests
         Assert.Equal(3, publisher.SnapshotContainersCreated);
     }
 
-    [Fact]
-    public void Container_pool_return_failure_does_not_strand_flush_or_retain_packets()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Container_pool_return_failure_does_not_strand_flush_or_retain_packets(bool indexed)
     {
         var errors = new ConcurrentQueue<Exception>();
-        using var publisher = new BroadcastPublisher((_, _) => { }, 1);
+        using var publisher = new BroadcastPublisher((_, _) => { }, 1, indexed);
         publisher.OnError = errors.Enqueue;
         publisher.BeforePoolReturn = () => throw new OverflowException("injected container return failure");
         var lease = new Lease();
@@ -73,12 +77,14 @@ public sealed class P899PublisherTests
         Assert.Equal(2, publisher.PublishedSnapshots);
     }
 
-    [Fact]
-    public void Superseded_packet_return_failure_preserves_pending_traffic_and_releases_remaining_packets()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Superseded_packet_return_failure_preserves_pending_traffic_and_releases_remaining_packets(bool indexed)
     {
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
-        using var publisher = new BroadcastPublisher((_, _) => { }, 1);
+        using var publisher = new BroadcastPublisher((_, _) => { }, 1, indexed);
         publisher.BeforeEncode = () => { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); };
         var broken = new Lease(true);
         var reliable = new Lease();
@@ -104,11 +110,13 @@ public sealed class P899PublisherTests
         Assert.Equal(3, publisher.SnapshotContainersCreated);
     }
 
-    [Fact]
-    public void Waiting_thread_exception_is_reported_and_publication_recovers()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Waiting_thread_exception_is_reported_and_publication_recovers(bool indexed)
     {
         using var reported = new ManualResetEventSlim();
-        using var publisher = new BroadcastPublisher((_, _) => { }, 1);
+        using var publisher = new BroadcastPublisher((_, _) => { }, 1, indexed);
         publisher.OnError = _ => reported.Set();
         var thread = (Thread)typeof(BroadcastPublisher).GetField("_thread", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(publisher)!;
         thread.Interrupt(); // delivered on the coordinator's next blocking wait
@@ -119,10 +127,12 @@ public sealed class P899PublisherTests
         Assert.Equal(1, publisher.EncodeFailures);
     }
 
-    [Fact]
-    public void Encode_send_and_after_publish_failures_do_not_skip_packet_cleanup()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Encode_send_and_after_publish_failures_do_not_skip_packet_cleanup(bool indexed)
     {
-        using var publisher = new BroadcastPublisher((_, _) => throw new IOException("send"), 2);
+        using var publisher = new BroadcastPublisher((_, _) => throw new IOException("send"), 2, indexed);
         var lease = new Lease();
         var snapshot = publisher.Rent(1);
         snapshot.Deliveries.Add(new(new(1), lease));

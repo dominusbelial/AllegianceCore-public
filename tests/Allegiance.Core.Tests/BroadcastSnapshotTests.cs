@@ -48,13 +48,15 @@ public sealed class BroadcastPublisherTests
         Assert.Throws<InvalidDataException>(() => Srv.ResolveEncodeOnceFlag(false, "1", snapshot: false));
     }
 
-    [Fact]
-    public void After_publish_actions_run_after_their_deliveries_even_when_coalesced()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void After_publish_actions_run_after_their_deliveries_even_when_coalesced(bool indexed)
     {
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var log = new ConcurrentQueue<string>();
-        using var publisher = new BroadcastPublisher((delivery, bytes) => log.Enqueue($"send{bytes[0]}"), 2);
+        using var publisher = new BroadcastPublisher((delivery, bytes) => log.Enqueue($"send{bytes[0]}"), 2, indexed);
         int calls = 0;
         publisher.BeforeEncode = () => { if (Interlocked.Increment(ref calls) == 1) { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); } };
         BroadcastSnapshot Tick(int tick, string? after)
@@ -77,15 +79,17 @@ public sealed class BroadcastPublisherTests
     public void Invalid_environment_is_rejected() => Assert.Throws<InvalidDataException>(
         () => Srv.ResolveSnapshotFlag(false, "tru"));
 
-    [Fact]
-    public void Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Stalled_publisher_coalesces_to_one_pending_tick_preserving_reliable_events_and_own_pose(bool indexed)
     {
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var output = new ConcurrentQueue<(int Value, int Key, bool Guaranteed, int Thread)>();
         var errors = new ConcurrentQueue<Exception>();
         using var publisher = new BroadcastPublisher((delivery, bytes) =>
-            output.Enqueue((bytes[0], delivery.Key, delivery.Guaranteed, Environment.CurrentManagedThreadId)), 2);
+            output.Enqueue((bytes[0], delivery.Key, delivery.Guaranteed, Environment.CurrentManagedThreadId)), 2, indexed);
         int producer = Environment.CurrentManagedThreadId;
         publisher.OnError = errors.Enqueue;
         publisher.BeforeEncode = () => { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); };
@@ -117,14 +121,16 @@ public sealed class BroadcastPublisherTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void P788c_complementary_tick_phases_keep_streams_and_later_ticks_replace_them(bool newerTick)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void P788c_complementary_tick_phases_keep_streams_and_later_ticks_replace_them(bool newerTick, bool indexed)
     {
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var values = new ConcurrentQueue<byte>();
-        using var publisher = new BroadcastPublisher((delivery, bytes) => values.Enqueue(bytes[0]), 1);
+        using var publisher = new BroadcastPublisher((delivery, bytes) => values.Enqueue(bytes[0]), 1, indexed);
         publisher.BeforeEncode = () => { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); };
         BroadcastSnapshot Phase(int tick, int key, byte value)
         {
@@ -150,11 +156,13 @@ public sealed class BroadcastPublisherTests
         Assert.Equal(0, publisher.EncodeFailures);
     }
 
-    [Fact]
-    public void Dispose_drains_the_final_snapshot_and_joins_workers()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Dispose_drains_the_final_snapshot_and_joins_workers(bool indexed)
     {
         int count = 0;
-        var publisher = new BroadcastPublisher((_, _) => Interlocked.Increment(ref count), 2);
+        var publisher = new BroadcastPublisher((_, _) => Interlocked.Increment(ref count), 2, indexed);
         var snapshot = publisher.Rent(1);
         snapshot.Deliveries.Add(new(new(1), new BroadcastPacket([42])));
         publisher.Submit(snapshot);

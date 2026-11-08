@@ -63,6 +63,14 @@ internal sealed class BroadcastSnapshot
     internal void Reset(long tick) { Tick = tick; Deliveries.Clear(); AfterPublish.Clear(); }
 }
 
+// Optional measurement seam. Normal production leaves this null; all counters
+// are owned by the publisher gate and read after Flush by the proof harness.
+internal sealed class BroadcastPublisherDiagnostics
+{
+    internal long StreamComparisons, StreamLookups, IndexEntries, IndexVisits;
+    internal long FreshnessGateTicks, FreshnessGateAcquisitions, SubmitGateTicks;
+}
+
 /// <summary>One active publication and at most one pending snapshot. Encoding
 /// uses a bounded pool; the coordinator enqueues in captured order. Only the
 /// transport sink is callable here: this class has no Server/world reference.</summary>
@@ -73,20 +81,27 @@ internal sealed class BroadcastPublisher : IDisposable
     private readonly Action<BroadcastDelivery, ReadOnlyMemory<byte>> _send;
     private readonly Thread _thread;
     private readonly ParallelOptions _options;
+    // Read and rebuilt only under _gate, from the final coalesced pending list.
+    // Membership includes both delivery lanes; ordering stays in Deliveries.
+    private readonly HashSet<(ConnectionId Peer, int Key)>? _pendingStreams;
     private BroadcastSnapshot? _pending;
+    internal bool PendingStreamIndexEnabled => _pendingStreams is not null;
     private bool _active, _stopping;
     internal long CoalescedSnapshots, DroppedStreamFrames, PublishedSnapshots, PublishTimestampTicks;
     internal long SnapshotContainersCreated, EncodeFailures, PublishAllocatedBytes;
+    internal BroadcastPublisherDiagnostics? Diagnostics;
     internal Action? BeforeEncode; // deterministic stalled-worker test seam
     internal Action? BeforePoolReturn; // exceptional pool-return test seam
     internal Action<Exception>? OnError;
 
-    internal BroadcastPublisher(Action<BroadcastDelivery, byte[]> send, int workers)
-        : this((delivery, bytes) => send(delivery, bytes.ToArray()), workers, true) { }
+    internal BroadcastPublisher(Action<BroadcastDelivery, byte[]> send, int workers, bool pendingStreamIndex = false)
+        : this((delivery, bytes) => send(delivery, bytes.ToArray()), workers, true, pendingStreamIndex) { }
 
-    internal BroadcastPublisher(Action<BroadcastDelivery, ReadOnlyMemory<byte>> send, int workers, bool memorySink)
+    internal BroadcastPublisher(Action<BroadcastDelivery, ReadOnlyMemory<byte>> send, int workers, bool memorySink,
+        bool pendingStreamIndex = false)
     {
         _send = send;
+        if (pendingStreamIndex) _pendingStreams = new();
         _options = new() { MaxDegreeOfParallelism = Math.Max(1, workers) };
         // Triple buffer: sim capture, pending publication, active publication.
         for (int i = 0; i < 3; i++) { _pool.Add(new()); SnapshotContainersCreated++; }
@@ -109,6 +124,7 @@ internal sealed class BroadcastPublisher : IDisposable
     {
         lock (_gate)
         {
+            long gateStart = Diagnostics is null ? 0 : Stopwatch.GetTimestamp();
             if (_stopping) throw new ObjectDisposedException(nameof(BroadcastPublisher));
             if (_pending is { } previous)
             {
@@ -144,6 +160,19 @@ internal sealed class BroadcastPublisher : IDisposable
                 Interlocked.Increment(ref CoalescedSnapshots);
             }
             else _pending = snapshot;
+            if (_pendingStreams is { } streams)
+            {
+                streams.Clear();
+                foreach (var delivery in _pending!.Deliveries)
+                {
+                    if (Diagnostics is { } visitProbe) visitProbe.IndexVisits++;
+                    if (delivery.Key == 0) continue;
+                    streams.Add((delivery.Peer, delivery.Key));
+                    if (Diagnostics is { } probe) probe.IndexEntries++;
+                }
+            }
+            if (Diagnostics is { } diagnostics)
+                diagnostics.SubmitGateTicks += Stopwatch.GetTimestamp() - gateStart;
             Monitor.PulseAll(_gate);
         }
     }
@@ -177,6 +206,32 @@ internal sealed class BroadcastPublisher : IDisposable
         return false;
     }
 
+    // Called under _gate for each delivery: a Submit between two sends must
+    // affect the next freshness decision, even within one active snapshot.
+    private bool HasPendingStream(BroadcastSnapshot pending, BroadcastDelivery delivery)
+    {
+        if (_pendingStreams is { } streams)
+        {
+            if (Diagnostics is { } diagnostics) diagnostics.StreamLookups++;
+            return streams.Contains((delivery.Peer, delivery.Key));
+        }
+        return Diagnostics is { } probe
+            ? HasNewerStreamMeasured(pending, delivery, probe)
+            : HasNewerStream(pending, delivery);
+    }
+
+    // Keep the comparison probe out of the uninstrumented scan.
+    private static bool HasNewerStreamMeasured(BroadcastSnapshot snapshot, BroadcastDelivery previous,
+        BroadcastPublisherDiagnostics diagnostics)
+    {
+        foreach (var delivery in snapshot.Deliveries)
+        {
+            diagnostics.StreamComparisons++;
+            if (delivery.Peer == previous.Peer && delivery.Key == previous.Key) return true;
+        }
+        return false;
+    }
+
     private void Failed(Exception error)
     {
         Interlocked.Increment(ref EncodeFailures);
@@ -199,6 +254,7 @@ internal sealed class BroadcastPublisher : IDisposable
                     if (_pending is null) return;
                     snapshot = _pending;
                     _pending = null;
+                    _pendingStreams?.Clear();
                     _active = true;
                 }
                 start = Stopwatch.GetTimestamp();
@@ -223,11 +279,22 @@ internal sealed class BroadcastPublisher : IDisposable
                     // If sim has advanced again, no stale streaming state may
                     // jump ahead of its newer pending snapshot. Reliable events
                     // retain their exact original order, even during overload.
-                    bool stale;
-                    lock (_gate)
+                    bool stale = false;
+                    // Key-zero traffic is ordered and can never be stale. Keep
+                    // the original scan/lock path intact in the control arm.
+                    if (_pendingStreams is null || delivery.Key != 0)
                     {
-                        stale = _pending is { } pending && pending.Tick > snapshot.Tick + 1
-                            && (!delivery.Guaranteed || HasNewerStream(pending, delivery));
+                        lock (_gate)
+                        {
+                            long gateStart = Diagnostics is null ? 0 : Stopwatch.GetTimestamp();
+                            stale = _pending is { } pending && pending.Tick > snapshot.Tick + 1
+                                && (!delivery.Guaranteed || HasPendingStream(pending, delivery));
+                            if (Diagnostics is { } diagnostics)
+                            {
+                                diagnostics.FreshnessGateAcquisitions++;
+                                diagnostics.FreshnessGateTicks += Stopwatch.GetTimestamp() - gateStart;
+                            }
+                        }
                     }
                     if (stale && delivery.Key != 0)
                     {
