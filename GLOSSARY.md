@@ -754,7 +754,7 @@ list in **reverse**.
   Proofs: `tests/Allegiance.ClientCore.Tests/P975ReceiveContainmentTests.cs`; report
   `docs/reports/CLIENT_ROBUSTNESS_P975.md`.
 - **Per-world ship caches (P975)** — every ship-keyed client cache (remote dead
-  reckoners, Hermite histories, re-seed statistics and Game1's radius/side-colour/LOD
+  reckoners, Hermite/remote-timeline histories, re-seed statistics and Game1's radius/side-colour/LOD
   render maps) lives in ONE `ClientWorld.ShipCaches` container, replaced at every
   world boundary (`ResetCore`, `BeginNextMission`, `ClearTeamWorld`), so a retired id
   can never hand interpolation state, a side colour or an LOD tier to the next match.
@@ -895,6 +895,17 @@ list in **reverse**.
   shape `engine/camera.cpp:89-96,135-139`), removing the 6-10 km pop-in when the
   ship turns; `visuals.viewRange` is its range in metres. Proof:
   `tools/p979-visual-proof`; report `docs/reports/VISUAL_FLAGS_RADIAL_VISIBILITY_P979.md`.
+- **Remote-ship server-time timeline (P985, experiment, default OFF)** —
+  `visuals.remoteTimeline` selects `src/Allegiance.ClientCore/Flight/RemoteShipTimeline.cs`,
+  an eight-sample ring ordered by the server loop tick (mapped onto the local clock by
+  `RemoteTimelineClock`, a min-offset playout clock — never the TiDi-scaled PING clock) with duplicate/expiry rejection,
+  late insertion, cadence+jitter-smoothed delay, P813b's shared Hermite maths and the
+  existing capped dead-reckoner past the newest sample. `ClientWorld.ShipCaches`
+  owns and retires it; stall/sector/death/respawn/rotation/teleport cuts reset it.
+  Only `Game1.RemoteShipDrawPose` consumes the result, never aim/target/collision/lock,
+  own-ship prediction or outbound state. Replay: `tools/p985-remote-timeline-proof/`;
+  tests `tests/Allegiance.ClientCore.Tests/P985RemoteTimelineTests.cs`;
+  report `docs/reports/REMOTE_TIMELINE_P985.md`.
 - **Modern HUD scale / text budget (P833, capped by P859)** — one scale for text,
   glyph art, gauge ring, target pane and own-status grid, derived from the desktop
   display density × the user `HudSettings.Size` (`Rendering/ModernHudScale.cs`:

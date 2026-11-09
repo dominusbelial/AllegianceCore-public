@@ -257,6 +257,8 @@ public sealed partial class Game1
         EnsureOptionsPrefs();
         bool on = !_visuals.IsOn(key);
         _visuals.SetToggle(key, on);
+        if (string.Equals(key, Rendering.VisualFlags.RemoteTimelineKey, StringComparison.OrdinalIgnoreCase))
+            _session.World.RemoteTimelineRemotes = on;
         (_optionsPrefs.Visuals ??= new Rendering.VisualOptions()).SetToggle(key, on);
         _optionsPrefs.Save(_playerPrefsPath);
         Console.WriteLine($"[intro] visuals: {key} -> {(on ? "on" : "off")} (saved)");

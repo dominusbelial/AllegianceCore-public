@@ -656,6 +656,9 @@ public sealed partial class Game1 : Game
     // instead of the P448b forward extrapolation. Never touches the wire.
     private bool _remoteShipHermite;
 
+    // P985 reads _visuals.RemoteTimeline directly. There is deliberately no
+    // second launch flag: Options → Visuals/profile/--visuals own this feature.
+
     // P448b — wall-clock (seconds) the re-seed correction statistics were last logged;
     // the pose gather polls ClientWorld.TakeRemoteCorrectionStats every interval so the
     // typical re-seed jump is observable live (and, if it proved visibly large, a
@@ -664,6 +667,7 @@ public sealed partial class Game1 : Game
 
     // P813b — throttle for the [P813b] hermite telemetry line (logged every ~2 s).
     private double _hermiteTelemetryAt;
+    private double _timelineTelemetryAt;   // P985 — independent two-second diagnostic throttle
 
     // P508 — the own-ship local simulation (replaces the P447b OwnShipPredictionTransport).
     // The client flies its own ship locally and reports the pose to the server; the
@@ -1758,6 +1762,11 @@ public sealed partial class Game1 : Game
         foreach (var warning in visualWarnings)
             Console.Error.WriteLine("[client] " + warning);
         Console.WriteLine("[client] visuals: " + _visuals.Describe());
+        // P985 — live visual-only remote DRAW history. Options toggles update
+        // this world property too; off allocates no per-ship timeline state.
+        _session.World.RemoteTimelineRemotes = _visuals.RemoteTimeline;
+        if (_visuals.RemoteTimeline)
+            Console.WriteLine("[client] visuals.remoteTimeline: sender-timestamped remote DRAW history (P985 EXPERIMENTAL)");
         // P566 — the ship renderer: native .mdl meshes (default) vs Meshy content
         // models. Log so a bare --ships meshy run is obvious in the console.
         _shipsNative = opts.ShipsNative;

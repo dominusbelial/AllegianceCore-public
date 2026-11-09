@@ -2958,7 +2958,7 @@ public sealed partial class Game1
                 // kill switch is off or the reckoner isn't seeded (falls back to the
                 // raw last-known pose). Own-ship posing stays raw (P447); ships with
                 // no pose were already excluded above.
-                Flight.PredictedPose pose = RemoteShipPose(world, id, up, ship);
+                Flight.PredictedPose pose = RemoteShipDrawPose(world, id, up, ship);
                 _poses[id] = pose;
                 // P803 — a boarded gunner rides its carrier's smoothed render pose.
                 if (world.MyShipId is { } meRide && world.Ships.TryGetValue(meRide, out var rider) && rider.ParentId == id)
@@ -3046,6 +3046,13 @@ public sealed partial class Game1
                 if (hc > 0)
                     Console.WriteLine($"[P813b] hermite smoothing: ships={hc} delay(mean/min/max)={hMean:0.000}/{hMin:0.000}/{hMax:0.000}s");
             }
+            if (_visuals.RemoteTimeline && _nowSeconds - _timelineTelemetryAt >= 2.0)
+            {
+                _timelineTelemetryAt = _nowSeconds;
+                var (tc, tMean, tMin, tMax) = world.TakeTimelineStats();
+                if (tc > 0)
+                    Console.WriteLine($"[P985] remote timeline: ships={tc} delay(mean/min/max)={tMean:0.000}/{tMin:0.000}/{tMax:0.000}s");
+            }
         }
 
     }
@@ -3116,6 +3123,20 @@ public sealed partial class Game1
         foreach (var kv in world.Warps)
             if (kv.Value.ClusterId == viewSector)
                 _viewWarpCentres.Add(new SimVec(kv.Value.Position[0], kv.Value.Position[1], kv.Value.Position[2]));
+    }
+
+    /// <summary>P985 — DRAW-only wrapper. Non-render consumers keep using
+    /// <see cref="RemoteShipPose"/> and can never receive a delayed timeline pose.</summary>
+    private Flight.PredictedPose RemoteShipDrawPose(ClientWorld world, short id, ServerShipUpdate up, ShipEntity ship)
+    {
+        if (_visuals.RemoteTimeline &&
+            world.TryGetTimelineRenderPose(id, ClientNowMilliseconds / 1000.0, out var tPos, out var tOri))
+        {
+            // Per-ship timeline scratch is stable until the next frame's gather;
+            // unlike P813b this adds no per-frame Orientation allocation.
+            return new Flight.PredictedPose(tPos, tOri);
+        }
+        return RemoteShipPose(world, id, up, ship);
     }
 
     private Flight.PredictedPose RemoteShipPose(ClientWorld world, short id, ServerShipUpdate up, ShipEntity ship)

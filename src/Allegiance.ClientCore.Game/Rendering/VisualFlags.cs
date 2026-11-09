@@ -61,6 +61,10 @@ public static class VisualFlags
     /// clip (the no-pop-in rule). See <see cref="RadialVisibility"/>.</summary>
     public const string RadialVisibilityKey = "radialVisibility";
 
+    /// <summary>Server-timestamped, reorder-tolerant remote-ship DRAW history.
+    /// Visual only: aim, targeting, collision and outbound state stay on wire truth.</summary>
+    public const string RemoteTimelineKey = "remoteTimeline";
+
     /// <summary>The radial-visibility range in metres (native's dead-ahead
     /// distance, <c>WinTrek/WinTrek.cpp:323</c>).</summary>
     public const string ViewRangeKey = "viewRange";
@@ -74,6 +78,12 @@ public static class VisualFlags
             "true distance, no far-plane pop-in",
             VisualFlagKind.Toggle,
             Hotkey: 'R'),
+        new VisualFlag(
+            RemoteTimelineKey,
+            "Remote timeline",
+            "server-time remote ship smoothing",
+            VisualFlagKind.Toggle,
+            Hotkey: 'T'),
         new VisualFlag(
             ViewRangeKey,
             "View range",
@@ -114,6 +124,9 @@ public sealed class VisualOptions
 
     /// <summary>The first flag's live value — the radial no-pop-in rule.</summary>
     public bool RadialVisibility => IsOn(VisualFlags.RadialVisibilityKey);
+
+    /// <summary>The P985 remote-ship presentation timeline.</summary>
+    public bool RemoteTimeline => IsOn(VisualFlags.RemoteTimelineKey);
 
     /// <summary>The radial rule's range in metres.</summary>
     public float ViewRange => Value(VisualFlags.ViewRangeKey);
