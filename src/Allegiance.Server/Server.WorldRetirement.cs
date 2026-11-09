@@ -79,6 +79,11 @@ public sealed partial class Server
         _alliedRearmPending.RemoveWhere(s => !Keep(keep, s.Id));
         _alliedPodRedirectPending.RemoveWhere(s => !Keep(keep, s.Id));
 
+        // P966 (P963-02) — the SIDE roster packet cache is keyed by Mission and
+        // was only pruned lazily on the next roster build; a rotation with no
+        // later roster request kept the retired world reachable (P884 GC check).
+        _sideRosterPackets.Remove(retired);
+
         // Dropping the entries is not enough: a .NET dictionary/hash-set keeps the
         // backing arrays of the widest moment it ever saw, and a match's latches
         // peak at peers x ships-at-once. Left alone, each match whose peak exceeds
