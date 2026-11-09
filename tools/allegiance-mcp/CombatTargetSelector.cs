@@ -157,13 +157,31 @@ public static class CombatTargetSelector
         }
 
         var pick = PickBy(!SpreadFirst, threats, ctx);
-        if (pick is { } th) return th;
+        if (pick is { } th) { Record("CombatTarget", "Select", candidates, ctx, th); return th; }
         pick = PickBy(!SpreadFirst, combat, ctx);
-        if (pick is { } cm) return cm;
+        if (pick is { } cm) { Record("CombatTarget", "Select", candidates, ctx, cm); return cm; }
         pick = PickBy(!SpreadFirst, miners, ctx);
-        if (pick is { } mn) return mn;
+        if (pick is { } mn) { Record("CombatTarget", "Select", candidates, ctx, mn); return mn; }
 
-        return BotTargetChoice.Holding();
+        var hold = BotTargetChoice.Holding();
+        Record("CombatTarget", "Select", candidates, ctx, hold);
+        return hold;
+    }
+
+    private static void Record(string family, string decision, IReadOnlyList<BotTargetCandidate> candidates, BotSelectionContext ctx, BotTargetChoice choice)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record(family, decision,
+            new
+            {
+                selfShipId = ctx.SelfShipId,
+                myCluster = ctx.MyCluster,
+                teammatesInCluster = ctx.TeammatesInCluster,
+                engagerCounts = ctx.EngagerCounts,
+                candidateCount = candidates.Count,
+                candidates = candidates.Select(c => new { c.Id, c.Class, c.IsThreat, c.Distance }).ToArray(),
+            },
+            new { choice.TargetId, choice.Hold, choice.ChosenClass });
     }
 
     /// <summary>Among <paramref name="pool"/> choose the eligible candidate for

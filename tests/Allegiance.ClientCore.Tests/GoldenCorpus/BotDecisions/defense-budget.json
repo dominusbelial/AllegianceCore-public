@@ -1,0 +1,50 @@
+[
+  {
+    "inputs": {
+      "alreadyAssigned": 0,
+      "cap": 30,
+      "population": 10,
+      "share": 0.15
+    },
+    "outputs": {
+      "budget": 2
+    },
+    "name": "small-population"
+  },
+  {
+    "inputs": {
+      "alreadyAssigned": 5,
+      "cap": 30,
+      "population": 200,
+      "share": 0.15
+    },
+    "outputs": {
+      "budget": 25
+    },
+    "name": "large-population-capped"
+  },
+  {
+    "inputs": {
+      "alreadyAssigned": 15,
+      "cap": 15,
+      "population": 100,
+      "share": 0.15
+    },
+    "outputs": {
+      "budget": 0
+    },
+    "name": "already-assigned-exhausts"
+  },
+  {
+    "inputs": {
+      "alreadyAssigned": 0,
+      "cap": 30,
+      "population": 100,
+      "share": 0
+    },
+    "outputs": {
+      "budget": 0
+    },
+    "name": "zero-share"
+  }
+]

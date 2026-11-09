@@ -1,0 +1,211 @@
+[
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 0,
+          "distance": 100,
+          "id": 9001,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 0,
+      "hold": false,
+      "targetId": 9001
+    },
+    "name": "lone-miner-first-bot"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 0,
+          "distance": 100,
+          "id": 9001,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "engagerCounts": {
+        "9001": 2
+      },
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 0,
+      "hold": true,
+      "targetId": null
+    },
+    "name": "lone-miner-at-cap-holds"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 0,
+          "distance": 10,
+          "id": 9001,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 50,
+          "id": 9102,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 999,
+          "id": 9101,
+          "isThreat": true
+        }
+      ],
+      "cluster": 1052,
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 1,
+      "hold": false,
+      "targetId": 9101
+    },
+    "name": "threat-beats-nearer-fighter"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 0,
+          "distance": 5,
+          "id": 9001,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 200,
+          "id": 9102,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 1,
+      "hold": false,
+      "targetId": 9102
+    },
+    "name": "combat-present-miner-ignored"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 1,
+          "distance": 100,
+          "id": 9102,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 120,
+          "id": 9103,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "engagerCounts": {
+        "9102": 1
+      },
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 1,
+      "hold": false,
+      "targetId": 9102
+    },
+    "name": "focus-fire-second-bot-fills"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 1,
+          "distance": 300,
+          "id": 1001,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 400,
+          "id": 2001,
+          "isThreat": false
+        },
+        {
+          "class": 0,
+          "distance": 150,
+          "id": 1002,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "self": 9900,
+      "teammates": 10
+    },
+    "outputs": {
+      "chosenClass": 1,
+      "hold": false,
+      "targetId": 1001
+    },
+    "name": "two-side-fighter-spread"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "class": 3,
+          "distance": 800,
+          "id": 1001,
+          "isThreat": false
+        },
+        {
+          "class": 2,
+          "distance": 600,
+          "id": 2001,
+          "isThreat": false
+        },
+        {
+          "class": 1,
+          "distance": 200,
+          "id": 1002,
+          "isThreat": false
+        }
+      ],
+      "cluster": 1052,
+      "self": 9900,
+      "teammates": 20
+    },
+    "outputs": {
+      "chosenClass": 1,
+      "hold": false,
+      "targetId": 1002
+    },
+    "name": "three-side-capital-threat"
+  },
+  {
+    "inputs": {
+      "candidates": [],
+      "cluster": 1052,
+      "self": 9900
+    },
+    "outputs": {
+      "chosenClass": 0,
+      "hold": true,
+      "targetId": null
+    },
+    "name": "empty-sector-holds"
+  }
+]

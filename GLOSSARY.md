@@ -1451,6 +1451,13 @@ list in **reverse**.
 - **Bot behaviors** — weave/loiter/combat, scenarios, research, defense, siege.
   `tools/allegiance-mcp/BotManager.*.cs` (Combat, Defense, Siege, StrikeMass,
   Research, Support, Coordination, Orders).
+- **Bot decision golden corpus (P986)** — baseline record of the current MCP bot
+  driver’s pure decisions before any goal-stack/profile refactor. Recorder seam:
+  `tools/allegiance-mcp/BotDecisionRecorder.cs`; golden tests and corpus:
+  `tests/Allegiance.ClientCore.Tests/P986BotDecisionCorpusTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/GoldenCorpus/BotDecisions/*.json`.
+  Regenerate with `UPDATE_CORPUS=1`. Report:
+  `docs/reports/BOT_DECISION_CORPUS_P986.md`.
 - **Ordered miner / Piglet routines (P905)** — explicit `spawn_bot` behaviors
   `miner`, `docker`, `deathmatch`, `chatter` in
   `tools/allegiance-mcp/BotManager.Routines.cs`, with typed state and timers in

@@ -55,7 +55,20 @@ internal sealed partial class BotManager
                          .Where(b => b.Side == side && IsScoutRole(b.Role) && b.CanBuyRescueProbe)
                          .OrderBy(b => b.BotId).Take(MedevacScoutsPerSide))
                 chosen.Add(candidate.BotId);
+        RecordMedevacScouts(bots, chosen);
         return chosen;
+    }
+
+    private static void RecordMedevacScouts(IReadOnlyList<MedevacCandidate> bots, IReadOnlySet<int> chosen)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record("Medevac", "PickMedevacScouts",
+            new
+            {
+                candidateCount = bots.Count,
+                candidates = bots.Select(b => new { b.BotId, b.Side, b.Role, b.CanBuyRescueProbe }).ToArray(),
+            },
+            new { chosen = chosen.OrderBy(i => i).ToArray() });
     }
 
     internal static bool IsScoutRole(string role)
