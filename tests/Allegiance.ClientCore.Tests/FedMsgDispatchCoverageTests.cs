@@ -53,7 +53,7 @@ public class FedMsgDispatchCoverageTests
     /// addition — the kill-bonus update, fmid 212 — was removed again by P773; the
     /// client derives its own kill bonus from PLAYERINFO/KILL_SHIP experience.)
     /// </summary>
-    private static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
+    internal static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
     {
         (87, "FireExpendable"), (156, "GainFlag"), (164, "AddPart"),
         (182, "RequestMoney"), (192, "RelaunchShip"), (194, "PingData"),
@@ -135,7 +135,7 @@ public class FedMsgDispatchCoverageTests
     /// named Wire codec. Collection members are initialised to empty; the few
     /// codecs that need a non-empty nested ship / byte-blob / ctor are built
     /// explicitly. Produces real wire bytes that Decode() must accept.</summary>
-    private static IFedMessage NewMessage(string typeName, ushort fmid)
+    internal static IFedMessage NewMessage(string typeName, ushort fmid)
     {
         // Read-only record-style codecs built via their From(...) factory:
         switch (fmid)

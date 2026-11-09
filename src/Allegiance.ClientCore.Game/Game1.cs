@@ -808,15 +808,22 @@ public sealed partial class Game1 : Game
 
     // P628 — per-ship level-of-detail state. Collected under the Gate with the
     // other per-ship render tables; the Draw loop reads them lock-free.
+    // P975 (P971-03) — these maps are OWNED BY THE WORLD they were gathered from
+    // (ClientWorld.Caches), not by this Game instance: a mission rotation, a
+    // reconnect resume or a leave-to-lobby retires the whole container, so an id
+    // from a retired match can never supply a stale radius, side colour or LOD
+    // tier, and nothing accumulates across matches. Native has no client-side
+    // per-ship cache to leak — a rotation destroys the mission and its ships
+    // wholesale (clintlib.cpp:4193-4224).
     // _shipRadiusById: the ship's rendered bounding-sphere radius in world units
     // (0.5 × HullType.Length), the metric input to ProjectedPixelRadius.
     // _shipSideRgbById: the ship's real side colour (team colour), fetched from
     // the side roster under the Gate; the far-tier sprite's tint.
-    private readonly Dictionary<short, float> _shipRadiusById = new();
-    private readonly Dictionary<short, (float R, float G, float B)> _shipSideRgbById = new();
+    private Dictionary<short, float> _shipRadiusById => _session.World.Caches.RenderRadiusById;
+    private Dictionary<short, (float R, float G, float B)> _shipSideRgbById => _session.World.Caches.RenderSideRgbById;
     // Discrete far-tier state with hysteresis (ShipLod.NextFarState); suppresses
     // engine trails / motion ribbons for far ships and stabilises the toggle.
-    private readonly Dictionary<short, bool> _shipLodFar = new();
+    private Dictionary<short, bool> _shipLodFar => _session.World.Caches.LodFarById;
     // Debug overlay counters (per-tier counts) for the LOD hud line.
     private int _lodFullCount, _lodFarCount;
     // P628 — ship-pass draw-call counter (full-model draws + far-sprite batches),

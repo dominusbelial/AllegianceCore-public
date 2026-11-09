@@ -178,6 +178,10 @@ public sealed partial class ClientWorld
         _missileTrack = MissileTrackState.Clear;
         _miningAsteroidId = -1;
         ShipWarnings.Reset();
+        // P975 — leaving the team world retires every per-ship cache with it: the
+        // ships below stay listed but lose their pose/unknown state, so a stale
+        // reckoner, side colour or LOD tier must not linger either.
+        RetireShipCaches();
     }
 
     // appmsg.cpp:2501-2526; clintlib.cpp:4037-4077. Departure from a real

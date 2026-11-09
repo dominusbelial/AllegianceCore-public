@@ -366,6 +366,60 @@ public sealed partial class ClientWorld
     /// </summary>
     public Func<short, short?> LifepodHullResolver { get; set; } = _ => null;
 
+    // ── P975 (P971-03) — one per-world container for every ship-keyed cache ──
+    //
+    // Before P975 the per-ship interpolation maps below were removed only on
+    // individual departures and survived every wholesale world boundary, and
+    // Game1's per-ship render inputs (_shipRadiusById/_shipSideRgbById) were never
+    // cleared at all — so a rotation, a reconnect or a leave-to-lobby kept every id
+    // ever rendered and a reused id could render from the retired match's state.
+    // Native has nothing to leak here: a mission rotation destroys the client's
+    // mission and the per-ship simulation state hanging off it wholesale
+    // (clintlib.cpp:4193-4224, OnQuitMission → BeginNewMission rebuilds from the
+    // server's re-burst). One container, replaced at each boundary, is the port's
+    // equivalent: retirement cannot be forgotten by an individual removal path.
+    /// <summary>P975 — every ship-keyed client-side cache, owned by the world it
+    /// was built for. <see cref="RetireShipCaches"/> replaces the whole object at a
+    /// world boundary, so a retired world can never hand a stale pose, re-seed
+    /// statistic, side colour or LOD state to the next one.</summary>
+    public sealed class ShipCaches
+    {
+        /// <summary>P448b — per-REMOTE-ship dead-reckoners (native CalculateShip),
+        /// held separately from the wire-truth <see cref="ShipEntity"/> fields.</summary>
+        public readonly Dictionary<short, Flight.ShipDeadReckoner> Reckoners = new();
+        /// <summary>P813b — per-remote-ship cubic-Hermite histories (flag-gated,
+        /// default off).</summary>
+        public readonly Dictionary<short, Flight.RemoteShipHermiteInterpolator> Hermite = new();
+        /// <summary>P628 — Game1's per-ship rendered bounding-sphere radius (the
+        /// ProjectedPixelRadius metric).</summary>
+        public readonly Dictionary<short, float> RenderRadiusById = new();
+        /// <summary>P628 — Game1's per-ship real side colour (the far-tier tint).</summary>
+        public readonly Dictionary<short, (float R, float G, float B)> RenderSideRgbById = new();
+        /// <summary>P628 — Game1's per-ship far-tier LOD state (hysteresis).</summary>
+        public readonly Dictionary<short, bool> LodFarById = new();
+        /// <summary>P448b item 4 — rolling re-seed correction-distance statistics.</summary>
+        public long CorrectionCount;
+        public double CorrectionSum;
+        public float CorrectionMax;
+        /// <summary>How many times this world has retired its per-ship caches
+        /// (diagnostics: one increment per world boundary).</summary>
+        public int Retirements;
+    }
+
+    private ShipCaches _shipCaches = new();
+
+    /// <summary>P975 — the live per-ship cache container. Reads are safe off the
+    /// receive thread: a boundary publishes a NEW container (an atomic reference
+    /// write) and never mutates the retired one.</summary>
+    public ShipCaches Caches => _shipCaches;
+
+    /// <summary>P975 — retire every ship-keyed cache with the world it was built
+    /// for. Called at ALL three wholesale boundaries: <see cref="ResetCore"/> (a
+    /// fresh connection / a reconnect resume), <see cref="BeginNextMission"/> (a
+    /// rotation) and <see cref="ClearTeamWorld"/> (leave to the team lobby).</summary>
+    private void RetireShipCaches()
+        => _shipCaches = new ShipCaches { Retirements = _shipCaches.Retirements + 1 };
+
     // P448b — per-REMOTE-ship dead-reckoners (the port of native CalculateShip),
     // held SEPARATELY from the wire-truth ShipEntity fields so the reckoner state is
     // clearly client interpolation state, never mistaken for server truth. Each is
@@ -373,19 +427,12 @@ public sealed partial class ClientWorld
     // HeavyShipsUpdate) from the entity's just-written Latest, anchored at that
     // update's local arrival time, and queried by the renderer via TryGetRenderPose.
     // Own-ship prediction is out of scope (P447), so the local ship never gets one.
-    private readonly Dictionary<short, Flight.ShipDeadReckoner> _remoteReckoners = new();
+    private Dictionary<short, Flight.ShipDeadReckoner> _remoteReckoners => _shipCaches.Reckoners;
 
     // P813b — per-remote-ship cubic-Hermite interpolators (EXPERIMENTAL, default
     // OFF). Populated only when <see cref="HermiteRemotes"/> is true; the dead-
     // reckoner above remains the default render path.
-    private readonly Dictionary<short, Flight.RemoteShipHermiteInterpolator> _remoteHermite = new();
-
-    // P448b — rolling re-seed correction-distance statistics: how far the PREVIOUS
-    // seed's extrapolation stood from the new authoritative seed when a fresh update
-    // arrived. Used to judge (item 4) whether a visual error-decay is warranted.
-    private long _remoteCorrectionCount;
-    private double _remoteCorrectionSum;
-    private float _remoteCorrectionMax;
+    private Dictionary<short, Flight.RemoteShipHermiteInterpolator> _remoteHermite => _shipCaches.Hermite;
 
     private Dictionary<short, DataClusterIGC> _clusters = new();
     private Dictionary<short, DataStationIGC> _stations = new();
@@ -550,7 +597,25 @@ public sealed partial class ClientWorld
     private RankInfoEntry[] _rankTable = [];
     // P583 — the latest endgame per-player roster streamed by GameOverPlayers
     // (63), so the game-over screen can render each player's score breakdown.
-    private GameOverPlayerEntry[] _gameOverPlayers = [];
+    // P975 (P971-06) — ONE row per player, updated in place, in arrival order:
+    // native walks each chunk and does FindPlayer(name) → UpdateScore(stats), so a
+    // repeated or duplicate record updates the same player and never mints a second
+    // row (clintlib/appmsg.cpp:3094-3110). The name→row index makes that O(1) and
+    // keeps the list itself stable, so a repeated frame neither grows the roster
+    // nor recopies it (the pre-P975 `[.. old, .. new]` did both, every frame).
+    private readonly List<GameOverPlayerEntry> _gameOverPlayers = [];
+    private readonly Dictionary<string, int> _gameOverPlayerRowByName = new(StringComparer.Ordinal);
+    /// <summary>P975 — hard cap on the endgame roster. The roster is bounded in
+    /// native by the mission's player slots; a native host advertises
+    /// <c>nMaxPlayers &lt; 1000</c> (the listing rule mirrored by
+    /// <c>IntroFindServerList.MaxListedMaxPlayers</c>), so a hostile or broken
+    /// server can add at most that many rows before further names are dropped.</summary>
+    public const int MaxGameOverPlayers = 999;
+    private long _gameOverPlayersDropped;
+    /// <summary>P975 — endgame roster records dropped after the
+    /// <see cref="MaxGameOverPlayers"/> cap was reached (diagnostics: a non-zero
+    /// value means the server sent more player rows than a mission can seat).</summary>
+    public long GameOverPlayersDropped => _gameOverPlayersDropped;
     private MissionInfo? _mission;
 
     // P284 — each side's live development-tech mask (native
@@ -1217,9 +1282,9 @@ public sealed partial class ClientWorld
         {
             r.PoseAt(e.LatestArrivalTime, out var prevPos, out _);
             float corr = (prevPos - up.Position).Length();
-            _remoteCorrectionCount++;
-            _remoteCorrectionSum += corr;
-            if (corr > _remoteCorrectionMax) _remoteCorrectionMax = corr;
+            _shipCaches.CorrectionCount++;
+            _shipCaches.CorrectionSum += corr;
+            if (corr > _shipCaches.CorrectionMax) _shipCaches.CorrectionMax = corr;
         }
 
         r.Seed(up, rs.Stats, rs.AfterburnerMaxThrust, e.LatestArrivalTime);
@@ -1336,12 +1401,12 @@ public sealed partial class ClientWorld
     public (long Count, double Mean, float Max) TakeRemoteCorrectionStats()
     {
         var result = (
-            Count: _remoteCorrectionCount,
-            Mean: _remoteCorrectionCount > 0 ? _remoteCorrectionSum / _remoteCorrectionCount : 0d,
-            Max: _remoteCorrectionMax);
-        _remoteCorrectionCount = 0;
-        _remoteCorrectionSum = 0d;
-        _remoteCorrectionMax = 0f;
+            Count: _shipCaches.CorrectionCount,
+            Mean: _shipCaches.CorrectionCount > 0 ? _shipCaches.CorrectionSum / _shipCaches.CorrectionCount : 0d,
+            Max: _shipCaches.CorrectionMax);
+        _shipCaches.CorrectionCount = 0;
+        _shipCaches.CorrectionSum = 0d;
+        _shipCaches.CorrectionMax = 0f;
         return result;
     }
 
@@ -1731,8 +1796,10 @@ public sealed partial class ClientWorld
 
     /// <summary>P583 — the latest endgame per-player roster streamed by
     /// GameOverPlayers(63): each connected player's score + counter breakdown
-    /// at game over. Replaced wholesale on each receive; empty until the
-    /// first endgame roster lands.</summary>
+    /// at game over. One row per player, updated in place as native's
+    /// FindPlayer+UpdateScore does (P975); the list instance is stable, so the
+    /// game-over screen can hold it across frames. Empty until the first endgame
+    /// roster lands.</summary>
     public IReadOnlyList<GameOverPlayerEntry> GameOverPlayersList => _gameOverPlayers;
 
     /// <summary>P284 — the live development-tech mask (<c>DevelopmentTechs</c>,
@@ -2129,7 +2196,9 @@ public sealed partial class ClientWorld
         _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
-        _gameOverPlayers = [];
+        _gameOverPlayers.Clear();
+        _gameOverPlayerRowByName.Clear();
+        _gameOverPlayersDropped = 0;
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
         _missionBriefingInfo = null;
@@ -2143,6 +2212,7 @@ public sealed partial class ClientWorld
         ClearRipcord();                  // P414 — drop any ripcord state on reconnect
 
         _ships.Clear();
+        RetireShipCaches();              // P975 — no per-ship interpolation/render state survives a world reset
         _scoreRoster = [];               // P774 — the ship table was cleared: no rows
         _scoreRosterDirty = false;
         _clusters.Clear();
@@ -5235,6 +5305,7 @@ public sealed partial class ClientWorld
         ClearRipcord();
 
         _ships.Clear();
+        RetireShipCaches();              // P975 — a rotation retires every per-ship cache
         _scoreRoster = [];               // P774 — the ship table was cleared: no rows
         _scoreRosterDirty = false;
         _clusters.Clear();
@@ -5346,18 +5417,43 @@ public sealed partial class ClientWorld
         // the class remark above (P481).
         _gameOver = gameOver;
         // A GAME_OVER begins a new result; following native 50-player chunks
-        // update the same roster (clintlib/appmsg.cpp:3048-3111).
-        _gameOverPlayers = [];
+        // update the same roster (clintlib/appmsg.cpp:3048-3111). P975 — the index
+        // and the dropped-record counter reset with it.
+        _gameOverPlayers.Clear();
+        _gameOverPlayerRowByName.Clear();
+        _gameOverPlayersDropped = 0;
     }
 
     /// <summary>FM_S_GAME_OVER_PLAYERS(63) — the per-player endgame roster the
     /// server sends alongside GAME_OVER (P583): each connected player's score
     /// and counter breakdown (kills/deaths/ejections/rescues/baseKills/
-    /// baseCaptures/artifacts/flags). Accumulate native's 50-player chunks
-    /// until the next GAME_OVER; the game-over screen reads <see cref="GameOverPlayersList"/>.</summary>
+    /// baseCaptures/artifacts/flags). Native's 50-player chunks
+    /// (fsmission.cpp:3132-3141) are folded in one row per player until the next
+    /// GAME_OVER; the game-over screen reads <see cref="GameOverPlayersList"/>.
+    /// <para>P975 (P971-06) — native's handler updates each named existing player's
+    /// score rather than retaining an arrival history (clintlib/appmsg.cpp:3094-3110),
+    /// so a duplicate name updates its row in place (last value wins, the same
+    /// result as native's sequential UpdateScore), an unknown name appends one new
+    /// row (this port has no separate endgame player table to update), and the
+    /// roster is capped at <see cref="MaxGameOverPlayers"/>. No allocation and no
+    /// whole-list copy per frame.</para></summary>
     private void Apply(GameOverPlayers players)
     {
-        _gameOverPlayers = [.. _gameOverPlayers, .. players.Entries];
+        foreach (var entry in players.Entries)
+        {
+            if (_gameOverPlayerRowByName.TryGetValue(entry.CharacterName, out int row))
+            {
+                _gameOverPlayers[row] = entry;
+                continue;
+            }
+            if (_gameOverPlayers.Count >= MaxGameOverPlayers)
+            {
+                _gameOverPlayersDropped++;
+                continue;
+            }
+            _gameOverPlayerRowByName[entry.CharacterName] = _gameOverPlayers.Count;
+            _gameOverPlayers.Add(entry);
+        }
     }
 
     /// <summary>P481 — dismiss the game-over result panel (the Back action's
