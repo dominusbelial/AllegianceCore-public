@@ -126,6 +126,39 @@ passes **3/3 alone** (1 m 40 s each) against the enlarged 1848-combination matri
 
 Report: [SKINS_1A_BASELINE_P980.md](reports/SKINS_1A_BASELINE_P980.md).
 
+## P975 validation — client robustness, one Fast sweep, 2026-11-08 UTC
+
+One complete Fast invocation on the P975 tree (per-message receive containment,
+per-world ship caches, bounded game-over roster): **13,626 passed / 2 failed /
+3 not executed**, 13,632 cases in 548.4 s after the shared runner lock wait. The
+run shared the host with two concurrent lane Fast sweeps (measured load average
+4.3–19.6 during it). Fast infrastructure checks: PASS.
+
+| Sweep failure / timing family | Standalone on this tree | Classification |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s; "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail** (pass 1 s; fails 38 s) | The open partial-tip receipt failure ledgered since the P933/P935 cohorts (P966 entry: clean base 1/2, changed 0/3, same 38 s signature). No missile-lock/lock-tip source is on the P975 path. |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` (`Assert.Same`: target null) | **3 pass / 0 fail** | The ledgered null-target family (P945/P966: fail/fail/fail in both changed and base cohorts); load flake in this sweep, which ran at load 12–19 behind two other lane sweeps. |
+| SLOW FAST `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` 10.48 s, `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 10.04 s | not re-run (both PASSED in the sweep) | Ledgered timing-only exceedances of the calibrated 10 s guard; assertions passed. |
+
+P807's 394-peer budget family (ledgered under P960/P965) is process-neighbour
+sensitive: inside the combined 29-case affected run it failed **2/3** on the phase
+slice (97.8 / 80.5 ms vs the scaled 78.2 ms), and alone on this tree it is
+**2 pass / 1 fail** (pass 33–38 s; the failure is the ledgered "declare sim work
+157.6 ms over the scaled 150 ms budget" signature at load 27.1). Every P975 change
+is client-side (receive containment, per-ship caches, game-over roster); the
+measured phase is the server's handoff tick.
+
+New/affected P975 cases: **12/12 pass in each of three isolated runs**. The affected
+existing families (remote dead-reckon, P781 ripcord reckon, P813b Hermite, P660
+countdown, P636c/P636d snapshot, DecisionSnapshot 200v200 allocation) pass **3/3**;
+with P807 excluded the combined set is **28/28 in each of three runs**.
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
+five sequential isolated runs on the P975 tree: **5 pass / 0 fail**, walls
+147/183/149/187/304 s at load avg 5.9–13.0 — at the recorded base rate (P945/P965: 5/5;
+P967: 4/5 with an arrival-assertion failure). Zero parking violations; no bots/flight/sim
+path was changed by P975.
+
 ## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
 
 One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map

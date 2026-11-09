@@ -745,6 +745,21 @@ list in **reverse**.
   `modern.skin.json`. `HudSettings` migrates legacy `Style` to `Skin`, keeps
   `Style` as a renderer adapter, and saves only the canonical id. Report:
   `docs/reports/SKINS_1B_IDS_MIGRATION_P981.md`.
+
+- **Per-message receive containment (P975)** — an inbound message whose body a codec
+  rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
+  instead of ending the session; every case lives in one contained dispatch,
+  `ConnectionSession.DispatchInboundMessage`, and `ConnectionSession.IsMandatoryFmid`
+  is the explicit mandatory list (LOGONACK only). Native: `_Utility/Messages.cpp:947-994`.
+  Proofs: `tests/Allegiance.ClientCore.Tests/P975ReceiveContainmentTests.cs`; report
+  `docs/reports/CLIENT_ROBUSTNESS_P975.md`.
+- **Per-world ship caches (P975)** — every ship-keyed client cache (remote dead
+  reckoners, Hermite histories, re-seed statistics and Game1's radius/side-colour/LOD
+  render maps) lives in ONE `ClientWorld.ShipCaches` container, replaced at every
+  world boundary (`ResetCore`, `BeginNextMission`, `ClearTeamWorld`), so a retired id
+  can never hand interpolation state, a side colour or an LOD tier to the next match.
+  Proofs: `tests/Allegiance.ClientCore.Tests/P975WorldBoundaryCacheTests.cs`; report
+  `docs/reports/CLIENT_ROBUSTNESS_P975.md`.
 - **Autopilot (G key / pod home / cluster goto)** — the native `GotoPlan` law:
   same-sector steering, dodge, docking bays, pod pickup and cross-sector routing
   through warps. Key: `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`

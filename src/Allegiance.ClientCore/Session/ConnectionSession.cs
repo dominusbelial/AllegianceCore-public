@@ -100,6 +100,30 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     // P627 dispatch-coverage test to assert a supported S-message is consumed
     // and by the receive audit to list genuinely-unconsumed messages.
     private readonly HashSet<ushort> _unknownFmids = new();
+
+    // ── P975 (P971-01) — malformed-message containment ─────────────────────
+    //
+    // A CRC-valid message whose body a codec rejects used to throw straight out
+    // of OnReceive; the TCP read loop turns that into "invalid frame" and loses
+    // the session. Native does not do that: its receive loop sanity-checks each
+    // message and, when one fails, logs "HACKER??" and abandons the rest of the
+    // packet while the connection lives (_Utility/Messages.cpp:947-994). The
+    // dispatch below therefore contains a per-message decode/apply failure:
+    // that ONE message is dropped, counted and (rate-limited) logged, and the
+    // session continues. A message that decodes fully is applied; a message that
+    // fails while decoding has not mutated anything (decode before apply).
+    // Only the messages in the mandatory list may end the session.
+    private long _malformedMessages;
+    private readonly Dictionary<ushort, int> _malformedByFmid = new();
+    /// <summary>P975 — number of malformed messages logged unconditionally before
+    /// the per-session log throttle takes over.</summary>
+    private const int MalformedLogBurst = 10;
+    /// <summary>P975 — after the burst, one log line per this many malformed
+    /// messages (a hostile peer cannot spam the log or the disk).</summary>
+    private const int MalformedLogStride = 500;
+    /// <summary>P975 — upper bound on the per-fmid counter map (a hostile peer
+    /// cycling fmids cannot grow it without bound).</summary>
+    private const int MalformedFmidCap = 64;
     /// <summary>P627 — every distinct inbound fmid the receive dispatch fell
     /// through on (no <c>case</c> matched), i.e. a message the real client did
     /// not consume. Snapshot-on-read under <see cref="Gate"/>.</summary>
@@ -107,6 +131,50 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// <summary>P627 — clear the unknown-fmid record (tests feed one message at
     /// a time on a fresh/labeled session and reset before each feed).</summary>
     public void ClearUnknownFmids() { lock (_gate) _unknownFmids.Clear(); }
+
+    /// <summary>P975 (P971-01) — the messages whose malformed body still ends the
+    /// session, because the session cannot exist without them. The list is
+    /// deliberately ONE entry:
+    /// <list type="bullet">
+    /// <item><b>LOGONACK(2)</b> — the logon answer itself. A client that cannot read
+    /// its own acceptance has no seat, and a corrupt ACK says the peer is not
+    /// speaking this protocol. A deliberate port choice: native's client never
+    /// disconnects on bad input (<c>_Utility/Messages.cpp:997-1001</c> → <c>OnBadCRC</c>,
+    /// which only logs and asserts, <c>WinTrek/trekigc.cpp:3713-3718</c>).</item>
+    /// </list>
+    /// Everything else in the dispatch is a per-message drop: the entity, score,
+    /// roster and HUD streams are all re-sent, and native drops a bad message while
+    /// keeping the connection (<c>_Utility/Messages.cpp:947-994</c>).</summary>
+    public static bool IsMandatoryFmid(ushort fmid) => fmid == LogonAck.Fmid;
+
+    /// <summary>P975 — inbound messages whose decode/apply failed and were
+    /// contained (dropped) instead of ending the session. Monotonic per session.</summary>
+    public long MalformedMessageCount => Interlocked.Read(ref _malformedMessages);
+
+    /// <summary>P975 — per-fmid counts of contained malformed messages. Bounded
+    /// (<see cref="MalformedFmidCap"/> distinct fmids) so a hostile peer cycling
+    /// message ids cannot grow client memory; snapshot-on-read under the gate.</summary>
+    public IReadOnlyDictionary<ushort, int> MalformedMessageCounts
+    { get { lock (_gate) return new Dictionary<ushort, int>(_malformedByFmid); } }
+
+    /// <summary>P975 — record one contained malformed message: count it, count it
+    /// per fmid (bounded), and log <b>fmid + length + the exception type only</b> —
+    /// never the payload and never a credential — under a per-session rate limit
+    /// (first <see cref="MalformedLogBurst"/>, then one per
+    /// <see cref="MalformedLogStride"/>). Called on the receive thread inside the
+    /// world gate.</summary>
+    private void NoteMalformedMessage(ushort fmid, int length, Exception error, bool mandatory = false)
+    {
+        long n = Interlocked.Increment(ref _malformedMessages);
+        if (_malformedByFmid.TryGetValue(fmid, out int seen))
+            _malformedByFmid[fmid] = seen + 1;
+        else if (_malformedByFmid.Count < MalformedFmidCap)
+            _malformedByFmid[fmid] = 1;
+        if (n <= MalformedLogBurst || n % MalformedLogStride == 0)
+            Console.WriteLine($"[recv] contained malformed message fmid={fmid} len={length} "
+                + $"error={error.GetType().Name} total={n}"
+                + (mandatory ? " (mandatory: disconnecting)" : " (dropped, session kept)"));
+    }
     // P320 — set (volatile, on the transport receive thread) when the established
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
@@ -1437,679 +1505,11 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
 
             foreach (var m in messages)
             {
-                ushort fmid;
-                try { fmid = FedMessageHeader.Read(m).Fmid; }
-                catch { continue; }
-
-                switch (fmid)
-                {
-                    case LogonAck.Fmid:
-                        _ack = LogonAck.Decode(m);
-                        // Native keeps the accepted name as its own (clintlib/appmsg.cpp:39-40):
-                        // a verified logon's canonical callsign, so a P813c resume claims the
-                        // parked seat under the name the server knows.
-                        if (_ack.FValidated && _ack.CharNameOrFailureReason is { Length: > 0 } accepted)
-                        {
-                            _resumeName = accepted;
-                            if (_resumeRequest is { } pending) pending.CharacterName = accepted;
-                        }
-                        break;
-                    case RankInfo.Fmid:
-                        // P639 — FM_S_RANK_INFO(13): the server's rank-name table,
-                        // sent once right after LOGONACK (Server.Lobby.cs:3344;
-                        // native appmsg.cpp:3372-3382). Store it on the world so
-                        // the char sheet / scoreboard / team pane can resolve a
-                        // roster Rank id to its display name.
-                        try { _world.Apply(RankInfo.Decode(m)); }
-                        catch { /* ignore a malformed rank sync */ }
-                        break;
-                    case Ping.Fmid:
-                        // P508 — the server's echo of our FM_CS_PING(35): record its
-                        // sim-time stamp (timeServer, ms) + the local receive time for
-                        // the own-ship server clock. Decode-tolerant (bad frame → ignore).
-                        try
-                        {
-                            var ping = Ping.Decode(m);
-                            _pingEchoes.Add((ping.TimeServer, ReplayMilliseconds ?? Environment.TickCount64));
-                            _world.Apply(ping);
-                            if (_scriptedWarpHandshake.Clock(ping.TimeServer) is { } handshake)
-                                Send(ScriptedWarpHandshake.Pack(handshake));
-                        }
-                        catch { /* ignore a malformed echo */ }
-                        break;
-                    case TimescaleUpdate.Fmid:
-                        // P612 — the server's sim time scale (sim.timeScale). Stored on
-                        // the world so the remote-ship dead-reckoners extrapolate in
-                        // scaled sim time (no rubber-banding under slow motion).
-                        try { _world.TimeScale = TimescaleUpdate.Decode(m).Scale; }
-                        catch { /* ignore a malformed update */ }
-                        break;
-                    case SetCluster.Fmid:
-                        var assignment = SetCluster.Decode(m);
-                        _world.Apply(assignment);
-                        _scriptedWarpHandshake.Assigned(assignment);
-                        break;
-                    case SingleShipUpdate.Fmid:
-                        var singleShip = _world.DecodeBotMessage(m, SingleShipUpdate.Decode);
-                        _world.Apply(singleShip);
-                        _scriptedWarpHandshake.Observed(singleShip.Ship);
-                        break;
-                    case HeavyShipsUpdate.Fmid:
-                        // P347 — the periodic cross-side visibility sync; every
-                        // cluster ship the viewer's side sees (now incl. other
-                        // factions since P346) refreshes pose via this message.
-                        var heavyShips = _world.DecodeBotMessage(m, HeavyShipsUpdate.Decode);
-                        _world.Apply(heavyShips);
-                        _scriptedWarpHandshake.ObservedTick(heavyShips.TimeReference);
-                        break;
-                    case LightShipsUpdate.Fmid:
-                        _world.Apply(_world.DecodeBotMessage(m, LightShipsUpdate.Decode));
-                        break;
-                    case ShipStatusMessage.Fmid:
-                        _world.Apply(_world.DecodeBotMessage(m, ShipStatusMessage.Decode));
-                        break;
-                    case ExportShip.Fmid:
-                        // FM_S_EXPORT(26) is the generic object-export message:
-                        // ships (OT_ship=0), clusters (OT_cluster=13), stations
-                        // (OT_station=1), warps (OT_warp=7) and asteroids
-                        // (OT_asteroid=5) all ride this fmid, distinguished by
-                        // the 4-byte `objecttype` at message offset 8. Branch on
-                        // ObjectType first (same approach as Allegiance.Bot.Bot.cs),
-                        // decode the matching codec, feed it to the world.
-                        if (m.Length >= 12)
-                        {
-                            int ot = BitConverter.ToInt32(m.AsSpan(8, 4));
-                            if (ot == ExportShip.OtShip)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportShip.Decode));
-                            else if (ot == ExportCluster.OtCluster)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportCluster.Decode));
-                            else if (ot == ExportStation.OtStation)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportStation.Decode));
-                            else if (ot == ExportWarp.OtWarp)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportWarp.Decode));
-                            else if (ot == ExportAsteroid.OtAsteroid)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportAsteroid.Decode));
-                            else if (ot == ExportProbe.OtProbe)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportProbe.Decode));
-                            else if (ot == ExportMine.OtMine)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportMine.Decode));
-                            else if (ot == ExportBuildingEffect.OtBuildingEffect)
-                                _world.Apply(_world.DecodeBotMessage(m, ExportBuildingEffect.Decode));
-                        }
-                        break;
-                    case AsteroidsUpdate.Fmid:
-                        // P423 — the periodic per-asteroid ore/health sync; the
-                        // world stores the live ore + structural fractions.
-                        _world.Apply(_world.DecodeBotMessage(m, AsteroidsUpdate.Decode));
-                        break;
-                    case StationsUpdate.Fmid:
-                        // P423 — the periodic per-station hull/shield sync; the
-                        // world stores the live fractions (station health bar).
-                        _world.Apply(_world.DecodeBotMessage(m, StationsUpdate.Decode));
-                        break;
-                    case QueuedCommandUpdate.Fmid:
-                        // P424 — the owner-only "you have a pending queued order"
-                        // sync; the world remembers it for the ACCEPT/REJECT/CLEAR
-                        // keys.
-                        _world.Apply(QueuedCommandUpdate.Decode(m));
-                        break;
-
-                    case AcquireTreasure.Fmid:
-                    {
-                        // P758 — FM_S_ACQUIRE_TREASURE(162): the server's
-                        // "you picked up a treasure" notice. Native's client
-                        // handler (appmsg.cpp:262-308) is in the CLIENT CORE, so
-                        // the reply lives here: a c_tcPart offer is answered
-                        // immediately with FM_C_TREASURE_ACK carrying the mount
-                        // native's HitTreasure picks (shipIGC.h:1239-1305).
-                        // Every code then drives the world (sounds + the
-                        // c_tcCash reward line).
-                        var acquire = AcquireTreasure.Decode(m);
-                        if (acquire.TreasureCode == (byte)TreasureCode.Part)
-                        {
-                            // P816/SIM-0267 — a searched-and-full decline plays
-                            // the native salCargoFullSound cue (shipIGC.h:1302)
-                            // instead of the pickup cue, then still answers
-                            // c_mountNA so the server drops the part back into
-                            // space (FedSrv.CPP:6125-6130).
-                            var (mount, cargoFull) = PartOfferMount(acquire);
-                            if (cargoFull) _world.RecordPartOfferCargoFull();
-                            SendTreasureAck(mount);
-                        }
-                        _world.Apply(acquire);
-                        break;
-                    }
-                    case WarpBomb.Fmid:
-                        // P758 — FM_S_WARP_BOMB(188): a missile hit an aleph; it
-                        // detonates at the carried deadline
-                        // (appmsg.cpp:850-868 — AddBomb + the sector-gated
-                        // "Aleph to %s destabilized" line).
-                        _world.Apply(WarpBomb.Decode(m));
-                        break;
-                    case PlayerInfo.Fmid:
-                        _world.Apply(PlayerInfo.Decode(m));
-                        break;
-                    case ClusterInfo.Fmid:
-                        _world.Apply(_world.DecodeBotMessage(m, ClusterInfo.Decode));
-                        break;
-                    case DockedNotify.Fmid:
-                        _world.Apply(DockedNotify.Decode(m));
-                        break;
-                    case BuyLoadoutAck.Fmid:
-                        // P473 — keep the raw ack for the spawn harness to
-                        // compare against the requested loadout, alongside the
-                        // world apply (which mutates the client's own ship).
-                        var bla = BuyLoadoutAck.Decode(m);
-                        _buyLoadoutAcks.Add(bla);
-                        _world.Apply(bla);
-                        PurchaseCompleted?.Invoke(bla.FBoughtEverything);
-                        break;
-                    case Allegiance.Core.Wire.LoadoutChange.Fmid:
-                        // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull
-                        // changed (same-side broadcast; a post-death relaunch
-                        // sends this with the new hull). Previously dropped as
-                        // unknown; now applied so a same-side peer revives a
-                        // relaunched teammate and adopts its new hull.
-                        _world.Apply(Allegiance.Core.Wire.LoadoutChange.Decode(m));
-                        break;
-                    case Reload.Fmid:
-                        // P362 — a successful reload relay (P361 auto-reload, or
-                        // the manual RELOAD path): the world counts it per ship so
-                        // the weapon-status tracker can show the "Reloading ammo..."
-                        // success state even though the ammo refill is synchronous
-                        // server-side. Consumer of an already-broadcast message —
-                        // no wire-protocol change.
-                        _world.Apply(Reload.Decode(m));
-                        break;
-                    case ChangeAlliances.Fmid:
-                        _world.Apply(ChangeAlliances.Decode(m));
-                        break;
-                    case SwapPart.Fmid:
-                        _world.Apply(SwapPart.Decode(m));
-                        break;
-                    case DropPart.Fmid:
-                        _world.Apply(DropPart.Decode(m));
-                        break;
-                    case ChatMessage.Fmid:
-                        _world.Apply(ChatMessage.Decode(m));
-                        break;
-                    case Ballot.Fmid:
-                        // P626 — a new in-flight ballot was announced (P187); the
-                        // world latches it as the ActiveBallot for the vote keys.
-                        _world.Apply(Ballot.Decode(m));
-                        break;
-                    case CancelBallot.Fmid:
-                        _world.Apply(CancelBallot.Decode(m));
-                        break;
-                    case PositionReqBroadcast.Fmid:
-                        _world.Apply(PositionReqBroadcast.Decode(m));
-                        break;
-                    case DelPositionReq.Fmid:
-                        var refusal = DelPositionReq.Decode(m);
-                        if (_ack is { } ack && refusal.ShipId == ack.ShipID)
-                            _lastPositionRefusal = refusal;
-                        _world.Apply(refusal);
-                        break;
-                    case LockLobby.Fmid:
-                        _world.Apply(LockLobby.Decode(m));
-                        break;
-                    case LockSides.Fmid:
-                        _world.Apply(LockSides.Decode(m));
-                        break;
-                    case AutoAccept.Fmid:
-                        _world.Apply(AutoAccept.Decode(m));
-                        break;
-                    case ChatBuoy.Fmid:
-                        _world.Apply(ChatBuoy.Decode(m));
-                        break;
-                    case AsteroidDestroyed.Fmid:
-                        _world.Apply(AsteroidDestroyed.Decode(m));
-                        break;
-                    case LastBaseNotice.Fmid:
-                        _world.Apply(LastBaseNotice.Decode(m));
-                        break;
-                    case ResearchProduction.Fmid:
-                        _world.Apply(ResearchProduction.Decode(m));
-                        break;
-                    case ResearchBriefing.Fmid:
-                        try { _world.Apply(ResearchBriefing.Decode(m)); }
-                        catch (Exception ex) { Console.WriteLine($"[research] invalid briefing ignored: {ex.Message}"); }
-                        break;
-                    case MissionBriefingInfo.Fmid:
-                        try { _world.Apply(MissionBriefingInfo.Decode(m)); }
-                        catch (Exception ex) { Console.WriteLine($"[briefing] invalid mission briefing info ignored: {ex.Message}"); }
-                        break;
-                    case Payday.Fmid:
-                        _world.Apply(Payday.Decode(m));
-                        break;
-                    case SetMoney.Fmid:
-                        // P442 — absolute per-ship money sync (join + per-teammate).
-                        _world.Apply(SetMoney.Decode(m));
-                        break;
-                    case MoneyChange.Fmid:
-                        // P442 — per-ship money delta (bucket spend, purchase,
-                        // refund, player donation).
-                        _world.Apply(MoneyChange.Decode(m));
-                        break;
-                    case RequestMoney.Fmid:
-                        _world.Apply(RequestMoney.Decode(m));
-                        break;
-                    case GainFlag.Fmid:
-                        _world.Apply(GainFlag.Decode(m));
-                        break;
-                    case AddPart.Fmid:
-                        _world.Apply(AddPart.Decode(m));
-                        break;
-                    case FireExpendable.Fmid:
-                        _world.Apply(FireExpendable.Decode(m));
-                        break;
-                    case RelaunchShip.Fmid:
-                        _world.Apply(RelaunchShip.Decode(m));
-                        break;
-                    case PingData.Fmid:
-                        _world.Apply(PingData.Decode(m));
-                        break;
-                    case AutoDonateUpdate.Fmid:
-                        // P442 — a player's auto-donate relationship (payday
-                        // routing) + any one-time gift.
-                        _world.Apply(AutoDonateUpdate.Decode(m));
-                        break;
-                    case KillShip.Fmid:
-                        _world.Apply(KillShip.Decode(m));
-                        break;
-                    case ShipDelete.Fmid:
-                        // P370 — the server's explicit "ship no longer in your
-                        // view" notice (docked / warped to another sector /
-                        // logged off / died). Decoded and forwarded to the world
-                        // so it can stop rendering the departed ship's frozen
-                        // pose (and resume it if the ship returns to view).
-                        _world.Apply(ShipDelete.Decode(m));
-                        break;
-                    case PlayerReady.Fmid:
-                        _world.Apply(PlayerReady.Decode(m));
-                        break;
-                    case JoinedMission.Fmid:
-                        var joined = JoinedMission.Decode(m);
-                        if (_resumeRequest is not null) _resumeRequest.DwCookie = joined.DwCookie;
-                        _world.Apply(joined);
-                        if (_world.JoinError is not null)
-                        {
-                            EndMissionConnection();
-                            return;
-                        }
-                        break;
-                    case ObjectSpotted.Fmid:
-                        _world.Apply(ObjectSpotted.Decode(m));
-                        break;
-                    case ChangeTeamCiv.Fmid:
-                        _world.Apply(ChangeTeamCiv.Decode(m));
-                        break;
-                    case ProbesUpdate.Fmid:
-                        _world.Apply(ProbesUpdate.Decode(m));
-                        break;
-                    case QuitSide.Fmid:
-                        _world.Apply(QuitSide.Decode(m));
-                        break;
-                    case EnterGame.Fmid:
-                        _world.Apply(EnterGame.Decode(m));
-                        break;
-                    case GameState.Fmid:
-                        _world.Apply(GameState.Decode(m));
-                        break;
-                    case QuitMission.Fmid:
-                        var departure = QuitMission.Decode(m);
-                        bool ownDeparture = departure.ShipId == (_world.JoinedShipId ?? _world.MyShipId);
-                        _world.Apply(departure);
-                        if (ownDeparture)
-                        {
-                            // clintlib.cpp:3805-3848 disconnects on own mission departure.
-                            EndMissionConnection();
-                            return; // later messages in this burst belong to the departed mission
-                        }
-                        break;
-                    case SetWingId.Fmid:
-                        _world.Apply(SetWingId.Decode(m));
-                        break;
-                    case OrderChange.Fmid:
-                        _world.Apply(OrderChange.Decode(m));
-                        break;
-                    case MissionDef.Fmid:
-                        _world.Apply(MissionDef.Decode(m));
-                        break;
-                    case MissionStageMessage.Fmid:
-                        _world.Apply(MissionStageMessage.Decode(m));
-                        break;
-                    case SetStartTime.Fmid:
-                        _world.Apply(SetStartTime.Decode(m));
-                        break;
-                    case SetBriefingText.Fmid:
-                        // P271 — the server's per-player mission briefing (the
-                        // starting cluster name). The world keeps the text so the
-                        // MonoGame client can render the dismissible briefing popup.
-                        _world.Apply(SetBriefingText.Decode(m));
-                        break;
-                    case GameOver.Fmid:
-                        _world.Apply(GameOver.Decode(m));
-                        break;
-                    case GameOverPlayers.Fmid:
-                        // P583 — the server's per-player endgame roster (score +
-                        // kills/deaths/ejections/rescues/baseKills/baseCaptures/
-                        // artifacts/flags). The world keeps it so the game-over
-                        // screen can render the per-player scoreboard.
-                        _world.Apply(GameOverPlayers.Decode(m));
-                        break;
-                    case SideInactive.Fmid:
-                        // P455b — the server marks a side inactive (pre-game
-                        // roster shrink P202, or a mid-game elimination
-                        // P455/P455b). The world records the per-side active
-                        // state (and AET when bChangeAET) so the scoreboard /
-                        // team list can mark the eliminated side "destroyed"
-                        // exactly as native does.
-                        _world.Apply(SideInactive.Decode(m));
-                        break;
-                    case MissileLockUpdate.Fmid:
-                        // P230 — owner-only lock snapshot; the world updates its
-                        // MissileLock and edge-posts the partial/full/lost tips.
-                        _world.Apply(MissileLockUpdate.Decode(m));
-                        break;
-                    case ProjectileInstance.Fmid:
-                        // P231 — a real fired projectile; the world appends a
-                        // transient ProjectileEntity to render as a bolt/streak.
-                        _world.Apply(ProjectileInstance.Decode(m));
-                        break;
-                    case FireMissile.Fmid:
-                        // P234 — a real missile launch; the world hydrates the
-                        // id-keyed MissileEntity (identity + type + spawn pose).
-                        _world.Apply(FireMissile.Decode(m));
-                        break;
-                    case MissileUpdate.Fmid:
-                        // P234 — the per-tick ongoing-position stream; the world
-                        // upserts each missile's current position/heading.
-                        _world.Apply(MissileUpdate.Decode(m));
-                        break;
-                    case MissileDestroyed.Fmid:
-                        // P234 — a real missile expiry/destruction; the world
-                        // removes the entity by id.
-                        _world.Apply(MissileDestroyed.Decode(m));
-                        break;
-                    case ProbeDestroyed.Fmid:
-                        // P260 — a real probe destruction/lifespan-expiry; the
-                        // world removes the probe by id (ends its ambient loop).
-                        _world.Apply(ProbeDestroyed.Decode(m));
-                        break;
-                    case MineDestroyed.Fmid:
-                        // P291 — a real mine detonation/lifespan-expiry; the
-                        // world removes the mine by id (ends its decal field).
-                        _world.Apply(MineDestroyed.Decode(m));
-                        break;
-                    case MineStrength.Fmid:
-                        // P574 — a real mine's current strength fraction after a
-                        // ship hit; the world thins the mine's decal field.
-                        _world.Apply(MineStrength.Decode(m));
-                        break;
-                    case BuildingEffectDestroyed.Fmid:
-                        // P294 — a real building-effect interruption (its Builder
-                        // died mid-build); the world removes the construction by
-                        // the target asteroid id (removes its visual).
-                        _world.Apply(BuildingEffectDestroyed.Decode(m));
-                        break;
-                    case CreateChaff.Fmid:
-                        // P292 — a real chaff deploy (the sector-wide CREATE_CHAFF
-                        // of the FE+CREATE_CHAFF+SPOOFED+END_SPOOFING flow); the
-                        // world appends a transient ChaffEntity to render.
-                        _world.Apply(CreateChaff.Decode(m));
-                        break;
-                    case TreasureSpawn.Fmid:
-                        // P293 — a real treasure creation (the DROP_PART part-
-                        // treasure and treasure-ack re-spawn broadcasts); the world
-                        // upserts a TreasureEntity keyed by its ObjectId to render.
-                        _world.Apply(TreasureSpawn.Decode(m));
-                        break;
-                    case DestroyTreasure.Fmid:
-                        // P293 — a real treasure pickup/expiry; the world removes
-                        // the TreasureEntity by id (ends its gold gem).
-                        _world.Apply(DestroyTreasure.Decode(m));
-                        break;
-                    case ExplosionEvent.Fmid:
-                        // P263 — a real blast; the world appends a transient
-                        // ExplosionEntity for the renderer to play (size/duration
-                        // from the type preset).
-                        _world.Apply(ExplosionEvent.Decode(m));
-                        break;
-                    case ProjectileHullHit.Fmid:
-                        // P364 — a weapon shot connected; the world buffers a
-                        // transient HullHitEntity (impact pos/normal/radius) for
-                        // the renderer to spawn the impact spark.
-                        _world.Apply(ProjectileHullHit.Decode(m));
-                        break;
-                    case VictimDamaged.Fmid:
-                        // P623 — the local ship just took damage from a ship; the
-                        // world buffers the attribution (attacker id + damage) for
-                        // Game1's TK_TargetHostile tracker. Targeted unicast to
-                        // the victim's own peer only.
-                        _world.Apply(VictimDamaged.Decode(m));
-                        break;
-                    case Allegiance.Core.Wire.CollisionEvent.Fmid:
-                        // P463c — two bodies collided; the world buffers a
-                        // CollisionEntity (party ids, sector, impact, jiggles)
-                        // for the audio pass to play the collision sound + jiggle.
-                        _world.Apply(Allegiance.Core.Wire.CollisionEvent.Decode(m));
-                        break;
-                    case OwnShipMiningUpdate.Fmid:
-                        // P255 — owner-only mining-target snapshot; the world
-                        // records which rock the local ship is drilling so the
-                        // renderer can orient its hull toward it.
-                        _world.Apply(OwnShipMiningUpdate.Decode(m));
-                        break;
-                    case MissileTrackWarningUpdate.Fmid:
-                        // P264 — owner-only "an enemy missile is tracking YOU"
-                        // snapshot (armed bool + best lock fraction); the world
-                        // records it so Game1 can drive the warning loop.
-                        _world.Apply(MissileTrackWarningUpdate.Decode(m));
-                        break;
-                    // P774 — the port-only score-roster snapshot (209) and
-                    // patch (219) dispatch cases are gone; the world
-                    // derives the roster from PLAYERINFO(10) + KILL_SHIP(105)
-                    // as native does. A stray 209/219 lands in UnknownFmids.
-                    case StationDestroyed.Fmid:
-                        // P267 — a station was destroyed (whole-mission notice);
-                        // the world records the sound event + removes the station.
-                        _world.Apply(StationDestroyed.Decode(m));
-                        break;
-                    case StationCapture.Fmid:
-                        // P267 — a station changed sides (whole-mission notice);
-                        // the world records the capture sound event + re-sides it.
-                        _world.Apply(StationCapture.Decode(m));
-                        break;
-                    case DevCompleted.Fmid:
-                        // P267 — a development completed (side-group notice);
-                        // the world records the completion-chime event.
-                        _world.Apply(DevCompleted.Decode(m));
-                        break;
-                    case SideRoster.Fmid:
-                        // P281 — the post-connect side-roster snapshot the server
-                        // pushes while the peer sits in side-select.
-                        _world.Apply(SideRoster.Decode(m));
-                        break;
-                    case SetTeamInfo.Fmid:
-                        // P820c — the server relays a side's squad on native
-                        // SET_TEAM_INFO(15) (Server.Squads.RelaySideSquad) on every
-                        // squad/name change; the world stores each side's squad for
-                        // the team pane (appmsg.cpp FM_CS_SET_TEAM_INFO,
-                        // clintlib/appmsg.cpp:2541-2550).
-                        _world.Apply(SetTeamInfo.Decode(m));
-                        break;
-                    case StaticMapInfo.Fmid:
-                        _world.Apply(StaticMapInfo.Decode(m));
-                        break;
-                    case SetMissionOwner.Fmid:
-                        // P281 — whole-mission owner broadcast; the world keeps it
-                        // so the side-select randomize-teams control is shown only
-                        // to the mission owner.
-                        _world.Apply(SetMissionOwner.Decode(m));
-                        break;
-                    case TeamReady.Fmid:
-                        // P282 — whole-mission per-side aggregate ready broadcast.
-                        _world.Apply(TeamReady.Decode(m));
-                        break;
-                    case ForceTeamReady.Fmid:
-                        // P282 — whole-mission forward of the leader's force-ready
-                        // trigger (incl. the sender's own echo).
-                        _world.Apply(ForceTeamReady.Decode(m));
-                        break;
-                    case SetTeamLeader.Fmid:
-                        // P366 — whole-mission leadership assignment/transfer; the
-                        // world tracks the per-side leader so the MonoGame client
-                        // can gate the leader-only bot dock/launch UI on
-                        // ClientWorld.IsTeamLeader.
-                        _world.Apply(SetTeamLeader.Decode(m));
-                        break;
-                    case JoinSide.Fmid:
-                        // P438 — whole-mission side-join broadcast (the server
-                        // sends it on every TryJoinSide, Server.Lobby.cs
-                        // BroadcastJoinSide). The world refreshes the affected
-                        // ship's SideId (and MySideId when it is our own ship),
-                        // the input to the isEnemy friend/enemy classification.
-                        // Previously dropped, so a ship that switched side after
-                        // its one-shot EXPORT stayed classified by its old side.
-                        _world.Apply(JoinSide.Decode(m));
-                        break;
-                    case ClusterWarningUpdate.Fmid:
-                        // P374 — a side's per-sector threat state changed; the
-                        // world stores the level + queues the sound/status cues.
-                        _world.Apply(ClusterWarningUpdate.Decode(m));
-                        break;
-                    case ShipWarningUpdate.Fmid:
-                        _world.Apply(ShipWarningUpdate.Decode(m));
-                        break;
-                    case CreateBuckets.Fmid:
-                        // P284 — the join-sync CREATE_BUCKETS preface; the world
-                        // seeds the joining side's development-tech mask from it.
-                        _world.Apply(CreateBuckets.Decode(m));
-                        break;
-                    case BucketStatus.Fmid:
-                        // P487 — the join-sync / post-donation per-bucket funding
-                        // snapshot; the world tracks each side bucket's invested
-                        // money + build-time ms for the investment pane.
-                        _world.Apply(BucketStatus.Decode(m));
-                        break;
-                    case SideTechChange.Fmid:
-                        // P284 — a development completed; the world updates that
-                        // side's development-tech mask (the docked-shop gate).
-                        _world.Apply(SideTechChange.Decode(m));
-                        break;
-                    case SideAttributeChange.Fmid:
-                        // P446 — a development applied an attribute delta; the
-                        // world stores that side's post-Apply multiplier set.
-                        _world.Apply(SideAttributeChange.Decode(m));
-                        break;
-                    case RipcordActivate.Fmid:
-                        // P414 — the server acknowledged a ripcord countdown began
-                        // (or was re-targeted) toward a valid anchor in the target
-                        // sector; the world starts/refreshes the local ripcord HUD
-                        // state and any per-ship active flag for our own ship.
-                        _world.Apply(RipcordActivate.Decode(m));
-                        break;
-                    case RipcordDenied.Fmid:
-                        // P414 — the server refused our ripcord request (no valid
-                        // anchor in the named sector); requester-only. The world
-                        // surfaces it as a system chat line (not silently dropped).
-                        _world.Apply(RipcordDenied.Decode(m));
-                        break;
-                    case RipcordAborted.Fmid:
-                        // P414 — a ripcord countdown was cancelled (our cancel
-                        // request, or a mid-countdown legality failure); the world
-                        // clears the HUD state and queues the "ripcord aborted" cue.
-                        _world.Apply(RipcordAborted.Decode(m));
-                        break;
-                    case ShipReset.Fmid:
-                        // P508 — the server rejected this ship's reported pose and
-                        // sent an authoritative reset + a NEW cookie; the world
-                        // stores the pose and flags the own ship for re-seed.
-                        var reset = ShipReset.Decode(m);
-                        _world.Apply(reset);
-                        _scriptedWarpHandshake.Reset(reset);
-                        break;
-                    case Eject.Fmid:
-                        // P540 — a player in this sector ejected into a drifting
-                        // Lifepod hull; the world swaps the hull, sets the pod
-                        // pose + spin, and latches the own-ship rescue autopilot.
-                        var eject = Eject.Decode(m);
-                        _world.Apply(eject);
-                        _scriptedWarpHandshake.Ejected(eject);
-                        break;
-                    case PlayerRescued.Fmid:
-                        // P627 — FM_S_PLAYER_RESCUED(16): the server tells both the
-                        // rescuer and the rescuee that a lifepod was picked up
-                        // (native appmsg.cpp:309-340; FedSrv.CPP:13056-13065 sends
-                        // it to both parties). The world already had a
-                        // ClientWorld.Apply(PlayerRescued) feedback producer (P578);
-                        // only the receive dispatch case was missing, so the real
-                        // client silently dropped the "you were rescued" line.
-                        _world.Apply(PlayerRescued.Decode(m));
-                        break;
-                    case OwnShipCloakUpdate.Fmid:
-                        // HUD-12 — OWN_SHIP_CLOAK_UPDATE(220): the owner-only
-                        // continuous GetCloaking() fraction (Server.Broadcast.cs).
-                        // Native's client simulated this locally; this renderer-only
-                        // client needs the stream for the cloak strength readout and
-                        // the decloak-tail icon (consoledata.cpp:480-489,563-575).
-                        _world.Apply(OwnShipCloakUpdate.Decode(m));
-                        break;
-                    case TeleportAck.Fmid:
-                        // P638 — FM_S_TELEPORT_ACK(102): accepted/denied teleport
-                        // reply (appmsg.cpp:1856). Previously unconsumed, so the
-                        // real client never heard the denial or the arrival jump.
-                        _world.Apply(TeleportAck.Decode(m));
-                        break;
-                    case Promote.Fmid:
-                        _world.Apply(Promote.Decode(m));
-                        break;
-                    case HighlightCluster.Fmid:
-                        _world.Apply(HighlightCluster.Decode(m));
-                        break;
-                    case ViewClusterReply.Fmid:
-                        _world.Apply(ViewClusterReply.Decode(m));
-                        break;
-                    case BoardNack.Fmid:
-                        // P638 — FM_S_BOARD_NACK(178): boarding refusal
-                        // (appmsg.cpp:1899). Previously dropped silently.
-                        _world.Apply(BoardNack.Decode(m));
-                        break;
-                    case MissileSpoofed.Fmid:
-                        // P638 — FM_S_MISSILE_SPOOFED(110): a missile's lock was
-                        // broken by chaff (appmsg.cpp:1667). Retarget onto the decoy.
-                        _world.Apply(MissileSpoofed.Decode(m));
-                        break;
-                    case EndSpoofing.Fmid:
-                        // P638 — FM_S_END_SPOOFING(111): close the spoof window
-                        // (appmsg.cpp:1686).
-                        _world.Apply(EndSpoofing.Decode(m));
-                        break;
-                    case EnterLifepod.Fmid:
-                        // P638 — FM_S_ENTER_LIFEPOD(166): forced into a Lifepod
-                        // (appmsg.cpp:1945).
-                        _world.Apply(EnterLifepod.Decode(m));
-                        break;
-                    case LeaveShip.Fmid:
-                        // P638 — FM_S_LEAVE_SHIP(94): a ship left its boarded
-                        // parent (appmsg.cpp:1914).
-                        _world.Apply(LeaveShip.Decode(m));
-                        break;
-                    case AsteroidMined.Fmid:
-                        // P638 — FM_S_ASTEROID_MINED(198): authoritative He3-mined
-                        // ore sync (appmsg.cpp:1733).
-                        _world.Apply(AsteroidMined.Decode(m));
-                        break;
-                    default:
-                        // P627 — no case matched this fmid: the real client does not
-                        // consume it. Record it (bounded distinct set) so the
-                        // dispatch-coverage test can assert a supported S-message is
-                        // consumed ("not unknown fmid") and so the receive audit can
-                        // enumerate genuinely-unconsumed server→client messages.
-                        _unknownFmids.Add(fmid);
-                        break;
-                }
+                // P975 (P971-01) — dispatch this ONE message under containment.
+                // A decode/apply failure drops it (counted, rate-limited log) and
+                // the batch continues; only a mandatory message may end the session,
+                // and then the rest of the batch is abandoned exactly as before.
+                if (!DispatchInboundMessage(m)) return;
             }
             // Scripted pilots continue the real update stream even when their
             // unchanged controls were commanded only once before the warp.
@@ -2130,6 +1530,719 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             _world.MarkApplied();
             _world.PublishDecisionSnapshot();
         }
+    }
+
+    /// <summary>
+    /// P975 (P971-01) — dispatch ONE inbound server message into the world under
+    /// per-message containment. Called from <see cref="ITransportSite.OnReceive"/>
+    /// with the world gate held, so every world/session mutation stays on the
+    /// receive thread's critical section.
+    ///
+    /// Each case decodes its message into a local BEFORE it touches the world, so a
+    /// codec rejection mutates nothing; a failure in either the decode or the apply
+    /// drops only THIS message. Returns <c>false</c> when the message ended the
+    /// session (a mandatory-message failure, or a message whose content commands the
+    /// session to stop) — the caller then abandons the rest of the batch, exactly as
+    /// the pre-P975 early <c>return</c>s did. <c>true</c> otherwise, including when
+    /// the message was dropped as malformed.
+    /// </summary>
+    private bool DispatchInboundMessage(byte[] m)
+    {
+        ushort fmid;
+        try { fmid = FedMessageHeader.Read(m).Fmid; }
+        catch { return true; }   // not even a header — nothing to consume
+
+        try
+        {
+            switch (fmid)
+            {
+                case LogonAck.Fmid:
+                    _ack = LogonAck.Decode(m);
+                    // Native keeps the accepted name as its own (clintlib/appmsg.cpp:39-40):
+                    // a verified logon's canonical callsign, so a P813c resume claims the
+                    // parked seat under the name the server knows.
+                    if (_ack.FValidated && _ack.CharNameOrFailureReason is { Length: > 0 } accepted)
+                    {
+                        _resumeName = accepted;
+                        if (_resumeRequest is { } pending) pending.CharacterName = accepted;
+                    }
+                    break;
+                case RankInfo.Fmid:
+                    // P639 — FM_S_RANK_INFO(13): the server's rank-name table,
+                    // sent once right after LOGONACK (Server.Lobby.cs:3344;
+                    // native appmsg.cpp:3372-3382). Store it on the world so
+                    // the char sheet / scoreboard / team pane can resolve a
+                    // roster Rank id to its display name.
+                    // P975 — no local catch: the one containment path below counts
+                    // and rate-limits a malformed message like every other case.
+                    _world.Apply(RankInfo.Decode(m));
+                    break;
+                case Ping.Fmid:
+                    // P508 — the server's echo of our FM_CS_PING(35): record its
+                    // sim-time stamp (timeServer, ms) + the local receive time for
+                    // the own-ship server clock.
+                    var ping = Ping.Decode(m);
+                    _pingEchoes.Add((ping.TimeServer, ReplayMilliseconds ?? Environment.TickCount64));
+                    _world.Apply(ping);
+                    if (_scriptedWarpHandshake.Clock(ping.TimeServer) is { } handshake)
+                        Send(ScriptedWarpHandshake.Pack(handshake));
+                    break;
+                case TimescaleUpdate.Fmid:
+                    // P612 — the server's sim time scale (sim.timeScale). Stored on
+                    // the world so the remote-ship dead-reckoners extrapolate in
+                    // scaled sim time (no rubber-banding under slow motion).
+                    _world.TimeScale = TimescaleUpdate.Decode(m).Scale;
+                    break;
+                case SetCluster.Fmid:
+                    var assignment = SetCluster.Decode(m);
+                    _world.Apply(assignment);
+                    _scriptedWarpHandshake.Assigned(assignment);
+                    break;
+                case SingleShipUpdate.Fmid:
+                    var singleShip = _world.DecodeBotMessage(m, SingleShipUpdate.Decode);
+                    _world.Apply(singleShip);
+                    _scriptedWarpHandshake.Observed(singleShip.Ship);
+                    break;
+                case HeavyShipsUpdate.Fmid:
+                    // P347 — the periodic cross-side visibility sync; every
+                    // cluster ship the viewer's side sees (now incl. other
+                    // factions since P346) refreshes pose via this message.
+                    var heavyShips = _world.DecodeBotMessage(m, HeavyShipsUpdate.Decode);
+                    _world.Apply(heavyShips);
+                    _scriptedWarpHandshake.ObservedTick(heavyShips.TimeReference);
+                    break;
+                case LightShipsUpdate.Fmid:
+                    _world.Apply(_world.DecodeBotMessage(m, LightShipsUpdate.Decode));
+                    break;
+                case ShipStatusMessage.Fmid:
+                    _world.Apply(_world.DecodeBotMessage(m, ShipStatusMessage.Decode));
+                    break;
+                case ExportShip.Fmid:
+                    // FM_S_EXPORT(26) is the generic object-export message:
+                    // ships (OT_ship=0), clusters (OT_cluster=13), stations
+                    // (OT_station=1), warps (OT_warp=7) and asteroids
+                    // (OT_asteroid=5) all ride this fmid, distinguished by
+                    // the 4-byte `objecttype` at message offset 8. Branch on
+                    // ObjectType first (same approach as Allegiance.Bot.Bot.cs),
+                    // decode the matching codec, feed it to the world.
+                    if (m.Length >= 12)
+                    {
+                        int ot = BitConverter.ToInt32(m.AsSpan(8, 4));
+                        if (ot == ExportShip.OtShip)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportShip.Decode));
+                        else if (ot == ExportCluster.OtCluster)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportCluster.Decode));
+                        else if (ot == ExportStation.OtStation)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportStation.Decode));
+                        else if (ot == ExportWarp.OtWarp)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportWarp.Decode));
+                        else if (ot == ExportAsteroid.OtAsteroid)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportAsteroid.Decode));
+                        else if (ot == ExportProbe.OtProbe)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportProbe.Decode));
+                        else if (ot == ExportMine.OtMine)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportMine.Decode));
+                        else if (ot == ExportBuildingEffect.OtBuildingEffect)
+                            _world.Apply(_world.DecodeBotMessage(m, ExportBuildingEffect.Decode));
+                    }
+                    break;
+                case AsteroidsUpdate.Fmid:
+                    // P423 — the periodic per-asteroid ore/health sync; the
+                    // world stores the live ore + structural fractions.
+                    _world.Apply(_world.DecodeBotMessage(m, AsteroidsUpdate.Decode));
+                    break;
+                case StationsUpdate.Fmid:
+                    // P423 — the periodic per-station hull/shield sync; the
+                    // world stores the live fractions (station health bar).
+                    _world.Apply(_world.DecodeBotMessage(m, StationsUpdate.Decode));
+                    break;
+                case QueuedCommandUpdate.Fmid:
+                    // P424 — the owner-only "you have a pending queued order"
+                    // sync; the world remembers it for the ACCEPT/REJECT/CLEAR
+                    // keys.
+                    _world.Apply(QueuedCommandUpdate.Decode(m));
+                    break;
+
+                case AcquireTreasure.Fmid:
+                {
+                    // P758 — FM_S_ACQUIRE_TREASURE(162): the server's
+                    // "you picked up a treasure" notice. Native's client
+                    // handler (appmsg.cpp:262-308) is in the CLIENT CORE, so
+                    // the reply lives here: a c_tcPart offer is answered
+                    // immediately with FM_C_TREASURE_ACK carrying the mount
+                    // native's HitTreasure picks (shipIGC.h:1239-1305).
+                    // Every code then drives the world (sounds + the
+                    // c_tcCash reward line).
+                    var acquire = AcquireTreasure.Decode(m);
+                    if (acquire.TreasureCode == (byte)TreasureCode.Part)
+                    {
+                        // P816/SIM-0267 — a searched-and-full decline plays
+                        // the native salCargoFullSound cue (shipIGC.h:1302)
+                        // instead of the pickup cue, then still answers
+                        // c_mountNA so the server drops the part back into
+                        // space (FedSrv.CPP:6125-6130).
+                        var (mount, cargoFull) = PartOfferMount(acquire);
+                        if (cargoFull) _world.RecordPartOfferCargoFull();
+                        SendTreasureAck(mount);
+                    }
+                    _world.Apply(acquire);
+                    break;
+                }
+                case WarpBomb.Fmid:
+                    // P758 — FM_S_WARP_BOMB(188): a missile hit an aleph; it
+                    // detonates at the carried deadline
+                    // (appmsg.cpp:850-868 — AddBomb + the sector-gated
+                    // "Aleph to %s destabilized" line).
+                    _world.Apply(WarpBomb.Decode(m));
+                    break;
+                case PlayerInfo.Fmid:
+                    _world.Apply(PlayerInfo.Decode(m));
+                    break;
+                case ClusterInfo.Fmid:
+                    _world.Apply(_world.DecodeBotMessage(m, ClusterInfo.Decode));
+                    break;
+                case DockedNotify.Fmid:
+                    _world.Apply(DockedNotify.Decode(m));
+                    break;
+                case BuyLoadoutAck.Fmid:
+                    // P473 — keep the raw ack for the spawn harness to
+                    // compare against the requested loadout, alongside the
+                    // world apply (which mutates the client's own ship).
+                    var bla = BuyLoadoutAck.Decode(m);
+                    _buyLoadoutAcks.Add(bla);
+                    _world.Apply(bla);
+                    PurchaseCompleted?.Invoke(bla.FBoughtEverything);
+                    break;
+                case Allegiance.Core.Wire.LoadoutChange.Fmid:
+                    // P648 — FM_S_LOADOUT_CHANGE(96): a ship's loadout/hull
+                    // changed (same-side broadcast; a post-death relaunch
+                    // sends this with the new hull). Previously dropped as
+                    // unknown; now applied so a same-side peer revives a
+                    // relaunched teammate and adopts its new hull.
+                    _world.Apply(Allegiance.Core.Wire.LoadoutChange.Decode(m));
+                    break;
+                case Reload.Fmid:
+                    // P362 — a successful reload relay (P361 auto-reload, or
+                    // the manual RELOAD path): the world counts it per ship so
+                    // the weapon-status tracker can show the "Reloading ammo..."
+                    // success state even though the ammo refill is synchronous
+                    // server-side. Consumer of an already-broadcast message —
+                    // no wire-protocol change.
+                    _world.Apply(Reload.Decode(m));
+                    break;
+                case ChangeAlliances.Fmid:
+                    _world.Apply(ChangeAlliances.Decode(m));
+                    break;
+                case SwapPart.Fmid:
+                    _world.Apply(SwapPart.Decode(m));
+                    break;
+                case DropPart.Fmid:
+                    _world.Apply(DropPart.Decode(m));
+                    break;
+                case ChatMessage.Fmid:
+                    _world.Apply(ChatMessage.Decode(m));
+                    break;
+                case Ballot.Fmid:
+                    // P626 — a new in-flight ballot was announced (P187); the
+                    // world latches it as the ActiveBallot for the vote keys.
+                    _world.Apply(Ballot.Decode(m));
+                    break;
+                case CancelBallot.Fmid:
+                    _world.Apply(CancelBallot.Decode(m));
+                    break;
+                case PositionReqBroadcast.Fmid:
+                    _world.Apply(PositionReqBroadcast.Decode(m));
+                    break;
+                case DelPositionReq.Fmid:
+                    var refusal = DelPositionReq.Decode(m);
+                    if (_ack is { } ack && refusal.ShipId == ack.ShipID)
+                        _lastPositionRefusal = refusal;
+                    _world.Apply(refusal);
+                    break;
+                case LockLobby.Fmid:
+                    _world.Apply(LockLobby.Decode(m));
+                    break;
+                case LockSides.Fmid:
+                    _world.Apply(LockSides.Decode(m));
+                    break;
+                case AutoAccept.Fmid:
+                    _world.Apply(AutoAccept.Decode(m));
+                    break;
+                case ChatBuoy.Fmid:
+                    _world.Apply(ChatBuoy.Decode(m));
+                    break;
+                case AsteroidDestroyed.Fmid:
+                    _world.Apply(AsteroidDestroyed.Decode(m));
+                    break;
+                case LastBaseNotice.Fmid:
+                    _world.Apply(LastBaseNotice.Decode(m));
+                    break;
+                case ResearchProduction.Fmid:
+                    _world.Apply(ResearchProduction.Decode(m));
+                    break;
+                case ResearchBriefing.Fmid:
+                    // P975 — the one containment path counts/logs (rate-limited, no
+                    // exception text) instead of this case's own unbounded line.
+                    _world.Apply(ResearchBriefing.Decode(m));
+                    break;
+                case MissionBriefingInfo.Fmid:
+                    _world.Apply(MissionBriefingInfo.Decode(m));
+                    break;
+                case Payday.Fmid:
+                    _world.Apply(Payday.Decode(m));
+                    break;
+                case SetMoney.Fmid:
+                    // P442 — absolute per-ship money sync (join + per-teammate).
+                    _world.Apply(SetMoney.Decode(m));
+                    break;
+                case MoneyChange.Fmid:
+                    // P442 — per-ship money delta (bucket spend, purchase,
+                    // refund, player donation).
+                    _world.Apply(MoneyChange.Decode(m));
+                    break;
+                case RequestMoney.Fmid:
+                    _world.Apply(RequestMoney.Decode(m));
+                    break;
+                case GainFlag.Fmid:
+                    _world.Apply(GainFlag.Decode(m));
+                    break;
+                case AddPart.Fmid:
+                    _world.Apply(AddPart.Decode(m));
+                    break;
+                case FireExpendable.Fmid:
+                    _world.Apply(FireExpendable.Decode(m));
+                    break;
+                case RelaunchShip.Fmid:
+                    _world.Apply(RelaunchShip.Decode(m));
+                    break;
+                case PingData.Fmid:
+                    _world.Apply(PingData.Decode(m));
+                    break;
+                case AutoDonateUpdate.Fmid:
+                    // P442 — a player's auto-donate relationship (payday
+                    // routing) + any one-time gift.
+                    _world.Apply(AutoDonateUpdate.Decode(m));
+                    break;
+                case KillShip.Fmid:
+                    _world.Apply(KillShip.Decode(m));
+                    break;
+                case ShipDelete.Fmid:
+                    // P370 — the server's explicit "ship no longer in your
+                    // view" notice (docked / warped to another sector /
+                    // logged off / died). Decoded and forwarded to the world
+                    // so it can stop rendering the departed ship's frozen
+                    // pose (and resume it if the ship returns to view).
+                    _world.Apply(ShipDelete.Decode(m));
+                    break;
+                case PlayerReady.Fmid:
+                    _world.Apply(PlayerReady.Decode(m));
+                    break;
+                case JoinedMission.Fmid:
+                    var joined = JoinedMission.Decode(m);
+                    if (_resumeRequest is not null) _resumeRequest.DwCookie = joined.DwCookie;
+                    _world.Apply(joined);
+                    if (_world.JoinError is not null)
+                    {
+                        EndMissionConnection();
+                        return false;   // end the batch: the session stopped
+                    }
+                    break;
+                case ObjectSpotted.Fmid:
+                    _world.Apply(ObjectSpotted.Decode(m));
+                    break;
+                case ChangeTeamCiv.Fmid:
+                    _world.Apply(ChangeTeamCiv.Decode(m));
+                    break;
+                case ProbesUpdate.Fmid:
+                    _world.Apply(ProbesUpdate.Decode(m));
+                    break;
+                case QuitSide.Fmid:
+                    _world.Apply(QuitSide.Decode(m));
+                    break;
+                case EnterGame.Fmid:
+                    _world.Apply(EnterGame.Decode(m));
+                    break;
+                case GameState.Fmid:
+                    _world.Apply(GameState.Decode(m));
+                    break;
+                case QuitMission.Fmid:
+                    var departure = QuitMission.Decode(m);
+                    bool ownDeparture = departure.ShipId == (_world.JoinedShipId ?? _world.MyShipId);
+                    _world.Apply(departure);
+                    if (ownDeparture)
+                    {
+                        // clintlib.cpp:3805-3848 disconnects on own mission departure.
+                        EndMissionConnection();
+                        return false;   // later messages in this burst belong to the departed mission
+                    }
+                    break;
+                case SetWingId.Fmid:
+                    _world.Apply(SetWingId.Decode(m));
+                    break;
+                case OrderChange.Fmid:
+                    _world.Apply(OrderChange.Decode(m));
+                    break;
+                case MissionDef.Fmid:
+                    _world.Apply(MissionDef.Decode(m));
+                    break;
+                case MissionStageMessage.Fmid:
+                    _world.Apply(MissionStageMessage.Decode(m));
+                    break;
+                case SetStartTime.Fmid:
+                    _world.Apply(SetStartTime.Decode(m));
+                    break;
+                case SetBriefingText.Fmid:
+                    // P271 — the server's per-player mission briefing (the
+                    // starting cluster name). The world keeps the text so the
+                    // MonoGame client can render the dismissible briefing popup.
+                    _world.Apply(SetBriefingText.Decode(m));
+                    break;
+                case GameOver.Fmid:
+                    _world.Apply(GameOver.Decode(m));
+                    break;
+                case GameOverPlayers.Fmid:
+                    // P583 — the server's per-player endgame roster (score +
+                    // kills/deaths/ejections/rescues/baseKills/baseCaptures/
+                    // artifacts/flags). The world keeps it so the game-over
+                    // screen can render the per-player scoreboard.
+                    _world.Apply(GameOverPlayers.Decode(m));
+                    break;
+                case SideInactive.Fmid:
+                    // P455b — the server marks a side inactive (pre-game
+                    // roster shrink P202, or a mid-game elimination
+                    // P455/P455b). The world records the per-side active
+                    // state (and AET when bChangeAET) so the scoreboard /
+                    // team list can mark the eliminated side "destroyed"
+                    // exactly as native does.
+                    _world.Apply(SideInactive.Decode(m));
+                    break;
+                case MissileLockUpdate.Fmid:
+                    // P230 — owner-only lock snapshot; the world updates its
+                    // MissileLock and edge-posts the partial/full/lost tips.
+                    _world.Apply(MissileLockUpdate.Decode(m));
+                    break;
+                case ProjectileInstance.Fmid:
+                    // P231 — a real fired projectile; the world appends a
+                    // transient ProjectileEntity to render as a bolt/streak.
+                    _world.Apply(ProjectileInstance.Decode(m));
+                    break;
+                case FireMissile.Fmid:
+                    // P234 — a real missile launch; the world hydrates the
+                    // id-keyed MissileEntity (identity + type + spawn pose).
+                    _world.Apply(FireMissile.Decode(m));
+                    break;
+                case MissileUpdate.Fmid:
+                    // P234 — the per-tick ongoing-position stream; the world
+                    // upserts each missile's current position/heading.
+                    _world.Apply(MissileUpdate.Decode(m));
+                    break;
+                case MissileDestroyed.Fmid:
+                    // P234 — a real missile expiry/destruction; the world
+                    // removes the entity by id.
+                    _world.Apply(MissileDestroyed.Decode(m));
+                    break;
+                case ProbeDestroyed.Fmid:
+                    // P260 — a real probe destruction/lifespan-expiry; the
+                    // world removes the probe by id (ends its ambient loop).
+                    _world.Apply(ProbeDestroyed.Decode(m));
+                    break;
+                case MineDestroyed.Fmid:
+                    // P291 — a real mine detonation/lifespan-expiry; the
+                    // world removes the mine by id (ends its decal field).
+                    _world.Apply(MineDestroyed.Decode(m));
+                    break;
+                case MineStrength.Fmid:
+                    // P574 — a real mine's current strength fraction after a
+                    // ship hit; the world thins the mine's decal field.
+                    _world.Apply(MineStrength.Decode(m));
+                    break;
+                case BuildingEffectDestroyed.Fmid:
+                    // P294 — a real building-effect interruption (its Builder
+                    // died mid-build); the world removes the construction by
+                    // the target asteroid id (removes its visual).
+                    _world.Apply(BuildingEffectDestroyed.Decode(m));
+                    break;
+                case CreateChaff.Fmid:
+                    // P292 — a real chaff deploy (the sector-wide CREATE_CHAFF
+                    // of the FE+CREATE_CHAFF+SPOOFED+END_SPOOFING flow); the
+                    // world appends a transient ChaffEntity to render.
+                    _world.Apply(CreateChaff.Decode(m));
+                    break;
+                case TreasureSpawn.Fmid:
+                    // P293 — a real treasure creation (the DROP_PART part-
+                    // treasure and treasure-ack re-spawn broadcasts); the world
+                    // upserts a TreasureEntity keyed by its ObjectId to render.
+                    _world.Apply(TreasureSpawn.Decode(m));
+                    break;
+                case DestroyTreasure.Fmid:
+                    // P293 — a real treasure pickup/expiry; the world removes
+                    // the TreasureEntity by id (ends its gold gem).
+                    _world.Apply(DestroyTreasure.Decode(m));
+                    break;
+                case ExplosionEvent.Fmid:
+                    // P263 — a real blast; the world appends a transient
+                    // ExplosionEntity for the renderer to play (size/duration
+                    // from the type preset).
+                    _world.Apply(ExplosionEvent.Decode(m));
+                    break;
+                case ProjectileHullHit.Fmid:
+                    // P364 — a weapon shot connected; the world buffers a
+                    // transient HullHitEntity (impact pos/normal/radius) for
+                    // the renderer to spawn the impact spark.
+                    _world.Apply(ProjectileHullHit.Decode(m));
+                    break;
+                case VictimDamaged.Fmid:
+                    // P623 — the local ship just took damage from a ship; the
+                    // world buffers the attribution (attacker id + damage) for
+                    // Game1's TK_TargetHostile tracker. Targeted unicast to
+                    // the victim's own peer only.
+                    _world.Apply(VictimDamaged.Decode(m));
+                    break;
+                case Allegiance.Core.Wire.CollisionEvent.Fmid:
+                    // P463c — two bodies collided; the world buffers a
+                    // CollisionEntity (party ids, sector, impact, jiggles)
+                    // for the audio pass to play the collision sound + jiggle.
+                    _world.Apply(Allegiance.Core.Wire.CollisionEvent.Decode(m));
+                    break;
+                case OwnShipMiningUpdate.Fmid:
+                    // P255 — owner-only mining-target snapshot; the world
+                    // records which rock the local ship is drilling so the
+                    // renderer can orient its hull toward it.
+                    _world.Apply(OwnShipMiningUpdate.Decode(m));
+                    break;
+                case MissileTrackWarningUpdate.Fmid:
+                    // P264 — owner-only "an enemy missile is tracking YOU"
+                    // snapshot (armed bool + best lock fraction); the world
+                    // records it so Game1 can drive the warning loop.
+                    _world.Apply(MissileTrackWarningUpdate.Decode(m));
+                    break;
+                // P774 — the port-only score-roster snapshot (209) and
+                // patch (219) dispatch cases are gone; the world
+                // derives the roster from PLAYERINFO(10) + KILL_SHIP(105)
+                // as native does. A stray 209/219 lands in UnknownFmids.
+                case StationDestroyed.Fmid:
+                    // P267 — a station was destroyed (whole-mission notice);
+                    // the world records the sound event + removes the station.
+                    _world.Apply(StationDestroyed.Decode(m));
+                    break;
+                case StationCapture.Fmid:
+                    // P267 — a station changed sides (whole-mission notice);
+                    // the world records the capture sound event + re-sides it.
+                    _world.Apply(StationCapture.Decode(m));
+                    break;
+                case DevCompleted.Fmid:
+                    // P267 — a development completed (side-group notice);
+                    // the world records the completion-chime event.
+                    _world.Apply(DevCompleted.Decode(m));
+                    break;
+                case SideRoster.Fmid:
+                    // P281 — the post-connect side-roster snapshot the server
+                    // pushes while the peer sits in side-select.
+                    _world.Apply(SideRoster.Decode(m));
+                    break;
+                case SetTeamInfo.Fmid:
+                    // P820c — the server relays a side's squad on native
+                    // SET_TEAM_INFO(15) (Server.Squads.RelaySideSquad) on every
+                    // squad/name change; the world stores each side's squad for
+                    // the team pane (appmsg.cpp FM_CS_SET_TEAM_INFO,
+                    // clintlib/appmsg.cpp:2541-2550).
+                    _world.Apply(SetTeamInfo.Decode(m));
+                    break;
+                case StaticMapInfo.Fmid:
+                    _world.Apply(StaticMapInfo.Decode(m));
+                    break;
+                case SetMissionOwner.Fmid:
+                    // P281 — whole-mission owner broadcast; the world keeps it
+                    // so the side-select randomize-teams control is shown only
+                    // to the mission owner.
+                    _world.Apply(SetMissionOwner.Decode(m));
+                    break;
+                case TeamReady.Fmid:
+                    // P282 — whole-mission per-side aggregate ready broadcast.
+                    _world.Apply(TeamReady.Decode(m));
+                    break;
+                case ForceTeamReady.Fmid:
+                    // P282 — whole-mission forward of the leader's force-ready
+                    // trigger (incl. the sender's own echo).
+                    _world.Apply(ForceTeamReady.Decode(m));
+                    break;
+                case SetTeamLeader.Fmid:
+                    // P366 — whole-mission leadership assignment/transfer; the
+                    // world tracks the per-side leader so the MonoGame client
+                    // can gate the leader-only bot dock/launch UI on
+                    // ClientWorld.IsTeamLeader.
+                    _world.Apply(SetTeamLeader.Decode(m));
+                    break;
+                case JoinSide.Fmid:
+                    // P438 — whole-mission side-join broadcast (the server
+                    // sends it on every TryJoinSide, Server.Lobby.cs
+                    // BroadcastJoinSide). The world refreshes the affected
+                    // ship's SideId (and MySideId when it is our own ship),
+                    // the input to the isEnemy friend/enemy classification.
+                    // Previously dropped, so a ship that switched side after
+                    // its one-shot EXPORT stayed classified by its old side.
+                    _world.Apply(JoinSide.Decode(m));
+                    break;
+                case ClusterWarningUpdate.Fmid:
+                    // P374 — a side's per-sector threat state changed; the
+                    // world stores the level + queues the sound/status cues.
+                    _world.Apply(ClusterWarningUpdate.Decode(m));
+                    break;
+                case ShipWarningUpdate.Fmid:
+                    _world.Apply(ShipWarningUpdate.Decode(m));
+                    break;
+                case CreateBuckets.Fmid:
+                    // P284 — the join-sync CREATE_BUCKETS preface; the world
+                    // seeds the joining side's development-tech mask from it.
+                    _world.Apply(CreateBuckets.Decode(m));
+                    break;
+                case BucketStatus.Fmid:
+                    // P487 — the join-sync / post-donation per-bucket funding
+                    // snapshot; the world tracks each side bucket's invested
+                    // money + build-time ms for the investment pane.
+                    _world.Apply(BucketStatus.Decode(m));
+                    break;
+                case SideTechChange.Fmid:
+                    // P284 — a development completed; the world updates that
+                    // side's development-tech mask (the docked-shop gate).
+                    _world.Apply(SideTechChange.Decode(m));
+                    break;
+                case SideAttributeChange.Fmid:
+                    // P446 — a development applied an attribute delta; the
+                    // world stores that side's post-Apply multiplier set.
+                    _world.Apply(SideAttributeChange.Decode(m));
+                    break;
+                case RipcordActivate.Fmid:
+                    // P414 — the server acknowledged a ripcord countdown began
+                    // (or was re-targeted) toward a valid anchor in the target
+                    // sector; the world starts/refreshes the local ripcord HUD
+                    // state and any per-ship active flag for our own ship.
+                    _world.Apply(RipcordActivate.Decode(m));
+                    break;
+                case RipcordDenied.Fmid:
+                    // P414 — the server refused our ripcord request (no valid
+                    // anchor in the named sector); requester-only. The world
+                    // surfaces it as a system chat line (not silently dropped).
+                    _world.Apply(RipcordDenied.Decode(m));
+                    break;
+                case RipcordAborted.Fmid:
+                    // P414 — a ripcord countdown was cancelled (our cancel
+                    // request, or a mid-countdown legality failure); the world
+                    // clears the HUD state and queues the "ripcord aborted" cue.
+                    _world.Apply(RipcordAborted.Decode(m));
+                    break;
+                case ShipReset.Fmid:
+                    // P508 — the server rejected this ship's reported pose and
+                    // sent an authoritative reset + a NEW cookie; the world
+                    // stores the pose and flags the own ship for re-seed.
+                    var reset = ShipReset.Decode(m);
+                    _world.Apply(reset);
+                    _scriptedWarpHandshake.Reset(reset);
+                    break;
+                case Eject.Fmid:
+                    // P540 — a player in this sector ejected into a drifting
+                    // Lifepod hull; the world swaps the hull, sets the pod
+                    // pose + spin, and latches the own-ship rescue autopilot.
+                    var eject = Eject.Decode(m);
+                    _world.Apply(eject);
+                    _scriptedWarpHandshake.Ejected(eject);
+                    break;
+                case PlayerRescued.Fmid:
+                    // P627 — FM_S_PLAYER_RESCUED(16): the server tells both the
+                    // rescuer and the rescuee that a lifepod was picked up
+                    // (native appmsg.cpp:309-340; FedSrv.CPP:13056-13065 sends
+                    // it to both parties). The world already had a
+                    // ClientWorld.Apply(PlayerRescued) feedback producer (P578);
+                    // only the receive dispatch case was missing, so the real
+                    // client silently dropped the "you were rescued" line.
+                    _world.Apply(PlayerRescued.Decode(m));
+                    break;
+                case OwnShipCloakUpdate.Fmid:
+                    // HUD-12 — OWN_SHIP_CLOAK_UPDATE(220): the owner-only
+                    // continuous GetCloaking() fraction (Server.Broadcast.cs).
+                    // Native's client simulated this locally; this renderer-only
+                    // client needs the stream for the cloak strength readout and
+                    // the decloak-tail icon (consoledata.cpp:480-489,563-575).
+                    _world.Apply(OwnShipCloakUpdate.Decode(m));
+                    break;
+                case TeleportAck.Fmid:
+                    // P638 — FM_S_TELEPORT_ACK(102): accepted/denied teleport
+                    // reply (appmsg.cpp:1856). Previously unconsumed, so the
+                    // real client never heard the denial or the arrival jump.
+                    _world.Apply(TeleportAck.Decode(m));
+                    break;
+                case Promote.Fmid:
+                    _world.Apply(Promote.Decode(m));
+                    break;
+                case HighlightCluster.Fmid:
+                    _world.Apply(HighlightCluster.Decode(m));
+                    break;
+                case ViewClusterReply.Fmid:
+                    _world.Apply(ViewClusterReply.Decode(m));
+                    break;
+                case BoardNack.Fmid:
+                    // P638 — FM_S_BOARD_NACK(178): boarding refusal
+                    // (appmsg.cpp:1899). Previously dropped silently.
+                    _world.Apply(BoardNack.Decode(m));
+                    break;
+                case MissileSpoofed.Fmid:
+                    // P638 — FM_S_MISSILE_SPOOFED(110): a missile's lock was
+                    // broken by chaff (appmsg.cpp:1667). Retarget onto the decoy.
+                    _world.Apply(MissileSpoofed.Decode(m));
+                    break;
+                case EndSpoofing.Fmid:
+                    // P638 — FM_S_END_SPOOFING(111): close the spoof window
+                    // (appmsg.cpp:1686).
+                    _world.Apply(EndSpoofing.Decode(m));
+                    break;
+                case EnterLifepod.Fmid:
+                    // P638 — FM_S_ENTER_LIFEPOD(166): forced into a Lifepod
+                    // (appmsg.cpp:1945).
+                    _world.Apply(EnterLifepod.Decode(m));
+                    break;
+                case LeaveShip.Fmid:
+                    // P638 — FM_S_LEAVE_SHIP(94): a ship left its boarded
+                    // parent (appmsg.cpp:1914).
+                    _world.Apply(LeaveShip.Decode(m));
+                    break;
+                case AsteroidMined.Fmid:
+                    // P638 — FM_S_ASTEROID_MINED(198): authoritative He3-mined
+                    // ore sync (appmsg.cpp:1733).
+                    _world.Apply(AsteroidMined.Decode(m));
+                    break;
+                default:
+                    // P627 — no case matched this fmid: the real client does not
+                    // consume it. Record it (bounded distinct set) so the
+                    // dispatch-coverage test can assert a supported S-message is
+                    // consumed ("not unknown fmid") and so the receive audit can
+                    // enumerate genuinely-unconsumed server→client messages.
+                    _unknownFmids.Add(fmid);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (!IsMandatoryFmid(fmid))
+            {
+                // P971-01 — contain it: this message is dropped, counted and
+                // logged; the session and the rest of the batch continue. Native's
+                // equivalent is its per-message sanity check + "HACKER??" line,
+                // which also keeps the connection (_Utility/Messages.cpp:947-994).
+                NoteMalformedMessage(fmid, m.Length, ex);
+                return true;
+            }
+            // A mandatory message is unreadable: the session cannot be established
+            // or trusted (see IsMandatoryFmid), so this is an explicit disconnect
+            // instead of an exception escaping into the transport's read loop
+            // (which would surface as an unexplained "invalid frame" session loss).
+            NoteMalformedMessage(fmid, m.Length, ex, mandatory: true);
+            // Runs on the receive thread: a blocking Shutdown() would wait for
+            // this very attempt to finish (P974 ownership), so end it the same
+            // non-blocking way as the JoinError / own-departure paths above.
+            EndMissionConnection();
+            return false;
+        }
+        return true;
     }
 
     /// <summary>P671 — stop the keep-alive thread (on dispose). Sets the stop
