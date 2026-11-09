@@ -19,6 +19,7 @@ namespace Allegiance.ClientCore.Tests;
 /// <c>UPDATE_CORPUS=1</c> regenerates them. The tests prove the current driver
 /// produces exactly the recorded decisions and catch accidental behaviour drift.
 /// </summary>
+[Trait("Requires", "Artwork")]   // every scenario loads PCore001.igc (artwork corpus)
 public sealed class P986BotDecisionCorpusTests : IDisposable
 {
     private static readonly string CorpusDir = Path.Combine(

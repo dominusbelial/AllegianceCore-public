@@ -128,7 +128,7 @@ public class DiscoveryTests
         var targets = DiscoveryTargets.LanEndpoints(
             new[] { new InterfaceInfo("lo", IPAddress.Parse("127.0.0.1"), 8, IsLoopback: true) },
             responder.BoundPort, "239.255.7.31");
-        var found = engine.CollectLanAsync(targets, windowMs: 700);
+        var found = engine.CollectLanAsync(targets, windowMs: 3000); // loaded CI runner allowance (public CI run 42688466867 got nothing in 700 ms)
 
         Assert.NotEmpty(found);
         var s = found[0];
