@@ -1,0 +1,40 @@
+{
+  "baseline": "P979 documented 4/5; see VISUAL_FLAGS_RADIAL_VISIBILITY_P979.md",
+  "runs": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:04:03.3380239",
+      "receipt": "P700 local 15v15: 238.9s, samples=2385, reached=24/30, longest speed<1 with target=1.915s, shots=1519, hits=431, kills=1",
+      "maxIdleSeconds": 1.915
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:03:55.9152882",
+      "receipt": "P700 local 15v15: 231.6s, samples=2313, reached=24/30, longest speed<1 with target=1.413s, shots=2253, hits=592, kills=2",
+      "maxIdleSeconds": 1.413
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:03:14.8338858",
+      "receipt": "P700 local 15v15: 190.7s, samples=1904, reached=24/30, longest speed<1 with target=2.808s, shots=5341, hits=2691, kills=16",
+      "maxIdleSeconds": 2.808
+    },
+    {
+      "run": 4,
+      "outcome": "Passed",
+      "duration": "00:03:01.8070890",
+      "receipt": "P700 local 15v15: 177.2s, samples=1769, reached=24/30, longest speed<1 with target=2.707s, shots=4696, hits=2617, kills=16",
+      "maxIdleSeconds": 2.707
+    },
+    {
+      "run": 5,
+      "outcome": "Passed",
+      "duration": "00:02:42.2224189",
+      "receipt": "P700 local 15v15: 157.5s, samples=1572, reached=24/30, longest speed<1 with target=2.516s, shots=4582, hits=2283, kills=13",
+      "maxIdleSeconds": 2.516
+    }
+  ]
+}

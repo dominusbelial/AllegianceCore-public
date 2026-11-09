@@ -57,6 +57,7 @@ public sealed class LensFlareRenderer : IDisposable
 
     private Vector3? _lightDir;
     private bool _loaded;
+    private Texture2D? _simDisc;
 
     public LensFlareRenderer(GraphicsDevice gd, IAssetSource assets)
     {
@@ -86,11 +87,11 @@ public sealed class LensFlareRenderer : IDisposable
     /// with a self-contained orthographic pass. Sets/restores only the blend
     /// state (the caller has already pinned depth-off / raster).
     /// </summary>
-    public void Draw(Matrix view, Matrix projection)
+    public void Draw(Matrix view, Matrix projection, bool simGlare = false)
     {
         if (_lightDir is not Vector3 light) return;
         EnsureLoaded();
-        if (!HasAnySurface()) return;
+        if (!simGlare && !HasAnySurface()) return;
 
         var gd = _gd;
         int w = gd.Viewport.Width, h = gd.Viewport.Height;
@@ -133,13 +134,21 @@ public sealed class LensFlareRenderer : IDisposable
         foreach (var elem in LensFlareElements.Table)
         {
             if (elem.Index < 0 || elem.Index >= _surfaces.Length) continue;
-            var tex = _surfaces[elem.Index];
+            var tex = simGlare && elem.Index == 1 ? SimDisc() : _surfaces[elem.Index];
             if (tex is null) continue;
 
+            float restrainedAlpha = !simGlare ? 1 : elem.Index == 1 ? SimGlare.Alpha
+                : SimGlare.GhostAlpha(Vector3.Dot(light, Vector3.Normalize(Matrix.Invert(view).Forward)));
+            if (simGlare && restrainedAlpha <= 0) continue;
             var center = new Vector2(cx, cy) + pointLight * elem.Pos;
             float half = BaseHalfSizePx * (w / ReferenceWidth) * elem.Scale;
 
             var color = elem.White ? new Color(255, 255, 255) : new Color(40, 40, 255);
+            if (simGlare)
+            {
+                half = elem.Index == 1 ? SimGlare.DiscHalfPixels(projection.M22, h) : half * 0.35f;
+                color = new Color(1f, 1f, 1f, elem.Index == 1 ? SimGlare.DiscAlpha : restrainedAlpha);
+            }
 
             // Native rotates only the STAR_AURA (surface index 1).
             float angle = elem.Index == 1 ? (sx + sy) / 200f : 0f;
@@ -179,6 +188,22 @@ public sealed class LensFlareRenderer : IDisposable
         }
     }
 
+    private Texture2D SimDisc()
+    {
+        if (_simDisc is not null) return _simDisc;
+        const int size = 32;
+        var pixels = new Color[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float radius = new Vector2((x + 0.5f) * 2 / size - 1, (y + 0.5f) * 2 / size - 1).Length();
+                pixels[y * size + x] = new Color(1f, 1f, 1f, Math.Clamp((1 - radius) * size * 0.5f, 0, 1));
+            }
+        _simDisc = new Texture2D(_gd, size, size);
+        _simDisc.SetData(pixels);
+        return _simDisc;
+    }
+
     private bool HasAnySurface()
     {
         for (int i = 0; i < _surfaces.Length; i++)
@@ -188,6 +213,7 @@ public sealed class LensFlareRenderer : IDisposable
 
     public void Dispose()
     {
+        _simDisc?.Dispose();
         _mdl.Dispose();
         for (int i = 0; i < _surfaces.Length; i++) _surfaces[i] = null;
     }

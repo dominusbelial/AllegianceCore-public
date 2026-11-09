@@ -685,35 +685,51 @@ public sealed partial class Game1
                 // ships, over the starfield (native renders it among the geos). A
                 // >100 m camera jump (warp/teleport/sector change) clears it (the
                 // native rule), so the field never smears across a transit.
-                _debrisGeo.Step(
-                    new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z),
-                    new SimVec(-view.M31, -view.M32, -view.M33),   // camera forward
-                    new SimVec(view.M11, view.M12, view.M13),      // camera right
-                    new SimVec(view.M21, view.M22, view.M23),      // camera up
-                    proj.M22,                                      // focus = cot(vFOV/2)
-                    (float)_gameSeconds);
-                float debrisFocus = proj.M22;
-                _drawDustViews.Clear();
-                foreach (var pt in _debrisGeo.Points)
+                if (_visuals.IsOn(Rendering.VisualFlags.SubtleDustKey))
                 {
-                    float age = (float)_gameSeconds - pt.StartTime;
-                    float bright = Rendering.DebrisGeo.Brightness(age);
-                    if (bright <= 0f) continue;
-                    float rx = pt.Position.X - cameraEye.X, ry = pt.Position.Y - cameraEye.Y, rz = pt.Position.Z - cameraEye.Z;
-                    float dsq = rx * rx + ry * ry + rz * rz;
-                    // Native Render skips grains within 20 m of the camera (debrisgeo.cpp:177).
-                    if (dsq <= Rendering.DebrisGeo.NearCameraSkipSquared) continue;
-                    // P503: native DrawDecal scale = 0.1/focus is a CONSTANT world
-                    // half-extent for every grain (context.cpp:2317, debrisgeo.cpp:166);
-                    // the perspective divide then makes a grain subtend 0.1/distance of
-                    // the screen height — smaller the farther away. The P449a formula
-                    // (0.1/focus)·distance·Calibration gave every grain a constant
-                    // ~1.3% of screen height regardless of depth → the "bubbles".
-                    float half = Rendering.AmbientDustRenderer.DecalHalfExtent(debrisFocus);
-                    _drawDustViews.Add(new Rendering.AmbientDustView(
-                        pt.Position,
-                        half,
-                        new Vector3(bright * pt.Colour.X, bright * pt.Colour.Y, bright * pt.Colour.Z)));
+                    _subtleDust.Step(cameraEye, _debrisGeo.Density, _spaceVisualFrame.Cut);
+                    _drawDustViews.Clear();
+                    foreach (var grain in _subtleDust.Grains)
+                    {
+                        float brightness = grain.Brightness * Rendering.SubtleDust.DistanceFade(Vector3.Distance(grain.Position, cameraEye));
+                        _drawDustViews.Add(new Rendering.AmbientDustView(
+                            new SimVec(grain.Position.X, grain.Position.Y, grain.Position.Z),
+                            grain.HalfExtent / proj.M22, new Vector3(brightness)));
+                    }
+                }
+                else
+                {
+                    _subtleDust.Reset();
+                    _debrisGeo.Step(
+                        new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z),
+                        new SimVec(-view.M31, -view.M32, -view.M33),   // camera forward
+                        new SimVec(view.M11, view.M12, view.M13),      // camera right
+                        new SimVec(view.M21, view.M22, view.M23),      // camera up
+                        proj.M22,                                      // focus = cot(vFOV/2)
+                        (float)_gameSeconds);
+                    float debrisFocus = proj.M22;
+                    _drawDustViews.Clear();
+                    foreach (var pt in _debrisGeo.Points)
+                    {
+                        float age = (float)_gameSeconds - pt.StartTime;
+                        float bright = Rendering.DebrisGeo.Brightness(age);
+                        if (bright <= 0f) continue;
+                        float rx = pt.Position.X - cameraEye.X, ry = pt.Position.Y - cameraEye.Y, rz = pt.Position.Z - cameraEye.Z;
+                        float dsq = rx * rx + ry * ry + rz * rz;
+                        // Native Render skips grains within 20 m of the camera (debrisgeo.cpp:177).
+                        if (dsq <= Rendering.DebrisGeo.NearCameraSkipSquared) continue;
+                        // P503: native DrawDecal scale = 0.1/focus is a CONSTANT world
+                        // half-extent for every grain (context.cpp:2317, debrisgeo.cpp:166);
+                        // the perspective divide then makes a grain subtend 0.1/distance of
+                        // the screen height — smaller the farther away. The P449a formula
+                        // (0.1/focus)·distance·Calibration gave every grain a constant
+                        // ~1.3% of screen height regardless of depth → the "bubbles".
+                        float half = Rendering.AmbientDustRenderer.DecalHalfExtent(debrisFocus);
+                        _drawDustViews.Add(new Rendering.AmbientDustView(
+                            pt.Position,
+                            half,
+                            new Vector3(bright * pt.Colour.X, bright * pt.Colour.Y, bright * pt.Colour.Z)));
+                    }
                 }
                 _debrisRenderer.Draw(_drawDustViews, cameraEye, view, proj);
 
@@ -2287,6 +2303,11 @@ public sealed partial class Game1
             skySectorId = skySector;
         }
 
+        long spaceIdentity = ((long)skySectorId << 32) ^ ((long)_cameraMode << 16)
+            ^ (string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? 1L
+                : string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase) ? 2L : 3L);
+        _spaceVisualFrame = _spaceMotion.Step(_visuals, view, cameraEye, _nowSeconds, spaceIdentity);
+
         // P588 — the sky tier dispatch: black (default: point stars + native
         // planet, no dome) | native (P576 dome + planet) | hd (P577 telescope).
         bool black = string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase);
@@ -2312,14 +2333,14 @@ public sealed partial class Game1
 
         if (sky is not null && black)
         {
-            _blackSky.Draw(view, projection, cameraEye);
+            _blackSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
             // (The aleph destination-glimpse composites after the opaque scene —
             // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
             // cover it.)
         }
         else if (sky is not null && !hd)
         {
-            _nativeSky.Draw(view, projection, cameraEye);
+            _nativeSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
             // (The aleph destination-glimpse composites after the opaque scene —
             // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
             // cover it.)
@@ -2330,15 +2351,15 @@ public sealed partial class Game1
             // structure and cluster switch as native; only the textures and the
             // star layer differ (see HdSkyRenderer). SetCluster happens in the
             // shared sector-change block above.
-            _hdSky.Draw(view, projection, cameraEye);
+            _hdSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
         }
         else
         {
             // No cluster yet — fall back to the old parallax field so there is
             // still a visible backdrop pre-flight.
-            _starFar.Draw(view, projection, cameraEye);
-            _starMid.Draw(view, projection, cameraEye);
-            _starNear.Draw(view, projection, cameraEye);
+            _starFar.Draw(view, projection, cameraEye, _spaceVisualFrame);
+            _starMid.Draw(view, projection, cameraEye, _spaceVisualFrame);
+            _starNear.Draw(view, projection, cameraEye, _spaceVisualFrame);
         }
     }
 
@@ -2362,6 +2383,7 @@ public sealed partial class Game1
         LogGlimpseResolution(targets, current);
         // P585 — pass the per-warp transit-pulse strength (drives the glimpse
         // open-wide + lens-flare) and the flare occlusion test (P547 depth).
+        _alephGlimpseRenderer.Visuals = _visuals;
         _alephGlimpseRenderer.Draw(targets, cameraEye, view, projection, current,
             wId => _warpPulses.Strength(wId, _nowSeconds),
             TransitFlareOccluded);

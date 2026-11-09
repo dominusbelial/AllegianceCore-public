@@ -43,6 +43,8 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     /// behind it.</summary>
     private const float ObjectDist = 7800f;
 
+    private SimStarLayer? _simStars;
+    private DataClusterIGC _spaceCluster;
     private readonly GraphicsDevice _gd;
     private readonly Starfield _starNear;
     private readonly Starfield _starMid;
@@ -100,6 +102,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     /// shells). Called on sector change.</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        _spaceCluster = cluster;
         _planet.SetCluster(cluster);
 
         var toward = TowardLight(cluster);
@@ -116,7 +119,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     /// dome by design. Render states are pinned (P568 lesson): the sky is a
     /// backdrop and must neither write depth nor disturb the opaque scene's
     /// blend/sampler state.</summary>
-    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
+    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default)
     {
         var skyProj = NativeSkyPlacement.SkyProjection(projection);
 
@@ -132,9 +135,18 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
             gd.RasterizerState = RasterizerState.CullNone;
 
             // Stars (the old three parallax shells), then the native planet.
-            _starFar.Draw(view, skyProj, cameraEye);
-            _starMid.Draw(view, skyProj, cameraEye);
-            _starNear.Draw(view, skyProj, cameraEye);
+            if (frame.SimStars)
+            {
+                _simStars ??= new SimStarLayer(gd);
+                _simStars.SetCluster(_spaceCluster);
+                _simStars.Draw(view, skyProj, frame);
+            }
+            else
+            {
+                _starFar.Draw(view, skyProj, cameraEye, frame);
+                _starMid.Draw(view, skyProj, cameraEye, frame);
+                _starNear.Draw(view, skyProj, cameraEye, frame);
+            }
             _planet.Draw(view, skyProj, cameraEye, PlanetDist);
 
             // P592 — the GIANT sky object (one curved sky-sphere patch, e.g. the
@@ -149,7 +161,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
             if (_galaxiesOn) _galaxies.Draw(view, skyProj, cameraEye, ObjectDist);
             // The sun/lens flare: additive screen-space, drawn last so it reads
             // over the other sky elements (the opaque scene still draws over it).
-            _lensFlare.Draw(view, skyProj);
+            _lensFlare.Draw(view, skyProj, frame.SimGlare);
         }
         finally
         {
@@ -173,6 +185,8 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
 
     public void Dispose()
     {
+        _simStars?.Dispose();
+        _starNear.Dispose(); _starMid.Dispose(); _starFar.Dispose();
         _planet.Dispose();
         _lensFlare.Dispose();
         _moons.Dispose();

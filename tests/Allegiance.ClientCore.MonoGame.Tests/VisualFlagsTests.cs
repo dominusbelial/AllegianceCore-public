@@ -31,7 +31,7 @@ public sealed class VisualFlagsTests
             if (definition.Kind == VisualFlagKind.Toggle) Assert.False(definition.DefaultOn);
             else Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=off viewRange=10000", options.Describe());
+        Assert.Equal("radialVisibility=off viewRange=10000 subtleDust=off simStars=off simGlare=off starStreaks=off", options.Describe());
     }
 
     [Theory]

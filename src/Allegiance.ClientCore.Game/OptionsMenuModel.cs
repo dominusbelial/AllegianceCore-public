@@ -54,6 +54,14 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed class OptionsMenuModel
 {
+    /// <summary>P982 table pages fit their navigation hint in short windows.
+    /// Existing pages keep their original spacing whenever it fits.</summary>
+    public static (float FirstY, float RowStep) LayoutRows(float height, int count)
+    {
+        float step = MathF.Min(40f, MathF.Max(24f, (height - 174f) / Math.Max(1, count)));
+        return (MathF.Min(height * 0.36f, height - count * step - 54f), step);
+    }
+
     /// <summary>Which native menu is open.</summary>
     public enum Page { Root, Sound, Game, Chat, Mouse, Visuals }
 
@@ -310,9 +318,16 @@ public sealed class OptionsMenuModel
     public OptionsCommand? CommandForHotkey(char key, OptionsState state)
     {
         if (key == '\0') return null;
-        foreach (var row in Rows(state))
-            if (row.Hotkey == char.ToUpperInvariant(key) && row.Command is { } cmd)
+        var rows = Rows(state);
+        for (int i = 0; i < rows.Count; i++)
+            if (rows[i].Hotkey == char.ToUpperInvariant(key) && rows[i].Command is { } cmd)
+            {
+                // Generic visual commands use the selected row to resolve their
+                // table key. A hotkey must select the row it actually names.
+                if (cmd is OptionsCommand.ToggleVisualFlag or OptionsCommand.RaiseVisualRange or OptionsCommand.LowerVisualRange)
+                    Row0 = i;
                 return cmd;
+            }
         return null;
     }
 

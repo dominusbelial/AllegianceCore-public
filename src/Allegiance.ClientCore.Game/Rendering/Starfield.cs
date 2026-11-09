@@ -22,12 +22,14 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// real motion parallax works — this is what actually makes flying feel 3D
 /// rather than like a painted backdrop.
 /// </remarks>
-public sealed class Starfield
+public sealed class Starfield : IDisposable
 {
     private readonly Vector3[] _worldPositions;
     private readonly Color[] _colors;
     private readonly VertexPositionColor[] _scratch;
     private readonly BasicEffect _effect;
+    private SpaceStarRenderer? _tails;
+    private VertexStar[]? _tailStars;
 
     /// <param name="gd">The graphics device (for the effect only — no content
     /// pipeline asset needed, stars are generated, not loaded).</param>
@@ -88,10 +90,20 @@ public sealed class Starfield
     /// (uniformly blank frames from large-world-coordinate precision loss) —
     /// so, as with ships, only ever-small camera-relative values are uploaded.
     /// </summary>
-    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
+    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default)
     {
         for (int i = 0; i < _worldPositions.Length; i++)
             _scratch[i] = new VertexPositionColor(_worldPositions[i] - cameraEye, _colors[i]);
+
+        if (frame.Streaks)
+        {
+            _tailStars ??= new VertexStar[_worldPositions.Length];
+            for (int i = 0; i < _worldPositions.Length; i++)
+                _tailStars[i] = new VertexStar(Vector3.Normalize(_worldPositions[i] - cameraEye), _colors[i]);
+            (_tails ??= new SpaceStarRenderer(_effect.GraphicsDevice)).Draw(_tailStars, view, projection, frame, drawPoints: false);
+        }
+        else if (_tails is not null)
+            _tails.Draw([], view, projection, frame, drawPoints: false);
 
         _effect.View = view;
         _effect.Projection = projection;
@@ -101,4 +113,5 @@ public sealed class Starfield
             _effect.GraphicsDevice.DrawUserPrimitives(PrimitiveType.PointList, _scratch, 0, _scratch.Length);
         }
     }
+    public void Dispose() { _effect.Dispose(); _tails?.Dispose(); }
 }

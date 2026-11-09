@@ -7719,3 +7719,54 @@ The same run also flagged two calibrated timing exceedances outside this task
 `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 11.4 s) and quarantined the first
 (its retry passed). `Allegiance.Update.Tests` passed 54/54 in the sweep and 3/3 alone
 before it. Report: [reports/UPDATE_ATOMIC_APPLY_P976.md](reports/UPDATE_ATOMIC_APPLY_P976.md).
+
+## P982 — sandbox profile obstruction (2026-11-09)
+
+An interrupted preliminary Fast sweep hit the already-ledgered
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`:
+its `finally` restores the existing real user profile at test line 237, outside
+this lane's writable filesystem. The exception is `IOException: Read-only file
+system`; P982 changes no profile editor, chat handler, or persistence code.
+
+| Isolated control | Passed / Failed / Skipped | Result |
+|---|---:|---|
+| Original environment, three serial runs | 0 / 3 / 0 | Same read-only profile restoration failure in all three runs. |
+| Existing `ALLEGIANCE_PLAYER_SETTINGS` redirected to task scratch, three serial runs | 3 / 0 / 0 | All profile-editing and chat-focus assertions pass. |
+
+The final full Fast sweep uses that supported writable-profile override. The
+worktree's original `local.env` is restored after the runner reads the override;
+no real user settings are changed. Raw evidence:
+`.scratch/p982/p761-readonly-{1,2,3}.trx` and
+`.scratch/p982/p761-scratch-{1,2,3}.trx`.
+
+### P982 final Fast and isolated controls
+
+The final source sweep ran 13,802 cases: **13,794 passed / 5 failed / 3 skipped**,
+plus nine passing runner-infrastructure checks. The skips are the optional private
+Meshy-pack cases. The five failures and calibrated-limit offender match existing
+entries; P982 changes no audio, repair, missile, bot, collision, simulation or wire
+implementation. Full Fast remains **FAIL**.
+
+| Case | Sweep signature | Three serial isolated executions |
+|---|---|---|
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,384 bytes allocated, expected zero | **pass / pass / pass**, 0.009 / 0.009 / 0.012 s |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | fighter credit 0.222 versus 0.500 | **pass / pass / pass**, 3.434 / 3.435 / 3.392 s |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without the required partial/full tip pair; 38.325 s Fast budget offender | **fail / pass / fail**, 38.517 / 1.666 / 38.456 s; known OPEN issue, not cleared |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | terminal travel 1663.70 m versus full-lifespan 1848.56 m | **pass / pass / pass**, 0.508 / 0.480 / 0.526 s |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | tick 139 drift 18.57 m | **pass / pass / pass**, 1.092 / 1.061 / 1.097 s |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | passing test, 10.378 s versus calibrated 10 s limit | **pass / pass / pass**, 9.309 / 9.883 / 9.941 s, all below the limit |
+| `CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return` | preliminary quarantine timeout, immediate managed retry passed; final quarantine passes | **pass / pass / pass**, 1.577 / 1.580 / 1.935 s |
+
+All isolated controls skipped zero cases. Raw logs/TRX are under
+`.scratch/p982/*-isolated-{1,2,3}.*`; compact outcomes are retained in
+`docs/reports/P982_assets/triage.json`.
+
+Earlier interrupted drivers survived and overlapped showcase loops; those runs
+are excluded from isolated-rate evidence. Both stale drivers were stopped, the
+temporary cleanup hook was removed, and the original configuration bytes were
+restored. The subsequent fresh serial showcase cohort passed **5/5**, zero skips,
+with test durations **243.3 / 235.9 / 194.8 / 181.8 / 162.2 s**. Each reached
+24/30; longest low-speed-with-target intervals were **1.915 / 1.413 / 2.808 /
+2.707 / 2.516 s**. Documented P979 base rate: 4/5. This headless fixture does not
+exercise visual flags, so no bot improvement is attributed to P982. Receipts:
+`.scratch/p982/serial-showcase/` and `docs/reports/P982_assets/showcase.json`.

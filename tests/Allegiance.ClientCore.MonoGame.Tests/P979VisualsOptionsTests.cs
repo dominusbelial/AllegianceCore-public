@@ -52,7 +52,7 @@ public sealed class P979VisualsOptionsTests
         var menu = OpenVisualsPage(State());
         var rows = menu.Rows(State());
         // One toggle row + a numeric flag's value row and its two step rows.
-        Assert.Equal(4, rows.Count);
+        Assert.Equal(8, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Contains(rows, r => r.Label == "Raise View range to 11000 m");
@@ -111,7 +111,9 @@ public sealed class P979VisualsOptionsTests
         // The visual commands come back through the page's hotkeys too.
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, menu.CommandForHotkey('R', state));
         Assert.Equal(OptionsMenuModel.OptionsCommand.RaiseVisualRange, menu.CommandForHotkey('U', state));
+        Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(menu.Row0, state));
         Assert.Equal(OptionsMenuModel.OptionsCommand.LowerVisualRange, menu.CommandForHotkey('D', state));
+        Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(menu.Row0, state));
     }
 
     [Theory]
@@ -128,7 +130,7 @@ public sealed class P979VisualsOptionsTests
         var state = State();
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
-        Assert.Equal(4, rows.Count);
+        Assert.Equal(8, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, state));

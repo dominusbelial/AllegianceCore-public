@@ -72,6 +72,10 @@ public sealed class AlephGlimpseRenderer : IDisposable
     /// <summary>Maximum number of simultaneously-glimpsed alephs (nearest first).</summary>
     public const int MaxGlimpses = 6;
 
+    /// <summary>P982 backdrop choices also apply to destination postcards;
+    /// postcards never advance the active flight camera's motion history.</summary>
+    public VisualOptions? Visuals { get; set; }
+
     /// <summary>Smallest on-screen funnel radius (px) that earns a glimpse.</summary>
     public const float MinScreenRadiusPx = 8f;
 
@@ -420,8 +424,16 @@ public sealed class AlephGlimpseRenderer : IDisposable
     /// destination — the caller MUST restore it (see <see cref="Draw"/>,
     /// <see cref="Warm"/>). Returns true when a target was rendered now.
     /// </summary>
+    private int _visualSignature;
     private bool EnsureTarget(ISkyRenderer sky, short destSector, DataClusterIGC destCluster, Vector3 lookDirection)
     {
+        int signature = (Visuals?.IsOn(VisualFlags.SimStarsKey) == true ? 1 : 0)
+            | (Visuals?.IsOn(VisualFlags.SimGlareKey) == true ? 2 : 0);
+        if (signature != _visualSignature)
+        {
+            foreach (var entry in _cache.Values) entry.Rendered = false;
+            _visualSignature = signature;
+        }
         if (_cache.TryGetValue(destSector, out var e) && e.Rendered)
         {
             e.LastFrame = _frame;
@@ -453,7 +465,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
         // Render the destination sky into the small target (depth off inside the
         // sky renderer). Transparent clear + the colorkeyed dome/planet let the
         // empty sky show as transparent for the composite.
-        sky.Draw(view, proj, Vector3.Zero);
+        sky.Draw(view, proj, Vector3.Zero, new SpaceVisualFrame(Visuals, 0, true, AdvanceHistory: false));
         _gd.SetRenderTargets(savedTargets);
 
         e.Rendered = true;
