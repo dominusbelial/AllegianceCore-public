@@ -4,6 +4,35 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
+
+One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map
+catalog gate, reconnect-grace refusals): **13,583 passed / 2 failed / 0 skipped,
+3 not executed** (the MonoGame project's own skip markers), 13,586 cases in 551.6 s
+after the shared runner lock wait. Fast infrastructure checks: PASS. Both failures
+are **pre-existing intermittent families, proven by clean-base controls**: each was
+re-run standalone on both the changed tree and an unmodified checkout of the same
+base commit (`1f6e1250`) built in a scratch worktree — the failure rates match, and
+no P966 source is on either path.
+
+| Sweep failure / timing family | Changed tree, standalone | Clean base `1f6e1250`, standalone | Classification |
+|---|---|---|---|
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **3 pass / 4 fail** over 7 runs (values 32.15–32.40 against the fixture's [28, 31]; 1 s each) | **2 pass / 3 fail** over 5 runs, same 32.x signature | Existing receipt/simulation-clock boundary (also P945/P948/P953/P967 entries): the auto-seat fires at the 30 s deadline but the test's `elapsed` is measured when the FltBot receive thread surfaces `ShipAssignment`, which lags by 1–2 sim-seconds under host load (load avg 0.9–2.9 during validation). No side-select/auto-seat source changed by P966. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0 pass / 3 fail** (38 s each — the timeout signature) | **1 pass / 2 fail** (pass 1 s; fails 38 s) | Known missing partial-tip receipt (ledgered since P935-era; same 38.7–38.8 s durations). No missile-lock/lock-tip source changed by P966. |
+| `MissileLockLiveTests` (SLOW FAST 38.299 s) and `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (SLOW FAST 10.246 s vs the 10.000 s limit) | — | — | Timing exceedances of the same two led families under the shared-host load; assertions pass when the box is quieter. |
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
+five sequential isolated runs on the P966 tree: **5 pass / 0 fail**, walls
+287/184/357/253/269 s at load avg 1.3–3.3 — at or better than the recorded base
+rate (P967: 4/5 with an arrival-assertion failure). Zero parking violations;
+no bots/flight/sim path was changed by P966.
+
+All 52 new/affected P966 test cases pass **3/3 standalone** (P966ServerTrustBoundary
++ P813cReconnectGrace + LiveDuplicateLogon + P883MissionCookie + P914StationDeadline
++ P871bCreateGameProvisioning). Exact sweep logs are under `TestResults/tiers-20261109T013853.881216Z/`;
+the gate summary is in
+[the P966 report](reports/SERVER_TRUST_BOUNDARIES_P966.md).
+
 ## P968 qualification — publisher index, 2026-11-08 UTC
 
 The new default-off publisher index has **129/129 new/changed cases passing**

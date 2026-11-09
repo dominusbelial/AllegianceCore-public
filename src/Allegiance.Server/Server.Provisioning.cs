@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 
@@ -87,10 +88,31 @@ public sealed partial class Server
         for (int i = 0; i < config.CivIds.Length; i++)
             if (config.CivIds[i] >= 0 && !_core.Civilizations.ContainsKey((short)config.CivIds[i]))
                 config.CivIds[i] = -1;
-        string mapPath = Path.Combine(_config.ArtPath, config.Map);
-        if (!File.Exists(mapPath))
+        // P966 (P963-03) — the claimed map is player-controlled input and is
+        // only ever used as a catalog KEY. It must be an EXACT catalog match
+        // (file + team count — native VerifyUserMap, FedSrv.CPP:234-245); the
+        // file actually opened is the catalog entry's own relative basename,
+        // canonically re-checked under the artwork root. The old
+        // Path.Combine(_config.ArtPath, config.Map) let a ".."/rooted claim
+        // escape artPath and turn the server into a file-existence/parse oracle
+        // for any readable IGC outside the advertised catalog. The refusals
+        // echo no path details (the sanitized claim name stays in the operator
+        // log only; the lobby's Failed state carries nothing).
+        if (!TryResolveClaimedCatalogMap(config, out var catalogFile))
         {
-            Console.WriteLine($"[provision] '{claim.GameName}' refused: map '{config.Map}' not found under artPath");
+            Console.WriteLine($"[provision] '{ConsoleLog.Sanitize(claim.GameName)}' refused: map '{ConsoleLog.Sanitize(config.Map, 48)}' "
+                + $"is not in this server's catalog for {config.Teams} team(s) (native VerifyUserMap, FedSrv.CPP:234-245)");
+            return null;
+        }
+        string artRoot = Path.GetFullPath(_config.ArtPath);
+        string mapPath = Path.GetFullPath(Path.Combine(artRoot, catalogFile));
+        bool underArtRoot = mapPath.Length > artRoot.Length
+            && mapPath.StartsWith(artRoot, StringComparison.OrdinalIgnoreCase)
+            && (artRoot.EndsWith(Path.DirectorySeparatorChar) || mapPath[artRoot.Length] == Path.DirectorySeparatorChar);
+        if (!underArtRoot || !File.Exists(mapPath))
+        {
+            Console.WriteLine($"[provision] '{ConsoleLog.Sanitize(claim.GameName)}' refused: map '{ConsoleLog.Sanitize(config.Map, 48)}' "
+                + "is not available under this server's artwork root");
             return null;
         }
 

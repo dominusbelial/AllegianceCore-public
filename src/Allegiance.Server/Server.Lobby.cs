@@ -4594,6 +4594,12 @@ private void CompleteStartCountdown(Mission mission, double now)
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.ResumeToken };
+        // P966 (P963-02) — a seat (re-)registered in _peerShips changes the side
+        // roster this mission's still-pending peers would be shown. The normal
+        // side-select flow marks the lobby dirty on the side change itself, but
+        // a reconnect-grace RESUME re-enters _peerShips without that mark, so
+        // invalidate the cached SIDE_ROSTER bytes here at the mutation point.
+        InvalidateSideRosterCache();
         // P864 / SIM-0504 — the logon leader election (TryJoinSide in the
         // side-select flow) runs BEFORE this ship is registered in _peerShips,
         // so TransferCommandTime's _peerShips lookup could not StartCommand the
@@ -5555,6 +5561,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// <c>SendLobbyMissionInfo</c>'s side table).</summary>
     private (SideRoster Roster, SideRoster.SideRecord[] Records) BuildSideRoster(Mission mission)
     {
+        Interlocked.Increment(ref _sideRosterBuilds);
         var recs = mission.Sides
             .Select(s => new SideRoster.SideRecord(
                 s.Id,
@@ -5568,6 +5575,49 @@ private void CompleteStartCountdown(Mission mission, double now)
         // ("Not on a team"), native clintlib.cpp:994.
         short lobby = (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == SideTeamLobby);
         return (new SideRoster { Sides = recs, LobbyPlayerCount = lobby }, recs);
+    }
+
+    // ── P966 (P963-02) — per-mission cached SIDE_ROSTER bytes ──────────────
+    // Building a roster scans _peerShips once per side (plus the lobby-count
+    // pass), so a re-LOGONREQ flood amplified into one scan PER duplicate.
+    // The encoded SIDE_ROSTER packet is now cached per mission and re-used
+    // until the roster CHANGES: every roster-affecting event bumps
+    // _sideRosterEpoch (see InvalidateSideRosterCache), so the cache can never
+    // serve bytes older than the last event. The PLAYERINFO burst and squad
+    // relays in SendSideRoster stay per-recipient (latched) and are NOT cached.
+    private readonly Dictionary<Mission, (long Epoch, byte[] Packet, SideRoster Roster, SideRoster.SideRecord[] Records)> _sideRosterPackets = new();
+    private long _sideRosterEpoch;
+
+    /// <summary>P966 test seam — how many times BuildSideRoster actually ran
+    /// (the flood/cache proofs assert the scan is not re-run per duplicate).</summary>
+    internal long SideRosterBuilds => Interlocked.Read(ref _sideRosterBuilds);
+    private long _sideRosterBuilds;
+
+    /// <summary>P966 (P963-02) — the roster changed: every cached SIDE_ROSTER
+    /// packet is stale. Bumped from the lobby-dirty choke point (player left,
+    // side change, team-lobby, host edits of names/teams/civs/locks, squads,
+    // stages), the seat-registration point (CompleteJoinAndLaunch — a resumed
+    /// seat re-enters _peerShips without a lobby-dirty mark) and the mid-game
+    /// side-civ change, i.e. every event that alters what BuildSideRoster
+    /// would produce.</summary>
+    private void InvalidateSideRosterCache() => Interlocked.Increment(ref _sideRosterEpoch);
+
+    /// <summary>P966 (P963-02) — the encoded SIDE_ROSTER packet for a mission,
+    /// re-using the cached bytes while the roster epoch is unchanged (see
+    /// <see cref="_sideRosterPackets"). Kept bounded by the live mission set:
+    /// dead-mission entries are pruned on insert.</summary>
+    private (byte[] Packet, SideRoster Roster, SideRoster.SideRecord[] Records) SideRosterPacket(Mission mission)
+    {
+        if (_sideRosterPackets.Count > 0)
+            foreach (var stale in _sideRosterPackets.Keys.Where(k => !_missions.Contains(k)).ToArray())
+                _sideRosterPackets.Remove(stale);
+        long epoch = Interlocked.Read(ref _sideRosterEpoch);
+        if (_sideRosterPackets.TryGetValue(mission, out var hit) && hit.Epoch == epoch)
+            return (hit.Packet, hit.Roster, hit.Records);
+        var (roster, recs) = BuildSideRoster(mission);
+        var packet = FedPacket.Pack(new[] { roster.Encode() });
+        _sideRosterPackets[mission] = (epoch, packet, roster, recs);
+        return (packet, roster, recs);
     }
 
     /// <summary>P871 / MISSIONPARAMS — re-publish the side table to every peer of
@@ -5588,9 +5638,14 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         var mission = ConnectionMission(to);
         if (mission is null) return;
-        var (roster, recs) = BuildSideRoster(mission);
+        // P966 (P963-02) — the SIDE_ROSTER bytes come from the per-mission cache
+        // (re-used until the roster changes) instead of a fresh per-side
+        // _peerShips scan per send, so a re-LOGONREQ flood cannot amplify the
+        // rebuild cost; the per-recipient PLAYERINFO/squad parts below are not
+        // cached and behave exactly as before.
+        var (packet, roster, recs) = SideRosterPacket(mission);
         short lobby = roster.LobbyPlayerCount;
-        SendPeer(to, FedPacket.Pack(new[] { roster.Encode() }));
+        SendPeer(to, packet);
         Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [+ lobby {lobby}] [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
         // P864d — native's SendLobbyMissionInfo ends with "tell them about all of
         // the players": one PLAYERINFO(10) per ship in the mission, sent to the

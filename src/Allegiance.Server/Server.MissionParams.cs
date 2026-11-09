@@ -589,6 +589,11 @@ public sealed partial class Server
     private void MarkLobbyDirty(string why)
     {
         lock (_statsLock) _lobbyDirtyVersion++;
+        // P966 (P963-02) — every lobby-dirty event is a superset of a roster
+        // change (player left, side change, team-lobby, host edits of names /
+        // teams / civs / locks, squads, stages), so the cached SIDE_ROSTER
+        // packets are stale from this moment on.
+        InvalidateSideRosterCache();
         ConsoleLog.Write($"[lobby-dirty] mark ({why}) → version {LobbyDirtyVersion}");
     }
 

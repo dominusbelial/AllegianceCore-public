@@ -88,6 +88,18 @@ public class P813cReconnectGraceTests
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby
     }
 
+    /// <summary>P966 — capture the server's console output while <paramref name="run"/>
+    /// executes (the wrong-token refusal must never print the expected token).</summary>
+    private static string CaptureConsole(Action run)
+    {
+        var sw = new System.IO.StringWriter();
+        var orig = Console.Out;
+        Console.SetOut(sw);
+        try { run(); }
+        finally { Console.SetOut(orig); }
+        return sw.ToString();
+    }
+
     // ── the wire client ─────────────────────────────────────────────────────
 
     private sealed class WireClient : ITransportSite, IDisposable
@@ -404,13 +416,20 @@ public class P813cReconnectGraceTests
         Assert.Contains(identities.Values.Cast<global::Allegiance.Core.Identity.JoinIdentity>(), i => i.Sub == account);
     }
 
-    /// <summary>⭐ The token is the second factor: a different client that knows
-    /// the character name but not the session nonce must NOT inherit the parked
-    /// seat. It is refused and the parked ship is retired immediately (the native
-    /// drop path), so a player can never end up with two ships.</summary>
+    /// <summary>⭐ P966 (P963-05) — the token is the second factor: a different
+    /// client that knows the character name but not the session nonce must NOT
+    /// inherit the parked seat — and must not be able to destroy it either. The
+    /// wrong-token refusal touches ONLY the claimant: the parked entry and the
+    /// victim's ship stay exactly as they were (still in its sector, still
+    /// resumable), and the log never prints the expected token — only the
+    /// claimant's own value and a short non-reversible tag. The pre-P966 code
+    /// removed the entry and retired the victim's ship on the bare name claim.
+    /// Native has no resume flow to depart from (it asserts an existing player
+    /// never resends LOGONREQ, FedSrv.CPP:4832); fail-closed for the claimant,
+    /// side-effect-free for the parked player, is the trust rule.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Resume_with_the_wrong_token_is_refused_and_the_ship_retires()
+    public void Wrong_token_refuses_only_the_claimant_and_the_original_resumes()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -421,21 +440,110 @@ public class P813cReconnectGraceTests
         var (first, shipId) = Seat(server, "MINE");
         first.Dispose();
         PumpUntil(server, () => server.ReconnectParkedShipCount == 1, 400);
+        Assert.True(InSector(server, shipId), "precondition: the seat is being held");
 
+        // The intruder claims the name with the wrong token — and also fails the
+        // fresh-logon version gate, so the name is NOT taken by the attempt.
         using var intruder = new WireClient();
         intruder.Connect(server.BoundPort, "MINE");
-        intruder.Logon(Request("MINE", 0xDEADBEEFu));        // same name, wrong token
-        int settled = PumpUntil(server,
-            () => server.ReconnectParkedShipCount == 0 && !InSector(server, shipId), 1200);
-        Assert.True(settled < 1200, "the claimed seat was not retired");
-        Assert.Equal(1, server.ReconnectRefusedTotal);
-        Assert.False(InSector(server, shipId), "the parked seat is retired when a wrong token claims it");
+        var bad = Request("MINE", 0xDEADBEEFu);
+        bad.FedsrvVer = (ushort)(LogonRequest.MsgVer + 1);
+        string log = CaptureConsole(() =>
+        {
+            intruder.Logon(bad);
+            PumpUntil(server, () => server.ReconnectRefusedTotal == 1, 400);
+        });
 
-        // The intruder still gets a normal fresh logon (no seat theft, no lockout).
-        int ack = PumpUntil(server, () => intruder.LastAck is not null, 4000);
-        Assert.True(ack < 4000, "the wrong-token client must still be able to log on normally");
-        Assert.True(intruder.LastAck!.FValidated);
-        Console.WriteLine($"P813C-HIJACK: wrong-token claim refused; parked ship {shipId} retired; claimer got a fresh logon");
+        // The parked seat is untouched and still resumable.
+        Assert.Equal(1, server.ReconnectParkedShipCount);
+        Assert.True(InSector(server, shipId), "a wrong token must not retire the parked ship");
+        Assert.Equal(shipId, server.ReconnectParkedShipId("MINE"));
+        Assert.DoesNotContain("C0FFEE01", log, StringComparison.Ordinal);   // the expected token is never printed
+        Assert.Contains("tag", log, StringComparison.Ordinal);               // only the non-reversible tag is
+        // The intruder's own fresh logon was refused (wrong version) — no lockout beyond that.
+        Assert.True(PumpUntil(server, () => intruder.LastAck is not null, 4000) < 4000);
+        Assert.False(intruder.LastAck!.FValidated);
+
+        // The original returns with the right token: the SAME ship, the SAME side.
+        using var back = new WireClient();
+        back.Connect(server.BoundPort, "MINE");
+        back.Logon(Request("MINE", Token));
+        int resumed = PumpUntil(server, () => server.ReconnectResumedTotal == 1, 4000);
+        Assert.True(resumed < 4000, "the untouched seat must still resume");
+        Assert.Equal(shipId, back.LastAck!.ShipID);
+        Assert.Equal(0, server.ReconnectParkedShipCount);
+        Console.WriteLine($"P966-HIJACK: wrong-token claim refused with zero side effects; original resumed ship {shipId}");
+    }
+
+    /// <summary>⭐ P966 (P963-05) — the full impostor chain: a claimant with the
+    /// wrong token is refused, then takes the freed name through the fresh-logon
+    /// path (the name collision). The original's later resume is refused while
+    /// the impostor holds the name — but the parked ship is NOT retired (the
+    /// port's duplicate-logon ruling is refusal-as-flag, LOB-0033; native USEAUTH
+    /// would remove the old same-name player, FedSrv.CPP:629, and the
+    /// standalone-private build refuses the claimant, FedSrv.CPP:602-623) — and
+    /// once the impostor leaves, the ORIGINAL RESUMES the same ship. The
+    /// impostor's own drop does not clobber the victim's parked entry (one held
+    /// seat per name; no overwrite, no orphaned ship).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Name_collision_keeps_the_seat_parked_and_the_original_resumes()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        InjectSectorZeroSpawn(server);
+        server.Boot(Config(reconnect: true, graceSeconds: 30));
+        StartMission(server);
+
+        var (first, shipId) = Seat(server, "HELD");
+        // Live observers on both sides: a parked ship does not keep its side
+        // active for the win-by-elimination tally (only _peerShips count), so
+        // without them the impostor's departure would end the mission and the
+        // rotation would (correctly) discard the parked seat.
+        var (obs0, _) = Seat(server, "OBS0", Token + 10, side: 0);
+        var (obs1, _) = Seat(server, "OBS1", Token + 11, side: 1);
+        first.Dispose();
+        PumpUntil(server, () => server.ReconnectParkedShipCount == 1, 400);
+
+        // The impostor: wrong-token claim (refused, no side effects) that then
+        // completes a validated fresh logon under the freed name and seats.
+        using var impostor = new WireClient();
+        impostor.Connect(server.BoundPort, "HELD");
+        impostor.Logon(Request("HELD", 0xDEADBEEFu));
+        Assert.True(PumpUntil(server, () => server.ReconnectRefusedTotal == 1, 400) < 400);
+        Assert.True(PumpUntil(server, () => impostor.LastAck is { FValidated: true }, 4000) < 4000,
+            "the impostor's fresh logon under the freed name is allowed");
+        impostor.SendPositionReq(0);
+        Assert.True(PumpUntil(server, () => impostor.ShipAssignment is not null, 4000) < 4000);
+        short impostorShip = impostor.ShipAssignment!.Ship.ShipId;
+        Assert.NotEqual(shipId, impostorShip);
+        Assert.Equal(1, server.ReconnectParkedShipCount);          // the parked seat survived both
+        Assert.True(InSector(server, shipId));
+
+        // The original returns with the RIGHT token while the impostor holds the
+        // name: the resume is refused, the ship is NOT retired, the seat stays.
+        using var owner = new WireClient();
+        owner.Connect(server.BoundPort, "HELD");
+        owner.Logon(Request("HELD", Token));
+        Assert.True(PumpUntil(server, () => server.ReconnectRefusedTotal == 2, 400) < 400);
+        Assert.Equal(1, server.ReconnectParkedShipCount);
+        Assert.True(InSector(server, shipId), "a name collision must not retire the parked ship");
+        Assert.Equal(shipId, server.ReconnectParkedShipId("HELD"));
+
+        // The impostor leaves: their own drop does not overwrite the victim's
+        // parked entry (one seat per name), and the original can now resume.
+        impostor.Dispose();
+        Assert.True(PumpUntil(server, () => server.Ships.Count() == 2, 800) < 800, "the impostor's ship must retire");
+        Assert.Equal(1, server.ReconnectParkedShipCount);
+        Assert.Equal(shipId, server.ReconnectParkedShipId("HELD"));
+
+        owner.Logon(Request("HELD", Token));
+        int resumed = PumpUntil(server, () => server.ReconnectResumedTotal == 1, 4000);
+        Assert.True(resumed < 4000, "the original must resume once the name is free again");
+        Assert.Equal(shipId, owner.LastAck!.ShipID);
+        Assert.True(InSector(server, shipId));
+        Assert.Equal(0, server.ReconnectParkedShipCount);
+        Console.WriteLine($"P966-COLLISION: impostor {impostorShip} refused+seated+gone; original resumed ship {shipId}");
     }
 
     /// <summary>⭐ Death during the gap is final: the parked ship is dead and out

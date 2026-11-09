@@ -90,6 +90,7 @@ public sealed partial class Server
     {
         _peerShips.Clear();
         _peerNames.Clear();
+        InvalidateSideRosterCache();   // P966 — the seeded roster differs from any cached bytes
         foreach (var (conn, ship, sector) in peers)
         {
             _peerShips[conn] = new LiveShip(ship, sector, ship.Position,

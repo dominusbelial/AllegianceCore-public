@@ -156,22 +156,58 @@ public sealed partial class Server
         lock (_statsLock)
         {
             double now = _simNow;
-            _parkedShips[ParkedKey(mission.Cookie, name)] = new ParkedPeer(live, name, live.ResumeToken, now + _reconnectGraceSeconds, id, reason,
+            var key = ParkedKey(mission.Cookie, name);
+            if (_parkedShips.TryGetValue(key, out var existing))
+            {
+                // P966 (P963-05) — ONE held seat per (mission, name). The name's
+                // grace slot is already taken (its earlier holder is still
+                // parked — e.g. a player whose name was taken over while they
+                // were parked), and blindly overwriting would orphan that ship:
+                // still in its sector, no table entry, never retired. Refuse to
+                // park the newcomer — it gets the immediate native removal,
+                // exactly the grace-off outcome — and leave the existing seat
+                // untouched and resumable by its owner.
+                Console.WriteLine($"[reconnect] peer {id} ship {live.Ship.Id} '{ConsoleLog.Sanitize(name)}' dropped, but the "
+                    + $"name's grace seat is already held by parked ship {existing.Live.Ship.Id} — not parking (no overwrite); "
+                    + "native immediate removal for this ship");
+                return false;
+            }
+            _parkedShips[key] = new ParkedPeer(live, name, live.ResumeToken, now + _reconnectGraceSeconds, id, reason,
                 _playerReady.TryGetValue(id, out var ready) && ready, identity);
         }
         Interlocked.Increment(ref _reconnectParkedTotal);
         Console.WriteLine($"[reconnect] peer {id} '{ConsoleLog.Sanitize(name)}' ship {live.Ship.Id} dropped UNREQUESTED — "
-            + $"parked {_reconnectGraceSeconds:0.##}s (token 0x{live.ResumeToken:X8}, controls neutral/coast); "
+            + $"parked {_reconnectGraceSeconds:0.##}s ({TokenTag(live.ResumeToken)}, controls neutral/coast); "
             + "native removal (FedSrv.CPP:4549-4566) deferred until the window expires");
         return true;
+    }
+
+    /// <summary>P966 (P963-05) — a short NON-REVERSIBLE tag for a resume token.
+    /// The token is the only proof of session ownership for a parked seat, so it
+    /// must never be printed in full (the wrong-token refusal used to echo the
+    /// expected value, handing the secret to anyone who could read the log);
+    /// the park/resume lines follow the same rule so a shared console cannot
+    /// leak it either. Sixteen mixed bits keep lines correlatable without being
+    /// invertible to the 32-bit token.</summary>
+    private static string TokenTag(uint token)
+    {
+        uint h = 0x811C9DC5u;
+        for (int i = 0; i < 4; i++) { h ^= token & 0xFFu; h *= 0x01000193u; token >>= 8; }
+        h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15;
+        return $"tag {h & 0xFFFFu:X4}";
     }
 
     /// <summary>
     /// P813c — resume a parked seat for a reconnecting peer's LOGONREQ.
     /// <para>Match is <b>name + token</b>. A name match with the wrong token (a
     /// different client claiming the name, or a genuine new session that does not
-    /// know the token) is refused AND the parked ship is retired immediately
-    /// through the native path, so a player can never end up with two ships.
+    /// know the token) is refused WITHOUT touching the parked record or ship
+    /// (P966/P963-05: the seat stays resumable by its owner; the claimant falls
+    /// through to the fresh-logon path). A name match with the RIGHT token whose
+    /// name is now held by another live peer is likewise refused without retiring
+    /// the parked ship — the port's duplicate-logon ruling is refusal-as-flag
+    /// (LOB-0033), not the native USEAUTH old-player removal — and the seat stays
+    /// parked for its window.
     /// </para>
     /// <para>A parked ship that died during the gap (no sector — the port's
     /// death contract, <c>FinalizeDeadShip</c>) is not resurrected: the entry is
@@ -192,20 +228,44 @@ public sealed partial class Server
         if (!ReferenceEquals(ResolveJoinMission(req.DwCookie), parked.Live.Ship.Mission)) return false;
         if (req.ResumeToken != parked.Token)
         {
+            // P966 (P963-05) — a wrong token refuses ONLY the claimant: the parked
+            // entry and the victim's ship are untouched (fail-closed for the
+            // claimant, side-effect-free for the parked player), so the seat
+            // stays resumable by its real owner. The old path removed the entry
+            // and retired the victim's ship on a mere name claim, letting any
+            // unauthenticated third party terminate the parked seat. The log
+            // never prints the expected token — only the claimant's own value
+            // and a short NON-REVERSIBLE tag of the parked one (TokenTag), so a
+            // log reader cannot lift the secret either.
             Interlocked.Increment(ref _reconnectRefusedTotal);
-            Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' claims a parked seat with token "
-                + $"0x{req.ResumeToken:X8} != 0x{parked.Token:X8} — REFUSED; retiring the parked ship {parked.Live.Ship.Id} now (native path)");
-            _parkedShips.Remove(ParkedKey(requestedMission.Cookie, name));
-            RetireDepartedPeer(parked.Live, parked.Reason, parked.Name);
+            Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' claims a parked seat with the wrong token "
+                + $"(claim 0x{req.ResumeToken:X8}, parked {TokenTag(parked.Token)}) — REFUSED; the parked ship {parked.Live.Ship.Id} "
+                + "is untouched and stays resumable by its owner");
             return false;
         }
 
-        _parkedShips.Remove(ParkedKey(requestedMission.Cookie, name));
         var live = parked.Live;
         // The name was free while the seat was parked, so a NEW player may have
         // taken it in the meantime. Resuming would then put two ships with one
-        // name in the mission — refuse, retire the parked seat, and let this
-        // logon take the normal (duplicate-name) path below.
+        // name in the mission — refuse the resume, but P966 (P963-05) keeps the
+        // seat parked: a name collision is not a retirement reason (retirement
+        // happens on window expiry, game over, or a server-verified replacement
+        // — never a mere collision), and the entry is removed exactly once, at
+        // the actual resume / the not-resumable fallback / expiry / game over,
+        // so a ship can never be retired twice.
+        //
+        // Native on a duplicate name at logon (the parity ruling "dup logon
+        // native-when-verified, port refusal as flag", docs/parity/lobby-matrix.csv
+        // LOB-0033): the USEAUTH build REMOVES the old same-name player so the
+        // new logon proceeds (FedSrv.CPP:629 RemovePlayerByName,
+        // QSR_DuplicateLocalLogon), while the standalone-private build refuses
+        // the CLAIMANT with DELPOSITIONREQ(DPR_DuplicateLogin) and leaves the
+        // existing player alone (FedSrv.CPP:602-623). This port refuses the
+        // duplicate logon (ServerConfig.AlwaysRefuseDuplicateLogons), so the
+        // refusal arm applies to the collision too: neither player is removed,
+        // the claimant falls through to the fresh-logon (duplicate-name) path,
+        // and the parked seat rides out its window — still resumable if the
+        // name-taker leaves before it expires.
         bool nameTaken = _peerNames.Any(kv => kv.Key != from
             && ReferenceEquals(ConnectionMission(kv.Key), parked.Live.Ship.Mission)
             && string.Equals(kv.Value, name, StringComparison.OrdinalIgnoreCase));
@@ -213,8 +273,8 @@ public sealed partial class Server
         {
             Interlocked.Increment(ref _reconnectRefusedTotal);
             Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' resume REFUSED — the name is now used by "
-                + $"another live peer; retiring the parked ship {live.Ship.Id} (native path)");
-            RetireDepartedPeer(live, parked.Reason, parked.Name);
+                + $"another live peer; the parked ship {live.Ship.Id} stays parked for its window (port refusal-as-flag, "
+                + "LOB-0033; native USEAUTH would remove the old player, FedSrv.CPP:629)");
             return false;
         }
         bool resumable = live.Ship.Sector is not null
@@ -223,6 +283,9 @@ public sealed partial class Server
         {
             // Died (or was finalized) during the gap, or the mission rotated out
             // from under it: nothing to resume — fall back to a normal logon.
+            // The entry is consumed here (exactly once) so expiry cannot act on
+            // a dead ship a second time.
+            _parkedShips.Remove(ParkedKey(requestedMission.Cookie, name));
             Interlocked.Increment(ref _reconnectRefusedTotal);
             Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' resume REFUSED — ship {live.Ship.Id} is no longer "
                 + $"in the world (sector {(live.Ship.Sector is null ? "none" : "present")}, "
@@ -230,6 +293,13 @@ public sealed partial class Server
                 + "continuing as a fresh logon (the ship stays dead — no resurrection)");
             return false;
         }
+
+        // The resume is real: consume the parked entry exactly once, and drop any
+        // pending-side-select hold this connection picked up when an earlier
+        // resume attempt was refused for a name collision (P966 — a peer can be
+        // pending AND have its old seat parked; the resume supersedes the hold).
+        _parkedShips.Remove(ParkedKey(requestedMission.Cookie, name));
+        _pendingSideSelect.Remove(from);
 
         _peerNames[from] = name;
         _peerRequests[from] = req;
@@ -257,7 +327,7 @@ public sealed partial class Server
         };
         SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
         Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' RESUME — ship {live.Ship.Id} seat "
-            + $"side {live.Ship.SideId?.ToString() ?? "(none)"} reattached (token 0x{parked.Token:X8}); replaying the native join burst");
+            + $"side {live.Ship.SideId?.ToString() ?? "(none)"} reattached ({TokenTag(parked.Token)}); replaying the native join burst");
 
         // Replay THE native join sequence for the resumed peer (MISSIONDEF →
         // JOINED_MISSION → PLAYERINFOs → SET_MONEY/tech → CLUSTERINFO/exports →

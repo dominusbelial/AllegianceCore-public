@@ -62,7 +62,12 @@ public sealed class P871bCreateGameProvisioningLiveTests
     {
         StrGameName = "P871b Wizard Game",
         SzIgcStaticFile = "PCore001.igc",
-        NTems = 3,                                  // the wizard's own team count
+        // P966 (P963-03): the claimed map must be an EXACT catalog entry — file
+        // AND team count (native VerifyUserMap, FedSrv.CPP:234-245) — and
+        // m2xspiderw is a 2-team map in maps.txt, so the wizard's team count is
+        // 2. (The wizard's own parameters still differ from the configured
+        // world's via the per-team cap, goals and name below.)
+        NTems = 2,
         NTotalMaxPlayersPerGame = 32,
         NMaxPlayersPerTeam = 12,
         IMinRank = -1,
@@ -194,14 +199,14 @@ public sealed class P871bCreateGameProvisioningLiveTests
         var mission = server.Missions[1];                 // appended game, addressed by its cookie
         Assert.True(mission.PlayerCreated);              // SIM-0146 reap armed
         Assert.False(server.Missions[0].PlayerCreated);  // the configured world is untouched
-        Assert.Equal(3, mission.Sides.Count);            // the wizard's team count
+        Assert.Equal(2, mission.Sides.Count);            // the wizard's team count (catalog-verified, P966)
         Assert.Equal(7, mission.Goals.TeamKills);        // the wizard's winning condition
         Assert.Equal(MissionStage.NotStarted, mission.Stage);
         Assert.NotEmpty(mission.Sectors);
         Assert.NotEmpty(mission.Warps);
         Assert.Equal("P871b Wizard Game", config.Games[1].Name);
         Assert.Equal(12, config.Games[1].MaxPlayersPerTeam);
-        Assert.Equal(3, config.Games[1].Teams);
+        Assert.Equal(2, config.Games[1].Teams);
         // The creator uses the ready cookie; NA keeps targeting the first world.
         Assert.Same(mission, server.Missions[1]);
 

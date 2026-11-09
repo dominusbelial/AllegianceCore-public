@@ -1062,16 +1062,36 @@ public sealed partial class Server : IDisposable
         /// order their POSITIONREQ raced in), keeping round-robin sides and
         /// injected ShipSpawner ordering deterministic exactly as pre-P281.</summary>
         public long JoinSeq { get; }
+        /// <summary>P966 (P963-02) — sim time of the last LOGONACK this pending
+        /// peer was sent. The original logon sets it to
+        /// <see cref="ConnectSimTime"/> and each served re-ack refreshes it; a
+        /// duplicate LOGONREQ inside <see cref="ReackRetrySeconds"/> of this
+        /// moment is dropped without a reply, so an unbounded re-send flood
+        /// cannot amplify into a guaranteed LOGONACK + SIDE_ROSTER per copy
+        /// (plus a per-copy roster rebuild) while a legitimate client retry —
+        /// real retransmit timeouts are at least this long — still gets the
+        /// same idempotent ack. Native has no such flow at all: it asserts an
+        /// existing player never sends LOGONREQ (FedSrv.CPP:4832).</summary>
+        public double LastReackSimTime { get; }
+        /// <summary>P966 (P963-02) — the per-peer re-ack retry interval in sim
+        /// seconds (see <see cref="LastReackSimTime"/>).</summary>
+        internal const double ReackRetrySeconds = 1.0;
         public PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, Mission mission)
-            : this(shipId, request, connectSimTime, joinSeq, mission, null) { }
-        private PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, Mission mission, short? requestedSide)
+            : this(shipId, request, connectSimTime, joinSeq, mission, null, connectSimTime) { }
+        private PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq,
+            Mission mission, short? requestedSide, double lastReackSimTime)
         {
             ShipId = shipId; Request = request; Mission = mission; ConnectSimTime = connectSimTime; JoinSeq = joinSeq; RequestedSide = requestedSide;
+            LastReackSimTime = lastReackSimTime;
         }
         public PendingSideSelect WithRequestedSide(short? side) =>
-            new(ShipId, Request, ConnectSimTime, JoinSeq, Mission, side);
+            new(ShipId, Request, ConnectSimTime, JoinSeq, Mission, side, LastReackSimTime);
         public PendingSideSelect WithMission(Mission mission) =>
-            new(ShipId, Request, ConnectSimTime, JoinSeq, mission, RequestedSide);
+            new(ShipId, Request, ConnectSimTime, JoinSeq, mission, RequestedSide, LastReackSimTime);
+        /// <summary>P966 (P963-02) — a served re-ack moves the retry-interval
+        /// anchor to now.</summary>
+        public PendingSideSelect WithReackSimTime(double reackSimTime) =>
+            new(ShipId, Request, ConnectSimTime, JoinSeq, Mission, RequestedSide, reackSimTime);
     }
 
     /// <summary>P281 — peers awaiting a post-connect side choice (keyed by

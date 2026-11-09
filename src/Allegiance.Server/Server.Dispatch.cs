@@ -170,7 +170,41 @@ public sealed partial class Server
                     // Still awaiting side selection: the LOGONREQ is idempotent —
                     // re-send the SAME LogonAck (same reserved ship id, same
                     // validated/cookie), allocate nothing, register nothing new.
-                    Console.WriteLine($"[logon] {from} '{ConsoleText(pendingLogon.Request.CharacterName)}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
+                    //
+                    // P966 (P963-02) — but the re-ack is BOUNDED. Unbounded, every
+                    // duplicate cost a guaranteed LOGONACK + a guaranteed
+                    // SIDE_ROSTER (with a full per-side _peerShips rebuild per
+                    // copy) plus a log line: 256 duplicates per tick from one
+                    // connection was ~614k peer/side predicate evaluations plus
+                    // 512 guaranteed frames in a single tick at 400 seated peers.
+                    // Now a duplicate inside the per-peer retry interval
+                    // (PendingSideSelect.ReackRetrySeconds, anchored at the last
+                    // ack this peer was sent) is dropped with NO reply, no roster
+                    // and no per-copy log line (rate-limited diagnostics only);
+                    // the SIDE_ROSTER bytes come from the per-mission roster cache
+                    // until the roster changes. A legitimate client retry — real
+                    // retransmit timeouts are ≥ the interval — is still served the
+                    // same ack. Native has no pending-side-select retry flow at
+                    // all: it asserts an existing player never resends LOGONREQ
+                    // (FedSrv.CPP:4830-4832 `assert (pfm->fmid != FM_C_LOGONREQ);
+                    // shouldn't have a pfsPlayer yet if logging on`), so this is
+                    // purely the port's idempotency robustness, now with
+                    // abuse resistance (P646/H3 kept: no second ship, no new id).
+                    if (_simNow - pendingLogon.LastReackSimTime < PendingSideSelect.ReackRetrySeconds)
+                    {
+                        var dl = _duplicateLogonLog.Ticket(from.Value);
+                        if (dl.Emit)
+                            Console.WriteLine($"[logon] {from} duplicate LOGONREQ within the {PendingSideSelect.ReackRetrySeconds:0.##}s re-ack interval — dropped, no reply (P963-02 bound)");
+                        else if (dl.Summarize)
+                            Console.WriteLine($"[logon] {from}: {dl.Suppressed} more in-interval duplicate LOGONREQs dropped (rate-limited)");
+                        continue;
+                    }
+                    _pendingSideSelect[from] = pendingLogon.WithReackSimTime(_simNow);
+                    var rl = _duplicateLogonLog.Ticket(from.Value);
+                    if (rl.Emit)
+                        Console.WriteLine($"[logon] {from} '{ConsoleText(pendingLogon.Request.CharacterName)}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
+                    else if (rl.Summarize)
+                        Console.WriteLine($"[logon] {from}: {rl.Suppressed} more re-LOGONREQ re-acks suppressed (rate-limited)");
                     var reack = new LogonAck
                     {
                         CharNameOrFailureReason = pendingLogon.Request.VersionMatches ? IdentityWelcome(from, pendingLogon.Request.CharacterName) : "wrong client version",
