@@ -65,6 +65,16 @@ public static class UpdateClient
                 throw new InvalidDataException(
                     $"feed manifest version '{manifest.Version}' does not match the index '{index.Version}'");
 
+            // 3b. P976 — a version the applier gave up on after its retry cap is
+            //     not downloaded again: the release pipeline never reuses a
+            //     version string, so re-staging it would only re-enter the cycle.
+            var discarded = UpdateState.ReadDiscardedVersion(options.AppRoot);
+            if (string.Equals(discarded, manifest.Version, StringComparison.Ordinal))
+                throw new InvalidDataException(
+                    $"version {manifest.Version} was discarded after {UpdateApplier.MaxApplyAttempts} failed " +
+                    "applies; keeping the current build (a newer release will be staged)");
+            if (!string.IsNullOrEmpty(discarded)) UpdateState.ClearDiscard(options.AppRoot);
+
             // 4. Delta: hash the local tree, keep what differs or is missing.
             var stagingRoot = Path.Combine(UpdateState.StateDirectory(options.AppRoot), "staging");
             if (Directory.Exists(stagingRoot)) Directory.Delete(stagingRoot, recursive: true);
@@ -110,10 +120,19 @@ public static class UpdateClient
                 .Select(f => f.Path)
                 .Where(p => !newPaths.Contains(p) && localHashes.ContainsKey(p) && !UpdateFeed.IsExcluded(p))
                 .OrderBy(p => p, StringComparer.Ordinal).ToList();
+            // P976 — re-staging the SAME version keeps its failed-apply count:
+            // otherwise an update that fails every apply would reset to attempt 1
+            // on every boot and never reach the cap.
+            var previousMarker = UpdateState.ReadPending(options.AppRoot);
+            int attempts = previousMarker is not null
+                           && string.Equals(previousMarker.Version, manifest.Version, StringComparison.Ordinal)
+                ? previousMarker.Attempts
+                : 0;
             UpdateState.WritePending(options.AppRoot, new UpdatePendingUpdate(
                 manifest.Version,
                 changed.Select(f => f.Path).ToList(),
-                obsolete));
+                obsolete,
+                attempts));
 
             log?.WriteLine($"[update] staged {manifest.Version}: {changed.Count} changed file(s), {bytes} bytes; " +
                            $"{obsolete.Count} obsolete file(s) queued for removal");

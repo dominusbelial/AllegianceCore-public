@@ -15,6 +15,8 @@ namespace Allegiance.Update;
 [JsonSerializable(typeof(UpdateManifest))]
 [JsonSerializable(typeof(UpdateFeedIndex))]
 [JsonSerializable(typeof(UpdatePendingUpdate))]
+[JsonSerializable(typeof(UpdateApplyJournal))]
+[JsonSerializable(typeof(UpdateDiscardRecord))]
 internal sealed partial class UpdateJsonContext : JsonSerializerContext;
 
 /// <summary>The feed layout constants (single source of truth for the
@@ -34,10 +36,22 @@ public static class UpdateFeed
     /// <summary>The pending-update marker (what <see cref="UpdateApplier"/> consumes).</summary>
     public const string PendingFile = "pending.json";
 
+    /// <summary>P976 — the tombstone naming a version the applier gave up on after
+    /// its retry cap, so the next feed check does not stage it again.</summary>
+    public const string DiscardFile = "discarded.json";
+
     /// <summary>Feed sub-tree that is NEVER part of the application manifest:
     /// the HD texture pack stays a separate, explicit, optional download (the
     /// Meshy rule, P601 — the updater must never pull it implicitly).</summary>
     public static readonly string[] ExcludedPrefixes = ["packs/", "hd/"];
+
+    /// <summary>True when <paramref name="relPath"/> is the updater's own state
+    /// directory or inside it. The applier never installs into it and never
+    /// deletes from it: the pending marker, the staging area, the recovery
+    /// journal, the backups and installed.json live there (P976).</summary>
+    public static bool IsStatePath(string relPath)
+        => relPath.Equals(StateDir, StringComparison.OrdinalIgnoreCase)
+           || relPath.StartsWith(StateDir + "/", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>True when <paramref name="relPath"/> (slash-separated, relative)
     /// is inside an excluded feed sub-tree.</summary>

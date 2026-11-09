@@ -48,7 +48,13 @@ if (args.Contains("--check-assets") || args.Contains("--asset-census"))
 // load, then (opt-in via the lobby's /api/update/info advertisement or the
 // ALLEGIANCE_UPDATE_FEED env var) check the signed release feed and stage a
 // newer build for the next start. Never blocks or crashes the boot path.
-if (!joinLaunch.IsLinkLaunch) await ClientUpdateBootstrap.RunAsync(args);
+// P976 — a join-link launch skips the network check but NOT the apply: that call
+// is also the crash recovery for an interrupted apply, and it must run before
+// anything of the application loads.
+if (joinLaunch.IsLinkLaunch)
+    Allegiance.Update.UpdateApplier.ApplyPendingIfAny(AppContext.BaseDirectory, Console.Out);
+else
+    await ClientUpdateBootstrap.RunAsync(args);
 
 PlayerConfig? savedPlayer = null;
 bool lobbyFromSavedPlayer = false;   // P947 — the no-args --lobby seed is a saved value
