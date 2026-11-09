@@ -1,0 +1,8494 @@
+{
+ "baseline": "~/allegiance-evidence/hud-goldens/66d72e6f",
+ "summary": {
+  "hudRows": 111,
+  "hudCoveredByVisibleElement": 96,
+  "hudCoveredByTextOrStructure": 5,
+  "hudModelOnly": 3,
+  "hudCoveredByFixture": 101,
+  "hudElsewhere": 7,
+  "hudUnmapped": 0,
+  "screenRows": 103,
+  "screenRowsWithoutFixture": 103,
+  "screenRowsWithoutTestEvidence": 29,
+  "screensFamilies": 51,
+  "scenarios": 22
+ },
+ "hud": [
+  {
+   "row": "Hull integrity",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Shield charge",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Energy reserve",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Fuel reserve",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Ammunition reserve",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Thrust setting",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Speed",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Kill bonus",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Roll tutorial cue",
+   "status": "done",
+   "kind": "text",
+   "scenarios": {
+    "training": []
+   },
+   "note": "P785 DrawTrainingCallout text + roll instrument; no HudElements row"
+  },
+  {
+   "row": "Signature percentage",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Detection eye",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Cloak active",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Cloak strength and drained state",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Autopilot status",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Vector lock status",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Carried flag",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Carried artifact",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target name",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target type description",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target side identity",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target hull",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target shield",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target range or sector",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target speed",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target ore",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target kill bonus",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target in weapon range",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Target model preview",
+   "status": "done",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "P805 3-D target preview renderer (Game1.Rendering), not a HUD widget; needs a real-window scenario"
+  },
+  {
+   "row": "Target time to intercept",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Cockpit centre reticle",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Velocity direction marker",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Joystick turning indicator",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Ballistic lead marker",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Aim hit-probability predictor",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Chase weapon aim without target",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Accepted and current order turn arrows",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Selected target bracket",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Missile lock flower",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Training HUD callouts",
+   "status": "done",
+   "kind": "text",
+   "scenarios": {
+    "training": []
+   },
+   "note": "P785 native RenderTrainingOverlay geometry table via the training scenario"
+  },
+  {
+   "row": "Radar viewport and round border",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar ship contacts",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar station contacts",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar warp contacts",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar asteroid contacts",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar missile contacts",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar probe and mine contacts",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar treasure and tech contacts",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar accepted order brackets",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar queued order brackets",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar nearest enemy bracket",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar threat damage flash",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar command subjects",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar carried flag marker",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar carried artifact marker",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar ripcord marker",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar construction highlight",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar name labels",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar range labels",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar hull and shield bars",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar ore and miner fill bars",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar friendly detection eyes",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar friendly ripcord seconds",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Teleport lead-up sparks (ripcord + aleph)",
+   "status": "done",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "WarpTransitParticles EmitTeleport world effect (Game1), never a HUD draw"
+  },
+  {
+   "row": "Radar command verb labels",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar LOD modes",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Radar range fade",
+   "status": "done",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "native 100/1000 m alpha block is commented out (radarimage.cpp:689-700); nothing to draw"
+  },
+  {
+   "row": "Sector location",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Turret carrier identity",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Observer and turret board state",
+   "status": "done",
+   "kind": "element-model",
+   "scenarios": {
+    "chase": [],
+    "chat-stress": [],
+    "combat": [],
+    "command": [],
+    "commandee": [],
+    "critical": [],
+    "dead": [],
+    "docked": [],
+    "flight": [],
+    "ghost": [],
+    "hidden": [],
+    "inventory": [],
+    "lifepod": [],
+    "radar-All": [],
+    "radar-Default": [],
+    "radar-Minimal": [],
+    "radar-Target": [],
+    "radar-overlays": [],
+    "slide": [],
+    "systems": [],
+    "target-full": [],
+    "training": []
+   },
+   "note": "native BoardTextImage is loadout-only (dialog.mdl:2106); HUD-20 exposes the value in the model, not in flight"
+  },
+  {
+   "row": "Accepted order text",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Queued order text",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Chat history",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "dead": [
+     "Classic",
+     "Modern"
+    ],
+    "docked": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Chat composition and recipient",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "dead": [
+     "Classic",
+     "Modern"
+    ],
+    "docked": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Command recipient verb and wing controls",
+   "status": "done",
+   "kind": "text",
+   "scenarios": {
+    "combat": [],
+    "commandee": [],
+    "flight": []
+   },
+   "note": "HUD-10 DrawCommandee text (commandee scenario) plus the order lines"
+  },
+  {
+   "row": "Tip text lines",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "dead": [
+     "Classic",
+     "Modern"
+    ],
+    "docked": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Critical tip text lines",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "dead": [
+     "Classic",
+     "Modern"
+    ],
+    "docked": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Vote banner",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "critical": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Money credits",
+   "status": "done",
+   "kind": "element-model",
+   "scenarios": {
+    "chase": [],
+    "chat-stress": [],
+    "combat": [],
+    "command": [],
+    "commandee": [],
+    "critical": [],
+    "dead": [],
+    "docked": [],
+    "flight": [],
+    "ghost": [],
+    "hidden": [],
+    "inventory": [],
+    "lifepod": [],
+    "radar-All": [],
+    "radar-Default": [],
+    "radar-Minimal": [],
+    "radar-Target": [],
+    "radar-overlays": [],
+    "slide": [],
+    "systems": [],
+    "target-full": [],
+    "training": []
+   },
+   "note": "native moneyPane lives only in the F5 investment pane (dialog.mdl:5199-5203); no flight credits readout"
+  },
+  {
+   "row": "Lives remaining",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "ghost": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Mission kills",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "ghost": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Mission countdown",
+   "status": "done-visual",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "native game-state screen clock (Game1.Rendering, MissionClock); not drawn by either HUD renderer"
+  },
+  {
+   "row": "Ripcord countdown",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Eject pod identity panel",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Lifepod oxygen endurance",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Death banner",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "ghost": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Boundary and crowd warnings",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "systems": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Incoming missile warning",
+   "status": "done",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "source-ship audio loop (Audio/MissileWarningController), no HUD pixels by design"
+  },
+  {
+   "row": "Damage flash timer",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "critical": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "HUD style and software layouts",
+   "status": "done-visual",
+   "kind": "structural",
+   "scenarios": {
+    "chase": [],
+    "chat-stress": [],
+    "combat": [],
+    "command": [],
+    "commandee": [],
+    "critical": [],
+    "dead": [],
+    "docked": [],
+    "flight": [],
+    "ghost": [],
+    "inventory": [],
+    "lifepod": [],
+    "radar-All": [],
+    "radar-Default": [],
+    "radar-Minimal": [],
+    "radar-Target": [],
+    "radar-overlays": [],
+    "slide": [],
+    "systems": [],
+    "target-full": [],
+    "training": []
+   },
+   "note": "every combination is rendered in Classic and Modern with size/colour-blind variants; the native ShowCenterHUD/ShowTargetHUD gates are P805 unit-tested"
+  },
+  {
+   "row": "Console pane visibility and slide animation",
+   "status": "done-visual",
+   "kind": "structural",
+   "scenarios": {
+    "slide": []
+   },
+   "note": "the slide scenario renders an inventory pane mid-slide (InventorySlide .5)"
+  },
+  {
+   "row": "HUD base class contract",
+   "status": "n/a",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "n/a: abstract C++ wrapper contract, no visual row"
+  },
+  {
+   "row": "Game list screen boundary",
+   "status": "implemented",
+   "kind": "elsewhere",
+   "scenarios": {},
+   "note": "implemented; merged with the server-browser screen row (screens area)"
+  },
+  {
+   "row": "Flight equipment inventory pane",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment part identity and key",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment selected and active state",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment quantity and empty warning",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment mounting progress",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Launcher arming progress",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment weapon range",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment shot damage",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment burst rate",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment shield strength",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment shield recharge seconds",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment afterburner top speed",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment afterburner endurance",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment cloak endurance",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Inventory turret gunner identity",
+   "status": "done",
+   "kind": "element-model",
+   "scenarios": {},
+   "note": "HudElements hard-codes this row unavailable (no gunner field on the pane model): P972 1D/2D work"
+  },
+  {
+   "row": "Inventory cargo slots",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Inventory own ship name",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Equipment empty slot affordances",
+   "status": "done",
+   "kind": "element",
+   "scenarios": {
+    "chase": [
+     "Classic",
+     "Modern"
+    ],
+    "chat-stress": [
+     "Classic",
+     "Modern"
+    ],
+    "combat": [
+     "Classic",
+     "Modern"
+    ],
+    "command": [
+     "Classic",
+     "Modern"
+    ],
+    "commandee": [
+     "Classic",
+     "Modern"
+    ],
+    "critical": [
+     "Classic",
+     "Modern"
+    ],
+    "flight": [
+     "Classic",
+     "Modern"
+    ],
+    "ghost": [
+     "Classic",
+     "Modern"
+    ],
+    "inventory": [
+     "Classic",
+     "Modern"
+    ],
+    "lifepod": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-All": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Default": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Minimal": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-Target": [
+     "Classic",
+     "Modern"
+    ],
+    "radar-overlays": [
+     "Classic",
+     "Modern"
+    ],
+    "slide": [
+     "Classic",
+     "Modern"
+    ],
+    "target-full": [
+     "Classic",
+     "Modern"
+    ],
+    "training": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  },
+  {
+   "row": "Command view ship summary",
+   "status": "done-visual",
+   "kind": "element",
+   "scenarios": {
+    "command": [
+     "Classic",
+     "Modern"
+    ]
+   },
+   "note": "visible HudElement in the semantic snapshot"
+  }
+ ],
+ "screens": {
+  "families": {
+   "ChatPaneModel": [
+    {
+     "row": "Chat pane / History scrolling and channels",
+     "status": "done",
+     "family": "ChatPaneModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs",
+     "evidence": [
+      "P757ChatPaneTests.cs",
+      "P761StartChatComposeTests.cs",
+      "P784ComposeTests.cs",
+      "P787BShopHoverAndPickTests.cs",
+      "P818ChatSubjectsTests.cs",
+      "P871bDirectoryChatTests.cs",
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    }
+   ],
+   "unknown": [
+    {
+     "row": "Chat pane / Compose and send focus flow",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Hangar screen / Button face strips (ButtonFaceUp | ButtonFaceInside)",
+     "status": "done-visual",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Hangar screen / Launch pane FrameImage animation (animlaunch, 0.7 s)",
+     "status": "done-visual",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Hangar screen / Hover text (hugeFont 0.75 grey, centred in 600x24 at 100,561)",
+     "status": "done-visual",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Hangar screen / In-turret badge (hangarinturretbmp, BoardState 2)",
+     "status": "done-visual",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Hangar screen / Docked view opens on the hangar screen (vmHangar)",
+     "status": "done-visual",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Intro screen / Credits popup",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Intro screen / Help button",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Intro screen / Replay-intro button",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Splash / loading screen / Timeout to intro and connection progress",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Training screen / Back to intro",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Training screen / Basic Flight launch/runtime",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Training screen / Pre/post-training slideshow flow",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Training screen / Introduction mission",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Training screen",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Video screen (cinematic)",
+     "status": "n/a",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Squad of a side in games / leader succession",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Teleport pane / Back and failure recovery",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "Commander / sector map / Generic target-to-order interaction",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "F-key help overlay(s) / Manual pages and navigation",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    },
+    {
+     "row": "in-game key rebinding popup / OK versus Cancel persistence",
+     "status": "done",
+     "family": "unknown",
+     "cite": "",
+     "evidence": []
+    }
+   ],
+   "Game1.Panes": [
+    {
+     "row": "Hangar / loadout screen / Buy and launch own ship",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Hangar / loadout screen / Loadout button",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Hangar / loadout screen / Investment toggle",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Hangar / loadout screen / Teleport toggle",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Game-starting (countdown) screen / Stage-starting holds player",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Game-starting (countdown) screen",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Teleport pane / Teleport and boarding requests",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Loadout panel (shop) / Explicit launch and acknowledgement",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    },
+    {
+     "row": "Investment screen / Station buildspot and builder gate",
+     "status": "done",
+     "family": "Game1.Panes",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "ShopLauncherBuyLiveTests.cs"
+     ]
+    }
+   ],
+   "Game1.Hangar": [
+    {
+     "row": "Hangar / loadout screen / Disembark then launch boarded ship",
+     "status": "done",
+     "family": "Game1.Hangar",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+     "evidence": []
+    },
+    {
+     "row": "Hangar / loadout screen / Command view button",
+     "status": "done",
+     "family": "Game1.Hangar",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+     "evidence": []
+    },
+    {
+     "row": "Hangar / loadout screen / Team and help buttons",
+     "status": "done",
+     "family": "Game1.Hangar",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+     "evidence": []
+    },
+    {
+     "row": "Hangar / loadout screen / Quit-mission button",
+     "status": "done",
+     "family": "Game1.Hangar",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+     "evidence": []
+    },
+    {
+     "row": "Hangar / loadout screen / Button hover feedback",
+     "status": "done",
+     "family": "Game1.Hangar",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+     "evidence": []
+    }
+   ],
+   "HangarScreen": [
+    {
+     "row": "Hangar screen / Native hangar.mdl artwork and pane layout",
+     "status": "done-visual",
+     "family": "HangarScreen",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/HangarScreen.cs",
+     "evidence": [
+      "DockLoadoutLiveTests.cs",
+      "FullSessionIntegrationTests.cs",
+      "LaunchUndockTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P945HangarArtTests.cs"
+     ]
+    }
+   ],
+   "GameOverPanelInfo": [
+    {
+     "row": "Game-over screen / Winner and reason banner",
+     "status": "done",
+     "family": "GameOverPanelInfo",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverPanelInfo.cs",
+     "evidence": [
+      "GameOverPanelInfoTests.cs",
+      "P914PresetPresentationTests.cs"
+     ]
+    }
+   ],
+   "GameOverTablesLayout": [
+    {
+     "row": "Game-over screen / Player results table",
+     "status": "done",
+     "family": "GameOverTablesLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+     "evidence": [
+      "GameOverTablesLayoutTests.cs",
+      "P914PresetPresentationTests.cs"
+     ]
+    },
+    {
+     "row": "Game-over screen / Team totals table",
+     "status": "done",
+     "family": "GameOverTablesLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+     "evidence": [
+      "GameOverTablesLayoutTests.cs",
+      "P914PresetPresentationTests.cs"
+     ]
+    },
+    {
+     "row": "Game-over screen / Column sorting and reversal",
+     "status": "done",
+     "family": "GameOverTablesLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+     "evidence": [
+      "GameOverTablesLayoutTests.cs",
+      "P914PresetPresentationTests.cs"
+     ]
+    }
+   ],
+   "GameOverBackPlanner": [
+    {
+     "row": "Game-over screen / Back action",
+     "status": "done",
+     "family": "GameOverBackPlanner",
+     "cite": "src/Allegiance.ClientCore/State/GameOverBackPlanner.cs",
+     "evidence": [
+      "GameOverBackLiveTests.cs",
+      "GameOverBackPlannerTests.cs"
+     ]
+    }
+   ],
+   "Game1.Career": [
+    {
+     "row": "Scoreboard / leaderboard screen / Career leaderboard query and search",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Scoreboard / leaderboard screen / Find-me and page navigation",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Scoreboard / leaderboard screen / Column sort and profile navigation",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Character-info screen / Career stats and civilization selection",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Character-info screen / Profile editing and apply",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Character-info screen / Leaderboard and games navigation",
+     "status": "done",
+     "family": "Game1.Career",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    }
+   ],
+   "ReadyCheckLayout": [
+    {
+     "row": "Game-starting (countdown) screen / Countdown display and stage-started transition",
+     "status": "done",
+     "family": "ReadyCheckLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs",
+     "evidence": [
+      "P713LobbyScreenLiveTests.cs",
+      "P802CivPickerLayoutTests.cs",
+      "P864dTeamLobbyScreenTests.cs",
+      "ReadyCheckLayoutTests.cs"
+     ]
+    }
+   ],
+   "Game1.IntroScreen": [
+    {
+     "row": "Intro screen / Internet button",
+     "status": "done",
+     "family": "Game1.IntroScreen",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Intro screen / Training entry and first-run suggestion",
+     "status": "done",
+     "family": "Game1.IntroScreen",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Intro screen / Exit button",
+     "status": "done",
+     "family": "Game1.IntroScreen",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+     "evidence": [
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    }
+   ],
+   "IntroFindServerList": [
+    {
+     "row": "Intro screen / LAN popup and polling",
+     "status": "done",
+     "family": "IntroFindServerList",
+     "cite": "src/Allegiance.ClientCore.Game/IntroFindServerList.cs",
+     "evidence": [
+      "P757IntroScreensTests.cs",
+      "P883JoinSelectionTests.cs"
+     ]
+    }
+   ],
+   "OptionsMenuModel": [
+    {
+     "row": "Intro screen / Options menu",
+     "status": "done",
+     "family": "OptionsMenuModel",
+     "cite": "src/Allegiance.ClientCore.Game/OptionsMenuModel.cs",
+     "evidence": [
+      "P806OptionsMenuTests.cs",
+      "P871bDirectoryChatTests.cs",
+      "P902SoundTemplateTests.cs"
+     ]
+    }
+   ],
+   "Game1": [
+    {
+     "row": "Splash / loading screen / Quickstart splash bypass",
+     "status": "done",
+     "family": "Game1",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.cs",
+     "evidence": [
+      "AcceptRejectQueuedOrderLiveTests.cs",
+      "AlephTransitDispatchTests.cs",
+      "AutopilotCrossSectorGoalTests.cs",
+      "AutopilotDisengageSoundTests.cs",
+      "ChaffDropLiveTests.cs",
+      "ChatTargetLogicTests.cs",
+      "ClientJoinSideLiveTests.cs",
+      "ClientWorldAnnouncerTests.cs",
+      "ClientWorldEjectTests.cs",
+      "ClientWorldSoundEventTests.cs",
+      "CloakToggleLiveTests.cs",
+      "CommandOrderResolverTests.cs",
+      "CommandedDroneBuildKeyLiveTests.cs",
+      "DamageFlashTrackerTests.cs",
+      "DeadLatchRespawnLiveTests.cs",
+      "DebrisGeoTests.cs",
+      "DispenserEquipFireLiveTests.cs",
+      "EjectRescueTargetTests.cs",
+      "EnhancedVfxTests.cs",
+      "FilteredTargetingLiveTests.cs",
+      "FilteredTargetingTests.cs",
+      "FlightFarClipParityTests.cs",
+      "FlightInputTests.cs",
+      "FlightJiggleTests.cs",
+      "HdPbrTests.cs",
+      "HelpOverlayTests.cs",
+      "Hud11LayoutPerfTests.cs",
+      "Hud12DataAndArtTests.cs",
+      "Hud12bReviewFixTests.cs",
+      "Hud12bSourceGuardTests.cs",
+      "Hud13RadarBracketTests.cs",
+      "Hud15CommandIconTests.cs",
+      "Hud16RadarIconTests.cs",
+      "Hud19CentreHudTests.cs",
+      "Hud21TargetModelPreviewTests.cs",
+      "Hud8bCurrentCommandTests.cs",
+      "JoystickFlightControllerTests.cs",
+      "MeshyNoticeTests.cs",
+      "MiscKeyBindingLiveTests.cs",
+      "MiscKeyBindingTests.cs",
+      "MissileFireLiveTests.cs",
+      "ModernHudSettingsInputTests.cs",
+      "NativeAsteroidResolverTests.cs",
+      "NativeShipResolverTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P505SelfTargetTests.cs",
+      "P522ShieldParityLiveTests.cs",
+      "P522UndockReseedLiveTests.cs",
+      "P523SelfTargetAndBracketJitterTests.cs",
+      "P527RadarTagRenderPoseAnchorTests.cs",
+      "P540EjectLiveProofTests.cs",
+      "P540bPodAutopilotCrossSectorLiveTests.cs",
+      "P547ShaderTests.cs",
+      "P571AutopilotDockClearTests.cs",
+      "P572AutoProofTests.cs",
+      "P587MousePickAndBaseTargetingTests.cs",
+      "P594PodPickupTests.cs",
+      "P612OrbitCameraTests.cs",
+      "P623TargetingPackTests.cs",
+      "P625bActionMapBehaviorTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P640CommandCameraTests.cs",
+      "P642ConsoleZoomTests.cs",
+      "P642TargetCommandTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P664StationEventSoundTests.cs",
+      "P675CommandActionTests.cs",
+      "P680CountdownSoundTests.cs",
+      "P695HumanShipUpdatesLiveTests.cs",
+      "P698StaleShipsLoopbackTests.cs",
+      "P699HumanPodHomeLiveTests.cs",
+      "P713LobbyScreenLiveTests.cs",
+      "P720EquipmentSwapTests.cs",
+      "P728CommanderTests.cs",
+      "P729BenchmarkProjectionTests.cs",
+      "P740FlightInputTests.cs",
+      "P748InterfaceTests.cs",
+      "P749CrashSafetyTests.cs",
+      "P757ChatPaneTests.cs",
+      "P757IntroScreensTests.cs",
+      "P761StartChatComposeTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P769TargetKilledRetargetTests.cs",
+      "P770ChatKeySoundTests.cs",
+      "P775PlayerInfoOnlyShipTests.cs",
+      "P781Game1RipcordTests.cs",
+      "P784ComposeTests.cs",
+      "P785TrainingHandlerTests.cs",
+      "P787BShopHoverAndPickTests.cs",
+      "P804ClientLeadTests.cs",
+      "P805bHudProofHarnessTests.cs",
+      "P806OptionsMenuTests.cs",
+      "P816CargoFullCueTests.cs",
+      "P818ChatSubjectsTests.cs",
+      "P820SquadScreenModelTests.cs",
+      "P828RadarLabelDeclutterTests.cs",
+      "P836HudLevelTests.cs",
+      "P856GameDetailsOptionsTests.cs",
+      "P859RegressionProofTests.cs",
+      "P871RadarIconStyleTests.cs",
+      "P871bCreateGameClientTests.cs",
+      "P871bDirectoryChatTests.cs",
+      "P873TrainingJoinTests.cs",
+      "P881aTrainingMissionsTests.cs",
+      "P882aTrainingIntegrationTests.cs",
+      "P890OwnAimLoopbackTests.cs",
+      "P897ClientTransportTests.cs",
+      "P909TrainingBindingsTests.cs",
+      "P910TrainingIntegrationTests.cs",
+      "P910TrainingWireTests.cs",
+      "P911TrainingArenaClientTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "P912TrainingWindowTests.cs",
+      "P914PresetPresentationTests.cs",
+      "P918TrainingOrderTests.cs",
+      "P931TrainingPilotTests.cs",
+      "P936InternetJoinTests.cs",
+      "P940BasicFlightInputTests.cs",
+      "P944JoinLinkUiTests.cs",
+      "P947LobbyPrecedenceTests.cs",
+      "P948MouseOptionsTests.cs",
+      "P970JoinPasswordUiTests.cs",
+      "PromoteTurretKeyLiveTests.cs",
+      "QuickChatOrderResolverTests.cs",
+      "RadarTargetHighlightLiveTests.cs",
+      "ReadyCheckLiveTests.cs",
+      "RendererDisposalGuardTests.cs",
+      "RipcordRequestLiveTests.cs",
+      "ScoreboardToggleGateTests.cs",
+      "SectorInfoPaneLayoutTests.cs",
+      "ShipStatusAlarmSoundTests.cs",
+      "ShopLauncherBuyLiveTests.cs",
+      "ShopNoAutoLaunchTests.cs",
+      "SkyLaunchOptionDefaultsTests.cs",
+      "SkyP577LaunchDefaultsTests.cs",
+      "SpaceObjectLaunchOptionTests.cs",
+      "TargetPickSectorScopeLiveTests.cs",
+      "TargetPickSectorScopeTests.cs",
+      "TeamPaneControlsTests.cs",
+      "TeamPaneLayoutTests.cs",
+      "TurretGunnerCadenceTests.cs",
+      "TurretGunnerFireLiveTests.cs",
+      "WarpDestinationResolverTests.cs",
+      "WarpRoutingRealMapTests.cs"
+     ]
+    },
+    {
+     "row": "Splash / loading screen",
+     "status": "done",
+     "family": "Game1",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.cs",
+     "evidence": [
+      "AcceptRejectQueuedOrderLiveTests.cs",
+      "AlephTransitDispatchTests.cs",
+      "AutopilotCrossSectorGoalTests.cs",
+      "AutopilotDisengageSoundTests.cs",
+      "ChaffDropLiveTests.cs",
+      "ChatTargetLogicTests.cs",
+      "ClientJoinSideLiveTests.cs",
+      "ClientWorldAnnouncerTests.cs",
+      "ClientWorldEjectTests.cs",
+      "ClientWorldSoundEventTests.cs",
+      "CloakToggleLiveTests.cs",
+      "CommandOrderResolverTests.cs",
+      "CommandedDroneBuildKeyLiveTests.cs",
+      "DamageFlashTrackerTests.cs",
+      "DeadLatchRespawnLiveTests.cs",
+      "DebrisGeoTests.cs",
+      "DispenserEquipFireLiveTests.cs",
+      "EjectRescueTargetTests.cs",
+      "EnhancedVfxTests.cs",
+      "FilteredTargetingLiveTests.cs",
+      "FilteredTargetingTests.cs",
+      "FlightFarClipParityTests.cs",
+      "FlightInputTests.cs",
+      "FlightJiggleTests.cs",
+      "HdPbrTests.cs",
+      "HelpOverlayTests.cs",
+      "Hud11LayoutPerfTests.cs",
+      "Hud12DataAndArtTests.cs",
+      "Hud12bReviewFixTests.cs",
+      "Hud12bSourceGuardTests.cs",
+      "Hud13RadarBracketTests.cs",
+      "Hud15CommandIconTests.cs",
+      "Hud16RadarIconTests.cs",
+      "Hud19CentreHudTests.cs",
+      "Hud21TargetModelPreviewTests.cs",
+      "Hud8bCurrentCommandTests.cs",
+      "JoystickFlightControllerTests.cs",
+      "MeshyNoticeTests.cs",
+      "MiscKeyBindingLiveTests.cs",
+      "MiscKeyBindingTests.cs",
+      "MissileFireLiveTests.cs",
+      "ModernHudSettingsInputTests.cs",
+      "NativeAsteroidResolverTests.cs",
+      "NativeShipResolverTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P505SelfTargetTests.cs",
+      "P522ShieldParityLiveTests.cs",
+      "P522UndockReseedLiveTests.cs",
+      "P523SelfTargetAndBracketJitterTests.cs",
+      "P527RadarTagRenderPoseAnchorTests.cs",
+      "P540EjectLiveProofTests.cs",
+      "P540bPodAutopilotCrossSectorLiveTests.cs",
+      "P547ShaderTests.cs",
+      "P571AutopilotDockClearTests.cs",
+      "P572AutoProofTests.cs",
+      "P587MousePickAndBaseTargetingTests.cs",
+      "P594PodPickupTests.cs",
+      "P612OrbitCameraTests.cs",
+      "P623TargetingPackTests.cs",
+      "P625bActionMapBehaviorTests.cs",
+      "P625bActionMapGuardTests.cs",
+      "P640CommandCameraTests.cs",
+      "P642ConsoleZoomTests.cs",
+      "P642TargetCommandTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P664StationEventSoundTests.cs",
+      "P675CommandActionTests.cs",
+      "P680CountdownSoundTests.cs",
+      "P695HumanShipUpdatesLiveTests.cs",
+      "P698StaleShipsLoopbackTests.cs",
+      "P699HumanPodHomeLiveTests.cs",
+      "P713LobbyScreenLiveTests.cs",
+      "P720EquipmentSwapTests.cs",
+      "P728CommanderTests.cs",
+      "P729BenchmarkProjectionTests.cs",
+      "P740FlightInputTests.cs",
+      "P748InterfaceTests.cs",
+      "P749CrashSafetyTests.cs",
+      "P757ChatPaneTests.cs",
+      "P757IntroScreensTests.cs",
+      "P761StartChatComposeTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P769TargetKilledRetargetTests.cs",
+      "P770ChatKeySoundTests.cs",
+      "P775PlayerInfoOnlyShipTests.cs",
+      "P781Game1RipcordTests.cs",
+      "P784ComposeTests.cs",
+      "P785TrainingHandlerTests.cs",
+      "P787BShopHoverAndPickTests.cs",
+      "P804ClientLeadTests.cs",
+      "P805bHudProofHarnessTests.cs",
+      "P806OptionsMenuTests.cs",
+      "P816CargoFullCueTests.cs",
+      "P818ChatSubjectsTests.cs",
+      "P820SquadScreenModelTests.cs",
+      "P828RadarLabelDeclutterTests.cs",
+      "P836HudLevelTests.cs",
+      "P856GameDetailsOptionsTests.cs",
+      "P859RegressionProofTests.cs",
+      "P871RadarIconStyleTests.cs",
+      "P871bCreateGameClientTests.cs",
+      "P871bDirectoryChatTests.cs",
+      "P873TrainingJoinTests.cs",
+      "P881aTrainingMissionsTests.cs",
+      "P882aTrainingIntegrationTests.cs",
+      "P890OwnAimLoopbackTests.cs",
+      "P897ClientTransportTests.cs",
+      "P909TrainingBindingsTests.cs",
+      "P910TrainingIntegrationTests.cs",
+      "P910TrainingWireTests.cs",
+      "P911TrainingArenaClientTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "P912TrainingWindowTests.cs",
+      "P914PresetPresentationTests.cs",
+      "P918TrainingOrderTests.cs",
+      "P931TrainingPilotTests.cs",
+      "P936InternetJoinTests.cs",
+      "P940BasicFlightInputTests.cs",
+      "P944JoinLinkUiTests.cs",
+      "P947LobbyPrecedenceTests.cs",
+      "P948MouseOptionsTests.cs",
+      "P970JoinPasswordUiTests.cs",
+      "PromoteTurretKeyLiveTests.cs",
+      "QuickChatOrderResolverTests.cs",
+      "RadarTargetHighlightLiveTests.cs",
+      "ReadyCheckLiveTests.cs",
+      "RendererDisposalGuardTests.cs",
+      "RipcordRequestLiveTests.cs",
+      "ScoreboardToggleGateTests.cs",
+      "SectorInfoPaneLayoutTests.cs",
+      "ShipStatusAlarmSoundTests.cs",
+      "ShopLauncherBuyLiveTests.cs",
+      "ShopNoAutoLaunchTests.cs",
+      "SkyLaunchOptionDefaultsTests.cs",
+      "SkyP577LaunchDefaultsTests.cs",
+      "SpaceObjectLaunchOptionTests.cs",
+      "TargetPickSectorScopeLiveTests.cs",
+      "TargetPickSectorScopeTests.cs",
+      "TeamPaneControlsTests.cs",
+      "TeamPaneLayoutTests.cs",
+      "TurretGunnerCadenceTests.cs",
+      "TurretGunnerFireLiveTests.cs",
+      "WarpDestinationResolverTests.cs",
+      "WarpRoutingRealMapTests.cs"
+     ]
+    }
+   ],
+   "TrainingScreenModels": [
+    {
+     "row": "Training screen / Mission selection list",
+     "status": "done",
+     "family": "TrainingScreenModels",
+     "cite": "src/Allegiance.ClientCore.Game/TrainingScreenModels.cs",
+     "evidence": []
+    }
+   ],
+   "Mission3": [
+    {
+     "row": "Training screen / Basic Weaponry mission",
+     "status": "done",
+     "family": "Mission3",
+     "cite": "src/Allegiance.ClientCore/Training/Mission3.cs",
+     "evidence": [
+      "P881aTrainingMissionsTests.cs",
+      "P892TrainingSetupTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "P932TrainingLoadoutTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR3TrainingMissions34Tests.cs"
+     ]
+    }
+   ],
+   "Mission4": [
+    {
+     "row": "Training screen / Enemy Engagement mission",
+     "status": "done",
+     "family": "Mission4",
+     "cite": "src/Allegiance.ClientCore/Training/Mission4.cs",
+     "evidence": [
+      "P881aTrainingMissionsTests.cs",
+      "P885Mission4NativeKeysTests.cs",
+      "P892TrainingSetupTests.cs",
+      "P917TrainingBranchTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR3TrainingMissions34Tests.cs"
+     ]
+    }
+   ],
+   "Mission5": [
+    {
+     "row": "Training screen / Command View mission",
+     "status": "done",
+     "family": "Mission5",
+     "cite": "src/Allegiance.ClientCore/Training/Mission5.cs",
+     "evidence": [
+      "P873TrainingJoinTests.cs",
+      "P882aTrainingIntegrationTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR4TrainingMissions56Tests.cs"
+     ]
+    }
+   ],
+   "Mission6": [
+    {
+     "row": "Training screen / Practice Arena mission",
+     "status": "done",
+     "family": "Mission6",
+     "cite": "src/Allegiance.ClientCore/Training/Mission6.cs",
+     "evidence": [
+      "P882aTrainingIntegrationTests.cs",
+      "P911TrainingArenaClientTests.cs",
+      "P911TrainingArenaTests.cs",
+      "P918TrainingOrderTests.cs",
+      "P933TrainingPatrolTests.cs",
+      "P934TrainingSupportTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR4TrainingMissions56Tests.cs"
+     ]
+    }
+   ],
+   "Mission8": [
+    {
+     "row": "Training screen / Nanite mission",
+     "status": "done",
+     "family": "Mission8",
+     "cite": "src/Allegiance.ClientCore/Training/Mission8.cs",
+     "evidence": [
+      "P912TrainingUniverseTests.cs",
+      "P917TrainingBranchTests.cs",
+      "P934TrainingSupportTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR5TrainingMissions810Tests.cs"
+     ]
+    }
+   ],
+   "Mission10": [
+    {
+     "row": "Training screen / Free Flight launch",
+     "status": "done",
+     "family": "Mission10",
+     "cite": "src/Allegiance.ClientCore/Training/Mission10.cs",
+     "evidence": [
+      "P882aTrainingIntegrationTests.cs",
+      "P911TrainingArenaClientTests.cs",
+      "P911TrainingArenaTests.cs",
+      "P933TrainingPatrolTests.cs",
+      "P934TrainingSupportTests.cs",
+      "P941PromptAuditTests.cs",
+      "TR5TrainingMissions810Tests.cs"
+     ]
+    }
+   ],
+   "ChatRenderer": [
+    {
+     "row": "Chat pane",
+     "status": "done",
+     "family": "ChatRenderer",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs",
+     "evidence": [
+      "Font1NativeFontTests.cs",
+      "Hud10PanelsTests.cs",
+      "P784ComposeTests.cs",
+      "P871bDirectoryChatTests.cs"
+     ]
+    }
+   ],
+   "DockedScreenRenderer": [
+    {
+     "row": "Hangar / loadout screen",
+     "status": "done",
+     "family": "DockedScreenRenderer",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs",
+     "evidence": [
+      "InvestmentLayoutTests.cs"
+     ]
+    }
+   ],
+   "GameOverScreenRenderer": [
+    {
+     "row": "Game-over screen",
+     "status": "done",
+     "family": "GameOverScreenRenderer",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs",
+     "evidence": [
+      "GameOverPerfPanelLayoutTests.cs"
+     ]
+    }
+   ],
+   "ScoreboardLayout": [
+    {
+     "row": "Scoreboard / leaderboard screen",
+     "status": "done",
+     "family": "ScoreboardLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs",
+     "evidence": [
+      "PilotInfoLayoutTests.cs",
+      "ScoreboardLayoutTests.cs",
+      "ShopLayoutTests.cs",
+      "ShopModelTests.cs",
+      "TeamPaneLayoutTests.cs"
+     ]
+    }
+   ],
+   "Game1.Session": [
+    {
+     "row": "Intro screen",
+     "status": "done",
+     "family": "Game1.Session",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Session.cs",
+     "evidence": [
+      "P625bActionMapGuardTests.cs",
+      "P770ChatKeySoundTests.cs",
+      "P856GameDetailsOptionsTests.cs",
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    },
+    {
+     "row": "Server list / lobby browser / Mission list and join",
+     "status": "done",
+     "family": "Game1.Session",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Session.cs",
+     "evidence": [
+      "P625bActionMapGuardTests.cs",
+      "P770ChatKeySoundTests.cs",
+      "P856GameDetailsOptionsTests.cs",
+      "P947LobbyPrecedenceTests.cs"
+     ]
+    }
+   ],
+   "Game1.Squads": [
+    {
+     "row": "Squads screen",
+     "status": "done",
+     "family": "Game1.Squads",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Squads.cs",
+     "evidence": []
+    }
+   ],
+   "IdentityEndpoints": [
+    {
+     "row": "Zone Club screen (online account)",
+     "status": "done",
+     "family": "IdentityEndpoints",
+     "cite": "src/Allegiance.Lobby/Identity/IdentityEndpoints.cs",
+     "evidence": [
+      "P871bDirectoryChatTests.cs"
+     ]
+    }
+   ],
+   "EventStore": [
+    {
+     "row": "Zone events screen",
+     "status": "done",
+     "family": "EventStore",
+     "cite": "src/Allegiance.Lobby/Events/EventStore.cs",
+     "evidence": [
+      "P820bEventsPostgresTests.cs",
+      "P820bEventsTests.cs"
+     ]
+    }
+   ],
+   "Game1.Targeting": [
+    {
+     "row": "Selection pane / Empty selection-change callback",
+     "status": "done",
+     "family": "Game1.Targeting",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Targeting.cs",
+     "evidence": [
+      "CommandOrderResolverTests.cs",
+      "CommandedDroneBuildKeyLiveTests.cs",
+      "Hud12bSourceGuardTests.cs",
+      "P625bActionMapGuardTests.cs"
+     ]
+    },
+    {
+     "row": "Selection pane / Selected-model child wrapper",
+     "status": "done",
+     "family": "Game1.Targeting",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Targeting.cs",
+     "evidence": [
+      "CommandOrderResolverTests.cs",
+      "CommandedDroneBuildKeyLiveTests.cs",
+      "Hud12bSourceGuardTests.cs",
+      "P625bActionMapGuardTests.cs"
+     ]
+    }
+   ],
+   "TeamPaneLayout": [
+    {
+     "row": "Team pane / screen / Pilot roster roles and readiness",
+     "status": "done",
+     "family": "TeamPaneLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+     "evidence": [
+      "P642ConsoleZoomTests.cs",
+      "P740FlightInputTests.cs",
+      "P761TeamPaneSortTests.cs",
+      "P775PlayerInfoOnlyShipTests.cs",
+      "P820bTeamPaneSquadTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "TeamPaneLayoutTests.cs"
+     ]
+    },
+    {
+     "row": "Team pane / screen / Compact and expanded modes",
+     "status": "done",
+     "family": "TeamPaneLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+     "evidence": [
+      "P642ConsoleZoomTests.cs",
+      "P740FlightInputTests.cs",
+      "P761TeamPaneSortTests.cs",
+      "P775PlayerInfoOnlyShipTests.cs",
+      "P820bTeamPaneSquadTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "TeamPaneLayoutTests.cs"
+     ]
+    }
+   ],
+   "TeamPaneControls": [
+    {
+     "row": "Team pane / screen / Selected-player donate and stop buttons",
+     "status": "done",
+     "family": "TeamPaneControls",
+     "cite": "src/Allegiance.ClientCore.Game/Flight/TeamPaneControls.cs",
+     "evidence": [
+      "P761TeamPaneSortTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P910TrainingIntegrationTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "TeamPaneControlsTests.cs"
+     ]
+    },
+    {
+     "row": "Team pane / screen / Take-me-to and accept controls",
+     "status": "done",
+     "family": "TeamPaneControls",
+     "cite": "src/Allegiance.ClientCore.Game/Flight/TeamPaneControls.cs",
+     "evidence": [
+      "P761TeamPaneSortTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P910TrainingIntegrationTests.cs",
+      "P912TrainingUniverseTests.cs",
+      "TeamPaneControlsTests.cs"
+     ]
+    }
+   ],
+   "TeamPaneSort": [
+    {
+     "row": "Team pane / screen / Sort headers and player selection",
+     "status": "done",
+     "family": "TeamPaneSort",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneSort.cs",
+     "evidence": [
+      "P761TeamPaneSortTests.cs",
+      "TeamPaneLayoutTests.cs"
+     ]
+    }
+   ],
+   "TeleportPaneModel": [
+    {
+     "row": "Teleport pane / Destination eligibility and selection",
+     "status": "done",
+     "family": "TeleportPaneModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs",
+     "evidence": [
+      "P764UiSoundSeamTests.cs",
+      "TeleportLayoutTests.cs",
+      "TeleportPaneModelTests.cs"
+     ]
+    }
+   ],
+   "ShopModel": [
+    {
+     "row": "Loadout panel (shop) / Hull and part purchase gates",
+     "status": "done",
+     "family": "ShopModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "DockedHullOrbitTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P571DefaultLoadoutTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P728CommanderTests.cs",
+      "P748InterfaceTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P787BShopHoverAndPickTests.cs",
+      "PartInfoLayoutTests.cs",
+      "ShopLauncherBuyLiveTests.cs",
+      "ShopLauncherCatalogueTests.cs",
+      "ShopLauncherMountNumberingLiveTests.cs",
+      "ShopLayoutTests.cs",
+      "ShopModelTests.cs",
+      "ShopNoAutoLaunchTests.cs",
+      "TeleportPaneModelTests.cs"
+     ]
+    },
+    {
+     "row": "Loadout panel (shop) / Native saved and default loadout controls",
+     "status": "done",
+     "family": "ShopModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs",
+     "evidence": [
+      "DispenserEquipFireLiveTests.cs",
+      "DockedHullOrbitTests.cs",
+      "P394ShopPreSeedLiveTests.cs",
+      "P571DefaultLoadoutTests.cs",
+      "P653DPodPurchaseLiveTests.cs",
+      "P728CommanderTests.cs",
+      "P748InterfaceTests.cs",
+      "P764UiSoundSeamTests.cs",
+      "P787BShopHoverAndPickTests.cs",
+      "PartInfoLayoutTests.cs",
+      "ShopLauncherBuyLiveTests.cs",
+      "ShopLauncherCatalogueTests.cs",
+      "ShopLauncherMountNumberingLiveTests.cs",
+      "ShopLayoutTests.cs",
+      "ShopModelTests.cs",
+      "ShopNoAutoLaunchTests.cs",
+      "TeleportPaneModelTests.cs"
+     ]
+    }
+   ],
+   "InvestmentPaneModel": [
+    {
+     "row": "Investment screen / Full and partial donation",
+     "status": "done",
+     "family": "InvestmentPaneModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+     "evidence": [
+      "InvestmentBuildGatesTests.cs",
+      "InvestmentLayoutTests.cs",
+      "InvestmentPaneModelTests.cs",
+      "P728CommanderTests.cs",
+      "P728HumanCommanderLiveTests.cs",
+      "P748InterfaceTests.cs"
+     ]
+    },
+    {
+     "row": "Investment screen / Predecessor and continued-buyability filtering",
+     "status": "done",
+     "family": "InvestmentPaneModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+     "evidence": [
+      "InvestmentBuildGatesTests.cs",
+      "InvestmentLayoutTests.cs",
+      "InvestmentPaneModelTests.cs",
+      "P728CommanderTests.cs",
+      "P728HumanCommanderLiveTests.cs",
+      "P748InterfaceTests.cs"
+     ]
+    },
+    {
+     "row": "Investment screen / Tabs and status detail selection",
+     "status": "done",
+     "family": "InvestmentPaneModel",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+     "evidence": [
+      "InvestmentBuildGatesTests.cs",
+      "InvestmentLayoutTests.cs",
+      "InvestmentPaneModelTests.cs",
+      "P728CommanderTests.cs",
+      "P728HumanCommanderLiveTests.cs",
+      "P748InterfaceTests.cs"
+     ]
+    }
+   ],
+   "CommandCamera": [
+    {
+     "row": "Commander / sector map / Camera modes pan and zoom",
+     "status": "done",
+     "family": "CommandCamera",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/CommandCamera.cs",
+     "evidence": [
+      "Hud21TargetModelPreviewTests.cs",
+      "Hud5bReviewFixTests.cs",
+      "P640CommandCameraTests.cs",
+      "P881aTrainingMissionsTests.cs",
+      "P909TrainingBindingsTests.cs",
+      "P910TrainingIntegrationTests.cs",
+      "P910TrainingWireTests.cs",
+      "P911TrainingArenaClientTests.cs",
+      "P912TrainingUniverseTests.cs"
+     ]
+    }
+   ],
+   "Game1.Commanding": [
+    {
+     "row": "Commander / sector map / Rectangle selection and friendly recipient group",
+     "status": "done",
+     "family": "Game1.Commanding",
+     "cite": "src/Allegiance.ClientCore.Game/Game1.Commanding.cs",
+     "evidence": [
+      "P625bActionMapGuardTests.cs",
+      "P770ChatKeySoundTests.cs"
+     ]
+    }
+   ],
+   "SectorInfoPaneLayout": [
+    {
+     "row": "Sector info pane / Special asteroid groups",
+     "status": "done",
+     "family": "SectorInfoPaneLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs",
+     "evidence": [
+      "SectorInfoPaneLayoutTests.cs",
+      "SectorMapQueriesTests.cs"
+     ]
+    },
+    {
+     "row": "Sector info pane / Known helium sum",
+     "status": "done",
+     "family": "SectorInfoPaneLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs",
+     "evidence": [
+      "SectorInfoPaneLayoutTests.cs",
+      "SectorMapQueriesTests.cs"
+     ]
+    }
+   ],
+   "SectorMapQueries": [
+    {
+     "row": "Sector info pane / Own probe count",
+     "status": "done",
+     "family": "SectorMapQueries",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorMapQueries.cs",
+     "evidence": [
+      "P493ClientWorldShipStatusTests.cs",
+      "P775ClientPlayerInfoMomentsTests.cs",
+      "SectorMapQueriesTests.cs"
+     ]
+    }
+   ],
+   "StarmapHover": [
+    {
+     "row": "Sector info pane / Hover-selected sector and expand button",
+     "status": "done",
+     "family": "StarmapHover",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/StarmapHover.cs",
+     "evidence": [
+      "P764UiSoundSeamTests.cs",
+      "StarmapHoverTests.cs"
+     ]
+    }
+   ],
+   "HelpOverlayLayout": [
+    {
+     "row": "F-key help overlay(s) / Open and close help",
+     "status": "done",
+     "family": "HelpOverlayLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/HelpOverlayLayout.cs",
+     "evidence": [
+      "HelpOverlayTests.cs"
+     ]
+    }
+   ],
+   "MissionBriefingRenderer": [
+    {
+     "row": "Mission briefing screen / Mission body and title",
+     "status": "done",
+     "family": "MissionBriefingRenderer",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs",
+     "evidence": []
+    }
+   ],
+   "MissionBriefingGenerator": [
+    {
+     "row": "Mission briefing screen / Civilization-generated briefing and tips",
+     "status": "done",
+     "family": "MissionBriefingGenerator",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingGenerator.cs",
+     "evidence": [
+      "MissionBriefingGeneratorTests.cs"
+     ]
+    }
+   ],
+   "LobbyScreenState": [
+    {
+     "row": "Side-select screen / Request side and wait for authoritative admission",
+     "status": "done",
+     "family": "LobbyScreenState",
+     "cite": "src/Allegiance.ClientCore/State/LobbyScreenState.cs",
+     "evidence": [
+      "P713LobbyScreenLiveTests.cs",
+      "P713LobbyScreenStateTests.cs",
+      "P761TeamLobbyControlsTests.cs"
+     ]
+    },
+    {
+     "row": "Ready-check (pre-flight) / Commander force-ready and AFK clear",
+     "status": "done",
+     "family": "LobbyScreenState",
+     "cite": "src/Allegiance.ClientCore/State/LobbyScreenState.cs",
+     "evidence": [
+      "P713LobbyScreenLiveTests.cs",
+      "P713LobbyScreenStateTests.cs",
+      "P761TeamLobbyControlsTests.cs"
+     ]
+    }
+   ],
+   "SideSelectLayout": [
+    {
+     "row": "Side-select screen / Side list and active-side presentation",
+     "status": "done",
+     "family": "SideSelectLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs",
+     "evidence": [
+      "P802CivPickerLayoutTests.cs",
+      "P864dTeamLobbyScreenTests.cs",
+      "SideSelectLayoutTests.cs"
+     ]
+    }
+   ],
+   "LobbyGameSort": [
+    {
+     "row": "Server list / lobby browser / Sort and game filters",
+     "status": "done",
+     "family": "LobbyGameSort",
+     "cite": "src/Allegiance.ClientCore.Game/LobbyGameSort.cs",
+     "evidence": [
+      "P761LobbySortAndSearchTests.cs",
+      "P806LobbyFiltersTests.cs",
+      "P806ServerListLoopbackTests.cs"
+     ]
+    }
+   ],
+   "ServerListing": [
+    {
+     "row": "Server list / lobby browser / Find-player and details popup",
+     "status": "done",
+     "family": "ServerListing",
+     "cite": "src/Allegiance.ClientCore.Game/ServerListing.cs",
+     "evidence": [
+      "DeregisterTests.cs",
+      "ExpiryTests.cs",
+      "HeartbeatTests.cs",
+      "LobbyChatLogicTests.cs",
+      "LobbyFilterTests.cs",
+      "LobbyHeartbeatTests.cs",
+      "P655DirectoryIntegrityTests.cs",
+      "P761LobbySortAndSearchTests.cs",
+      "P761PlayerListTests.cs",
+      "P806LobbyFiltersTests.cs",
+      "P806LobbyGameParamsTests.cs",
+      "P806ServerListLoopbackTests.cs",
+      "P808IdentityScreenTests.cs",
+      "P808IdentityTests.cs",
+      "P856GameDetailsOptionsTests.cs",
+      "P856OptionServerTests.cs",
+      "P871bCreateGameProvisioningLiveTests.cs",
+      "P883JoinSelectionTests.cs",
+      "P894ListingFieldsTests.cs",
+      "P894LobbyTests.cs",
+      "P895UdpMetadataTests.cs",
+      "P897ClientTransportTests.cs",
+      "P936InternetJoinTests.cs",
+      "P936InternetSessionTests.cs",
+      "P936NatSignalingTests.cs",
+      "P944JoinLinkResolutionTests.cs",
+      "P944JoinLinkUiTests.cs",
+      "P947LobbyPrecedenceTests.cs",
+      "P970JoinPasswordTests.cs",
+      "P970JoinPasswordUiTests.cs",
+      "P970ListingPasswordTests.cs",
+      "RegistrationTests.cs",
+      "ServerListingMinClientVersionTests.cs",
+      "UpdateInfoTests.cs"
+     ]
+    }
+   ],
+   "ReadyCheckRoster": [
+    {
+     "row": "Ready-check (pre-flight) / Own ready and roster display",
+     "status": "done",
+     "family": "ReadyCheckRoster",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs",
+     "evidence": [
+      "DockedTeleportAndChatSnapshotConcurrencyTests.cs",
+      "P713LobbyScreenLiveTests.cs",
+      "P864dTeamLobbyScreenTests.cs",
+      "ReadyCheckRosterTests.cs"
+     ]
+    }
+   ],
+   "KeyBindingController": [
+    {
+     "row": "in-game key rebinding popup / Select action and capture chord",
+     "status": "done",
+     "family": "KeyBindingController",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs",
+     "evidence": [
+      "P625KeyMapTests.cs",
+      "P757KeyBindOkCancelTests.cs",
+      "P941InputLayoutTests.cs"
+     ]
+    },
+    {
+     "row": "in-game key rebinding popup / Restore defaults",
+     "status": "done",
+     "family": "KeyBindingController",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs",
+     "evidence": [
+      "P625KeyMapTests.cs",
+      "P757KeyBindOkCancelTests.cs",
+      "P941InputLayoutTests.cs"
+     ]
+    }
+   ],
+   "TeamCivPickerLayout": [
+    {
+     "row": "Ready-check / Team civilization block (name, icon, read-only for non-leaders)",
+     "status": "done",
+     "family": "TeamCivPickerLayout",
+     "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamCivPickerLayout.cs",
+     "evidence": [
+      "P802CivPickerLayoutTests.cs"
+     ]
+    }
+   ]
+  },
+  "rows": [
+   {
+    "row": "Chat pane / History scrolling and channels",
+    "status": "done",
+    "family": "ChatPaneModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs",
+    "evidence": [
+     "P757ChatPaneTests.cs",
+     "P761StartChatComposeTests.cs",
+     "P784ComposeTests.cs",
+     "P787BShopHoverAndPickTests.cs",
+     "P818ChatSubjectsTests.cs",
+     "P871bDirectoryChatTests.cs",
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Chat pane / Compose and send focus flow",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Hangar / loadout screen / Buy and launch own ship",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar / loadout screen / Disembark then launch boarded ship",
+    "status": "done",
+    "family": "Game1.Hangar",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+    "evidence": []
+   },
+   {
+    "row": "Hangar / loadout screen / Command view button",
+    "status": "done",
+    "family": "Game1.Hangar",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+    "evidence": []
+   },
+   {
+    "row": "Hangar / loadout screen / Loadout button",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar / loadout screen / Investment toggle",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar / loadout screen / Teleport toggle",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar / loadout screen / Team and help buttons",
+    "status": "done",
+    "family": "Game1.Hangar",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+    "evidence": []
+   },
+   {
+    "row": "Hangar / loadout screen / Quit-mission button",
+    "status": "done",
+    "family": "Game1.Hangar",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+    "evidence": []
+   },
+   {
+    "row": "Hangar / loadout screen / Button hover feedback",
+    "status": "done",
+    "family": "Game1.Hangar",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Hangar.cs",
+    "evidence": []
+   },
+   {
+    "row": "Hangar screen / Native hangar.mdl artwork and pane layout",
+    "status": "done-visual",
+    "family": "HangarScreen",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/HangarScreen.cs",
+    "evidence": [
+     "DockLoadoutLiveTests.cs",
+     "FullSessionIntegrationTests.cs",
+     "LaunchUndockTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P945HangarArtTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar screen / Button face strips (ButtonFaceUp | ButtonFaceInside)",
+    "status": "done-visual",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Hangar screen / Launch pane FrameImage animation (animlaunch, 0.7 s)",
+    "status": "done-visual",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Hangar screen / Hover text (hugeFont 0.75 grey, centred in 600x24 at 100,561)",
+    "status": "done-visual",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Hangar screen / In-turret badge (hangarinturretbmp, BoardState 2)",
+    "status": "done-visual",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Hangar screen / Docked view opens on the hangar screen (vmHangar)",
+    "status": "done-visual",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Game-over screen / Winner and reason banner",
+    "status": "done",
+    "family": "GameOverPanelInfo",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverPanelInfo.cs",
+    "evidence": [
+     "GameOverPanelInfoTests.cs",
+     "P914PresetPresentationTests.cs"
+    ]
+   },
+   {
+    "row": "Game-over screen / Player results table",
+    "status": "done",
+    "family": "GameOverTablesLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+    "evidence": [
+     "GameOverTablesLayoutTests.cs",
+     "P914PresetPresentationTests.cs"
+    ]
+   },
+   {
+    "row": "Game-over screen / Team totals table",
+    "status": "done",
+    "family": "GameOverTablesLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+    "evidence": [
+     "GameOverTablesLayoutTests.cs",
+     "P914PresetPresentationTests.cs"
+    ]
+   },
+   {
+    "row": "Game-over screen / Column sorting and reversal",
+    "status": "done",
+    "family": "GameOverTablesLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverTablesLayout.cs",
+    "evidence": [
+     "GameOverTablesLayoutTests.cs",
+     "P914PresetPresentationTests.cs"
+    ]
+   },
+   {
+    "row": "Game-over screen / Back action",
+    "status": "done",
+    "family": "GameOverBackPlanner",
+    "cite": "src/Allegiance.ClientCore/State/GameOverBackPlanner.cs",
+    "evidence": [
+     "GameOverBackLiveTests.cs",
+     "GameOverBackPlannerTests.cs"
+    ]
+   },
+   {
+    "row": "Scoreboard / leaderboard screen / Career leaderboard query and search",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Scoreboard / leaderboard screen / Find-me and page navigation",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Scoreboard / leaderboard screen / Column sort and profile navigation",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Game-starting (countdown) screen / Stage-starting holds player",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Game-starting (countdown) screen / Countdown display and stage-started transition",
+    "status": "done",
+    "family": "ReadyCheckLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs",
+    "evidence": [
+     "P713LobbyScreenLiveTests.cs",
+     "P802CivPickerLayoutTests.cs",
+     "P864dTeamLobbyScreenTests.cs",
+     "ReadyCheckLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / Internet button",
+    "status": "done",
+    "family": "Game1.IntroScreen",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / LAN popup and polling",
+    "status": "done",
+    "family": "IntroFindServerList",
+    "cite": "src/Allegiance.ClientCore.Game/IntroFindServerList.cs",
+    "evidence": [
+     "P757IntroScreensTests.cs",
+     "P883JoinSelectionTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / Training entry and first-run suggestion",
+    "status": "done",
+    "family": "Game1.IntroScreen",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / Options menu",
+    "status": "done",
+    "family": "OptionsMenuModel",
+    "cite": "src/Allegiance.ClientCore.Game/OptionsMenuModel.cs",
+    "evidence": [
+     "P806OptionsMenuTests.cs",
+     "P871bDirectoryChatTests.cs",
+     "P902SoundTemplateTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / Credits popup",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Intro screen / Help button",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Intro screen / Exit button",
+    "status": "done",
+    "family": "Game1.IntroScreen",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen / Replay-intro button",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Splash / loading screen / Quickstart splash bypass",
+    "status": "done",
+    "family": "Game1",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.cs",
+    "evidence": [
+     "AcceptRejectQueuedOrderLiveTests.cs",
+     "AlephTransitDispatchTests.cs",
+     "AutopilotCrossSectorGoalTests.cs",
+     "AutopilotDisengageSoundTests.cs",
+     "ChaffDropLiveTests.cs",
+     "ChatTargetLogicTests.cs",
+     "ClientJoinSideLiveTests.cs",
+     "ClientWorldAnnouncerTests.cs",
+     "ClientWorldEjectTests.cs",
+     "ClientWorldSoundEventTests.cs",
+     "CloakToggleLiveTests.cs",
+     "CommandOrderResolverTests.cs",
+     "CommandedDroneBuildKeyLiveTests.cs",
+     "DamageFlashTrackerTests.cs",
+     "DeadLatchRespawnLiveTests.cs",
+     "DebrisGeoTests.cs",
+     "DispenserEquipFireLiveTests.cs",
+     "EjectRescueTargetTests.cs",
+     "EnhancedVfxTests.cs",
+     "FilteredTargetingLiveTests.cs",
+     "FilteredTargetingTests.cs",
+     "FlightFarClipParityTests.cs",
+     "FlightInputTests.cs",
+     "FlightJiggleTests.cs",
+     "HdPbrTests.cs",
+     "HelpOverlayTests.cs",
+     "Hud11LayoutPerfTests.cs",
+     "Hud12DataAndArtTests.cs",
+     "Hud12bReviewFixTests.cs",
+     "Hud12bSourceGuardTests.cs",
+     "Hud13RadarBracketTests.cs",
+     "Hud15CommandIconTests.cs",
+     "Hud16RadarIconTests.cs",
+     "Hud19CentreHudTests.cs",
+     "Hud21TargetModelPreviewTests.cs",
+     "Hud8bCurrentCommandTests.cs",
+     "JoystickFlightControllerTests.cs",
+     "MeshyNoticeTests.cs",
+     "MiscKeyBindingLiveTests.cs",
+     "MiscKeyBindingTests.cs",
+     "MissileFireLiveTests.cs",
+     "ModernHudSettingsInputTests.cs",
+     "NativeAsteroidResolverTests.cs",
+     "NativeShipResolverTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P505SelfTargetTests.cs",
+     "P522ShieldParityLiveTests.cs",
+     "P522UndockReseedLiveTests.cs",
+     "P523SelfTargetAndBracketJitterTests.cs",
+     "P527RadarTagRenderPoseAnchorTests.cs",
+     "P540EjectLiveProofTests.cs",
+     "P540bPodAutopilotCrossSectorLiveTests.cs",
+     "P547ShaderTests.cs",
+     "P571AutopilotDockClearTests.cs",
+     "P572AutoProofTests.cs",
+     "P587MousePickAndBaseTargetingTests.cs",
+     "P594PodPickupTests.cs",
+     "P612OrbitCameraTests.cs",
+     "P623TargetingPackTests.cs",
+     "P625bActionMapBehaviorTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P640CommandCameraTests.cs",
+     "P642ConsoleZoomTests.cs",
+     "P642TargetCommandTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P664StationEventSoundTests.cs",
+     "P675CommandActionTests.cs",
+     "P680CountdownSoundTests.cs",
+     "P695HumanShipUpdatesLiveTests.cs",
+     "P698StaleShipsLoopbackTests.cs",
+     "P699HumanPodHomeLiveTests.cs",
+     "P713LobbyScreenLiveTests.cs",
+     "P720EquipmentSwapTests.cs",
+     "P728CommanderTests.cs",
+     "P729BenchmarkProjectionTests.cs",
+     "P740FlightInputTests.cs",
+     "P748InterfaceTests.cs",
+     "P749CrashSafetyTests.cs",
+     "P757ChatPaneTests.cs",
+     "P757IntroScreensTests.cs",
+     "P761StartChatComposeTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P769TargetKilledRetargetTests.cs",
+     "P770ChatKeySoundTests.cs",
+     "P775PlayerInfoOnlyShipTests.cs",
+     "P781Game1RipcordTests.cs",
+     "P784ComposeTests.cs",
+     "P785TrainingHandlerTests.cs",
+     "P787BShopHoverAndPickTests.cs",
+     "P804ClientLeadTests.cs",
+     "P805bHudProofHarnessTests.cs",
+     "P806OptionsMenuTests.cs",
+     "P816CargoFullCueTests.cs",
+     "P818ChatSubjectsTests.cs",
+     "P820SquadScreenModelTests.cs",
+     "P828RadarLabelDeclutterTests.cs",
+     "P836HudLevelTests.cs",
+     "P856GameDetailsOptionsTests.cs",
+     "P859RegressionProofTests.cs",
+     "P871RadarIconStyleTests.cs",
+     "P871bCreateGameClientTests.cs",
+     "P871bDirectoryChatTests.cs",
+     "P873TrainingJoinTests.cs",
+     "P881aTrainingMissionsTests.cs",
+     "P882aTrainingIntegrationTests.cs",
+     "P890OwnAimLoopbackTests.cs",
+     "P897ClientTransportTests.cs",
+     "P909TrainingBindingsTests.cs",
+     "P910TrainingIntegrationTests.cs",
+     "P910TrainingWireTests.cs",
+     "P911TrainingArenaClientTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "P912TrainingWindowTests.cs",
+     "P914PresetPresentationTests.cs",
+     "P918TrainingOrderTests.cs",
+     "P931TrainingPilotTests.cs",
+     "P936InternetJoinTests.cs",
+     "P940BasicFlightInputTests.cs",
+     "P944JoinLinkUiTests.cs",
+     "P947LobbyPrecedenceTests.cs",
+     "P948MouseOptionsTests.cs",
+     "P970JoinPasswordUiTests.cs",
+     "PromoteTurretKeyLiveTests.cs",
+     "QuickChatOrderResolverTests.cs",
+     "RadarTargetHighlightLiveTests.cs",
+     "ReadyCheckLiveTests.cs",
+     "RendererDisposalGuardTests.cs",
+     "RipcordRequestLiveTests.cs",
+     "ScoreboardToggleGateTests.cs",
+     "SectorInfoPaneLayoutTests.cs",
+     "ShipStatusAlarmSoundTests.cs",
+     "ShopLauncherBuyLiveTests.cs",
+     "ShopNoAutoLaunchTests.cs",
+     "SkyLaunchOptionDefaultsTests.cs",
+     "SkyP577LaunchDefaultsTests.cs",
+     "SpaceObjectLaunchOptionTests.cs",
+     "TargetPickSectorScopeLiveTests.cs",
+     "TargetPickSectorScopeTests.cs",
+     "TeamPaneControlsTests.cs",
+     "TeamPaneLayoutTests.cs",
+     "TurretGunnerCadenceTests.cs",
+     "TurretGunnerFireLiveTests.cs",
+     "WarpDestinationResolverTests.cs",
+     "WarpRoutingRealMapTests.cs"
+    ]
+   },
+   {
+    "row": "Splash / loading screen / Timeout to intro and connection progress",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Mission selection list",
+    "status": "done",
+    "family": "TrainingScreenModels",
+    "cite": "src/Allegiance.ClientCore.Game/TrainingScreenModels.cs",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Back to intro",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Basic Flight launch/runtime",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Pre/post-training slideshow flow",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Introduction mission",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Training screen / Basic Weaponry mission",
+    "status": "done",
+    "family": "Mission3",
+    "cite": "src/Allegiance.ClientCore/Training/Mission3.cs",
+    "evidence": [
+     "P881aTrainingMissionsTests.cs",
+     "P892TrainingSetupTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "P932TrainingLoadoutTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR3TrainingMissions34Tests.cs"
+    ]
+   },
+   {
+    "row": "Training screen / Enemy Engagement mission",
+    "status": "done",
+    "family": "Mission4",
+    "cite": "src/Allegiance.ClientCore/Training/Mission4.cs",
+    "evidence": [
+     "P881aTrainingMissionsTests.cs",
+     "P885Mission4NativeKeysTests.cs",
+     "P892TrainingSetupTests.cs",
+     "P917TrainingBranchTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR3TrainingMissions34Tests.cs"
+    ]
+   },
+   {
+    "row": "Training screen / Command View mission",
+    "status": "done",
+    "family": "Mission5",
+    "cite": "src/Allegiance.ClientCore/Training/Mission5.cs",
+    "evidence": [
+     "P873TrainingJoinTests.cs",
+     "P882aTrainingIntegrationTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR4TrainingMissions56Tests.cs"
+    ]
+   },
+   {
+    "row": "Training screen / Practice Arena mission",
+    "status": "done",
+    "family": "Mission6",
+    "cite": "src/Allegiance.ClientCore/Training/Mission6.cs",
+    "evidence": [
+     "P882aTrainingIntegrationTests.cs",
+     "P911TrainingArenaClientTests.cs",
+     "P911TrainingArenaTests.cs",
+     "P918TrainingOrderTests.cs",
+     "P933TrainingPatrolTests.cs",
+     "P934TrainingSupportTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR4TrainingMissions56Tests.cs"
+    ]
+   },
+   {
+    "row": "Training screen / Nanite mission",
+    "status": "done",
+    "family": "Mission8",
+    "cite": "src/Allegiance.ClientCore/Training/Mission8.cs",
+    "evidence": [
+     "P912TrainingUniverseTests.cs",
+     "P917TrainingBranchTests.cs",
+     "P934TrainingSupportTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR5TrainingMissions810Tests.cs"
+    ]
+   },
+   {
+    "row": "Training screen / Free Flight launch",
+    "status": "done",
+    "family": "Mission10",
+    "cite": "src/Allegiance.ClientCore/Training/Mission10.cs",
+    "evidence": [
+     "P882aTrainingIntegrationTests.cs",
+     "P911TrainingArenaClientTests.cs",
+     "P911TrainingArenaTests.cs",
+     "P933TrainingPatrolTests.cs",
+     "P934TrainingSupportTests.cs",
+     "P941PromptAuditTests.cs",
+     "TR5TrainingMissions810Tests.cs"
+    ]
+   },
+   {
+    "row": "Chat pane",
+    "status": "done",
+    "family": "ChatRenderer",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs",
+    "evidence": [
+     "Font1NativeFontTests.cs",
+     "Hud10PanelsTests.cs",
+     "P784ComposeTests.cs",
+     "P871bDirectoryChatTests.cs"
+    ]
+   },
+   {
+    "row": "Hangar / loadout screen",
+    "status": "done",
+    "family": "DockedScreenRenderer",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs",
+    "evidence": [
+     "InvestmentLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Game-over screen",
+    "status": "done",
+    "family": "GameOverScreenRenderer",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs",
+    "evidence": [
+     "GameOverPerfPanelLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Scoreboard / leaderboard screen",
+    "status": "done",
+    "family": "ScoreboardLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs",
+    "evidence": [
+     "PilotInfoLayoutTests.cs",
+     "ScoreboardLayoutTests.cs",
+     "ShopLayoutTests.cs",
+     "ShopModelTests.cs",
+     "TeamPaneLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Game-starting (countdown) screen",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Intro screen",
+    "status": "done",
+    "family": "Game1.Session",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Session.cs",
+    "evidence": [
+     "P625bActionMapGuardTests.cs",
+     "P770ChatKeySoundTests.cs",
+     "P856GameDetailsOptionsTests.cs",
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Splash / loading screen",
+    "status": "done",
+    "family": "Game1",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.cs",
+    "evidence": [
+     "AcceptRejectQueuedOrderLiveTests.cs",
+     "AlephTransitDispatchTests.cs",
+     "AutopilotCrossSectorGoalTests.cs",
+     "AutopilotDisengageSoundTests.cs",
+     "ChaffDropLiveTests.cs",
+     "ChatTargetLogicTests.cs",
+     "ClientJoinSideLiveTests.cs",
+     "ClientWorldAnnouncerTests.cs",
+     "ClientWorldEjectTests.cs",
+     "ClientWorldSoundEventTests.cs",
+     "CloakToggleLiveTests.cs",
+     "CommandOrderResolverTests.cs",
+     "CommandedDroneBuildKeyLiveTests.cs",
+     "DamageFlashTrackerTests.cs",
+     "DeadLatchRespawnLiveTests.cs",
+     "DebrisGeoTests.cs",
+     "DispenserEquipFireLiveTests.cs",
+     "EjectRescueTargetTests.cs",
+     "EnhancedVfxTests.cs",
+     "FilteredTargetingLiveTests.cs",
+     "FilteredTargetingTests.cs",
+     "FlightFarClipParityTests.cs",
+     "FlightInputTests.cs",
+     "FlightJiggleTests.cs",
+     "HdPbrTests.cs",
+     "HelpOverlayTests.cs",
+     "Hud11LayoutPerfTests.cs",
+     "Hud12DataAndArtTests.cs",
+     "Hud12bReviewFixTests.cs",
+     "Hud12bSourceGuardTests.cs",
+     "Hud13RadarBracketTests.cs",
+     "Hud15CommandIconTests.cs",
+     "Hud16RadarIconTests.cs",
+     "Hud19CentreHudTests.cs",
+     "Hud21TargetModelPreviewTests.cs",
+     "Hud8bCurrentCommandTests.cs",
+     "JoystickFlightControllerTests.cs",
+     "MeshyNoticeTests.cs",
+     "MiscKeyBindingLiveTests.cs",
+     "MiscKeyBindingTests.cs",
+     "MissileFireLiveTests.cs",
+     "ModernHudSettingsInputTests.cs",
+     "NativeAsteroidResolverTests.cs",
+     "NativeShipResolverTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P505SelfTargetTests.cs",
+     "P522ShieldParityLiveTests.cs",
+     "P522UndockReseedLiveTests.cs",
+     "P523SelfTargetAndBracketJitterTests.cs",
+     "P527RadarTagRenderPoseAnchorTests.cs",
+     "P540EjectLiveProofTests.cs",
+     "P540bPodAutopilotCrossSectorLiveTests.cs",
+     "P547ShaderTests.cs",
+     "P571AutopilotDockClearTests.cs",
+     "P572AutoProofTests.cs",
+     "P587MousePickAndBaseTargetingTests.cs",
+     "P594PodPickupTests.cs",
+     "P612OrbitCameraTests.cs",
+     "P623TargetingPackTests.cs",
+     "P625bActionMapBehaviorTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P640CommandCameraTests.cs",
+     "P642ConsoleZoomTests.cs",
+     "P642TargetCommandTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P664StationEventSoundTests.cs",
+     "P675CommandActionTests.cs",
+     "P680CountdownSoundTests.cs",
+     "P695HumanShipUpdatesLiveTests.cs",
+     "P698StaleShipsLoopbackTests.cs",
+     "P699HumanPodHomeLiveTests.cs",
+     "P713LobbyScreenLiveTests.cs",
+     "P720EquipmentSwapTests.cs",
+     "P728CommanderTests.cs",
+     "P729BenchmarkProjectionTests.cs",
+     "P740FlightInputTests.cs",
+     "P748InterfaceTests.cs",
+     "P749CrashSafetyTests.cs",
+     "P757ChatPaneTests.cs",
+     "P757IntroScreensTests.cs",
+     "P761StartChatComposeTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P769TargetKilledRetargetTests.cs",
+     "P770ChatKeySoundTests.cs",
+     "P775PlayerInfoOnlyShipTests.cs",
+     "P781Game1RipcordTests.cs",
+     "P784ComposeTests.cs",
+     "P785TrainingHandlerTests.cs",
+     "P787BShopHoverAndPickTests.cs",
+     "P804ClientLeadTests.cs",
+     "P805bHudProofHarnessTests.cs",
+     "P806OptionsMenuTests.cs",
+     "P816CargoFullCueTests.cs",
+     "P818ChatSubjectsTests.cs",
+     "P820SquadScreenModelTests.cs",
+     "P828RadarLabelDeclutterTests.cs",
+     "P836HudLevelTests.cs",
+     "P856GameDetailsOptionsTests.cs",
+     "P859RegressionProofTests.cs",
+     "P871RadarIconStyleTests.cs",
+     "P871bCreateGameClientTests.cs",
+     "P871bDirectoryChatTests.cs",
+     "P873TrainingJoinTests.cs",
+     "P881aTrainingMissionsTests.cs",
+     "P882aTrainingIntegrationTests.cs",
+     "P890OwnAimLoopbackTests.cs",
+     "P897ClientTransportTests.cs",
+     "P909TrainingBindingsTests.cs",
+     "P910TrainingIntegrationTests.cs",
+     "P910TrainingWireTests.cs",
+     "P911TrainingArenaClientTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "P912TrainingWindowTests.cs",
+     "P914PresetPresentationTests.cs",
+     "P918TrainingOrderTests.cs",
+     "P931TrainingPilotTests.cs",
+     "P936InternetJoinTests.cs",
+     "P940BasicFlightInputTests.cs",
+     "P944JoinLinkUiTests.cs",
+     "P947LobbyPrecedenceTests.cs",
+     "P948MouseOptionsTests.cs",
+     "P970JoinPasswordUiTests.cs",
+     "PromoteTurretKeyLiveTests.cs",
+     "QuickChatOrderResolverTests.cs",
+     "RadarTargetHighlightLiveTests.cs",
+     "ReadyCheckLiveTests.cs",
+     "RendererDisposalGuardTests.cs",
+     "RipcordRequestLiveTests.cs",
+     "ScoreboardToggleGateTests.cs",
+     "SectorInfoPaneLayoutTests.cs",
+     "ShipStatusAlarmSoundTests.cs",
+     "ShopLauncherBuyLiveTests.cs",
+     "ShopNoAutoLaunchTests.cs",
+     "SkyLaunchOptionDefaultsTests.cs",
+     "SkyP577LaunchDefaultsTests.cs",
+     "SpaceObjectLaunchOptionTests.cs",
+     "TargetPickSectorScopeLiveTests.cs",
+     "TargetPickSectorScopeTests.cs",
+     "TeamPaneControlsTests.cs",
+     "TeamPaneLayoutTests.cs",
+     "TurretGunnerCadenceTests.cs",
+     "TurretGunnerFireLiveTests.cs",
+     "WarpDestinationResolverTests.cs",
+     "WarpRoutingRealMapTests.cs"
+    ]
+   },
+   {
+    "row": "Training screen",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Video screen (cinematic)",
+    "status": "n/a",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Character-info screen / Career stats and civilization selection",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Character-info screen / Profile editing and apply",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Character-info screen / Leaderboard and games navigation",
+    "status": "done",
+    "family": "Game1.Career",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Career.cs",
+    "evidence": [
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Squads screen",
+    "status": "done",
+    "family": "Game1.Squads",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Squads.cs",
+    "evidence": []
+   },
+   {
+    "row": "Zone Club screen (online account)",
+    "status": "done",
+    "family": "IdentityEndpoints",
+    "cite": "src/Allegiance.Lobby/Identity/IdentityEndpoints.cs",
+    "evidence": [
+     "P871bDirectoryChatTests.cs"
+    ]
+   },
+   {
+    "row": "Zone events screen",
+    "status": "done",
+    "family": "EventStore",
+    "cite": "src/Allegiance.Lobby/Events/EventStore.cs",
+    "evidence": [
+     "P820bEventsPostgresTests.cs",
+     "P820bEventsTests.cs"
+    ]
+   },
+   {
+    "row": "Selection pane / Empty selection-change callback",
+    "status": "done",
+    "family": "Game1.Targeting",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Targeting.cs",
+    "evidence": [
+     "CommandOrderResolverTests.cs",
+     "CommandedDroneBuildKeyLiveTests.cs",
+     "Hud12bSourceGuardTests.cs",
+     "P625bActionMapGuardTests.cs"
+    ]
+   },
+   {
+    "row": "Selection pane / Selected-model child wrapper",
+    "status": "done",
+    "family": "Game1.Targeting",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Targeting.cs",
+    "evidence": [
+     "CommandOrderResolverTests.cs",
+     "CommandedDroneBuildKeyLiveTests.cs",
+     "Hud12bSourceGuardTests.cs",
+     "P625bActionMapGuardTests.cs"
+    ]
+   },
+   {
+    "row": "Team pane / screen / Pilot roster roles and readiness",
+    "status": "done",
+    "family": "TeamPaneLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+    "evidence": [
+     "P642ConsoleZoomTests.cs",
+     "P740FlightInputTests.cs",
+     "P761TeamPaneSortTests.cs",
+     "P775PlayerInfoOnlyShipTests.cs",
+     "P820bTeamPaneSquadTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "TeamPaneLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Squad of a side in games / leader succession",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Team pane / screen / Compact and expanded modes",
+    "status": "done",
+    "family": "TeamPaneLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+    "evidence": [
+     "P642ConsoleZoomTests.cs",
+     "P740FlightInputTests.cs",
+     "P761TeamPaneSortTests.cs",
+     "P775PlayerInfoOnlyShipTests.cs",
+     "P820bTeamPaneSquadTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "TeamPaneLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Team pane / screen / Selected-player donate and stop buttons",
+    "status": "done",
+    "family": "TeamPaneControls",
+    "cite": "src/Allegiance.ClientCore.Game/Flight/TeamPaneControls.cs",
+    "evidence": [
+     "P761TeamPaneSortTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P910TrainingIntegrationTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "TeamPaneControlsTests.cs"
+    ]
+   },
+   {
+    "row": "Team pane / screen / Take-me-to and accept controls",
+    "status": "done",
+    "family": "TeamPaneControls",
+    "cite": "src/Allegiance.ClientCore.Game/Flight/TeamPaneControls.cs",
+    "evidence": [
+     "P761TeamPaneSortTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P910TrainingIntegrationTests.cs",
+     "P912TrainingUniverseTests.cs",
+     "TeamPaneControlsTests.cs"
+    ]
+   },
+   {
+    "row": "Team pane / screen / Sort headers and player selection",
+    "status": "done",
+    "family": "TeamPaneSort",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamPaneSort.cs",
+    "evidence": [
+     "P761TeamPaneSortTests.cs",
+     "TeamPaneLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Teleport pane / Destination eligibility and selection",
+    "status": "done",
+    "family": "TeleportPaneModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs",
+    "evidence": [
+     "P764UiSoundSeamTests.cs",
+     "TeleportLayoutTests.cs",
+     "TeleportPaneModelTests.cs"
+    ]
+   },
+   {
+    "row": "Teleport pane / Teleport and boarding requests",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Teleport pane / Back and failure recovery",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Loadout panel (shop) / Hull and part purchase gates",
+    "status": "done",
+    "family": "ShopModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "DockedHullOrbitTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P571DefaultLoadoutTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P728CommanderTests.cs",
+     "P748InterfaceTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P787BShopHoverAndPickTests.cs",
+     "PartInfoLayoutTests.cs",
+     "ShopLauncherBuyLiveTests.cs",
+     "ShopLauncherCatalogueTests.cs",
+     "ShopLauncherMountNumberingLiveTests.cs",
+     "ShopLayoutTests.cs",
+     "ShopModelTests.cs",
+     "ShopNoAutoLaunchTests.cs",
+     "TeleportPaneModelTests.cs"
+    ]
+   },
+   {
+    "row": "Loadout panel (shop) / Explicit launch and acknowledgement",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Loadout panel (shop) / Native saved and default loadout controls",
+    "status": "done",
+    "family": "ShopModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "DockedHullOrbitTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P571DefaultLoadoutTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P728CommanderTests.cs",
+     "P748InterfaceTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "P787BShopHoverAndPickTests.cs",
+     "PartInfoLayoutTests.cs",
+     "ShopLauncherBuyLiveTests.cs",
+     "ShopLauncherCatalogueTests.cs",
+     "ShopLauncherMountNumberingLiveTests.cs",
+     "ShopLayoutTests.cs",
+     "ShopModelTests.cs",
+     "ShopNoAutoLaunchTests.cs",
+     "TeleportPaneModelTests.cs"
+    ]
+   },
+   {
+    "row": "Investment screen / Full and partial donation",
+    "status": "done",
+    "family": "InvestmentPaneModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+    "evidence": [
+     "InvestmentBuildGatesTests.cs",
+     "InvestmentLayoutTests.cs",
+     "InvestmentPaneModelTests.cs",
+     "P728CommanderTests.cs",
+     "P728HumanCommanderLiveTests.cs",
+     "P748InterfaceTests.cs"
+    ]
+   },
+   {
+    "row": "Investment screen / Predecessor and continued-buyability filtering",
+    "status": "done",
+    "family": "InvestmentPaneModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+    "evidence": [
+     "InvestmentBuildGatesTests.cs",
+     "InvestmentLayoutTests.cs",
+     "InvestmentPaneModelTests.cs",
+     "P728CommanderTests.cs",
+     "P728HumanCommanderLiveTests.cs",
+     "P748InterfaceTests.cs"
+    ]
+   },
+   {
+    "row": "Investment screen / Station buildspot and builder gate",
+    "status": "done",
+    "family": "Game1.Panes",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "evidence": [
+     "DispenserEquipFireLiveTests.cs",
+     "P394ShopPreSeedLiveTests.cs",
+     "P625bActionMapGuardTests.cs",
+     "P653DPodPurchaseLiveTests.cs",
+     "P764UiSoundSeamTests.cs",
+     "ShopLauncherBuyLiveTests.cs"
+    ]
+   },
+   {
+    "row": "Investment screen / Tabs and status detail selection",
+    "status": "done",
+    "family": "InvestmentPaneModel",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+    "evidence": [
+     "InvestmentBuildGatesTests.cs",
+     "InvestmentLayoutTests.cs",
+     "InvestmentPaneModelTests.cs",
+     "P728CommanderTests.cs",
+     "P728HumanCommanderLiveTests.cs",
+     "P748InterfaceTests.cs"
+    ]
+   },
+   {
+    "row": "Commander / sector map / Camera modes pan and zoom",
+    "status": "done",
+    "family": "CommandCamera",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/CommandCamera.cs",
+    "evidence": [
+     "Hud21TargetModelPreviewTests.cs",
+     "Hud5bReviewFixTests.cs",
+     "P640CommandCameraTests.cs",
+     "P881aTrainingMissionsTests.cs",
+     "P909TrainingBindingsTests.cs",
+     "P910TrainingIntegrationTests.cs",
+     "P910TrainingWireTests.cs",
+     "P911TrainingArenaClientTests.cs",
+     "P912TrainingUniverseTests.cs"
+    ]
+   },
+   {
+    "row": "Commander / sector map / Rectangle selection and friendly recipient group",
+    "status": "done",
+    "family": "Game1.Commanding",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Commanding.cs",
+    "evidence": [
+     "P625bActionMapGuardTests.cs",
+     "P770ChatKeySoundTests.cs"
+    ]
+   },
+   {
+    "row": "Commander / sector map / Generic target-to-order interaction",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Sector info pane / Special asteroid groups",
+    "status": "done",
+    "family": "SectorInfoPaneLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs",
+    "evidence": [
+     "SectorInfoPaneLayoutTests.cs",
+     "SectorMapQueriesTests.cs"
+    ]
+   },
+   {
+    "row": "Sector info pane / Known helium sum",
+    "status": "done",
+    "family": "SectorInfoPaneLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs",
+    "evidence": [
+     "SectorInfoPaneLayoutTests.cs",
+     "SectorMapQueriesTests.cs"
+    ]
+   },
+   {
+    "row": "Sector info pane / Own probe count",
+    "status": "done",
+    "family": "SectorMapQueries",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/SectorMapQueries.cs",
+    "evidence": [
+     "P493ClientWorldShipStatusTests.cs",
+     "P775ClientPlayerInfoMomentsTests.cs",
+     "SectorMapQueriesTests.cs"
+    ]
+   },
+   {
+    "row": "Sector info pane / Hover-selected sector and expand button",
+    "status": "done",
+    "family": "StarmapHover",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/StarmapHover.cs",
+    "evidence": [
+     "P764UiSoundSeamTests.cs",
+     "StarmapHoverTests.cs"
+    ]
+   },
+   {
+    "row": "F-key help overlay(s) / Open and close help",
+    "status": "done",
+    "family": "HelpOverlayLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/HelpOverlayLayout.cs",
+    "evidence": [
+     "HelpOverlayTests.cs"
+    ]
+   },
+   {
+    "row": "F-key help overlay(s) / Manual pages and navigation",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Mission briefing screen / Mission body and title",
+    "status": "done",
+    "family": "MissionBriefingRenderer",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs",
+    "evidence": []
+   },
+   {
+    "row": "Mission briefing screen / Civilization-generated briefing and tips",
+    "status": "done",
+    "family": "MissionBriefingGenerator",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/MissionBriefingGenerator.cs",
+    "evidence": [
+     "MissionBriefingGeneratorTests.cs"
+    ]
+   },
+   {
+    "row": "Side-select screen / Request side and wait for authoritative admission",
+    "status": "done",
+    "family": "LobbyScreenState",
+    "cite": "src/Allegiance.ClientCore/State/LobbyScreenState.cs",
+    "evidence": [
+     "P713LobbyScreenLiveTests.cs",
+     "P713LobbyScreenStateTests.cs",
+     "P761TeamLobbyControlsTests.cs"
+    ]
+   },
+   {
+    "row": "Side-select screen / Side list and active-side presentation",
+    "status": "done",
+    "family": "SideSelectLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs",
+    "evidence": [
+     "P802CivPickerLayoutTests.cs",
+     "P864dTeamLobbyScreenTests.cs",
+     "SideSelectLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "Server list / lobby browser / Mission list and join",
+    "status": "done",
+    "family": "Game1.Session",
+    "cite": "src/Allegiance.ClientCore.Game/Game1.Session.cs",
+    "evidence": [
+     "P625bActionMapGuardTests.cs",
+     "P770ChatKeySoundTests.cs",
+     "P856GameDetailsOptionsTests.cs",
+     "P947LobbyPrecedenceTests.cs"
+    ]
+   },
+   {
+    "row": "Server list / lobby browser / Sort and game filters",
+    "status": "done",
+    "family": "LobbyGameSort",
+    "cite": "src/Allegiance.ClientCore.Game/LobbyGameSort.cs",
+    "evidence": [
+     "P761LobbySortAndSearchTests.cs",
+     "P806LobbyFiltersTests.cs",
+     "P806ServerListLoopbackTests.cs"
+    ]
+   },
+   {
+    "row": "Server list / lobby browser / Find-player and details popup",
+    "status": "done",
+    "family": "ServerListing",
+    "cite": "src/Allegiance.ClientCore.Game/ServerListing.cs",
+    "evidence": [
+     "DeregisterTests.cs",
+     "ExpiryTests.cs",
+     "HeartbeatTests.cs",
+     "LobbyChatLogicTests.cs",
+     "LobbyFilterTests.cs",
+     "LobbyHeartbeatTests.cs",
+     "P655DirectoryIntegrityTests.cs",
+     "P761LobbySortAndSearchTests.cs",
+     "P761PlayerListTests.cs",
+     "P806LobbyFiltersTests.cs",
+     "P806LobbyGameParamsTests.cs",
+     "P806ServerListLoopbackTests.cs",
+     "P808IdentityScreenTests.cs",
+     "P808IdentityTests.cs",
+     "P856GameDetailsOptionsTests.cs",
+     "P856OptionServerTests.cs",
+     "P871bCreateGameProvisioningLiveTests.cs",
+     "P883JoinSelectionTests.cs",
+     "P894ListingFieldsTests.cs",
+     "P894LobbyTests.cs",
+     "P895UdpMetadataTests.cs",
+     "P897ClientTransportTests.cs",
+     "P936InternetJoinTests.cs",
+     "P936InternetSessionTests.cs",
+     "P936NatSignalingTests.cs",
+     "P944JoinLinkResolutionTests.cs",
+     "P944JoinLinkUiTests.cs",
+     "P947LobbyPrecedenceTests.cs",
+     "P970JoinPasswordTests.cs",
+     "P970JoinPasswordUiTests.cs",
+     "P970ListingPasswordTests.cs",
+     "RegistrationTests.cs",
+     "ServerListingMinClientVersionTests.cs",
+     "UpdateInfoTests.cs"
+    ]
+   },
+   {
+    "row": "Ready-check (pre-flight) / Own ready and roster display",
+    "status": "done",
+    "family": "ReadyCheckRoster",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs",
+    "evidence": [
+     "DockedTeleportAndChatSnapshotConcurrencyTests.cs",
+     "P713LobbyScreenLiveTests.cs",
+     "P864dTeamLobbyScreenTests.cs",
+     "ReadyCheckRosterTests.cs"
+    ]
+   },
+   {
+    "row": "Ready-check (pre-flight) / Commander force-ready and AFK clear",
+    "status": "done",
+    "family": "LobbyScreenState",
+    "cite": "src/Allegiance.ClientCore/State/LobbyScreenState.cs",
+    "evidence": [
+     "P713LobbyScreenLiveTests.cs",
+     "P713LobbyScreenStateTests.cs",
+     "P761TeamLobbyControlsTests.cs"
+    ]
+   },
+   {
+    "row": "in-game key rebinding popup / Select action and capture chord",
+    "status": "done",
+    "family": "KeyBindingController",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs",
+    "evidence": [
+     "P625KeyMapTests.cs",
+     "P757KeyBindOkCancelTests.cs",
+     "P941InputLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "in-game key rebinding popup / Restore defaults",
+    "status": "done",
+    "family": "KeyBindingController",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs",
+    "evidence": [
+     "P625KeyMapTests.cs",
+     "P757KeyBindOkCancelTests.cs",
+     "P941InputLayoutTests.cs"
+    ]
+   },
+   {
+    "row": "in-game key rebinding popup / OK versus Cancel persistence",
+    "status": "done",
+    "family": "unknown",
+    "cite": "",
+    "evidence": []
+   },
+   {
+    "row": "Ready-check / Team civilization block (name, icon, read-only for non-leaders)",
+    "status": "done",
+    "family": "TeamCivPickerLayout",
+    "cite": "src/Allegiance.ClientCore.Game/Rendering/TeamCivPickerLayout.cs",
+    "evidence": [
+     "P802CivPickerLayoutTests.cs"
+    ]
+   }
+  ]
+ }
+}

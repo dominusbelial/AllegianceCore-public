@@ -1,0 +1,132 @@
+{
+ "Schema": 1,
+ "Tool": "tools/hud2-proof",
+ "Task": "P980",
+ "Commit": "66d72e6fc847",
+ "Dirty": true,
+ "Driver": {
+  "Renderer": "MonoGame.Framework.DesktopGL",
+  "AdapterDescription": "Mesa Intel(R) Arc(tm) Pro B50 Graphics (BMG G21)",
+  "GraphicsProfile": "Reach",
+  "SurfaceFormat": "Color/Depth24",
+  "MonoGameVersion": "3.8.5.1",
+  "SdlVideoDriver": "offscreen",
+  "OsDescription": "Ubuntu 26.04.1 LTS",
+  "DisplayScale": 1
+ },
+ "Matrix": {
+  "Scenarios": [
+   "flight"
+  ],
+  "Sizes": [
+   "0.75",
+   "1",
+   "1.5"
+  ],
+  "Backdrops": [
+   "dark",
+   "bright"
+  ],
+  "Styles": [
+   "Classic",
+   "Modern"
+  ],
+  "Resolutions": [
+   [
+    1920,
+    1080
+   ],
+   [
+    2560,
+    1440
+   ],
+   [
+    1280,
+    720
+   ],
+   [
+    1600,
+    900
+   ],
+   [
+    1366,
+    768
+   ],
+   [
+    800,
+    480
+   ],
+   [
+    3840,
+    2160
+   ]
+  ],
+  "CombinationCount": 4
+ },
+ "Combinations": [
+  {
+   "Id": "flight/800x480/s1/dark/Classic",
+   "Scenario": "flight",
+   "Width": 800,
+   "Height": 480,
+   "Size": 1,
+   "Backdrop": "dark",
+   "Style": "Classic",
+   "PixelsSha256": "08739ca5b31890856e2cfdf5004cafc0193810dd41271d03a7e35e5b779b7fe6",
+   "PixelsOutsideAnimationSha256": "08739ca5b31890856e2cfdf5004cafc0193810dd41271d03a7e35e5b779b7fe6",
+   "AnimationPixels": 0,
+   "AnimationMask": [],
+   "Png": "png/flight__800x480__s1__dark__Classic.png",
+   "Snapshot": "snapshots/flight__800x480__s1__dark__Classic.json",
+   "SnapshotSha256": "11c4871a3edf2a9f598a2ba0b5cb563b12df7fb2887d8626324fe4345f8d6e58"
+  },
+  {
+   "Id": "flight/800x480/s1/dark/Modern",
+   "Scenario": "flight",
+   "Width": 800,
+   "Height": 480,
+   "Size": 1,
+   "Backdrop": "dark",
+   "Style": "Modern",
+   "PixelsSha256": "d4e42a63f0ed5356c896577fc9cfb4d5bfd7e02d16852d5f41f2c407236f26db",
+   "PixelsOutsideAnimationSha256": "d4e42a63f0ed5356c896577fc9cfb4d5bfd7e02d16852d5f41f2c407236f26db",
+   "AnimationPixels": 0,
+   "AnimationMask": [],
+   "Png": "png/flight__800x480__s1__dark__Modern.png",
+   "Snapshot": "snapshots/flight__800x480__s1__dark__Modern.json",
+   "SnapshotSha256": "ab7d69477751b6f451e7ebd2787ec146361295ffe448390921d14a6ec99d17db"
+  },
+  {
+   "Id": "flight/3840x2160/s1/dark/Classic",
+   "Scenario": "flight",
+   "Width": 3840,
+   "Height": 2160,
+   "Size": 1,
+   "Backdrop": "dark",
+   "Style": "Classic",
+   "PixelsSha256": "9c481084b4da6a6d3dee9506bb356a4b8c7302d38f7c6204af719c7541ba9db8",
+   "PixelsOutsideAnimationSha256": "9c481084b4da6a6d3dee9506bb356a4b8c7302d38f7c6204af719c7541ba9db8",
+   "AnimationPixels": 0,
+   "AnimationMask": [],
+   "Png": "png/flight__3840x2160__s1__dark__Classic.png",
+   "Snapshot": "snapshots/flight__3840x2160__s1__dark__Classic.json",
+   "SnapshotSha256": "0efbb1e598a8fefb85ebf68b6c57d7757699b5916e33342181f644a665bf210a"
+  },
+  {
+   "Id": "flight/3840x2160/s1/dark/Modern",
+   "Scenario": "flight",
+   "Width": 3840,
+   "Height": 2160,
+   "Size": 1,
+   "Backdrop": "dark",
+   "Style": "Modern",
+   "PixelsSha256": "f724bde054d4e3f9fae91c82eac838ed4034eace34cfe84e7df0253637001f5e",
+   "PixelsOutsideAnimationSha256": "f724bde054d4e3f9fae91c82eac838ed4034eace34cfe84e7df0253637001f5e",
+   "AnimationPixels": 0,
+   "AnimationMask": [],
+   "Png": "png/flight__3840x2160__s1__dark__Modern.png",
+   "Snapshot": "snapshots/flight__3840x2160__s1__dark__Modern.json",
+   "SnapshotSha256": "0b6b06085782c192c45622b9b595b30b689765409758a6074bd5fffdb8a6a821"
+  }
+ ]
+}

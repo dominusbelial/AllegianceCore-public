@@ -847,8 +847,22 @@ list in **reverse**.
   them, notices yield to labels, and a fully crowded screen falls back to the
   native anchor instead of throwing. The centred ripcord countdown reserve is the
   union of the native 150-px StringImage box (`Artwork/dialog.mdl:5145-5151`,
-  `:5429`) and the wider port glyph run (P859). Proof: `tools/hud2-proof`
-  (sweeps 1920×1080, 2560×1440, 1280×720, 1600×900, 1366×768 × Size × both skins).
+  `:5429`) and the wider port glyph run (P859). Proof: `tools/hud2-proof`.
+- **HUD golden baseline / zero-delta gate (P980)** — `tools/hud2-proof` renders 22
+  scenarios × 7 resolutions (800×480 … 3840×2160) × 3 sizes × 2 backdrops (dark/bright)
+  × 2 skins through the production renderers, and `--capture` writes lossless RGBA
+  PNGs, a SHA-256 of the *decoded* pixels, a semantic snapshot (visible `HudElement`s,
+  text boxes + bounds, inventory column fit) and a deterministic `manifest.json`.
+  `--compare <baseline>` re-renders and fails on any decoded-pixel or semantic
+  difference (diff images + changed-pixel counts), `--diff-captures <a> <b>` is the
+  double-capture determinism proof and `--self-test` proves the compare mode detects a
+  deliberately changed pixel. Baseline lives outside the repo
+  (`~/allegiance-evidence/hud-goldens/<short-commit>/`); only the manifest and a small
+  runnable sample are committed (`docs/reports/P980_assets/`). Determinism is
+  fixture-owned: Modern's frame state is reset per combination and the one wall-clock
+  animated glyph (ModernHudRenderer.cs:166) is a recorded animation mask, never a
+  blessed hash. Coverage inventory: `tools/hud2-proof/coverage.py` (every `hud` and
+  `screens` parity row → scenarios). Report `docs/reports/SKINS_1A_BASELINE_P980.md`.
 - **HUD renderer** — `Rendering/HudRenderer.cs` (shared model +
   Classic), `Rendering/ModernHudRenderer.cs` (Modern override). P786 report.
 - **Fresh-profile keys hint (P949)** — `Rendering/ControlHint.cs` (pure text +

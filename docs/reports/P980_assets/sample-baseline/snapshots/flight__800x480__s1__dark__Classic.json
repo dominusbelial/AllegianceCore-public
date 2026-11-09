@@ -1,0 +1,1365 @@
+{
+  "Scenario": "flight",
+  "Width": 800,
+  "Height": 480,
+  "Size": 1,
+  "Backdrop": "dark",
+  "Style": "Classic",
+  "Visible": true,
+  "FlightVisible": true,
+  "InstrumentsVisible": true,
+  "Elements": [
+    {
+      "Id": "Hull integrity",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -65.5,
+      "Y": 35.5,
+      "YUp": false,
+      "Value": 0.82,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Shield charge",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 65.5,
+      "Y": 35.5,
+      "YUp": false,
+      "Value": 0.7,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Energy reserve",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 126.5,
+      "Y": -112.5,
+      "YUp": false,
+      "Value": 1,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Fuel reserve",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 126.5,
+      "Y": 93.5,
+      "YUp": false,
+      "Value": 0.9,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Ammunition reserve",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -126.5,
+      "Y": -112.5,
+      "YUp": false,
+      "Value": 0.8,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Thrust setting",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -126.5,
+      "Y": 93.5,
+      "YUp": false,
+      "Value": 1,
+      "Color": [
+        0.07,
+        0.95,
+        0.84
+      ]
+    },
+    {
+      "Id": "Speed",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -39,
+      "Y": -88,
+      "YUp": true,
+      "Value": 260,
+      "Text": "mps"
+    },
+    {
+      "Id": "Kill bonus",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -39,
+      "Y": -138,
+      "YUp": true,
+      "Value": 15
+    },
+    {
+      "Id": "Roll tutorial cue",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": -110,
+      "Y": -170,
+      "YUp": true
+    },
+    {
+      "Id": "Signature percentage",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -39,
+      "Y": -107,
+      "YUp": true,
+      "Value": 42
+    },
+    {
+      "Id": "Detection eye",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": 70,
+      "Y": -185,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Cloak active",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -200,
+      "Y": -160,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Cloak strength and drained state",
+      "Available": true,
+      "Visible": false,
+      "Value": 0
+    },
+    {
+      "Id": "Autopilot status",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -143,
+      "Y": 102,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Vector lock status",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 122,
+      "Y": 97,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Carried flag",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 107,
+      "Y": 110,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Carried artifact",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": -161,
+      "Y": 110,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Target name",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -80,
+      "Y": 150,
+      "YUp": true
+    },
+    {
+      "Id": "Target type description",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Target side identity",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Target hull",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -85,
+      "Y": 58,
+      "YUp": true
+    },
+    {
+      "Id": "Target shield",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": 47,
+      "Y": 58,
+      "YUp": true
+    },
+    {
+      "Id": "Target range or sector",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": 80,
+      "Y": 58,
+      "YUp": true
+    },
+    {
+      "Id": "Target speed",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -228,
+      "Y": 58,
+      "YUp": true
+    },
+    {
+      "Id": "Target ore",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Target kill bonus",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -40,
+      "Y": 135,
+      "YUp": true
+    },
+    {
+      "Id": "Target in weapon range",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -120,
+      "Y": 115,
+      "YUp": true
+    },
+    {
+      "Id": "Target model preview",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": 270,
+      "Y": 9,
+      "YUp": true
+    },
+    {
+      "Id": "Target time to intercept",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": 242,
+      "Y": 10,
+      "YUp": true
+    },
+    {
+      "Id": "Cockpit centre reticle",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Velocity direction marker",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 260,
+      "ScreenX": 340,
+      "ScreenY": 260
+    },
+    {
+      "Id": "Joystick turning indicator",
+      "Available": true,
+      "Visible": true,
+      "Value": 0
+    },
+    {
+      "Id": "Ballistic lead marker",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Aim hit-probability predictor",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Chase weapon aim without target",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Accepted and current order turn arrows",
+      "Available": true,
+      "Visible": true,
+      "Value": 1,
+      "Text": "accepted\u002Bcurrent"
+    },
+    {
+      "Id": "Selected target bracket",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Missile lock flower",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Training HUD callouts",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Radar viewport and round border",
+      "Available": true,
+      "Visible": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar ship contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 2
+    },
+    {
+      "Id": "Radar station contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 2
+    },
+    {
+      "Id": "Radar warp contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 2
+    },
+    {
+      "Id": "Radar asteroid contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 2
+    },
+    {
+      "Id": "Radar missile contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar probe and mine contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 4
+    },
+    {
+      "Id": "Radar treasure and tech contacts",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 4
+    },
+    {
+      "Id": "Radar accepted order brackets",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar queued order brackets",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar nearest enemy bracket",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar threat damage flash",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar command subjects",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar carried flag marker",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar carried artifact marker",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar ripcord marker",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar construction highlight",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar name labels",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 2
+    },
+    {
+      "Id": "Radar range labels",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 3
+    },
+    {
+      "Id": "Radar hull and shield bars",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar ore and miner fill bars",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar friendly detection eyes",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Radar friendly ripcord seconds",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar command verb labels",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar LOD modes",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true,
+      "Value": 1
+    },
+    {
+      "Id": "Radar range fade",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Projected",
+      "X": 0,
+      "Y": 0,
+      "YUp": true
+    },
+    {
+      "Id": "Sector location",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "TopRight",
+      "X": -180,
+      "Y": -37,
+      "YUp": true,
+      "Text": "Alystra"
+    },
+    {
+      "Id": "Turret carrier identity",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "TopRight",
+      "X": -180,
+      "Y": -75,
+      "YUp": true,
+      "Text": "Pilot Alpha"
+    },
+    {
+      "Id": "Observer and turret board state",
+      "Available": true,
+      "Visible": false,
+      "Value": 2,
+      "Text": "Turret of Pilot Alpha"
+    },
+    {
+      "Id": "Accepted order text",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "TopLeft",
+      "X": 50,
+      "Y": -37,
+      "YUp": true,
+      "Text": "defend Garrison"
+    },
+    {
+      "Id": "Queued order text",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "TopLeft",
+      "X": 50,
+      "Y": -37,
+      "YUp": true,
+      "Text": "attack Enemy fighter"
+    },
+    {
+      "Id": "Chat history",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Top",
+      "X": -160,
+      "Y": -126,
+      "YUp": true,
+      "Text": "[TEAM] Pilot: defend the base\n[ALL] Enemy: incoming"
+    },
+    {
+      "Id": "Chat composition and recipient",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Bottom",
+      "X": -150,
+      "Y": 148,
+      "YUp": true,
+      "Text": "[TEAM] returning"
+    },
+    {
+      "Id": "Command recipient verb and wing controls",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Bottom",
+      "X": -135,
+      "Y": 40,
+      "YUp": true
+    },
+    {
+      "Id": "Tip text lines",
+      "Available": true,
+      "Visible": true,
+      "Text": "Welcome to the sector\nAlystra: 3 miners on duty\nPayday: $500"
+    },
+    {
+      "Id": "Critical tip text lines",
+      "Available": true,
+      "Visible": true,
+      "Text": "Reloading ammo..."
+    },
+    {
+      "Id": "Vote banner",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Money credits",
+      "Available": true,
+      "Visible": false,
+      "Value": 2500
+    },
+    {
+      "Id": "Lives remaining",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "TopLeft",
+      "X": 40,
+      "Y": -97,
+      "YUp": true
+    },
+    {
+      "Id": "Mission kills",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "TopLeft",
+      "X": 40,
+      "Y": -177,
+      "YUp": true
+    },
+    {
+      "Id": "Mission countdown",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "TopLeft",
+      "X": 40,
+      "Y": -137,
+      "YUp": true
+    },
+    {
+      "Id": "Ripcord countdown",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "Center",
+      "X": -75,
+      "Y": 15,
+      "YUp": true,
+      "Text": "Ripcord in: 9"
+    },
+    {
+      "Id": "Eject pod identity panel",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": -86,
+      "Y": -87,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Lifepod oxygen endurance",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": -20,
+      "Y": -77,
+      "YUp": true,
+      "Value": 0.9
+    },
+    {
+      "Id": "Death banner",
+      "Available": true,
+      "Visible": false,
+      "Anchor": "Center",
+      "X": -105,
+      "Y": 15,
+      "YUp": true,
+      "Value": 0
+    },
+    {
+      "Id": "Boundary and crowd warnings",
+      "Available": true,
+      "Visible": true,
+      "Text": "OUT OF BOUNDS"
+    },
+    {
+      "Id": "Incoming missile warning",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Damage flash timer",
+      "Available": true,
+      "Visible": false,
+      "Value": 0
+    },
+    {
+      "Id": "HUD style and software layouts",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Console pane visibility and slide animation",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "HUD base class contract",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Game list screen boundary",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Flight equipment inventory pane",
+      "Available": true,
+      "Visible": true,
+      "Anchor": "BottomRight",
+      "X": -36,
+      "Y": 40,
+      "YUp": true,
+      "Text": "Fig Adv"
+    },
+    {
+      "Id": "Equipment part identity and key",
+      "Available": true,
+      "Visible": true,
+      "Text": "1. Gatling Gun; 2. Plasma Cannon; Y. Turret weapon; 5. SRM Dumbfire 3; 7. Energy Shield; 9. Booster; 8. Cloaking Device; S. Ammo Pack; 3. \u003Csmall weapon mount\u003E"
+    },
+    {
+      "Id": "Equipment selected and active state",
+      "Available": true,
+      "Visible": true,
+      "Text": "1.Gatling Gun"
+    },
+    {
+      "Id": "Equipment quantity and empty warning",
+      "Available": true,
+      "Visible": true,
+      "Text": "SRM Dumbfire 3 x5; Energy Shield x1; Booster x1; Cloaking Device x1; Ammo Pack x3"
+    },
+    {
+      "Id": "Equipment mounting progress",
+      "Available": true,
+      "Visible": true,
+      "Value": 0.45
+    },
+    {
+      "Id": "Launcher arming progress",
+      "Available": true,
+      "Visible": true,
+      "Value": 0.6,
+      "Text": "5 / 1125m / 150"
+    },
+    {
+      "Id": "Equipment weapon range",
+      "Available": true,
+      "Visible": true,
+      "Text": "800m / 15 X 8; 1200m / 20 X 5"
+    },
+    {
+      "Id": "Equipment shot damage",
+      "Available": true,
+      "Visible": true,
+      "Text": "800m / 15 X 8; 1200m / 20 X 5"
+    },
+    {
+      "Id": "Equipment burst rate",
+      "Available": true,
+      "Visible": true,
+      "Text": "800m / 15 X 8; 1200m / 20 X 5"
+    },
+    {
+      "Id": "Equipment shield strength",
+      "Available": true,
+      "Visible": true,
+      "Text": "500 / 3 sec"
+    },
+    {
+      "Id": "Equipment shield recharge seconds",
+      "Available": true,
+      "Visible": true,
+      "Text": "500 / 3 sec"
+    },
+    {
+      "Id": "Equipment afterburner top speed",
+      "Available": true,
+      "Visible": true,
+      "Text": "220mps / 8"
+    },
+    {
+      "Id": "Equipment afterburner endurance",
+      "Available": true,
+      "Visible": true,
+      "Text": "220mps / 8"
+    },
+    {
+      "Id": "Equipment cloak endurance",
+      "Available": true,
+      "Visible": true,
+      "Text": "12 sec"
+    },
+    {
+      "Id": "Inventory turret gunner identity",
+      "Available": false,
+      "Visible": false
+    },
+    {
+      "Id": "Inventory cargo slots",
+      "Available": true,
+      "Visible": true,
+      "Text": "S.Ammo Pack x3"
+    },
+    {
+      "Id": "Inventory own ship name",
+      "Available": true,
+      "Visible": true,
+      "Text": "Fig Adv"
+    },
+    {
+      "Id": "Equipment empty slot affordances",
+      "Available": true,
+      "Visible": true,
+      "Text": "3.\u003Csmall weapon mount\u003E"
+    },
+    {
+      "Id": "Command view ship summary",
+      "Available": false,
+      "Visible": false,
+      "Anchor": "Left",
+      "X": 36,
+      "Y": 120,
+      "YUp": true,
+      "Text": ""
+    }
+  ],
+  "TextBoxes": [
+    {
+      "Text": "FIRING",
+      "X": 367,
+      "Y": 388,
+      "W": 66,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "radar:Enemy fighter with a long pilot name",
+      "X": 4,
+      "Y": 229,
+      "W": 437,
+      "H": 55,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "radar:800",
+      "X": 115,
+      "Y": 197,
+      "W": 63,
+      "H": 28,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "radar:A-4 Aleph",
+      "X": 349,
+      "Y": 175,
+      "W": 107,
+      "H": 50,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "radar:label",
+      "X": 403,
+      "Y": 421,
+      "W": 41,
+      "H": 28,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "COCKPIT",
+      "X": 16,
+      "Y": 454,
+      "W": 77,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "OUT OF BOUNDS",
+      "X": 26,
+      "Y": 117,
+      "W": 143,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "Current location:",
+      "X": 606,
+      "Y": 37,
+      "W": 187,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Alystra",
+      "X": 662,
+      "Y": 59,
+      "W": 77,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Turret of:",
+      "X": 645,
+      "Y": 75,
+      "W": 110,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Pilot Alpha",
+      "X": 640,
+      "Y": 97,
+      "W": 121,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Current orders:",
+      "X": 37,
+      "Y": 37,
+      "W": 165,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "attack Enemy fighter",
+      "X": 57,
+      "Y": 57,
+      "W": 220,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "defend Garrison",
+      "X": 57,
+      "Y": 77,
+      "W": 165,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Reloading ammo...",
+      "X": 306,
+      "Y": 134,
+      "W": 187,
+      "H": 22,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "Welcome to the sector",
+      "X": 284,
+      "Y": 444,
+      "W": 231,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "Alystra: 3 miners on duty",
+      "X": 262,
+      "Y": 433,
+      "W": 275,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "Payday: $500",
+      "X": 54,
+      "Y": 422,
+      "W": 132,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "Ripcord in: 9",
+      "X": 244,
+      "Y": 225,
+      "W": 312,
+      "H": 47,
+      "FixedAnchor": true
+    },
+    {
+      "Text": "260",
+      "X": 124,
+      "Y": 372,
+      "W": 72,
+      "H": 47,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "mps",
+      "X": 384,
+      "Y": 343,
+      "W": 33,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "AFTERBURNER ACTIVE",
+      "X": 598,
+      "Y": 20,
+      "W": 198,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "PWR 100%",
+      "X": 676,
+      "Y": 44,
+      "W": 89,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "WEAPONS: ALL",
+      "X": 655,
+      "Y": 58,
+      "W": 132,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "MINING",
+      "X": 688,
+      "Y": 82,
+      "W": 66,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "TIME DILATION 85%",
+      "X": 608,
+      "Y": 16,
+      "W": 188,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "\u002B024deg",
+      "X": 666,
+      "Y": 41,
+      "W": 77,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "ROLL",
+      "X": 682,
+      "Y": 80,
+      "W": 44,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "MOUSE DZ 10% QUAD",
+      "X": 4,
+      "Y": 332,
+      "W": 187,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "NO ENEMY FIGHTER IN SECTOR",
+      "X": 280,
+      "Y": 144,
+      "W": 287,
+      "H": 22,
+      "FixedAnchor": false
+    },
+    {
+      "Text": "Reloading ammo...",
+      "X": 4,
+      "Y": 144,
+      "W": 187,
+      "H": 22,
+      "FixedAnchor": false
+    }
+  ],
+  "Inventory": {
+    "Visible": true,
+    "Scale": 0.9,
+    "Rows": [
+      {
+        "Key": "1.",
+        "Name": "Gatling Gun",
+        "Stats": "800m / 15 X 8",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 143,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 0.50979024,
+        "StatsFits": true
+      },
+      {
+        "Key": "2.",
+        "Name": "Plasma Cannon",
+        "Stats": "1200m / 20 X 5",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 154,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 0.47337663,
+        "StatsFits": true
+      },
+      {
+        "Key": "Y.",
+        "Name": "Turret weapon",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 0,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 1,
+        "StatsFits": true
+      },
+      {
+        "Key": "5.",
+        "Name": "SRM Dumbfire 3",
+        "Stats": "5 / 1125m / 150",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 165,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 0.44181818,
+        "StatsFits": true
+      },
+      {
+        "Key": "7.",
+        "Name": "Energy Shield",
+        "Stats": "500 / 3 sec",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 121,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 0.60247934,
+        "StatsFits": true
+      },
+      {
+        "Key": "9.",
+        "Name": "Booster",
+        "Stats": "220mps / 8",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 110,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 0.6627273,
+        "StatsFits": true
+      },
+      {
+        "Key": "8.",
+        "Name": "Cloaking Device",
+        "Stats": "12 sec",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 66,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 1,
+        "StatsFits": true
+      },
+      {
+        "Key": "S.",
+        "Name": "Ammo Pack",
+        "Stats": "3",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 11,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 1,
+        "StatsFits": true
+      },
+      {
+        "Key": "3.",
+        "Name": "\u003Csmall weapon mount\u003E",
+        "NameWidthPx": 77,
+        "NameMaxPx": 83.7,
+        "NameFits": true,
+        "StatsWidthPx": 0,
+        "StatsMaxPx": 72.9,
+        "StatsFitScale": 1,
+        "StatsFits": true
+      }
+    ],
+    "AllFit": true
+  },
+  "DrawnElements": [],
+  "ModernScale": 1,
+  "Findings": [
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = radar:Enemy fighter with a long pilot name, Bounds = {X:4 Y:229 Width:437 Height:55}, FixedAnchor = False } / HudTextBox { Text = Ripcord in: 9, Bounds = {X:244 Y:225 Width:312 Height:47}, FixedAnchor = True }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = radar:label, Bounds = {X:403 Y:421 Width:41 Height:28}, FixedAnchor = False } / HudTextBox { Text = Welcome to the sector, Bounds = {X:284 Y:444 Width:231 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = radar:label, Bounds = {X:403 Y:421 Width:41 Height:28}, FixedAnchor = False } / HudTextBox { Text = Alystra: 3 miners on duty, Bounds = {X:262 Y:433 Width:275 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Current location:, Bounds = {X:606 Y:37 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = AFTERBURNER ACTIVE, Bounds = {X:598 Y:20 Width:198 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Current location:, Bounds = {X:606 Y:37 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = PWR 100%, Bounds = {X:676 Y:44 Width:89 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Current location:, Bounds = {X:606 Y:37 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = WEAPONS: ALL, Bounds = {X:655 Y:58 Width:132 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Current location:, Bounds = {X:606 Y:37 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = TIME DILATION 85%, Bounds = {X:608 Y:16 Width:188 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Current location:, Bounds = {X:606 Y:37 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = \u002B024deg, Bounds = {X:666 Y:41 Width:77 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Alystra, Bounds = {X:662 Y:59 Width:77 Height:22}, FixedAnchor = True } / HudTextBox { Text = PWR 100%, Bounds = {X:676 Y:44 Width:89 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Alystra, Bounds = {X:662 Y:59 Width:77 Height:22}, FixedAnchor = True } / HudTextBox { Text = WEAPONS: ALL, Bounds = {X:655 Y:58 Width:132 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Alystra, Bounds = {X:662 Y:59 Width:77 Height:22}, FixedAnchor = True } / HudTextBox { Text = \u002B024deg, Bounds = {X:666 Y:41 Width:77 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Alystra, Bounds = {X:662 Y:59 Width:77 Height:22}, FixedAnchor = True } / HudTextBox { Text = ROLL, Bounds = {X:682 Y:80 Width:44 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Turret of:, Bounds = {X:645 Y:75 Width:110 Height:22}, FixedAnchor = True } / HudTextBox { Text = WEAPONS: ALL, Bounds = {X:655 Y:58 Width:132 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Turret of:, Bounds = {X:645 Y:75 Width:110 Height:22}, FixedAnchor = True } / HudTextBox { Text = MINING, Bounds = {X:688 Y:82 Width:66 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Turret of:, Bounds = {X:645 Y:75 Width:110 Height:22}, FixedAnchor = True } / HudTextBox { Text = ROLL, Bounds = {X:682 Y:80 Width:44 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Pilot Alpha, Bounds = {X:640 Y:97 Width:121 Height:22}, FixedAnchor = True } / HudTextBox { Text = MINING, Bounds = {X:688 Y:82 Width:66 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Pilot Alpha, Bounds = {X:640 Y:97 Width:121 Height:22}, FixedAnchor = True } / HudTextBox { Text = ROLL, Bounds = {X:682 Y:80 Width:44 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Reloading ammo..., Bounds = {X:306 Y:134 Width:187 Height:22}, FixedAnchor = True } / HudTextBox { Text = NO ENEMY FIGHTER IN SECTOR, Bounds = {X:280 Y:144 Width:287 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = Welcome to the sector, Bounds = {X:284 Y:444 Width:231 Height:22}, FixedAnchor = False } / HudTextBox { Text = Alystra: 3 miners on duty, Bounds = {X:262 Y:433 Width:275 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = AFTERBURNER ACTIVE, Bounds = {X:598 Y:20 Width:198 Height:22}, FixedAnchor = False } / HudTextBox { Text = TIME DILATION 85%, Bounds = {X:608 Y:16 Width:188 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = AFTERBURNER ACTIVE, Bounds = {X:598 Y:20 Width:198 Height:22}, FixedAnchor = False } / HudTextBox { Text = \u002B024deg, Bounds = {X:666 Y:41 Width:77 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = PWR 100%, Bounds = {X:676 Y:44 Width:89 Height:22}, FixedAnchor = False } / HudTextBox { Text = WEAPONS: ALL, Bounds = {X:655 Y:58 Width:132 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = PWR 100%, Bounds = {X:676 Y:44 Width:89 Height:22}, FixedAnchor = False } / HudTextBox { Text = \u002B024deg, Bounds = {X:666 Y:41 Width:77 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = WEAPONS: ALL, Bounds = {X:655 Y:58 Width:132 Height:22}, FixedAnchor = False } / HudTextBox { Text = \u002B024deg, Bounds = {X:666 Y:41 Width:77 Height:22}, FixedAnchor = False }",
+    "flight/800x480/s1/dark/Classic overlap: HudTextBox { Text = MINING, Bounds = {X:688 Y:82 Width:66 Height:22}, FixedAnchor = False } / HudTextBox { Text = ROLL, Bounds = {X:682 Y:80 Width:44 Height:22}, FixedAnchor = False }"
+  ]
+}

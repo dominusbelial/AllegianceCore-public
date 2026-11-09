@@ -63,7 +63,7 @@ public sealed class ModernHudTests
     }
     [Trait("Requires", "Gpu")]
     [SkippableFact]
-    [Trait("Tier", "Live")]   // renders every HUD-1 scenario in both skins (~11 s)
+    [Trait("Tier", "Live")]   // renders the full P980 matrix: 22 scenarios × 7 resolutions × 3 sizes × 2 backdrops × 2 skins (~100 s)
     public async Task Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements()
     {
         string repo = Repo();
@@ -75,7 +75,10 @@ public sealed class ModernHudTests
         start.Environment["SDL_VIDEODRIVER"] = "offscreen"; start.Environment["ALSOFT_DRIVERS"] = "null";
         using var process = Process.Start(start)!;
         var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+        // P980 grew the matrix from 480 to 1848 combinations (800×480, 4K and the
+        // bright/dark backdrops); the host run takes ~100 s, so allow headroom
+        // for a loaded shared machine instead of the old 3-minute cap.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
         try { await process.WaitForExitAsync(timeout.Token); }
         catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HUD2 GL render check timed out; evidence " + output); }
         string text = await stdout + await stderr;

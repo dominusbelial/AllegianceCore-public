@@ -4,6 +4,25 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P980 validation — HUD golden baseline (tools/tests only), one Fast sweep, 2026-11-09 UTC
+
+P980 changes no file under `src/`: `tools/hud2-proof` (matrix/baseline/compare), one Live-tier
+proof-harness test timeout (`tests/Allegiance.ClientCore.MonoGame.Tests/ModernHudTests.cs`) and
+docs. The one Fast invocation reported **13,628 cases, 553.3 s, FAIL** with two unrelated,
+already-ledgered intermittent families plus three `SLOW FAST` exceedances of the calibrated
+10 s limit under shared-host load (load avg 3.7 on 24 CPUs):
+
+| Sweep failure | First run | Standalone re-runs (same tree) | Classification |
+|---|---|---|---|
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | fail, 253 ms — `Assert.Contains()` found the "proposal … has passed (2 for)" announcement but not the expected second line | **3 pass / 3** (0.7 s each) | Message-ordering/timing under load; no ballot or wire source changed by P980 |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | fail, 24 s — `P877 loopback join condition timed out` (also the sweep's slowest test) | **3 pass / 3** (1 s each) | Loopback join under load (the ledgered P877 family); no mine/damage/bot source changed by P980 |
+
+No new test was added to the Fast tier by this slice; the Live-tier proof-harness test
+(`ModernHudTests.Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements`)
+passes **3/3 alone** (1 m 40 s each) against the enlarged 1848-combination matrix.
+
+Report: [SKINS_1A_BASELINE_P980.md](reports/SKINS_1A_BASELINE_P980.md).
+
 ## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
 
 One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map
