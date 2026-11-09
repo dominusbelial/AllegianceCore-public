@@ -190,6 +190,9 @@ public sealed partial class Game1 : Game
     // the --debris launch setting. Created in the ctor (needs opts + the RNG seam).
     private Rendering.DebrisGeo _debrisGeo;
     private Rendering.AmbientDustRenderer _debrisRenderer = null!;
+    private readonly Rendering.SubtleDust _subtleDust = new();
+    private readonly Rendering.SpaceVisualMotion _spaceMotion = new();
+    private Rendering.SpaceVisualFrame _spaceVisualFrame;
     // Per-frame grain snapshot (reused list; native renders from the fixed points,
     // so we only re-derive brightness/size/colour each frame).
     private readonly List<Rendering.AmbientDustView> _drawDustViews = new();

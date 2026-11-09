@@ -40,12 +40,17 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     /// before the environment).</summary>
     private const float StarRadius = 7000f;
 
+    private SimStarLayer? _simStars;
+    private DataClusterIGC _spaceCluster;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, SkyDome> _domes = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
 
+    private SpaceStarRenderer? _nativeTails;
+    private VertexStar[] _tailStars = [];
+    private readonly LensFlareRenderer _simSun;
     private NativeStar[] _stars = [];
     private uint _starSeed;
     private short _nStars = -1;
@@ -61,6 +66,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     public NativeSkyRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _simSun = new LensFlareRenderer(gd, assets);
         _assets = assets;
         _planet = new PlanetPoster(gd, assets);
     }
@@ -95,9 +101,13 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     /// </summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        _spaceCluster = cluster;
+        _simSun.SetLightDirection(SimGlare.TowardLight(cluster));
         if (cluster.StarSeed != _starSeed || cluster.Stars != _nStars)
         {
             _stars = NativeSkyMath.GenerateStars(cluster.StarSeed, cluster.Stars);
+            _tailStars = _stars.Select(s => new VertexStar(new Vector3(s.DirX, s.DirY, s.DirZ),
+                new Color((byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f), (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f), (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f)))).ToArray();
             _starSeed = cluster.StarSeed;
             _nStars = cluster.Stars;
         }
@@ -133,9 +143,9 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     /// (P568 lesson): depth off, additive for stars, alpha-blend (premultiplied)
     /// for the colorkeyed dome and planet.
     /// </summary>
-    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
+    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default)
     {
-        if (_stars.Length == 0 && _activeDome is null && !_planet.HasPlanet)
+        if (_stars.Length == 0 && _activeDome is null && !_planet.HasPlanet && !frame.SimGlare)
         {
             // Nothing to draw (no cluster yet) — leave the caller's clear colour.
             return;
@@ -166,8 +176,18 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             // 1) Stars — additive points on a shell at StarRadius (native draws
             //    them at infinity; we place them just inside the dome). Drawn
             //    first so the dome's colorkeyed black reveals them.
-            if (_stars.Length > 0)
+            if (frame.SimStars)
+            {
+                _simStars ??= new SimStarLayer(gd);
+                _simStars.SetCluster(_spaceCluster);
+                _simStars.Draw(view, skyProj, frame);
+            }
+            else if (_stars.Length > 0)
+            {
                 DrawStars(view, skyProj, cameraEye);
+                if (frame.Streaks || _nativeTails is not null)
+                    (_nativeTails ??= new SpaceStarRenderer(gd)).Draw(_tailStars, view, skyProj, frame, drawPoints: false);
+            }
 
             // 2) Environment dome — unlit, colorkeyed-nebula texture (copy mode).
             if (_activeDome is not null && _activeEnvTexture is not null)
@@ -176,6 +196,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             // 3) Planet poster — billboarded square at the planet direction
             //    (shared PlanetPoster, camera-relative).
             _planet.Draw(view, skyProj, cameraEye, StarRadius);
+            if (frame.SimGlare) _simSun.Draw(view, skyProj, true);
         }
         finally
         {
@@ -364,6 +385,8 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
 
     public void Dispose()
     {
+        _simStars?.Dispose(); _nativeTails?.Dispose(); _simSun.Dispose();
+        _planet.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
         _domes.Clear();

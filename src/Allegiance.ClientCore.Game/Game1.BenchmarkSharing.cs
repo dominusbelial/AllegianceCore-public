@@ -365,7 +365,8 @@ public sealed partial class Game1
             _ => "Graphics / Sound / Game / Controls",
         };
         DrawIntroTitle(width, "Options", subtitle, title, dim);
-        float y = height * 0.36f;
+        var (firstY, rowStep) = OptionsMenuModel.LayoutRows(height, rows.Count);
+        float y = firstY;
         for (int i = 0; i < rows.Count; i++)
         {
             bool sel = i == _optionsMenu.Row0;
@@ -375,7 +376,7 @@ public sealed partial class Game1
             string hot = rows[i].Hotkey == '\0' ? "" : $"  ({rows[i].Hotkey})";
             _spriteBatch.DrawString(_hudSmall, (sel ? "> " : "  ") + rows[i].Label + hot,
                 new Vector2(72, y), sel ? title : Color.White);
-            y += 40f;
+            y += rowStep;
         }
         string hint = _optionsMenu.Current == OptionsMenuModel.Page.Root
             ? "UP/DOWN select   ENTER open   ESC back"

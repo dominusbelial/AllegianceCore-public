@@ -878,6 +878,23 @@ list in **reverse**.
 - **HUD settings / styles** — `Rendering/HudSettings.cs` defines `HudStyle`
   Classic/Modern; **every HUD change must work in both styles**
   (`Rendering/ModernHudRenderer.cs`). *Native:* the original classic HUD layout.
+- **Sim space visuals (P982, default OFF)** — independent `visuals.subtleDust`,
+  `simStars`, `simGlare`, and `starStreaks` rows in
+  `src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs`. The existing Debris
+  level budgets the near-eye shell in `src/Allegiance.ClientCore.Game/Rendering/SubtleDust.cs`;
+  direction projection and rotation history live in
+  `src/Allegiance.ClientCore.Game/Rendering/SpaceVisualMotion.cs`, with batched
+  points/tails in `src/Allegiance.ClientCore.Game/Rendering/SpaceStarRenderer.cs`.
+  `src/Allegiance.ClientCore.Game/Rendering/HdStarSamples.cs` anchors HD tails
+  to actual baked stars; `src/Allegiance.ClientCore.Game/Rendering/SimGlare.cs`
+  limits sun size and ghosts. Height-aware table rows use
+  `src/Allegiance.ClientCore.Game/OptionsMenuModel.cs`. All three sky tiers share the choices, including
+  aleph postcards without advancing flight history. Proof:
+  `tools/p982-space-proof/`; tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P982SimSpaceTests.cs`; report:
+  `docs/reports/SIM_SPACE_FLAGS_P982.md`. Native defaults retained:
+  `effect/debrisgeo.cpp:98`, `effect/starimage.cpp:32-53`,
+  `effect/efimage.cpp:601-613,716-745`. Opt-in look is a visual departure.
 - **Visual-enhancement flags (`visuals.*`, P979)** — visual changes that may
   depart from native's look sit behind per-flag switches, **all default OFF**
   (the native path stays pinned by tests); a flag changes how things LOOK, never

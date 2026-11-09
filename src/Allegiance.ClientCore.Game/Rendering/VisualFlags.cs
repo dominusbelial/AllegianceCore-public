@@ -65,6 +65,11 @@ public static class VisualFlags
     /// distance, <c>WinTrek/WinTrek.cpp:323</c>).</summary>
     public const string ViewRangeKey = "viewRange";
 
+    public const string SubtleDustKey = "subtleDust";
+    public const string SimStarsKey = "simStars";
+    public const string SimGlareKey = "simGlare";
+    public const string StarStreaksKey = "starStreaks";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -83,6 +88,10 @@ public static class VisualFlags
             MinValue: 1000f,
             MaxValue: 50000f,
             Step: 1000f),
+        new VisualFlag(SubtleDustKey, "Subtle dust", "faint shell; uses Debris level", VisualFlagKind.Toggle, Hotkey: 'S'),
+        new VisualFlag(SimStarsKey, "Sim stars", "sparse neutral stars at infinity", VisualFlagKind.Toggle, Hotkey: 'T'),
+        new VisualFlag(SimGlareKey, "Sim glare", "small sun and restrained central flare", VisualFlagKind.Toggle, Hotkey: 'G'),
+        new VisualFlag(StarStreaksKey, "Star streaks", "short star tails while the view turns", VisualFlagKind.Toggle, Hotkey: 'K'),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>

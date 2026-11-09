@@ -1,0 +1,98 @@
+[
+  {
+    "case": "black_classic_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_classic_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_classic_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_classic_turning_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_modern_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_modern_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_modern_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "black_modern_turning_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_classic_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_classic_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_classic_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_classic_turning_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_modern_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_modern_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_modern_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "hd_modern_turning_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_classic_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_classic_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_classic_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_classic_turning_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_modern_boosting_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_modern_cruising_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_modern_stationary_off.png",
+    "changedPixels": 0
+  },
+  {
+    "case": "native_modern_turning_off.png",
+    "changedPixels": 0
+  }
+]

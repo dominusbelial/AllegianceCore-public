@@ -53,6 +53,11 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     /// <summary>Saturation ceiling (chroma fraction of max) applied on load.</summary>
     private const float SatCap = HdSkyGuard.DefaultSatCap;
 
+    private SpaceStarRenderer? _hdTails;
+    private VertexStar[]? _hdTailStars;
+    private readonly LensFlareRenderer _simSun;
+    private SimStarLayer? _simStars;
+    private DataClusterIGC _spaceCluster;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly bool _lowRes;
@@ -81,6 +86,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     public HdSkyRenderer(GraphicsDevice gd, IAssetSource assets, bool lowRes = false)
     {
         _gd = gd;
+        _simSun = new LensFlareRenderer(gd, assets);
         _assets = assets;
         _lowRes = lowRes;
         _planet = new PlanetPoster(gd, assets);
@@ -119,6 +125,8 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     /// <summary>Switch the HD sky to a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        _spaceCluster = cluster;
+        _simSun.SetLightDirection(SimGlare.TowardLight(cluster));
         var poster = cluster.PosterName;
         if (!string.IsNullOrEmpty(poster) && !string.Equals(poster, _activePoster, StringComparison.OrdinalIgnoreCase))
         {
@@ -139,9 +147,9 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         _planet.SetCluster(cluster);
     }
 
-    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
+    public void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default)
     {
-        if (_activeDome is null && !_planet.HasPlanet) return;
+        if (_activeDome is null && !_planet.HasPlanet && !frame.SimStars && !frame.SimGlare && !frame.Streaks) return;
 
         var skyProj = NativeSkyPlacement.SkyProjection(projection);
         var gd = _gd;
@@ -156,7 +164,21 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             gd.RasterizerState = RasterizerState.CullNone;
 
             // 1) HD star dome (NASA equirect) — replaces native seeded points.
-            DrawStarDome(view, skyProj, cameraEye);
+            if (frame.SimStars)
+            {
+                _simStars ??= new SimStarLayer(gd);
+                _simStars.SetCluster(_spaceCluster);
+                _simStars.Draw(view, skyProj, frame);
+            }
+            else
+            {
+                DrawStarDome(view, skyProj, cameraEye);
+                if (frame.Streaks || _hdTails is not null)
+                {
+                    EnsureTailStars();
+                    (_hdTails ??= new SpaceStarRenderer(gd)).Draw(_hdTailStars ?? [], view, skyProj, frame, drawPoints: false);
+                }
+            }
 
             // 2) HD environment dome (native globe geometry + HD equirect).
             if (_activeDome is not null && _activeEnvTexture is not null)
@@ -165,6 +187,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             // 3) Native planet billboard (shared PlanetPoster, P588) tinted by
             //    the HD global intensity.
             _planet.Draw(view, skyProj, cameraEye, PlanetDist, Tint);
+            if (frame.SimGlare) _simSun.Draw(view, skyProj, true);
         }
         finally
         {
@@ -173,6 +196,16 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             gd.RasterizerState = prevRaster;
             gd.SamplerStates[0] = prevSampler;
         }
+    }
+
+    private void EnsureTailStars()
+    {
+        if (_hdTailStars is not null) return;
+        if (_starTexture is null || (_starDome is null && !TryBuildStarDome())) { _hdTailStars = []; return; }
+        var pixels = new Color[_starTexture.Width * _starTexture.Height];
+        _starTexture.GetData(pixels);
+        _hdTailStars = HdStarSamples.Extract(pixels, _starTexture.Width, _starTexture.Height,
+            _starDome!.Vertices, _starDome.Indices);
     }
 
     private Color Tint => new(
@@ -370,8 +403,10 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
 
     public void Dispose()
     {
+        _planet.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
+        _simStars?.Dispose(); _hdTails?.Dispose(); _simSun.Dispose();
         _starTexture?.Dispose();
         _starDome = null;
         _domes.Clear();

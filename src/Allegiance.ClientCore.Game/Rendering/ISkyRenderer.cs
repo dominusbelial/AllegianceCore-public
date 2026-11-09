@@ -17,5 +17,5 @@ public interface ISkyRenderer : IDisposable
     void SetCluster(DataClusterIGC cluster);
 
     /// <summary>Draw the sky behind everything for the flight camera.</summary>
-    void Draw(Matrix view, Matrix projection, Vector3 cameraEye);
+    void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default);
 }
