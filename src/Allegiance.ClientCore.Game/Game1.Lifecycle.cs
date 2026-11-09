@@ -251,13 +251,17 @@ public sealed partial class Game1
         // the client-only --flightFov setting (defaults 50). The old P385 expression
         // `_debugMode ? 50f : 75f` is gone — normal launches are 50° too.
         float flightFovDeg = _flightFovDeg;
-        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f,
+        // Native world camera far clip SetZClip(5, 10000) (WinTrek/WinTrek.cpp:323); the port
+        // used 6000 until 2026-11-08 (objects 6-10 km dead ahead were hidden and popped in at
+        // the screen edge when turning). One constant for every flight camera.
+        const float FlightFarPlane = Rendering.ExternalCameras.FarPlane;
+        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: FlightFarPlane,
             fieldOfViewDegrees: flightFovDeg, turnSmoothingTauSeconds: 0.18f);
 
         // First-person cockpit camera (P211) — same FOV/near/far family as the
         // chase camera so switching views keeps perceived scale; a small forward
         // offset keeps the near clip clear of the (un-rendered) cockpit interior.
-        _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: 6000f,
+        _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: FlightFarPlane,
             fieldOfViewDegrees: flightFovDeg, forwardOffset: 14f);
 
         // P295 — the external-missile view camera. Same FOV/far family as the
@@ -269,7 +273,7 @@ public sealed partial class Game1
         // small (e.g. ~5u → eye only ~3.5u behind) — the old 10-unit near plane
         // put the missile inside the clip volume and missile-cam showed nothing
         // at exactly the moment you toggled to it. 1 matches the cockpit camera.
-        _missileCamera = new MissileCamera(nearPlane: 1f, farPlane: 6000f,
+        _missileCamera = new MissileCamera(nearPlane: 1f, farPlane: FlightFarPlane,
             fieldOfViewDegrees: flightFovDeg, framingFactor: 0.35f);
 
         // 2D HUD plumbing (P211): a SpriteBatch, a 1x1 white pixel for

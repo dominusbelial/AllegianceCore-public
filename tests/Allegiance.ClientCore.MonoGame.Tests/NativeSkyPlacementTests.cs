@@ -97,7 +97,7 @@ public class NativeSkyPlacementTests
     [Fact]
     public void SkyProjection_EnclosesTheDomeRadius()
     {
-        // Scene far plane ~6000 is NEARER than the 7500 dome shell; the sky's own
+        // A scene far plane nearer than the 7500 dome shell (here 6500); the sky's own
         // projection must hold the whole dome inside [near, far].
         var sceneProj = Matrix.CreatePerspectiveFieldOfView(
             MathHelper.ToRadians(60f), 16f / 9f, 0.1f, 6500f);

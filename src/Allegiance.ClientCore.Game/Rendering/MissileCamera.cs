@@ -56,7 +56,7 @@ public sealed class MissileCamera
     /// <param name="framingFactor">Multiple of the missile↔reference separation
     /// used as TrackCamera's eye-offset length, so both objects stay framed at
     /// any scale (see remarks).</param>
-    public MissileCamera(float nearPlane = 1f, float farPlane = 6000f,
+    public MissileCamera(float nearPlane = 1f, float farPlane = ExternalCameras.FarPlane,
         float fieldOfViewDegrees = 50f, float framingFactor = 0.35f)
     {
         _nearPlane = nearPlane;

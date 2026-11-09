@@ -30,8 +30,8 @@ public static class LinearDepth
     public const float DefaultNear = 1f;
 
     /// <summary>Far plane used for depth normalization. Matches every camera's
-    /// far plane (6000).</summary>
-    public const float DefaultFar = 6000f;
+    /// far plane (<see cref="ExternalCameras.FarPlane"/>, native 10000).</summary>
+    public const float DefaultFar = ExternalCameras.FarPlane;
 
     /// <summary>
     /// The soft-particle fade softness, in NORMALIZED linear-depth units.
@@ -43,7 +43,9 @@ public static class LinearDepth
     /// hard cut, yet dissipates quickly enough that a puff no longer reads
     /// once the surface slides well past it. Tuned visually in the P547 proof.
     /// </summary>
-    public const float SoftnessNormalized = 0.004f;
+    /// <para>2026-11-08: the range grew from 6000 to native 10000, so the constant is
+    /// now derived from the same 24 world units instead of a fixed 0.004.</para>
+    public const float SoftnessNormalized = 24f / (DefaultFar - DefaultNear);
 
     /// <summary>
     /// The soft-particle fade factor (pure, unit-testable): how much a particle

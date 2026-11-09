@@ -42,7 +42,10 @@ public static class ExternalCameras
     // modes share the chase camera's FOV/far so switching views keeps scale.
     public const float DefaultFovDegrees = 50f;
     public const float NearPlane = 10f;
-    public const float FarPlane = 6000f;
+    // Native world camera SetZClip(5, 10000) (WinTrek/WinTrek.cpp:323). The port used
+    // 6000 until 2026-11-08, which hid objects 6-10 km dead ahead that native showed
+    // (they popped in at the screen edge when turning: the far clip is a plane).
+    public const float FarPlane = 10000f;
 
     /// <summary>
     /// Native's min-external-distance rule for the fixed-offset modes

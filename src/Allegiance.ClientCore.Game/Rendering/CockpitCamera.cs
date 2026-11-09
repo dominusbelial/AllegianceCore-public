@@ -40,7 +40,7 @@ public sealed class CockpitCamera
     /// <param name="forwardOffset">A small local offset pushed along the ship's
     /// forward axis so the eye is just forward of the ship's origin, keeping
     /// the near clip plane clear of the cockpit interior.</param>
-    public CockpitCamera(float nearPlane = 1f, float farPlane = 6000f,
+    public CockpitCamera(float nearPlane = 1f, float farPlane = ExternalCameras.FarPlane,
         float fieldOfViewDegrees = 50f, float forwardOffset = 14f)
     {
         _nearPlane = nearPlane;

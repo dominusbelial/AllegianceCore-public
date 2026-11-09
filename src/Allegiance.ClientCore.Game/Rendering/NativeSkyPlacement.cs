@@ -56,9 +56,10 @@ public static class NativeSkyPlacement
         => Vector3.Cross(dir, right);
 
     /// <summary>
-    /// The sky's OWN projection. The scene far plane (~6000,
-    /// ExternalCameras.cs:45) is nearer than the native dome's 7500 shell, so
-    /// using it would clip the sky (P576b: black wedges where faces fall past
+    /// The sky's OWN projection. The scene far plane (native 10000 since
+    /// 2026-11-08, 6000 before; ExternalCameras.FarPlane) is a PLANE: the native
+    /// dome's 7500 shell reaches past it toward the screen corners, so using it
+    /// would clip the sky (P576b: black wedges where faces fall past
     /// the far plane). The sky has no parallax, so it is re-projected with a
     /// large far (80000) and near = 1, keeping the dome/stars inside
     /// [near, far]; FOV/aspect are recovered from the scene projection so the
