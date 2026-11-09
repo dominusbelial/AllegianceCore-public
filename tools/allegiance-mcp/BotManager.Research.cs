@@ -74,6 +74,12 @@ internal sealed partial class BotManager
                         // Read pilots before taking the commander gate: the combat
                         // loop also takes individual session gates under _gate.
                         var tactical = ResearchTacticalSnapshot(side);
+                        // P973 — the side's own knowledge record (per mission), read BEFORE
+                        // the peer gate so the intel lock is never taken inside it (the
+                        // intel scan and SideIntelReport take them in the other order).
+                        uint intelCookie;
+                        lock (peer.Gate) intelCookie = CookieOf(peer);
+                        var recordedRocks = _intel.Read(intelCookie, side, intel => intel.Rocks.Keys.ToHashSet());
                         lock (peer.Gate)
                         {
                             var briefing = peer.World.ResearchBriefing;
@@ -102,7 +108,7 @@ internal sealed partial class BotManager
                                         briefing.Plan, initial.Value, _researchRocks, briefing.Loop, briefing.ResearchTimeScale);
                                     _research[side] = commander;
                                 }
-                                foreach (var action in commander.Tick(ResearchSnapshot(peer, side)))
+                                foreach (var action in commander.Tick(ResearchSnapshot(peer, side, recordedRocks)))
                                     switch (action.Kind)
                                     {
                                         // These are ordinary player actions. No grant, CanBuy bypass or direct sim mutation.
@@ -203,8 +209,20 @@ internal sealed partial class BotManager
                 && !peer.World.Roster.ReadyByShipId.GetValueOrDefault(id)) peer.SendPlayerReady(true, id);
     }
 
-    /// <summary>Take one consistent native wire observation under peer.Gate. No socket in the policy.</summary>
-    internal static ResearchCommander.Snapshot ResearchSnapshot(ConnectionSession peer, short side)
+    /// <summary>Take one consistent native wire observation under peer.Gate. No socket in the policy.
+    ///
+    /// <para>P973 — <paramref name="recordedRocks"/> is the side's own knowledge record
+    /// (the P797/P798 per-side intel, which the fog audit reads). A construction target is
+    /// picked from the rocks the SIDE has recorded, never from one peer's world alone: the
+    /// commander's world is a single peer's view and the knowledge record is sampled once a
+    /// second, so a rock a side discovers and then consumes with its own build between two
+    /// samples stops existing in every client world — a build on it then named a rock no
+    /// recorded knowledge held (the P973 P798 leak). Native exports statics per side only
+    /// after SeenBySide
+    /// (<c>FedSrv/fsmission.cpp:4169-4250</c>), so "what this side has seen" is the right
+    /// candidate set for its builder.</para></summary>
+    internal static ResearchCommander.Snapshot ResearchSnapshot(ConnectionSession peer, short side,
+        IReadOnlySet<short>? recordedRocks = null)
     {
         var world = peer.World;
         var stations = world.Stations.Values.Where(s => s.SideId == side).ToArray();
@@ -213,7 +231,9 @@ internal sealed partial class BotManager
             new ResearchCommander.Unit(p.ShipId, p.DroneTypeId, p.StationTypeId,
                 world.IsResearchProductionAlive(p.ShipId),
                 world.Ships.TryGetValue(p.ShipId, out var ship) ? ship.SectorId : (short)-1)).ToArray();
-        var rocks = world.Asteroids.Values.OrderByDescending(a => homeSectors.Contains(a.ClusterId)).ThenBy(a => a.AsteroidId)
+        var rocks = world.Asteroids.Values
+            .Where(a => recordedRocks is null || recordedRocks.Contains(a.AsteroidId))
+            .OrderByDescending(a => homeSectors.Contains(a.ClusterId)).ThenBy(a => a.AsteroidId)
             .Select(a => new ResearchCommander.Rock(a.AsteroidId, a.AabmCapabilities,
                 !world.BuildingEffects.ContainsKey(a.AsteroidId), world.BuildingEffects.ContainsKey(a.AsteroidId), a.ClusterId,
                 // Use the observing client's current known ore, including depletion

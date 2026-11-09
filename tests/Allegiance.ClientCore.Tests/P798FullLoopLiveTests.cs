@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
+using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -25,6 +27,15 @@ namespace Allegiance.ClientCore.Tests;
 /// <item>at least one station kill (a station the server had disappears);</item>
 /// <item>a game over, then the next match reaching <c>MissionStage.Started</c>.</item>
 /// </list>
+///
+/// <para><b>Mission attribution (P973).</b> <c>get_side_intel</c> holds ONE row per
+/// (<c>Mission.Cookie</c>, side) — <c>SideIntelStore</c> is keyed by that pair and every
+/// match gets a fresh cookie (<c>Server.Lifecycle.cs</c>:
+/// <c>mission.Cookie = ++_nextMissionCookie</c>) — and the manager keeps the finished
+/// match's row after the rotation. The build happens in the FIRST match, so it is
+/// checked against the FIRST match's row. Reading "the last row per side" compared it
+/// with the next match's few-hundred-milliseconds-old knowledge and reported a
+/// knowledge leak that never happened (P973: 1/3 before this fix).</para>
 ///
 /// <para><b>Config note.</b> The showcase runs with the harness' all-tech grant
 /// (<c>TestUnlock</c>) and test money so the finale can actually buy a bomber
@@ -105,6 +116,44 @@ public sealed class P798FullLoopLiveTests(ITestOutputHelper output)
             && ship.HullType.HasCapability(DataHullTypeIGC.HabmMiner));
 
     private static float TotalOre(Mission m) => m.Sectors.SelectMany(s => s.Mineable).Sum(a => a.OreRemaining);
+
+    /// <summary>P973 diagnostic — what the building side's OWN client worlds hold for
+    /// the build rock's sector, straight from the bots' <c>ConnectionSession</c> views
+    /// (the same data the commander reads and the intel scan samples). Printed with the
+    /// knowledge-leak assertion so a failure says whether the side's worlds knew the
+    /// rock (an intel/report gap) or never knew it (the commander kept private
+    /// knowledge). Never server truth: only per-side client views.</summary>
+    private static string DescribeClientRockKnowledge(BotManager manager, short side, short rock, short sector)
+    {
+        var field = typeof(BotManager).GetField("_bots", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        if (field.GetValue(manager) is not System.Collections.IEnumerable roster) return "no roster";
+        const BindingFlags Fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        var views = new List<string>();
+        // P973 — the research commander's own world is the one that chooses the build
+        // rock (ResearchSnapshot reads peer.World.Asteroids), so probe it explicitly.
+        if (typeof(BotManager).GetField("_commanders", Fields)!.GetValue(manager) is System.Collections.IDictionary commanders
+            && commanders[side] is ConnectionSession commander && commander.World is { } cw)
+            lock (commander.Gate)
+                views.Add($"commander(mySide={cw.MySideId}) known={cw.Asteroids.ContainsKey(rock)} "
+                    + $"sectorRocks={cw.Asteroids.Values.Count(a => a.ClusterId == sector)} "
+                    + $"lowIds=[{string.Join(",", cw.Asteroids.Values.Where(a => a.ClusterId == sector && a.AsteroidId < 64).Select(a => a.AsteroidId).Order())}]");
+        var worldKeys = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        foreach (var bot in roster)
+        {
+            if (bot is null) continue;
+            var type = bot.GetType();
+            if (type.GetField("Side", Fields)!.GetValue(bot) is not short botSide || botSide != side) continue;
+            if (type.GetField("Cs", Fields)!.GetValue(bot) is not ConnectionSession cs || cs.World is null) continue;
+            lock (cs.Gate)
+            {
+                if (!worldKeys.Add(cs.World.Asteroids)) continue;   // one view per shared per-side world
+                var inSector = cs.World.Asteroids.Values.Where(a => a.ClusterId == sector).Select(a => a.AsteroidId).Order().ToArray();
+                views.Add($"bot(mySide={cs.World.MySideId}) known={cs.World.Asteroids.ContainsKey(rock)} sectorRocks={inSector.Length} "
+                    + $"lowIds=[{string.Join(",", inSector.Where(id => id < 64))}]");
+            }
+        }
+        return views.Count == 0 ? "no side view" : string.Join(" | ", views);
+    }
 
     [SkippableFact]
     public void Fogged_showcase_runs_the_whole_loop_unattended_and_starts_the_next_match()
@@ -217,16 +266,22 @@ public sealed class P798FullLoopLiveTests(ITestOutputHelper output)
             double elapsed = watch.Elapsed.TotalSeconds;
             var intelRows = JsonSerializer.SerializeToElement(manager.SideIntelReport());
             var discovered = new Dictionary<short, HashSet<short>>();
+            var intelSummary = new List<string>();
             foreach (var row in intelRows.EnumerateArray())
             {
                 short side = row.GetProperty("side").GetInt16();
-                discovered[side] = row.GetProperty("rocks").EnumerateArray()
+                uint cookie = row.GetProperty("cookie").GetUInt32();
+                var rowRocks = row.GetProperty("rocks").EnumerateArray()
                     .Select(r => r.GetProperty("id").GetInt16()).ToHashSet();
-                output.WriteLine($"[p798-loop] intel side {side}: sectors={row.GetProperty("knownSectors").GetArrayLength()} "
+                output.WriteLine($"[p798-loop] intel side {side} cookie={cookie}: knownSectors={row.GetProperty("knownSectors").GetArrayLength()} "
                     + $"rocks={row.GetProperty("rockCount").GetInt32()} "
                     + $"enemyStations={row.GetProperty("enemyStations").GetArrayLength()} "
                     + $"raids={row.GetProperty("minerRaids").GetInt32()} support={row.GetProperty("supportCalls").GetInt32()} "
                     + $"explorationComplete={row.GetProperty("opening").GetProperty("explorationComplete").GetBoolean()}");
+                // P973 — one row per (mission cookie, side): attribute every row to its
+                // own mission and keep only the row of the match the build happened in.
+                intelSummary.Add($"side={side} cookie={cookie} rocks={rowRocks.Count} hasBuildRock={rowRocks.Contains(build?.Rock ?? -1)}");
+                if (cookie == first.Cookie) discovered[side] = rowRocks;
             }
             foreach (var (side, miners) in seenMiners.OrderBy(kv => kv.Key))
                 output.WriteLine($"[p798-loop] side {side}: minersSeen={miners} paydayCredits={paydays.GetValueOrDefault(side)} "
@@ -247,11 +302,21 @@ public sealed class P798FullLoopLiveTests(ITestOutputHelper output)
                 Assert.True(r.Step > 1 || r.Progress > 0,
                     $"side {side} research must progress (step {r.Step}/{r.Total}, progress {r.Progress:F1}%)");
             });
-            // 3) a constructor building on a DISCOVERED rock.
+            // 3) a constructor building on a DISCOVERED rock. The failure message
+            // names the rock's discovery state per mission (P973 diagnostic): which
+            // intel rows exist, whether each one holds the build rock, and what the
+            // building side's own client worlds hold for that sector.
             Assert.True(build is not null, "a constructor must start a build on a rock");
             var (buildAt, buildSide, buildRock, buildSector) = build!.Value;
-            Assert.True(discovered.GetValueOrDefault(buildSide)?.Contains(buildRock) ?? false,
-                $"side {buildSide} built on rock {buildRock} (sector {buildSector}) without having discovered it (knowledge leak)");
+            bool discoveredAtBuild = discovered.GetValueOrDefault(buildSide)?.Contains(buildRock) ?? false;
+            string clientView = DescribeClientRockKnowledge(manager, buildSide, buildRock, buildSector);
+            output.WriteLine($"[p798-loop] build rock {buildRock} sector {buildSector} side {buildSide} "
+                + $"discoveredInMission={discoveredAtBuild} firstMissionCookie={first.Cookie} "
+                + $"intelRows=[{string.Join("; ", intelSummary)}] clientWorlds=[{clientView}]");
+            Assert.True(discoveredAtBuild,
+                $"side {buildSide} built on rock {buildRock} (sector {buildSector}) without having discovered it "
+                + $"(knowledge leak); first mission cookie={first.Cookie}; intel rows: [{string.Join("; ", intelSummary)}]; "
+                + $"client worlds: [{clientView}]");
             // 4) a real station kill.
             Assert.True(kill is not null, "at least one station must be destroyed");
             // 5) game over and the next match starting.
