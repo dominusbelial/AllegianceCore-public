@@ -184,6 +184,45 @@ public class UpdateClientLoopbackTests : IDisposable
         Assert.False(outcome.Applied, "a poisoned staging must fail its re-verification");
     }
 
+    /// <summary>P976 — the retry cap end to end: a staged version whose apply
+    /// fails three times is discarded, the next feed check does not download it
+    /// again, and a newer release stages normally. Re-staging the same version
+    /// keeps the attempt count (otherwise every boot would reset it).</summary>
+    [Fact]
+    public async Task A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one()
+    {
+        using var http = new HttpClient();
+        _feed.Publish("2.0.0", new Dictionary<string, string> { ["game.dll"] = "v2" });
+
+        for (int attempt = 1; attempt <= UpdateApplier.MaxApplyAttempts; attempt++)
+        {
+            Assert.Equal(UpdateCheckStatus.Pending,
+                (await UpdateClient.CheckAndStageAsync(Options(installed: "1.0.0"), http)).Status);
+            // Make the apply impossible: the staged bytes are gone (disk trouble).
+            File.Delete(Path.Combine(_appRoot, "autoupdate", "staging", "game.dll"));
+            var outcome = UpdateApplier.ApplyPendingIfAny(_appRoot);
+
+            Assert.False(outcome.Applied, outcome.Detail);
+            if (attempt < UpdateApplier.MaxApplyAttempts)
+                Assert.Equal(attempt, UpdateState.ReadPending(_appRoot)!.Attempts);
+        }
+
+        Assert.Null(UpdateState.ReadPending(_appRoot));   // discarded at the cap
+        Assert.False(Directory.Exists(Path.Combine(_appRoot, "autoupdate", "staging")));
+
+        var recheck = await UpdateClient.CheckAndStageAsync(Options(installed: "1.0.0"), http);
+        Assert.Equal(UpdateCheckStatus.Failed, recheck.Status);
+        Assert.Contains("discarded", recheck.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(UpdateState.ReadPending(_appRoot));
+        Assert.False(Directory.Exists(Path.Combine(_appRoot, "autoupdate", "staging")));
+
+        _feed.Publish("2.0.1", new Dictionary<string, string> { ["game.dll"] = "v2-fixed" });
+        var newer = await UpdateClient.CheckAndStageAsync(Options(installed: "1.0.0"), http);
+        Assert.Equal(UpdateCheckStatus.Pending, newer.Status);
+        Assert.Equal("2.0.1", newer.VersionOrSource);
+        Assert.Equal(0, UpdateState.ReadPending(_appRoot)!.Attempts);
+    }
+
     /// <summary>A minimal static feed server over HttpListener: serves the
     /// manifest tree the way a static host would, counts requests, and can
     /// tamper with individual files or the manifest.</summary>

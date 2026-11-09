@@ -7536,3 +7536,31 @@ has zero sim-pass failures, and holds the parking limit (maximum 1.915 s).
 Report: [RESTART_MIGRATION_BARRIER_P965.md](reports/RESTART_MIGRATION_BARRIER_P965.md).
 Compact receipts: [validation.json](reports/P965_assets/validation.json).
 Raw ignored evidence: `.scratch/p965/` in the task worktree.
+
+## P976 gate observation (2026-11-09) — Update apply transaction
+
+The one Fast-tier run in the P976 gate (`tools/run-tests.sh --tier fast`, host load
+average 3.7 at start, 10-16 earlier; other lanes running) finished 13,642 tests with
+two failures, both in `Allegiance.ClientCore.MonoGame.Tests` and both in the existing
+allocation-under-parallel-load family — no client, HUD or sound code was touched by
+P976 (the task changes `src/Allegiance.Update/`, its tests and docs):
+
+| Sweep failure | Three isolated invocations | Classification |
+|---|---|---|
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` (1,232 B allocated) | 3/3 pass | Already ledged allocation intermittency (see the P902/P787a entries above). |
+| `Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact` (7,432 B over 10k calls) | 3/3 pass | Same allocation-under-load family as the P787a observation (line 2439); HUD code unchanged. |
+| Second sweep (host load 14.4): `NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by` (travelled 170.718) | 3/3 pass | Already itemized above (lines 154, 1158): sweep-only standby displacement, NPC/flight unchanged. |
+| Second sweep: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (quarantine tier) | runner retry passed | Existing quarantine flake (lines 609, 904); pickup/world code unchanged. |
+| Second sweep: `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` 10.037 s, `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 10.750 s | — | Calibrated 10 s timing limit under load; both are runtime-only overruns, not assertions. |
+| Third sweep (final tree, host load 3.9→8): `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`, `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`, `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | each 3/3 pass (all cases; 5 cases × 3 for the Core filter) | All are existing ledgered Live-tier receipt/timing families (see the entries above); none touches the updater. |
+| Third sweep: `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.6 s "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail**, 38 s signature, plus 1/1 pass alone | The known OPEN partial-tip receipt failure (P933/P935/P938/P961 entries; fails isolated cohorts too). No lock/missile/tip code changed by P976; not cleared. |
+
+P976 also updates `tests/Allegiance.ClientCore.MonoGame.Tests/P944JoinLinkUiTests.cs`:
+the source-order guard now asserts the new branch (a link launch must not reach the
+feed check but must still run the apply/recovery). That class passes 10/10 alone.
+
+The same run also flagged two calibrated timing exceedances outside this task
+(`CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return` 36.8 s and
+`P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 11.4 s) and quarantined the first
+(its retry passed). `Allegiance.Update.Tests` passed 54/54 in the sweep and 3/3 alone
+before it. Report: [reports/UPDATE_ATOMIC_APPLY_P976.md](reports/UPDATE_ATOMIC_APPLY_P976.md).

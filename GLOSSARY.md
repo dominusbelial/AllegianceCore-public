@@ -1658,6 +1658,18 @@ list in **reverse**.
   (`LobbyUpdateInfoClient`). Key: `src/Allegiance.Update/UpdateClient.cs`,
   `UpdateApplier.cs`, `UpdateManifestBuilder.cs`, `UpdateSignature.cs`;
   client boot hook `src/Allegiance.ClientCore.MonoGame/ClientUpdateBootstrap.cs`.
+- **Apply transaction (P976)** — the apply-on-restart is failure-atomic: the
+  whole staged set is verified before the first mutation, replaced/deleted files
+  (and `installed.json`) are backed up in `autoupdate/apply-backup/`, targets are
+  swapped by atomic rename, and a crash is recovered from
+  `autoupdate/apply-journal.json` on the next boot (roll back an `applying`
+  journal, finish a `committed` one); a pending update failing
+  `UpdateApplier.MaxApplyAttempts` (3) times is discarded and the version is
+  tombstoned in `autoupdate/discarded.json` so it is not staged again. Key:
+  `src/Allegiance.Update/UpdateApplyJournal.cs` (`UpdateApplyJournal`,
+  `UpdateApplyRecovery`), `src/Allegiance.Update/UpdateApplier.cs`. Fixes the
+  P971-05 mixed-tree finding (`docs/reports/CLIENT_REVIEW_P971.md`); report
+  `docs/reports/UPDATE_ATOMIC_APPLY_P976.md`.
 - **Server self-update** — opt-in (`ServerConfig.Updates`), stages ONLY at game
   over (`src/Allegiance.Server/Server.Update.cs`, `ServerUpdateGate`), applied
   before the world loads in `src/Allegiance.Server/Program.cs`. Docker keeps

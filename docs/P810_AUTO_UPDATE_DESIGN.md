@@ -86,7 +86,9 @@ manifest-2.0.0.json          # UpdateManifest: version + every file (path, size,
 1. **Apply-on-restart first**: before SDL/GL/audio load, `UpdateApplier`
    applies any staged pending update (fail-safe: any error logs and the old
    build boots). This is the native Reloader step
-   (`AutoDownload.cpp:225-240` sets the working dir for the reloader).
+   (`AutoDownload.cpp:225-240` sets the working dir for the reloader). Since
+   P976 the apply is **failure-atomic** — see §3.1 (P971-05: the old code could
+   leave a mixed old/new tree and boot-loop).
 2. **Update check** (the `AUTO_UPDATE_INFO` trigger): after the apply, before
    the window opens, the client fetches the lobby's `GET /api/update/info`
    (Section 4). If it carries a `feedUrl` **and** (`currentVersion` or
@@ -101,6 +103,51 @@ manifest-2.0.0.json          # UpdateManifest: version + every file (path, size,
    a full manifest written by `packaging/package.py` (P969); after an update the
    applier overwrites it with the new release's manifest. A tree with no
    manifest (dev build or pre-P969 install) reports `0.0.0`.
+
+### 3.1 Apply transaction (P976, fixes P971-05)
+
+The apply is a small transaction, because "the current build is kept" must be
+true for *every* failure (native had no rollback: `clintlib/AutoDownload.h:230-278`
+moved staged files one at a time and left the moved ones in place, only reporting
+`Error while moving downloaded files`, `AutoDownload.cpp:964-978`):
+
+1. **Verify the whole staged set** — path guard (no escape, no
+   `autoupdate/` path), entry present in the staged manifest, size, SHA-256, and
+   (Windows) not a module the running process has mapped. Any failure returns
+   before the first mutation.
+2. **Journal + backup** — `autoupdate/apply-journal.json` is written in the
+   `backing-up` phase, then every file to be replaced or deleted (plus
+   `installed.json`) is copied to `autoupdate/apply-backup/<n>` with its Unix
+   mode. Only after the last backup does the journal flip to `applying`; the app
+   tree is untouched until then, so a half-copied backup is never restoreable.
+3. **Apply** — each target is written to `<target>.update-new` in the same
+   directory (mode applied there) and renamed over the target, so a target is
+   never observed half-written; obsolete files are deleted.
+4. **Commit** — `installed.json` is written (the only place it ever changes),
+   the journal flips to `committed`, then marker, journal, backups and the
+   staging tree are cleared.
+5. **Any error** restores every backup (content + Unix mode) and removes every
+   created file and empty created directory, then counts the attempt. After
+   `UpdateApplier.MaxApplyAttempts` (3) failing attempts the staged update is
+   discarded with one log line — a stage that can never apply cannot boot-loop
+   the client.
+
+Boot recovery (`UpdateApplyRecovery`, run before the marker is read) handles the
+crash cases: `backing-up` is abandoned (nothing was touched), `applying` is
+rolled back from the backups, `committed` is finished forward. Restoring is
+idempotent (a crash during recovery just repeats it), and a file that still holds
+its pre-apply bytes is left alone (a delete that failed did not change it). If a
+restore itself fails (a file is locked), the journal and backups are kept and the
+next start retries, instead of piling mutations on a mixed tree.
+
+Windows: a file mapped by the running process cannot be replaced. The client
+applies from inside its own `Program.Main`, so its own assemblies are already
+loaded and locked; pre-verification detects them and fails with *nothing changed*
+rather than discovering it mid-transaction. Native's answer was the separate
+`Reloader.exe` that waited for the client to exit (`Reloader/Reloader.cpp:1-11`,
+`:108-224`); the port's equivalent role is the packaging path (the Windows
+installer/portable zip replaces the tree while no client runs), and the apply
+itself always rolls back cleanly and gives up after 3 attempts.
 
 ### Lobby (`src/Allegiance.Lobby`)
 

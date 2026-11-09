@@ -82,7 +82,16 @@ public sealed class P944JoinLinkUiTests
         while (!File.Exists(Path.Combine(root, "AllegianceCore.slnx"))) root = Directory.GetParent(root)!.FullName;
         string program = File.ReadAllText(Path.Combine(root, "src/Allegiance.ClientCore.MonoGame/Program.cs"));
         Assert.True(program.IndexOf("JoinLinkLaunch.Take", StringComparison.Ordinal) < program.IndexOf("TakeTrainingSwitch", StringComparison.Ordinal));
-        Assert.Contains("if (!joinLaunch.IsLinkLaunch) await ClientUpdateBootstrap.RunAsync(args);", program);
+        // P976: a link launch must not reach the feed check (it skips the network
+        // work), but it MUST still run the updater — that call is the crash
+        // recovery for an interrupted apply, and it has to happen before anything
+        // of the application loads. The guard sits after the link take.
+        int linkBranch = program.IndexOf("if (joinLaunch.IsLinkLaunch)", StringComparison.Ordinal);
+        int recovery = program.IndexOf("UpdateApplier.ApplyPendingIfAny(AppContext.BaseDirectory", StringComparison.Ordinal);
+        int feedCheck = program.IndexOf("await ClientUpdateBootstrap.RunAsync(args);", StringComparison.Ordinal);
+        Assert.True(linkBranch > program.IndexOf("JoinLinkLaunch.Take", StringComparison.Ordinal));
+        Assert.True(recovery > linkBranch, "the link branch must run the apply/recovery");
+        Assert.True(feedCheck > recovery, "the feed check stays in the non-link branch");
         Assert.Contains("JoinLinkLaunch = joinLaunch", program);
         string ui = File.ReadAllText(Path.Combine(root, "src/Allegiance.ClientCore.Game/Game1.JoinLink.cs"));
         Assert.Contains("BeginConnect(listing.Address, (ushort)listing.Port, listing.MissionCookie,", ui);

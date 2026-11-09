@@ -11,4 +11,11 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- P976 — the apply transaction's fault-injection seam (UpdateApplyTestSeam)
+       and the journal/recovery types are internal; the atomicity tests drive the
+       apply through every boundary from the test assembly. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Allegiance.Update.Tests" />
+  </ItemGroup>
+
 </Project>
