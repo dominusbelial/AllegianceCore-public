@@ -100,7 +100,7 @@ public sealed class P944JoinLinkUiTests
     [InlineData(HudStyle.Modern, false)]
     [InlineData(HudStyle.Classic, true)]
     [InlineData(HudStyle.Modern, true)]
-    public void Resolved_listing_drives_transport_and_punch_uses_the_link_lobby(HudStyle style, bool playerHosted)
+    public async Task Resolved_listing_drives_transport_and_punch_uses_the_link_lobby(HudStyle style, bool playerHosted)
     {
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1)); GC.SuppressFinalize(game);
         void Set(string field, object value) => typeof(Game1).GetField(field, Hidden)!.SetValue(game, value);
@@ -112,7 +112,9 @@ public sealed class P944JoinLinkUiTests
         Set("_lobbyUrl", "https://remembered.example"); Set("_connectListingLobby", "https://link-lobby.example");
         Set("_connectListingTarget", listing);
         Set("_hudSettings", new HudSettings { Style = style, Transport = Discovery.ClientTransportSetting.UDP });
-        typeof(Game1).GetMethod("ConfigureClientTransport", Hidden)!.Invoke(game, [listing.Address, (ushort)listing.Port, listing.MissionCookie, null]);
+        var setup = (Func<CancellationToken, Task>)typeof(Game1).GetMethod("CaptureTransportSetup", Hidden)!
+            .Invoke(game, [listing.Address, (ushort)listing.Port, listing.MissionCookie, null])!;
+        await setup(CancellationToken.None);
         Assert.Equal("udp", session.TransportProtocol); Assert.Equal((ushort)54322, session.UdpPort);
         if (playerHosted)
         {

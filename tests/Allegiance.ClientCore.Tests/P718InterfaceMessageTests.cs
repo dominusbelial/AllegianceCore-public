@@ -167,12 +167,18 @@ public sealed class P718InterfaceMessageTests
     }
 
     [Fact]
-    public void Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages()
+    public async Task Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages()
     {
-        using var session = new ConnectionSession(); Seed(session); int losses = 0; session.SessionLost += () => losses++;
+        using var session = new ConnectionSession(); Seed(session); int losses = 0;
+        var lost = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        session.SessionLost += () => { Interlocked.Increment(ref losses); lost.TrySetResult(); };
         Feed(session, new EnterGame(), new QuitMission { ShipId = 10, Reason = (QuitSideReason)2, Message = "removed" },
             new PlayerInfo { ShipId = 99, CharacterName = "must not return" });
-        Assert.True(session.Lost); Assert.Equal(1, losses); Assert.Empty(session.World.Ships);
+        Assert.True(session.Lost); Assert.Empty(session.World.Ships);
+        // Loss is notified after owned transport teardown, outside the receive
+        // gate, so callbacks can dispose and the reader can return before Join.
+        await lost.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(1, losses);
         Assert.Null(session.World.Mission); Assert.Null(session.World.MyShipId); Assert.False(session.World.InGame);
         Assert.Equal("removed", session.World.LastDeparture!.Value.Message);
         Assert.Equal((QuitSideReason)2, session.World.OwnMissionDeparture!.Reason);

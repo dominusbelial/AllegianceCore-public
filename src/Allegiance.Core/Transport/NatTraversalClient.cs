@@ -93,7 +93,7 @@ public static class NatTraversalClient
             if (endpoint.AddressFamily != observation.Endpoint.AddressFamily
                 || endpoint.AddressFamily == AddressFamily.InterNetworkV6 && !IsGlobalV6(endpoint.Address)) throw new DirectConnectionException();
             await transport.PunchAsync(introduction, ct).ConfigureAwait(false);
-            transport.Join(endpoint.Address.ToString(), (ushort)endpoint.Port, playerName);
+            await transport.JoinAsync(endpoint.Address.ToString(), (ushort)endpoint.Port, playerName, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is TimeoutException or SocketException)
         { transport.Shutdown(); throw new DirectConnectionException(ex); }

@@ -459,54 +459,98 @@ public sealed class TcpTransport : IServerTransport
         Spawn(() => ReceiveLoopStart(listener), "accept");
     }
 
+    private CancellationTokenSource? _clientConnectCancellation;
+    internal Func<TcpClient, string, ushort, CancellationToken, ValueTask>? ConnectClientForTesting { get; set; }
+
     public void Join(string address, ushort port, string playerName)
+        => JoinAsync(address, port, playerName).GetAwaiter().GetResult();
+
+    /// <summary>Client DNS and TCP establishment share a ten-second ceiling.
+    /// Session/handshake cancellation can impose a shorter overall deadline.</summary>
+    public async Task JoinAsync(string address, ushort port, string playerName, CancellationToken cancellationToken = default)
     {
-        if (_running) throw new InvalidOperationException("transport already running");
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(10));
         var client = new TcpClient();
-        client.Connect(address, port);
-        // Disable Nagle's algorithm (off by default in .NET's TcpClient). This
-        // protocol sends frequent small messages (controls every ~50ms, ship
-        // updates every tick) — over loopback the resulting Nagle+delayed-ACK
-        // interaction (classically ~40ms per small exchange) is negligible at
-        // near-zero RTT, but over any REAL network path it compounds into
-        // clearly perceptible input lag and slow joins — confirmed live
-        // (2026-09-15) on a real LAN connection with zero artificial latency
-        // injected.
-        client.NoDelay = true;
-        // P311: the client half also gets a real send timeout + a send queue,
-        // so a dead server never blocks the client caller either.
-        client.SendTimeout = SendTimeoutMs;
-        _clientStream = client.GetStream();
-        _isHost = false;
-        _running = true;
-        LocalId = ConnectionId.Me; // client self id 0, mirroring Messages.cpp:1603
-        // Set up the per-connection send queue; the greeting travels through it
-        // (first in the queue, so ordering is preserved) instead of a raw write.
-        // P606 — the client half stamps a reason on its sender's death, but
-        // DropClient needs none (it just tears the socket down so the read loop
-        // unwinds and surfaces OnSessionLost with the real reason).
-        var sender = new PeerSender(_clientStream, client, _ => DropClient())
+        bool published = false;
+        lock (_gate)
         {
-            Reliable = Reliable,
-            ReliableOneShotPark = ReliableOneShot,
-        };
-        sender.Start();
-        sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true, coalesceKey: 0);
-        // Published only after the greeting is queued: the session keep-alive
-        // thread sends as soon as IsConnected is true, and a data frame ahead of
-        // the greeting gets this connection dropped as a protocol error.
-        lock (_gate) _clientSender = sender;
-        IsConnected = true;
-        Spawn(() =>
+            if (_running || _clientConnectCancellation is not null)
+            {
+                client.Dispose();
+                throw new InvalidOperationException("transport already running");
+            }
+            _clientConnectCancellation = deadline;
+        }
+        try
         {
-            // P320 — the client read loop ending (server closed / socket error /
-            // network drop) is the client's ONLY detection of a lost session: it
-            // surfaces OnSessionLost (exactly once, unless this was an intentional
-            // Shutdown) so the app can stop sending and show a disconnect UI
-            // instead of silently "flying" a dead world.
-            try { ReadDataLoop(_clientStream!, ConnectionId.Server); }
-            finally { RaiseClientSessionLostIfFirst(); }
-        }, "client-read");
+            if (ConnectClientForTesting is { } connect)
+                await connect(client, address, port, deadline.Token).ConfigureAwait(false);
+            else
+                await client.ConnectAsync(address, port, deadline.Token).ConfigureAwait(false);
+            lock (_gate)
+            {
+                deadline.Token.ThrowIfCancellationRequested();
+                if (!ReferenceEquals(_clientConnectCancellation, deadline)) throw new OperationCanceledException("transport shut down during connect");
+                // Disable Nagle's algorithm (off by default in .NET's TcpClient). This
+                // protocol sends frequent small messages (controls every ~50ms, ship
+                // updates every tick) — over loopback the resulting Nagle+delayed-ACK
+                // interaction (classically ~40ms per small exchange) is negligible at
+                // near-zero RTT, but over any REAL network path it compounds into
+                // clearly perceptible input lag and slow joins — confirmed live
+                // (2026-09-15) on a real LAN connection with zero artificial latency
+                // injected.
+                client.NoDelay = true;
+                // P311: the client half also gets a real send timeout + a send queue,
+                // so a dead server never blocks the client caller either.
+                client.SendTimeout = SendTimeoutMs;
+                _clientStream = client.GetStream();
+                _isHost = false;
+                _running = true;
+                LocalId = ConnectionId.Me; // client self id 0, mirroring Messages.cpp:1603
+                // Set up the per-connection send queue; the greeting travels through it
+                // (first in the queue, so ordering is preserved) instead of a raw write.
+                // P606 — the client half stamps a reason on its sender's death, but
+                // DropClient needs none (it just tears the socket down so the read loop
+                // unwinds and surfaces OnSessionLost with the real reason).
+                var sender = new PeerSender(_clientStream, client, _ => DropClient())
+                {
+                    Reliable = Reliable,
+                    ReliableOneShotPark = ReliableOneShot,
+                };
+                sender.Start();
+                sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true, coalesceKey: 0);
+                // Published only after the greeting is queued: the session keep-alive
+                // thread sends as soon as IsConnected is true, and a data frame ahead of
+                // the greeting gets this connection dropped as a protocol error.
+                lock (_gate) _clientSender = sender;
+                IsConnected = true;
+                Spawn(() =>
+                {
+                    // P320 — the client read loop ending (server closed / socket error /
+                    // network drop) is the client's ONLY detection of a lost session: it
+                    // surfaces OnSessionLost (exactly once, unless this was an intentional
+                    // Shutdown) so the app can stop sending and show a disconnect UI
+                    // instead of silently "flying" a dead world.
+                    try { ReadDataLoop(_clientStream!, ConnectionId.Server); }
+                    finally { RaiseClientSessionLostIfFirst(); }
+                }, "client-read");
+                published = true;
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested
+            && deadline.IsCancellationRequested && ReferenceEquals(Volatile.Read(ref _clientConnectCancellation), deadline))
+        {
+            // Our own ten-second ceiling (not the caller, not Shutdown): report a
+            // timeout so the join screen shows a real reason, not "task canceled".
+            throw new TimeoutException($"timed out connecting to {address}:{port}");
+        }
+        finally
+        {
+            lock (_gate)
+                if (ReferenceEquals(_clientConnectCancellation, deadline)) _clientConnectCancellation = null;
+            if (!published) client.Dispose();
+        }
     }
 
     public void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed)
@@ -596,6 +640,11 @@ public sealed class TcpTransport : IServerTransport
 
     public void Shutdown()
     {
+        lock (_gate)
+        {
+            _clientConnectCancellation?.Cancel();
+            _clientConnectCancellation = null;
+        }
         if (!_running) return;
         // P320 — flag the close as intentional so the client read-loop's finally
         // (which unwinds as we close the socket) does NOT raise OnSessionLost: a

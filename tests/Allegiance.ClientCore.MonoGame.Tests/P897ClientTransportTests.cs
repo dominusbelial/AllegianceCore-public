@@ -84,7 +84,7 @@ public sealed class P897ClientTransportTests
     [InlineData(ClientTransportSetting.UDP, true, "udp", false)]
     [InlineData(ClientTransportSetting.Auto, false, "tcp", false)]
     [InlineData(ClientTransportSetting.UDP, false, "tcp", false)]
-    public void Real_discovery_and_session_use_selected_protocol(ClientTransportSetting setting, bool advertiseUdp, string expected, bool blocked)
+    public async Task Real_discovery_and_session_use_selected_protocol(ClientTransportSetting setting, bool advertiseUdp, string expected, bool blocked)
     {
         var site = new Site();
         var host = new DualTransport(site, new TcpTransport(site, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
@@ -103,7 +103,8 @@ public sealed class P897ClientTransportTests
         var before = Stopwatch.StartNew();
         try
         {
-            Call(game, "ConfigureClientTransport", found.Address, (ushort)found.Port, uint.MaxValue, found);
+            var setup = (Func<CancellationToken, Task>)Call(game, "CaptureTransportSetup", found.Address, (ushort)found.Port, uint.MaxValue, found)!;
+            await setup(CancellationToken.None);
             session.Connect((ushort)found.Port, "P897", found.Address);
             Assert.Equal(expected, session.ActiveTransportProtocol);
             session.SendPing();

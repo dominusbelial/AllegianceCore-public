@@ -2152,9 +2152,11 @@ public sealed partial class Game1 : Game
         _hdMaterials?.Dispose();
         _shaders?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it
+        _connectCancellation?.Cancel();
         _identityCancellation?.Cancel();
         _identityClient?.Dispose();
         _session.Dispose();
+        _connectCancellation?.Dispose();
         _joinLinkCancellation?.Cancel();
         _joinLinkCancellation?.Dispose();
         _http.Dispose();

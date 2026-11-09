@@ -29,7 +29,10 @@ public static class TransportFactory
         public ushort BoundPort => 0;
         public void Host(ushort port = 0) => throw new NotSupportedException("client only");
         public void Join(string address, ushort port, string playerName)
+            => JoinAsync(address, port, playerName).GetAwaiter().GetResult();
+        public async Task JoinAsync(string address, ushort port, string playerName, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_active is not null) throw new InvalidOperationException("transport already used");
             ushort selectedPort = udpPort ?? port;
             if (udpPort is null && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } value)
@@ -37,12 +40,13 @@ public static class TransportFactory
             if (selectedPort == 0) selectedPort = port;
             var udp = new UdpTransport(site);
             _active = udp;
-            try { udp.Join(address, selectedPort, playerName); }
+            try { await udp.JoinAsync(address, selectedPort, playerName, cancellationToken).ConfigureAwait(false); }
             catch (Exception ex) when (ex is TimeoutException or IOException or System.Net.Sockets.SocketException)
             {
                 udp.Shutdown();
+                cancellationToken.ThrowIfCancellationRequested();
                 _active = new TcpTransport(site);
-                _active.Join(address, port, playerName);
+                await _active.JoinAsync(address, port, playerName, cancellationToken).ConfigureAwait(false);
             }
         }
         public void Shutdown() => _active?.Shutdown();
