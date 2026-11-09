@@ -260,6 +260,12 @@ public sealed partial class Game1
         UpdateSkirmish(Keyboard.GetState());
         UpdateSizingCalibration();
         if (UpdateBenchmark(ref gameTime)) { base.Update(gameTime); return; }
+        if (_state == ClientState.Connecting)
+        {
+            UpdateConnecting(Keyboard.GetState());
+            base.Update(gameTime);
+            return;
+        }
         // P789 — the always-on session recorder: one O(1), zero-allocation
         // record per frame in every match (pilot and spectator). No locks, no
         // I/O — see Game1.SessionPerformance.cs for the threading contract.

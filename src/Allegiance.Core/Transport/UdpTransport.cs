@@ -90,36 +90,47 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     }
 
     public void Join(string address, ushort port, string playerName)
+        => JoinAsync(address, port, playerName).GetAwaiter().GetResult();
+
+    public async Task JoinAsync(string address, ushort port, string playerName, CancellationToken cancellationToken = default)
     {
         if (Encoding.UTF8.GetByteCount(playerName) > 128) throw new ArgumentException("UDP name exceeds 128 bytes", nameof(playerName));
-        var addresses = Dns.GetHostAddresses(address);
+        var addresses = await Dns.GetHostAddressesAsync(address, cancellationToken).ConfigureAwait(false);
         var ip = addresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork) ?? addresses.First();
-        lock (_gate)
+        try
         {
-            if (!_traversalPrepared) EnsureStopped();
-            else if (!_running || _host || _remote is not null) throw new InvalidOperationException("prepared socket unavailable");
-            _host = false;
-            _joined.Reset();
-            _remote = Normalize(new IPEndPoint(ip, port));
-            _greeting = Encoding.UTF8.GetBytes(playerName);
-            _hello = new byte[HandshakeSize];
-            WriteMagic(_hello, Kind.Hello);
-            RandomNumberGenerator.Fill(_hello.AsSpan(8, 16));
-            _lastHandshake = 0;
-            if (!_traversalPrepared) Start(IPAddress.IPv6Any, 0);
-            else ServiceClient(Environment.TickCount64);
+            lock (_gate)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!_traversalPrepared) EnsureStopped();
+                else if (!_running || _host || _remote is not null) throw new InvalidOperationException("prepared socket unavailable");
+                _host = false;
+                _joined.Reset();
+                _remote = Normalize(new IPEndPoint(ip, port));
+                _greeting = Encoding.UTF8.GetBytes(playerName);
+                _hello = new byte[HandshakeSize];
+                WriteMagic(_hello, Kind.Hello);
+                RandomNumberGenerator.Fill(_hello.AsSpan(8, 16));
+                _lastHandshake = 0;
+                if (!_traversalPrepared) Start(IPAddress.IPv6Any, 0);
+                else ServiceClient(Environment.TickCount64);
+            }
+            long until = Environment.TickCount64 + (long)HandshakeTimeout.TotalMilliseconds;
+            while (!_joined.IsSet)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (Environment.TickCount64 >= until) throw new TimeoutException("UDP address-validation handshake timed out");
+                await Task.Delay(5, cancellationToken).ConfigureAwait(false);
+            }
+            AfterHandshakeForTesting?.Invoke();
+            lock (_gate)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsConnected) throw new IOException("UDP connection closed during handshake");
+                _established = true;
+            }
         }
-        if (!_joined.Wait(HandshakeTimeout))
-        {
-            Shutdown();
-            throw new TimeoutException("UDP address-validation handshake timed out");
-        }
-        AfterHandshakeForTesting?.Invoke();
-        lock (_gate)
-        {
-            if (!IsConnected) throw new IOException("UDP connection closed during handshake");
-            _established = true;
-        }
+        catch { Shutdown(); throw; }
     }
 
     private void EnsureStopped()

@@ -33,7 +33,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// (<c>EnterCareerScreen</c>), the F2 identity client
 /// (<c>UpdateIdentity</c>), the new-game wizard
 /// (<c>EnterCreateGame</c> → <see cref="LobbyGameClient"/>) and the P944
-/// internet join target (<c>ConfigureClientTransport</c>).
+/// internet join target (<c>CaptureTransportSetup</c>).
 /// All headless: uninitialized <see cref="Game1"/> + reflection, and loopback
 /// URLs only (nothing here contacts a real host).
 /// </summary>
@@ -292,26 +292,26 @@ public sealed class P947LobbyPrecedenceTests
 
     // ------------------------------------------------------------------
     // Consumer 7 — the P944 internet join target (Game1.Session.cs
-    // ConfigureClientTransport records the resolved lobby for the traversal).
+    // CaptureTransportSetup snapshots the resolved lobby for the traversal).
     // ------------------------------------------------------------------
 
     [Theory]
     [InlineData(1, ExplicitUrl)]
     [InlineData(2, ProfileUrl)]
     [InlineData(3, DefaultUrl)]
-    public void The_player_hosted_join_target_carries_the_resolved_lobby(int scenario, string expected)
+    public async Task The_player_hosted_join_target_carries_the_resolved_lobby(int scenario, string expected)
     {
         var game = HeadlessGame();
-        Set(game, "_session", new ConnectionSession());
+        using var session = new ConnectionSession();
+        Set(game, "_session", session);
         var listing = new ServerListing("ph1", "Player Host", "203.0.113.7", 6073,
             PlayerCount: 1, MaxPlayers: 20, MissionName: "m", CoreFile: "PCore001.igc", Version: "1",
             RegisteredUtc: DateTimeOffset.UnixEpoch, LastSeenUtc: DateTimeOffset.UnixEpoch, PlayerHosted: true);
         Set(game, "_connectListingTarget", listing);
         Set(game, "_lobbyUrl", Resolve(scenario));
 
-        Call(game, "ConfigureClientTransport", "203.0.113.7", (ushort)6073, 0u, null);
-
-        var session = Get<ConnectionSession>(game, "_session");
+        var setup = (Func<CancellationToken, Task>)Call(game, "CaptureTransportSetup", "203.0.113.7", (ushort)6073, 0u, null)!;
+        await setup(CancellationToken.None);
         Assert.Equal(new InternetJoin(expected, "ph1"), session.InternetJoinTarget);
         Assert.Equal("udp", session.TransportProtocol);
     }

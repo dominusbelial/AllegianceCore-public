@@ -10,6 +10,20 @@ public enum NetworkLink { Unknown, Wired, Wireless }
 /// No probe packet is sent. VPNs, loopback and unavailable platform facts stay unknown.</summary>
 public static class NetworkLinkDetector
 {
+    public static async Task<NetworkLink> DetectAsync(string host, ushort port, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var addresses = IPAddress.TryParse(host, out var ip) ? [ip]
+                : await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            var address = addresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork) ?? addresses.FirstOrDefault();
+            return address is null ? NetworkLink.Unknown : Detect(address, port);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception) { return NetworkLink.Unknown; }
+    }
+
     public static NetworkLink Detect(string host, ushort port)
     {
         if (string.IsNullOrWhiteSpace(host)) return NetworkLink.Unknown;

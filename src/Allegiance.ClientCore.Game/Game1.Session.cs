@@ -1088,23 +1088,29 @@ public sealed partial class Game1
         }
     }
 
-    /// <summary>A brief "connecting…" screen while the wire handshake completes
-    /// (it is synchronous, so this is a single rendered frame — a nicety, not
-    /// a spinner).</summary>
+    /// <summary>The interactive connection screen, drawn while the shared
+    /// cancellable handshake is pending (Classic and Modern).</summary>
     private void DrawConnecting()
     {
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width;
         float h = vp.Height;
 
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+            SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone);
         try
         {
             string host = string.IsNullOrEmpty(_connectHost) ? "127.0.0.1" : _connectHost;
-            string msg = $"Connecting to {host}:{_connectPort} as '{_playerName}'...";
-            var sz = _hudBig.MeasureString(msg);
-            _spriteBatch.DrawString(_hudBig, msg, new Vector2((w - sz.X) / 2f, (h - sz.Y) / 2f),
-                new Color(0.88f, 0.96f, 0.95f));
+            string msg = _connectCancelled ? "Cancelling connection..."
+                : $"Connecting to {host}:{_connectPort} as '{_playerName}'...";
+            var sz = _hudSmall.MeasureString(msg);
+            float scale = Math.Min(1.35f, (w - 40f) / Math.Max(1f, sz.X));
+            _spriteBatch.DrawString(_hudSmall, msg, new Vector2((w - sz.X * scale) / 2f, (h - sz.Y * scale) / 2f),
+                new Color(0.88f, 0.96f, 0.95f), 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+            string hint = _connectCancelled ? "Waiting for connection cleanup..." : "ESC - cancel";
+            var hintSize = _hudSmall.MeasureString(hint);
+            _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hintSize.X) / 2f, (h + sz.Y * scale) / 2f + 16f),
+                new Color(0.72f, 0.80f, 0.80f));
         }
         finally
         {
@@ -1172,44 +1178,71 @@ public sealed partial class Game1
     private Discovery.DiscoveredServer? _connectDiscovery;
     private ServerListing? _connectListingTarget;
     private string? _connectListingLobby;
-    private string _transportReason = "not connected";
+    private CancellationTokenSource? _connectCancellation;
+    private Task<DelPositionReq?>? _connectOperation;
+    private Task? _connectCleanup;
+    private bool _connectCancelled;
 
-    private void ConfigureClientTransport(string host, ushort port, uint cookie, Discovery.DiscoveredServer? found)
+    // Snapshot screen choices on the game thread. DNS/policy detection runs
+    // inside the session owner, sharing the entire join's deadline.
+    private Func<CancellationToken, Task> CaptureTransportSetup(string host, ushort port, uint cookie, Discovery.DiscoveredServer? found)
     {
-        _session.InternetJoinTarget = null;
-        // Embedded modes keep their existing loopback TCP path, regardless of Settings/env.
+        var session = _session;
         if (_skirmish is not null || _trainingSession is not null || _embeddedHost is not null)
-        {
-            _session.TransportProtocol = "tcp";
-            _session.UdpPort = null;
-            _transportReason = "local Skirmish/Training";
-            return;
-        }
+            return _ =>
+            {
+                session.InternetJoinTarget = null;
+                session.TransportProtocol = "tcp";
+                session.UdpPort = null;
+                return Task.CompletedTask;
+            };
         if (_connectListingTarget is { PlayerHosted: true } playerHost)
         {
-            _session.InternetJoinTarget = new(_connectListingLobby ?? _lobbyUrl, playerHost.Id);
-            _session.TransportProtocol = "udp";
-            _session.UdpPort = (ushort?)playerHost.UdpPort;
-            _transportReason = "player-hosted internet game; lobby introduction and UDP direct";
-            return;
+            var target = new Allegiance.Core.Transport.InternetJoin(_connectListingLobby ?? _lobbyUrl, playerHost.Id);
+            return _ =>
+            {
+                session.InternetJoinTarget = target;
+                session.TransportProtocol = "udp";
+                session.UdpPort = (ushort?)playerHost.UdpPort;
+                return Task.CompletedTask;
+            };
         }
         ServerListing? listing;
         lock (_introLobbyLock)
             listing = _connectListingTarget ?? _servers.FirstOrDefault(s => !s.PlayerHosted && s.Address == host && s.Port == port && s.MissionCookie == cookie);
         var source = found?.Source ?? (listing is null ? Discovery.DiscoverySource.Manual : Discovery.DiscoverySource.Lobby);
         int? udp = found?.UdpPort ?? listing?.UdpPort;
-        var choice = Discovery.ClientTransportPolicy.Resolve(_hudSettings.Transport, source, udp,
-            Allegiance.Core.Transport.NetworkLinkDetector.Detect(host, port),
-            found?.HostLink ?? Allegiance.Core.Transport.NetworkLink.Unknown,
-            Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL"));
-        _session.UdpPort = udp is > 0 and <= ushort.MaxValue ? (ushort)udp : null;
-        _session.TransportProtocol = choice.Protocol;
-        _transportReason = choice.Reason;
+        var preference = _hudSettings.Transport;
+        var hostLink = found?.HostLink ?? Allegiance.Core.Transport.NetworkLink.Unknown;
+        var environment = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL");
+        return async ct =>
+        {
+            var link = await Allegiance.Core.Transport.NetworkLinkDetector.DetectAsync(host, port, ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            var choice = Discovery.ClientTransportPolicy.Resolve(preference, source, udp, link, hostLink, environment);
+            session.InternetJoinTarget = null;
+            session.UdpPort = udp is > 0 and <= ushort.MaxValue ? (ushort)udp : null;
+            session.TransportProtocol = choice.Protocol;
+            Console.WriteLine($"[monogame] selected transport={choice.Protocol}: {choice.Reason}");
+        };
     }
 
     private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null, string? listingLobby = null, JoinOrigin origin = JoinOrigin.Intro)
     {
         if (!training) ReleaseTraining();
+        _connectCancellation?.Cancel();
+        _connectCancellation?.Dispose();
+        _connectCancellation = new();
+        _connectCancelled = false;
+        _connectCleanup = null;
+        _connectAbortWasDown = false;
+        _disconnectTransitioned = false;
+        // Session disposal is terminal. A later menu join gets a fresh owner.
+        if (_session.IsDisposed)
+        {
+            _session = new ConnectionSession();
+            _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
+        }
         _moderation.Reset();
         // P970 — remember which join screen this attempt came from (a password
         // refusal returns there with the field focused), and which server it is
@@ -1262,12 +1295,11 @@ public sealed partial class Game1
                 Console.WriteLine($"[monogame] P813c reconnect grace armed: window {reconnectWindow:0.##}s "
                     + "(auto-reconnect + resume token; server needs reconnect.enabled=true)");
             }
-            ConfigureClientTransport(host, port, missionCookie, discovered);
-            _session.Connect(port, _playerName, host);
-            Console.WriteLine($"[monogame] transport={_session.ActiveTransportProtocol} selected={_session.TransportProtocol}: {_transportReason}");
+            var setup = CaptureTransportSetup(host, port, missionCookie, discovered);
             var logon = Request(_playerName);
             logon.DwCookie = missionCookie;
             logon.MissionPassword = _skirmish?.Options.HostLan == true ? _skirmish.Options.Password : _lanJoinPassword.ToString();
+            Func<CancellationToken, Task<string>>? ticket = null;
             if (_skirmish is null && _identityClient?.Account is not null
                 && (listingLobby is null || (Uri.TryCreate(_lobbyUrl, UriKind.Absolute, out var savedLobby)
                     && Uri.Equals(new Uri(listingLobby), savedLobby))))
@@ -1277,64 +1309,72 @@ public sealed partial class Game1
                 if (serverId is null && listingTarget is null)
                     lock (_introFoundLock) serverId = _introFound.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified)?.IdentityServerId;
                 if (serverId is not null)
-                    logon.ZoneTicket = System.Text.Encoding.UTF8.GetBytes(_identityClient.JoinTokenAsync(serverId).GetAwaiter().GetResult());
+                {
+                    var identity = _identityClient;
+                    ticket = ct => identity.JoinTokenAsync(serverId, ct);
+                }
             }
-            _session.SendLogonRequest(logon);
-            var ack = _session.WaitForAck(5000);
-            // P894 / LOB-0020, LOB-0026 — a refused logon (the server's minimum
-            // client version, the API version, a duplicate name, a reserved
-            // callsign, the file-set CRC…) carries the reason the player must see.
-            // Before this the client ignored FValidated and walked into a side
-            // select it could never complete.
-            if (!ack.FValidated)
-                throw new InvalidOperationException(ack.CharNameOrFailureReason is { Length: > 0 } why
-                    ? why
-                    : "the server refused the logon");
-            Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");
-            // P970 — CHECK EARLY: the server answers the join itself, right after
-            // the logon ack (native FedSrv.CPP:648-661 sends DELPOSITIONREQ with
-            // DPR_BadPassword before any side selection). Wait for that ordered
-            // answer so a wrong password is reported on the JOIN SCREEN instead of
-            // leaking onto the side-select screen, and the player can retype in
-            // place (native kept the list up: gamescreen.cpp:1498-1505
-            // bDisconnect = false).
-            if (_session.WaitForJoinAnswer(JoinAnswerWaitMs) is { } joinAnswer
-                && Rendering.JoinPasswordPrompt.IsPasswordRefusal(joinAnswer.Reason))
+            _connectOperation = _session.JoinAsync(port, _playerName, logon, host,
+                identityTicket: ticket, cancellationToken: _connectCancellation.Token, prepareTransport: setup);
+        }
+        catch (Exception ex) { ShowConnectFailure(ex); }
+    }
+
+    private void ShowConnectFailure(Exception ex)
+    {
+        Console.WriteLine($"[monogame] FAILED to connect/log on: {ex.Message}");
+        _connectFailureReason = $"Could not join {_connectHost}:{_connectPort} - {ex.Message}";
+        _state = ClientState.ConnectFailed;
+    }
+
+    private void UpdateConnecting(KeyboardState ks)
+    {
+        if (_connectOperation is null) return;
+        bool abort = ActionDown(ks, "MainMenu") || ActionDown(ks, "MenuBack");
+        if (abort && !_connectAbortWasDown)
+        {
+            _connectCancelled = true;
+            _connectCancellation?.Cancel();
+            _connectCleanup = _session.ShutdownAsync();
+        }
+        _connectAbortWasDown = abort;
+        if (!_connectOperation.IsCompleted || _connectCleanup is { IsCompleted: false }) return;
+        var operation = _connectOperation;
+        _connectOperation = null;
+        try
+        {
+            _connectCleanup?.GetAwaiter().GetResult();
+            var answer = operation.GetAwaiter().GetResult();
+            // Escape wins even when completion and input land in the same frame.
+            if (_connectCancelled)
+            {
+                _connectFailureReason = "Connection cancelled.";
+                AbortConnect();
+                return;
+            }
+            if (answer is { } refusal && Rendering.JoinPasswordPrompt.IsPasswordRefusal(refusal.Reason))
             {
                 HandleJoinPasswordRefusal();
                 return;
             }
-            // Accepted (or a non-password refusal, which keeps its old path below):
-            // the password is worth remembering only now.
             SaveRememberedPassword(_joinPasswordKey);
-            // P281 — the server now defers our spawn to a post-connect side-select
-            // step: after LOGONACK it pushes a SIDE_ROSTER(211) snapshot and holds
-            // the peer (no ship, no SET_CLUSTER) until we send FM_C_POSITIONREQ(39).
-            // Enter the side-select screen here; UpdateSideSelect sends POSITIONREQ
-            // and transitions to Flying once the server seats us (SET_CLUSTER sets
-            // World.MyShipId).
             _state = ClientState.SideSelect;
             if (_benchmark is null) ObserveBenchmarkSharingSession();
             _sideSelectIndex = 0;
-            _sideSelectFromGameOver = false;   // P481 — a fresh logon is never an eliminated-side lobby
+            _sideSelectFromGameOver = false;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (_connectCancelled)
         {
-            // P759 — native OnLogonGameServerFailed (introscreen.cpp:1667-1699)
-            // presents a retry/abort decision instead of silently bouncing back.
-            // Stage the failure on a dedicated screen; R retries the same
-            // host/port, Esc aborts to wherever the join was launched from.
-            Console.WriteLine($"[monogame] FAILED to connect/log on: {ex.Message}");
-            _connectFailureReason = $"Could not join {host}:{port} - {ex.Message}";
-            _state = ClientState.ConnectFailed;
+            _connectFailureReason = "Connection cancelled.";
+            AbortConnect();
+        }
+        catch (Exception ex) { ShowConnectFailure(ex); }
+        finally
+        {
+            _connectCancellation?.Dispose();
+            _connectCancellation = null;
         }
     }
-
-    /// <summary>P970 — how long the client waits for the server's join answer. The
-    /// answer is ordered right behind the LOGONACK on the same connection, so this
-    /// is a generous ceiling for a slow link, not a polling delay: an accepted
-    /// join returns as soon as SIDE_ROSTER arrives.</summary>
-    private const int JoinAnswerWaitMs = 2500;
 
     /// <summary>
     /// P970 — a join refused with <c>DPR_BadPassword</c> goes back to the join
@@ -1440,6 +1480,7 @@ public sealed partial class Game1
     /// across rotation; this keeps the SOCKET honest across pause).</summary>
     public void NotifyPaused()
     {
+        _connectCancellation?.Cancel();
         if (_session is not null && _session.Connected)
         {
             Console.WriteLine("[monogame] lifecycle PAUSED: closing connection cleanly");

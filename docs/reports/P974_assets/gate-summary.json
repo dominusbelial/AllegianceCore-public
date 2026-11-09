@@ -1,0 +1,898 @@
+{
+  "baseCommit": "a6d8bf479019e22df9ccb4d6f9c5cfe7b08565b0",
+  "new": {
+    "passed": 66,
+    "failed": 0,
+    "skipped": 0,
+    "total": 66,
+    "runs": [
+      {
+        "file": "P974ClientConnectTests-1.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "P974ClientConnectTests-2.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "P974ClientConnectTests-3.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "P974ConnectingUiTests-1.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "P974ConnectingUiTests-2.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "P974ConnectingUiTests-3.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "P974SessionOwnershipTests-1.trx",
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "total": 8
+      },
+      {
+        "file": "P974SessionOwnershipTests-2.trx",
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "total": 8
+      },
+      {
+        "file": "P974SessionOwnershipTests-3.trx",
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "total": 8
+      }
+    ]
+  },
+  "initialAffected": {
+    "passed": 397,
+    "failed": 2,
+    "skipped": 0,
+    "total": 399,
+    "runs": [
+      {
+        "file": "ClientCore-P813c-1.trx",
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "total": 3
+      },
+      {
+        "file": "ClientCore-P813c-2.trx",
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "total": 3
+      },
+      {
+        "file": "ClientCore-P813c-3.trx",
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "total": 3
+      },
+      {
+        "file": "ClientCore-P974SessionOwnershipTests-1.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "ClientCore-P974SessionOwnershipTests-2.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "ClientCore-P974SessionOwnershipTests-3.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "ClientCore.MonoGame-P883-1.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "ClientCore.MonoGame-P883-2.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "ClientCore.MonoGame-P883-3.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "ClientCore.MonoGame-P970-1.trx",
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0,
+        "total": 18
+      },
+      {
+        "file": "ClientCore.MonoGame-P970-2.trx",
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0,
+        "total": 18
+      },
+      {
+        "file": "ClientCore.MonoGame-P970-3.trx",
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0,
+        "total": 18
+      },
+      {
+        "file": "ClientCore.MonoGame-P974ConnectingUiTests-1.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "ClientCore.MonoGame-P974ConnectingUiTests-2.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "ClientCore.MonoGame-P974ConnectingUiTests-3.trx",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "total": 12
+      },
+      {
+        "file": "Core-P809-1.trx",
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "total": 0
+      },
+      {
+        "file": "Core-P809-2.trx",
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "total": 0
+      },
+      {
+        "file": "Core-P809-3.trx",
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "total": 0
+      },
+      {
+        "file": "Core-P813c-1.trx",
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P813c-2.trx",
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P813c-3.trx",
+        "passed": 12,
+        "failed": 2,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P883-1.trx",
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P883-2.trx",
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P883-3.trx",
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "total": 14
+      },
+      {
+        "file": "Core-P895-1.trx",
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "total": 33
+      },
+      {
+        "file": "Core-P895-2.trx",
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "total": 33
+      },
+      {
+        "file": "Core-P895-3.trx",
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "total": 33
+      },
+      {
+        "file": "Core-P967-1.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "Core-P967-2.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "Core-P967-3.trx",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "total": 10
+      },
+      {
+        "file": "Core-P970-1.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "Core-P970-2.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "Core-P970-3.trx",
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "total": 6
+      },
+      {
+        "file": "Core-P974ClientConnectTests-1.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "Core-P974ClientConnectTests-2.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "Core-P974ClientConnectTests-3.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "Lobby-P970-1.trx",
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "total": 5
+      },
+      {
+        "file": "Lobby-P970-2.trx",
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "total": 5
+      },
+      {
+        "file": "Lobby-P970-3.trx",
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "total": 5
+      }
+    ]
+  },
+  "departureAndOwnership": {
+    "passed": 90,
+    "failed": 0,
+    "skipped": 0,
+    "total": 90,
+    "runs": [
+      {
+        "file": "departure-1.trx",
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0,
+        "total": 30
+      },
+      {
+        "file": "departure-2.trx",
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0,
+        "total": 30
+      },
+      {
+        "file": "departure-3.trx",
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0,
+        "total": 30
+      }
+    ]
+  },
+  "adaptedUi": {
+    "passed": 150,
+    "failed": 0,
+    "skipped": 0,
+    "total": 150,
+    "runs": [
+      {
+        "file": "adapted-1.trx",
+        "passed": 50,
+        "failed": 0,
+        "skipped": 0,
+        "total": 50
+      },
+      {
+        "file": "adapted-2.trx",
+        "passed": 50,
+        "failed": 0,
+        "skipped": 0,
+        "total": 50
+      },
+      {
+        "file": "adapted-3.trx",
+        "passed": 50,
+        "failed": 0,
+        "skipped": 0,
+        "total": 50
+      }
+    ]
+  },
+  "isolatedReceiptFlakes": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "total": 6,
+    "runs": [
+      {
+        "file": "Name_collision_keeps_the_seat_parked_and_the_original_resumes-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "Name_collision_keeps_the_seat_parked_and_the_original_resumes-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "Name_collision_keeps_the_seat_parked_and_the_original_resumes-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "Wrong_token_refuses_only_the_claimant_and_the_original_resumes-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "Wrong_token_refuses_only_the_claimant_and_the_original_resumes-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "Wrong_token_refuses_only_the_claimant_and_the_original_resumes-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "autoSeatFlake": {
+    "passed": 2,
+    "failed": 1,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "auto-seat-1.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "auto-seat-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "auto-seat-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "warpTiming": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "warp-timing-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "warp-timing-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "warp-timing-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "voluntaryLogoffFlake": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "voluntary-logoff-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "voluntary-logoff-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "voluntary-logoff-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "missileTipFlake": {
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "missile-tip-1.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "missile-tip-2.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "missile-tip-3.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "chatAllocationFlake": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "chat-allocation-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "chat-allocation-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "chat-allocation-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "bundleEnvironment": {
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "total": 27,
+    "runs": [
+      {
+        "file": "bundle-alias-1.trx",
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "total": 9
+      },
+      {
+        "file": "bundle-alias-2.trx",
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "total": 9
+      },
+      {
+        "file": "bundle-alias-3.trx",
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "total": 9
+      }
+    ]
+  },
+  "lossNotification": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "notification-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "notification-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "notification-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "fast": {
+    "passed": 13635,
+    "failed": 3,
+    "skipped": 3,
+    "total": 13641,
+    "runs": [
+      {
+        "file": "Allegiance.ClientCore.MonoGame.Tests-main.trx",
+        "passed": 4929,
+        "failed": 0,
+        "skipped": 3,
+        "total": 4932
+      },
+      {
+        "file": "Allegiance.ClientCore.Tests-main.trx",
+        "passed": 2322,
+        "failed": 1,
+        "skipped": 0,
+        "total": 2323
+      },
+      {
+        "file": "Allegiance.ClientCore.Tests-quarantine.trx",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "total": 2
+      },
+      {
+        "file": "Allegiance.Core.Tests-main.trx",
+        "passed": 6189,
+        "failed": 2,
+        "skipped": 0,
+        "total": 6191
+      },
+      {
+        "file": "Allegiance.Core.Tests-quarantine.trx",
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "total": 17
+      },
+      {
+        "file": "Allegiance.Lobby.Tests-main.trx",
+        "passed": 144,
+        "failed": 0,
+        "skipped": 0,
+        "total": 144
+      },
+      {
+        "file": "Allegiance.Update.Tests-main.trx",
+        "passed": 32,
+        "failed": 0,
+        "skipped": 0,
+        "total": 32
+      }
+    ],
+    "seconds": 964.5,
+    "gateExitCode": 1,
+    "projectParallelism": 1,
+    "lock": "task-local override after bounded default-lock queue attempts",
+    "knownFailures": [
+      "MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit",
+      "LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds"
+    ],
+    "skips": "3 optional private Meshy-pack tests"
+  },
+  "trainingReminder": {
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "total": 3,
+    "runs": [
+      {
+        "file": "training-reminders-1.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "training-reminders-2.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "training-reminders-3.trx",
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "total": 1
+      }
+    ],
+    "classification": "Pre-existing P945 reminder-proof prompt-snapshot mismatch; no training/proof source changed"
+  },
+  "showcaseBase": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "total": 5,
+    "runs": [
+      {
+        "file": "base-showcase-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "base-showcase-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "base-showcase-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "base-showcase-4.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "base-showcase-5.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "showcasePatched": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "total": 5,
+    "runs": [
+      {
+        "file": "patched-showcase-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "patched-showcase-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "patched-showcase-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "patched-showcase-4.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      },
+      {
+        "file": "patched-showcase-5.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1
+      }
+    ]
+  },
+  "patchedShowcaseLoad": [
+    {
+      "run": 1,
+      "load1": 14.69,
+      "load5": 18.5,
+      "load15": 14.03
+    },
+    {
+      "run": 2,
+      "load1": 5.05,
+      "load5": 12.19,
+      "load15": 12.72
+    },
+    {
+      "run": 3,
+      "load1": 4.84,
+      "load5": 8.65,
+      "load15": 11.2
+    },
+    {
+      "run": 4,
+      "load1": 4.33,
+      "load5": 7.38,
+      "load15": 9.76
+    },
+    {
+      "run": 5,
+      "load1": 1.49,
+      "load5": 4.38,
+      "load15": 7.88
+    }
+  ],
+  "build": {
+    "solutionWarnings": 0,
+    "solutionErrors": 0,
+    "toolProjects": 124,
+    "toolsPassed": true,
+    "serverNativeAotPassed": true,
+    "IL2026": 0,
+    "IL3050": 0
+  },
+  "checks": {
+    "glossaryDistinctPaths": 682,
+    "parityRows": 5,
+    "whitespace": "pass",
+    "workingTreeHygiene": "pass",
+    "commits": 0,
+    "pushes": 0
+  }
+}

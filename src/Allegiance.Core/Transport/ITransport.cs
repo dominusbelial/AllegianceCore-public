@@ -5,7 +5,7 @@ namespace Allegiance.Core.Transport;
 /// TRANSPORT_SEAM.md, adapted from <c>class ITransport</c>). Unlike the C++
 /// sketch there is no <c>HRESULT</c>/<c>DPID</c> — the C# idiomatic choices are
 /// **exceptions** (declared below) and a **<see cref="ConnectionId"/> value
-/// type**. Every method is synchronous.
+/// type**. Client establishment also has a cancellable async path.
 ///
 /// Deliberately left out of the interface (owned by the message/codec layer):
 /// frame composition, the trailing CRC, packet walking, recipient bookkeeping.
@@ -22,6 +22,19 @@ public interface ITransport
     /// <summary>Connect to an already-hosting peer and publish our name.
     /// Throws on connect failure.</summary>
     void Join(string address, ushort port, string playerName);
+
+    /// <summary>Cancellable client establishment. Production transports override
+    /// this with cancellable I/O. The adapter for external synchronous transports
+    /// drains Join before returning, even if cancellation arrives during Join.</summary>
+    async Task JoinAsync(string address, ushort port, string playerName, CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Join(address, port, playerName);
+        }, CancellationToken.None).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+    }
 
     /// <summary>Tear the session down. Idempotent.</summary>
     void Shutdown();

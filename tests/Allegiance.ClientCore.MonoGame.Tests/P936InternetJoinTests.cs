@@ -40,7 +40,7 @@ public sealed class P936InternetJoinTests
     [Theory]
     [InlineData(HudStyle.Classic)]
     [InlineData(HudStyle.Modern)]
-    public void Browser_keeps_the_selected_listing_identity_and_manual_TCP_stays_manual(HudStyle style)
+    public async Task Browser_keeps_the_selected_listing_identity_and_manual_TCP_stays_manual(HudStyle style)
     {
         const BindingFlags hidden = BindingFlags.Instance | BindingFlags.NonPublic;
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1)); GC.SuppressFinalize(game);
@@ -53,15 +53,15 @@ public sealed class P936InternetJoinTests
         Set("_session", session); Set("_introLobbyLock", new object());
         Set("_servers", new List<ServerListing> { first, selected }); Set("_lobbyUrl", "https://lobby.example.org");
         Set("_connectListingTarget", selected);
-        void Configure() => typeof(Game1).GetMethod("ConfigureClientTransport", hidden)!.Invoke(game,
-            [selected.Address, (ushort)selected.Port, selected.MissionCookie, null]);
-        Configure();
+        Task Configure() => ((Func<CancellationToken, Task>)typeof(Game1).GetMethod("CaptureTransportSetup", hidden)!.Invoke(game,
+            [selected.Address, (ushort)selected.Port, selected.MissionCookie, null])!)(CancellationToken.None);
+        await Configure();
         Assert.Equal("second", session.InternetJoinTarget!.ListingId);
         Assert.Equal((ushort)32002, session.UdpPort); Assert.Equal("udp", session.TransportProtocol);
         Assert.Contains("[player hosted]", selected.FormatRow());
         // A later Direct Connect must clear the previous introduction target,
         // even if a cached lobby row has the identical address and TCP port.
-        Set("_connectListingTarget", null); Configure();
+        Set("_connectListingTarget", null); await Configure();
         Assert.Null(session.InternetJoinTarget); Assert.Equal("tcp", session.TransportProtocol);
     }
 }

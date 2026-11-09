@@ -22,7 +22,7 @@ namespace Allegiance.ClientCore.Session;
 /// the lock. This is the client half of the transport, so only
 /// <see cref="ITransportSite.OnReceive"/> is raised.
 /// </summary>
-public sealed class ConnectionSession : ITransportSite, IDisposable
+public sealed partial class ConnectionSession : ITransportSite, IDisposable
 {
     private ITransport? _transport;
     private string? _joinedProtocol;
@@ -45,6 +45,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private InternetJoin? _joinedInternet;
     internal HttpClient? TraversalHttpForTesting { get; set; }
     internal Action<UdpTransport>? ConfigureTraversalForTesting { get; set; }
+    internal Func<ITransportSite, ITransport>? TransportFactoryForTesting { get; set; }
 
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
     public Allegiance.ClientCore.Replay.WireRecording? Recording { get; set; }
@@ -162,10 +163,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     public bool Lost => _lost;
 
     /// <summary>
-    /// P320 — raised (on the transport receive thread) the first time the
+    /// P320 — raised (on a background network/ownership worker) the first time the
     /// established session to the server is lost. Handlers must NOT touch
     /// MonoGame graphics here (wrong thread); latch a flag and do UI work on the
-    /// render loop, or just poll <see cref="Lost"/>.
+    /// render loop, or just poll <see cref="Lost"/>. Receive-initiated mission
+    /// departure notifies after transport teardown has drained.
     /// </summary>
     public event Action? SessionLost;
 
@@ -190,8 +192,6 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private double _reconnectWindowSeconds = 5;
     private volatile bool _autoReconnect;
     private volatile bool _reconnecting;
-    private volatile bool _reconnectStop;
-    private Thread? _reconnectThread;
     private int _resumeAttempts;
     private int _resumeSuccesses;
     private int _resumeShipMismatches;
@@ -346,76 +346,54 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// this session's netem-latency experiment needed a real non-loopback
     /// peer).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
-    {
-        // P813c — an EXPLICIT connect is a fresh session: mint a new resume
-        // nonce (so a rejoin never silently adopts a parked seat) and remember
-        // the endpoint for the automatic reconnect path. Stop any in-flight
-        // reconnect loop first.
-        StopReconnectLoop();
-        _resumeToken = NewResumeToken();
-        _resumeHost = host;
-        _resumePort = port;
-        _resumeName = playerName;
-        _resumeRequest = null;
-        _resumeShipId = null;
-        _reconnectExhausted = false;
-        _lost = false;
-        // P321 — a retry must not abandon the previous transport: its socket and
-        // receive thread would leak for the process lifetime. Shut it down the
-        // same way a normal disconnect does (closes the socket, joins the receive
-        // thread, sets _intentionalShutdown so no spurious SessionLost fires),
-        // then start from a genuinely clean world so no stale ships/ids from the
-        // previous failed/dead connection survive into the new session. Done
-        // before the new TcpTransport is created (so its fresh receive thread is
-        // the only writer) and under _gate (so a lingering old thread mid-OnReceive
-        // drains before Reset clears the tables it might still touch).
-        var previous = _transport;
-        _transport = null;               // detach first: Shutdown won't self-null, and the new one is fresh
-        previous?.Shutdown();
+        => ConnectAsync(port, playerName, host).GetAwaiter().GetResult();
 
+    public Task ConnectAsync(ushort port, string playerName, string host = "127.0.0.1", CancellationToken cancellationToken = default)
+        => StartOwned(async owner =>
+        {
+            await ConnectFreshAsync(owner, host, port, playerName).ConfigureAwait(false);
+            return true;
+        }, TimeSpan.FromSeconds(10), cancellationToken);
+
+    private async Task ConnectFreshAsync(ConnectionOwner owner, string host, ushort port, string playerName)
+    {
         lock (_gate)
         {
+            RequireOwner(owner);
+            _resumeToken = NewResumeToken();
+            _resumeHost = host;
+            _resumePort = port;
+            _resumeName = playerName;
+            _resumeRequest = null;
+            _resumeShipId = null;
+            _reconnectExhausted = false;
             if (ReplayMilliseconds is not null)
             {
                 ReplayMilliseconds = null;
                 _world.NowSeconds = () => Environment.TickCount64 / 1000.0;
             }
-            _ack = null;                 // a fresh session has no ack yet
-            _lastPositionRefusal = null;
-            _lost = false;               // a new session is not lost (was latched true by a dropped one)
-            _world.Reset();
-            _pingEchoes.Clear();
-            _connectionGeneration++;
+            ResetConnectionState(preserveMission: false);
+            // Freeze the transport choice for this connection and its resumes.
+            _joinedProtocol = TransportProtocol ?? Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL") ?? "tcp";
+            _joinedUdpPort = UdpPort ?? port;
+            if (UdpPort is null && _joinedProtocol.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase)
+                && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } envPort)
+                _joinedUdpPort = ushort.Parse(envPort, System.Globalization.CultureInfo.InvariantCulture);
+            _joinedInternet = InternetJoinTarget;
         }
-
-        // Freeze the choice for this connection, including environment resolution.
-        // Changing Settings or the environment during a match cannot affect resume.
-        _joinedProtocol = TransportProtocol ?? Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL") ?? "tcp";
-        _joinedUdpPort = UdpPort ?? port;
-        if (UdpPort is null && _joinedProtocol.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase)
-            && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } envPort)
-            _joinedUdpPort = ushort.Parse(envPort, System.Globalization.CultureInfo.InvariantCulture);
-        _joinedInternet = InternetJoinTarget;
-        ConnectTransport(host, port, playerName);
-        StartKeepAlive();
+        await ConnectTransportAsync(owner, host, port, playerName).ConfigureAwait(false);
+        lock (_gate) { RequireOwner(owner); StartKeepAlive(); }
     }
 
-    private void ConnectTransport(string host, ushort port, string playerName)
+    private void ResetConnectionState(bool preserveMission)
     {
-        if (_joinedInternet is { } internet)
-        {
-            var udp = new UdpTransport(this);
-            ConfigureTraversalForTesting?.Invoke(udp);
-            _transport = udp;
-            if (TraversalHttpForTesting is { } http)
-                NatTraversalClient.ConnectAsync(udp, http, internet.ListingId, playerName).GetAwaiter().GetResult();
-            else NatTraversalClient.ConnectAsync(udp, internet, playerName).GetAwaiter().GetResult();
-        }
-        else
-        {
-            _transport = TransportFactory.CreateClient(this, _joinedProtocol, _joinedUdpPort);
-            _transport.Join(host, port, playerName);
-        }
+        _ack = null;
+        _lastPositionRefusal = null;
+        _lost = false;
+        if (preserveMission) _world.ResetPreservingMissionIdentity();
+        else _world.Reset();
+        _pingEchoes.Clear();
+        _connectionGeneration++;
     }
 
     /// <summary>P671 — (re)arm the native keep-alive thread for this session.
@@ -450,9 +428,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// healthy link is never lost. PERSISTENT: it survives a not-yet-connected
     /// window and a reconnect (skipping ticks while disconnected) so it works for
     /// every connection path, including the MCP harness's direct
-    /// <c>Transport.Join</c>. Exits only on <see cref="StopKeepAlive"/> (dispose)
-    /// or a detected loss; on exit it clears <c>_keepAliveThread</c> so a later
-    /// reconnect can re-arm it.
+    /// <c>Transport.Join</c>. A lost connection is skipped until a new owner
+    /// resets it. Exits only on <see cref="StopKeepAlive"/> (dispose).
     /// </summary>
     private void KeepAliveLoop()
     {
@@ -463,12 +440,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                 if (_keepAliveGate.Wait(KeepAliveIntervalMs)) return;   // stop requested
                 if (Volatile.Read(ref _keepAliveStop) != 0) return;
                 bool lostNow = false;
+                ConnectionOwner? observedOwner;
+                ITransport? observedTransport;
                 lock (_gate)
                 {
-                    if (_lost) return;
+                    if (_lost) continue;
+                    observedOwner = _owner;
+                    observedTransport = _transport;
                     // Skip this tick while not connected (pre-connect window,
                     // between transports during a reconnect, etc.); never exit.
-                    if (_transport is { IsConnected: true })
+                    if (!_disposed && (_owner is null || Owns(_owner)) && _transport is { IsConnected: true })
                     {
                         SendPing();
                         _unansweredPings++;
@@ -478,12 +459,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                             lostNow = true;
                     }
                 }
-                if (lostNow) { RaiseLost(); return; }
+                if (lostNow) RaiseLost(observedOwner, expectedTransport: observedTransport);
             }
         }
         finally
         {
-            _keepAliveThread = null;   // allow re-arm after loss / dispose
+            _keepAliveThread = null;
         }
     }
 
@@ -1254,8 +1235,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         // transport's Send throws "not connected" after its client sender is
         // reaped). Guard every send so no racing control frame from the render
         // thread can crash after a server drop; sends become silent no-ops.
-        if (_lost || _transport?.IsConnected != true) return;
-        _transport.Send(ConnectionId.Server, packet, guaranteed: true);
+        lock (_gate)
+        {
+            if (_disposed || _lost || (_owner is not null && !Owns(_owner)) || _transport?.IsConnected != true) return;
+            _transport.Send(ConnectionId.Server, packet, guaranteed: true);
+        }
     }
 
     // ── ITransportSite (client half: only OnReceive is raised) ─────────────
@@ -1287,22 +1271,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// rule (<c>CheckServerLag</c>, clintlib.cpp:2063-2068). Safe to call from
     /// either the transport receive thread or the keep-alive thread; the first
     /// caller wins and subsequent calls are no-ops.</summary>
-    private void RaiseLost()
+    private void RaiseLost(ConnectionOwner? expectedOwner = null, OwnerSite? expectedSite = null, ITransport? expectedTransport = null)
     {
-        if (_lost) return;
-        // P813c — an unrequested loss with auto-reconnect armed hands off to the
-        // reconnect loop instead of ending the session: the native drop would
-        // have deleted the ship (FedSrv.CPP:4549-4566), but the server's grace
-        // window is holding it for exactly this. If the window elapses without a
-        // validated LOGONACK, the loop calls back here with _reconnecting false
-        // and the session latches lost exactly as before.
-        if (_autoReconnect && !_reconnecting && CanReconnect())
+        Action? notification;
+        lock (_gate)
         {
-            StartReconnectLoop();
-            return;
+            if (_disposed || _lost || _reconnecting) return;
+            if (expectedOwner is not null && (!Owns(expectedOwner)
+                || expectedSite is not null && !ReferenceEquals(expectedOwner.Site, expectedSite))) return;
+            if (expectedTransport is not null && !ReferenceEquals(_transport, expectedTransport)) return;
+            if (_autoReconnect && (_owner is null || _owner.Work.IsCompletedSuccessfully) && CanReconnect())
+            {
+                StartReconnectLoop();
+                return;
+            }
+            _lost = true;
+            notification = SessionLost;
         }
-        _lost = true;
-        SessionLost?.Invoke();
+        notification?.Invoke();
     }
 
     /// <summary>P813c — a fresh 32-bit session nonce (never 0: 0 means "no
@@ -1320,134 +1306,104 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private bool CanReconnect() =>
         !_reconnectExhausted && _resumeHost is { Length: > 0 } && _resumePort != 0 && _resumeName is { Length: > 0 };
 
-    /// <summary>P813c — start the (single) reconnect thread for a lost session.
-    /// </summary>
+    /// <summary>The opt-in resume is another connection owner. Explicit connect
+    /// and teardown cancel and drain it just like an initial join.</summary>
     private void StartReconnectLoop()
     {
         lock (_gate)
         {
-            if (_reconnecting) return;
-            _reconnecting = true;
-            _resumeShipId = _world.MyShipId;   // the seat we are asking the server to give back
+            if (_disposed || _reconnecting) return;
+            _resumeShipId = _world.MyShipId;
+            var work = StartOwned(async owner =>
+            {
+                Console.WriteLine($"[reconnect] session lost — auto-reconnect armed, re-dialing "
+                    + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s (token 0x{_resumeToken:X8})");
+                while (true)
+                {
+                    lock (_gate)
+                    {
+                        RequireOwner(owner);
+                        Interlocked.Increment(ref _resumeAttempts);
+                        ResetConnectionState(preserveMission: true);
+                    }
+                    try
+                    {
+                        await ConnectTransportAsync(owner, _resumeHost!, _resumePort, _resumeName!).ConfigureAwait(false);
+                        lock (_gate)
+                        {
+                            RequireOwner(owner);
+                            var req = _resumeRequest ?? new LogonRequest
+                            {
+                                CharacterName = _resumeName,
+                                FedsrvVer = LogonRequest.MsgVer,
+                                CrcFileList = ClientFileList.Compute(),
+                                ClientVersion = ClientVersion,
+                            };
+                            req.ResumeToken = _resumeToken;
+                            Send(FedPacket.Pack(new[] { req.Encode() }));
+                        }
+                        // Preserve the per-dial ACK retry ceiling inside the overall window.
+                        var until = Environment.TickCount64 + 1500;
+                        LogonAck? ack = null;
+                        while (ack is null && Environment.TickCount64 < until)
+                        {
+                            lock (_gate) { RequireOwner(owner); ack = _ack; }
+                            if (ack is null) await Task.Delay(5, owner.Token).ConfigureAwait(false);
+                        }
+                        if (ack?.FValidated != true)
+                            throw new IOException(ack?.CharNameOrFailureReason ?? "timed out waiting for LOGONACK");
+                        lock (_gate)
+                        {
+                            RequireOwner(owner);
+                            if (_resumeShipId is { } held && ack.ShipID != held)
+                                Interlocked.Increment(ref _resumeShipMismatches);
+                            Interlocked.Increment(ref _resumeSuccesses);
+                            StartKeepAlive();
+                            Console.WriteLine($"[reconnect] session restored after {ResumeAttempts} attempt(s): ship {ack.ShipID}, "
+                                + $"resumeToken=0x{_resumeToken:X8}; join burst re-syncing the world");
+                        }
+                        return true;
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception e)
+                    {
+                        lock (_gate) RequireOwner(owner);
+                        Console.WriteLine($"[reconnect] attempt {ResumeAttempts} failed: {e.GetType().Name}: {e.Message}");
+                        RetireTransport(owner);
+                        await Task.Delay(250, owner.Token).ConfigureAwait(false);
+                    }
+                }
+            }, TimeSpan.FromSeconds(_reconnectWindowSeconds), CancellationToken.None, reconnect: true);
+            // Observe the background result and only latch failure for this owner.
+            var owner = _owner!;
+            _ = CompleteReconnectAsync(owner, work);
         }
-        _reconnectStop = false;
-        var t = new Thread(ReconnectLoop) { IsBackground = true, Name = "session-reconnect" };
-        _reconnectThread = t;
-        Console.WriteLine($"[reconnect] session lost — auto-reconnect armed, re-dialing "
-            + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s (token 0x{_resumeToken:X8})");
-        t.Start();
     }
 
-    /// <summary>P813c — stop an in-flight reconnect loop (explicit Connect / Dispose).</summary>
-    private void StopReconnectLoop()
+    private async Task CompleteReconnectAsync(ConnectionOwner owner, Task work)
     {
-        _reconnectStop = true;
-        var t = _reconnectThread;
-        _reconnectThread = null;
-        if (t is not null && t != Thread.CurrentThread)
-            try { t.Join(1500); } catch { /* best effort */ }
-        _reconnecting = false;
-    }
-
-    /// <summary>
-    /// P813c — the auto-reconnect loop: re-dial, re-send the SAME LOGONREQ with
-    /// the same resume token, and wait for a validated LOGONACK. The world is
-    /// reset before the new socket starts (exactly like <see cref="Connect"/>) so
-    /// the server's native join burst re-populates it from authoritative state —
-    /// the same MISSIONDEF → JOINED_MISSION → PLAYERINFO → CLUSTERINFO/exports →
-    /// SET_CLUSTER sequence a fresh joiner gets (fsmission.cpp:3943-3974,
-    /// 4122-4250). On success the session is live again in the same seat; on
-    /// failure (window elapsed, or every attempt refused) it latches
-    /// <see cref="Lost"/>, i.e. today's behaviour.
-    /// </summary>
-    private void ReconnectLoop()
-    {
-        var deadline = Environment.TickCount64 + (long)(_reconnectWindowSeconds * 1000);
-        bool resumed = false;
-        while (!resumed && Environment.TickCount64 <= deadline && !_reconnectStop)
+        try { await work.ConfigureAwait(false); }
+        catch (Exception)
         {
-            Interlocked.Increment(ref _resumeAttempts);
-            try
+            Action? notification;
+            lock (_gate)
             {
-                var previous = _transport;
-                _transport = null;
-                previous?.Shutdown();
-                lock (_gate)
-                {
-                    // Fresh world: the join burst is the re-sync (native
-                    // JOINED_MISSION → ResetStaticData is the same idea,
-                    // appmsg.cpp:2150-2215).
-                    _ack = null;
-                    _lastPositionRefusal = null;
-                    _lost = false;
-                    // Same mission identity: a resume is not a mission rotation.
-                    _world.ResetPreservingMissionIdentity();
-                    _pingEchoes.Clear();
-                    _connectionGeneration++;
-                }
-
-                ConnectTransport(_resumeHost!, _resumePort, _resumeName!);
-
-                var req = _resumeRequest ?? new LogonRequest
-                {
-                    CharacterName = _resumeName,
-                    FedsrvVer = LogonRequest.MsgVer,
-                    // P871 — a resume reports the same file-set identity as the
-                    // first logon (the running install's manifest CRC).
-                    CrcFileList = ClientFileList.Compute(),
-                    // P894 — and the same client-version extension, so a server's
-                    // minimum-client-version gate answers the resume identically
-                    // (the host sets ClientVersion at startup; null = an older host
-                    // that sends no extension, the pre-P894 message).
-                    ClientVersion = ClientVersion,
-                };
-                req.ResumeToken = _resumeToken;
-                Send(FedPacket.Pack(new[] { req.Encode() }));
-
-                var ack = WaitForAck(1500);
-                if (!ack.FValidated)
-                {
-                    Console.WriteLine($"[reconnect] attempt {ResumeAttempts} refused: {ack.CharNameOrFailureReason}");
-                    continue;
-                }
-
-                // Live again. Report whether the server gave the SAME seat back
-                // (a resume) or a fresh one (window expired / died during the gap).
-                short? held;
-                lock (_gate) held = _resumeShipId;
-                if (held is { } was && ack.ShipID != was)
-                {
-                    Interlocked.Increment(ref _resumeShipMismatches);
-                    Console.WriteLine($"[reconnect] resumed with a NEW ship {ack.ShipID} (held {was}): the grace window "
-                        + "expired or the ship was destroyed during the gap — fresh seat");
-                }
-                Interlocked.Increment(ref _resumeSuccesses);
-                StartKeepAlive();
-                resumed = true;
-                Console.WriteLine($"[reconnect] session restored after {ResumeAttempts} attempt(s): ship {ack.ShipID}, "
-                    + $"resumeToken=0x{_resumeToken:X8}; join burst re-syncing the world");
+                if (_disposed || !ReferenceEquals(_owner, owner) || owner.ExplicitlyCancelled) return;
+                _reconnecting = false;
+                _reconnectExhausted = true;
+                if (_lost) return;
+                _lost = true;
+                notification = SessionLost;
+                Console.WriteLine($"[reconnect] gave up after {ResumeAttempts} attempt(s) inside {_reconnectWindowSeconds:0.##}s — session lost");
             }
-            catch (Exception e)
-            {
-                Console.WriteLine($"[reconnect] attempt {ResumeAttempts} failed: {e.GetType().Name}: {e.Message}");
-                try { _transport?.Shutdown(); } catch { /* best effort */ }
-                _transport = null;
-                Thread.Sleep(250);   // brief back-off; the window is short by design
-            }
+            notification?.Invoke();
         }
-
-        _reconnecting = false;
-        _reconnectThread = null;
-        if (resumed) return;
-        _reconnectExhausted = true;   // latch: do not start a second round from RaiseLost
-        Console.WriteLine($"[reconnect] gave up after {ResumeAttempts} attempt(s) inside {_reconnectWindowSeconds:0.##}s — session lost");
-        RaiseLost();
     }
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
         Recording?.Write(data);
-        if (_lost) return; // a rejected core cannot be followed by a partial join burst
+        if (_disposed || _lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
         Interlocked.Add(ref _decodedBytes, data.Length);
@@ -1766,8 +1722,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(joined);
                         if (_world.JoinError is not null)
                         {
-                            _lost = true;
-                            SessionLost?.Invoke();
+                            EndMissionConnection();
                             return;
                         }
                         break;
@@ -1796,8 +1751,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         if (ownDeparture)
                         {
                             // clintlib.cpp:3805-3848 disconnects on own mission departure.
-                            Shutdown();
-                            RaiseLost();
+                            EndMissionConnection();
                             return; // later messages in this burst belong to the departed mission
                         }
                         break;
@@ -2167,8 +2121,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     }
 
     /// <summary>P671 — stop the keep-alive thread (on dispose). Sets the stop
-    /// flag and wakes the gate so the loop exits within its 6 s wait; joins
-    /// briefly. Does not acquire <c>_gate</c>, so it cannot deadlock against the
+    /// flag and wakes the gate so the loop exits within its 6 s wait, then drains
+    /// the thread. Does not acquire <c>_gate</c>, so it cannot deadlock against the
     /// loop's own locked iteration. Called ONLY from <see cref=\"Dispose\"/>: the
     /// thread is persistent, so a <see cref=\"Shutdown\"/> (used by a reconnect's
     /// old-transport teardown) must NOT stop it.</summary>
@@ -2177,24 +2131,38 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Volatile.Write(ref _keepAliveStop, 1);
         _keepAliveGate.Set();
         var t = _keepAliveThread;
+        if (t is not null && t != Thread.CurrentThread) t.Join();
         _keepAliveThread = null;
-        try { t?.Join(1000); } catch { /* best effort */ }
     }
 
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.
     /// P813c — an explicit shutdown also cancels any in-flight reconnect: a
     /// caller that deliberately closes the session must never be re-dialed.</summary>
-    public void Shutdown()
-    {
-        StopReconnectLoop();
-        _transport?.Shutdown();
-    }
+    public void Shutdown() => ShutdownAsync().GetAwaiter().GetResult();
 
     public void Dispose()
     {
-        StopReconnectLoop();
-        StopKeepAlive();
-        Shutdown();
-        lock (_gate) _world.ReleaseBotView();
+        TaskCompletionSource completion;
+        bool dispose;
+        lock (_gate)
+        {
+            dispose = _disposeCompletion is null;
+            completion = _disposeCompletion ??= new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _disposed = true;
+        }
+        if (!dispose) { completion.Task.GetAwaiter().GetResult(); return; }
+        try
+        {
+            Shutdown();
+            StopKeepAlive();
+            lock (_gate)
+            {
+                _owner?.Cancellation.Dispose();
+                _owner = null;
+                _world.ReleaseBotView();
+            }
+            completion.SetResult();
+        }
+        catch (Exception ex) { completion.SetException(ex); throw; }
     }
 }

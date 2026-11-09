@@ -709,6 +709,23 @@ list in **reverse**.
   `docs/reports/P813C_RECONNECT_GRACE.md`. Client opt-in:
   `$ALLEGIANCE_RECONNECT_GRACE_SECONDS`.
 
+- **Client connection ownership (P974)** — explicit connect, initial join and
+  reconnect share a cancellable owner in
+  `src/Allegiance.ClientCore/Session/ConnectionSession.Ownership.cs`. A successor
+  drains the previous operation and socket before resetting the world; transport
+  callbacks check their owner and individual dial. Terminal disposal rejects new
+  connections; receive-initiated departure returns before teardown joins the read
+  thread and notifies loss. `src/Allegiance.ClientCore.Game/Game1.Session.cs` polls one
+  asynchronous join with a 15-second overall deadline and Escape cancellation in
+  both HUD styles. TCP establishment has a cancellable ten-second ceiling in
+  `src/Allegiance.Core/Transport/TcpTransport.cs`; UDP/fallback/traversal propagate
+  cancellation too. Native retry clears the preceding connection
+  (`clintlib/clintlib.cpp:1298-1306`); task ownership is a modern safeguard.
+  Proof: `tests/Allegiance.ClientCore.Tests/P974SessionOwnershipTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P974ConnectingUiTests.cs`,
+  `tools/p974-session-proof/`; report:
+  `docs/reports/CLIENT_SESSION_OWNERSHIP_P974.md`.
+
 - **Trap-hack operator events (P855/SIM-0809)** — every message-validation
   failure that stands in for a native `TrapHack*` check emits one structured
   operator-log line (kind log/boot/boot-no-player, failed check text, native

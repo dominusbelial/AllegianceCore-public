@@ -4,6 +4,55 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P974 qualification — client ownership, 2026-11-09 UTC
+
+The targeted P813c family passed twice, then two existing ACK-receipt assertions
+failed in its third run: `Name_collision_keeps_the_seat_parked_and_the_original_resumes`
+read ship ID 0 instead of 8098, and
+`Wrong_token_refuses_only_the_claimant_and_the_original_resumes` read a null ACK.
+Both fixtures wait for the server's `ReconnectResumedTotal` and immediately inspect
+the client's ACK (`P813cReconnectGraceTests.cs:471-473,541-543`); that server-side
+counter can precede delivery on the receive thread. Each method then passed
+**3/3 alone (1 passed / 0 failed / 0 skipped per run)**. No server/reconnect-grace
+rule changed. Raw evidence: `.scratch/p974/evidence/repeat-final/` and
+`.scratch/p974/evidence/flakes/`; final qualification is recorded in
+[the P974 report](reports/CLIENT_SESSION_OWNERSHIP_P974.md).
+
+
+The completed Fast gate has **13,635 passed / 3 failed / 3 skipped** across
+13,641 executions (964.5 s, one project at a time). The three skips are the
+optional private Meshy pack. The default shared lock blocked the bounded queued
+attempts; the completed gate used the runner's task-local lock override.
+
+| Completed Fast failure/timing family | Three isolated runs (passed/failed/skipped) | Classification |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0/3/0**, same ~38 s timeout | Existing missing partial-tip receipt; the P966 entry below includes a failing clean-base control. It also accounts for the 38.468 s slow-Fast execution. |
+| `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | **3/0/0** | Existing quit-receipt race (`Assert.Contains` over an empty list), already recorded in this ledger. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **2/1/0**; isolated failure 31.60 s, sweep 31.75 s, fixture range [28,31] | Existing server-deadline/client-receipt clock boundary; P966 has clean-base controls. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (assertions passed; sweep 11.264 s > 10 s) | **3/0/0**, 9.394/9.424/9.452 s | Existing timing family, also recorded by P966. |
+
+An earlier, incomplete sweep saw
+`Hud12bReviewFixTests.Chat_line_truncation_matches_the_native_clip_and_is_cached_per_source_and_width`
+allocate 6,072 B; it then passed **3/3 alone** and passed in the completed sweep.
+Temporary-path fixture failures were environmental: scratch beneath this checkout
+let `PlayerBundlePathsTests` discover the checkout's `local.env`. A directory-FD
+alias preserves logically outside-repository paths with all physical writes still
+inside workspace scratch; all nine fixture cases pass **3/3 (27/0/0)**. A writable
+scratch XDG profile also resolves the earlier read-only default-profile failure.
+
+The supplementary training-window attempt reproduced the already-recorded P945
+`P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(Classic, reminders)`
+failure. It then reproduced **0/3/0 alone**, about nine minutes each: the actual
+lesson docks and completes, but the proof's five-entry prompt snapshot rejects a
+repeated booster prompt. Training scripts, host, input and proof source are
+unchanged. This is a known pre-existing reminder-proof mismatch; no complete
+training-window gate is claimed for P974. The client-core training filter passed
+126/0/0. Raw training follow-ups are in `.scratch/p974/evidence/training-flakes/`.
+
+All **22 new P974 cases pass 3/3 (66/0/0)**, updated transport/lobby reflection
+callers pass **150/0/0**, and the final departure/ownership/reconnect group passes
+**90/0/0**. Showcase never-parks is **5/0/0** on both the base and changed tree.
+
 ## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
 
 One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map
