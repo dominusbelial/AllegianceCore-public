@@ -1,0 +1,73 @@
+[
+  {
+    "inputs": {
+      "budget": 9.223372036854776E+18,
+      "civId": 1,
+      "dockTypeId": 315,
+      "role": 0
+    },
+    "outputs": {
+      "hullId": null,
+      "hullName": null,
+      "parts": null,
+      "price": null
+    },
+    "name": "fighter-default"
+  },
+  {
+    "inputs": {
+      "civId": 1,
+      "dockTypeId": 315,
+      "role": 2
+    },
+    "outputs": {
+      "hasCloak": null,
+      "hullId": null,
+      "hullName": null
+    },
+    "name": "scout-prefers-cloak"
+  },
+  {
+    "inputs": {
+      "civId": 1,
+      "dockTypeId": 315,
+      "role": 3,
+      "targetStationTypeId": 315
+    },
+    "outputs": {
+      "hullId": null,
+      "hullName": null,
+      "parts": null,
+      "price": null
+    },
+    "name": "bomber-strike-loadout"
+  },
+  {
+    "inputs": {
+      "budget": 9.223372036854776E+18,
+      "civId": 1,
+      "dockTypeId": 315
+    },
+    "outputs": {
+      "hullId": null,
+      "hullName": null,
+      "parts": null,
+      "price": null
+    },
+    "name": "support-nanite"
+  },
+  {
+    "inputs": {
+      "civId": 1,
+      "dockTypeId": 315,
+      "rescueProbe": true,
+      "role": 2
+    },
+    "outputs": {
+      "hasRescueProbe": null,
+      "hullId": null,
+      "hullName": null
+    },
+    "name": "rescue-probe-scout"
+  }
+]

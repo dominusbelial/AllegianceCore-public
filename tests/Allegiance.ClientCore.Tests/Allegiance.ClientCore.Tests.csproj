@@ -25,6 +25,9 @@
     <Compile Include="../../tools/p925-home-geometry/PodReplay.cs" Link="_shared/P925PodReplay.cs" />
     <Compile Include="../../tools/p925-home-geometry/FixtureMap.cs" Link="_shared/P925FixtureMap.cs" />
     <EmbeddedResource Include="Fixtures/P925Pods.json" />
+    <Content Include="GoldenCorpus/BotDecisions/*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
     <Compile Include="../_shared/P911ArenaFiringRange.cs" Link="_shared/P911ArenaFiringRange.cs" />

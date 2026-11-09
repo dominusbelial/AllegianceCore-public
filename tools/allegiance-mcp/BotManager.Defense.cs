@@ -139,8 +139,9 @@ internal sealed partial class BotManager
             if (incident.Assigned) continue; // repeated alerts extend this deployment, never recruit a new wing
             var side = bots.Where(b => DefenseAvailable(b) && DefenseKeyFor(b, key.Sector) == key).ToArray();
             if (side.Length == 0) continue; // world/objective sync can finish after the alert
-            int budget = DefenseBudgetFor(side.Length, side.Count(b => b.DefenseSector is not null),
-                DefenseConfig.Cap, DefenseConfig.Share);
+            int assigned = side.Count(b => b.DefenseSector is not null);
+            int budget = DefenseBudgetFor(side.Length, assigned, DefenseConfig.Cap, DefenseConfig.Share);
+            RecordDefenseBudget(key, side.Length, assigned, budget);
             var ranked = side.Where(b => b.DefenseSector is null && IsDefenseFighter(b))
                 .Select(b => (Bot: b, Distance: DefenseDistance(b, key.Sector)))
                 .Where(b => b.Distance.Hops >= 0)
@@ -167,6 +168,24 @@ internal sealed partial class BotManager
         if (Partition is not null) _localThreats[key] = Math.Max(_localThreats.GetValueOrDefault(key, double.NegativeInfinity), now);
         if (!DefenseIncidents.TryGetValue(key, out var incident)) DefenseIncidents[key] = new(now);
         else incident.LastThreat = Math.Max(incident.LastThreat, now);
+    }
+
+    private void RecordDefenseBudget(DefenseKey key, int population, int alreadyAssigned, int budget)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record("Defense", "Budget",
+            new
+            {
+                cookie = key.Cookie,
+                generation = key.Generation,
+                side = key.Side,
+                sector = key.Sector,
+                population,
+                alreadyAssigned,
+                cap = DefenseConfig.Cap,
+                share = DefenseConfig.Share,
+            },
+            new { budget });
     }
 
     private static (int Hops, float Local) DefenseDistance(ActiveBot bot, short sector)

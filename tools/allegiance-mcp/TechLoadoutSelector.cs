@@ -46,9 +46,12 @@ internal static class TechLoadoutSelector
         StrikeHullPref strikePref = StrikeHullPref.Best, bool boarding = false, bool alephFieldMines = false)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
-        return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
+        var result = Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
             target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref, boarding: boarding,
             alephFieldMines: alephFieldMines);
+        RecordLoadout("Loadout", "Select", core, civId, role, techs, dockTypeId, target, budget,
+            preferMines, rescueProbe, strikePref, boarding, alephFieldMines, result);
+        return result;
     }
 
     /// <summary>P877 — the FIELD-GRADE mine launcher part a side can actually
@@ -762,6 +765,38 @@ internal static class TechLoadoutSelector
         if (frontier.Any(s => Dominates(s, candidate))) return;
         frontier.RemoveAll(s => Dominates(candidate, s));
         frontier.Add(candidate);
+    }
+
+    private static void RecordLoadout(string family, string decision, StaticCore core, short civId,
+        Showcase.HullRole role, TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target,
+        long budget, bool preferMines, bool rescueProbe, StrikeHullPref strikePref, bool boarding,
+        bool alephFieldMines, Selection? result)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record(family, decision,
+            new
+            {
+                civId,
+                role,
+                techBits = techs.PopCount,
+                dockTypeId,
+                targetStationTypeId = target?.StationTypeId,
+                budget,
+                preferMines,
+                rescueProbe,
+                strikePref,
+                boarding,
+                alephFieldMines,
+            },
+            new
+            {
+                hullId = result?.HullId,
+                hullName = result?.HullName,
+                price = result?.Price,
+                partCount = result?.Parts.Count,
+                parts = result?.Parts.Select(p => new { p.PartId, p.Amount, p.MountId }).ToArray(),
+                reason = result?.Reason,
+            });
     }
 
 }

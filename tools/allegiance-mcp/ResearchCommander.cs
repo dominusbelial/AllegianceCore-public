@@ -269,7 +269,35 @@ internal sealed partial class ResearchCommander
             progress = 1;
         }
         Publish(world, step, work, prefix + status, progress, eta, displayedStep);
+        RecordResearchCommand(world, step, status, commands);
         return commands;
+    }
+
+    private void RecordResearchCommand(Snapshot world, ResearchStep? step, string status, List<Command> commands)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record("ResearchCommander", "TickPlan",
+            new
+            {
+                side = Side,
+                epoch = Epoch,
+                plan = _plan.Name,
+                stepIndex = _index,
+                stepAction = step?.Action,
+                stepId = step?.Id,
+                time = world.Time,
+                started = world.Started,
+                wallet = world.Wallet,
+                stationCount = world.Stations.Length,
+                developmentBits = world.Developments.PopCount,
+                completedTechCount = world.CompletedDevelopments.Count,
+            },
+            new
+            {
+                status,
+                commandCount = commands.Count,
+                commands = commands.Select(c => new { c.Kind, c.Id, c.Amount, c.Target, c.Text }).ToArray(),
+            });
     }
 
     private void Announce(List<Command> commands, string text)

@@ -1,0 +1,128 @@
+[
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "botId": 1,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 1
+        },
+        {
+          "botId": 2,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 2
+        },
+        {
+          "botId": 3,
+          "canBuyRescueProbe": true,
+          "role": "fighter",
+          "side": 1
+        }
+      ]
+    },
+    "outputs": {
+      "chosen": [
+        1,
+        2
+      ]
+    },
+    "name": "two-side-one-each"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "botId": 1,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 1
+        },
+        {
+          "botId": 2,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 1
+        },
+        {
+          "botId": 3,
+          "canBuyRescueProbe": false,
+          "role": "scout",
+          "side": 2
+        },
+        {
+          "botId": 4,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 3
+        },
+        {
+          "botId": 5,
+          "canBuyRescueProbe": true,
+          "role": "scout",
+          "side": 3
+        }
+      ]
+    },
+    "outputs": {
+      "chosen": [
+        1,
+        4
+      ]
+    },
+    "name": "three-side-mixed-roles"
+  },
+  {
+    "inputs": {
+      "candidates": [
+        {
+          "botId": 1,
+          "canBuyRescueProbe": true,
+          "role": "fighter",
+          "side": 1
+        },
+        {
+          "botId": 2,
+          "canBuyRescueProbe": true,
+          "role": "bomber",
+          "side": 2
+        }
+      ]
+    },
+    "outputs": {
+      "chosen": []
+    },
+    "name": "no-scouts"
+  },
+  {
+    "inputs": {
+      "lastRescueProbeAt": 0,
+      "loadTime": 10,
+      "now": 100,
+      "ownPodsInSector": 3,
+      "ownRescueProbeNearby": false,
+      "ownStationInSector": false,
+      "recentOwnEjects": 0
+    },
+    "outputs": {
+      "drop": true
+    },
+    "name": "drop-gate-yes"
+  },
+  {
+    "inputs": {
+      "lastRescueProbeAt": 0,
+      "loadTime": 10,
+      "now": 100,
+      "ownPodsInSector": 3,
+      "ownRescueProbeNearby": true,
+      "ownStationInSector": false,
+      "recentOwnEjects": 0
+    },
+    "outputs": {
+      "drop": false
+    },
+    "name": "drop-gate-no-probe-nearby"
+  }
+]

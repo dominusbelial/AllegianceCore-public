@@ -1,0 +1,57 @@
+[
+  {
+    "inputs": {
+      "plan": "p986",
+      "side": 0,
+      "started": false,
+      "wallet": 1000000
+    },
+    "outputs": {
+      "commandCount": 0,
+      "status": "waiting for mission start"
+    },
+    "name": "waiting-for-start"
+  },
+  {
+    "inputs": {
+      "plan": "p986",
+      "side": 0,
+      "started": true,
+      "wallet": 7
+    },
+    "outputs": {
+      "commandCount": 2,
+      "firstAmount": 0,
+      "firstKind": "chat",
+      "status": "funding"
+    },
+    "name": "first-donation"
+  },
+  {
+    "inputs": {
+      "plan": "p986",
+      "side": 0,
+      "started": true,
+      "wallet": 0
+    },
+    "outputs": {
+      "commandCount": 0,
+      "status": "waiting for money"
+    },
+    "name": "insufficient-wallet"
+  },
+  {
+    "inputs": {
+      "plan": "p986",
+      "side": 0,
+      "unitCount": 4,
+      "wallet": 1000000
+    },
+    "outputs": {
+      "action": "develop",
+      "commandCount": 1,
+      "status": "funding"
+    },
+    "name": "drone-cap-blocks"
+  }
+]

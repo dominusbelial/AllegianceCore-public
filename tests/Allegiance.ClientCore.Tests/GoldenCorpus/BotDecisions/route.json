@@ -1,0 +1,52 @@
+[
+  {
+    "inputs": {
+      "fromCluster": 1,
+      "maxRoutes": 4,
+      "toCluster": 3,
+      "warpCount": 8
+    },
+    "outputs": {
+      "routeCount": 2,
+      "routes": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          4,
+          3
+        ]
+      ]
+    },
+    "name": "distinct-entry-routes"
+  },
+  {
+    "inputs": {
+      "counts": [
+        5,
+        2,
+        8
+      ]
+    },
+    "outputs": {
+      "pick": 1
+    },
+    "name": "pick-least-loaded-route"
+  },
+  {
+    "inputs": {
+      "counts": [
+        2,
+        1,
+        1
+      ]
+    },
+    "outputs": {
+      "pick": 1
+    },
+    "name": "tied-least-loaded-goes-to-lowest-index"
+  }
+]
