@@ -128,18 +128,36 @@ public sealed class P813cReconnectClientTests
             missionGeneration = session.World.MissionGeneration;
         }
         Assert.True(session.AutoReconnect);
+        uint resumeToken = session.ResumeToken;
 
-        // A network blip: both sockets die abruptly, the proxy keeps listening.
-        proxy.DropConnections();
-        int resumed = PumpUntil(server, () =>
-            session.ResumeSuccesses > 0 && !session.Reconnecting
-            && (session.Connected || server.Ships.Any(s => s.Ship.Id == myShip)), 4000);
-
-        // Wait for the burst to land and re-establish MyShipId in the fresh world.
-        int resynced = PumpUntil(server, () =>
+        // P977 (P971-07): capture the exact console stream which CrashLog tees
+        // to client.log and its crash ring through a REAL park + resume. The
+        // bearer token must never occur in any common rendering; only the same
+        // short non-reversible tag emitted by Server.ReconnectGrace may remain.
+        var savedOut = Console.Out;
+        using var reconnectLog = new StringWriter();
+        Console.SetOut(TextWriter.Synchronized(reconnectLog));
+        int resumed;
+        int resynced;
+        try
         {
-            lock (session.Gate) return session.World.MyShipId == myShip && session.World.MySideId == mySide;
-        }, 6000);
+            // A network blip: both sockets die abruptly, the proxy keeps listening.
+            proxy.DropConnections();
+            resumed = PumpUntil(server, () =>
+                session.ResumeSuccesses > 0 && !session.Reconnecting
+                && (session.Connected || server.Ships.Any(s => s.Ship.Id == myShip)), 4000);
+
+            // Wait for the burst to land and re-establish MyShipId in the fresh world.
+            resynced = PumpUntil(server, () =>
+            {
+                lock (session.Gate) return session.World.MyShipId == myShip && session.World.MySideId == mySide;
+            }, 6000);
+        }
+        finally { Console.SetOut(savedOut); }
+        string persistedClientLog = reconnectLog.ToString();
+        Assert.DoesNotContain($"0x{resumeToken:X8}", persistedClientLog, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(resumeToken.ToString(), persistedClientLog, StringComparison.Ordinal);
+        Assert.Contains($"tag {ExpectedTokenTag(resumeToken):X4}", persistedClientLog, StringComparison.Ordinal);
         Assert.True(resumed < 4000, "the client never re-dialed/resumed");
         Assert.True(resynced < 6000, "the join burst did not re-establish the same ship/seat in the client world");
         Assert.False(session.Lost, "a resumed session must not latch Lost");
@@ -158,6 +176,16 @@ public sealed class P813cReconnectClientTests
         }
         Console.WriteLine($"P813C-CLIENT: ship {myShip} side {mySide} resumed after a real socket drop " +
                           $"(attempts={session.ResumeAttempts}, serverResumed={server.ReconnectResumedTotal})");
+    }
+
+    private static ushort ExpectedTokenTag(uint token)
+    {
+        // Independent copy of Server.ReconnectGrace.TokenTag's documented FNV
+        // + avalanche algorithm: the client/server lines must correlate exactly.
+        uint h = 0x811C9DC5u;
+        for (int i = 0; i < 4; i++) { h ^= token & 0xFFu; h *= 0x01000193u; token >>= 8; }
+        h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15;
+        return (ushort)(h & 0xFFFFu);
     }
 
     /// <summary>

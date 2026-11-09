@@ -1315,6 +1315,18 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         return token;
     }
 
+    /// <summary>P977 (P971-07) — the same short NON-REVERSIBLE correlation tag
+    /// as <c>Server.ReconnectGrace.TokenTag</c>. Never print the bearer token:
+    /// console output is persisted in client.log and copied into crash reports.
+    /// FNV-1a over the four bytes plus the server's avalanche; retain 16 bits.</summary>
+    private static string TokenTag(uint token)
+    {
+        uint h = 0x811C9DC5u;
+        for (int i = 0; i < 4; i++) { h ^= token & 0xFFu; h *= 0x01000193u; token >>= 8; }
+        h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15;
+        return $"tag {h & 0xFFFFu:X4}";
+    }
+
     /// <summary>P813c — the reconnect loop can only run when it knows where to
     /// dial and what to ask for.</summary>
     private bool CanReconnect() =>
@@ -1334,7 +1346,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         var t = new Thread(ReconnectLoop) { IsBackground = true, Name = "session-reconnect" };
         _reconnectThread = t;
         Console.WriteLine($"[reconnect] session lost — auto-reconnect armed, re-dialing "
-            + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s (token 0x{_resumeToken:X8})");
+            + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s ({TokenTag(_resumeToken)})");
         t.Start();
     }
 
@@ -1425,7 +1437,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                 StartKeepAlive();
                 resumed = true;
                 Console.WriteLine($"[reconnect] session restored after {ResumeAttempts} attempt(s): ship {ack.ShipID}, "
-                    + $"resumeToken=0x{_resumeToken:X8}; join burst re-syncing the world");
+                    + $"{TokenTag(_resumeToken)}; join burst re-syncing the world");
             }
             catch (Exception e)
             {

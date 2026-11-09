@@ -4,6 +4,34 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P977 qualification — eject targeting/log redaction, 2026-11-09 UTC
+
+One complete Fast invocation (`TestResults/tiers-20261109T082904.709886Z/`):
+**13,624 passed / 5 failed / 3 skipped** out of 13,632 cases (the skips are the
+optional absent Meshy pack); nine infrastructure checks passed. One failure was
+P540's outdated expectation that an enemy RescueAny probe is ignored, directly
+contrary to the native rule P977 adds. Its test now expects the nearest RescueAny
+probe regardless of side and passes **3/3** (`EjectRescueTargetTests`, four cases
+per run). The other four failures received three isolated exact-method runs:
+
+| Sweep failure | Three isolated runs | Disposition |
+|---|---|---|
+| `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` (1,208 B over 10,000 frames in the sweep) | **pass / pass / pass**, 15 ms each | Existing load-sensitive allocation measurement; no HUD code changed. |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` (54.167 s sweep timeout; also SLOW FAST) | **pass / pass / pass**, 3–4 s each | Existing miner receipt/timing family; no NPC/miner/sim code changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (32.35 s against [28,31]) | **fail / fail / fail**, same 32.x boundary signature | Already-ledgered auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967 entries); still failing alone and not cleared by P977. No side-select/auto-seat code changed. |
+| `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` (missing kill receipt in the sweep) | **pass / pass / pass**, 0.4–0.5 s each | Load-sensitive kill receipt; no combat/projectile code changed. |
+
+The sweep's other SLOW FAST entries were P750 native asteroid types (11.706 s),
+P942 research ordering (10.662 s), and P777 warp-exit timing (10.522 s), all
+assertion-passing known timing families.
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
+five isolated runs after the allied bay-approach change: **5 pass / 0 fail /
+0 skipped**, matching P961's recorded unchanged-base 5/5 rate. Runs took
+168.5/466.9/151.8/172.4/169.4 s, each reached 24/30 with real combat, and the
+longest speed-below-one intervals with a target were
+2.004/1.812/2.007/2.205/1.905 s. No parking-bound failure occurred.
+
 ## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
 
 One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map

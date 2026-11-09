@@ -22,21 +22,24 @@ public sealed partial class Game1
     private const short RescueStationMask =
         DataStationTypeIGC.SabmRescue | DataStationTypeIGC.SabmRescueAny | DataStationTypeIGC.SabmLand;
 
-    /// <summary>The eject-target capability mask for a PROBE, mirroring the
-    /// expendable twin <c>c_eabmRescue | c_eabmRescueAny</c> (igc.h:781-782 —
-    /// both aliases of <c>c_sabmRescue</c>/<c>c_sabmRescueAny</c>), the probe
-    /// rescue bits a lifepod can drift into and be rescued by.</summary>
-    private const short RescueProbeMask =
-        DataStationTypeIGC.SabmRescue | DataStationTypeIGC.SabmRescueAny;
+    /// <summary>The eject-target capability mask for a PROBE. Native passes
+    /// the SAME station mask to <c>HasCapability</c> for probes
+    /// (Igc/common.cpp:329-333), so this also retains the Land bit's
+    /// <c>c_eabmShootStations</c> alias. A friendly probe with any requested
+    /// bit qualifies; RescueAny additionally bypasses the side gate
+    /// (Igc/common.cpp:282-286).</summary>
+    private const short RescueProbeMask = RescueStationMask;
 
     /// <summary>
-    /// P540 — choose the eject autopilot's target: the nearest FRIENDLY station
-    /// or probe, in ANY cluster, whose capabilities include rescue/land
-    /// (native's <c>FindTarget(pShip, c_ttStation | c_ttFriendly | c_ttAnyCluster |
-    /// c_ttProbe, …, c_sabmRescue | c_sabmRescueAny | c_sabmLand)</c>,
-    /// appmsg.cpp:233). Enemies and non-rescue-capable stations are ignored;
-    /// distance is measured from the eject position. PURE and STATIC so the
-    /// target pick is unit-testable headlessly. (Native also passes the current
+    /// P540/P977 — choose the eject autopilot's target from own/allied
+    /// stations and probes, plus RescueAny probes of ANY side, using native's
+    /// <c>FindTarget(pShip, c_ttStation | c_ttFriendly | c_ttAnyCluster |
+    /// c_ttProbe, …, c_sabmRescue | c_sabmRescueAny | c_sabmLand)</c>
+    /// (appmsg.cpp:233; ally mode 1 at Igc/igc.h:4628-4644). The current
+    /// cluster's strict nearest target wins; otherwise known warps are searched
+    /// breadth-first and each remote cluster measures from its entry warp
+    /// (Igc/common.cpp:648-729). PURE and STATIC for headless tests. (Native
+    /// also passes the current
     /// command target as a tie-break preference — this client has no
     /// command-console / command-target concept, verified in P417's writeup, so
     /// that parameter has no equivalent here.)
@@ -54,39 +57,81 @@ public sealed partial class Game1
 
     internal static AutopilotTarget? ChooseEjectRescueTarget(
         ClientWorld world, short mySideId, SimVec fromPos,
-        Func<short, short> stationSabm, Func<short, short> probeEabm)
+        Func<short, short> stationSabm, Func<short, short> probeEabm,
+        short? fromClusterId = null)
     {
-        AutopilotTarget? best = null;
-        float bestDistSq = float.MaxValue;
+        bool Friendly(short side) => side == mySideId || world.AreAllied(mySideId, side);
 
-        // Stations — friendly + rescue/land-capable, any cluster (world.Stations
-        // spans every known sector).
-        foreach (var st in world.Stations.Values)
+        // FindableModel (Igc/common.cpp:254-342): own/allied stations and
+        // probes are c_ttFriendly in ally mode 1. ONLY a RescueAny probe can
+        // bypass that side gate; HasCapability is an ANY-bit test.
+        AutopilotTarget? Nearest(short? clusterId, SimVec origin)
         {
-            if (st.SideId != mySideId) continue;                                   // c_ttFriendly
-            if ((stationSabm(st.StationTypeId) & RescueStationMask) == 0) continue;
-            float d = DistSq(fromPos, st.Position[0], st.Position[1], st.Position[2]);
-            if (d < bestDistSq)
+            AutopilotTarget? best = null;
+            float bestDistSq = float.MaxValue;
+            foreach (var st in world.Stations.Values)
             {
-                bestDistSq = d;
-                best = new AutopilotTarget(TargetKind.Station, st.StationId, st.Name);
+                if (clusterId is { } cid && st.ClusterId != cid) continue;
+                if (!Friendly(st.SideId)) continue;
+                if ((stationSabm(st.StationTypeId) & RescueStationMask) == 0) continue;
+                float d = DistSq(origin, st.Position[0], st.Position[1], st.Position[2]);
+                if (d < bestDistSq)
+                {
+                    bestDistSq = d;
+                    best = new AutopilotTarget(TargetKind.Station, st.StationId, st.Name);
+                }
             }
+            foreach (var pb in world.Probes.Values)
+            {
+                if (clusterId is { } cid && pb.ClusterId != cid) continue;
+                short abilities = probeEabm(pb.ProbetypeId);
+                bool rescueAny = (abilities & DataStationTypeIGC.SabmRescueAny) != 0;
+                if (!rescueAny && !Friendly(pb.SideId)) continue;
+                if ((abilities & RescueProbeMask) == 0) continue;
+                float d = DistSq(origin, pb.Position.X, pb.Position.Y, pb.Position.Z);
+                if (d < bestDistSq)
+                {
+                    bestDistSq = d;
+                    best = new AutopilotTarget(TargetKind.Probe, pb.ProbeId, $"probe {pb.ProbeId}");
+                }
+            }
+            return best;
         }
 
-        // Probes — friendly + rescue-capable, any cluster.
-        foreach (var pb in world.Probes.Values)
+        // Headless callers which predate cluster context retain the original
+        // all-known-target nearest query. The real EJECT path always supplies
+        // its cluster and therefore takes native's ordered search below.
+        if (fromClusterId is not { } startCluster)
+            return Nearest(null, fromPos);
+
+        // common.cpp:648-655: ANY current-cluster match ends the search. Raw
+        // coordinates in different sectors are not globally comparable.
+        if (Nearest(startCluster, fromPos) is { } local)
+            return local;
+
+        // common.cpp:658-729: walk the known warp graph breadth-first. The
+        // first remote cluster with a match wins; candidates there are nearest
+        // to the DESTINATION (entry) warp mouth, not to the eject position.
+        var visited = new HashSet<short> { startCluster };
+        var queue = new Queue<short>();
+        queue.Enqueue(startCluster);
+        while (queue.Count > 0)
         {
-            if (pb.SideId != mySideId) continue;                                   // c_ttFriendly
-            if ((probeEabm(pb.ProbetypeId) & RescueProbeMask) == 0) continue;
-            float d = DistSq(fromPos, pb.Position.X, pb.Position.Y, pb.Position.Z);
-            if (d < bestDistSq)
+            short cluster = queue.Dequeue();
+            foreach (var warp in world.Warps.Values)
             {
-                bestDistSq = d;
-                best = new AutopilotTarget(TargetKind.Probe, pb.ProbeId, $"probe {pb.ProbeId}");
+                if (warp.ClusterId != cluster) continue;
+                if (!world.Warps.TryGetValue(warp.DestinationId, out var destination)) continue;
+                if (destination.ClusterId == cluster || visited.Contains(destination.ClusterId)) continue;
+                if (destination.Position is not { Length: 3 } p) continue;
+                visited.Add(destination.ClusterId);
+                SimVec entry = new(p[0], p[1], p[2]);
+                if (Nearest(destination.ClusterId, entry) is { } remote)
+                    return remote;
+                queue.Enqueue(destination.ClusterId);
             }
         }
-
-        return best;
+        return null;
     }
 
     private static float DistSq(SimVec p, float x, float y, float z)
@@ -118,7 +163,7 @@ public sealed partial class Game1
 
         var fromPos = up.Position;
         var target = ChooseEjectRescueTarget(world, world.MySideId ?? -1, fromPos,
-            StationSabm, ProbeEabm);
+            StationSabm, ProbeEabm, mine.SectorId);
 
         if (target is { } t)
         {

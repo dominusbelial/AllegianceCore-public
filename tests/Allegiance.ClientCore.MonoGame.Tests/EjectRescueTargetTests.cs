@@ -11,8 +11,9 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// (<see cref="Game1.ChooseEjectRescueTarget"/>), the pure mirror of native's
 /// <c>FindTarget(pShip, c_ttStation | c_ttFriendly | c_ttAnyCluster | c_ttProbe,
 /// …, c_sabmRescue | c_sabmRescueAny | c_sabmLand)</c> (appmsg.cpp:233):
-/// nearest FRIENDLY station or probe, in ANY cluster, carrying rescue/land
-/// capability — enemy and non-rescue objects ignored.
+/// nearest friendly station or probe, in ANY cluster, carrying rescue/land
+/// capability. Enemy stations and ordinary enemy probes are ignored; P977's
+/// native RescueAny-probe exception is explicitly side-independent.
 /// </summary>
 public class EjectRescueTargetTests
 {
@@ -103,18 +104,19 @@ public class EjectRescueTargetTests
     }
 
     [Fact]
-    public void CanPick_A_FriendlyRescueProbe_AsNearest()
+    public void CanPick_A_RescueAnyProbe_RegardlessOfSide_AsNearest()
     {
         var w = new ClientWorld();
         AddStation(w, Station(30, MySide, RescueType, new[] { 500f, 0f, 0f }));    // friendly station, far
         AddProbe(w, 1, MySide, ProbeRescueType, new SimVec(10f, 0f, 0f));          // friendly rescue probe, near
-        AddProbe(w, 2, EnemySide, ProbeRescueType, new SimVec(1f, 0f, 0f));        // enemy probe — ignored
+        // RescueAny qualifies for ANY side (P977) and is nearest.
+        AddProbe(w, 2, EnemySide, ProbeRescueType, new SimVec(1f, 0f, 0f));
         AddProbe(w, 3, MySide, ProbePlainType, new SimVec(3f, 0f, 0f));            // friendly, no rescue — ignored
 
         var pick = Game1.ChooseEjectRescueTarget(w, MySide, new SimVec(0, 0, 0), StationSabm, ProbeEabm);
         if (pick is not { } p) throw new InvalidOperationException("expected a rescue probe target");
 
         Assert.Equal(Game1.TargetKind.Probe, p.Kind);
-        Assert.Equal((short)1, p.Id);
+        Assert.Equal((short)2, p.Id);
     }
 }
