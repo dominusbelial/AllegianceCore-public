@@ -79,7 +79,13 @@ internal sealed partial class BotManager
                         // intel scan and SideIntelReport take them in the other order).
                         uint intelCookie;
                         lock (peer.Gate) intelCookie = CookieOf(peer);
-                        var recordedRocks = _intel.Read(intelCookie, side, intel => intel.Rocks.Keys.ToHashSet());
+                        // A side the intel scan has never sampled (no participating bot, e.g. a
+                        // commander-only fixture) has no knowledge record: fall back to the peer's
+                        // world instead of filtering every rock out (an empty record is not "saw none").
+                        IReadOnlySet<short>? recordedRocks;
+                        lock (_intel.Sync)
+                            recordedRocks = _intel.Find(intelCookie, side) is { KnownSectors.Count: > 0 } intel
+                                ? intel.Rocks.Keys.ToHashSet() : null;
                         lock (peer.Gate)
                         {
                             var briefing = peer.World.ResearchBriefing;
