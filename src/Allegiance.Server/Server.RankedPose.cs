@@ -125,7 +125,15 @@ public sealed partial class Server
         if (lightBytes is not null) lightBytes.CopyTo(bytes.Slice(length));
         int packetLength = length + (lightBytes?.Length ?? 0);
         packet.Seal(packetLength);
-        SendPeerCoalescing(peer.Key, packet, CoalesceShipsUpdate);
+        SendPeerCoalescing(peer.Key, packet, CoalesceShipsUpdate,
+            category: BroadcastCategory.HeavyShipUpdates, splitBytes: lightBytes?.Length ?? 0);
+        // P983 — every heavy record just sent is this peer's newest pose for that
+        // ship; stamp the simulation clock so the report can measure staleness.
+        if (_broadcastTelemetry is { } telemetry)
+        {
+            var ages = telemetry.Peer(peer.Key);
+            foreach (var ship in heavy) ages.MarkPose(ship.Id, telemetry.SimNowMs);
+        }
         if (cadence is not null) cadence.PacketBytes += packetLength + FedPacket.CrcWidth;
         Interlocked.Add(ref ShipEncodingCounters.RelativePositions, heavy.Count);
         // Scratch lists must not hold dead/replaced ships between passes.

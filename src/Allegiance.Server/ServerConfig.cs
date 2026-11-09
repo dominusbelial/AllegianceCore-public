@@ -770,6 +770,24 @@ public sealed class AdminCheatsConfig
 /// </summary>
 public sealed class ProfilerConfig
 {
+    /// <summary>
+    /// P983 — the broadcast byte/update-age diagnostic (<c>[broadcast-budget]</c>,
+    /// <c>[bb-*]</c> lines). <b>Default <c>false</c></b>: off means no allocation
+    /// and no counter work on any send path (the server holds a null
+    /// <c>BroadcastTelemetry</c>). When on it keeps a rolling 5 × 1 s window per
+    /// peer and server-wide of bytes/messages by category (heavy ship update,
+    /// light/ranked pose, reliable/keyed, chat/lobby, other) plus the newest pose
+    /// age (sim ms) per peer per visible ship, and reports them on this profiler's
+    /// window cadence (console + <see cref="CsvPath"/> when set). Measurement
+    /// only: what is sent, in which order, and at what rate are untouched (the
+    /// byte-budget scheduler is the later slice-D experiment). Emitted by
+    /// <c>Server.BroadcastTelemetry.cs</c>; env override
+    /// <c>ALLEGIANCE_BROADCAST_TELEMETRY</c> (0/1). Patch source (ideas only):
+    /// FS2 Open's per-player/per-type five-sample rate monitor,
+    /// <c>fs2open:code/network/multi_rate.cpp:24</c>.
+    /// </summary>
+    public bool BroadcastBudget { get; set; }
+
     /// <summary>P907: process pool probe and UDP completion handoff metrics when
     /// the profiler is enabled. Disable only for measurement-cost A/B runs.</summary>
     public bool SchedulingMetrics { get; set; } = true;

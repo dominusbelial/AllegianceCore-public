@@ -73,7 +73,9 @@ public sealed partial class Server
         }
         ObserveConsoleChat(mission, sender?.Name, message);
         byte[] packet = FedPacket.Pack(new[] { message.Encode() });
-        foreach (var peer in peers) SendPeer(peer.Key, packet);
+        // P983 — chat rides the ordered one-shot lane; name it for the
+        // broadcast byte diagnostic (default-off).
+        foreach (var peer in peers) SendPeer(peer.Key, packet, BroadcastCategory.ChatLobby);
     }
 
     /// <summary>P760b/SIM-0173 — the CHAT_SHIP recipient set, the exact filter

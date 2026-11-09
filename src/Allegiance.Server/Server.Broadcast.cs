@@ -132,6 +132,13 @@ public sealed partial class Server
         lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
         lock (_statsLock) now = _simNow;
+        // P983 — the clocks the broadcast diagnostic measures against: sim ms for
+        // pose age, wall seconds for the rolling buckets. Null check when off.
+        if (_broadcastTelemetry is { } budgetTelemetry)
+        {
+            budgetTelemetry.SimNowMs = now * 1000.0;
+            budgetTelemetry.RefreshSecond();
+        }
         Step("update", () =>
         {
             // Iterate a SNAPSHOT, not _missions itself: a mission can end during
@@ -3410,7 +3417,20 @@ public sealed partial class Server
                     { LightShipEntries = lightEntries?.ToArray() ?? [], InactiveTurretShipIds = inactiveTurrets }) }
                 : new[] { Message(heavy) };
             var packet = PackBroadcast(frames);
-            SendPeerCoalescing(kv.Key, packet, CoalesceShipsUpdate);
+            // P983 — the LIGHT(175) half rides inside this ONE coalesced frame
+            // (native copies it to the end of HEAVY, FedSrv.CPP:4185-4189), so the
+            // sent bytes split into heavy + light for the diagnostic.
+            int lightMessageBytes = hasLight
+                ? LightShipsUpdate.FixedSize + (lightEntries?.Count ?? 0) * LightShipUpdateEntry.Size
+                    + inactiveTurrets.Length * 2
+                : 0;
+            SendPeerCoalescing(kv.Key, packet, CoalesceShipsUpdate,
+                category: BroadcastCategory.HeavyShipUpdates, splitBytes: lightMessageBytes);
+            if (_broadcastTelemetry is { } telemetry)
+            {
+                var ages = telemetry.Peer(kv.Key);
+                foreach (var entry in entries) ages.MarkPose(entry.ShipId, telemetry.SimNowMs);
+            }
             if (cadence is not null) cadence.PacketBytes += HeavyShipsUpdate.FixedSize
                 + entries.Count * HeavyShipUpdateEntry.Width + FedPacket.CrcWidth
                 + (hasLight

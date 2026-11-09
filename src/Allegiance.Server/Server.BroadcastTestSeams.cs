@@ -75,6 +75,9 @@ public sealed partial class Server
         _activeTurretCandidates.Clear();
         _inactiveTurretRelays.Clear();
         _clusterInfoBytes.Clear();
+        // P983 — replay fixtures start the broadcast diagnostic from a clean
+        // window (peer counters + pose stamps), like every other latch here.
+        _broadcastTelemetry?.Reset();
         foreach (var m in _missions)
             foreach (var s in m.Sectors)
                 foreach (var mdl in s.Models)
@@ -361,6 +364,32 @@ public sealed partial class Server
     /// fixture assert that a refused edit left the snapshot untouched. Inert in
     /// production.</summary>
     internal MissionParamsMsg TestParamsOf(Mission mission) => ParamsOf(mission);
+
+    /// <summary>P983 test seam — emit the diagnostic's report exactly as the
+    /// profiler window does (console + CSV when a path is configured). Inert in
+    /// production.</summary>
+    internal void TestEmitBroadcastBudgetWindow() => EmitBroadcastBudgetWindow();
+
+    /// <summary>P983 test seam — the broadcast diagnostic's per-peer record count and
+    /// total pose stamps, so a rotation test can prove the update-age table does not
+    /// grow with match count (one stamp per visible ship, retired with its world).
+    /// Inert in production.</summary>
+    internal (int Peers, int PoseStamps) BroadcastTelemetryCounts()
+        => (_broadcastTelemetry?.PeerCount ?? 0, _broadcastTelemetry?.PoseStampCount() ?? 0);
+
+    /// <summary>P983 test seam — sends recorded by the diagnostic (0 when off), and
+    /// an A/B switch so one fixture can measure the same tick with the counters on
+    /// and off without a second boot. Inert in production.</summary>
+    internal long TestBroadcastTelemetryProbes => _broadcastTelemetry?.Probes ?? 0;
+
+    internal void TestSetBroadcastTelemetry(bool enabled)
+        => _broadcastTelemetry = enabled ? _broadcastTelemetry ?? new BroadcastTelemetry() : null;
+
+    /// <summary>P983 test seam — whether any peer still holds a pose stamp for
+    /// <paramref name="shipId"/> (a retired world's ship must never answer true
+    /// after its rotation). Inert in production.</summary>
+    internal bool BroadcastTelemetryTracksShip(short shipId)
+        => _broadcastTelemetry?.TelemetryTracksShip(shipId) ?? false;
 
     /// <summary>P884b test seam — sizes of the per-WORLD ship-keyed caches
     /// <see cref="RetirePerWorldShipState"/> must retire at a rotation, plus the

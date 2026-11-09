@@ -359,8 +359,12 @@ public sealed class P869OwnershipTests
             Assert.Empty(server.Missions); Assert.Empty(mission.GetShips()); Assert.Empty(mission.Sectors);
             server._testSendCapture = null; // exercise the direct lease span path
             server.TestPublicationSizeCapture = (_, _, _, _) => sends++;
-            typeof(Srv).GetMethod("PublishMemory", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(server, [new ConnectionId(42), new ReadOnlyMemory<byte>(new byte[8]), 0, true]);
+            // P983 — PublishMemory now takes the whole delivery (the category/split
+            // travel with it for the byte diagnostic).
+            typeof(Srv).GetMethod("PublishMemory", BindingFlags.Instance | BindingFlags.NonPublic,
+                    [typeof(BroadcastDelivery), typeof(ReadOnlyMemory<byte>)])!
+                .Invoke(server, [new BroadcastDelivery(new ConnectionId(42), new BroadcastPacket(new byte[8]), 0, true),
+                    new ReadOnlyMemory<byte>(new byte[8])]);
             Assert.Equal(0, sends);
             using var staleOwnership = StaticCoreCache.Shared.Retain(mission.Core);
             Assert.Null(staleOwnership); // unique cache name: no other test server owns this core

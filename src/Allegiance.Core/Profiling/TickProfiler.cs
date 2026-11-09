@@ -100,9 +100,20 @@ public sealed class TickProfiler
     /// banner so the operator sees what a measurement run will emit).</summary>
     public int ReportIntervalSeconds => _reportIntervalSeconds;
 
-    /// <summary>The configured CSV output path, or null for log-only (read by the
-    /// boot banner).</summary>
+    /// <summary>The configured CSV output path, or null for log-only (read by the boot
+    /// banner).</summary>
     public string? CsvPath => _csvPath;
+
+    /// <summary>
+    /// P983 — append one diagnostic row to the same CSV stream (when a path is
+    /// configured). A caller that reports on the profiler window (e.g. the
+    /// broadcast byte/update-age block) uses a distinct row kind in column 3 so
+    /// the P600 rows stay parseable; the row body after it is key=value.
+    /// </summary>
+    public void WriteCsvRow(string row)
+    {
+        lock (_lock) _csv?.WriteLine(row);
+    }
 
     /// <summary>
     /// P603 — an optional short label (e.g. the active broadcast build mode)

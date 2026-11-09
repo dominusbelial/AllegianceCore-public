@@ -67,7 +67,16 @@ public sealed partial class Server
         if (light is not null) light.CopyTo(bytes.Slice(length));
         int packetLength = length + (light?.Length ?? 0);
         packet.Seal(packetLength);
-        SendPeerCoalescing(peer, packet, CoalesceShipsUpdate);
+        SendPeerCoalescing(peer, packet, CoalesceShipsUpdate,
+            category: BroadcastCategory.HeavyShipUpdates, splitBytes: light?.Length ?? 0);
+        // P983 — stamp the newest pose sent for each heavy record of this packet.
+        if (_broadcastTelemetry is { } telemetry)
+        {
+            var ages = telemetry.Peer(peer);
+            if (seesTarget) ages.MarkPose(target!.Id, telemetry.SimNowMs);
+            foreach (ref readonly var candidate in selected) ages.MarkPose(candidate.Ship.Id, telemetry.SimNowMs);
+            if (appendParent) ages.MarkPose(parent!.Id, telemetry.SimNowMs);
+        }
         cadence.PacketBytes += packetLength + FedPacket.CrcWidth;
         Interlocked.Add(ref ShipEncodingCounters.RelativePositions, count);
     }
