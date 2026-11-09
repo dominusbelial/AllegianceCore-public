@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import hashlib
 import importlib.util
 import json
@@ -344,6 +345,63 @@ class PackagingTests(unittest.TestCase):
                         self.assertEqual(1, emit.call_count)
                         self.assertEqual(1, emit.call_args.args[4])
 
+
+
+    def test_bundle_writes_installed_version_manifest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / 'Allegiance-linux-x64'
+            bundle.mkdir()
+            (bundle / 'Allegiance').write_text('#!/bin/sh\necho ok\n')
+            (bundle / 'Allegiance').chmod(0o755)
+            (bundle / 'Content').mkdir(parents=True)
+            (bundle / 'Content' / 'HUD.xnb').write_text('xnb')
+            package.write_installed_manifest(bundle, '0.1.6-test')
+            installed = bundle / 'autoupdate' / 'installed.json'
+            self.assertTrue(installed.is_file())
+            manifest = json.loads(installed.read_text())
+            self.assertEqual('0.1.6-test', manifest['version'])
+            self.assertIn('generatedAtUtc', manifest)
+            self.assertIn('files', manifest)
+            paths = [entry['path'] for entry in manifest['files']]
+            self.assertIn('Allegiance', paths)
+            self.assertIn('Content/HUD.xnb', paths)
+            self.assertNotIn('autoupdate/installed.json', paths)
+            for entry in manifest['files']:
+                self.assertEqual(package.checksum(bundle / entry['path']), entry['sha256'])
+                self.assertIsInstance(entry['size'], int)
+                self.assertRegex(entry['unixMode'], r'^[0-7]{3}$')
+            allegiance = next(entry for entry in manifest['files'] if entry['path'] == 'Allegiance')
+            self.assertEqual('755' if os.name != 'nt' else '644', allegiance['unixMode'])
+            generated = manifest['generatedAtUtc'].replace('Z', '+00:00')
+            self.assertIsNotNone(datetime.datetime.fromisoformat(generated).tzinfo)
+
+    def test_installed_manifest_excludes_state_and_hd_packs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / 'Allegiance-linux-x64'
+            bundle.mkdir()
+            (bundle / 'game.dll').write_text('app')
+            (bundle / 'autoupdate').mkdir(parents=True)
+            (bundle / 'autoupdate' / 'installed.json').write_text('{}')
+            (bundle / 'packs' / 'hd').mkdir(parents=True)
+            (bundle / 'packs' / 'hd' / 'tex.pbr').write_text('huge')
+            (bundle / 'hd').mkdir(parents=True)
+            (bundle / 'hd' / 'bonus.tex').write_text('huge')
+            package.write_installed_manifest(bundle, '1.0.0')
+            manifest = json.loads((bundle / 'autoupdate' / 'installed.json').read_text())
+            self.assertEqual(['game.dll'], [entry['path'] for entry in manifest['files']])
+
+    def test_dev_bundle_reports_zero_version(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / 'Allegiance-linux-x64'
+            bundle.mkdir()
+            (bundle / 'Allegiance').write_text('app')
+            package.write_installed_manifest(bundle, '0.0.0')
+            manifest = json.loads((bundle / 'autoupdate' / 'installed.json').read_text())
+            self.assertEqual('0.0.0', manifest['version'])
+            self.assertEqual(['Allegiance'], [entry['path'] for entry in manifest['files']])
 
 
 if __name__ == '__main__':

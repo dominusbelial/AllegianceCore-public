@@ -8,11 +8,19 @@ export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config"
 mkdir -p "$XDG_CONFIG_HOME"
 unset ALLEGIANCE_ARTWORK_PATH ALLEGIANCE_SKY_PACK_PATH
 cd "$work"
+expected_version="${EXPECTED_VERSION:-}"
 # Exercise the runtime directly without requiring host FUSE.
 APPIMAGE_EXTRACT_AND_RUN=1 "$image" --check-assets
 # Exercise the explicitly extracted layout too, from outside the AppDir.
 "$image" --appimage-extract > extract.log
 payload="$work/squashfs-root/usr/lib/AllegianceCore"
+if [ -n "$expected_version" ]; then
+    actual_version=$(python3 -c "import json; print(json.load(open('$payload/autoupdate/installed.json'))['version'])")
+    if [ "$actual_version" != "$expected_version" ]; then
+        echo "Version mismatch: expected $expected_version, got $actual_version" >&2
+        exit 1
+    fi
+fi
 (cd "$payload" && sha256sum --check bundle-files.sha256 > "$work/inventory.log")
 # AppRun must work from a read-only installation, with all writes in user dirs.
 chmod -R a-w "$work/squashfs-root"

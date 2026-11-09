@@ -75,6 +75,11 @@ try {
             & (Join-Path $install 'Allegiance.exe') --check-assets
             if ($LASTEXITCODE -ne 0) { throw 'Installed asset check failed' }
         } finally { Pop-Location }
+        $installedJson = Join-Path $install 'autoupdate\installed.json'
+        $installedVersion = (Get-Content $installedJson | ConvertFrom-Json).version
+        if ($installedVersion -ne $after) {
+            throw "Installed version mismatch: autoupdate/installed.json says $installedVersion, registry says $after"
+        }
         Check-Config
         Run-Setup (Join-Path $install 'unins000.exe') @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART')
         if (Test-Path (Join-Path $install 'Allegiance.exe')) { throw 'Uninstall left the executable' }

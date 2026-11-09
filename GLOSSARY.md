@@ -1669,6 +1669,17 @@ list in **reverse**.
   `src/Allegiance.Server/Server.Dispatch.cs` (`CheckFileList`),
   `ServerConfig.RequireFileList`/`ExpectedFileListCrc`; native
   `clintlib/clintlib.cpp:1418`, `lobby/client.cpp:272-281`.
+- **Bundle version reporting (P969)** — release bundles ship
+  `<appRoot>/autoupdate/installed.json` so a fresh install reports the packaged
+  version instead of the "0.0.0" fallback. `packaging/package.py` writes the
+  manifest with the same schema as `UpdateManifestBuilder` (full file list +
+  SHA-256 + Unix mode) so the updater's delta and obsolete-file logic stays
+  correct on the first upgrade. Key:
+  `packaging/package.py` (`build_installed_manifest`, `write_installed_manifest`),
+  `src/Allegiance.Update/UpdateApplier.cs` (`UpdateState` class),
+  `src/Allegiance.Update/UpdateManifestBuilder.cs`,
+  `src/Allegiance.ClientCore.Game/Game1.Session.cs` (`InstalledClientVersion`).
+  Report: `docs/reports/BUNDLE_VERSION_P969.md`.
 - **Feed builder** — `tools/feedbuild/` (manifest + signature + `latest.json`,
   GitHub flat-asset mode); driven by the `feed` job in
   `.github/workflows/release.yml`. Key handling: `packaging/README.md`.

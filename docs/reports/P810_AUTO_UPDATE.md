@@ -59,18 +59,20 @@ pull the HD pack implicitly; it stays a separate, explicit download.
 - **`src/Allegiance.ClientCore.Game`**: `ServerListing.MinClientVersion` +
   `RequiresNewerClient` (shared intro + connect browse paths).
 - **`tools/feedbuild/`** (release/proof tool, built by `tools/build-tools.sh`):
-  manifest + signature + `latest.json`, `--stamp` (write
-  `autoupdate/installed.json` into the bundle), `--asset-prefix` (GitHub
-  Release's flat asset namespace: entry URLs become
-  `feed-<rid>-dir__file`), `--verify` (end-to-end self-check through the real
-  `UpdateClient`).
+  manifest + signature + `latest.json`, `--asset-prefix` (GitHub Release's flat
+  asset namespace: entry URLs become `feed-<rid>-dir__file`), `--verify`
+  (end-to-end self-check through the real `UpdateClient`). `--stamp` still
+  writes a minimal `autoupdate/installed.json` for dry-runs/legacy roots; the
+  release workflow no longer uses it because `packaging/package.py` now writes
+  the full manifest into every bundle (P969).
 - **`.github/workflows/release.yml`**: new `feed` job (per RID: unpack the
-  verified portable bundle, stamp the version, `dotnet run --project tools/feedbuild`
-  with the key from the `RELEASE_UPDATE_SIGNING_KEY_PEM` secret, upload
-  `feed-<rid>`); `publish` attaches the feeds unmerged so the GitHub Release is
-  a flat-asset feed root per RID. `workflow_dispatch` = the dry-run: it runs
-  everything except `publish`; without the secret it emits an UNSIGNED feed
-  (marked `UNSIGNED`, refused by every verifier) — the dry-run cannot publish.
+  verified portable bundle — which already contains `autoupdate/installed.json`
+  from `package.py` — and run `dotnet run --project tools/feedbuild` with the
+  key from the `RELEASE_UPDATE_SIGNING_KEY_PEM` secret, upload `feed-<rid>`);
+  `publish` attaches the feeds unmerged so the GitHub Release is a flat-asset
+  feed root per RID. `workflow_dispatch` = the dry-run: it runs everything
+  except `publish`; without the secret it emits an UNSIGNED feed (marked
+  `UNSIGNED`, refused by every verifier) — the dry-run cannot publish.
 - **Key handling** (see `packaging/README.md`): one PKCS#8 ECDSA P-256 private
   PEM, stored only as the repo secret `RELEASE_UPDATE_SIGNING_KEY_PEM`; the
   public half is derived (or shipped as `feed-public.pem`); rotation = new key
@@ -131,12 +133,10 @@ breaks it (the full solution build + fast tier were green before and after).
 
 ## Unfinished / notes for review
 
-1. **Fresh-install version stamping**: bundles from `package.py` do not carry
-   `autoupdate/installed.json`, so a never-updated install reports `0.0.0`
-   (fail-closed: any advertised current/minimum triggers a check — the same
-   direction as native's unknown CRC). A follow-up can stamp the version into
-   the portable bundles at package time; the feed job already stamps its own
-   unpacked trees.
+1. **Fresh-install version stamping**: implemented in P969. `packaging/package.py`
+   now writes a full `autoupdate/installed.json` into every bundle, so a fresh
+   install reports the packaged version and same-version feeds return
+   `UpToDate` instead of staging a needless update.
 2. **GitHub Release feed hosting**: release assets are a flat namespace, so the
    workflow uses `--asset-prefix feed-<rid>-` and `UpdateFileEntry.AssetName`;
    a plain static tree (nginx/GH Pages) needs no prefix. Both documented in

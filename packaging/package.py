@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Build self-contained player bundles and installers (Python 3.11+)."""
 import argparse
+import datetime
 import os
 import hashlib
 import json
 import plistlib
 import re
+import stat
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
@@ -17,6 +19,10 @@ import zipfile
 REPO = Path(__file__).resolve().parents[1]
 PROJECT = REPO / 'src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj'
 LIMIT = 2 * 1024**3
+
+# Prefixes excluded from the updater manifest (must match UpdateFeed.ExcludedPrefixes
+# and UpdateFeed.StateDir in src/Allegiance.Update/UpdateManifestBuilder.cs).
+_EXCLUDED_MANIFEST_PREFIXES = ('autoupdate/', 'packs/', 'hd/')
 
 
 def app_dir(bundle, destination):
@@ -233,6 +239,48 @@ def checksum(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def _octal_mode(path):
+    """Unix file mode as a 3-digit octal string, matching UpdateManifestBuilder.ModeToOctal."""
+    if os.name == 'nt':
+        return '644'
+    return f'{stat.S_IMODE(os.stat(path).st_mode):03o}'
+
+
+def build_installed_manifest(bundle, version):
+    """Build the autoupdate/installed.json payload for a freshly packaged bundle.
+
+    The schema matches Allegiance.Update.UpdateManifest so the client resolves
+    the packaged version immediately, and the updater can compute deltas and
+    obsolete files correctly on the first upgrade.
+    """
+    files = []
+    for path in sorted(bundle.rglob('*')):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(bundle).as_posix()
+        if any(rel.startswith(prefix) for prefix in _EXCLUDED_MANIFEST_PREFIXES):
+            continue
+        files.append({
+            'path': rel,
+            'size': path.stat().st_size,
+            'sha256': checksum(path),
+            'unixMode': _octal_mode(path),
+        })
+    return {
+        'version': version,
+        'generatedAtUtc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'files': files,
+    }
+
+
+def write_installed_manifest(bundle, version):
+    """Write <bundle>/autoupdate/installed.json with a full file manifest."""
+    manifest = build_installed_manifest(bundle, version)
+    state_dir = bundle / 'autoupdate'
+    state_dir.mkdir(parents=True, exist_ok=True)
+    (state_dir / 'installed.json').write_text(json.dumps(manifest, separators=(',', ':')) + '\n')
+
+
 def build(args):
     validate_args(args)
     output = args.output.resolve()
@@ -306,6 +354,12 @@ def build(args):
                 if p.is_file():
                     inventory.append(f'{checksum(p)}  {p.relative_to(bundle).as_posix()}\n')
         (bundle / 'bundle-files.sha256').write_text(''.join(inventory))
+        # P969 — every released bundle must report its own version. The client
+        # resolves it from autoupdate/installed.json; dev builds keep the 0.0.0
+        # fallback that an untouched tree would return anyway. Write this after
+        # the packaging-only inventory so the manifest is a complete, consistent
+        # picture of the files that ship.
+        write_installed_manifest(bundle, args.version)
         if args.rid == 'osx-arm64':
             mac_app(bundle)
         emit_artifacts(bundle, Path(staging), output, args, len(manifest), pins)

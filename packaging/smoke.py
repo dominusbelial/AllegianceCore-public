@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Extract a trusted locally built archive outside the repo and check it."""
 import argparse
+import json
 import os
 from pathlib import Path
 import plistlib
@@ -63,10 +64,25 @@ def executable(bundle):
     return bundle / ('Allegiance.exe' if (bundle / 'Allegiance.exe').exists() else 'Allegiance')
 
 
-def smoke(archive):
+def installed_version(bundle):
+    path = bundle / 'autoupdate' / 'installed.json'
+    if not path.is_file():
+        raise ValueError('Missing autoupdate/installed.json')
+    return json.loads(path.read_text())['version']
+
+
+def smoke(archive, expected_version=None):
     with tempfile.TemporaryDirectory(prefix='allegiance-smoke-') as staging:
         root = Path(staging)
         bundle = extract(archive, root)
+        if expected_version is None:
+            meta = archive.parent / (archive.name + '.json')
+            if meta.is_file():
+                expected_version = json.loads(meta.read_text()).get('version')
+        if expected_version:
+            actual = installed_version(bundle)
+            if actual != expected_version:
+                raise ValueError(f'Bundle reports version {actual}, expected {expected_version}')
         exe = executable(bundle)
         env = {k: v for k, v in os.environ.items() if not k.startswith('ALLEGIANCE_')}
         subprocess.run([str(exe), '--check-assets', '--asset-manifest', str(root / 'census.json')],
@@ -82,4 +98,6 @@ def smoke(archive):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('archive', type=Path)
-    smoke(parser.parse_args().archive.resolve())
+    parser.add_argument('--version', help='Expected installed version (default: read from <archive>.json metadata)')
+    args = parser.parse_args()
+    smoke(args.archive.resolve(), args.version)

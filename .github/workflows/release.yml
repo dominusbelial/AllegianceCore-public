@@ -205,7 +205,7 @@ jobs:
             --root "$approot" --out "dist/feed-${{ matrix.rid }}" \
             --base-url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/feed-${{ matrix.rid }}-" \
             --asset-prefix "feed-${{ matrix.rid }}-" \
-            --version "$version" --stamp "${keyargs[@]}"
+            --version "$version" "${keyargs[@]}"
           rm -f "$RUNNER_TEMP/signing.pem"
           # Dry-runs (workflow_dispatch, no tag) must never look publishable:
           # an unsigned feed is refused by every verifier, and we also tag it.
@@ -234,13 +234,18 @@ jobs:
       - name: Build stock distribution smoke environment
         run: docker build -f packaging/Dockerfile.smoke-${{ matrix.distro }} -t allegiance-smoke packaging
       - name: AppImage runtime and extracted/offline smoke with no internet
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
         run: |
           chmod +x dist/Allegiance-linux-x64.AppImage
+          version=0.0.1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then version="${RELEASE_REF#v}"; fi
           intro=''
           if [[ '${{ matrix.distro }}' == ubuntu ]]; then intro=--intro; fi
           docker run --rm --network none --read-only --user 1000:1000 \
             --tmpfs /tmp:exec,mode=1777 \
             -v "$PWD/dist:/artifacts:ro" -v "$PWD/packaging:/packaging:ro" \
+            -e "EXPECTED_VERSION=$version" \
             allegiance-smoke sh /packaging/smoke-appimage.sh /artifacts/Allegiance-linux-x64.AppImage $intro
 
   macos-smoke:
