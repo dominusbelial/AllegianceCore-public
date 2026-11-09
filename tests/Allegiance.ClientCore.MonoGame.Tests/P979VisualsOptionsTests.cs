@@ -34,7 +34,7 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = new OptionsMenuModel();
         var rows = menu.Rows(State());
-        Assert.Equal(9, rows.Count);
+        Assert.Equal(5, rows.Count);
         Assert.Equal("Graphics Options", rows[0].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenSoundMenu, rows[1].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenGameMenu, rows[2].Command);
@@ -61,7 +61,7 @@ public sealed class P979VisualsOptionsTests
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, rows[0].Command);
         Assert.Equal('R', rows[0].Hotkey);
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, rows[1].Command);
-        Assert.Equal('T', rows[1].Hotkey);
+        Assert.Equal('M', rows[1].Hotkey);
         Assert.Null(rows[2].Command);                       // the value line is a read-out
         Assert.Equal(OptionsMenuModel.OptionsCommand.RaiseVisualRange, rows[3].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.LowerVisualRange, rows[4].Command);

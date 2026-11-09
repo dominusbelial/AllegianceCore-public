@@ -36,6 +36,16 @@ public sealed class VisualFlagsTests
         Assert.Equal("radialVisibility=off remoteTimeline=off viewRange=10000 subtleDust=off simStars=off simGlare=off starStreaks=off", options.Describe());
     }
 
+    [Fact]
+    public void Toggle_hotkeys_are_unique_on_the_visuals_page()
+    {
+        // P982 and P985 both claimed 'T' in parallel; the page's U/D are the range steps.
+        var keys = VisualFlags.Definitions.Where(d => d.Hotkey != '\0').Select(d => d.Hotkey).ToList();
+        Assert.Equal(keys.Count, keys.Distinct().Count());
+        Assert.DoesNotContain('U', keys);
+        Assert.DoesNotContain('D', keys);
+    }
+
     [Theory]
     [InlineData("radialVisibility=on", true, 10000f)]
     [InlineData("radialVisibility=ON", true, 10000f)]
