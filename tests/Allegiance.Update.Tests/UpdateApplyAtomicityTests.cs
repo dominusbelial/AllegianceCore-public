@@ -268,6 +268,7 @@ public class UpdateApplyAtomicityTests : IDisposable
     public void An_undeletable_obsolete_file_rolls_the_apply_back()
     {
         if (OperatingSystem.IsWindows()) return;   // chmod-based fault injection
+        if (!ChmodFaultInjectionWorks()) return;   // root ignores the missing write bit (containerised runner)
 
         Write("locked/old.dat", "old-only-in-a-locked-dir");
         var before = Snapshot();
@@ -497,6 +498,7 @@ public class UpdateApplyAtomicityTests : IDisposable
     public void An_incomplete_rollback_keeps_the_journal_and_retries_on_the_next_boot()
     {
         if (OperatingSystem.IsWindows()) return;   // chmod-based fault injection
+        if (!ChmodFaultInjectionWorks()) return;   // root ignores the missing write bit (containerised runner)
 
         var before = Snapshot();
         Stage("2.0.0", [("game.dll", "new-game"), ("second.dll", "new-second")]);
@@ -627,5 +629,25 @@ public class UpdateApplyAtomicityTests : IDisposable
         Assert.Equal(
             before.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToList(),
             after.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToList());
+    }
+
+    /// <summary>The chmod fault injection only holds where directory permissions are enforced:
+    /// not on Windows, and not for root (CAP_DAC_OVERRIDE ignores the missing write bit, e.g. the
+    /// containerised test runner). Probe once instead of guessing from the user name.</summary>
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+    private static bool ChmodFaultInjectionWorks()
+    {
+        var probe = Directory.CreateTempSubdirectory("p976-chmod-probe-").FullName;
+        try
+        {
+            File.SetUnixFileMode(probe, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+            try { File.WriteAllText(Path.Combine(probe, "x"), "x"); return false; }
+            catch (UnauthorizedAccessException) { return true; }
+        }
+        finally
+        {
+            File.SetUnixFileMode(probe, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            Directory.Delete(probe, recursive: true);
+        }
     }
 }
