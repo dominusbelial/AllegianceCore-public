@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Allegiance.ClientCore.MonoGame.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -54,7 +55,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed class OptionsMenuModel
 {
     /// <summary>Which native menu is open.</summary>
-    public enum Page { Root, Sound, Game, Chat, Mouse }
+    public enum Page { Root, Sound, Game, Chat, Mouse, Visuals }
 
     /// <summary>The action a leaf item performs (the screen executes it; the
     /// model stays static-data free).</summary>
@@ -86,6 +87,17 @@ public sealed class OptionsMenuModel
         MouseSensitivityUp,
         /// <summary>P948 — native <c>idmMouseSensDown</c> ('D', ':4613').</summary>
         MouseSensitivityDown,
+        /// <summary>P979 — the port's Visuals page (visual-enhancement flags,
+        /// always OFF by default; native has no counterpart).</summary>
+        OpenVisualsMenu,
+        /// <summary>P979 — flip the toggle whose row was activated
+        /// (<see cref="VisualKeyAt"/> names it).</summary>
+        ToggleVisualFlag,
+        /// <summary>P979 — step the numeric flag whose row was activated by its
+        /// table step (+).</summary>
+        RaiseVisualRange,
+        /// <summary>P979 — step the numeric flag down (−).</summary>
+        LowerVisualRange,
     }
 
     /// <summary>One menu line: its label (state included, like native's
@@ -113,7 +125,10 @@ public sealed class OptionsMenuModel
         Audio.AudioQuality AudioQuality = Audio.AudioQuality.Medium,
         // P948 — the live, persisted mouse sensitivity (native MouseSensitivity,
         // WinTrek.cpp:2809) so the Mouse Options labels show the value they act on.
-        float MouseSensitivity = Flight.MouseFlightController.DefaultMouseSensitivity);
+        float MouseSensitivity = Flight.MouseFlightController.DefaultMouseSensitivity,
+        // P979 — the EFFECTIVE visual flags (profile `visuals` group + the
+        // --visuals launch override). Null renders the table defaults (all OFF).
+        VisualOptions? Visuals = null);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -204,15 +219,72 @@ public sealed class OptionsMenuModel
                     new Row(Flight.MouseOptions.StepLabel(state.MouseSensitivity, -1),
                         OptionsCommand.MouseSensitivityDown, 'D'),
                 };
+            case Page.Visuals:
+                // P979 — generated from the flag TABLE, not hand-written per flag:
+                // a toggle row, or a value row plus raise/lower for a numeric flag.
+                return VisualPageRows(state).Select(entry => entry.Row).ToArray();
             default:
                 return new[]
                 {
                     new Row("Graphics Options", OptionsCommand.GraphicsSettings, 'O'),
                     new Row("Sound Options >", OptionsCommand.OpenSoundMenu, 'S'),
                     new Row("Game Options >", OptionsCommand.OpenGameMenu, 'G'),
+                    // P979 — the port's Visuals page (visual enhancements, each a
+                    // flag defaulting OFF; native has no counterpart).
+                    new Row("Visuals >", OptionsCommand.OpenVisualsMenu, 'V'),
                     new Row("Map Keys and Controls", OptionsCommand.MapKeysAndControls, 'C'),
                 };
         }
+    }
+
+    /// <summary>
+    /// P979 — the Visuals page, built from <see cref="VisualFlags.Definitions"/>
+    /// so a new flag needs only a table row. Each entry keeps the flag key its
+    /// row edits (<see cref="VisualKeyAt"/>), because the three visual commands
+    /// are generic: the screen applies them to the row's key.
+    /// </summary>
+    private IReadOnlyList<(Row Row, string? Key)> VisualPageRows(OptionsState state)
+    {
+        var rows = new List<(Row Row, string? Key)>();
+        foreach (var definition in VisualFlags.Definitions)
+        {
+            if (definition.Kind == VisualFlagKind.Range)
+            {
+                float value = state.Visuals?.Value(definition.Key) ?? definition.DefaultValue;
+                rows.Add((new Row(
+                    $"{definition.Label}: {VisualOptions.Format(value)} m - {definition.Description}", null), definition.Key));
+                rows.Add((new Row(RangeStepLabel(definition, value, +1), OptionsCommand.RaiseVisualRange, 'U'), definition.Key));
+                rows.Add((new Row(RangeStepLabel(definition, value, -1), OptionsCommand.LowerVisualRange, 'D'), definition.Key));
+            }
+            else
+            {
+                rows.Add((new Row(
+                    $"{definition.Label}: {VisualOptions.DescribeValue(definition, state.Visuals)} - {definition.Description}",
+                    OptionsCommand.ToggleVisualFlag, definition.Hotkey), definition.Key));
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>P979 — the flag key the row at <paramref name="row"/> edits on the
+    /// Visuals page (null when the page is not showing or the row is empty).</summary>
+    public string? VisualKeyAt(int row, OptionsState state)
+    {
+        if (Current != Page.Visuals) return null;
+        var rows = VisualPageRows(state);
+        if (rows.Count == 0) return null;
+        return rows[System.Math.Clamp(row, 0, rows.Count - 1)].Key;
+    }
+
+    private static string RangeStepLabel(VisualFlag definition, float value, int direction)
+    {
+        float step = definition.Step > 0f ? definition.Step : 1000f;
+        float next = System.Math.Clamp(value + direction * step, definition.MinValue, definition.MaxValue);
+        bool atStop = direction > 0 ? next <= value : next >= value;
+        if (atStop)
+            return (direction > 0 ? "Raise " : "Lower ") + definition.Label
+                + (direction > 0 ? " (highest)" : " (lowest)");
+        return (direction > 0 ? "Raise " : "Lower ") + definition.Label + " to " + VisualOptions.Format(next) + " m";
     }
 
     /// <summary>Activate the highlighted row: a submenu opens (and the highlight
@@ -229,6 +301,7 @@ public sealed class OptionsMenuModel
             case OptionsCommand.OpenGameMenu: Current = Page.Game; Row0 = 0; return null;
             case OptionsCommand.OpenChatMenu: Current = Page.Chat; Row0 = 0; return null;
             case OptionsCommand.OpenMouseMenu: Current = Page.Mouse; Row0 = 0; return null;
+            case OptionsCommand.OpenVisualsMenu: Current = Page.Visuals; Row0 = 0; return null;
             default: return cmd;
         }
     }

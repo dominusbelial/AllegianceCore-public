@@ -742,6 +742,26 @@ public sealed partial class Game1 : Game
     // (P385) is gone — normal launches now use 50° too.
     private readonly float _flightFovDeg;
 
+    // P979 — the EFFECTIVE visual-enhancement flags (profile `visuals` group +
+    // the client-only `--visuals` override). The flight render reads this object
+    // every frame, so an options-page toggle applies immediately; the profile
+    // group it came from is kept separately on IntroPreferences.Visuals so an
+    // unrelated preferences save never persists a launch override.
+    private readonly Rendering.VisualOptions _visuals;
+
+    // P979 — per-frame radial-visibility state, resolved once in the flight
+    // render (see ResolveRadialView): active only for the flight cameras native's
+    // SetZClip governs, and the range/far used by the per-object gate and the
+    // projection. Kept in fields so PrepareSceneGeometry's depth gather and the
+    // colour loops consult the exact same decision as the camera did.
+    private bool _radialViewActive;
+    private float _radialViewRange = Rendering.ExternalCameras.FarPlane;
+    // P979 — the linear-depth range THIS frame's depth pass normalizes with (the
+    // radial far when the flag is on, native's 10000 otherwise), so the
+    // soft-particle fade and the flare occlusion test stay consistent with the
+    // projection actually used.
+    private float _flightDepthFar = Rendering.LinearDepth.DefaultFar;
+
     // P449b — the native camera-jiggle accumulator (WinTrek.cpp:374-399),
     // driven each frame from the own ship's afterburner state. Shared trail
     // random source (render-thread only) for the per-axis offset.
@@ -1721,6 +1741,16 @@ public sealed partial class Game1 : Game
         _flightFovDeg = opts.FlightFovDegrees;
         if (_flightFovDeg != 50f)
             Console.WriteLine($"[client] --flightFov: in-flight camera FOV = {_flightFovDeg:0.#}° (native default is 50°)");
+        // P979 — resolve the visual-enhancement flags ONCE at startup: the player
+        // profile's `visuals` group, then the client-only `--visuals` override on
+        // top. Unknown override keys warn (a typo silently doing nothing is worth
+        // saying); unknown PROFILE keys are simply ignored. Every flag defaults
+        // OFF, so a legacy profile renders exactly native's look.
+        _visuals = Rendering.VisualOptions.Resolve(
+            IntroPreferences.Load(_playerPrefsPath).Visuals, opts.VisualsOverride, out var visualWarnings);
+        foreach (var warning in visualWarnings)
+            Console.Error.WriteLine("[client] " + warning);
+        Console.WriteLine("[client] visuals: " + _visuals.Describe());
         // P566 — the ship renderer: native .mdl meshes (default) vs Meshy content
         // models. Log so a bare --ships meshy run is obvious in the console.
         _shipsNative = opts.ShipsNative;

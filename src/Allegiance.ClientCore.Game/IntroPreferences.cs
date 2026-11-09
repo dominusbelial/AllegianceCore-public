@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -102,6 +103,16 @@ public sealed class IntroPreferences
     /// row stays partial for exactly that reason).</summary>
     public string PilotDescription { get; set; } = "";
 
+    /// <summary>P979 — the <c>visuals</c> group: this profile's visual-enhancement
+    /// flags (flat <c>{ "radialVisibility": true, "viewRange": 12000 }</c>, see
+    /// <see cref="Rendering.VisualOptions"/>). Missing on a legacy profile and
+    /// unknown keys ignored — every flag defaults OFF, keeping the native look.
+    /// The in-flight render reads the EFFECTIVE options (this group plus the
+    /// client-only <c>--visuals</c> launch override), which is why the group is
+    /// stored rather than the resolved object.</summary>
+    [JsonPropertyName("visuals")]
+    public Rendering.VisualOptions? Visuals { get; set; }
+
     public const int MaxRecent = 8;
 
     public static string DirectoryPath => Path.Combine(
@@ -147,6 +158,16 @@ public sealed class IntroPreferences
             ? Math.Clamp(MouseSensitivity, Flight.MouseFlightController.MinMouseSensitivity,
                 Flight.MouseFlightController.MaxMouseSensitivity)
             : fallback;
+        // P979 — keep a hand-edited visuals range inside the flag table's bounds
+        // (the toggle has no invalid state: a missing key already reads OFF).
+        if (Visuals is not null)
+        {
+            foreach (var definition in Rendering.VisualFlags.Definitions)
+            {
+                if (definition.Kind != Rendering.VisualFlagKind.Range) continue;
+                Visuals.SetValue(definition.Key, Visuals.Value(definition.Key));
+            }
+        }
     }
 
     public void Save(string? path = null)

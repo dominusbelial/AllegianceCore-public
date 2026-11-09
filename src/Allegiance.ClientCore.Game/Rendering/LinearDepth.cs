@@ -47,6 +47,12 @@ public static class LinearDepth
     /// now derived from the same 24 world units instead of a fixed 0.004.</para>
     public const float SoftnessNormalized = 24f / (DefaultFar - DefaultNear);
 
+    /// <summary>The soft-particle fade softness for a given near/far range, in
+    /// NORMALIZED linear-depth units. Derived from the same 24 world units as
+    /// <see cref="SoftnessNormalized"/>, so a caller that widens the range (P979's
+    /// radial far plane) keeps the fade's physical thickness.</summary>
+    public static float SoftnessFor(float near, float far) => 24f / Math.Max(1e-6f, far - near);
+
     /// <summary>
     /// The soft-particle fade factor (pure, unit-testable): how much a particle
     /// at <paramref name="particleNorm"/> survives given the scene depth at its

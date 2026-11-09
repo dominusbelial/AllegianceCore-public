@@ -64,7 +64,7 @@ public sealed class VfxPostProcessor : IDisposable
     /// <summary>The per-frame soft-particle context for this frame's camera
     /// near/far. Only valid when <see cref="SoftReady"/>.</summary>
     public SoftParticleContext Context(float near, float far)
-        => new(DepthRT!, near, far, LinearDepth.SoftnessNormalized);
+        => new(DepthRT!, near, far, LinearDepth.SoftnessFor(near, far));
 
     /// <summary>Clear-and-fill colour for the depth target: encoded "far"
     /// (normalized 0.999 — NOT 1.0, which aliases to 0 under the float-RGBA
