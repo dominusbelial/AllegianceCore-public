@@ -3467,9 +3467,12 @@ public sealed partial class Game1
             if (!_session.World.Ships.TryGetValue(me, out var mine)) return false;
             if (!_session.World.Stations.TryGetValue(tgt.Id, out var station)) return false;
 
-            // Friendly (same-side) gate: never bay-approach an enemy/wrong-side
-            // station — the server would refuse to dock and the ship would grind.
-            if (_session.World.MySideId is { } mySide && station.SideId != mySide) return false;
+            // Native admits own-side AND allied stations to the InGarage dock
+            // branch (Igc/shipIGC.cpp:732-735,843-855). P977: an allied eject
+            // target must use the same bay approach as an own-side target;
+            // exact-side-only steering made the pod grind against the hull.
+            if (_session.World.MySideId is { } mySide && station.SideId != mySide
+                && !_session.World.AreAllied(mySide, station.SideId)) return false;
 
             DataHullTypeIGC? ownHull = null;
             foreach (var h in cat.Hulls)

@@ -753,8 +753,14 @@ list in **reverse**.
 - **Lifepod home / rescue** — ejecting leaves a pod that flies home with the same
   autopilot: target selection (`Game1.ChooseEjectRescueTarget`, native
   `clintlib/appmsg.cpp:230-238` `FindTarget(… c_ttAnyCluster …, c_sabmRescue…)`),
-  oxygen budget and docking. Reports P699/P699c; live test
-  `P699HumanPodHomeLiveTests`.
+  oxygen budget and docking. P977 adds own+allied targeting, side-independent
+  RescueAny probes, current-cluster/warp-bracket ordering and allied bay approach
+  (`src/Allegiance.ClientCore.Game/Game1.Eject.cs`, `Game1.FlightInput.cs`; native
+  `Igc/common.cpp:269-333,648-729`, `Igc/shipIGC.cpp:732-735`). Proofs:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P977EjectAlliedRescueTests.cs`,
+  `P977AlliedEjectLiveTests.cs`; parity `docs/parity/p977-eject-rescue.csv`;
+  report `docs/reports/EJECT_RESCUE_TOKEN_LOG_P977.md`. Earlier reports P699/P699c;
+  live test `P699HumanPodHomeLiveTests`.
 - **Player pod collision lifetime (P955)** — collision damage returns `Killed`
   even after the synchronous server callback swaps the same ship to a live pod.
   `src/Allegiance.Core/Model/Sector.cs` preserves that survivor in asteroid,

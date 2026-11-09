@@ -1317,7 +1317,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             var work = StartOwned(async owner =>
             {
                 Console.WriteLine($"[reconnect] session lost — auto-reconnect armed, re-dialing "
-                    + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s (token 0x{_resumeToken:X8})");
+                    + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s ({TokenTag(_resumeToken)})");
                 while (true)
                 {
                     lock (_gate)
@@ -1360,7 +1360,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
                             Interlocked.Increment(ref _resumeSuccesses);
                             StartKeepAlive();
                             Console.WriteLine($"[reconnect] session restored after {ResumeAttempts} attempt(s): ship {ack.ShipID}, "
-                                + $"resumeToken=0x{_resumeToken:X8}; join burst re-syncing the world");
+                                + $"{TokenTag(_resumeToken)}; join burst re-syncing the world");
                         }
                         return true;
                     }
@@ -1378,6 +1378,18 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             var owner = _owner!;
             _ = CompleteReconnectAsync(owner, work);
         }
+    }
+
+    /// <summary>P977 (P971-07) — the same short NON-REVERSIBLE correlation tag
+    /// as <c>Server.ReconnectGrace.TokenTag</c>. Never print the bearer token:
+    /// console output is persisted in client.log and copied into crash reports.
+    /// FNV-1a over the four bytes plus the server's avalanche; retain 16 bits.</summary>
+    private static string TokenTag(uint token)
+    {
+        uint h = 0x811C9DC5u;
+        for (int i = 0; i < 4; i++) { h ^= token & 0xFFu; h *= 0x01000193u; token >>= 8; }
+        h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15;
+        return $"tag {h & 0xFFFFu:X4}";
     }
 
     private async Task CompleteReconnectAsync(ConnectionOwner owner, Task work)
