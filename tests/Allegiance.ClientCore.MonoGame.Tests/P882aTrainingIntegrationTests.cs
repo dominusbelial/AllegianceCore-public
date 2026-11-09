@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core;
@@ -408,6 +409,49 @@ public sealed class P882aTrainingIntegrationTests : IDisposable
         Assert.Same(sector, host.PlayerShip.Sector);
         Assert.Equal(1f, host.PlayerShip.Fraction);
     }
+    [Fact]
+    public void Training_exit_restores_saved_skin_id()
+    {
+        var savedMap = KeyBindingStore.Instance.Map.ToJson();
+        using var connection = new ConnectionSession();
+        var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1));
+        var originalSettings = new HudSettings { Skin = HudSkinIds.Classic };
+        Set(game, "_hudSettings", originalSettings);
+        Set(game, "_session", connection);
+        Set(game, "_cameraMode", CameraMode.Cockpit);
+        Set(game, "_radarMode", RadarMode.Default);
+        Set(game, "_consolePanes", new ConsolePaneState());
+        Set(game, "_trainingDeathCameraActive", false);
+        Set(game, "_trainingQuitConfirm", false);
+        Set(game, "_trainingCommandPane", true);
+        Set(game, "_trainingAutoJoin", false);
+        Set(game, "_trainingSideRequested", false);
+        Set(game, "_dockedActive", false);
+        Set(game, "_hangarOnly", false);
+        Set(game, "_hangarQuitConfirm", false);
+        Set(game, "_minimapExpanded", false);
+        Set(game, "_teamPaneVisible", false);
+        Set(game, "_investActive", false);
+        Set(game, "_teleportActive", false);
+        Set(game, "_mainMenuVisible", false);
+        Set(game, "_helpVisible", false);
+        Set(game, "_keyBindVisible", false);
+        Set(game, "_trainingSounds", new Dictionary<int, Microsoft.Xna.Framework.Audio.SoundEffectInstance>());
+        try
+        {
+            Call(game, "SaveTrainingPreferences");
+            originalSettings.Skin = HudSkinIds.Modern;
+            Call(game, "ReleaseTraining");
+            Assert.Equal(HudSkinIds.Classic, originalSettings.Skin);
+        }
+        finally
+        {
+            KeyBindingStore.Instance.Map.ResetToDefaults();
+            KeyBindingStore.Instance.Map.ApplyJson(savedMap);
+            KeyBindingStore.Instance.Map.ActionFilter = null;
+        }
+    }
+
     private sealed class ProbeCondition(Func<bool> evaluate) : Condition
     {
         public override bool Evaluate() => evaluate();

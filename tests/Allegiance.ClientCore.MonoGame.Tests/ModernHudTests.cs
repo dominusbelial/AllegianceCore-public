@@ -23,7 +23,7 @@ public sealed class ModernHudTests
             Assert.Equal(HudStyle.Modern, restored.Style); Assert.Equal(1.25f, restored.Size); Assert.True(restored.ColorBlindSafe);
             settings.Size = float.NaN; settings.Style = (HudStyle)99; settings.Save(path);
             restored = HudSettings.Load(path, false);
-            Assert.Equal(1, restored.Size); Assert.Equal(HudStyle.Classic, restored.Style);
+            Assert.Equal(1, restored.Size); Assert.Equal(HudStyle.Modern, restored.Style);
             File.WriteAllText(path, "broken json"); Assert.Equal(HudStyle.Classic, HudSettings.Load(path, true).Style);
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

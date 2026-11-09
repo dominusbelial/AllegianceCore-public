@@ -1,0 +1,11 @@
+{
+  "Schema": "hud-skin-1",
+  "Id": "classic",
+  "Name": "Classic",
+  "Version": "1.0.0",
+  "Defaults": {
+    "SelectionBracket": false,
+    "RadarDeclutter": false,
+    "Level": "Tactical"
+  }
+}

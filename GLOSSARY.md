@@ -738,6 +738,13 @@ list in **reverse**.
 
 - **Headless session** — the world-state tracker driving prediction/replay.
   `src/Allegiance.ClientCore/Session/`, `Replay/`, `State/`.
+- **UI skins (P981)** — canonical skin ids (`classic`, `modern`) replace the
+  persisted two-value `HudStyle`. `src/Allegiance.ClientCore.Game/Rendering/Skins/`
+  holds `HudSkinIds`, `HudSkinDefinition`, source-generated `HudSkinJson`,
+  `HudSkinLoader`, `HudSkinCatalog` and built-in `classic.skin.json` /
+  `modern.skin.json`. `HudSettings` migrates legacy `Style` to `Skin`, keeps
+  `Style` as a renderer adapter, and saves only the canonical id. Report:
+  `docs/reports/SKINS_1B_IDS_MIGRATION_P981.md`.
 - **Autopilot (G key / pod home / cluster goto)** — the native `GotoPlan` law:
   same-sector steering, dodge, docking bays, pod pickup and cross-sector routing
   through warps. Key: `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`

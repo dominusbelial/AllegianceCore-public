@@ -1,12 +1,13 @@
 using Allegiance.ClientCore.Training;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.MonoGame;
 
 public sealed partial class Game1
 {
-    private sealed record TrainingPreferences(HudStyle Style, string Keymap, Func<string, bool>? Filter,
+    private sealed record TrainingPreferences(string Skin, string Keymap, Func<string, bool>? Filter,
         CameraMode Camera, RadarMode Radar, ConsolePaneState Panes, TimeSpan FrameCap);
     private TrainingPreferences? _trainingPreferences;
     private bool _trainingQuitConfirm;
@@ -20,7 +21,7 @@ public sealed partial class Game1
     {
         if (_trainingPreferences is not null) return;
         var map = KeyBindingStore.Instance.Map;
-        _trainingPreferences = new(_hudSettings.Style, map.ToJson(), map.ActionFilter,
+        _trainingPreferences = new(_hudSettings.Skin, map.ToJson(), map.ActionFilter,
             _cameraMode, _radarMode, _consolePanes, MaxElapsedTime);
         // Native shipping Time::Now retains the complete elapsed interval
         // (zlib/ztime.h:75-77). The framework's 500 ms cap otherwise discards
@@ -53,7 +54,7 @@ public sealed partial class Game1
         if (_trainingPreferences is { } saved)
         {
             MaxElapsedTime = saved.FrameCap;
-            _hudSettings.Style = saved.Style;
+            _hudSettings.Skin = HudSkinResolver.Catalog.Resolve(saved.Skin).Id;
             map.ResetToDefaults();
             map.ApplyJson(saved.Keymap);
             map.ActionFilter = saved.Filter;

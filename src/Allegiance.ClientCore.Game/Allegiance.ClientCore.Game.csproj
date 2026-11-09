@@ -18,6 +18,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Rendering/Skins/*.skin.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Version pinned to what dotnet restored from the 3.8.* wildcard on this
          machine: 3.8.5.1 (see docs/CLIENTCORE_MONOGAME_POC_P207.md). -->
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" PrivateAssets="All" />
