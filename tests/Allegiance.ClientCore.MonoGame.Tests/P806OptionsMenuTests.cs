@@ -22,13 +22,16 @@ public sealed class P806OptionsMenuTests
     {
         var menu = new OptionsMenuModel();
         var rows = menu.Rows(State);
-        Assert.Equal(4, rows.Count);
+        // P979 adds the port's Visuals page after native's four groups, so the
+        // native four keep their order and the page row sits before Controls.
+        Assert.Equal(5, rows.Count);
         Assert.Equal("Graphics Options", rows[0].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenSoundMenu, rows[1].Command);
         Assert.Equal("Sound Options >", rows[1].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenGameMenu, rows[2].Command);
         Assert.Equal("Game Options >", rows[2].Label);
-        Assert.Equal(OptionsMenuModel.OptionsCommand.MapKeysAndControls, rows[3].Command);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.OpenVisualsMenu, rows[3].Command);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.MapKeysAndControls, rows[4].Command);
 
         // Activating a submenu row opens it (and returns no leaf command);
         // activating a leaf returns the command and keeps the page.
@@ -200,7 +203,7 @@ public sealed class P806OptionsMenuTests
     {
         var menu = new OptionsMenuModel();
         menu.Move(-1, State);                            // wrap to the last root row
-        Assert.Equal(3, menu.Row0);
+        Assert.Equal(4, menu.Row0);                      // P979: Visuals page added to the root
         menu.Move(1, State);                             // wrap back to the first
         Assert.Equal(0, menu.Row0);
 

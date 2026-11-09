@@ -42,6 +42,40 @@ public sealed partial class Game1
     /// deterministic-spin seed) and its resolved native visual.</summary>
     private readonly record struct TreasureDrawItem(Vector3 Position, short Id, Rendering.TreasureVisual Visual);
 
+    /// <summary>
+    /// P979 — resolve this frame's radial-visibility state once, before the
+    /// geometry gather. The flag applies to the flight cameras native's
+    /// <c>SetZClip(5, 10000)</c> governs (cockpit, chase, every external mode,
+    /// missile/turret/drone views); the command map, free-cam and spectator orbit
+    /// cameras are port extensions with their own 80 km range and keep it. The
+    /// benchmark and capture cameras own their framing, so the rule is off there
+    /// too (the benchmark A/B stays comparable with the pre-P979 client).
+    /// </summary>
+    private void ResolveRadialView()
+    {
+        bool flightCamera = _cameraMode is not (CameraMode.Command or CameraMode.FreeCam or CameraMode.OrbitCam);
+        _radialViewActive = _visuals.RadialVisibility
+            && flightCamera
+            && _benchmark is null && !_benchmarkApplied
+            && _captureSpec is null;
+        _radialViewRange = _visuals.ViewRange;
+        _flightDepthFar = _radialViewActive
+            ? Rendering.RadialVisibility.RadialFarPlane(_radialViewRange)
+            : Rendering.LinearDepth.DefaultFar;
+    }
+
+    /// <summary>
+    /// P979 — the per-object gate. With <c>visuals.radialVisibility</c> ON an
+    /// object more than the view range from the camera eye (its nearest surface,
+    /// counting <paramref name="radius"/>) is skipped; inside the range it draws
+    /// wherever it sits on screen, so turning can neither reveal nor hide it.
+    /// OFF returns false, leaving the GPU's native planar far clip to decide
+    /// exactly as before.
+    /// </summary>
+    private bool OutsideRadialView(Vector3 position, Vector3 eye, float radius = 0f)
+        => _radialViewActive
+           && !Rendering.RadialVisibility.RadialDrawn(Vector3.Distance(position, eye), radius, _radialViewRange);
+
     /// <summary>P586 — log an unresolvable treasure (a part/development id the
     /// client's catalogue cannot resolve, or one whose native model is missing)
     /// exactly once per ObjectId, then fall back to the gold-gem placeholder —
@@ -409,6 +443,10 @@ public sealed partial class Game1
                 // object positions.
                 Matrix view; Matrix proj; Vector3 cameraEye;
                 float chaseDt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                // P979 — resolve this frame's radial-visibility state BEFORE the
+                // geometry gather: the per-object gate (OutsideRadialView), the
+                // depth pass and the projection all read the same decision.
+                ResolveRadialView();
                 // P306 — capture mode: default is a fixed tracking overview of the
                 // whole fleet (video shows N ships in frame at once). P338 — a
                 // `chase` capture instead drives the local ship's REAL chase
@@ -447,6 +485,13 @@ public sealed partial class Game1
                 _sound?.SetListenerCamera(cameraEye, view);
                 if ((_benchmark is not null || _benchmarkApplied) && _cameraMode != CameraMode.Command)
                     proj = WithBenchmarkViewDistance(proj, _benchmarkViewDistance);
+                // P979 — radial visibility ON: push the far plane past the range so
+                // the plane can never clip an object the sphere rule keeps (an
+                // object at the limit still has its bulk inside the frustum). The
+                // per-object gate below does the actual hiding; OFF leaves native's
+                // 10000 m planar clip exactly as it was.
+                if (_radialViewActive)
+                    proj = Rendering.RadialVisibility.WithFarPlane(proj, _flightDepthFar);
                 // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets
                 // bJiggle = InternalCamera(m_cm), and InternalCamera is true only for
                 // cmCockpit (Treki.h:145) — so native shakes the COCKPIT view, not the
@@ -598,7 +643,7 @@ public sealed partial class Game1
                 // when soft particles are inactive/unavailable.
                 if (soft)
                 {
-                    _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+                    _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, _flightDepthFar);
                     // P862b — the flare occlusion probe reads LAST frame's linear
                     // depth HERE, before this frame's pass re-renders that target:
                     // the same exact test P585 did, one frame late, with no
@@ -613,7 +658,7 @@ public sealed partial class Game1
                     GraphicsDevice.SetRenderTarget(_post!.DepthRT);
                     GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
                         Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
-                    DrawSceneDepth(view, proj, cameraEye);
+                    DrawSceneDepth(view, proj, cameraEye, Rendering.LinearDepth.DefaultNear, _flightDepthFar);
                     GraphicsDevice.SetRenderTarget(sceneTarget ? sceneRt : (capThis ? _capTarget : (RenderTarget2D?)null));
                     GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -688,6 +733,10 @@ public sealed partial class Game1
                     if (!ShipInDrawnSector(id, me)) continue;
                     var xnaPos = PoseConverter.ToXna(pose.Position);
                     if (OutsideBenchmarkView(xnaPos, cameraEye)) continue;
+                    // P979 — radial visibility: by true camera distance, not the
+                    // planar far clip (OFF = no-op, native's clip applies).
+                    if (OutsideRadialView(xnaPos, cameraEye,
+                            _shipRadiusById.TryGetValue(id, out var gateRadius) ? gateRadius : 0f)) continue;
                     var eyeRel = xnaPos - cameraEye;                     // P612b camera-relative
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
@@ -828,6 +877,7 @@ public sealed partial class Game1
                 {
                     var rXnaPos = PoseConverter.ToXna(rPos);
                     if (OutsideBenchmarkView(rXnaPos, cameraEye, rRadius)) continue;
+                    if (OutsideRadialView(rXnaPos, cameraEye, rRadius)) continue;   // P979
                     var rRot = PoseConverter.ToXnaRotation(rOri);
                     // P252 — apply the accumulated spin (already advanced for this
                     // frame in PrepareSceneGeometry) about the rock's own
@@ -902,6 +952,7 @@ public sealed partial class Game1
                 foreach (var (wId, wPos, wOri, wRadius, wTex) in _drawWarps)
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
+                    if (OutsideRadialView(wXnaPos, cameraEye, wRadius)) continue;   // P979 — alephs
                     var wRot = PoseConverter.ToXnaRotation(wOri);
                     // P562 — the whole-mesh rigid spin is gone; the vortex now
                     // flows from the native animated UVs inside WarpRenderer.
@@ -943,6 +994,7 @@ public sealed partial class Game1
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
                     if (OutsideBenchmarkView(sXnaPos, cameraEye, sRadius)) continue;
+                    if (OutsideRadialView(sXnaPos, cameraEye, sRadius)) continue;   // P979
                     var sRot = PoseConverter.ToXnaRotation(sOri);
                     // P564 — draw each station from its ORIGINAL native .mdl station
                     // model + native texture at native scale/orientation (native
@@ -1005,6 +1057,7 @@ public sealed partial class Game1
                 }
                 foreach (var (bPos, bRadius, bAlpha) in _drawBuilds)
                 {
+                    if (OutsideRadialView(bPos, cameraEye, bRadius)) continue;   // P979
                     var bWorld = Matrix.CreateScale(bRadius) * Matrix.CreateTranslation(bPos - cameraEye);
                     _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha, _sectorLighting);
                 }
@@ -1256,6 +1309,7 @@ public sealed partial class Game1
                 foreach (var (mType, mPos, mOri, mModel) in _drawMissiles)
                 {
                     var mXna = PoseConverter.ToXna(mPos);
+                    if (OutsideRadialView(mXna, cameraEye)) continue;   // P979
                     var mRot = PoseConverter.ToXnaRotation(mOri);
                     var mWorld = mRot * Matrix.CreateTranslation(mXna - cameraEye);
                     if (mModel is not null)
@@ -1318,6 +1372,7 @@ public sealed partial class Game1
                 }
                 foreach (var (pbPos, pbSide, pbType) in _drawProbes)
                 {
+                    if (OutsideRadialView(pbPos, cameraEye)) continue;   // P979
                     var pbWorld = Matrix.CreateTranslation(pbPos - cameraEye);
                     var pbTint = (world.MySideId ?? -1) == pbSide
                         ? Rendering.StationRenderer.FriendlyColor
@@ -1363,7 +1418,10 @@ public sealed partial class Game1
                     }
                 }
                 foreach (var (mnPos, mnRadius, mnSeed, mnStrength) in _drawMines)
+                {
+                    if (OutsideRadialView(mnPos, cameraEye, mnRadius)) continue;   // P979
                     _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnStrength, mnSeed, cameraEye, view, proj);
+                }
 
                 // P292 — chaff. ClientWorld.Chaff is transient (CREATE_CHAFF(109)
                 // carries no id and no destroy message), so — like projectiles —
@@ -1438,6 +1496,7 @@ public sealed partial class Game1
                 }
                 foreach (var it in _drawTreasureItems)
                 {
+                    if (OutsideRadialView(it.Position, cameraEye)) continue;   // P979
                     double age = _treasureAge.TryGetValue(it.Id, out double a) ? a : 0.0;
                     if (it.Visual.IsDecal)
                     {
@@ -1640,7 +1699,12 @@ public sealed partial class Game1
                     if (TrySceneSector(world, me, out ownSectorId))
                     {
                         foreach (var ex in world.Explosions)
-                            if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
+                            // P979 — radial visibility also applies to blast
+                            // effects, so an off-axis blast past the range cannot
+                            // show up over empty space.
+                            if (ex.ClusterId == ownSectorId
+                                && !OutsideRadialView(PoseConverter.ToXna(ex.Position), cameraEye))
+                                _drawExplosions.Add(ex);
                     }
                 }
                 // P579 — real-window proof hook: deterministically injects
@@ -2338,7 +2402,7 @@ public sealed partial class Game1
         if (depth is null || _softContext is null)
             return false;                                  // no fresh depth
         float alephNorm = Rendering.LinearDepth.Normalize(viewDepth,
-            Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+            Rendering.LinearDepth.DefaultNear, _flightDepthFar);
         return _flareOcclusion.Query(warpId, sx, sy, alephNorm,
             depth.Width, depth.Height, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
     }
@@ -2369,12 +2433,10 @@ public sealed partial class Game1
     /// depth target with LinearDepth.fx, so the soft-particle smoke can fade at
     /// hull/rock/station intersections. No-op if the depth effect is missing.
     /// </summary>
-    private void DrawSceneDepth(Matrix view, Matrix projection, Vector3 cameraEye)
+    private void DrawSceneDepth(Matrix view, Matrix projection, Vector3 cameraEye, float near, float far)
     {
         var depthEffect = _post?.LinearDepthEffect;
         if (depthEffect is null) return;
-        const float near = Rendering.LinearDepth.DefaultNear;
-        const float far = Rendering.LinearDepth.DefaultFar;
         foreach (var (model, world, scale) in _drawShipDepth)
             _shipRenderer.DrawDepth(model, world, view, projection, scale, depthEffect, near, far);
         foreach (var (geo, world, scale) in _drawNativeShipDepth)   // P566
@@ -2453,6 +2515,10 @@ public sealed partial class Game1
             // silhouette (their tiny point must not occlude soft smoke oddly).
             if (IsFarLod(id)) continue;
             var xnaPos = PoseConverter.ToXna(pose.Position);
+            // P979 — the depth silhouette must match what the colour pass draws:
+            // a ship the radial rule hides contributes no depth.
+            if (OutsideRadialView(xnaPos, cameraEye,
+                    _shipRadiusById.TryGetValue(id, out var depthRadius) ? depthRadius : 0f)) continue;
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
             // P566 — native depth geometry (original .mdl at native scale); else the
             // Meshy content-model depth geometry, mirroring the color pass exactly.
@@ -2501,6 +2567,7 @@ public sealed partial class Game1
         {
             spin.Advance(dtSec);
             var rXnaPos = PoseConverter.ToXna(rPos);
+            if (OutsideRadialView(rXnaPos, cameraEye, rRadius)) continue;   // P979 — depth matches colour
             var rRot = PoseConverter.ToXnaRotation(rOri);
             var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
             var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
@@ -2528,6 +2595,7 @@ public sealed partial class Game1
         foreach (var (sPos, sOri, _, sRadius, sModel, _) in _drawStations)
         {
             var sXnaPos = PoseConverter.ToXna(sPos);
+            if (OutsideRadialView(sXnaPos, cameraEye, sRadius)) continue;   // P979 — depth matches colour
             var sRot = PoseConverter.ToXnaRotation(sOri);
             var sWorld = sRot * Matrix.CreateScale(sRadius) * Matrix.CreateTranslation(sXnaPos - cameraEye);
             // P564 — native station: carry the unscaled native world + scale + stem so

@@ -81,6 +81,32 @@ five isolated runs after the allied bay-approach change: **5 pass / 0 fail /
 longest speed-below-one intervals with a target were
 2.004/1.812/2.007/2.205/1.905 s. No parking-bound failure occurred.
 
+## P979 validation — visual flags, two Fast sweeps, 2026-11-09 UTC
+
+**Sweep 1** on the P979 tree (`tools/run-tests.sh --tier fast`, 13,664 cases, 565.7 s, run
+while another lane's `tools/hud2-proof` golden captures and diffs held one core: load
+average 3.2–4.3 on 24 CPUs): **13,660 passed / 1 failed / 3 not executed** (the MonoGame
+project's own skip markers). **Sweep 2** on the final tree (13,664 cases, 551.6 s, load
+1.6–3.0): **13,658 passed / 3 failed / 3 not executed**. Fast infrastructure checks: PASS
+in both. Every failure is an unrelated `Allegiance.Core.Tests` / `Allegiance.ClientCore.Tests`
+server-wire/NPC case and belongs to an already-ledgered family:
+
+| test | suite result | isolated |
+| --- | --- | --- |
+| `MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` (sweep 1) | fail 13.1 s (`NPC should have docked and sold within the tick budget`), also over the 10 s Fast limit; its P817 twin passed in 0.7 s in the same run | **3/3 pass** (12 s per 3-test run) |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (sweep 1) | pass, 10.6 s (over the limit; ledgered timing family since P966) | **3/3 pass** |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (both sweeps) | pass, 11.1 s / 11.4 s (over the limit) | **pass** (1 s) alone |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (sweep 2) | fail 38.4 s (`lock never reached full + partial tip (lock 1.000)`) — the ledgered 38.7–38.8 s timeout signature | **1 pass / 2 fail** (pass 1 s, fails 38 s), i.e. the recorded **clean-base** rate (P966 row: 1 pass / 2 fail) |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (sweep 2) | `31.05` against the fixture's [28, 31] — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) | **2 pass / 3 fail** over the mixed cohorts, same one-second signature |
+| `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` (sweep 2) | fail (`target shield never dropped below 0.74 (ended 1)`) | **3/3 pass** (3 s each, load 2.8–4.0) |
+
+No task test failed: the P979 files (`Allegiance.ClientCore.MonoGame.Tests`
+`RadialVisibilityTests`, `VisualFlagsTests`, `P979VisualsOptionsTests`,
+`P806OptionsMenuTests`, `FlightFarClipParityTests`) are 52/52 in each of three isolated
+repetitions, and the MonoGame project passed 4,961/4,964 (3 not executed) in both sweeps.
+P979 touches only client rendering, the intro options model and player preferences — no
+server/NPC/sim/wire path — so these are shared-host and pre-existing flakes.
+
 ## P966 validation — server trust boundaries, one Fast sweep, 2026-11-08 UTC
 
 One complete Fast invocation on the P966 tree (logon re-send bound, claimed-map

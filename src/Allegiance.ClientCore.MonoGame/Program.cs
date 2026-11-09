@@ -113,6 +113,10 @@ float? debrisDensity = null;
 // P449b — client-only in-flight camera FOV in degrees (native default 50). Mirrors
 // the P378 liveSettings philosophy as a launch setting; never sent on the wire.
 float flightFovDegrees = 50f;
+// P979 — client-only visual-enhancement overrides (`--visuals key=on,...`), applied
+// on top of the player profile's `visuals` group. Every flag defaults OFF (native
+// look); never sent on the wire.
+string? visualsSpec = null;
 // P546 — VFX renderer: default ENHANCED; --fx native forces the P545/P263
 // native-art path for parity checks (see LaunchOptions.EnhancedVfx).
 bool enhancedVfx = true;
@@ -240,6 +244,17 @@ for (int i = 0; i < args.Length; i++)
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var ff2))
             flightFovDegrees = ff2;
+    }
+    else if (a == "--visuals")
+    {
+        // P979 — `--visuals key=on,viewRange=12000`. Unknown keys warn at startup;
+        // the resolved flags are logged once the profile has been read.
+        if (i + 1 < args.Length) visualsSpec = args[++i];
+        else Console.Error.WriteLine("[monogame] --visuals: expected key=on,... (e.g. radialVisibility=on)");
+    }
+    else if (a.StartsWith("--visuals=", StringComparison.Ordinal))
+    {
+        visualsSpec = a.Substring("--visuals=".Length);
     }
     else if (a == "--asset-manifest")
     {
@@ -633,6 +648,9 @@ var opts = new Game1.LaunchOptions
     DebrisDensity = debrisDensity,
     // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
     FlightFovDegrees = flightFovDegrees,
+    // P979 — the client-only `--visuals key=on,...` override, applied on top of
+    // the profile's `visuals` group at startup (see LaunchOptions.VisualsOverride).
+    VisualsOverride = visualsSpec,
     // P546 — VFX renderer (Enhanced default; --fx native forces native-art path).
     EnhancedVfx = enhancedVfx,
     // P573 — effects tier + volumetric technique (--fx volumetric|displaced).

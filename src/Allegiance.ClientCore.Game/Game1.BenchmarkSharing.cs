@@ -108,6 +108,7 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.OpenGameMenu:
                 case OptionsMenuModel.OptionsCommand.OpenChatMenu:
                 case OptionsMenuModel.OptionsCommand.OpenMouseMenu:
+                case OptionsMenuModel.OptionsCommand.OpenVisualsMenu:   // P979 — port extension
                     _optionsMenu.Activate(state);          // descend one level
                     break;
                 case OptionsMenuModel.OptionsCommand.MapKeysAndControls: // native idmConfigure 'C'
@@ -171,6 +172,19 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.MouseSensitivityDown:
                     StepMouseSensitivity(-1);
                     break;
+                // P979 — the Visuals page: the command is generic and acts on the
+                // flag whose row was activated. The live object is updated in place
+                // (the flight render reads it every frame) and the profile copy is
+                // saved, so the choice survives a restart.
+                case OptionsMenuModel.OptionsCommand.ToggleVisualFlag:
+                    ToggleVisualFlag(_optionsMenu.VisualKeyAt(_optionsMenu.Row0, state));
+                    break;
+                case OptionsMenuModel.OptionsCommand.RaiseVisualRange:
+                    StepVisualRange(_optionsMenu.VisualKeyAt(_optionsMenu.Row0, state), +1);
+                    break;
+                case OptionsMenuModel.OptionsCommand.LowerVisualRange:
+                    StepVisualRange(_optionsMenu.VisualKeyAt(_optionsMenu.Row0, state), -1);
+                    break;
             }
         }
 
@@ -224,7 +238,43 @@ public sealed partial class Game1
                 && _directoryChat.IsMuted(newest.SenderId),
             AudioQuality: _sound?.Quality ?? _optionsPrefs.AudioQuality,
             // P948 — the live mouse sensitivity the Mouse Options labels act on.
-            MouseSensitivity: _mouseFlight.MouseSensitivity);
+            MouseSensitivity: _mouseFlight.MouseSensitivity,
+            // P979 — the EFFECTIVE visual flags (profile group + launch override);
+            // the Visuals page labels read and edit this object.
+            Visuals: _visuals);
+    }
+
+    /// <summary>
+    /// P979 — flip one Visuals-page toggle. The live object is mutated in place so
+    /// the very next rendered frame uses the new value; the profile's own group is
+    /// updated and saved separately (never the launch override's resolved value),
+    /// so the choice survives a restart and an unrelated preferences save cannot
+    /// persist an override.
+    /// </summary>
+    private void ToggleVisualFlag(string? key)
+    {
+        if (key is null || Rendering.VisualFlags.Find(key) is not { Kind: Rendering.VisualFlagKind.Toggle }) return;
+        EnsureOptionsPrefs();
+        bool on = !_visuals.IsOn(key);
+        _visuals.SetToggle(key, on);
+        (_optionsPrefs.Visuals ??= new Rendering.VisualOptions()).SetToggle(key, on);
+        _optionsPrefs.Save(_playerPrefsPath);
+        Console.WriteLine($"[intro] visuals: {key} -> {(on ? "on" : "off")} (saved)");
+    }
+
+    /// <summary>P979 — step a Visuals-page numeric flag by the table's step,
+    /// clamped to its bounds; live + saved like the toggles.</summary>
+    private void StepVisualRange(string? key, int direction)
+    {
+        var definition = key is null ? null : Rendering.VisualFlags.Find(key);
+        if (definition is not { Kind: Rendering.VisualFlagKind.Range }) return;
+        EnsureOptionsPrefs();
+        float step = definition.Step > 0f ? definition.Step : 1000f;
+        float next = System.Math.Clamp(_visuals.Value(key!) + direction * step, definition.MinValue, definition.MaxValue);
+        _visuals.SetValue(key!, next);
+        (_optionsPrefs.Visuals ??= new Rendering.VisualOptions()).SetValue(key!, next);
+        _optionsPrefs.Save(_playerPrefsPath);
+        Console.WriteLine($"[intro] visuals: {key} -> {Rendering.VisualOptions.Format(next)} m (saved)");
     }
 
     /// <summary>P871b — native <c>contextMute</c> (<c>WinTrek/WinTrek.cpp:3731-3734</c>,
@@ -310,6 +360,8 @@ public sealed partial class Game1
             OptionsMenuModel.Page.Game => "Game Options",
             OptionsMenuModel.Page.Chat => "Game Options / Chat, Mute, Filter",
             OptionsMenuModel.Page.Mouse => "Game Options / Mouse Options",
+            // P979 — the port's visual-enhancement flags (no native counterpart).
+            OptionsMenuModel.Page.Visuals => "Visuals (enhancements, default off)",
             _ => "Graphics / Sound / Game / Controls",
         };
         DrawIntroTitle(width, "Options", subtitle, title, dim);

@@ -153,6 +153,14 @@ public sealed partial class Game1
         /// separate capture-overview FOV stays governed by <c>--debugMode</c>.</summary>
         public float FlightFovDegrees = 50f;
 
+        /// <summary>P979 — the client-only visual-enhancement launch override
+        /// (<c>--visuals key=on,viewRange=12000</c>), applied ON TOP of the
+        /// player profile's <c>visuals</c> group. Null = no override. Every flag
+        /// defaults OFF (native's look); the resolved set is logged at startup
+        /// and the options menu's Visuals page edits the profile group live.
+        /// Never sent on the wire.</summary>
+        public string? VisualsOverride = null;
+
         /// <summary>P546 — the VFX renderer: <b>Enhanced</b> (default ON) uses the
         /// CC0 flipbook explosions + animated premultiplied sector-lit smoke
         /// (<see cref="Rendering.EnhancedExplosionRenderer"/> /

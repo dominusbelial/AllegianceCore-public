@@ -856,6 +856,23 @@ list in **reverse**.
 - **HUD settings / styles** — `Rendering/HudSettings.cs` defines `HudStyle`
   Classic/Modern; **every HUD change must work in both styles**
   (`Rendering/ModernHudRenderer.cs`). *Native:* the original classic HUD layout.
+- **Visual-enhancement flags (`visuals.*`, P979)** — visual changes that may
+  depart from native's look sit behind per-flag switches, **all default OFF**
+  (the native path stays pinned by tests); a flag changes how things LOOK, never
+  game rules or server knowledge. The table lives in
+  `src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs` (`VisualFlags.Definitions`
+  drives parsing, the `--visuals key=on,...` override, the Options → Visuals page
+  and the startup log); the state is one flat `visuals` group in
+  `player.json` (`IntroPreferences.Visuals`, unknown keys ignored), effective
+  flags resolved at startup in `Game1.cs`. The first flag,
+  `visuals.radialVisibility`
+  (`src/Allegiance.ClientCore.Game/Rendering/RadialVisibility.cs`,
+  `src/Allegiance.ClientCore.Game/Game1.Rendering.cs` `OutsideRadialView`), draws
+  objects by true camera distance instead of native's
+  planar far clip (`SetZClip(5, 10000)`, `WinTrek/WinTrek.cpp:323`; projection
+  shape `engine/camera.cpp:89-96,135-139`), removing the 6-10 km pop-in when the
+  ship turns; `visuals.viewRange` is its range in metres. Proof:
+  `tools/p979-visual-proof`; report `docs/reports/VISUAL_FLAGS_RADIAL_VISIBILITY_P979.md`.
 - **Modern HUD scale / text budget (P833, capped by P859)** — one scale for text,
   glyph art, gauge ring, target pane and own-status grid, derived from the desktop
   display density × the user `HudSettings.Size` (`Rendering/ModernHudScale.cs`:
