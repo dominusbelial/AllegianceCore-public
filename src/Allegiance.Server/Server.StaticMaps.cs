@@ -46,4 +46,37 @@ public sealed partial class Server
         return string.IsNullOrEmpty(selected.FileName) ? game.Map
             : selected.FileName.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? selected.FileName : selected.FileName + ".igc";
     }
+
+    /// <summary>
+    /// P966 (P963-03) — an EXACT catalog match for a player-CLAIMED map. Native
+    /// checks a user map against the static-map catalog before hosting it:
+    /// <c>VerifyUserMap</c> requires the team count AND the file name to match a
+    /// catalog entry exactly (<c>FedSrv/FedSrv.CPP:234-245</c>,
+    /// <c>nTeams == nNumTeams &amp;&amp; 0 == strcmp(szMapFile, cbIGCFile)</c>). The
+    /// port's provisioning previously <c>Path.Combine</c>d the raw claim under
+    /// <c>artPath</c>, so a <c>..</c> or rooted claim escaped the artwork root and
+    /// hosted any readable file while skipping the catalog entirely.
+    /// <para>The claim is therefore only ever used as a catalog KEY: the file that
+    /// is actually opened comes from the operator's <c>maps.txt</c> (whose loader
+    /// already rejects non-basename entries, above), matched by file name (with
+    /// or without the <c>.igc</c> extension — the form the lobby's wizard list
+    /// uses) or friendly name, with the team count. No match ⇒ refused; a
+    /// matching entry is still re-checked as a relative basename by the caller
+    /// before anything is opened.</para>
+    /// </summary>
+    private bool TryResolveClaimedCatalogMap(GameConfig game, out string catalogFile)
+    {
+        catalogFile = "";
+        var selected = _staticMaps.FirstOrDefault(m => m.Teams == game.Teams
+            && (m.FileName == game.Map
+                || (m.FileName + ".igc").Equals(game.Map, StringComparison.Ordinal)
+                || m.FriendlyName == game.Map));
+        if (selected.FileName is not { Length: > 0 } file) return false;
+        // The catalog's own basename rule (loader, above): a relative file name
+        // only — no separators, no rooted form. The claim string never reaches
+        // the file system, but a hostile maps.txt entry must not either.
+        if (file != Path.GetFileName(file) || file.Contains('\\') || Path.IsPathRooted(file)) return false;
+        catalogFile = file.EndsWith(".igc", StringComparison.OrdinalIgnoreCase) ? file : file + ".igc";
+        return true;
+    }
 }

@@ -450,7 +450,11 @@ list in **reverse**.
   `src/Allegiance.Server/Server.StaticMaps.cs` loads native `maps.txt` and
   sends `src/Allegiance.Core/Wire/StaticMapInfo.cs` after validated logon;
   `src/Allegiance.ClientCore/State/ClientWorld.StaticMaps.cs` replaces and
-  selects the catalog by exact file/team pair. Native:
+  selects the catalog by exact file/team pair. P966: a player-CLAIMED map
+  (`Server.Provisioning.cs`) is only ever a catalog KEY — an exact
+  file+team match (native `VerifyUserMap`, `FedSrv.CPP:234-245`) whose
+  canonical path stays under `artPath`; `..`/rooted/non-catalog claims are
+  refused without path echoes. Native:
   `FedSrv/FedSrv.CPP:74-82,211-244,990-998,7690-7715`.
 - **Inbound native-message certification (P867)** — the 49 active cases of
   `FedSrvSiteBase::OnAppMessage`, with sender/stage/ownership/trap guards,
@@ -460,6 +464,17 @@ list in **reverse**.
   `src/Allegiance.Server/Server.Dispatch.cs`; native chat lobby controls and
   the balance-mode team flush use `src/Allegiance.Server/Server.DispatchParity.cs`.
   Report: `docs/reports/P867_REPORT.md`.
+- **Logon re-send bound / cached side roster (P966)** — a peer still pending
+  side selection gets the idempotent re-LOGONREQ re-ack (same ship id, no new
+  allocation; P646 keeps one logon per connection) but bounded: duplicates
+  inside `PendingSideSelect.ReackRetrySeconds` are dropped with rate-limited
+  diagnostics, and the SIDE_ROSTER bytes come from a per-mission cache
+  invalidated by every roster-affecting event (the lobby-dirty choke point,
+  seat registration, side-civ changes). Native has no pending-side-select
+  retry flow — it asserts an existing player never resends LOGONREQ
+  (`FedSrv.CPP:4830-4832`). `src/Allegiance.Server/Server.Dispatch.cs`,
+  `src/Allegiance.Server/Server.Lobby.cs` (`SideRosterPacket`),
+  `src/Allegiance.Server/Server.cs` (`PendingSideSelect`).
 - **Ship commands** — client intent handlers (flight, firing, docking, buying).
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
@@ -680,10 +695,15 @@ list in **reverse**.
 - **Reconnect Grace** (EXPERIMENTAL, `reconnect.enabled`, default **off**) —
   an unrequested drop parks the player's ship for `reconnect.graceSeconds`
   (default 5 s) instead of deleting it at once; the same pilot resumes the same
-  ship/seat with a session token carried in the native `LOGONREQ.dwCookie`, and
-  the existing native join burst re-syncs the client world. Expiry runs the
-  native removal (`FedSrv.CPP:4549-4566`, `fsship.cpp:58-68`); a voluntary
-  `LOGOFF` is immediate. `src/Allegiance.Server/Server.ReconnectGrace.cs`,
+  ship/seat with a session token in the port-only `LOGONREQ.ResumeToken`
+  extension (P883), and the existing native join burst re-syncs the client
+  world. Expiry runs the native removal (`FedSrv.CPP:4549-4566`,
+  `fsship.cpp:58-68`); a voluntary `LOGOFF` is immediate. P966 trust rules: a
+  wrong token refuses only the claimant (the parked seat is untouched and
+  resumable); a name collision refuses the resume without retiring the seat
+  (port refusal-as-flag, LOB-0033); one held seat per (mission, name) — a
+  same-name drop never overwrites a parked entry; the token is never logged
+  (a short non-reversible tag only). `src/Allegiance.Server/Server.ReconnectGrace.cs`,
   `src/Allegiance.ClientCore/Session/ConnectionSession.cs`
   (`EnableAutoReconnect`), `tools/reconnect-fault/`,
   `docs/reports/P813C_RECONNECT_GRACE.md`. Client opt-in:

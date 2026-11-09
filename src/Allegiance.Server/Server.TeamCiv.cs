@@ -142,6 +142,10 @@ public sealed partial class Server
         short previous = side.Civilization.CivilizationId;
         side.Civilization = civ;
         side.DevelopmentTechs = TechTreeBitMask.FromBytes(civ.TtbmBaseTechs);
+        // P966 (P963-02) — the roster records carry the side's civilization id,
+        // so a mid-game civ change invalidates the cached SIDE_ROSTER bytes
+        // (the host-edit path marks the lobby dirty; this path does not).
+        InvalidateSideRosterCache();
 
         int retyped = 0;
         if (mission.Core.StationTypes.TryGetValue(civ.InitialStationTypeId, out var homeType))

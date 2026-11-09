@@ -129,7 +129,11 @@ public class LiveDuplicateLogonTests
         short firstShip = bot.Ack!.ShipID;
 
         // Duplicate LOGONREQ while pending: the SAME ack (same ship id), and the
-        // pending entry is not replaced with a freshly-allocated id.
+        // pending entry is not replaced with a freshly-allocated id. P966
+        // (P963-02) bounds the re-ack with a per-peer retry interval, so advance
+        // the sim clock past it first — a legitimate client retry (never faster
+        // than the interval) is still served the same idempotent ack.
+        PumpUntil(server, () => false, 25);   // 25 ticks @ 20 ups = 1.25 s ≥ the 1 s interval
         bot.SendLogonRequest(Request("PDUP2"));
         PumpUntil(server, () => false, 40);
         Assert.Equal(1, server.ConnectionScopedCacheCounts().PendingSideSelect);
