@@ -1,0 +1,11 @@
+{
+  "Schema": "hud-skin-1",
+  "Id": "modern",
+  "Name": "Modern",
+  "Version": "1.0.0",
+  "Defaults": {
+    "SelectionBracket": true,
+    "RadarDeclutter": true,
+    "Level": "Tactical"
+  }
+}

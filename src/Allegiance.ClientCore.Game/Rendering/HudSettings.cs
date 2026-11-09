@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -10,7 +11,19 @@ public enum HudStyle { Classic, Modern }
 /// before the intro screen can create player.json.</summary>
 public sealed class HudSettings
 {
-    public HudStyle Style { get; set; } = HudStyle.Modern;
+    /// <summary>Canonical skin id. The persisted value; <see cref="Style"/>
+    /// remains a temporary adapter for existing renderer branches.</summary>
+    public string Skin { get; set; } = HudSkinIds.Modern;
+
+    /// <summary>Legacy adapter: maps <see cref="Skin"/> to the two existing
+    /// renderer instances. Unknown skin ids resolve to Modern.</summary>
+    [JsonIgnore]
+    public HudStyle Style
+    {
+        get => SkinToStyle(Skin);
+        set => Skin = value == HudStyle.Classic ? HudSkinIds.Classic : HudSkinIds.Modern;
+    }
+
     public float Size { get; set; } = 1;
     public bool ColorBlindSafe { get; set; }
     /// <summary>HUD-4 — native optional round radar border (WinTrek.cpp:2715
@@ -55,7 +68,7 @@ public sealed class HudSettings
     public bool? SelectionBracket { get; set; }
     /// <summary>Whether the 3-D selection box draws: the player's choice, else the
     /// style default.</summary>
-    public bool SelectionBracketOn => SelectionBracket ?? Style == HudStyle.Modern;
+    public bool SelectionBracketOn => SelectionBracket ?? (Style == HudStyle.Modern);
     /// <summary>P828 — the Modern-HUD radar label declutter (priority + nearest-N
     /// labels, distance fade, overlap merge) for crowded battles. A VISUAL port
     /// option: native labels every ship its radar mode allows
@@ -68,7 +81,7 @@ public sealed class HudSettings
     public bool? RadarDeclutter { get; set; }
     /// <summary>Whether the declutter runs: the player's choice, else the style
     /// default.</summary>
-    public bool RadarDeclutterOn => RadarDeclutter ?? Style == HudStyle.Modern;
+    public bool RadarDeclutterOn => RadarDeclutter ?? (Style == HudStyle.Modern);
     /// <summary>P828 — how many ordinary (non-priority) labels per frame the
     /// declutter keeps ("the nearest N"; the priority contacts are always
     /// labelled). 0 hides every ordinary label.</summary>
@@ -112,10 +125,12 @@ public sealed class HudSettings
     public bool ControlHintSeen { get; set; }
     /// <summary>P897 remote multiplayer preference; local lessons/skirmish use TCP.</summary>
     public Discovery.ClientTransportSetting Transport { get; set; } = Discovery.ClientTransportSetting.Auto;
-    public void Normalize()
+
+    public void Normalize(HudSkinCatalog? catalog = null)
     {
+        catalog ??= HudSkinResolver.Catalog;
         if (!Enum.IsDefined(Transport)) Transport = Discovery.ClientTransportSetting.Auto;
-        if (!Enum.IsDefined(Style)) Style = HudStyle.Classic;
+        Skin = ResolveSkin(Skin, catalog, out _);
         // P833 — widen the user Size multiplier (0.5–2.0) so the pilot can
         // compensate for very high/low density displays; the base HUD scale is
         // now density-derived (see ModernHudScale) rather than window-height.
@@ -127,23 +142,87 @@ public sealed class HudSettings
         if (!Enum.IsDefined(Level)) Level = HudLevel.Tactical;
         if (!Enum.IsDefined(ActiveLevel) || ActiveLevel == HudLevel.Auto) ActiveLevel = HudLevel.Tactical;
     }
+
     public static HudSettings Load(string path, bool existingPlayer)
     {
         try
         {
-            var settings = JsonSerializer.Deserialize(File.ReadAllText(path), HudSettingsJson.Default.HudSettings) ?? new();
+            string text = File.ReadAllText(path);
+            using var doc = JsonDocument.Parse(text);
+            string skin = MigrateSkin(doc.RootElement, existingPlayer);
+            var settings = JsonSerializer.Deserialize(text, HudSettingsJson.Default.HudSettings) ?? new();
+            settings.Skin = skin;
             settings.Normalize();
             return settings;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
-        { return new() { Style = existingPlayer ? HudStyle.Classic : HudStyle.Modern }; }
+        { return new() { Skin = existingPlayer ? HudSkinIds.Classic : HudSkinIds.Modern }; }
     }
+
     public void Save(string path)
     {
         Normalize();
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(this, HudSettingsJson.Default.HudSettings));
         File.Move(path + ".tmp", path, true);
+    }
+
+    private static string MigrateSkin(JsonElement root, bool existingPlayer)
+    {
+        var catalog = HudSkinResolver.Catalog;
+        if (root.TryGetProperty("Skin", out var skinProp) && skinProp.ValueKind == JsonValueKind.String)
+        {
+            var raw = skinProp.GetString()!;
+            var normalized = HudSkinIds.Normalize(raw);
+            if (catalog.TryGet(normalized) is not null)
+            {
+                if (raw != normalized) LogCasingDiagnostic(raw, normalized);
+                return normalized;
+            }
+            return catalog.Resolve(raw).Id;
+        }
+
+        if (root.TryGetProperty("Style", out var styleProp))
+        {
+            string? legacy = null;
+            if (styleProp.ValueKind == JsonValueKind.String)
+                legacy = styleProp.GetString();
+            else if (styleProp.ValueKind == JsonValueKind.Number && styleProp.TryGetInt32(out var n))
+                legacy = n == 0 ? "Classic" : n == 1 ? "Modern" : null;
+
+            if (legacy is not null && Enum.TryParse<HudStyle>(legacy, ignoreCase: true, out var style) && Enum.IsDefined(style))
+                return style == HudStyle.Classic ? HudSkinIds.Classic : HudSkinIds.Modern;
+
+            // A legacy Style field exists but is unrecognised: fall back to Modern
+            // per P972 §2.4, not to the no-style existing-player fallback.
+            return catalog.Resolve(legacy).Id;
+        }
+
+        // No readable style/skin field: preserve the existing-player/fresh-profile fallback.
+        return existingPlayer ? HudSkinIds.Classic : HudSkinIds.Modern;
+    }
+
+    private static string ResolveSkin(string? id, HudSkinCatalog catalog, out bool known)
+    {
+        var normalized = HudSkinIds.Normalize(id);
+        if (catalog.TryGet(normalized) is { } def)
+        {
+            known = true;
+            return def.Id;
+        }
+        known = false;
+        return catalog.Resolve(id).Id;
+    }
+
+    private static HudStyle SkinToStyle(string skin) =>
+        skin == HudSkinIds.Classic ? HudStyle.Classic : HudStyle.Modern;
+
+    private static bool _casingDiagnostic;
+    private static void LogCasingDiagnostic(string raw, string canonical)
+    {
+        if (_casingDiagnostic) return;
+        _casingDiagnostic = true;
+        Console.WriteLine($"[hud.settings] Skin id '{raw}' normalized to '{canonical}'.");
     }
 }
 
