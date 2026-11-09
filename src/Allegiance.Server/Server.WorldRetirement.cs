@@ -84,6 +84,12 @@ public sealed partial class Server
         // later roster request kept the retired world reachable (P884 GC check).
         _sideRosterPackets.Remove(retired);
 
+        // P983 — the broadcast update-age table keeps one pose stamp per
+        // (peer, visible ship); a retired world's ship ids must not survive the
+        // rotation (native loses every CFShip with the same mission reset,
+        // fsmission.cpp:3490-3527). Same complement rule as the latches above.
+        _broadcastTelemetry?.RetireShips(keep);
+
         // Dropping the entries is not enough: a .NET dictionary/hash-set keeps the
         // backing arrays of the widest moment it ever saw, and a match's latches
         // peak at peers x ships-at-once. Left alone, each match whose peak exceeds

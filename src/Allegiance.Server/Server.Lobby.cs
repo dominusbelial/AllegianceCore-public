@@ -236,7 +236,7 @@ public sealed partial class Server
 
         // "<Side name> is no more." (fsmission.cpp:5377).
         var chat = new ChatMessage { Message = $"{side.Name} is no more.", ChatTarget = (int)ChatTarget.Everyone };
-        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }));
+        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }), BroadcastCategory.ChatLobby);
         Console.WriteLine($"[sideinactive] side {side.Id} departure elimination chat \"{side.Name} is no more.\" -> {nChat} peer(s)");
 
         // Win-by-inactive-sides check (fsmission.cpp:5378-5419).
@@ -375,7 +375,7 @@ public sealed partial class Server
 
         // 5. Chat "<Side name> is no more." to everyone (fsmission.cpp:5377).
         var chat = new ChatMessage { Message = $"{side.Name} is no more.", ChatTarget = (int)ChatTarget.Everyone };
-        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }));
+        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }), BroadcastCategory.ChatLobby);
         Console.WriteLine($"[sideinactive] side {sideId} elimination chat \"{side.Name} is no more.\" -> {nChat} peer(s)");
 
         // 6. Win-by-elimination check (fsmission.cpp:5378-5419).
@@ -2298,13 +2298,13 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// received it. Shared by all five leadership/join/quit broadcasts so the
     /// multi-mission scoping (the P180/P178 fixed bug — never regress an
     /// unscoped sweep) lives in one place.</summary>
-    private int SendToMissionPeers(Mission mission, byte[] packet)
+    private int SendToMissionPeers(Mission mission, byte[] packet, BroadcastCategory category = BroadcastCategory.Other)
     {
         int n = 0;
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;   // whole-mission, not whole-server
-            SendPeer(kv.Key, packet);
+            SendPeer(kv.Key, packet, category);
             n++;
         }
         return n;

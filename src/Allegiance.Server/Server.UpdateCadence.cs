@@ -62,6 +62,9 @@ public sealed partial class Server
     internal void RetireViewerUpdateCadence(ConnectionId id)
     {
         RetireBroadcastProjectionCaches();
+        // P983 — the peer's broadcast byte counters and pose stamps die with it
+        // (a reconnect begins from fresh telemetry, like its cadence).
+        _broadcastTelemetry?.RetirePeer(id);
         _emissionViewers.Remove(id);
         foreach (var pair in _missileViewers)
         {
@@ -159,6 +162,11 @@ internal sealed class ViewerPoseCadence
     internal long ExtraBytes, PacketBytes;
     internal int Older1, Older3;
     internal int TrackedCount => _stamps.Count;
+
+    /// <summary>P983 — whether this viewer currently tracks <paramref name="shipId"/>
+    /// as visible, so the update-age diagnostic can ignore a stamp left by a ship
+    /// that has since left the viewer's sector.</summary>
+    internal bool Contains(short shipId) => _stamps.ContainsKey(shipId);
     // P813a — bounded per-window delivery telemetry (merged into the
     // [update-age] report and cleared there, like PacketBytes).
     internal long Promotions;

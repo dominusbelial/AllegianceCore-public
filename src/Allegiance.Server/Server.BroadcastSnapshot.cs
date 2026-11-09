@@ -79,7 +79,7 @@ public sealed partial class Server
     {
         if (!_broadcastSnapshotEnabled) return;
         _broadcastPublisher = new BroadcastPublisher((delivery, bytes) =>
-            PublishMemory(delivery.Peer, bytes, delivery.Key, delivery.Guaranteed), _broadcastMaxParallelism, true, _broadcastPendingStreamIndex)
+            PublishMemory(delivery, bytes), _broadcastMaxParallelism, true, _broadcastPendingStreamIndex)
         {
             OnError = e => Console.Error.WriteLine($"[broadcast-publish] {e}"),
         };
@@ -209,13 +209,16 @@ public sealed partial class Server
         action();
     }
 
-    private void SendPeer(ConnectionId peer, BroadcastPacket packet) => QueueBroadcast(peer, packet, 0, true);
-    private void SendPeerCoalescing(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed = false)
-        => QueueBroadcast(peer, packet, key, guaranteed);
+    private void SendPeer(ConnectionId peer, BroadcastPacket packet, BroadcastCategory category = BroadcastCategory.Other)
+        => QueueBroadcast(peer, packet, 0, true, category);
+    private void SendPeerCoalescing(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed = false,
+        BroadcastCategory category = BroadcastCategory.Other, int splitBytes = 0)
+        => QueueBroadcast(peer, packet, key, guaranteed, category, splitBytes);
 
     // An event already owns immutable encoded bytes. Its N recipients can share
     // one wrapper within the open snapshot, preserving delivery order and lanes.
-    private void QueueEncodedEvent(ConnectionId peer, byte[] bytes, int key, bool guaranteed)
+    private void QueueEncodedEvent(ConnectionId peer, byte[] bytes, int key, bool guaranteed,
+        BroadcastCategory category = BroadcastCategory.Other)
     {
         if (!TestLegacySurgeProjection && _buildingBroadcastSnapshot is { } snapshot)
         {
@@ -223,28 +226,38 @@ public sealed partial class Server
             {
                 if (!_encodedEventPackets.TryGetValue(bytes, out var packet))
                     _encodedEventPackets.Add(bytes, packet = new BroadcastPacket(bytes));
-                snapshot.Deliveries.Add(new(peer, packet, key, guaranteed));
+                snapshot.Deliveries.Add(new(peer, packet, key, guaranteed, category));
             }
             return;
         }
-        QueueBroadcast(peer, new BroadcastPacket(bytes), key, guaranteed);
+        QueueBroadcast(peer, new BroadcastPacket(bytes), key, guaranteed, category);
     }
 
-    private void QueueBroadcast(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed)
+    private void QueueBroadcast(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed,
+        BroadcastCategory category = BroadcastCategory.Other, int splitBytes = 0)
     {
         if (_shutdown) return;
         if (_buildingBroadcastSnapshot is { } snapshot)
         {
-            lock (_snapshotCaptureGate) snapshot.Deliveries.Add(new(peer, packet, key, guaranteed));
+            lock (_snapshotCaptureGate) snapshot.Deliveries.Add(new(peer, packet, key, guaranteed, category, splitBytes));
             return;
         }
         // Direct test/admin calls outside a sim tick cannot overtake the last
         // queued tick. Production per-tick broadcasts always use the snapshot.
         FlushBroadcastSnapshots();
-        PublishBytes(peer, packet.Encode(), key, guaranteed);
+        PublishBytes(peer, packet.Encode(), key, guaranteed, category, splitBytes);
     }
 
+    private void PublishMemory(BroadcastDelivery delivery, ReadOnlyMemory<byte> memory)
+        => PublishMemory(delivery.Peer, memory, delivery.Key, delivery.Guaranteed, delivery.Category, delivery.SplitBytes);
+
+    // Compatibility shape for the P869 shutdown seam (and tools that reflect the
+    // old four-argument sink); the delivery form above is the production call.
     private void PublishMemory(ConnectionId peer, ReadOnlyMemory<byte> memory, int key, bool guaranteed)
+        => PublishMemory(peer, memory, key, guaranteed, BroadcastCategory.Other, 0);
+
+    private void PublishMemory(ConnectionId peer, ReadOnlyMemory<byte> memory, int key, bool guaranteed,
+        BroadcastCategory category, int splitBytes = 0)
     {
         if (_shutdown) return;
         // Capture hooks retain arrays, so give them an owned copy. Production
@@ -252,12 +265,15 @@ public sealed partial class Server
         if (_captureStream is not null || _testSendCapture is not null
             || TestPublicationCapture is not null || _testSendCoalescingCapture is not null)
         {
-            PublishBytes(peer, memory.ToArray(), key, guaranteed);
+            PublishBytes(peer, memory.ToArray(), key, guaranteed, category, splitBytes);
             return;
         }
         TestPublicationSizeCapture?.Invoke(peer, memory.Length, key, guaranteed);
         Interlocked.Add(ref _egressPayloadOfferedBytes, memory.Length);
         Interlocked.Increment(ref _egressPacketsOffered);
+        // P983 — count exactly the bytes handed to the transport, with the
+        // delivery's category (null field = the off path: no counter work).
+        _broadcastTelemetry?.RecordSend(peer, key, category, memory.Length, splitBytes);
         if (key == 0) _host.Send(peer, memory.Span);
         else if (guaranteed) _host.SendGuaranteedCoalescing(peer, memory.Span, key);
         else _host.SendCoalescing(peer, memory.Span, key);
@@ -266,6 +282,10 @@ public sealed partial class Server
     // The sole publishing sink. No sim state, latches, visibility, ranking or
     // cadence objects are read here. Transport queues are already thread-safe.
     private void PublishBytes(ConnectionId peer, byte[] bytes, int key, bool guaranteed)
+        => PublishBytes(peer, bytes, key, guaranteed, BroadcastCategory.Other, 0);
+
+    private void PublishBytes(ConnectionId peer, byte[] bytes, int key, bool guaranteed,
+        BroadcastCategory category, int splitBytes = 0)
     {
         if (_shutdown) return;
         lock (_captureLock)
@@ -275,6 +295,7 @@ public sealed partial class Server
         Interlocked.Increment(ref _egressPacketsOffered);
         _testSendCapture?.Invoke(peer, bytes);
         TestPublicationCapture?.Invoke(peer, bytes, key, guaranteed);
+        _broadcastTelemetry?.RecordSend(peer, key, category, bytes.Length, splitBytes);
         if (key == 0) _host.Send(peer, bytes);
         else
         {

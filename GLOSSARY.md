@@ -300,6 +300,15 @@ list in **reverse**.
   allocation attribution. `src/Allegiance.Core/Profiling/TickProfiler.cs`;
   env `ALLEGIANCE_TICK_PROFILER`, `ALLEGIANCE_TICK_PROFILER_INTERVAL`,
   `ALLEGIANCE_SLOW_TICK_MS`. Report: `docs/reports/P838_GC_PROFILE.md`.
+- **Broadcast byte / update-age telemetry (P983)** — the default-off `profiler.broadcastBudget`
+  diagnostic: per-peer + server-wide rolling 5 × 1 s byte/frame counters by category (heavy
+  ship update, light/ranked pose, reliable/keyed, chat/lobby, other) and the newest pose age
+  (sim ms) per peer per visible ship, reported on the P600 profiler window/CSV.
+  `src/Allegiance.Server/BroadcastTelemetry.cs`, `src/Allegiance.Server/Server.BroadcastTelemetry.cs`;
+  the categories are tagged at the send sites in `src/Allegiance.Server/Server.BroadcastSnapshot.cs`,
+  `src/Allegiance.Server/Server.RankedPose.cs`, `src/Allegiance.Server/Server.Broadcast.cs`,
+  `src/Allegiance.Server/Server.InterestTiers.cs`, `src/Allegiance.Server/Server.Callbacks.cs`;
+  env `ALLEGIANCE_BROADCAST_TELEMETRY`. Report: `docs/reports/BROADCAST_TELEMETRY_P983.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry

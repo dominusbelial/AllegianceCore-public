@@ -152,6 +152,10 @@ public sealed partial class Server
         // editing a config file: "1"/"true" enables (log-only), "0"/"false"
         // forces off, and any other value is treated as the CSV output path.
         ApplyProfilerConfig(config.Profiler);
+        // P983 — the broadcast byte/update-age diagnostic (profiler.broadcastBudget,
+        // default off). Initialised after the profiler so the boot line can say
+        // whether the periodic report will actually run.
+        InitBroadcastTelemetry();
         if (TickProfiler.Instance is not null && config.Profiler?.SchedulingMetrics != false)
             _threadPoolTelemetry = new ThreadPoolTelemetry();
         if (TickProfiler.Instance is { } profiler)
@@ -1019,11 +1023,13 @@ public sealed partial class Server
 
     /// <summary>Central send path: optional capture then the actual send. Every
     /// packet the server emits flows through here so capture sees all of TX.</summary>
-    private void SendPeer(ConnectionId target, byte[] packet)
+    private void SendPeer(ConnectionId target, byte[] packet) => SendPeer(target, packet, BroadcastCategory.Other);
+
+    private void SendPeer(ConnectionId target, byte[] packet, BroadcastCategory category)
     {
         if (_shutdown) return;
-        if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true);
-        else QueueEncodedEvent(target, packet, 0, true);
+        if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true, category);
+        else QueueEncodedEvent(target, packet, 0, true, category);
     }
 
     /// <summary>
@@ -1040,10 +1046,14 @@ public sealed partial class Server
     /// fsship.cpp:544).
     /// </summary>
     private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed = false)
+        => SendPeerCoalescing(target, packet, coalesceKey, guaranteed, BroadcastCategory.Other);
+
+    private void SendPeerCoalescing(ConnectionId target, byte[] packet, int coalesceKey, bool guaranteed,
+        BroadcastCategory category)
     {
         if (_shutdown) return;
-        if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed);
-        else QueueEncodedEvent(target, packet, coalesceKey, guaranteed);
+        if (_broadcastPublisher is null) PublishBytes(target, packet, coalesceKey, guaranteed, category);
+        else QueueEncodedEvent(target, packet, coalesceKey, guaranteed, category);
     }
 
     /// <summary>Capture one received packet before it is processed. Called from
@@ -2622,6 +2632,7 @@ public sealed partial class Server
         _threadPoolTelemetry?.Dispose();
         _threadPoolTelemetry = null;
         TickProfiler.WindowReported -= EmitEgressWindow;
+        ShutdownBroadcastTelemetry();
         // Heartbeat constructed last in Boot → torn down first, so its best-effort
         // deregister DELETE fires before the process tears down. Independent of the
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.

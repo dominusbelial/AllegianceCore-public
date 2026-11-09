@@ -50,7 +50,8 @@ internal class BroadcastPacket
 }
 
 internal readonly record struct BroadcastDelivery(ConnectionId Peer, BroadcastPacket Packet,
-    int Key = 0, bool Guaranteed = true);
+    int Key = 0, bool Guaranteed = true, BroadcastCategory Category = BroadcastCategory.Other,
+    int SplitBytes = 0);
 
 internal sealed class BroadcastSnapshot
 {
