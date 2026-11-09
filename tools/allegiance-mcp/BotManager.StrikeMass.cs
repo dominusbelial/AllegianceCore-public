@@ -285,9 +285,15 @@ internal sealed partial class BotManager
             }
             // A bomber that already released this life is SPENT (its magazine is
             // empty): it must not be re-counted into another mass until it
-            // relaunches (ResetNewLife clears FinaleStrikeSpent).
+            // relaunches (ResetNewLife clears FinaleStrikeSpent). P973 — the wave also
+            // counts only hulls that really carry station-damaging hardware: finale
+            // DUTY (FinaleBomberActive, P733's fallback) is not the same question as
+            // "can this hull hurt the station", and a fallback fighter must never be
+            // sized, staged or released as a strike bomber (P959's rule, kept where a
+            // real strike loadout exists on the same side).
             var armed = run.Bots.Where(b => b.Side == side && b.FinaleBomberActive && b.FinaleGrantVerified
-                && !b.IsPod && !b.FinaleStrikeSpent && IsParticipating(b)).ToArray();
+                && !b.IsPod && !b.FinaleStrikeSpent && IsParticipating(b)
+                && FinaleCarriesStrikeHardware(b, plan)).ToArray();
             if (plan.KilledAt is not null)
             {
                 if (!plan.OutcomeLogged)

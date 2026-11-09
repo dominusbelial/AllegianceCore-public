@@ -499,7 +499,9 @@ internal sealed partial class BotManager
                 // through the ordinary path (FedSrv.CPP:6189-6303), never a grant. The
                 // relaunch (PrepareFinaleRelaunch) orders it onto the wing afterwards,
                 // so it never flies to the target and turns back.
-                bot.FinaleBomberActive = false;
+                // P973 — only the verification is cleared here: a member that already
+                // holds the P733 fallback finale DUTY keeps it (it flies the best legal
+                // combat loadout while the side has no station-damaging hardware).
                 bot.FinaleGrantVerified = false;
                 bot.FinaleRefitCheckAt = now;
                 refits++;
@@ -1140,17 +1142,19 @@ internal sealed partial class BotManager
                     bot.MineDispenserPartId = null;
                     bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
                 }
-                // P959 — a strike bomber needs REAL station-damaging hardware: either the
-                // newly selected strike loadout, or the legal strike loadout it already
-                // carries (P656b's "using existing bomber loadouts" path). Any other hull
-                // stays unverified, or the wing parks as "armed" fighters that can never
-                // hurt the station (the b59 unarmed-wave signature).
-                bool carriesStrike = loadout is not null;
-                if (!carriesStrike
-                    && StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId) is { } stationType
-                    && StrikeVolley.FromParts(Catalog.RepresentativeCore(), ActualHullId(bot), bot.Parts) is { } carried)
-                    carriesStrike = StrikeVolley.DamagesStation(stationType, carried);
-                bot.FinaleBomberActive = armed && carriesStrike;
+                // P973 — this flag is DUTY, not hardware. P733 pinned that a reserved
+                // pilot whose side has no bomber tech and no station-damaging starting
+                // weapon still takes the finale duty: it relaunches with the best legal
+                // combat loadout, the purchase reason says so explicitly ("research
+                // finale", BotManager.TechLoadouts.RepickRelaunchLoadout) and the
+                // server's bounded deadline ends the match. P959 turned this line into
+                // `armed && carriesStrike`, which silently dropped that fallback (P733's
+                // live proof failed 3/3) without changing what a strike wave may count:
+                // that rule is enforced where the mass is measured, by
+                // FinaleCarriesStrikeHardware (BotManager.ReachableStrike.cs) in
+                // FinaleStrikeMassTick — a hull that cannot damage the station is never
+                // counted into a wave or committed with one.
+                bot.FinaleBomberActive = armed;
                 if (bot.FinaleBomberActive)
                 {
                     bot.Role = "bomber";

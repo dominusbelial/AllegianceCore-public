@@ -1439,6 +1439,25 @@ list in **reverse**.
   trips, and one preparation refit is allowed per prearm/arm cycle. Report:
   `docs/reports/FINALE_REACHABLE_STRIKE_P961.md`.
   Local measurement harnesses: `tools/p896-strike-proof/`, `tools/p959-strike-proof/`.
+- **Finale duty vs strike hardware (P733, P959, P973)** — `FinaleBomberActive` is
+  the finale DUTY flag: a reserved pilot whose side has no bomber tech and no
+  station-damaging weapon still relaunches with the best legal combat loadout, its
+  purchase reason reads "research finale", and the server's bounded deadline ends
+  the match (`docs/reports/P733_TECH_FINALE_AND_SPEED.md`). Whether a hull may be
+  counted, staged or released in a strike wave is the separate predicate
+  `FinaleCarriesStrikeHardware` (granted inventory + the real station damage
+  matrix), which builds `FinaleStrikeMassTick`'s `armed` set.
+  `tools/allegiance-mcp/BotManager.Finale.cs` (`PrepareFinaleRelaunch`,
+  `ArmFinaleWing`), `tools/allegiance-mcp/BotManager.StrikeMass.cs`,
+  `tools/allegiance-mcp/BotManager.ReachableStrike.cs`;
+  report: `docs/reports/P959_REGRESSIONS_P973.md`.
+- **Research builder rock selection (P798, P973)** — the research commander picks a
+  construction target only from the side's own recorded rocks (the per-side P797/P798
+  intel), never from a single peer's world: a rock a side discovers and consumes with
+  its own build between two 1 Hz intel samples otherwise leaves a build on a rock no
+  recorded knowledge names. `tools/allegiance-mcp/BotManager.Research.cs`
+  (`ResearchSnapshot(..., recordedRocks)`), `tools/allegiance-mcp/ResearchCommander.cs`;
+  report: `docs/reports/P959_REGRESSIONS_P973.md`.
 - **Generated research scheduling and receipts (P942)** — canonical generated
   plans execute research before optional production through
   `tools/allegiance-mcp/ResearchCommander.cs` and the opt-in priority in

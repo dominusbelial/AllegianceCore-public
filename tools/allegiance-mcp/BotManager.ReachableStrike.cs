@@ -38,6 +38,24 @@ internal sealed partial class BotManager
         return StrikeVolley.FromParts(core, ActualHullId(bot), remaining);
     }
 
+    /// <summary>P973 — P959's "no unarmed wave" rule as one predicate: the member
+    /// really carries station-damaging hardware, granted, on the hull it is mounted
+    /// on. <see cref="BotManager.StrikeMass"/> counts and commits only these, so a
+    /// P733 fallback member (finale DUTY with no station-damaging loadout available
+    /// on its side) can never be sized into a wave, staged as assembled or released
+    /// with one. Uses the granted inventory (never the desired parts, see
+    /// <see cref="FinaleGrantedStrikeLoadout"/>) so a refit that has not launched yet
+    /// is not mistaken for hardware. Pure apart from that read.</summary>
+    private static bool FinaleCarriesStrikeHardware(ActiveBot bot, FinalePlan plan)
+    {
+        var core = Catalog.RepresentativeCore();
+        if (!core.StationTypes.TryGetValue(plan.TargetTypeId, out var stationType)) return false;
+        var loadout = FinaleGrantedStrikeLoadout(bot);
+        return FinaleWingMemberReady(
+            loadout is not null && StrikeVolley.DamagesStation(StrikeVolley.StationProfile.From(core, stationType), loadout),
+            bot.Granted.HullId == ActualHullId(bot));
+    }
+
     private static bool HasFinaleDestination(ActiveBot bot)
         => bot.Finale is { Rotated: false, GameOverAt: null } run
             && run.Plans.TryGetValue(bot.Side, out var plan)

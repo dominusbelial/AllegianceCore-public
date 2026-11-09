@@ -63,6 +63,93 @@ consecutive isolated runs.
 The failure set differs between the two sweeps (load-driven), which is why each is listed with its
 own isolated qualification.
 
+## P973 resolution — P959's two regressions: the P733 fallback duty and the P798 fog audit, 2026-11-08 UTC
+
+Both P959 regressions are resolved; details and evidence are in
+[reports/P959_REGRESSIONS_P973.md](reports/P959_REGRESSIONS_P973.md).
+
+**1. `P733ResearchTests.No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice`
+(Live, ~4 s).** Fixed — real regression of P959 `cbd96ade`, reproduced here **1/1** before the fix
+(`Assert.True(Get<bool>(bots[0], "FinaleBomberActive"))`, `P733ResearchTests.cs:103`, with the
+purchase log showing the *ordinary* role fallback instead of P733's "research finale" reason).
+P959 gated the finale DUTY flag on strike hardware
+(`bot.FinaleBomberActive = armed && carriesStrike`, then `BotManager.Finale.cs:1153`), and
+`BotManager.TechLoadouts.cs:185-195` keys P733's fallback loadout **and its reason** off that flag,
+so a side with no bomber tech and no station-damaging weapon never reached the fallback at all.
+The flag is duty again (`BotManager.Finale.cs:1157`); P959's "never count or commit a hull that
+cannot hurt the station" rule moved to the strike predicate
+`FinaleCarriesStrikeHardware` (`BotManager.ReachableStrike.cs:49`), which the strike mass uses to
+build its `armed` set (`BotManager.StrikeMass.cs:285-297`). The arm's refit branch no longer clears
+the duty of a member that already holds it (`BotManager.Finale.cs:499-509`). After: the test passes
+**10/10 alone**, and the finale/affected unit suites pass **67/67 ×3** (0 skipped).
+
+**2. `P798FullLoopLiveTests.Fogged_showcase_runs_the_whole_loop_unattended_and_starts_the_next_match`
+(Live, ~3.5 min).** Fixed at the source of the *build target*: the research commander picked the
+constructor's rock from **its own** `ClientWorld.Asteroids`, while the side's knowledge record (the
+P797/P798 per-side intel that the fog audit reads) is a 1 Hz sample of the side's worlds. The
+showcase research map preparation adds buildable rocks 3500-4200 u out in the home sector
+(`Server.Showcase.cs:85-135`), and with the research timescale and this test's fast tick loop a rock
+can be discovered and then consumed by the build in ~1-2 wall seconds — shorter than one intel
+sample — so the build landed on a rock no recorded knowledge named (`rock 12`, sector 2080).
+Reproduced **1/7** with the new diagnostic on master's bot code (`diag3` run 3: `commander(mySide=0)
+known=False … lowIds=[0..11,13]`, i.e. not even the commander's own world still has the consumed
+rock; 1/21 over all of this task's runs, ~5% — it needs the build to land on a far research rock, which
+is why the plain master 10× sweep hit only the *other* failure mode, below).
+`ResearchSnapshot(peer, side, recordedRocks)` now filters the commander's rock candidates to that
+side's recorded intel (`BotManager.Research.cs:211-241`, caller `:76-111`), so a constructor can only
+be ordered to a rock the side's own knowledge holds — the fog rule is unchanged and the audit can no
+longer race. The test also attributes every `get_side_intel` row to its mission (one row per
+`(Mission.Cookie, side)`, and the manager keeps the finished match's row after the rotation) and
+prints the rock's per-mission discovery state plus the commander/bot client views on failure
+(`intelRows=[…] clientWorlds=[commander(…) known=… | bot(…) known=…]`).
+
+Also found and fixed on the way: `discovered[side]` was assigned *per intel row*, i.e. "the last row
+for this side", so a first-match build could be audited against the next match's fresh knowledge. It
+now uses the row of the match the build happened in; `P973FogAuditTests.Intel_is_per_match_so_a_build_is_audited_against_its_own_match`
+(Fast, 7 ms) pins that invariant.
+
+| test | master `78c4f4e6` (before) | this tree (after) | verdict |
+| --- | --- | --- | --- |
+| `P733ResearchTests.No_bomber_tech_finale_…_twice` (Live) | **fail 1/1** (3/3 in the P959 sweep) | **pass 10/10** | Real P959 regression, fixed. |
+| `P798FullLoopLiveTests.Fogged_showcase_runs_the_whole_loop_…` (Live) | **8 pass / 2 fail**, both `at least one station must be destroyed`; the knowledge-leak case reproduced **1/7** in the instrumented rerun (`rock 12`, sector 2080) | see the gate in the report | Leak fixed at the build-target source + the audit attribution defect; the no-station-kill mode is a separate pre-existing flake (entry below). |
+
+## P973 fast-tier observation — four Core live cases failed in the suite, all 3/3 alone, 2026-11-08 UTC
+
+One `tools/run-tests.sh --tier fast` (13,540 tests, 564.7 s) on the P973 tree ran while other lanes
+carried the shared host and reported **4 `Allegiance.Core.Tests` failures**, every one of them **pass
+3/3 alone** on the same binary (and 3 Fast executions over the calibrated 10 s limit, two of them the
+same cases):
+
+| test | suite result | isolated |
+| --- | --- | --- |
+| `NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by` | fail 1 s (`wingman with no enemy must not move: travelled 161.517`) | **3/3 pass** |
+| `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | fail 19.1 s (`cycle 1: miner should have docked and sold (sells 0)`), also over the 10 s Fast limit | **3/3 pass** |
+| `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station` | fail 3 s (`Assert.Single` empty — no building effect) | **3/3 pass** |
+| `AsteroidCombatLiveTests.Cross_side_missile_hits_asteroid_with_exact_computed_damage_and_it_survives` | fail 11.1 s (`cross-side missile must actually hit the asteroid`), also over the limit | **3/3 pass** |
+
+All four are Core server/NPC/flight cases; P973 touches only `tools/allegiance-mcp/**` (bot policy) and
+two `Allegiance.ClientCore.Tests` files, and none of them exercises the research commander or the
+finale duty. `DirectNpcBuildOrderLiveTests` is already ledgered as a contention flake (see its
+historical rows); `NpcWingmanAttackLiveTests`, `MinerDecisionCycleLiveTests` and
+`AsteroidCombatLiveTests` have historical sweep-only rows too. **No task test failed** in the suite
+(`Allegiance.ClientCore.Tests` 2315/2315, 0 skipped).
+
+## P973 base rate — P798 full loop, no station kill before the match cap (pre-existing), 2026-11-08 UTC
+
+`P798FullLoopLiveTests.Fogged_showcase_runs_the_whole_loop_unattended_and_starts_the_next_match`
+requires a station kill inside one 600 s wall window. On a quiet lane (load average 0.9-3.8) the
+unmodified master test failed **2/10** with `Assert.True(kill is not null, "at least one station must
+be destroyed")` after ~207 s wall (= the 3600 sim-second match cap; the test ticks ~20× real time).
+Both logs show the same shape: `[finale] waiting t=…s: side 0 combat=15 relaunched=15 share=1.00
+kills=0; side 1 … kills=0` — no ship kill ever happened, so the finale's P801 maturity gate
+(`kills>=1` in the last 5 min) never armed, the ordinary 1-2 hull strike waves only scratched the
+station shield (0.679 → 1.000 regenerated) and the cap ended the match with 0 station kills.
+Four concurrent copies of the same binary (deliberate self-load for the P959 leak repro, load
+average 15.8) all passed 4/4, so this is not purely load. Nothing in P959/P961 touches the ordinary
+strike/clash policy (`git diff 73eacf4d cbd96ade --stat`), and the finale never armed in the failing
+runs. Not fixed here (no task change to ordinary engagement policy); it stays a known base rate for
+this Live test — treat one failure per five runs as expected and re-run before recording a regression.
+
 ## P962 resolution — stale spawn-docked SHIP_STATUS behind the test's status reset, 2026-11-08 UTC
 
 `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` is **fixed**, and it was a test race,
