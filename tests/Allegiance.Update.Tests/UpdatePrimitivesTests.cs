@@ -151,3 +151,56 @@ public class UpdateVersionGateTests
         Assert.False(UpdateVersionGate.IsTooOld("banana", "1.0.0"));
     }
 }
+
+/// <summary>P969 — fresh bundles must report their packaged version through
+/// <see cref="UpdateState.ResolveInstalledVersion"/>, falling back to "0.0.0"
+/// only when the updater has never touched the tree.</summary>
+public class UpdateStateTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "p969-state-" + Guid.NewGuid().ToString("N"));
+
+    public UpdateStateTests() => Directory.CreateDirectory(_root);
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_root, recursive: true); } catch (IOException) { }
+    }
+
+    [Fact]
+    public void ResolveInstalledVersion_reads_written_manifest()
+    {
+        var manifest = new UpdateManifest
+        {
+            Version = "0.1.6-test",
+            GeneratedAtUtc = DateTimeOffset.UtcNow,
+            Files = [new UpdateFileEntry("a.txt", 1, "2e6f9e5e0b23e5f5a1c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8", "644")],
+        };
+        UpdateState.WriteInstalled(_root, manifest);
+        Assert.Equal("0.1.6-test", UpdateState.ResolveInstalledVersion(_root));
+        Assert.Equal("0.1.6-test", UpdateState.ReadInstalledVersion(_root));
+    }
+
+    [Fact]
+    public void ResolveInstalledVersion_falls_back_to_zero_when_missing()
+        => Assert.Equal("0.0.0", UpdateState.ResolveInstalledVersion(_root));
+
+    [Fact]
+    public void ResolveInstalledVersion_falls_back_to_zero_when_manifest_is_corrupt()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "autoupdate"));
+        File.WriteAllText(Path.Combine(_root, "autoupdate", "installed.json"), "not valid json");
+        Assert.Equal("0.0.0", UpdateState.ResolveInstalledVersion(_root));
+    }
+
+    [Fact]
+    public void ReadInstalledManifest_excludes_updater_state_directory()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "autoupdate"));
+        File.WriteAllText(Path.Combine(_root, "autoupdate", "installed.json"), "{\"version\":\"9.9.9\"}");
+        File.WriteAllText(Path.Combine(_root, "game.dll"), "app");
+
+        var manifest = UpdateManifestBuilder.Build(_root, "1.0.0");
+
+        Assert.Equal(["game.dll"], manifest.Files.Select(f => f.Path));
+    }
+}

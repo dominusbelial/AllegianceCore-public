@@ -97,9 +97,10 @@ manifest-2.0.0.json          # UpdateManifest: version + every file (path, size,
    nothing to disconnect — classified **design (modernised)**.
 3. A feed can also be forced with `ALLEGIANCE_UPDATE_FEED` (+ optional
    `ALLEGIANCE_UPDATE_PUBLIC_KEY`) for testing/offline lobbies.
-4. The installed version is `autoupdate/installed.json`, written by the
-   applier; without it the client reports the assembly's informational version
-   (`0.0.0` in dev builds).
+4. The installed version is `autoupdate/installed.json`. Released bundles ship
+   a full manifest written by `packaging/package.py` (P969); after an update the
+   applier overwrites it with the new release's manifest. A tree with no
+   manifest (dev build or pre-P969 install) reports `0.0.0`.
 
 ### Lobby (`src/Allegiance.Lobby`)
 
