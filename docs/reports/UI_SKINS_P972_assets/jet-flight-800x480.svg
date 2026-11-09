@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+<title id="title">Jet green phosphor flight HUD 800x480</title><desc id="desc">Jet green phosphor in-flight HUD proposal at 800 by 480. Design mockup, not a runtime screenshot.</desc>
+<defs>
+ <radialGradient id="space" cx="52%" cy="44%" r="78%"><stop offset="0" stop-color="#122335"/><stop offset=".48" stop-color="#060d17"/><stop offset="1" stop-color="#010308"/></radialGradient>
+ <radialGradient id="planet" cx="35%" cy="28%" r="72%"><stop offset="0" stop-color="#7797a7"/><stop offset=".38" stop-color="#293f51"/><stop offset=".74" stop-color="#101d2b"/><stop offset="1" stop-color="#02050b"/></radialGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#172c39" stop-opacity=".92"/><stop offset="1" stop-color="#07131d" stop-opacity=".9"/></linearGradient>
+ <linearGradient id="jetglass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071b13" stop-opacity=".9"/><stop offset="1" stop-color="#020a07" stop-opacity=".86"/></linearGradient>
+ <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 3.5H4" stroke="#79ffc0" stroke-opacity=".045" stroke-width="1"/></pattern>
+</defs>
+<rect x="0.0" y="0.0" width="800.0" height="480.0" rx="0" fill="url(#space)" stroke="none" stroke-width="1" />
+<circle cx="751.4" cy="360.6" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6545913133257297" />
+<circle cx="305.7" cy="311.2" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5085257297578694" />
+<circle cx="93.7" cy="352.3" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7080938069146094" />
+<circle cx="102.2" cy="14.7" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3815790811467408" />
+<circle cx="597.5" cy="63.8" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.37129039216870463" />
+<circle cx="721.8" cy="109.9" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.45321479101096834" />
+<circle cx="26.3" cy="377.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4939572631990262" />
+<circle cx="182.7" cy="260.4" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.29655124327251337" />
+<circle cx="197.7" cy="138.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3745992587320886" />
+<circle cx="177.0" cy="78.8" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.22882000930236998" />
+<circle cx="379.0" cy="232.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.22846648752024445" />
+<circle cx="566.4" cy="409.6" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.23000988187138868" />
+<circle cx="783.1" cy="109.9" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3348068255362332" />
+<circle cx="781.1" cy="342.0" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7424110483171092" />
+<circle cx="248.4" cy="177.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.49897953098702263" />
+<circle cx="640.7" cy="208.1" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4907121971784616" />
+<circle cx="260.1" cy="132.9" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7360501677412802" />
+<circle cx="539.4" cy="167.4" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7123228407341028" />
+<circle cx="379.2" cy="365.6" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24916601400811994" />
+<circle cx="335.3" cy="75.1" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24040851860487292" />
+<circle cx="323.2" cy="350.9" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6781065750587983" />
+<circle cx="30.2" cy="214.0" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5025697054747769" />
+<circle cx="777.8" cy="80.3" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3429002353315036" />
+<circle cx="64.8" cy="302.8" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.43157201993249145" />
+<circle cx="485.4" cy="354.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6606642281441724" />
+<circle cx="124.3" cy="450.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5845939873620748" />
+<circle cx="159.8" cy="138.2" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3655098382619393" />
+<circle cx="260.8" cy="201.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2260485544295984" />
+<circle cx="708.5" cy="275.6" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7229023338018263" />
+<circle cx="103.5" cy="105.4" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.358442582247924" />
+<circle cx="71.5" cy="206.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5814995416015664" />
+<circle cx="106.4" cy="238.1" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6782886272480998" />
+<circle cx="471.6" cy="281.2" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5714092792576689" />
+<circle cx="389.2" cy="304.5" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.321578419555467" />
+<circle cx="284.4" cy="8.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2665977303033176" />
+<circle cx="477.7" cy="364.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7042395975870122" />
+<circle cx="74.0" cy="254.7" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.35441217093453947" />
+<circle cx="341.6" cy="367.1" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.38728612284084324" />
+<circle cx="763.0" cy="185.8" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7678748261987752" />
+<circle cx="8.6" cy="63.6" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7578092956569891" />
+<circle cx="540.9" cy="39.5" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7667329030538036" />
+<circle cx="334.9" cy="308.4" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3462771463848221" />
+<circle cx="460.2" cy="31.8" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.44191931521869954" />
+<circle cx="130.3" cy="293.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6416013084153168" />
+<circle cx="556.6" cy="13.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6912407076638355" />
+<circle cx="703.3" cy="144.2" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7341211995024558" />
+<circle cx="201.7" cy="460.8" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.55160872200489" />
+<circle cx="480.6" cy="401.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5126338860203083" />
+<circle cx="710.3" cy="244.4" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5072402129740468" />
+<circle cx="71.3" cy="240.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6923834424618712" />
+<circle cx="405.6" cy="96.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.41102679666892217" />
+<circle cx="731.8" cy="219.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5051241425370055" />
+<circle cx="351.7" cy="197.1" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.31825195632686576" />
+<circle cx="562.5" cy="189.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6295134233477517" />
+<circle cx="188.2" cy="210.1" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7054415099117285" />
+<circle cx="608.9" cy="55.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6056587162908185" />
+<circle cx="466.5" cy="93.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5095574284562067" />
+<circle cx="712.6" cy="402.6" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.42868143266688136" />
+<circle cx="57.5" cy="225.0" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6675170537514069" />
+<circle cx="620.9" cy="107.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3496339251232963" />
+<circle cx="256.8" cy="26.1" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.28527548319527873" />
+<circle cx="9.1" cy="12.0" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.34070787378009376" />
+<circle cx="120.0" cy="436.8" r="124.8" fill="url(#planet)" stroke="none" stroke-width="1" opacity="0.8" />
+<path d="M 20.2 393.1 Q 120.0 343.2 201.1 411.8" fill="none" stroke="#9cb8bf" stroke-width="2" opacity="0.13" />
+<path d="M 448.9 199.7 L 465.3 190.8 L 472.0 178.4 L 478.7 190.8 L 495.1 199.7 L 480.0 198.0 L 475.6 206.8 L 468.4 206.8 L 464.0 198.0 Z" fill="#263b4b" stroke="#a5c4ce" stroke-width="1.2" opacity="0.88" />
+<path d="M 466.7 205.5 L 472.0 223.3 L 477.3 205.5" fill="#54d8d0" stroke="none" stroke-width="1" opacity="0.22" />
+<rect x="0.0" y="0.0" width="800.0" height="480.0" rx="0" fill="url(#scan)" stroke="none" stroke-width="1" />
+<line x1="255.0" y1="27.0" x2="545.0" y2="27.0" stroke="#79ffc0" stroke-width="1" opacity="0.75" />
+<line x1="255.0" y1="22.0" x2="255.0" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="255.0" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >210</text>
+<line x1="279.2" y1="22.0" x2="279.2" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="303.3" y1="22.0" x2="303.3" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="303.3" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >230</text>
+<line x1="327.5" y1="22.0" x2="327.5" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="351.7" y1="22.0" x2="351.7" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="351.7" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >250</text>
+<line x1="375.8" y1="22.0" x2="375.8" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="400.0" y1="22.0" x2="400.0" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="400.0" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >270</text>
+<line x1="424.2" y1="22.0" x2="424.2" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="448.3" y1="22.0" x2="448.3" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="448.3" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >290</text>
+<line x1="472.5" y1="22.0" x2="472.5" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="496.7" y1="22.0" x2="496.7" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="496.7" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >310</text>
+<line x1="520.8" y1="22.0" x2="520.8" y2="30.0" stroke="#79ffc0" stroke-width="1" />
+<line x1="545.0" y1="22.0" x2="545.0" y2="34.0" stroke="#79ffc0" stroke-width="1" />
+<text x="545.0" y="16.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >330</text>
+<path d="M 393.0 37 L 400.0 44 L 407.0 37" fill="none" stroke="#c9ffe3" stroke-width="1.4" />
+<circle cx="328.0" cy="278.0" r="14.0" fill="none" stroke="#79ffc0" stroke-width="1.5" filter="url(#glow)"/>
+<line x1="303.0" y1="278.0" x2="314.0" y2="278.0" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="342.0" y1="278.0" x2="353.0" y2="278.0" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="328.0" y1="253.0" x2="328.0" y2="264.0" stroke="#79ffc0" stroke-width="1.5" />
+<path d="M 376.0 240.0 H 394.0 M 406.0 240.0 H 424.0 M 400.0 233.0 V 247.0" fill="none" stroke="#c9ffe3" stroke-width="1.2" />
+<line x1="453.0" y1="167.4" x2="462.0" y2="167.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="453.0" y1="167.4" x2="453.0" y2="176.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="507.0" y1="167.4" x2="498.0" y2="167.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="507.0" y1="167.4" x2="507.0" y2="176.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="453.0" y1="221.4" x2="462.0" y2="221.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="453.0" y1="221.4" x2="453.0" y2="212.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="507.0" y1="221.4" x2="498.0" y2="221.4" stroke="#79ffc0" stroke-width="1.5" />
+<line x1="507.0" y1="221.4" x2="507.0" y2="212.4" stroke="#79ffc0" stroke-width="1.5" />
+<path d="M 480.0 145.4 l 12 12 l -12 12 l -12 -12 Z" fill="none" stroke="#c9ffe3" stroke-width="1.6" />
+<text x="480.0" y="136.4" fill="#c9ffe3" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >LOCK 82%</text>
+<text x="480.0" y="238.4" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="middle" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >1250 / +43</text>
+<text x="12.0" y="376.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="400" text-anchor="start" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >GUN 100  MSL 04</text>
+<text x="12.0" y="396.0" fill="#c9ffe3" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="400" text-anchor="start" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >ARM 082  SHD 070</text>
+<text x="12.0" y="416.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="400" text-anchor="start" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >ENG 091  FUEL 090</text>
+<text x="788.0" y="77.0" fill="#c9ffe3" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="400" text-anchor="end" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >! MSL TRACK</text>
+<text x="788.0" y="94.0" fill="#c9ffe3" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="end" letter-spacing="0" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >! SHIELD HIT</text>
+<rect x="628.0" y="328.0" width="160.0" height="140.0" rx="5" fill="url(#jetglass)" stroke="#79ffc0" stroke-width="0.8" opacity="0.96" />
+<line x1="629.0" y1="356.0" x2="787.0" y2="356.0" stroke="#79ffc0" stroke-width="0.7" opacity="0.45" />
+<text x="640.0" y="347.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" font-weight="600" text-anchor="start" letter-spacing="1.2" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >RWR / RADAR DEFAULT</text>
+<circle cx="708.0" cy="409.0" r="47.6" fill="none" stroke="#3da87b" stroke-width="0.7" opacity="0.75" />
+<circle cx="708.0" cy="409.0" r="26.2" fill="none" stroke="#3da87b" stroke-width="0.7" opacity="0.75" />
+<line x1="660.4" y1="409.0" x2="755.6" y2="409.0" stroke="#3da87b" stroke-width="0.6" />
+<line x1="708.0" y1="361.4" x2="708.0" y2="456.6" stroke="#3da87b" stroke-width="0.6" />
+<path d="M 708.0 403.0 l 5 11 h -10 Z" fill="none" stroke="#c9ffe3" stroke-width="1.1" />
+<path d="M 681.82 383.96 l 6 10 h -12 Z" fill="none" stroke="#79ffc0" stroke-width="1.1" />
+<text x="681.8" y="409.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="middle" letter-spacing="0" >S</text>
+<path d="M 729.42 376.82 l 6 10 h -12 Z" fill="none" stroke="#c9ffe3" stroke-width="1.1" />
+<text x="729.4" y="401.8" fill="#c9ffe3" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="middle" letter-spacing="0" >M</text>
+<path d="M 736.56 414.9 l 6 10 h -12 Z" fill="none" stroke="#79ffc0" stroke-width="1.1" />
+<text x="736.6" y="439.9" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="middle" letter-spacing="0" >S</text>
+<path d="M 698.48 431.56 l 6 10 h -12 Z" fill="none" stroke="#79ffc0" stroke-width="1.1" />
+<text x="698.5" y="456.6" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" font-weight="400" text-anchor="middle" letter-spacing="0" >F</text>
+<text x="638.0" y="459.0" fill="#3da87b" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="7" font-weight="400" text-anchor="start" letter-spacing="0" >ALL/DEFAULT/TGT/MIN  [TAB] MAP</text>
+<text x="400.0" y="462.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="8" font-weight="400" text-anchor="middle" letter-spacing="0.7" >JET / GREEN     SHIFT+F12 SKIN</text>
+<text x="400.0" y="477.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="7" font-weight="500" text-anchor="middle" letter-spacing="0.5" opacity="0.55" >P972 DESIGN MOCKUP</text>
+</svg>
