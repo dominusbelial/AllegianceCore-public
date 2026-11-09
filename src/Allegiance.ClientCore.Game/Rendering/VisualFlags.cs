@@ -73,6 +73,18 @@ public static class VisualFlags
     public const string SimStarsKey = "simStars";
     public const string SimGlareKey = "simGlare";
     public const string StarStreaksKey = "starStreaks";
+    /// <summary>P984 — the linear HDR scene pipeline: render the 3-D scene into a
+    /// floating-point target, keep the lit content linear and apply ONE output
+    /// transform before the HUD. Dotted key: the <c>space.</c> namespace groups
+    /// the 3-D look flags (this one and P985's <c>space.simPalette</c>), so the
+    /// profile reads <c>visuals.space.hdrPipeline</c>. The profile group itself
+    /// stays flat; the dot is just part of the key.</summary>
+    public const string HdrPipelineKey = "space.hdrPipeline";
+
+    /// <summary>P984 — pick the ACES approximation instead of the neutral curve in
+    /// the single output transform (comparison switch; only meaningful when
+    /// <see cref="HdrPipelineKey"/> is on).</summary>
+    public const string HdrAcesKey = "space.hdrAces";
 
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
@@ -102,6 +114,21 @@ public static class VisualFlags
         new VisualFlag(SimStarsKey, "Sim stars", "sparse neutral stars at infinity", VisualFlagKind.Toggle, Hotkey: 'T'),
         new VisualFlag(SimGlareKey, "Sim glare", "small sun and restrained central flare", VisualFlagKind.Toggle, Hotkey: 'G'),
         new VisualFlag(StarStreaksKey, "Star streaks", "short star tails while the view turns", VisualFlagKind.Toggle, Hotkey: 'K'),
+        // P984 — the HDR foundation (default OFF: the 8-bit native path stays the
+        // default look). The ACES row is a comparison switch, so it is listed
+        // right after the pipeline it belongs to.
+        new VisualFlag(
+            HdrPipelineKey,
+            "HDR scene",
+            "float scene target + one output transform",
+            VisualFlagKind.Toggle,
+            Hotkey: 'H'),
+        new VisualFlag(
+            HdrAcesKey,
+            "ACES output curve",
+            "compare the filmic curve with neutral",
+            VisualFlagKind.Toggle,
+            Hotkey: 'A'),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -139,6 +166,12 @@ public sealed class VisualOptions
 
     /// <summary>The radial rule's range in metres.</summary>
     public float ViewRange => Value(VisualFlags.ViewRangeKey);
+
+    /// <summary>P984 — the linear HDR scene pipeline is requested.</summary>
+    public bool HdrPipeline => IsOn(VisualFlags.HdrPipelineKey);
+
+    /// <summary>P984 — the output transform uses ACES instead of neutral.</summary>
+    public bool HdrAces => IsOn(VisualFlags.HdrAcesKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)

@@ -932,6 +932,26 @@ list in **reverse**.
   own-ship prediction or outbound state. Replay: `tools/p985-remote-timeline-proof/`;
   tests `tests/Allegiance.ClientCore.Tests/P985RemoteTimelineTests.cs`;
   report `docs/reports/REMOTE_TIMELINE_P985.md`.
+
+- **Linear HDR scene foundation (`visuals.space.hdrPipeline`, P984)** — with the
+  flag ON the 3-D scene renders into a floating-point target
+  (`SurfaceFormat.HalfVector4`, RGBA16F), the PBR/HD-material path
+  (`Shaders/NativePbr.fx` `NativePbrHdr`/`EffectLitPbrHdr`) lights in LINEAR space
+  and writes the sRGB transfer once with no curve or clamp, and exactly ONE output
+  transform (`Shaders/Tonemap.fx`: `Neutral` = today's HD-6 hue-preserving shoulder
+  moved out of the PBR shader; `Aces` = Narkowicz's public fit) converts the scene
+  before the HUD, which is never graded. The float target holds **display-encoded
+  RGB with headroom** (every legacy writer — BasicGame hulls, sky billboards,
+  SpriteBatch particles — emits display-referred values; only the shader we own is
+  linear internally). Ordered pass list as data: `Rendering/HdrOutput.cs`
+  `Plan`/`SceneFormat`/`Neutral`/`Aces`; transform: `Rendering/HdrOutputTransform.cs`;
+  float targets + fallback: `Rendering/VfxPostProcessor.cs` (`HdrActive`),
+  `Rendering/BloomPostProcessor.cs`, `Rendering/FsrPostProcessor.cs`; wiring in
+  `Game1.Rendering.cs` (flight), `Game1.Inspector.cs` (showcase), `Game1.Lifecycle.cs`
+  (startup log), `Game1.GpuBudget.cs` (resize). `visuals.space.hdrAces` selects the
+  ACES curve for comparison. Default OFF; the OFF path is byte-identical to the
+  native 8-bit pipeline (proven against a base-commit build). Proof:
+  `tools/p984-hdr-proof`; report `docs/reports/HDR_FOUNDATION_P984.md`.
 - **Modern HUD scale / text budget (P833, capped by P859)** — one scale for text,
   glyph art, gauge ring, target pane and own-status grid, derived from the desktop
   display density × the user `HudSettings.Size` (`Rendering/ModernHudScale.cs`:

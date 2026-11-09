@@ -150,6 +150,106 @@ float4 PSFlash(VOUT i):COLOR0 {
     color+=emisG;
     return float4(clamp(ToneMap(color),0,1)*Opacity,Opacity);
 }
+// ─────────────────────────────────────────────────────────────────────────────
+// P984 — the LINEAR HDR variants (visuals.space.hdrPipeline).
+//
+// Same geometry, maps and material tuning; the BASE lighting is evaluated in
+// LINEAR space instead of gamma space, and the result is written to the float
+// scene target with the sRGB transfer applied ONCE on write. There is no tone
+// curve and no clamp here: the single end-of-scene output transform
+// (Shaders/Tonemap.fx) owns the hue-preserving shoulder, so a highlight reaches
+// the float target above 1.0 instead of being compressed inside the shader.
+//
+// Linear lighting means the sampled albedo/emission and the sector light colours
+// are decoded first (`SrgbToLinear3`) and the GGX clearcoat runs on linear
+// colours; the shader then encodes its linear radiance with `LinearToSrgb3` so
+// the float target stays in the display-encoded domain every other writer uses
+// (BasicEffect hulls/sky/particles emit encoded values — see HdrOutput's notes).
+// The OFF path above is untouched: it still runs the HD-6 gamma-space curve.
+float3 SrgbToLinear3(float3 c) {
+    c=max(c,0);
+    float3 lo=c/12.92;
+    float3 hi=pow((c+0.055)/1.055,float3(2.4,2.4,2.4));
+    return lerp(hi,lo,step(c,float3(0.04045,0.04045,0.04045)));
+}
+float3 LinearToSrgb3(float3 c) {
+    c=max(c,0);
+    float3 lo=c*12.92;
+    float3 hi=1.055*pow(c,float3(1.0/2.4,1.0/2.4,1.0/2.4))-0.055;
+    return lerp(hi,lo,step(c,float3(0.0031308,0.0031308,0.0031308)));
+}
+float3 AlbedoColorLinear(VOUT i, out float3 n, out float3 v, out float3 albedoL, out float metal, out float rough)
+{
+    n=normalize(i.Normal);
+    float3 t=normalize(i.Tangent.xyz-n*dot(n,i.Tangent.xyz));
+    float3 b=cross(n,t)*i.Tangent.w;
+    float3 map=tex2D(NormalSampler,i.UV).xyz*2-1;
+    if (CompressedMaps > .5) map.z=sqrt(saturate(1-dot(map.xy,map.xy)));
+    n=normalize(t*map.x+b*map.y+n*map.z);
+    v=normalize(CameraPosition-i.WorldPosition);
+    float3 albedoS=tex2D(BaseSampler,i.UV).rgb;
+    // Compressed BC7 maps are sampled through an sRGB texture (already linear);
+    // the uncompressed PNG fallback is sRGB-encoded and is decoded here.
+    albedoL = CompressedMaps > .5 ? max(albedoS,0) : SrgbToLinear3(albedoS);
+    float metalMap=tex2D(MetalSampler,i.UV).r;
+    float roughMap=tex2D(RoughSampler,i.UV).r;
+    metal=metalMap>=MetallicDeadband ? (metalMap-MetallicDeadband)*MetallicGain+MetallicDeadband : metalMap;
+    metal=clamp(metal,MetallicMin,MetallicMax);
+    rough=clamp(roughMap*RoughnessScale+RoughnessBias,RoughnessMin,RoughnessMax);
+    // The same native bidirectional equation (ambient + key + blue alt) as the
+    // gamma path, with every light colour decoded to linear.
+    float3 ambientL=SrgbToLinear3(Ambient);
+    float3 keyL=SrgbToLinear3(KeyColor);
+    float3 altL=SrgbToLinear3(AltColor);
+    float3 color=albedoL*ambientL*lerp(1,AmbientMetalFloor,metal);
+    color+=albedoL*keyL*saturate(dot(n,-KeyDirection));
+    color+=albedoL*altL*saturate(dot(n,-AltDirection));
+    color+=Highlight(n,v,-KeyDirection,keyL,metal,rough);
+    color+=Highlight(n,v,-AltDirection,altL,metal,rough);
+    if (EnvSheen > 0.001) {
+        float fres=pow(1-saturate(dot(n,v)),3);
+        float3 refl=reflect(-v,n);
+        float hem=saturate(refl.y*0.5+0.5);
+        color+=fres*lerp(float3(.05,.06,.08),altL*.4,hem)*metal*EnvSheen;
+    }
+    return color;
+}
+
+float4 PSHdr(VOUT i):COLOR0 {
+    float3 n,v,albedo; float metal,rough;
+    float3 color=AlbedoColorLinear(i,n,v,albedo,metal,rough);
+    float3 emisS=tex2D(EmissionSampler,i.UV).rgb;
+    float3 emisL = CompressedMaps > .5 ? max(emisS,0) : SrgbToLinear3(emisS);
+    color+=emisL;
+    // Exposure is the material tuning's (1.0 by default), applied in linear
+    // space; no curve, no clamp — the scene target is floating point.
+    return float4(LinearToSrgb3(color*Exposure)*Opacity,Opacity);
+}
+
+float4 PSFlashHdr(VOUT i):COLOR0 {
+    float3 n,v,albedo; float metal,rough;
+    float3 color=AlbedoColorLinear(i,n,v,albedo,metal,rough);
+    for (int j=0; j<4; j++) {
+        float3 delta=FlashPositions[j].xyz-i.WorldPosition;
+        float distance2=dot(delta,delta);
+        float range=max(FlashPositions[j].w,1e-3);
+        float fade=saturate(1-distance2/(range*range));
+        float3 ldir=delta/max(sqrt(distance2),.001);
+        float3 fcol=SrgbToLinear3(FlashColors[j].rgb)*fade*fade;
+        color+=albedo*fcol*saturate(dot(n,ldir));
+        color+=Highlight(n,v,ldir,fcol,metal,rough);
+    }
+    float3 emisS=tex2D(EmissionSampler,i.UV).rgb;
+    float3 emisL = CompressedMaps > .5 ? max(emisS,0) : SrgbToLinear3(emisS);
+    color+=emisL;
+    return float4(LinearToSrgb3(color*Exposure)*Opacity,Opacity);
+}
 technique NativePbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(); } }
 
 technique EffectLitPbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PSFlash(); } }
+
+// P984 — the HDR path's techniques (selected when visuals.space.hdrPipeline is on
+// and the float scene target exists). No ToneMap call, no clamp.
+technique NativePbrHdr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PSHdr(); } }
+
+technique EffectLitPbrHdr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PSFlashHdr(); } }

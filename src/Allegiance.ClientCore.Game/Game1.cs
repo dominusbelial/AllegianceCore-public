@@ -416,6 +416,22 @@ public sealed partial class Game1 : Game
     private Rendering.VfxPostProcessor? _post;
     private bool _bloomEnabled;   // Bloom setting (default Off; --bloom on)
     private bool _softEnabled;    // soft particles (default On in Enhanced; --soft off)
+    /// <summary>P984 — the output curve of the single HDR output transform,
+    /// resolved from <c>visuals.space.hdrAces</c> at startup (neutral by default).</summary>
+    private Rendering.HdrCurve _hdrCurve = Rendering.HdrCurve.Neutral;
+    /// <summary>P984 — the HDR scene path is live THIS frame: the flag asked for it
+    /// and the float scene target + output transform both exist. Everything
+    /// downstream reads this one property (never the raw flag), so a backend that
+    /// refuses RGBA16F transparently keeps the native 8-bit path.</summary>
+    private bool HdrScene => _post is { HdrActive: true } && _post.Output is { IsUsable: true };
+    /// <summary>P984 — keep the shared HD-material renderer on the same lighting
+    /// domain as the scene target (it is shared by every PBR user: ships,
+    /// stations, asteroids, missiles, probes, projectiles, treasure, warps).</summary>
+    private void SyncHdrState()
+    {
+        bool hdr = HdrScene;
+        if (_hdMaterials is not null && _hdMaterials.HdrOutput != hdr) _hdMaterials.HdrOutput = hdr;
+    }
     private Rendering.SoftParticleContext? _softContext;
     // Depth-pass ship gather: (model, world, scale) re-drawn with the linear
     // depth effect before the smoke, so soft particles see hulls.

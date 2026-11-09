@@ -1,0 +1,170 @@
+{
+ "perf_1080p_off": {
+  "frame_ms": {
+   "n": 11863,
+   "mean": 1.602,
+   "median": 1.474,
+   "p95": 2.381
+  },
+  "draw_submit_ms": {
+   "n": 11863,
+   "mean": 1.211,
+   "median": 1.149,
+   "p95": 1.943
+  },
+  "post_submit_ms": {
+   "n": 11863,
+   "mean": 0.016,
+   "median": 0.017,
+   "p95": 0.021
+  },
+  "present_wait_ms": {
+   "n": 11863,
+   "mean": 0.002,
+   "median": 0.002,
+   "p95": 0.003
+  },
+  "scene_gpu_ms": {
+   "n": 10442,
+   "mean": 0.255,
+   "median": 0.183,
+   "p95": 0.258
+  },
+  "post_gpu_ms": {
+   "n": 10442,
+   "mean": 0.132,
+   "median": 0.129,
+   "p95": 0.179
+  },
+  "fps_mean": 624.0,
+  "render_size": "1920x1080",
+  "window": "1920x1080",
+  "draw_calls_median": 300
+ },
+ "perf_1080p_on": {
+  "frame_ms": {
+   "n": 11991,
+   "mean": 1.586,
+   "median": 1.47,
+   "p95": 2.366
+  },
+  "draw_submit_ms": {
+   "n": 11991,
+   "mean": 1.197,
+   "median": 1.15,
+   "p95": 1.944
+  },
+  "post_submit_ms": {
+   "n": 11991,
+   "mean": 0.019,
+   "median": 0.02,
+   "p95": 0.025
+  },
+  "present_wait_ms": {
+   "n": 11991,
+   "mean": 0.002,
+   "median": 0.002,
+   "p95": 0.003
+  },
+  "scene_gpu_ms": {
+   "n": 10570,
+   "mean": 0.253,
+   "median": 0.188,
+   "p95": 0.247
+  },
+  "post_gpu_ms": {
+   "n": 10570,
+   "mean": 0.206,
+   "median": 0.204,
+   "p95": 0.228
+  },
+  "fps_mean": 630.6,
+  "render_size": "1920x1080",
+  "window": "1920x1080",
+  "draw_calls_median": 304
+ },
+ "perf_4kfsr_off": {
+  "frame_ms": {
+   "n": 10236,
+   "mean": 1.856,
+   "median": 1.557,
+   "p95": 2.467
+  },
+  "draw_submit_ms": {
+   "n": 10236,
+   "mean": 1.434,
+   "median": 1.202,
+   "p95": 1.982
+  },
+  "post_submit_ms": {
+   "n": 10236,
+   "mean": 0.025,
+   "median": 0.024,
+   "p95": 0.038
+  },
+  "present_wait_ms": {
+   "n": 10236,
+   "mean": 0.002,
+   "median": 0.002,
+   "p95": 0.003
+  },
+  "scene_gpu_ms": {
+   "n": 5339,
+   "mean": 0.416,
+   "median": 0.286,
+   "p95": 0.362
+  },
+  "post_gpu_ms": {
+   "n": 5285,
+   "mean": 1.157,
+   "median": 1.151,
+   "p95": 1.558
+  },
+  "fps_mean": 538.8,
+  "render_size": "2560x1440",
+  "window": "3840x2160",
+  "draw_calls_median": 317.0
+ },
+ "perf_4kfsr_on": {
+  "frame_ms": {
+   "n": 8092,
+   "mean": 2.352,
+   "median": 1.55,
+   "p95": 2.346
+  },
+  "draw_submit_ms": {
+   "n": 8092,
+   "mean": 1.923,
+   "median": 1.213,
+   "p95": 1.836
+  },
+  "post_submit_ms": {
+   "n": 8092,
+   "mean": 0.027,
+   "median": 0.027,
+   "p95": 0.044
+  },
+  "present_wait_ms": {
+   "n": 8092,
+   "mean": 0.002,
+   "median": 0.002,
+   "p95": 0.003
+  },
+  "scene_gpu_ms": {
+   "n": 1440,
+   "mean": 0.786,
+   "median": 0.354,
+   "p95": 0.409
+  },
+  "post_gpu_ms": {
+   "n": 1389,
+   "mean": 1.732,
+   "median": 1.757,
+   "p95": 1.845
+  },
+  "fps_mean": 425.2,
+  "render_size": "2560x1440",
+  "window": "3840x2160",
+  "draw_calls_median": 313.0
+ }
+}

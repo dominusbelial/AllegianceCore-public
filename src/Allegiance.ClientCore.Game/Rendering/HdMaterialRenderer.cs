@@ -41,6 +41,13 @@ public sealed class HdMaterialRenderer : IDisposable
     /// instance (ships, stations, missiles, probes, projectiles, asteroids,
     /// treasure, warps).</summary>
     public HdDrawMode Mode { get; set; } = HdDrawMode.Classic;
+    /// <summary>P984 — draw the LINEAR HDR variants of the PBR shader
+    /// (<c>NativePbrHdr</c> / <c>EffectLitPbrHdr</c>): linear lighting, one sRGB
+    /// transfer on write, no in-shader tone curve or clamp. Set from the resolved
+    /// <c>visuals.space.hdrPipeline</c> flag AND the float scene target actually
+    /// existing (<see cref="VfxPostProcessor.HdrActive"/>); never enabled on its
+    /// own, so the native gamma path stays the default.</summary>
+    public bool HdrOutput { get; set; }
     /// <summary>Derive the pack participation from the two player settings:
     /// HD textures on/off and the experimental HD lighting (PBR) on/off. Pure and
     /// testable (HD-5).</summary>
@@ -164,7 +171,11 @@ public sealed class HdMaterialRenderer : IDisposable
         if (maps is null) return false;
         var e = _effect;
         bool flashes = Flashes is { Detail: not Allegiance.ClientCore.State.EffectsDetail.Low };
-        e.CurrentTechnique = e.Techniques[flashes ? "EffectLitPbr" : "NativePbr"];
+        // P984 — technique choice: the HDR variants share every uniform with the
+        // native HD-6 ones and only change the lighting domain / output.
+        e.CurrentTechnique = e.Techniques[HdrOutput
+            ? (flashes ? "EffectLitPbrHdr" : "NativePbrHdr")
+            : (flashes ? "EffectLitPbr" : "NativePbr")];
         if (flashes)
         {
             e.Parameters["FlashPositions"].SetValue(Flashes!.Positions);

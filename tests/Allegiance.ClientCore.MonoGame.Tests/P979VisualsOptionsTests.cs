@@ -51,8 +51,9 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = OpenVisualsPage(State());
         var rows = menu.Rows(State());
-        // Six toggle rows + a numeric flag's value row and its two step rows.
-        Assert.Equal(9, rows.Count);
+        // Six toggle rows + a numeric flag's value row and its two step rows,
+        // then P984's two 3-D look toggles (space.hdrPipeline / space.hdrAces).
+        Assert.Equal(11, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
@@ -137,7 +138,7 @@ public sealed class P979VisualsOptionsTests
         var state = State();
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
-        Assert.Equal(9, rows.Count);
+        Assert.Equal(11, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));

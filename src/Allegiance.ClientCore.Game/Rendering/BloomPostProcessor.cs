@@ -70,13 +70,19 @@ public sealed class BloomPostProcessor : IDisposable
         && _pDirection is not null && _pTexture is not null && _pBloom is not null
         && _bright is not null && _blurH is not null && _blurV is not null;
 
-    public void SetSize(int width, int height)
+    /// <summary>
+    /// (Re)create the half-res bright-pass/blur targets. P984 — <paramref name="hdr"/>
+    /// makes them RGBA16F so the bright-pass threshold and the blur operate on the
+    /// float scene's over-1.0 highlights instead of clipping them at 8 bits.
+    /// </summary>
+    public void SetSize(int width, int height, bool hdr = false)
     {
         int bw = Math.Max(1, width / Downsample), bh = Math.Max(1, height / Downsample);
+        SurfaceFormat format = HdrOutput.SceneFormat(hdr);
         _bright?.Dispose(); _blurH?.Dispose(); _blurV?.Dispose();
-        _bright = new RenderTarget2D(_gd, bw, bh, false, SurfaceFormat.Color, DepthFormat.None);
-        _blurH = new RenderTarget2D(_gd, bw, bh, false, SurfaceFormat.Color, DepthFormat.None);
-        _blurV = new RenderTarget2D(_gd, bw, bh, false, SurfaceFormat.Color, DepthFormat.None);
+        _bright = new RenderTarget2D(_gd, bw, bh, false, format, DepthFormat.None);
+        _blurH = new RenderTarget2D(_gd, bw, bh, false, format, DepthFormat.None);
+        _blurV = new RenderTarget2D(_gd, bw, bh, false, format, DepthFormat.None);
     }
 
     /// <summary>

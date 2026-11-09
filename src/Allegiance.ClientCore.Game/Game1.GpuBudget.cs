@@ -123,8 +123,11 @@ public sealed partial class Game1
         {
             _post?.SetSize(dimensions.Item1, dimensions.Item2);
             _postWidth = dimensions.Item1; _postHeight = dimensions.Item2;
+            SyncHdrState();
         }
-        if (enabled) _fsr!.SetSize(width, height, scale);
+        // P984 — the FSR targets follow the scene target's format (RGBA16F on the
+        // HDR path), so the upscale cannot clip the float scene.
+        if (enabled) _fsr!.SetSize(width, height, scale, HdrScene);
         _scaledThisFrame = enabled;
         return enabled;
     }
