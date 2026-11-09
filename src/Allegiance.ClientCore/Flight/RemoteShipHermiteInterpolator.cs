@@ -209,7 +209,7 @@ public sealed class RemoteShipHermiteInterpolator
     /// <c>p(u)=h00 p0 + h10 m0 + h01 p1 + h11 m1</c>, the standard basis
     /// <c>h00=(1+2u)(1-u)², h10=u(1-u)², h01=u²(3-2u), h11=u²(u-1)</c>.
     /// </summary>
-    private static void Hermite3(in Vector3 p0, in Vector3 m0, in Vector3 p1, in Vector3 m1, float u, out Vector3 result)
+    internal static void Hermite3(in Vector3 p0, in Vector3 m0, in Vector3 p1, in Vector3 m1, float u, out Vector3 result)
     {
         float u2 = u * u, u3 = u2 * u;
         float h00 = 2f * u3 - 3f * u2 + 1f;
@@ -230,8 +230,18 @@ public sealed class RemoteShipHermiteInterpolator
     /// </summary>
     private static Orientation OrientationSlerp(in Orientation a, in Orientation b, float t)
     {
-        if (t <= 0f) return a.Copy();
-        if (t >= 1f) return b.Copy();
+        var result = new Orientation();
+        OrientationSlerp(a, b, t, result);
+        return result;
+    }
+
+    /// <summary>P985 — allocation-free form shared by the server-timestamp
+    /// timeline. The caller owns <paramref name="result"/>; the maths and
+    /// shortest-path rotation are exactly the P813b implementation above.</summary>
+    internal static void OrientationSlerp(in Orientation a, in Orientation b, float t, Orientation result)
+    {
+        if (t <= 0f) { result.Set(a.GetForward(), a.GetUp()); return; }
+        if (t >= 1f) { result.Set(b.GetForward(), b.GetUp()); return; }
 
         // Express b's world axes in a's local frame → columns of R_local.
         Vector3 rx = a.TimesInverse(b.GetRight());
@@ -241,7 +251,7 @@ public sealed class RemoteShipHermiteInterpolator
         float trace = rx.X + ry.Y + rz.Z;
         float cosTheta = Math.Clamp(0.5f * (trace - 1f), -1f, 1f);
         float theta = (float)Math.Acos(cosTheta);
-        if (theta < 1e-4f) return a.Copy();   // essentially identical
+        if (theta < 1e-4f) { result.Set(a.GetForward(), a.GetUp()); return; }
 
         // Axis from the skew-symmetric part of R_local (R − Rᵀ)/2.
         Vector3 axis = new(
@@ -249,11 +259,10 @@ public sealed class RemoteShipHermiteInterpolator
             rx.Z - rz.X,
             ry.X - rx.Y);
         float len = axis.Length();
-        if (len < 1e-6f) return a.Copy();
+        if (len < 1e-6f) { result.Set(a.GetForward(), a.GetUp()); return; }
         axis /= len;
 
-        var result = a.Copy();
+        result.Set(a.GetForward(), a.GetUp());
         result.PostRotate(axis, theta * t);
-        return result;
     }
 }

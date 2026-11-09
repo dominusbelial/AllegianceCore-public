@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P985 qualification — remote-ship visual timeline, 2026-11-09 UTC
+
+The required single Fast invocation completed **13,779 cases in 586.3 s**: **13,774
+passed / 2 failed / 3 not executed** (the optional private Meshy pack). Nine
+infrastructure checks passed. No P985 timeline, P813b, cache-retirement, dead-reckon
+or visual-flag test failed. The two unrelated failures and the four timing-only
+exceedances received three isolated repetitions on the changed tree:
+
+| Sweep failure / timing family | Three isolated runs | Classification |
+|---|---|---|
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` (expected side 1, saw lobby side -2) | **2 pass / 1 fail**, same lobby/logon-drain signature | Existing seating/logon timing family; the P974/P967-era entries include the same signature and changing isolated outcomes. No server/session/seed path changed by P985. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.369 s timeout in sweep) | **3/3 pass**, about 1 s each | Existing missing-partial-tip receipt family under sweep load; no missile/lock/tip path changed. |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path` and `Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` (passed at 10.183/11.194 s) | **3/3 pass each**, about 7–8 s | Existing timing-only exceedances under sweep load. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed at 10.127 s) | **3/3 pass**, about 9 s | Existing near-limit native-physics timing family; no warp/sim rule or duration limit changed. |
+
+The initial serial showcase never-parks gate was **4/5**: runs 1/2/3/5 passed at
+176.5/151.3/381.6/173.7 s, reaching 24/30 with real combat and longest
+speed-below-one-with-target intervals of 1.906/2.022/2.011/2.006 s. Run 4 reached
+19/30 at the separate 480 s arrival deadline (shots 1830, hits 697), but its parking
+bound still passed at 2.006 s. Three exact isolated retries passed **3/3**
+(456.5/153.5/182.9 s, all reached 24/30; longest intervals 0.601/2.006/1.716 s).
+The unchanged P975 baseline is 5/5; P967 already records the same 4/5 arrival-only
+outcome. P985 changes no bot, server, physics or showcase decision path. Raw TRX/logs:
+`.scratch/p985/fast/` and `.scratch/p985/showcase/` in the task worktree.
+
 ## P974 qualification — client ownership, 2026-11-09 UTC
 
 The targeted P813c family passed twice, then two existing ACK-receipt assertions

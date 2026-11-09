@@ -390,6 +390,11 @@ public sealed partial class ClientWorld
         /// <summary>P813b — per-remote-ship cubic-Hermite histories (flag-gated,
         /// default off).</summary>
         public readonly Dictionary<short, Flight.RemoteShipHermiteInterpolator> Hermite = new();
+        /// <summary>P985 — per-remote-ship sender-timestamped render histories
+        /// (<c>visuals.remoteTimeline</c>, default off).</summary>
+        public readonly Dictionary<short, Flight.RemoteShipTimeline> Timelines = new();
+        /// <summary>P985 — loop-tick → local playout clock shared by the timelines.</summary>
+        public readonly Flight.RemoteTimelineClock TimelineClock = new();
         /// <summary>P628 — Game1's per-ship rendered bounding-sphere radius (the
         /// ProjectedPixelRadius metric).</summary>
         public readonly Dictionary<short, float> RenderRadiusById = new();
@@ -433,6 +438,10 @@ public sealed partial class ClientWorld
     // OFF). Populated only when <see cref="HermiteRemotes"/> is true; the dead-
     // reckoner above remains the default render path.
     private Dictionary<short, Flight.RemoteShipHermiteInterpolator> _remoteHermite => _shipCaches.Hermite;
+
+    // P985 — sender-timestamped counterpart to P813b. It has its own map so the
+    // old experiment remains unchanged and flag-off allocates no timeline state.
+    private Dictionary<short, Flight.RemoteShipTimeline> _remoteTimelines => _shipCaches.Timelines;
 
     private Dictionary<short, DataClusterIGC> _clusters = new();
     private Dictionary<short, DataStationIGC> _stations = new();
@@ -1261,6 +1270,7 @@ public sealed partial class ClientWorld
         // P633 — headless consumers (the bot harness) never render remote ships,
         // so skip maintaining a dead-reckoner per remote ship per heavy update
         // entirely (real per-bot work + GC pressure nobody consumes at 200v200).
+        FeedRemoteTimeline(e);  // P985 — independent of hull resolution / reckoning
         if (!ReckonRemotes) return;
         FeedRemoteHermite(e);   // P813b — Hermite feed rides every remote pose arrival
         if (e.IsMine)
@@ -1352,7 +1362,65 @@ public sealed partial class ClientWorld
         return h;
     }
 
-    private void DropRemoteHermite(short shipId) => _remoteHermite.Remove(shipId);
+    private void DropRemoteHermite(short shipId)
+    {
+        _remoteHermite.Remove(shipId);
+        _remoteTimelines.Remove(shipId);   // P985 — every P813b cut is a timeline cut too
+    }
+
+    // ── P985: server-timestamped remote render timeline (visuals.remoteTimeline) ──
+
+    /// <summary>P985 — enable the sender-timestamped remote DRAW history.
+    /// Default false: no map entries are created and the pose query returns
+    /// false, leaving today's P448b/P813b branch byte-for-byte unchanged.</summary>
+    public bool RemoteTimelineRemotes { get; set; }
+
+    private void FeedRemoteTimeline(ShipEntity e)
+    {
+        if (!RemoteTimelineRemotes) return;
+        if (e.IsMine) { _remoteTimelines.Remove(e.ShipId); return; }
+        if (e.Latest is not { } up) return;
+        if (e.IsGone || e.IsDead) _remoteTimelines.Remove(e.ShipId); // return from a cut starts fresh
+        // The Time slot is the server LOOP tick, not PING sim time (which TiDi,
+        // slow motion and pause rescale) — map it on the local clock instead.
+        double arrival = NowSeconds();
+        double sampleTime = _shipCaches.TimelineClock.Map(up.Time, arrival, out bool stepped);
+        if (stepped)
+            foreach (var t in _remoteTimelines.Values) t.Clear();
+        if (!_remoteTimelines.TryGetValue(e.ShipId, out var timeline))
+        {
+            timeline = new Flight.RemoteShipTimeline();
+            _remoteTimelines.Add(e.ShipId, timeline);
+        }
+        timeline.Feed(up.Position, up.Velocity, up.Orientation, sampleTime, arrival);
+    }
+
+    /// <summary>P985 — remote DRAW pose on the loop-tick playout timeline.
+    /// <paramref name="now"/> is the local monotonic clock (seconds) used by the
+    /// existing dead-reckoner. False selects the unchanged fallback.</summary>
+    public bool TryGetTimelineRenderPose(int shipId, double now, out Vector3 position, out Orientation orientation)
+    {
+        position = default;
+        orientation = null!;
+        if (!RemoteTimelineRemotes
+            || !_remoteTimelines.TryGetValue((short)shipId, out var timeline)) return false;
+        return timeline.TryGetPose(now, out position, out orientation);
+    }
+
+    /// <summary>P985 — bounded live diagnostics (ship count and delay range).</summary>
+    public (int Count, double MeanDelay, double MinDelay, double MaxDelay) TakeTimelineStats()
+    {
+        if (!RemoteTimelineRemotes || _remoteTimelines.Count == 0) return (0, 0, 0, 0);
+        double sum = 0, min = double.MaxValue, max = double.MinValue;
+        foreach (var timeline in _remoteTimelines.Values)
+        {
+            double delay = timeline.RenderDelay;
+            sum += delay;
+            if (delay < min) min = delay;
+            if (delay > max) max = delay;
+        }
+        return (_remoteTimelines.Count, sum / _remoteTimelines.Count, min, max);
+    }
 
     /// <summary>
     /// P813b — bounded telemetry for the experimental smoother: the number of
@@ -3040,6 +3108,7 @@ public sealed partial class ClientWorld
             // :957, ABORT :981, every SSU :1154): a flag from an SSU sent before
             // this activation is stale.
             if (Ships.TryGetValue(m.ShipidRipcord, out var rip)) rip.WireRipcording = null;
+            DropRemoteHermite(m.ShipidRipcord);   // P985 — ripcord/teleport is a hard render-history cut
         }
     }
 

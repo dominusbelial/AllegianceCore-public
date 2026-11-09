@@ -18,9 +18,11 @@ public sealed class VisualFlagsTests
     {
         var options = new VisualOptions();
         Assert.False(options.RadialVisibility);
+        Assert.False(options.RemoteTimeline);
         Assert.Equal(10000f, options.ViewRange);
         Assert.Contains(VisualFlags.Definitions, d => d.Key == VisualFlags.RadialVisibilityKey);
         Assert.Contains(VisualFlags.Definitions, d => d.Key == VisualFlags.ViewRangeKey);
+        Assert.Contains(VisualFlags.Definitions, d => d.Key == VisualFlags.RemoteTimelineKey);
         // A table of definitions, not code: every row is complete enough for the
         // options page to render it without special-casing the flag.
         foreach (var definition in VisualFlags.Definitions)
@@ -31,7 +33,7 @@ public sealed class VisualFlagsTests
             if (definition.Kind == VisualFlagKind.Toggle) Assert.False(definition.DefaultOn);
             else Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=off viewRange=10000 subtleDust=off simStars=off simGlare=off starStreaks=off", options.Describe());
+        Assert.Equal("radialVisibility=off remoteTimeline=off viewRange=10000 subtleDust=off simStars=off simGlare=off starStreaks=off", options.Describe());
     }
 
     [Theory]
@@ -49,6 +51,20 @@ public sealed class VisualFlagsTests
         Assert.Empty(warnings);
         Assert.Equal(expectedOn, options.RadialVisibility);
         Assert.Equal(expectedRange, options.ViewRange);
+    }
+
+    [Theory]
+    [InlineData("remoteTimeline", true)]
+    [InlineData("remoteTimeline=on", true)]
+    [InlineData("RemoteTimeline=true", true)]
+    [InlineData("remoteTimeline=off", false)]
+    public void Remote_timeline_launch_override_is_a_p979_visual_flag(string spec, bool expected)
+    {
+        var options = VisualOptions.Parse(spec, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(expected, options.RemoteTimeline);
+        Assert.False(options.RadialVisibility);
+        Assert.Equal(10000f, options.ViewRange);
     }
 
     [Fact]
@@ -105,9 +121,10 @@ public sealed class VisualFlagsTests
         Assert.Equal(10000f, missing.ViewRange);
 
         var json = JsonSerializer.Deserialize<VisualOptions>(
-            """{ "radialVisibility": true, "viewRange": 13000, "futureFlag": true, "tonemap": "film" }""");
+            """{ "radialVisibility": true, "remoteTimeline": true, "viewRange": 13000, "futureFlag": true, "tonemap": "film" }""");
         Assert.NotNull(json);
         Assert.True(json!.RadialVisibility);
+        Assert.True(json.RemoteTimeline);
         Assert.Equal(13000f, json.ViewRange);
 
         var garbage = JsonSerializer.Deserialize<VisualOptions>("""{ "viewRange": "wide" }""");
@@ -125,6 +142,7 @@ public sealed class VisualFlagsTests
                 Visuals = new VisualOptions(),
             };
             prefs.Visuals.SetToggle(VisualFlags.RadialVisibilityKey, true);
+            prefs.Visuals.SetToggle(VisualFlags.RemoteTimelineKey, true);
             prefs.Visuals.SetValue(VisualFlags.ViewRangeKey, 16000f);
             prefs.Save(path);
 
@@ -132,10 +150,12 @@ public sealed class VisualFlagsTests
             Assert.Contains("\"visuals\"", written);
             Assert.Contains("\"radialVisibility\": true", written);
             Assert.Contains("\"viewRange\": 16000", written);
+            Assert.Contains("\"remoteTimeline\": true", written);
 
             var loaded = IntroPreferences.Load(path);
             Assert.NotNull(loaded.Visuals);
             Assert.True(loaded.Visuals!.RadialVisibility);
+            Assert.True(loaded.Visuals.RemoteTimeline);
             Assert.Equal(16000f, loaded.Visuals.ViewRange);
         }
         finally
@@ -161,6 +181,7 @@ public sealed class VisualFlagsTests
             var resolved = VisualOptions.Resolve(loaded.Visuals, null, out var warnings);
             Assert.Empty(warnings);
             Assert.False(resolved.RadialVisibility);
+            Assert.False(resolved.RemoteTimeline);
             Assert.Equal(10000f, resolved.ViewRange);
         }
         finally

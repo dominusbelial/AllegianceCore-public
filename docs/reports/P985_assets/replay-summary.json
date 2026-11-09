@@ -1,0 +1,240 @@
+{
+  "seed": 985000,
+  "trajectory": "ShipKinematics 60 Hz, constant turning/climbing controls; source poses 10 Hz",
+  "jitter": "uniform [0,150] ms; reorder swaps adjacent arrival slots; duplicates 20%; loss seeded 5%; stall 7-8 s",
+  "errorConvention": "truth(now-delay) when interpolating; truth(now) while extrapolating; added latency separately",
+  "correctionSpike": "abs((poseNow-posePrevious)-(truthNow-truthPrevious)) \u003E 1 m at 60 Hz",
+  "scenarios": [
+    {
+      "Scenario": "clean",
+      "Method": "default-reckoner",
+      "MeanM": 0.08366713417053688,
+      "P95M": 0.24826274812221527,
+      "MaxM": 0.2486725002527237,
+      "Spikes": 0,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "clean",
+      "Method": "p813b-hermite",
+      "MeanM": 0.00511146604452127,
+      "P95M": 0.009065188467502594,
+      "MaxM": 0.010308083146810532,
+      "Spikes": 0,
+      "ExtrapPct": 0,
+      "AddedLatencyMs": 100.00000149011612,
+      "Frames": 720
+    },
+    {
+      "Scenario": "clean",
+      "Method": "p985-timeline",
+      "MeanM": 0.00511089194866751,
+      "P95M": 0.009062093682587147,
+      "MaxM": 0.010299218818545341,
+      "Spikes": 0,
+      "ExtrapPct": 0,
+      "AddedLatencyMs": 100.00000149011612,
+      "Frames": 720
+    },
+    {
+      "Scenario": "jitter-0-150ms",
+      "Method": "default-reckoner",
+      "MeanM": 6.517398958494111,
+      "P95M": 13.83906078338623,
+      "MaxM": 14.36971664428711,
+      "Spikes": 87,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "jitter-0-150ms",
+      "Method": "p813b-hermite",
+      "MeanM": 6.944242490233026,
+      "P95M": 13.58582592010498,
+      "MaxM": 14.368169784545898,
+      "Spikes": 171,
+      "ExtrapPct": 24.444444444444443,
+      "AddedLatencyMs": 74.57690530767043,
+      "Frames": 720
+    },
+    {
+      "Scenario": "jitter-0-150ms",
+      "Method": "p985-timeline",
+      "MeanM": 0.08264006384838467,
+      "P95M": 0.010531293228268623,
+      "MaxM": 14.332816123962402,
+      "Spikes": 10,
+      "ExtrapPct": 0.8333333333333334,
+      "AddedLatencyMs": 246.51124547753068,
+      "Frames": 720
+    },
+    {
+      "Scenario": "reorder",
+      "Method": "default-reckoner",
+      "MeanM": 4.988774357994164,
+      "P95M": 9.909131050109863,
+      "MaxM": 9.913905143737793,
+      "Spikes": 90,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "reorder",
+      "Method": "p813b-hermite",
+      "MeanM": 3.9975274361217292,
+      "P95M": 9.896806716918945,
+      "MaxM": 9.896825790405273,
+      "Spikes": 359,
+      "ExtrapPct": 0,
+      "AddedLatencyMs": 100.00000149011612,
+      "Frames": 720
+    },
+    {
+      "Scenario": "reorder",
+      "Method": "p985-timeline",
+      "MeanM": 0.005467919649345276,
+      "P95M": 0.00971641018986702,
+      "MaxM": 0.012900754809379578,
+      "Spikes": 0,
+      "ExtrapPct": 0,
+      "AddedLatencyMs": 330.64574603405265,
+      "Frames": 720
+    },
+    {
+      "Scenario": "duplicate",
+      "Method": "default-reckoner",
+      "MeanM": 0.12270834615758051,
+      "P95M": 0.3101714253425598,
+      "MaxM": 0.35558220744132996,
+      "Spikes": 0,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "duplicate",
+      "Method": "p813b-hermite",
+      "MeanM": 0.05940577114511143,
+      "P95M": 0.31015387177467346,
+      "MaxM": 0.35558220744132996,
+      "Spikes": 0,
+      "ExtrapPct": 11.38888888888889,
+      "AddedLatencyMs": 74.0330109372735,
+      "Frames": 720
+    },
+    {
+      "Scenario": "duplicate",
+      "Method": "p985-timeline",
+      "MeanM": 0.00511089194866751,
+      "P95M": 0.009062093682587147,
+      "MaxM": 0.010299218818545341,
+      "Spikes": 0,
+      "ExtrapPct": 0,
+      "AddedLatencyMs": 100.00000149011612,
+      "Frames": 720
+    },
+    {
+      "Scenario": "loss-5pct",
+      "Method": "default-reckoner",
+      "MeanM": 0.14002020218726507,
+      "P95M": 0.5200100541114807,
+      "MaxM": 2.2449588775634766,
+      "Spikes": 0,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "loss-5pct",
+      "Method": "p813b-hermite",
+      "MeanM": 0.06371617024211042,
+      "P95M": 0.5200100541114807,
+      "MaxM": 2.2449588775634766,
+      "Spikes": 0,
+      "ExtrapPct": 5.694444444444445,
+      "AddedLatencyMs": 100.28566299006343,
+      "Frames": 720
+    },
+    {
+      "Scenario": "loss-5pct",
+      "Method": "p985-timeline",
+      "MeanM": 0.0629883041421446,
+      "P95M": 0.5199427008628845,
+      "MaxM": 2.2449588775634766,
+      "Spikes": 0,
+      "ExtrapPct": 5.555555555555555,
+      "AddedLatencyMs": 99.64142557647493,
+      "Frames": 720
+    },
+    {
+      "Scenario": "stall-1s",
+      "Method": "default-reckoner",
+      "MeanM": 0.5644247379765147,
+      "P95M": 4.586769104003906,
+      "MaxM": 10.785379409790039,
+      "Spikes": 3,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "stall-1s",
+      "Method": "p813b-hermite",
+      "MeanM": 1.589961285258192,
+      "P95M": 6.7149763107299805,
+      "MaxM": 74.1771469116211,
+      "Spikes": 19,
+      "ExtrapPct": 8.194444444444445,
+      "AddedLatencyMs": 100.06389042569532,
+      "Frames": 720
+    },
+    {
+      "Scenario": "stall-1s",
+      "Method": "p985-timeline",
+      "MeanM": 0.41778036753870157,
+      "P95M": 3.8413028717041016,
+      "MaxM": 9.777920722961426,
+      "Spikes": 1,
+      "ExtrapPct": 8.333333333333334,
+      "AddedLatencyMs": 91.66666803260644,
+      "Frames": 720
+    },
+    {
+      "Scenario": "combined",
+      "Method": "default-reckoner",
+      "MeanM": 8.463062851265487,
+      "P95M": 21.45186996459961,
+      "MaxM": 86.72701263427734,
+      "Spikes": 94,
+      "ExtrapPct": 100,
+      "AddedLatencyMs": 0,
+      "Frames": 720
+    },
+    {
+      "Scenario": "combined",
+      "Method": "p813b-hermite",
+      "MeanM": 9.39352687388762,
+      "P95M": 19.814306259155273,
+      "MaxM": 86.27100372314453,
+      "Spikes": 252,
+      "ExtrapPct": 34.72222222222222,
+      "AddedLatencyMs": 64.07858036044571,
+      "Frames": 720
+    },
+    {
+      "Scenario": "combined",
+      "Method": "p985-timeline",
+      "MeanM": 0.9460045761445625,
+      "P95M": 12.93359088897705,
+      "MaxM": 86.72701263427734,
+      "Spikes": 3,
+      "ExtrapPct": 6.25,
+      "AddedLatencyMs": 339.38168713616,
+      "Frames": 720
+    }
+  ]
+}

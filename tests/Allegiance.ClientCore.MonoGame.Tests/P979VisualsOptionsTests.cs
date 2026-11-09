@@ -34,7 +34,7 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = new OptionsMenuModel();
         var rows = menu.Rows(State());
-        Assert.Equal(5, rows.Count);
+        Assert.Equal(9, rows.Count);
         Assert.Equal("Graphics Options", rows[0].Label);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenSoundMenu, rows[1].Command);
         Assert.Equal(OptionsMenuModel.OptionsCommand.OpenGameMenu, rows[2].Command);
@@ -51,19 +51,22 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = OpenVisualsPage(State());
         var rows = menu.Rows(State());
-        // One toggle row + a numeric flag's value row and its two step rows.
-        Assert.Equal(8, rows.Count);
+        // Six toggle rows + a numeric flag's value row and its two step rows.
+        Assert.Equal(9, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Contains(rows, r => r.Label == "Raise View range to 11000 m");
         Assert.Contains(rows, r => r.Label == "Lower View range to 9000 m");
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, rows[0].Command);
         Assert.Equal('R', rows[0].Hotkey);
-        Assert.Null(rows[1].Command);                       // the value line is a read-out
-        Assert.Equal(OptionsMenuModel.OptionsCommand.RaiseVisualRange, rows[2].Command);
-        Assert.Equal(OptionsMenuModel.OptionsCommand.LowerVisualRange, rows[3].Command);
-        Assert.Equal('U', rows[2].Hotkey);
-        Assert.Equal('D', rows[3].Hotkey);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, rows[1].Command);
+        Assert.Equal('T', rows[1].Hotkey);
+        Assert.Null(rows[2].Command);                       // the value line is a read-out
+        Assert.Equal(OptionsMenuModel.OptionsCommand.RaiseVisualRange, rows[3].Command);
+        Assert.Equal(OptionsMenuModel.OptionsCommand.LowerVisualRange, rows[4].Command);
+        Assert.Equal('U', rows[3].Hotkey);
+        Assert.Equal('D', rows[4].Hotkey);
     }
 
     [Fact]
@@ -71,10 +74,12 @@ public sealed class P979VisualsOptionsTests
     {
         var visuals = new VisualOptions();
         visuals.SetToggle(VisualFlags.RadialVisibilityKey, true);
+        visuals.SetToggle(VisualFlags.RemoteTimelineKey, true);
         visuals.SetValue(VisualFlags.ViewRangeKey, 12000f);
         var state = State(visuals);
         var rows = OpenVisualsPage(state).Rows(state);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 12000 m - "));
         Assert.Contains(rows, r => r.Label == "Raise View range to 13000 m");
         Assert.Contains(rows, r => r.Label == "Lower View range to 11000 m");
@@ -85,9 +90,10 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = OpenVisualsPage(State());
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, State()));
-        Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(1, State()));
+        Assert.Equal(VisualFlags.RemoteTimelineKey, menu.VisualKeyAt(1, State()));
         Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(2, State()));
         Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(3, State()));
+        Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(4, State()));
         Assert.Null(new OptionsMenuModel().VisualKeyAt(0, State()));   // not on the page
 
         var max = new VisualOptions();
@@ -110,6 +116,7 @@ public sealed class P979VisualsOptionsTests
         Assert.Equal(OptionsMenuModel.Page.Visuals, menu.Current);      // stays on the page
         // The visual commands come back through the page's hotkeys too.
         Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, menu.CommandForHotkey('R', state));
+        Assert.Equal(OptionsMenuModel.OptionsCommand.ToggleVisualFlag, menu.CommandForHotkey('M', state));
         Assert.Equal(OptionsMenuModel.OptionsCommand.RaiseVisualRange, menu.CommandForHotkey('U', state));
         Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(menu.Row0, state));
         Assert.Equal(OptionsMenuModel.OptionsCommand.LowerVisualRange, menu.CommandForHotkey('D', state));
@@ -130,10 +137,12 @@ public sealed class P979VisualsOptionsTests
         var state = State();
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
-        Assert.Equal(8, rows.Count);
+        Assert.Equal(9, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, state));
+        Assert.Equal(VisualFlags.RemoteTimelineKey, menu.VisualKeyAt(1, state));
         Assert.Equal(VisualFlags.ViewRangeKey, menu.VisualKeyAt(2, state));
     }
 }
