@@ -62,7 +62,16 @@ internal sealed record ServerListing(
     /// not state one (pre-P894 build, accepted).</summary>
     int? LobbyProtocolVersion = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null,
-    bool PlayerHosted = false);
+    bool PlayerHosted = false,
+    /// <summary>P970 — does any advertised mission of this server demand a game
+    /// password? Native never advertised this (its LOBBYMISSIONINFO payload has
+    /// no password field, <c>lobby/messagesall.h:25-63</c>): the native client
+    /// learned it only from the <c>DPR_BadPassword</c> refusal
+    /// (<c>WinTrek/gamescreen.cpp:1498-1505</c>). This port publishes the FACT
+    /// only — never the password itself, which stays on the server
+    /// (<c>FedSrv/FedSrv.CPP:648-661</c>). Default off keeps every pre-P970
+    /// payload meaning "no password advertised".</summary>
+    bool PasswordRequired = false);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -122,7 +131,12 @@ public sealed record ServerListingDto(
     /// absolute time. Null = no start time armed.</summary>
     DateTimeOffset? StartTimeUtc = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PlayerHosted = false);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PlayerHosted = false,
+    /// <summary>P970 — the server advertises that (at least one of) its games is
+    /// password protected, so the browser can show a lock and the join screen can
+    /// ask for the password up front. The password value never leaves the server;
+    /// this is the same read-only fact class as the game settings above.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PasswordRequired = false);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -277,6 +291,14 @@ public sealed class RegisterRequest
     /// <c>LOBBYVER_LS</c> match (<c>lobby/server.cpp:141-144</c>).</summary>
     public int? LobbyProtocolVersion { get; set; }
 
+    /// <summary>P970 — the server reports that at least one of its advertised
+    /// games is password protected (native carried no such flag: the client
+    /// learned it from the DPR_BadPassword refusal,
+    /// <c>WinTrek/gamescreen.cpp:1498-1505</c>). The password VALUE is never
+    /// part of this payload or any other. Optional; omitted = no password
+    /// advertised, byte-identical to a pre-P970 payload.</summary>
+    public bool PasswordRequired { get; set; }
+
     /// <summary>The ownership token; null/blank means "new registration".</summary>
     public string? Token { get; set; }
 }
@@ -338,13 +360,18 @@ public sealed class GameParamsRequest
 /// The result of a successful register/heartbeat call — the listing id and the
 /// ownership token the caller must present to subsequently update or delete it.
 /// </summary>
-public sealed record MissionListingDto(uint Cookie, string Name, int PlayerCount, GameParamsDto? Game);
+public sealed record MissionListingDto(uint Cookie, string Name, int PlayerCount, GameParamsDto? Game,
+    /// <summary>P970 — this particular game is password protected (per-mission
+    /// fact; the lock in the browser and the join-screen prompt read it).</summary>
+    bool PasswordRequired = false);
 public sealed class MissionListingRequest
 {
     public uint Cookie { get; set; }
     public string? Name { get; set; }
     public int PlayerCount { get; set; }
     public GameParamsRequest? Game { get; set; }
+    /// <summary>P970 — this game demands a password. Optional; omitted = none.</summary>
+    public bool PasswordRequired { get; set; }
 }
 
 public sealed record RegisterResponse(string Id, string Token);

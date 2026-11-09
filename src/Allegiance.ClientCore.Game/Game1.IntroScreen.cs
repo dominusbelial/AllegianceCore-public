@@ -283,12 +283,20 @@ public sealed partial class Game1
                 {
                     lock (_introFoundLock) if (_introFound.Count > 0)
                         _introFoundIndex = (_introFoundIndex - 1 + _introFound.Count) % _introFound.Count;
+                    SyncFindServerPasswordFocus();
                 }
                 if (down && !_iDown)
                 {
                     lock (_introFoundLock) if (_introFound.Count > 0)
                         _introFoundIndex = (_introFoundIndex + 1) % _introFound.Count;
+                    SyncFindServerPasswordFocus();
                 }
+                // P970 — the "remember for this server" checkbox (F8; the password
+                // box owns typed characters, so the toggle is a function key).
+                UpdateRememberToggle(ks);
+                // The lobby merge can change the selected row under a still cursor
+                // (a new password-protected game appears): re-sync once per target.
+                SyncFindServerPasswordFocus();
                 if (enter && !_iEnter) JoinIntroFound();
                 if (esc && !_iEsc) LeaveIntroFindServer();
                 // P871 — native's server list also opened the Create Game wizard
@@ -308,6 +316,7 @@ public sealed partial class Game1
                 break;
 
             case IntroView.DirectConnect:
+                UpdateRememberToggle(ks);
                 if (enter && !_iEnter) ConnectDirectIntro();
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 3; }
                 break;
@@ -418,6 +427,10 @@ public sealed partial class Game1
             case IntroCommand.DirectConnect:  // modern addition.
                 _introView = IntroView.DirectConnect;
                 _introEditingDirect = true;
+                // P970 — prefill a remembered password for the address already in
+                // the box (player.json remembers the last server).
+                SeedJoinPassword(IntroScreenModel.TryParseDirect(_directBuf.ToString(), 6073, out var dcHost, out var dcPort)
+                    ? SavedGamePasswords.HostKey(dcHost, dcPort) : null);
                 break;
             case IntroCommand.Options:        // native OnButtonOptions → ShowOptionsMenu (introscreen.cpp:1847-1851): the four-group options menu.
                 _introView = IntroView.Settings;
@@ -547,6 +560,8 @@ public sealed partial class Game1
     {
         _introView = IntroView.FindServer;
         _introFindError = "";
+        _joinPasswordError = "";
+        _findPasswordFocusTarget = null;   // P970 — re-sync the password focus on entry
         lock (_introFoundLock) { _introFound.Clear(); _introFoundIndex = 0; }
         _introEngine?.Dispose();
         _introEngine = new DiscoveryEngine();
@@ -619,7 +634,10 @@ public sealed partial class Game1
                         Name: s.Name, Address: s.Address, Port: s.Port,
                         Source: DiscoverySource.Lobby, PingMs: 0,
                         Map: s.MissionName, Players: s.PlayerCount, MaxPlayers: s.MaxPlayers,
-                        Version: s.Version, DisplayName: "", Verified: s.Verified, IdentityServerId: s.IdentityServerId, MissionCookie: s.MissionCookie, UdpPort: s.UdpPort));
+                        Version: s.Version, DisplayName: "", Verified: s.Verified, IdentityServerId: s.IdentityServerId, MissionCookie: s.MissionCookie, UdpPort: s.UdpPort,
+                        // P970 — carry the advertised password requirement so the
+                        // Find Server row shows its lock and the join asks up front.
+                        PasswordRequired: s.PasswordRequired));
             }
         }
     }
@@ -644,6 +662,32 @@ public sealed partial class Game1
             }
         }
         _lobbyResultData = null;
+    }
+
+    /// <summary>P970 — when the Find Server cursor lands on a game that advertises a
+    /// password, the password field takes focus with a saved password prefilled
+    /// (one sync per target, so a manual TAB toggle is never fought).</summary>
+    private string? _findPasswordFocusTarget;
+
+    private void SyncFindServerPasswordFocus()
+    {
+        DiscoveredServer? target;
+        lock (_introFoundLock)
+        {
+            var list = IntroFindServerList.FilterAndSort(_introFound);
+            target = list.Count == 0 ? null : list[Math.Min(_introFoundIndex, list.Count - 1)];
+        }
+        if (target is null) return;
+        string key = SavedGamePasswords.HostKey(target.Address, target.Port);
+        if (key == _findPasswordFocusTarget) return;
+        _findPasswordFocusTarget = key;
+        // A different server never inherits the previous one's typed password;
+        // LAN/multicast discovery cannot advertise the requirement, so an open
+        // row simply leaves the field to TAB.
+        _lanJoinPassword.Clear();
+        _editingLanPassword = target.PasswordRequired;
+        SeedJoinPassword(key);
+        if (target.PasswordRequired) Console.WriteLine($"[join] '{target.Name}' requires a password - field focused");
     }
 
     private void JoinIntroFound()
@@ -855,7 +899,10 @@ public sealed partial class Game1
             {
                 var s = list[i];
                 bool sel = i == _introFoundIndex;
-                string line = (sel ? "> " : "  ") + s.FormatRow();
+                // P970 — fit the row to the viewport (a long name + the password
+                // marker used to run past the right edge, and a wrapped row would
+                // collide with the next one).
+                string line = Rendering.TeamPaneRenderer.Fit((sel ? "> " : "  ") + s.FormatRow(), _hudSmall, w - 100f);
                 if (sel)
                 {
                     _spriteBatch.Draw(_whitePixel, new Rectangle(40, (int)y - 3, (int)(w - 80f), (int)(rowH - 6)),
@@ -872,9 +919,28 @@ public sealed partial class Game1
         // P946 — the password field's focus is visible (highlight + caret) and
         // the hint names it, so neither the list keys nor the typed text is a
         // surprise. Up/Down stay on the server list while it is open.
+        // P970 — the selected game's advertised requirement is said plainly, the
+        // edit line carries the character count, and the opt-in checkbox is shown.
         bool passwordFocused = IntroScreenModel.FindServerFocus(_editingLanPassword) == IntroScreenModel.TextField.ServerPassword;
-        string passwordLabel = (passwordFocused ? "Password: " : "TAB password: ")
-            + new string('*', _lanJoinPassword.Length) + (passwordFocused ? "_" : "");
+        bool selectedRequiresPassword = false;
+        {
+            DiscoveredServer? selected;
+            lock (_introFoundLock)
+            {
+                var filtered = IntroFindServerList.FilterAndSort(_introFound);
+                selected = filtered.Count == 0 ? null : filtered[Math.Min(_introFoundIndex, filtered.Count - 1)];
+            }
+            selectedRequiresPassword = selected?.PasswordRequired == true;
+            if (selectedRequiresPassword)
+                _spriteBatch.DrawString(_hudSmall, Rendering.JoinPasswordPrompt.RequirementLine(true),
+                    new Vector2(50, h - 104), new Color(1f, 0.62f, 0.35f));
+            string key = selected is null ? "" : SavedGamePasswords.HostKey(selected.Address, selected.Port);
+            _spriteBatch.DrawString(_hudSmall,
+                Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, key.Length > 0 && SavedPasswords.Has(key)),
+                new Vector2(50, h - 52), dimCol);
+        }
+        string passwordLabel = Rendering.JoinPasswordPrompt.EditLine(selectedRequiresPassword,
+            passwordFocused ? "Password" : "TAB password", _lanJoinPassword.Length, passwordFocused);
         var pwSize = _hudSmall.MeasureString(passwordLabel);
         if (passwordFocused)
             _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h - 74) - 4, (int)pwSize.X + 20, 24),
@@ -882,11 +948,14 @@ public sealed partial class Game1
         _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h - 74),
             passwordFocused ? titleCol : dimCol);
 
-        string hint = IntroScreenModel.FindServerHint(passwordFocused);
+        string hint = IntroScreenModel.FindServerHint(passwordFocused, selectedRequiresPassword);
         var fsz = _hudSmall.MeasureString(hint);
         float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 40f),
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f),
             dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
+        if (_joinPasswordError.Length > 0)
+            _spriteBatch.DrawString(_hudSmall, _joinPasswordError, new Vector2(50, h - 132),
+                new Color(1f, 0.45f, 0.35f));
     }
 
     private void DrawIntroDirect(float w, float h, Color titleCol, Color dimCol, Color textCol)
@@ -913,8 +982,11 @@ public sealed partial class Game1
         _spriteBatch.Draw(_whitePixel, new Rectangle((int)(w / 2f - 170), (int)(h * 0.42f) + 14, 340, 2),
             addressFocused ? titleCol : new Color(0.25f, 0.5f, 0.5f, 0.8f));
 
-        string passwordLabel = (passwordFocused ? "Password: " : "TAB password: ")
-            + new string('*', _lanJoinPassword.Length) + (passwordFocused ? "_" : "");
+        // P970 — the counted edit line and the opt-in checkbox (Direct Connect
+        // cannot know in advance that the target needs a password: the refusal
+        // path is what tells it, and it returns here with the field focused).
+        string passwordLabel = Rendering.JoinPasswordPrompt.EditLine(false,
+            passwordFocused ? "Password" : "TAB password", _lanJoinPassword.Length, passwordFocused);
         var pwSize = _hudSmall.MeasureString(passwordLabel);
         if (passwordFocused)
             _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h * .53f) - 4, (int)pwSize.X + 20, 24),
@@ -922,10 +994,19 @@ public sealed partial class Game1
         _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h * .53f),
             passwordFocused ? titleCol : dimCol);
 
+        string dcKey = IntroScreenModel.TryParseDirect(_directBuf.ToString(), 6073, out var dcHost, out var dcPort)
+            ? SavedGamePasswords.HostKey(dcHost, dcPort) : "";
+        _spriteBatch.DrawString(_hudSmall,
+            Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, dcKey.Length > 0 && SavedPasswords.Has(dcKey)),
+            new Vector2(50, h * .53f + 30f), dimCol);
+        if (_joinPasswordError.Length > 0)
+            _spriteBatch.DrawString(_hudSmall, _joinPasswordError, new Vector2(50, h * .53f + 60f),
+                new Color(1f, 0.45f, 0.35f));
+
         string hint = IntroScreenModel.DirectConnectHint(passwordFocused);
         var fsz = _hudSmall.MeasureString(hint);
         float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 40f),
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f),
             dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
     }
 

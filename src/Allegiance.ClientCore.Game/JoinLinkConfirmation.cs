@@ -85,6 +85,21 @@ public sealed class JoinLinkConfirmation
 
     public void Cancel() { Closed = true; }
 
+    /// <summary>P970 — a join refused with <c>DPR_BadPassword</c> reopens THIS
+    /// confirmation on the same listing so the player retypes next to the game
+    /// they chose (native kept the games list up and re-opened its password
+    /// dialog there, <c>WinTrek/gamescreen.cpp:1498-1505</c>). The resolution and
+    /// the listing stay intact: no second HTTP lookup, no lost selection.</summary>
+    public void RejectPassword(string message)
+    {
+        if (_missions.Count == 0) return;
+        Closed = false;   // the confirm already closed it; ENTER must work again
+        Message = message;
+    }
+
+    /// <summary>P970 — does the selected game advertise a password requirement?</summary>
+    public bool PasswordRequired => Listing?.PasswordRequired == true;
+
     // Network text remains plain text; control characters cannot spoof extra UI rows.
     public static string Display(string? text, int limit = 100) =>
         new((text ?? "").Select(c => c is >= ' ' and <= '~' ? c : '?').Take(limit).ToArray());

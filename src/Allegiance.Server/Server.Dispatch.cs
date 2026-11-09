@@ -314,7 +314,10 @@ public sealed partial class Server
                 if (validated)
                 {
                     SendPeer(from, FedPacket.Pack([new StaticMapInfo { Maps = _staticMaps }.Encode()]));
-                    if (JoinMission(from, req.DwCookie, shipId, out _, req.MissionPassword)) SendSideRoster(from);
+                    // P970 — the password gate runs at the JOIN (native FedSrv.CPP:648-661),
+                    // before any side selection: a wrong password gets DPR_BadPassword here,
+                    // while the client is still on its join screen.
+                    if (JoinMission(from, req.DwCookie, shipId, out _, req.MissionPassword, req.CharacterName)) SendSideRoster(from);
                     else _pendingSideSelect.Remove(from);
                 }
 

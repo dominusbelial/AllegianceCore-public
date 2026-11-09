@@ -35,7 +35,10 @@ public sealed partial class Server
             }
             _liveGameParams = _missions.Count > 0 ? SnapshotLobbyGameParams(_missions[0]) : null;
             _liveMissions = _missions.Select(m => new LobbyMissionListing(m.Cookie, GameSettings(m).Name,
-                _peerShips.Count(p => ReferenceEquals(p.Value.Ship.Mission, m)), SnapshotLobbyGameParams(m))).ToArray();
+                _peerShips.Count(p => ReferenceEquals(p.Value.Ship.Mission, m)), SnapshotLobbyGameParams(m),
+                // P970 — advertise the fact a password gates this game (the value
+                // stays here; native never sent it either, FedSrv/FedSrv.CPP:648).
+                PasswordRequired: ParamsOf(m).StrGamePassword.Length > 0)).ToArray();
         }
     }
 

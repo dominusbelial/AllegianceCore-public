@@ -216,6 +216,13 @@ public sealed partial class Server : IDisposable
     // trimming as _unsupportedLog; trimmed in ReleasePeer on peer leave).
     private readonly PerPeerRateLimiter _duplicateLogonLog = new();
 
+    // P970 — rate-limits the "game password incorrect" refusal log (a retry loop
+    // must not flood the console). One line per refusal with peer id + callsign;
+    // the password itself is never written (Server.MissionCookies.cs
+    // ReportPasswordRefusal). Keyed on the CALLSIGN, because a retrying player
+    // reconnects and therefore changes connection id every attempt.
+    private readonly PerPeerRateLimiter _joinRefusalLog = new();
+
     // Source of randomness for the eject branch's random fallback heading
     // (Vector::RandomDirection, vector.cpp:37-49). Unseeded by default;
     // local benchmarks can seed this server instance.
