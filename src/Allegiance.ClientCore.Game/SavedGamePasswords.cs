@@ -138,7 +138,19 @@ public sealed class SavedGamePasswords
                 ["version"] = Version,
                 ["servers"] = _servers,
             };
-            File.WriteAllText(path, JsonSerializer.Serialize(payload, JsonOptions));
+            // Claude review — never let the file exist with umask permissions, even
+            // briefly: write a sibling temp file CREATED 0600 (Unix), then rename it
+            // over the target (atomic on the same directory, keeps the 0600 inode).
+            string json = JsonSerializer.Serialize(payload, JsonOptions);
+            string tmp = path + ".tmp";
+            var options = new FileStreamOptions { Mode = FileMode.Create, Access = FileAccess.Write };
+            if (!OperatingSystem.IsWindows())
+                options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            File.Delete(tmp);   // a stale temp from a crash may carry wider permissions
+            using (var w = new StreamWriter(tmp, System.Text.Encoding.UTF8, options))
+                w.Write(json);
+            RestrictToUser(tmp);   // filesystems that ignore the create mode
+            File.Move(tmp, path, overwrite: true);
             RestrictToUser(path);
         }
         catch (Exception)
