@@ -37,8 +37,36 @@ public sealed class VfxPostProcessor : IDisposable
     public RenderTarget2D? DepthRT { get; private set; }
 
     /// <summary>The color target the 3D scene renders into when bloom is on
-    /// (opaque scene + particles, excluding HUD).</summary>
+    /// (opaque scene + particles, excluding HUD). P984 — a HALF-FLOAT target
+    /// (RGBA16F) when <see cref="HdrActive"/>, else the native RGBA8 one.</summary>
     public RenderTarget2D? SceneRT { get; private set; }
+
+    /// <summary>P984 — the bloom composite target of the HDR path when FSR is not
+    /// upscaling (the scene + glow are combined here at full scene resolution,
+    /// then the single output transform reads it). Null unless
+    /// <see cref="HdrActive"/>.</summary>
+    public RenderTarget2D? HdrCompositeRT { get; private set; }
+
+    /// <summary>P984 — the <c>visuals.space.hdrPipeline</c> flag asked for the
+    /// float scene target (before the format was proven on this device).</summary>
+    public bool HdrRequested { get; private set; }
+
+    /// <summary>P984 — the float scene target really exists, so the HDR pass list
+    /// (linear PBR variant + one output transform) is in force. False when the
+    /// flag is off OR the backend refused <see cref="SurfaceFormat.HalfVector4"/>;
+    /// the pipeline then runs the native 8-bit path unchanged.</summary>
+    public bool HdrActive { get; private set; }
+
+    /// <summary>P984 — the single output transform every HDR frame ends with
+    /// (neutral or ACES). Null when <c>Tonemap.ogl.mgfxo</c> failed to load, which
+    /// also disables <see cref="HdrActive"/>.</summary>
+    public HdrOutputTransform? Output { get; }
+
+    /// <summary>Why the HDR path was refused (one log line), or null.</summary>
+    public string? HdrFallbackReason { get; private set; }
+
+    private int _width = 1, _height = 1;
+    private bool _hdrShadersLogged;
 
     public VfxPostProcessor(GraphicsDevice gd, ShaderAssetCache shaders)
     {
@@ -49,7 +77,19 @@ public sealed class VfxPostProcessor : IDisposable
         Soft = softEff is null ? null : new SoftParticleRenderer(softEff);
         var bloomEff = shaders.Load("Content/Shaders/Bloom.ogl.mgfxo");
         Bloom = bloomEff is null ? null : new BloomPostProcessor(gd, bloomEff);
+        var tonemapEff = shaders.Load("Content/Shaders/Tonemap.ogl.mgfxo");
+        Output = tonemapEff is null ? null : new HdrOutputTransform(gd, tonemapEff);
         SetSize(gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
+    }
+
+    /// <summary>P984 — request/withdraw the float HDR scene target. Recreates the
+    /// targets when the setting changes (the flag is resolved once at startup, so
+    /// this normally runs before the first frame).</summary>
+    public void SetHdr(bool requested)
+    {
+        if (requested == HdrRequested) return;
+        HdrRequested = requested;
+        SetSize(_width, _height);
     }
 
     /// <summary>Depth pass usable (effect + target present).</summary>
@@ -77,24 +117,70 @@ public sealed class VfxPostProcessor : IDisposable
     public void SetSize(int width, int height)
     {
         int w = Math.Max(1, width), h = Math.Max(1, height);
+        _width = w; _height = h;
         DepthRT?.Dispose();
         SceneRT?.Dispose();
+        HdrCompositeRT?.Dispose();
+        HdrCompositeRT = null;
         // Depth target: RGBA8 (universal on GLES/Android) + a depth buffer so
         // the opaque depth pass hides backfaces and keeps the NEAREST surface.
+        // P984 — the linear-depth target is a DEPTH carrier, not colour: it stays
+        // RGBA8 on both paths (LinearDepth.fx packs 0..1 into 8 bits by design).
         DepthRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24);
         // P582b — SceneRT (bloom's colour target) must PRESERVE contents across
         // the P579 volumetric half-res excursion mid-frame, else the bloom'd
         // opaque scene is wiped by a near+large blast (the black-world bug).
-        SceneRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24,
-            0, RenderTargetUsage.PreserveContents);
-        Bloom?.SetSize(w, h);
+        HdrActive = false;
+        HdrFallbackReason = null;
+        bool transformUsable = Output is { IsUsable: true };
+        // The float target is used ONLY when the transform can grade it: a float
+        // scene with no output transform would display washed-out/over-bright, so
+        // that case falls back to the native 8-bit path instead.
+        bool hdrFormat = HdrRequested && transformUsable;
+        SurfaceFormat format = HdrOutput.SceneFormat(hdrFormat);
+        if (HdrRequested && !transformUsable)
+        {
+            // A float scene with no output transform would display an un-graded,
+            // over-bright frame: refuse the HDR path instead (one log line).
+            if (!_hdrShadersLogged)
+                Console.WriteLine("[client] visuals.space.hdrPipeline: output transform (Tonemap.ogl.mgfxo) "
+                    + "unavailable - staying on the native 8-bit scene path");
+            _hdrShadersLogged = true;
+        }
+        try
+        {
+            SceneRT = new RenderTarget2D(_gd, w, h, false, format, DepthFormat.Depth24,
+                0, RenderTargetUsage.PreserveContents);
+            if (hdrFormat)
+            {
+                HdrCompositeRT = new RenderTarget2D(_gd, w, h, false, format, DepthFormat.None,
+                    0, RenderTargetUsage.PreserveContents);
+                HdrActive = true;
+            }
+        }
+        catch (Exception exception) when (hdrFormat)
+        {
+            // P984 — the backend refused RGBA16F: fall back to the native 8-bit
+            // path and say so ONCE (never render nothing).
+            SceneRT?.Dispose();
+            HdrCompositeRT?.Dispose();
+            HdrCompositeRT = null;
+            SceneRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24,
+                0, RenderTargetUsage.PreserveContents);
+            HdrFallbackReason = $"{exception.GetType().Name}: {exception.Message}";
+            Console.WriteLine($"[client] visuals.space.hdrPipeline: {format} render target unavailable "
+                + $"({HdrFallbackReason}) - falling back to the native 8-bit scene path");
+        }
+        Bloom?.SetSize(w, h, HdrActive);
     }
 
     public void Dispose()
     {
         Soft?.Dispose();
         Bloom?.Dispose();
+        Output?.Dispose();
         DepthRT?.Dispose();
         SceneRT?.Dispose();
+        HdrCompositeRT?.Dispose();
     }
 }

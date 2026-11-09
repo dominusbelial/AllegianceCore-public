@@ -1,0 +1,70 @@
+{
+ "off_path_vs_base": {
+  "identical": true,
+  "sha256": "8e2c94f13e2a686fdf2cbcffee3ebdfe03c2ca6a1d491e18e7455ec874d751ef"
+ },
+ "classic_black_off_vs_neutral": {
+  "width": 960,
+  "height": 540,
+  "changed": 13575,
+  "changed_pct": 2.619,
+  "max_channel_delta": 90,
+  "mean_abs_channel_delta": 0.1161
+ },
+ "classic_black_off_vs_aces": {
+  "width": 960,
+  "height": 540,
+  "changed": 43407,
+  "changed_pct": 8.373,
+  "max_channel_delta": 83,
+  "mean_abs_channel_delta": 0.5395
+ },
+ "classic_native_off_vs_neutral": {
+  "width": 960,
+  "height": 540,
+  "changed": 13506,
+  "changed_pct": 2.605,
+  "max_channel_delta": 90,
+  "mean_abs_channel_delta": 0.1155
+ },
+ "classic_native_off_vs_aces": {
+  "width": 960,
+  "height": 540,
+  "changed": 42820,
+  "changed_pct": 8.26,
+  "max_channel_delta": 83,
+  "mean_abs_channel_delta": 0.5518
+ },
+ "classic_hd_off_vs_neutral": {
+  "width": 960,
+  "height": 540,
+  "changed": 17834,
+  "changed_pct": 3.44,
+  "max_channel_delta": 90,
+  "mean_abs_channel_delta": 0.1188
+ },
+ "classic_hd_off_vs_aces": {
+  "width": 960,
+  "height": 540,
+  "changed": 364356,
+  "changed_pct": 70.285,
+  "max_channel_delta": 83,
+  "mean_abs_channel_delta": 4.0015
+ },
+ "modern_hd_off_vs_neutral": {
+  "width": 960,
+  "height": 540,
+  "changed": 17071,
+  "changed_pct": 3.293,
+  "max_channel_delta": 90,
+  "mean_abs_channel_delta": 0.117
+ },
+ "modern_hd_off_vs_aces": {
+  "width": 960,
+  "height": 540,
+  "changed": 363352,
+  "changed_pct": 70.091,
+  "max_channel_delta": 83,
+  "mean_abs_channel_delta": 3.9416
+ }
+}

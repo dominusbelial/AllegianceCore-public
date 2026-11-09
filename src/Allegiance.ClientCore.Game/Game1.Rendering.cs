@@ -579,10 +579,19 @@ public sealed partial class Game1
                 // the depth shader + target ready.
                 var outputViewport = GraphicsDevice.Viewport;
                 bool fsr = PrepareUpscaling(outputViewport.Width, outputViewport.Height);
-                bool sceneTarget = fsr || (_bloomEnabled && _post is { BloomReady: true });
-                var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
+                // P984 — the HDR scene path is active only when the flag is on AND
+                // the float target + output transform really exist (VfxPostProcessor
+                // falls back to the native 8-bit path otherwise).
+                bool hdr = HdrScene;
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
+                bool sceneTarget = fsr || bloom || hdr;
+                var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
                 bool soft = _softEnabled && _post is { SoftReady: true };
+                // The ordered pass list is data (HdrOutput.Plan) so the required
+                // order — bloom, then FSR, then the one output transform, then the
+                // HUD — is pinned by tests instead of comments.
+                var passPlan = HdrOutput.Plan(hdr, bloom, fsr);
+                bool outputTransform = HdrOutput.IndexOf(passPlan, ScenePass.OutputTransform) >= 0;
 
                 // P559 — gather the opaque scene geometry ONCE (ships, asteroids,
                 // stations — the same per-object world transforms, spins advanced
@@ -1827,6 +1836,10 @@ public sealed partial class Game1
                 // FINAL target (backbuffer or the capture target), then the
                 // radar + HUD + SpriteBatch overlays below draw on top of it so
                 // they never bloom. When bloom is off nothing here runs.
+                // P984 — on the HDR path the composite lands in a FLOAT target
+                // (the HdrCompositeRT, or FSR's bloomed target) and the single
+                // output transform below is what reaches the final target; the
+                // HUD still draws after that, so it is never graded.
                 _gpuTimer?.Stop();
                 _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
                 _frameTelemetry?.BeginPost();
@@ -1834,11 +1847,19 @@ public sealed partial class Game1
                 Texture2D? upscaleSource = sceneRt;
                 if (bloom && _post is { BloomReady: true })
                 {
-                    GraphicsDevice.SetRenderTarget(fsr ? _fsr!.Bloomed : finalTarget);
+                    RenderTarget2D? compositeTarget = fsr ? _fsr!.Bloomed
+                        : (hdr ? _post.HdrCompositeRT : finalTarget);
+                    GraphicsDevice.SetRenderTarget(compositeTarget);
                     _post.Bloom!.Render(sceneRt!);
                     if (fsr) upscaleSource = _fsr!.Bloomed;
+                    else if (hdr) upscaleSource = _post.HdrCompositeRT;
                 }
-                if (fsr) _fsr!.Render(upscaleSource!, finalTarget, _upscaling.Sharpness);
+                if (fsr)
+                {
+                    _fsr!.Render(upscaleSource!, hdr ? null : finalTarget, _upscaling.Sharpness, hdr);
+                    if (hdr) upscaleSource = _fsr!.HdrUpscaled;
+                }
+                if (outputTransform) _post!.Output!.Render(upscaleSource!, finalTarget, _hdrCurve);
                 _frameTelemetry?.EndPost();
                 _gpuTimer?.Stop();
 

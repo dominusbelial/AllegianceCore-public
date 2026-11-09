@@ -877,6 +877,29 @@ public sealed partial class Game1
             _vfxAssets = new Rendering.VfxAssets(GraphicsDevice);
             _enhancedSmoke = new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets, _post?.Soft);
         }
+        else if (_visuals.HdrPipeline)
+        {
+            // P984 — the HDR scene target is a post-processing resource: it must
+            // exist even with Native VFX selected (no bloom/soft), so the flag
+            // still gives the float scene + one output transform.
+            _post = new Rendering.VfxPostProcessor(GraphicsDevice, _shaders);
+        }
+        if (_post is not null)
+        {
+            // P984 — request the float scene target ONLY when the flag is on; the
+            // post-processor proves RGBA16F + the output transform on this device
+            // and falls back to the native 8-bit path (one log line) otherwise.
+            _post.SetHdr(_visuals.HdrPipeline);
+            SyncHdrState();
+            _hdrCurve = _visuals.HdrAces ? Rendering.HdrCurve.Aces : Rendering.HdrCurve.Neutral;
+            if (_visuals.HdrPipeline)
+                Console.WriteLine("[monogame] P984: visuals.space.hdrPipeline "
+                    + (HdrScene
+                        ? $"ACTIVE (float scene target {Rendering.HdrOutput.SceneFormat(true)}, single output transform)"
+                        : $"UNAVAILABLE ({_post.HdrFallbackReason ?? "shader/target missing"}) - native 8-bit scene path")
+                    + " | " + Rendering.HdrOutput.Describe(HdrScene, _hdrCurve, _bloomEnabled,
+                        _upscaling.Upscaling == UpscalingMode.FSR1));
+        }
 
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);
 

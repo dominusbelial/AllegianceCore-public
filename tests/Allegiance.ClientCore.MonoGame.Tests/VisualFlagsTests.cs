@@ -31,7 +31,8 @@ public sealed class VisualFlagsTests
             if (definition.Kind == VisualFlagKind.Toggle) Assert.False(definition.DefaultOn);
             else Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=off viewRange=10000", options.Describe());
+        // P984 appended the two 3-D look flags (space.*) to the same table.
+        Assert.Equal("radialVisibility=off viewRange=10000 space.hdrPipeline=off space.hdrAces=off", options.Describe());
     }
 
     [Theory]

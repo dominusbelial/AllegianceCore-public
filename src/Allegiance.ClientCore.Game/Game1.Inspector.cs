@@ -922,8 +922,12 @@ public sealed partial class Game1
         }
 
         bool fsr = PrepareUpscaling(gd.Viewport.Width, gd.Viewport.Height);
+        // P984 — the showcase/inspector path runs the SAME pass list as flight:
+        // float scene target, bloom/FSR, then the one output transform before the
+        // HUD, so a capture taken here matches the live pipeline.
+        bool hdr = HdrScene;
         bool bloom = _inspectBloom && _post is { BloomReady: true };
-        bool sceneTarget = fsr || bloom;
+        bool sceneTarget = fsr || bloom || hdr;
         var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
         _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
         bool soft = _inspectSoft && _post is { SoftReady: true };
@@ -982,11 +986,19 @@ public sealed partial class Game1
         Texture2D? upscaleSource = sceneRt;
         if (bloom)
         {
-            gd.SetRenderTarget(fsr ? _fsr!.Bloomed : null);
+            RenderTarget2D? compositeTarget = fsr ? _fsr!.Bloomed
+                : (hdr ? _post!.HdrCompositeRT : null);
+            gd.SetRenderTarget(compositeTarget);
             _post!.Bloom!.Render(sceneRt!);
             if (fsr) upscaleSource = _fsr!.Bloomed;
+            else if (hdr) upscaleSource = _post.HdrCompositeRT;
         }
-        if (fsr) _fsr!.Render(upscaleSource!, null, _upscaling.Sharpness);
+        if (fsr)
+        {
+            _fsr!.Render(upscaleSource!, null, _upscaling.Sharpness, hdr);
+            if (hdr) upscaleSource = _fsr!.HdrUpscaled;
+        }
+        if (hdr) _post!.Output!.Render(upscaleSource!, null, _hdrCurve);
         _frameTelemetry?.EndPost();
         _gpuTimer?.Stop();
 
