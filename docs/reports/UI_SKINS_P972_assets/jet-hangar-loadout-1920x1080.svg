@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+<title id="title">Jet docked hangar and loadout</title><desc id="desc">Docked hangar/loadout proposal with every existing action retained. Design mockup, not a runtime screenshot.</desc>
+<defs>
+ <radialGradient id="space" cx="52%" cy="44%" r="78%"><stop offset="0" stop-color="#122335"/><stop offset=".48" stop-color="#060d17"/><stop offset="1" stop-color="#010308"/></radialGradient>
+ <radialGradient id="planet" cx="35%" cy="28%" r="72%"><stop offset="0" stop-color="#7797a7"/><stop offset=".38" stop-color="#293f51"/><stop offset=".74" stop-color="#101d2b"/><stop offset="1" stop-color="#02050b"/></radialGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#172c39" stop-opacity=".92"/><stop offset="1" stop-color="#07131d" stop-opacity=".9"/></linearGradient>
+ <linearGradient id="jetglass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071b13" stop-opacity=".9"/><stop offset="1" stop-color="#020a07" stop-opacity=".86"/></linearGradient>
+ <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 3.5H4" stroke="#79ffc0" stroke-opacity=".045" stroke-width="1"/></pattern>
+</defs>
+<rect x="0.0" y="0.0" width="1920.0" height="1080.0" rx="0" fill="url(#space)" stroke="none" stroke-width="1" />
+<circle cx="30.4" cy="985.9" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.42257784688721156" />
+<circle cx="1614.7" cy="387.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5317712653909747" />
+<circle cx="1115.5" cy="809.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4454747067590328" />
+<circle cx="346.1" cy="461.1" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5442088537479469" />
+<circle cx="1521.5" cy="209.9" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.32732214690419636" />
+<circle cx="257.4" cy="623.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6631608890047725" />
+<circle cx="382.2" cy="783.3" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3455537574935058" />
+<circle cx="939.8" cy="482.9" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6824068696939378" />
+<circle cx="1393.0" cy="740.7" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5998519337144654" />
+<circle cx="914.1" cy="1063.5" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24854261151600124" />
+<circle cx="1275.7" cy="922.3" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.48113417244231993" />
+<circle cx="572.7" cy="296.9" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3850829685719512" />
+<circle cx="298.0" cy="397.7" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5640881820430241" />
+<circle cx="971.0" cy="411.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7385187055092067" />
+<circle cx="1130.6" cy="325.1" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5894109334401574" />
+<circle cx="1668.1" cy="574.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5957464145719586" />
+<circle cx="364.4" cy="188.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3564563575906705" />
+<circle cx="1862.5" cy="43.8" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.23187080466632196" />
+<circle cx="1394.7" cy="765.2" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.31960488119571073" />
+<circle cx="1310.9" cy="1004.2" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6502135662488326" />
+<circle cx="258.4" cy="304.8" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6003991507550546" />
+<circle cx="83.6" cy="772.5" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6347503846025738" />
+<circle cx="1220.6" cy="368.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24855983893655684" />
+<circle cx="622.1" cy="228.2" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5558430853014813" />
+<circle cx="813.0" cy="673.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4343603928187328" />
+<circle cx="104.7" cy="438.9" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7329941980551816" />
+<circle cx="119.3" cy="748.8" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5671064743722446" />
+<circle cx="819.0" cy="723.3" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7720832652265801" />
+<circle cx="113.7" cy="533.0" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24633570480224193" />
+<circle cx="1406.6" cy="738.2" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7080067891420021" />
+<circle cx="472.2" cy="328.4" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6852285784117461" />
+<circle cx="605.9" cy="314.7" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.43768717687462744" />
+<circle cx="395.7" cy="382.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6537149660259017" />
+<circle cx="794.2" cy="972.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5310530212871426" />
+<circle cx="401.2" cy="932.0" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3273548253172269" />
+<circle cx="600.1" cy="603.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4719149167826717" />
+<circle cx="1271.4" cy="871.2" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3318689873950422" />
+<circle cx="1688.1" cy="503.0" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.22560957733285003" />
+<circle cx="29.8" cy="458.3" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4778841433494868" />
+<circle cx="1051.7" cy="474.6" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6693236411030797" />
+<circle cx="1038.1" cy="167.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3616313373635627" />
+<circle cx="1287.4" cy="380.5" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7391862903940473" />
+<circle cx="966.3" cy="965.1" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.23577475182108187" />
+<circle cx="1193.5" cy="991.3" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.30645985762195155" />
+<circle cx="1289.8" cy="471.3" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.33606088586770455" />
+<circle cx="1438.6" cy="524.1" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7031975446443338" />
+<circle cx="196.9" cy="522.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5638829680450449" />
+<circle cx="1788.1" cy="333.9" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7732108794991741" />
+<circle cx="1837.5" cy="308.0" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6510560042344616" />
+<circle cx="284.4" cy="235.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.28913652752112906" />
+<circle cx="72.6" cy="551.1" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.47926679278754747" />
+<circle cx="1249.2" cy="657.5" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.48847579959544885" />
+<circle cx="1323.1" cy="768.6" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.33555259023779455" />
+<circle cx="1562.6" cy="222.6" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6788765192689369" />
+<circle cx="194.3" cy="54.0" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.42625874458012747" />
+<circle cx="691.6" cy="99.6" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3858953833324975" />
+<circle cx="1000.9" cy="89.4" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6203767181225379" />
+<circle cx="86.7" cy="620.4" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4619480317203411" />
+<circle cx="87.7" cy="832.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3187004080029243" />
+<circle cx="1845.2" cy="730.8" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7002997208489854" />
+<circle cx="1435.9" cy="702.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7634543312156189" />
+<circle cx="1507.6" cy="838.2" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6485498614159954" />
+<circle cx="167.2" cy="811.5" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.33619216210929165" />
+<circle cx="900.4" cy="843.7" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.680381184821225" />
+<circle cx="1668.5" cy="1030.4" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2581439655194654" />
+<circle cx="380.3" cy="1057.3" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.26702959945446825" />
+<circle cx="1613.4" cy="341.7" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.38954890141239235" />
+<circle cx="1849.5" cy="569.7" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3046474162287647" />
+<circle cx="416.7" cy="232.9" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.662045135022689" />
+<circle cx="748.5" cy="670.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2897875285843975" />
+<circle cx="857.7" cy="33.5" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4975118378766067" />
+<circle cx="701.0" cy="627.8" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.48991717557144043" />
+<circle cx="337.0" cy="725.8" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4864159662540585" />
+<circle cx="535.5" cy="444.9" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.24283428319200634" />
+<circle cx="1628.4" cy="607.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6869222434815696" />
+<circle cx="1537.8" cy="456.9" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.621685797432526" />
+<circle cx="1668.5" cy="15.0" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5158475586650023" />
+<circle cx="362.3" cy="393.0" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5695814874474975" />
+<circle cx="991.6" cy="133.5" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2594781762386997" />
+<circle cx="1824.3" cy="644.8" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5028278046487111" />
+<circle cx="479.0" cy="395.1" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6770085985045077" />
+<circle cx="550.7" cy="86.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.36456884641638754" />
+<circle cx="1052.7" cy="785.3" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.37997804671126467" />
+<circle cx="1320.8" cy="25.2" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7761608253136165" />
+<circle cx="698.6" cy="461.4" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3825617995861604" />
+<circle cx="1323.3" cy="515.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.38669995516839395" />
+<circle cx="635.2" cy="281.3" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5553359181206249" />
+<circle cx="1778.3" cy="139.6" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.3161340009904961" />
+<circle cx="1329.5" cy="867.6" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4857356492089311" />
+<circle cx="936.0" cy="360.2" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6724320122078529" />
+<circle cx="756.8" cy="234.6" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6556276449775765" />
+<circle cx="770.5" cy="815.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.585041405361355" />
+<circle cx="381.0" cy="191.6" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6831514804085663" />
+<circle cx="351.7" cy="807.7" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6769220601019101" />
+<circle cx="1838.2" cy="327.3" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6880003599471857" />
+<circle cx="1695.2" cy="553.2" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.43149184373256105" />
+<circle cx="1180.0" cy="374.4" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5914324870240061" />
+<circle cx="168.2" cy="212.6" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6106826104241457" />
+<circle cx="212.1" cy="284.7" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.760714541234584" />
+<circle cx="447.3" cy="20.7" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4331706075188597" />
+<circle cx="1623.9" cy="39.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6957759263778398" />
+<circle cx="1863.7" cy="300.5" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6913342971641037" />
+<circle cx="1616.3" cy="434.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2209508406075262" />
+<circle cx="571.0" cy="834.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.48779552420771355" />
+<circle cx="436.2" cy="580.9" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4691255392760637" />
+<circle cx="99.1" cy="72.8" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.2234376038399527" />
+<circle cx="1756.7" cy="139.0" r="0.6" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.23118821191823885" />
+<circle cx="1764.0" cy="123.9" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5033759948563179" />
+<circle cx="276.8" cy="116.4" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6099454636194731" />
+<circle cx="1008.0" cy="48.2" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4535623458265481" />
+<circle cx="1244.9" cy="838.6" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6656243943355781" />
+<circle cx="1301.7" cy="914.5" r="1.2" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.6408389125831414" />
+<circle cx="835.8" cy="270.7" r="0.8" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.5186784258216404" />
+<circle cx="102.9" cy="305.7" r="1.0" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.7348399941994889" />
+<circle cx="734.1" cy="71.2" r="0.5" fill="#d9edf4" stroke="none" stroke-width="1" opacity="0.4686146276667762" />
+<path d="M 1080.8 449.4 L 1117.8 429.4 L 1132.8 401.4 L 1147.8 429.4 L 1184.8 449.4 L 1150.8 445.4 L 1140.8 465.4 L 1124.8 465.4 L 1114.8 445.4 Z" fill="#263b4b" stroke="#a5c4ce" stroke-width="1.2" opacity="0.88" />
+<path d="M 1120.8 462.4 L 1132.8 502.4 L 1144.8 462.4" fill="#54d8d0" stroke="none" stroke-width="1" opacity="0.22" />
+<rect x="0.0" y="0.0" width="1920.0" height="1080.0" rx="0" fill="url(#scan)" stroke="none" stroke-width="1" />
+<text x="48.0" y="55.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="18" font-weight="600" text-anchor="start" letter-spacing="2" >DOCKED / GARRISON 07</text>
+<text x="1872.0" y="55.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="16" font-weight="400" text-anchor="end" letter-spacing="0" >BIOS SCOUT  -  LOADOUT</text>
+<path d="M 0 160 L 280 90 H 1640 L 1920 160 V 920 L 1640 1010 H 280 L 0 920 Z" fill="#020b07" stroke="#79ffc0" stroke-width="1" opacity="0.9" />
+<line x1="90.0" y1="160.0" x2="170.0" y2="900.0" stroke="#79ffc0" stroke-width="2" opacity="0.12" />
+<line x1="250.0" y1="160.0" x2="330.0" y2="900.0" stroke="#79ffc0" stroke-width="2" opacity="0.12" />
+<line x1="1670.0" y1="160.0" x2="1590.0" y2="900.0" stroke="#79ffc0" stroke-width="2" opacity="0.12" />
+<line x1="1830.0" y1="160.0" x2="1750.0" y2="900.0" stroke="#79ffc0" stroke-width="2" opacity="0.12" />
+<line x1="280.0" y1="850.0" x2="1640.0" y2="850.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<rect x="55.0" y="160.0" width="285.0" height="680.0" rx="5" fill="url(#jetglass)" stroke="#79ffc0" stroke-width="0.8" opacity="0.96" />
+<line x1="56.0" y1="188.0" x2="339.0" y2="188.0" stroke="#79ffc0" stroke-width="0.7" opacity="0.45" />
+<text x="67.0" y="179.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" font-weight="600" text-anchor="start" letter-spacing="1.2" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >HANGAR ACTIONS</text>
+<rect x="75.0" y="189.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="217.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >LAUNCH SHIP</text>
+<rect x="75.0" y="255.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="283.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >COMMAND SCREEN</text>
+<rect x="75.0" y="321.0" width="245.0" height="44.0" rx="3" fill="#79ffc0" stroke="#79ffc0" stroke-width="0.8" opacity="0.24" />
+<text x="91.0" y="349.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="600" text-anchor="start" letter-spacing="0" >SHIP LOADOUT</text>
+<rect x="75.0" y="387.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="415.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >TEAM INVESTMENTS</text>
+<rect x="75.0" y="453.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="481.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >TELEPORT / BOARD</text>
+<rect x="75.0" y="519.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="547.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >TEAM INFORMATION</text>
+<rect x="75.0" y="585.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="613.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >HELP</text>
+<rect x="75.0" y="651.0" width="245.0" height="44.0" rx="3" fill="#0a1a22" stroke="#79ffc0" stroke-width="0.8" opacity="0.55" />
+<text x="91.0" y="679.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="start" letter-spacing="0" >EXIT GAME</text>
+<text x="75.0" y="794.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" font-weight="400" text-anchor="start" letter-spacing="0" >BUY LOADOUT  /  DEFAULT</text>
+<text x="75.0" y="820.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="400" text-anchor="start" letter-spacing="0" >Same actions and hit-test model</text>
+<text x="660.0" y="160.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="1.2" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >BAY 03 / READY</text>
+<path d="M 660 298.25 L 694.8 421.5 L 841.25 515.75 L 718.0 499.8 L 691.9 599.85 L 660 562.15 L 628.1 599.85 L 602.0 499.8 L 478.75 515.75 L 625.2 421.5 Z" fill="#071b12" stroke="#79ffc0" stroke-width="2" />
+<path d="M 660 331.6 V 544.75 M 515.0 509.95 L 660 472.25 L 805.0 509.95" fill="none" stroke="#79ffc0" stroke-width="1" opacity="0.55" />
+<circle cx="660.0" cy="443.2" r="23.2" fill="#79ffc0" stroke="none" stroke-width="1" opacity="0.25" />
+<line x1="410.0" y1="690.0" x2="910.0" y2="690.0" stroke="#79ffc0" stroke-width="1" opacity="0.4" />
+<line x1="430.0" y1="690.0" x2="450.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="470.0" y1="690.0" x2="490.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="510.0" y1="690.0" x2="530.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="550.0" y1="690.0" x2="570.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="590.0" y1="690.0" x2="610.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="630.0" y1="690.0" x2="650.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="670.0" y1="690.0" x2="690.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="710.0" y1="690.0" x2="730.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="750.0" y1="690.0" x2="770.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="790.0" y1="690.0" x2="810.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="830.0" y1="690.0" x2="850.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<line x1="870.0" y1="690.0" x2="890.0" y2="710.0" stroke="#79ffc0" stroke-width="1" opacity="0.25" />
+<text x="660.0" y="745.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="middle" letter-spacing="0" >HULL 100%  /  SHIELD 100%  /  FUEL 100%</text>
+<rect x="492.0" y="778.0" width="336.0" height="54.0" rx="4" fill="#79ffc0" stroke="#79ffc0" stroke-width="1.2" opacity="0.16" />
+<text x="660.0" y="812.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="22" font-weight="700" text-anchor="middle" letter-spacing="3" >LAUNCH</text>
+<rect x="1030.0" y="160.0" width="690.0" height="680.0" rx="5" fill="url(#jetglass)" stroke="#79ffc0" stroke-width="0.8" opacity="0.96" />
+<line x1="1031.0" y1="188.0" x2="1719.0" y2="188.0" stroke="#79ffc0" stroke-width="0.7" opacity="0.45" />
+<text x="1042.0" y="179.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" font-weight="600" text-anchor="start" letter-spacing="1.2" stroke="#010609" stroke-width="3" paint-order="stroke" stroke-linejoin="round" >LOADOUT / LIVE TRANSACTION MODEL</text>
+<rect x="1048.0" y="195.0" width="654.0" height="45.0" rx="0" fill="#06160e" stroke="none" stroke-width="1" opacity="0.55" />
+<text x="1064.0" y="220.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >PRIMARY 1</text>
+<text x="1210.0" y="220.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >EW Sniper 2</text>
+<text x="1684.0" y="220.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >100% / READY</text>
+<text x="1064.0" y="277.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >PRIMARY 2</text>
+<text x="1210.0" y="277.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >EW Sniper 2</text>
+<text x="1684.0" y="277.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >100% / READY</text>
+<rect x="1048.0" y="309.0" width="654.0" height="45.0" rx="0" fill="#06160e" stroke="none" stroke-width="1" opacity="0.55" />
+<text x="1064.0" y="334.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >MISSILE</text>
+<text x="1210.0" y="334.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Interceptor</text>
+<text x="1684.0" y="334.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >x4 / READY</text>
+<text x="1064.0" y="391.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >SHIELD</text>
+<text x="1210.0" y="391.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Standard Shield</text>
+<text x="1684.0" y="391.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >100% / 12 s</text>
+<rect x="1048.0" y="423.0" width="654.0" height="45.0" rx="0" fill="#06160e" stroke="none" stroke-width="1" opacity="0.55" />
+<text x="1064.0" y="448.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >AFTERBURNER</text>
+<text x="1210.0" y="448.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Ion Booster</text>
+<text x="1684.0" y="448.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >90% / 18 s</text>
+<text x="1064.0" y="505.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >CLOAK</text>
+<text x="1210.0" y="505.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Signature Cloak</text>
+<text x="1684.0" y="505.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >100% / 42 s</text>
+<rect x="1048.0" y="537.0" width="654.0" height="45.0" rx="0" fill="#06160e" stroke="none" stroke-width="1" opacity="0.55" />
+<text x="1064.0" y="562.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >CARGO 1</text>
+<text x="1210.0" y="562.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Ammo pack</text>
+<text x="1684.0" y="562.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >x3</text>
+<text x="1064.0" y="619.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >TURRET</text>
+<text x="1210.0" y="619.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >Empty mount</text>
+<text x="1684.0" y="619.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="end" letter-spacing="0" >AVAILABLE</text>
+<text x="1055.0" y="704.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start" letter-spacing="0" >BUY: 4 250 cr   /   AVAILABLE: 18 600 cr</text>
+<text x="1055.0" y="738.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >DEFAULT restores this hull loadout</text>
+<text x="1055.0" y="782.0" fill="#d7ffe9" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" letter-spacing="0" >Purchase ACK precedes optional launch.</text>
+<text x="960.0" y="1030.0" fill="#4ba67d" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="13" font-weight="400" text-anchor="middle" letter-spacing="0" >Hover: Ship loadout   |   Enter select   |   Esc back   |   In-turret badge remains state-driven</text>
+<text x="1904.0" y="1068.0" fill="#79ffc0" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" font-weight="500" text-anchor="end" letter-spacing="0.6" opacity="0.62" >P972 DESIGN MOCKUP - NOT A CAPTURE</text>
+</svg>
