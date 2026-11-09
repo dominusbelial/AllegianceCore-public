@@ -4391,7 +4391,11 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (!_pendingSideSelect.Remove(from, out var pend))
             return;   // not pending (already seated/launched) — nothing to do
         var mission = pend.Mission;
-        if (!JoinMission(from, mission.Cookie, pend.ShipId, out _, pend.Request.MissionPassword)) return;
+        // P970 — the refusal names the pilot in the server log (rate-limited,
+        // never the password). Native checks the password at the mission join
+        // (FedSrv.CPP:648-661); re-checking here catches a password the host
+        // changed after this peer logged on.
+        if (!JoinMission(from, mission.Cookie, pend.ShipId, out _, pend.Request.MissionPassword, pend.Request.CharacterName)) return;
 
         // P854 — native MISSION-JOIN gate (FedSrv.CPP:581-594): in a private game a
         // player who is not invited to ANY side is refused at mission entry — before

@@ -526,6 +526,36 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         throw new TimeoutException("timed out waiting for LOGONACK");
     }
 
+    /// <summary>
+    /// P970 — block until the server answers THIS join: the mission-join refusal
+    /// (<c>FM_S_DELPOSITIONREQ</c> naming the ship id the LOGONACK reserved, e.g.
+    /// <c>DPR_BadPassword</c>, native FedSrv.CPP:648-661) or the <c>SIDE_ROSTER</c>
+    /// snapshot that means the peer was admitted (native sends the join data once
+    /// the mission accepts the player, fsmission.cpp SendMissionInfo).
+    /// <para>Frames are ordered on one connection, so after the ACK exactly one of
+    /// the two arrives: the return value is the refusal, or <c>null</c> for
+    /// "accepted" / nothing arrived inside the window (the caller keeps its old
+    /// behaviour in that case, so a server that never sends a roster cannot strand
+    /// the client).</para>
+    /// </summary>
+    public DelPositionReq? WaitForJoinAnswer(int timeoutMs)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            lock (_gate)
+            {
+                if (_lastPositionRefusal is { } refusal) return refusal;
+                // Admitted: the roster of a fresh join, or (a P813c resume) the
+                // re-attached seat's SET_CLUSTER ship id.
+                if (_world.SideRoster is not null || _world.MyShipId is not null) return null;
+            }
+            if (_lost) return null;   // link died: the normal loss path owns the failure
+            Thread.Sleep(5);
+        }
+        return null;
+    }
+
     /// <summary>Command the ship's controls: the four axes and the movement-bit
     /// <paramref name="stateM"/>, encoded as a real <c>FM_C_SHIP_UPDATE(24)</c>.
     /// Mirror of <c>Bot.CommandControls</c>.</summary>

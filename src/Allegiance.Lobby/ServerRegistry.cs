@@ -124,7 +124,9 @@ public sealed class ServerRegistry
                 Math.Max(1, req.MaxGames ?? 20),
                 // P894 — native's server metadata (location), the paused flag the
                 // listing hides on, and the host's stated lobby protocol version.
-                Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted);
+                Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted,
+                // P970 — the advertised password-required fact (never the password).
+                req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -174,6 +176,9 @@ public sealed class ServerRegistry
             Location = Sanitize(req.Location, LocationMax),
             Paused = req.Paused,
             LobbyProtocolVersion = req.LobbyProtocolVersion ?? target.LobbyProtocolVersion,
+            // P970 — a heartbeat refreshes the password-required fact in place, so
+            // a host that loads or clears a mission password is visible at once.
+            PasswordRequired = req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false),
         };
 
         _entries[target.Id] = refreshed;
@@ -432,7 +437,9 @@ public sealed class ServerRegistry
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
         l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, VisibleMissions(l), l.CurrentGames, l.MaxGames,
-        l.Location, PercentLoad(l), StartTimeUtc(l), l.UdpPort, l.PlayerHosted);
+        l.Location, PercentLoad(l), StartTimeUtc(l), l.UdpPort, l.PlayerHosted,
+        // P970 — the directory relays the advertised password-required fact only.
+        l.PasswordRequired);
 
     /// <summary>P894 / LOB-0008 — the mission rows a client may see: native drops a
     /// zero-player non-arena mission from the advertisement
@@ -469,7 +476,9 @@ public sealed class ServerRegistry
     /// </summary>
     private static IReadOnlyList<MissionListingDto>? ToMissions(List<MissionListingRequest>? missions) => missions?
         .Where(m => m.Cookie != uint.MaxValue).DistinctBy(m => m.Cookie).Take(128)
-        .Select(m => new MissionListingDto(m.Cookie, Sanitize(m.Name, NameMax), Math.Max(0, m.PlayerCount), ToGameParams(m.Game))).ToArray();
+        .Select(m => new MissionListingDto(m.Cookie, Sanitize(m.Name, NameMax), Math.Max(0, m.PlayerCount), ToGameParams(m.Game),
+            // P970 — the per-game password-required fact the join screen reads.
+            m.PasswordRequired)).ToArray();
 
     private static GameParamsDto? ToGameParams(GameParamsRequest? g)
     {

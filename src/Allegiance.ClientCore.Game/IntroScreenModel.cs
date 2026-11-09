@@ -130,10 +130,13 @@ public sealed class IntroScreenModel
     /// silently opening the New Game wizard.</summary>
     public static bool FindServerNewGameKey(TextField focus) => focus != TextField.ServerPassword;
 
-    /// <summary>P946 — Find Server's hint, naming the field that owns typing.</summary>
-    public static string FindServerHint(bool passwordFocused) => passwordFocused
-        ? "TYPE password   TAB back to list   UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)"
-        : "UP/DOWN select   ENTER join   TAB password   ESC back (rescanning every 1 s)";
+    /// <summary>P946 — Find Server's hint, naming the field that owns typing.
+    /// P970 adds "(required)" when the selected game advertises a password.</summary>
+    public static string FindServerHint(bool passwordFocused, bool passwordRequired = false) => passwordFocused
+        ? "TYPE password" + (passwordRequired ? " (this game requires it)" : "")
+          + "   TAB back to list   UP/DOWN select   ENTER join   ESC back (rescanning every 1 s)"
+        : "UP/DOWN select   ENTER join   TAB password" + (passwordRequired ? " (required)" : "")
+          + "   ESC back (rescanning every 1 s)";
 
     /// <summary>P946 — Direct Connect's hint, naming the field that owns typing.</summary>
     public static string DirectConnectHint(bool passwordFocused) => passwordFocused

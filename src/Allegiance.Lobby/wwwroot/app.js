@@ -56,7 +56,9 @@ async function refresh() {
       tr.appendChild(cell(s.address));
       tr.appendChild(cell(s.port));
       tr.appendChild(cell(s.playerCount + ' / ' + s.maxPlayers));
-      tr.appendChild(cell(s.missionName));
+      // P970 — a password-protected game shows a lock next to its mission name.
+      // The FACT only: the lobby never receives the password itself.
+      tr.appendChild(cell(s.missionName + (s.passwordRequired ? ' \uD83D\uDD12' : '')));
       tr.appendChild(cell(s.coreFile));
       tr.appendChild(cell(s.version));
       tr.appendChild(cell(s.lastSeenUtc ? new Date(s.lastSeenUtc).toLocaleString() : ''));

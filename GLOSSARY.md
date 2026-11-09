@@ -1556,6 +1556,22 @@ list in **reverse**.
   OS registrations live under `packaging/`; safe web links in
   `src/Allegiance.Lobby/wwwroot/app.js`. Report: `docs/reports/P944_REPORT.md`.
 
+- **Game-password join UX (P970)** — the mission password stays on the server
+  (`FedSrv/FedSrv.CPP:648-661`), but the port now advertises the FACT so the
+  player is asked before connecting: `passwordRequired` rides the server
+  heartbeat (`src/Allegiance.Server/LobbyHeartbeat.cs`,
+  `src/Allegiance.Server/Server.Broadcast.cs`) into the directory
+  (`src/Allegiance.Lobby/ServerRegistry.cs`, `src/Allegiance.Lobby/ServerListing.cs`,
+  lock in `src/Allegiance.Lobby/wwwroot/app.js`) and the client listing
+  (`src/Allegiance.ClientCore.Game/ServerListing.cs`). The shared prompt model is
+  `src/Allegiance.ClientCore.Game/Rendering/JoinPasswordPrompt.cs`; the refusal
+  returns the player to the join screen with the field focused
+  (`src/Allegiance.ClientCore.Game/Game1.Session.cs`, `Game1.JoinLink.cs`,
+  `JoinLinkConfirmation.cs`), and the opt-in per-server store is
+  `src/Allegiance.ClientCore.Game/SavedGamePasswords.cs`. Parity rows:
+  `docs/parity/p970-join-password.csv`. Report:
+  `docs/reports/JOIN_PASSWORD_UX_P970.md`.
+
 ## 6b. Auto-update (`src/Allegiance.Update`)
 
 - **Signed release feed** — `latest.json` + `manifest-<version>.json` (one

@@ -238,7 +238,10 @@ public sealed class LobbyHeartbeat : IDisposable
                 _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
                 _enrollment?.ServerId, _enrollment?.ServerSecret,
                 _minClientVersion, missions, missions?.Count ?? 0, MaxGames,
-                _location, Allegiance.Core.LobbyProtocol.Version, UdpPort);             // P894 — location + stated lobby protocol version
+                _location, Allegiance.Core.LobbyProtocol.Version, UdpPort,              // P894 — location + stated lobby protocol version
+                // P970 — "a password is required": the advertised form of the
+                // refusal the game server already sends at the join.
+                PasswordRequired: missions?.Any(m => m.PasswordRequired) ?? false);
 
 
             HttpResponseMessage resp;
@@ -644,9 +647,20 @@ internal sealed record LobbyRegisterRequest(
     string? Location = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     int? LobbyProtocolVersion = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] int? UdpPort = null,
+    // P970 — the advertised password-required fact. Native carried no such flag
+    // (LOBBYMISSIONINFO has no password field, lobby/messagesall.h:25-63); this
+    // is the port's early-warning form of the FedSrv refusal it already sends
+    // (DPR_BadPassword, FedSrv/FedSrv.CPP:648-661). The password VALUE never
+    // rides this or any other payload. Omitted when false so a pre-P970 host's
+    // bytes are unchanged.
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    bool PasswordRequired = false);
 
-public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game);
+public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game,
+    /// <summary>P970 — this game demands a mission password (the per-game lock the
+    /// browser and the join screen read).</summary>
+    bool PasswordRequired = false);
 public sealed record GameReadyBody(string ServerId, string Token, uint? Cookie);
 public sealed record GameReadyRequest(string Id, uint? Cookie);
 

@@ -528,6 +528,12 @@ public sealed partial class Game1
             _selectedIndex = (_selectedIndex + 1) % _visibleRows.Count;
         _downWasDown = down;
 
+        // P970 — the browser's password field follows the selection (a game that
+        // advertises a password takes focus, a remembered one prefills), and F8
+        // is its opt-in "remember for this server" checkbox.
+        SyncLobbyPasswordFocus();
+        UpdateRememberToggle(ks);
+
         // P761 — the sort-header bar (native OnButtonBarGames,
         // gamescreen.cpp:858-898): Left/Right move the header cursor, Space
         // "clicks" it — the column becomes the LAST stack criterion (an earlier
@@ -1046,9 +1052,22 @@ public sealed partial class Game1
                 }
             }
 
-            _spriteBatch.DrawString(_hudSmall, KeyOf("LobbyPassword").Label + " game password: " + new string('*', _lanJoinPassword.Length)
-                + (_editingLanPassword ? "_  (" + KeyOf("LobbyJoin").Label + " done)" : ""),
-                new Vector2(40, h - 66), dimCol);
+            // P970 — the counted edit line, the selected game's advertised
+            // requirement and the opt-in checkbox share this bottom band.
+            var lobbySelected = _visibleRows.Count == 0 ? null
+                : _displayServers[_visibleRows[Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)]];
+            bool lobbyRequires = lobbySelected?.PasswordRequired == true;
+            if (lobbyRequires)
+                _spriteBatch.DrawString(_hudSmall, Rendering.JoinPasswordPrompt.RequirementLine(true),
+                    new Vector2(40, h - 96), new Color(1f, 0.62f, 0.35f));
+            string lobbyPasswordLine = Rendering.JoinPasswordPrompt.EditLine(lobbyRequires,
+                KeyOf("LobbyPassword").Label + " game password", _lanJoinPassword.Length, _editingLanPassword)
+                + (_editingLanPassword ? "  (" + KeyOf("LobbyJoin").Label + " done)" : "");
+            _spriteBatch.DrawString(_hudSmall, lobbyPasswordLine, new Vector2(40, h - 66), dimCol);
+            string lobbyKey = lobbySelected is null ? "" : JoinPasswordKey(_lobbyUrl, lobbySelected, lobbySelected.Address, lobbySelected.Port);
+            _spriteBatch.DrawString(_hudSmall,
+                Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, lobbyKey.Length > 0 && SavedPasswords.Has(lobbyKey)),
+                new Vector2(40 + _hudSmall.MeasureString(lobbyPasswordLine).X + 40f, h - 66), dimCol);
             string footer = connect
                 ? "TAP a row or BUTTON   A/CONNECT join   Y ADD   X EDIT   B back"
                 : (_filterActive
@@ -1188,10 +1207,25 @@ public sealed partial class Game1
         _transportReason = choice.Reason;
     }
 
-    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null, string? listingLobby = null)
+    private void BeginConnect(string host, ushort port, uint missionCookie = uint.MaxValue, Discovery.DiscoveredServer? discovered = null, bool training = false, ServerListing? listingTarget = null, string? listingLobby = null, JoinOrigin origin = JoinOrigin.Intro)
     {
         if (!training) ReleaseTraining();
         _moderation.Reset();
+        // P970 — remember which join screen this attempt came from (a password
+        // refusal returns there with the field focused), and which server it is
+        // for (the saved-password key: lobby+listing id, else host:port).
+        _joinOrigin = origin;
+        _joinPasswordKey = JoinPasswordKey(
+            listingLobby ?? (_lobbyUrl.Length > 0 ? _lobbyUrl : null), listingTarget, host, port);
+        _joinPasswordError = "";
+        // The advertisement is the early warning; the authoritative check stays
+        // on the server (native FedSrv.CPP:648-661).
+        bool passwordRequiredForTarget = listingTarget?.PasswordRequired ?? discovered?.PasswordRequired ?? false;
+        // Seed the box only if the player has not typed one, and never flip the
+        // opt-in checkbox they may have just ticked on the join screen.
+        SeedJoinPassword(_joinPasswordKey, resetRemember: false);
+        if (_state == ClientState.Intro && Rendering.JoinPasswordPrompt.FocusOnOpen(passwordRequiredForTarget, _lanJoinPassword.Length))
+            _editingLanPassword = true;   // a protected game opens on its password field
         // P894 — the reconnect/resume logon reports the same client build as the
         // first logon so the server's minimum-client-version gate answers both.
         _session.ClientVersion = InstalledClientVersion;
@@ -1257,6 +1291,22 @@ public sealed partial class Game1
                     ? why
                     : "the server refused the logon");
             Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");
+            // P970 — CHECK EARLY: the server answers the join itself, right after
+            // the logon ack (native FedSrv.CPP:648-661 sends DELPOSITIONREQ with
+            // DPR_BadPassword before any side selection). Wait for that ordered
+            // answer so a wrong password is reported on the JOIN SCREEN instead of
+            // leaking onto the side-select screen, and the player can retype in
+            // place (native kept the list up: gamescreen.cpp:1498-1505
+            // bDisconnect = false).
+            if (_session.WaitForJoinAnswer(JoinAnswerWaitMs) is { } joinAnswer
+                && Rendering.JoinPasswordPrompt.IsPasswordRefusal(joinAnswer.Reason))
+            {
+                HandleJoinPasswordRefusal();
+                return;
+            }
+            // Accepted (or a non-password refusal, which keeps its old path below):
+            // the password is worth remembering only now.
+            SaveRememberedPassword(_joinPasswordKey);
             // P281 — the server now defers our spawn to a post-connect side-select
             // step: after LOGONACK it pushes a SIDE_ROSTER(211) snapshot and holds
             // the peer (no ship, no SET_CLUSTER) until we send FM_C_POSITIONREQ(39).
@@ -1277,6 +1327,45 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] FAILED to connect/log on: {ex.Message}");
             _connectFailureReason = $"Could not join {host}:{port} - {ex.Message}";
             _state = ClientState.ConnectFailed;
+        }
+    }
+
+    /// <summary>P970 — how long the client waits for the server's join answer. The
+    /// answer is ordered right behind the LOGONACK on the same connection, so this
+    /// is a generous ceiling for a slow link, not a polling delay: an accepted
+    /// join returns as soon as SIDE_ROSTER arrives.</summary>
+    private const int JoinAnswerWaitMs = 2500;
+
+    /// <summary>
+    /// P970 — a join refused with <c>DPR_BadPassword</c> goes back to the join
+    /// screen that started it, with the password field focused and the typed
+    /// attempt kept so the player can correct it (native re-opened its password
+    /// dialog pre-filled with the last attempt, gamescreen.cpp:1502). The refused
+    /// password also clears its saved entry (P970 opt-in rule).
+    /// </summary>
+    private void HandleJoinPasswordRefusal()
+    {
+        ForgetSavedPassword(_joinPasswordKey);
+        _rememberGamePassword = false;
+        string message = Rendering.JoinPasswordPrompt.RefusalMessage();
+        _editingLanPassword = true;
+        Console.WriteLine($"[monogame] join refused: game password incorrect ({_joinOrigin}); retype allowed");
+        switch (_joinOrigin)
+        {
+            case JoinOrigin.Lobby:
+                _state = ClientState.Lobby;
+                _lobbyError = message;          // the browser's banner line
+                break;
+            case JoinOrigin.JoinLink:
+                _state = ClientState.Intro;
+                _introView = IntroView.JoinLink;
+                _joinLinkConfirmation?.RejectPassword(message);
+                break;
+            default:
+                _state = ClientState.Intro;
+                _joinPasswordError = message;   // Find Server / Direct Connect line
+                _introFindError = message;
+                break;
         }
     }
 
@@ -1323,7 +1412,7 @@ public sealed partial class Game1
         {
             Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
             _connectFailureReason = null;
-            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby);
+            BeginConnect(_connectHost!, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby, origin: _joinOrigin);
             return;
         }
         _connectRetryWasDown = retry;
@@ -1371,7 +1460,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
             bool prior = _returnToLobbyOnFailure;
             _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
-            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby); }
+            try { BeginConnect(_connectHost, _connectPort, _connectMissionCookie, _connectDiscovery, listingTarget: _connectListingTarget, listingLobby: _connectListingLobby, origin: _joinOrigin); }
             finally { _returnToLobbyOnFailure = prior; }
         }
     }

@@ -4,6 +4,25 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P970 sweeps — non-task live-tier failures, 2026-11-08/09 UTC
+
+Two `tools/run-tests.sh --tier fast` sweeps on the P970 tree discovered **13,568** cases each
+(13,563 passed / 2 failed / 3 not executed on the final tree; the three not-executed cases are the
+optional Meshy-pack skips that always skip). Every failure was qualified alone; none touches join,
+password, listing or lobby code, and P970's own suites (6 + 5 + 18 cases) passed in three
+consecutive isolated runs.
+
+| Failure / timing signature | Three isolated repeats | Attribution |
+| --- | --- | --- |
+| `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` ("no KILL_SHIP observed by the real Bot within budget") | **pass / pass / pass**, 0.6 s per run | The ledgered combat-timing family (same signature as the P865b entry: load flakes under tier parallelism). |
+| `SideEliminationLiveTests.Side_with_two_restart_stations_survives_losing_one` ("first station must be destroyed", 20.6 s — also over the Fast guard) | **pass / pass / pass**, 0.6 s per run | Live-wire elimination timing; same class as the ledgered side-elimination family. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38 s, "lock never reached full + partial tip (lock 1.000)") | **fail / fail / fail**, 38 s each, host load 0.66 (idle) | The known open partial-tip receipt failure (P933/P935/P938 cohorts, P961 entry above) — fails in isolated cohorts too. No lock/missile/tip code changed. |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` (resign chat present, filter not matched) | **pass / pass / pass**, 0.6 s each | Ledgered ballot-receipt timing family (same as the P961 sweep). |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (body **passed**, 10.58 s over the Fast guard) | pass / pass / pass in earlier sweeps | Existing timing-only Fast offender; no tier or limit relaxed, no warp code changed. |
+
+The failure set differs between the two sweeps (load-driven), which is why each is listed with its
+own isolated qualification.
+
 ## P962 resolution — stale spawn-docked SHIP_STATUS behind the test's status reset, 2026-11-08 UTC
 
 `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` is **fixed**, and it was a test race,

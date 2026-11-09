@@ -172,7 +172,8 @@ public sealed partial class Game1
         }
         _returnToLobbyOnFailure = true;
         Console.WriteLine($"[monogame] joining {s.Name} @ {s.Address}:{s.Port} ...");
-        BeginConnect(s.Address, (ushort)s.Port, s.MissionCookie, listingTarget: s);
+        // P970 — a refused password returns to the browser with its banner line.
+        BeginConnect(s.Address, (ushort)s.Port, s.MissionCookie, listingTarget: s, origin: JoinOrigin.Lobby);
     }
 
     /// <summary>Delete the selected SAVED server (no-op otherwise) and persist.</summary>

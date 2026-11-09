@@ -63,18 +63,36 @@ public sealed record ServerListing(
     /// <c>lobby/mission.cpp:61</c>). Null = no start time armed.</summary>
     DateTimeOffset? StartTimeUtc = null,
     int? UdpPort = null,
-    bool PlayerHosted = false)
+    bool PlayerHosted = false,
+    /// <summary>
+    /// P970 — the server advertises that (at least one of) its games demands a
+    /// game password. Native carried no such flag: its LOBBYMISSIONINFO payload
+    /// has no password field (<c>lobby/messagesall.h:25-63</c>) and the native
+    /// client only learned it from the <c>DPR_BadPassword</c> refusal, after
+    /// which it popped the password dialog and retried (<c>WinTrek/gamescreen.cpp:
+    /// 1498-1505</c>). This port advertises the FACT (never the password) so the
+    /// browser can show a lock and the join screen can ask before connecting.
+    /// </summary>
+    bool PasswordRequired = false)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
     /// launching <c>dotnet run --project src/Allegiance.Lobby</c> (it has no
     /// appsettings/launchSettings, so Kestrel binds its default port 5000). Not a
     /// guessed port; override with <c>--lobby &lt;url&gt;</c>.</summary>
-    public sealed record MissionListing(uint Cookie, string Name, int PlayerCount, GameParams? Game);
+    /// <summary>P970 — <paramref name="PasswordRequired"/> is the PER-GAME lock
+    /// (a server may host one open and one guarded game).</summary>
+    public sealed record MissionListing(uint Cookie, string Name, int PlayerCount, GameParams? Game,
+        bool PasswordRequired = false);
     public static IEnumerable<ServerListing> ExpandMissions(IEnumerable<ServerListing> servers) =>
         servers.SelectMany(s => s.Missions is { Count: > 0 } missions
             ? missions.Select(m => s with { MissionCookie = m.Cookie, MissionName = m.Name,
-                Name = m.Name, PlayerCount = m.PlayerCount, Game = m.Game, Missions = null }) : new[] { s });
+                Name = m.Name, PlayerCount = m.PlayerCount, Game = m.Game, Missions = null,
+                // P970 — the PER-GAME fact is authoritative for a mission row: a
+                // server-level "any of my games needs a password" must not mark an
+                // open game as guarded. (The server-level flag paints the server
+                // row itself, where no per-game detail exists.)
+                PasswordRequired = m.PasswordRequired }) : new[] { s });
 
     public const string LobbyUrlDefault = "http://127.0.0.1:5000";
 
@@ -145,7 +163,11 @@ public sealed record ServerListing(
             ? $"{PlayerCount}/{MaxPlayers}"
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
-        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
+        // P970 — the row's ASCII lock sits right after the name: the HUD fonts bake
+        // ASCII 32..126 only (no padlock glyph), and the browser trims long rows, so
+        // the marker must come before the columns that get cut.
+        var guard = PasswordRequired ? "  [password required]" : "";
+        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}{guard}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
     }
 
     /// <summary>
@@ -250,6 +272,8 @@ public static class ServerDirectorySearch
             "VERSION: " + (string.IsNullOrWhiteSpace(l.Version) ? "-" : l.Version),
             "PLAYERS: " + l.PlayerCount + (l.MaxPlayers > 0 ? "/" + l.MaxPlayers : ""),
         };
+        // P970 — the advertised password requirement (the fact only, never the value).
+        if (l.PasswordRequired) lines.Add("PASSWORD: required (ask the host; case-sensitive)");
         if (l.PlayerHosted) lines.Add("CONNECT: player hosted, UDP direct via lobby");
         // P894 / LOB-0018 — native's server metadata: LOCATION and the games /
         // load columns of its server list (CreateGameDialog.h:79-100).

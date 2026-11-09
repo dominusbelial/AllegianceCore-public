@@ -55,7 +55,12 @@ public sealed record DiscoveredServer(
     string? IdentityServerId = null,
     uint MissionCookie = uint.MaxValue,
     int? UdpPort = null,
-    NetworkLink HostLink = NetworkLink.Unknown)
+    NetworkLink HostLink = NetworkLink.Unknown,
+    /// <summary>P970 — the advertised password requirement (a lobby listing
+    /// carries it; LAN/multicast discovery has no way to state it, so a direct
+    /// discovery row keeps false and the join learns the fact from the refusal).
+    /// </summary>
+    bool PasswordRequired = false)
 {
     public string SourceLabel => Source switch
     {
@@ -88,6 +93,9 @@ public sealed record DiscoveredServer(
         var display = string.IsNullOrWhiteSpace(DisplayName) ? "" : $"  [{DisplayName}]";
         string ping = PingMs > 0 ? $"{PingMs}ms" : "-";
         string map = string.IsNullOrWhiteSpace(Map) ? "" : $"  {Map}";
-        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}:{Port}  {PlayersText} players  [{SourceLabel}] {ping}{display}{map}";
+        // P970 — the ASCII "password" lock goes right AFTER the name (the HUD fonts
+        // carry ASCII only) so a long row can never push it off the right edge.
+        string guard = PasswordRequired ? " [password]" : "";
+        return $"[{(Verified ? "verified" : "unverified")}] {name}{guard}  {addr}:{Port}  {PlayersText} players  [{SourceLabel}] {ping}{display}{map}";
     }
 }

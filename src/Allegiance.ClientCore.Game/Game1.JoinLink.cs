@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.Session;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -10,6 +11,7 @@ public sealed partial class Game1
     private JoinLinkConfirmation? _joinLinkConfirmation;
     private Task? _joinLinkResolution;
     private bool _joinLinkInputArmed;
+    private bool _joinLinkPasswordSeeded;
     private CancellationTokenSource? _joinLinkCancellation;
     private readonly System.Collections.Concurrent.ConcurrentQueue<string> _joinLinkEvents = new();
 
@@ -35,6 +37,8 @@ public sealed partial class Game1
         _joinLinkConfirmation = new(launch.Link, IntroPreferences.Load().Lobby, launch.Error);
         _lanJoinPassword.Clear();
         _editingLanPassword = false;
+        _rememberGamePassword = false;
+        _joinLinkPasswordSeeded = false;
         _joinLinkInputArmed = false;
         _introView = IntroView.JoinLink;
         _joinLinkResolution = ResolveJoinLinkAsync(_joinLinkConfirmation, _joinLinkCancellation.Token);
@@ -48,10 +52,31 @@ public sealed partial class Game1
         await confirmation.ResolveAsync(http, token);
     }
 
+    /// <summary>P970 — the saved-password key for the listing on this join-link
+    /// screen (lobby + listing id, per the store's keying rule).</summary>
+    private string? JoinLinkPasswordKey()
+        => _joinLinkConfirmation is { Link: { } link, Listing: { } listing }
+            ? JoinPasswordKey(link.Lobby.AbsoluteUri, listing, listing.Address, listing.Port)
+            : null;
+
     private void UpdateJoinLink(KeyboardState keys)
     {
         // Reading IsCompleted establishes visibility of the resolver's result before drawing/confirming.
         bool ready = _joinLinkResolution?.IsCompleted ?? true;
+        // P970 — once the listing is known, open the screen on its password field
+        // when the game advertises one, and prefill a remembered password. One-shot
+        // per confirmation so retyping never re-seeds the box.
+        if (ready && !_joinLinkPasswordSeeded && _joinLinkConfirmation?.Listing is { } resolved)
+        {
+            _joinLinkPasswordSeeded = true;
+            SeedJoinPassword(JoinLinkPasswordKey());
+            if (resolved.PasswordRequired && _lanJoinPassword.Length == 0)
+            {
+                _editingLanPassword = true;
+                Console.WriteLine($"[join] '{resolved.Name}' requires a password - field focused");
+            }
+        }
+        if (ready) UpdateRememberToggle(keys);
         bool enter = keys.IsKeyDown(Keys.Enter), escape = keys.IsKeyDown(Keys.Escape), tab = keys.IsKeyDown(Keys.Tab);
         bool up = keys.IsKeyDown(Keys.Up), down = keys.IsKeyDown(Keys.Down);
         if (ready && up && !_iUp) _joinLinkConfirmation?.SelectMission(-1);
@@ -70,7 +95,12 @@ public sealed partial class Game1
         if (escape && !_iEsc) CancelJoinLink();
         else if (enter && !_iEnter)
         {
-            if (_editingLanPassword) _editingLanPassword = false; // same two-step password edit as browser
+            // P970 — a password the game REQUIRES submits on ENTER (native's
+            // password dialog's OK is Enter, passworddialog.cpp:91-95); an
+            // optional one keeps the browser's two-step edit, so a stray key never
+            // joins with half a password typed (JoinPasswordPrompt.EnterSubmits).
+            if (!Rendering.JoinPasswordPrompt.EnterSubmits(_editingLanPassword, _joinLinkConfirmation?.PasswordRequired == true))
+                _editingLanPassword = false;
             else if (ready) _joinLinkConfirmation?.Confirm(JoinResolvedListing);
         }
         HandleIntroBackspace(keys);
@@ -84,6 +114,8 @@ public sealed partial class Game1
         _joinLinkCancellation?.Cancel();
         _lanJoinPassword.Clear();
         _editingLanPassword = false;
+        _rememberGamePassword = false;
+        _joinLinkPasswordSeeded = false;
         _introView = IntroView.Main;
     }
 
@@ -96,7 +128,10 @@ public sealed partial class Game1
         // Exactly the browser's BeginConnect call; listingLobby only pins the
         // introduction origin, without overwriting _lobbyUrl or player.json.
         BeginConnect(listing.Address, (ushort)listing.Port, listing.MissionCookie,
-            listingTarget: listing, listingLobby: lobby.AbsoluteUri.TrimEnd('/'));
+            listingTarget: listing, listingLobby: lobby.AbsoluteUri.TrimEnd('/'),
+            // P970 — a refused password comes back to THIS screen (native kept the
+            // games list up and re-opened the password dialog there).
+            origin: JoinOrigin.JoinLink);
     }
 
     private void DrawJoinLink(float w, float h, Color title, Color dim, Color text)
@@ -114,18 +149,33 @@ public sealed partial class Game1
         foreach (var line in lines) DrawJoinLinkLine(line, w, ref y, text);
         if (ready && confirmation?.Listing is { } listing)
         {
-            string[] details =
-            [
+            var details = new List<string>
+            {
                 "Server: " + JoinLinkConfirmation.Display(confirmation.ServerName),
                 (listing.Verified ? "Verified server" : "Unverified server") + "  |  " + (listing.PlayerHosted ? "Player-hosted game" : "Dedicated server"),
                 "Mission: " + JoinLinkConfirmation.Display(listing.MissionName, 65) + (confirmation.MissionCount > 1 ? "  (UP/DOWN to choose)" : ""),
                 $"Players: {listing.PlayerCount} / {listing.MaxPlayers}",
-                "TAB password (if required): " + new string('*', _lanJoinPassword.Length) + (_editingLanPassword ? "_  (ENTER done)" : ""),
-            ];
+            };
+            // P970 — the lock, said plainly, with the counted edit line. A game that
+            // advertises no password keeps the pre-P970 two-line tail exactly.
+            if (listing.PasswordRequired) details.Add(Rendering.JoinPasswordPrompt.RequirementLine(true));
+            details.Add(Rendering.JoinPasswordPrompt.EditLine(listing.PasswordRequired,
+                _editingLanPassword ? "Password" : "TAB password", _lanJoinPassword.Length, _editingLanPassword));
             foreach (var line in details) DrawJoinLinkLine(line, w, ref y, text);
         }
-        _spriteBatch.DrawString(_hudSmall, ready && confirmation?.Listing is not null
-            ? "ENTER confirm and join     ESC cancel" : "ESC return to the intro", new Vector2(50, h - 58), dim);
+        // The opt-in checkbox and the key help share the footer line: at 800x480 the
+        // detail block already reaches the bottom band, so an extra row would collide.
+        string? key = JoinLinkPasswordKey();
+        bool saved = key is not null && SavedPasswords.Has(key);
+        string footer = ready && confirmation?.Listing is { } confirmed
+            ? (confirmed.PasswordRequired && _editingLanPassword
+                ? "TYPE the password   ENTER join   ESC cancel   " + Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, saved)
+                : "ENTER confirm and join   TAB password   ESC cancel   " + Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, saved))
+            : "ESC return to the intro";
+        var footerSize = _hudSmall.MeasureString(footer);
+        float footerScale = Math.Min(1f, (w - 100f) / Math.Max(1f, footerSize.X));
+        _spriteBatch.DrawString(_hudSmall, footer, new Vector2(50, h - 58), dim, 0f, Vector2.Zero, footerScale,
+            Microsoft.Xna.Framework.Graphics.SpriteEffects.None, 0f);
     }
 
     private void DrawJoinLinkLine(string line, float width, ref float y, Color color)
