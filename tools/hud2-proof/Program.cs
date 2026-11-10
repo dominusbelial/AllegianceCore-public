@@ -40,6 +40,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Sim;
 using HudProof;
@@ -339,7 +340,10 @@ sealed class Proof : Game
         {
             GraphicsDevice.SetRenderTarget(target);
             GraphicsDevice.Clear(backdrop);
-            renderer.Draw(model, GraphicsDevice.Viewport);
+            // P988: exercise the production adapter too. The P980 fixture's
+            // external Classic radar/notices below retain their original order
+            // (different from Game1); changing that fixture would re-bless pixels.
+            Adapter(renderer).Draw(model, new(GraphicsDevice.Viewport, null, combo.Scenario == "target-full"));
             if (model.FlightVisible && renderer == _classic)
             {
                 var radar = new RadarBracketRenderer(_batch, _white);
@@ -381,6 +385,17 @@ sealed class Proof : Game
         {
             GraphicsDevice.SetRenderTarget(null);
         }
+    }
+
+    private readonly Dictionary<HudRenderer, IHudSkinRenderer> _adapters = new();
+    private IHudSkinRenderer Adapter(HudRenderer renderer)
+    {
+        if (_adapters.TryGetValue(renderer, out var adapter)) return adapter;
+        var services = new HudSkinResources(_ => { }, (_, _) => { }, _ => { },
+            (_, _) => { }, _ => { }, _ => { }, _ => { });
+        adapter = new HudSkinRenderer(renderer, services);
+        _adapters.Add(renderer, adapter);
+        return adapter;
     }
 
     // One Modern renderer per user Size: its constructor builds two SDF glyph

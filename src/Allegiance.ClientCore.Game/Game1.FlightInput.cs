@@ -251,8 +251,15 @@ public sealed partial class Game1
     {
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         SyncMouseCapture();
+        _hudSkinKeysRead = false;
         try { UpdateFrame(gameTime); }
-        finally { SyncMouseCapture(); } // includes every menu/dock/observer early return
+        finally
+        {
+            if (_hudSkins is not null)
+                UpdateHudSkinInput(_hudSkinKeysRead ? _hudSkinKeys : Keyboard.GetState(), IsActive);
+            CommitHudSkinChange();
+            SyncMouseCapture();
+        } // includes every menu/dock/observer early return
     }
 
     private void UpdateFrame(GameTime gameTime)
@@ -382,6 +389,8 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] team lobby: local ship is on no side (-2) — team screen (pick a side)");
         }
         var ks = _benchmark is null ? ReadProofKeyboard() : new KeyboardState();
+        _hudSkinKeys = ks;
+        _hudSkinKeysRead = true;
         // P948 — real-window proof of the persisted mouse options on the in-game
         // settings panel (Ctrl+F6). It runs HERE, not in UpdateFlying, because the
         // modal panel makes UpdateGraphicsSettings swallow the flight update.

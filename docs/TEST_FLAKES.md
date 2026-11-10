@@ -4,6 +4,144 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P988 golden qualification — existing P980 baseline drift, 2026-11-09 UTC
+
+Before the P988 adapter was built into the proof tool, the untouched HUD-2
+binary compared the full P980 matrix: 1,848 cases, **1,764 pixel differences,
+42 semantic differences, 0 corrupt goldens**. The original binary was retained.
+Its `flight/800x480/s0.75/dark` pair reproduced **3/3 alone**, each with exactly
+11,951 changed Classic pixels and 12,254 changed Modern pixels, no semantic
+difference. This is repeatable baseline/environment drift, **not a load flake**
+and not introduced by P988. The full initial comparison also reports target
+stat text differences (`SHLD 30%` versus `SHLD 30 %`). Existing P980 goldens are
+untouched. P988 uses a separate capture of that original dispatch binary to
+isolate this task's before/after result; see
+[the P988 report](reports/SKINS_1C_SWITCHING_P988.md). Raw evidence is under
+`.scratch/p988/{before,p980-repro-1,p980-repro-2,p980-repro-3}/` in its worktree.
+
+P988's single Fast sweep also hit the known ephemeral dual-transport bind
+collision in both `P897ClientTransportTests.Reconnect_reuses_initial_protocol_even_after_preference_changes`
+protocols. Both cases passed **3/3 alone (2/0/0 each run)**. No transport/server
+code changed. An adapter-related source guard,
+`P804ClientLeadTests.Round_border_is_drawn_for_both_styles`, still expected the
+Classic radar call in `Game1.Rendering.cs`; it was updated to check the explicit
+resource binding and adapter route. The complete affected set, including all
+P804 tests and the final skin/training changes, then passed **181/0/0 × 3**.
+Raw follow-ups: `.scratch/p988/retries/` and `.scratch/p988/latest-targeted/`.
+After the final allocation-only input-poll optimization, the expanded affected
+class filter passed **212/0/0 ×3**, including all 30 new switching cases and
+both preset allocation cases (**0 B / 100,000 frames** each). The complete
+existing training-integration class is included. Final receipts:
+`.scratch/p988/final-affected/`.
+
+The completed single Fast invocation executed **13,886 cases in 987.93 s**:
+**13,877 passed / 6 failed / 3 optional private-pack skips**; nine infrastructure
+checks passed. Remaining unchanged failure/timing families were repeated in
+three fresh filtered processes:
+
+| Family | Isolated Passed/Failed/Skipped | Classification |
+|---|---|---|
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | **2/1/0, 3/0/0, 3/0/0** | Existing floating upper-bound signature; sweep delay 5/7 values exceeded the inclusive bound by floating-point rounding. Mixed outcome remains unresolved; no timer/Core code changed. |
+| `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | **1/0/0 ×3**, 2.449/2.449/2.456 s | Existing idle-NPC movement signature (sweep travelled 169.868; previously led P887/P947 family); no NPC/sim code changed. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **1/0/0 ×3**, 10.385/10.440/10.638 s | Assertions pass, but all three remain above the unchanged 10 s Fast limit; timing issue remains open. Sweep 12.285 s. |
+| `ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph` | **1/0/0 ×3**, 7.816/7.687/8.174 s | Sweep assertions passed at 12.858 s; isolated runs are below the same Fast limit. |
+
+P988 never-parks trials passed **base 5/5 and changed 5/5**, no skips. These
+unseeded functional controls do not establish a performance effect. Raw gate,
+follow-ups and receipts are retained under `.scratch/p988/{fast,retries,base-parks,changed-parks}/`;
+summary: `docs/reports/P988_assets/qualification.json`. Training qualification
+and any window failures are recorded in the P988 report.
+
+The exact Classic/reminders window case in
+`P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
+reproduced **0/1/0 ×3 alone** at the same `M2 9.2: native prompts missing or out
+of order` guard. This is the previously recorded P945/P974 reminder-proof
+signature: the lesson actually docks/completes before the prompt snapshot
+fails. P988 changes no narration, prompt collection, flight control or lesson
+conditions. The current full window gate retains its failures; neither this
+guard nor a time limit was relaxed. The exact dispatch control (original Program.cs rebuilt against the retained
+pre-adapter Allegiance assemblies) also failed at **the same M2 9.2 prompt
+snapshot**, after native mission completion. The baseline Game assembly hash
+matches the retained original binary. Modern's exact reminder case also reproduced **0/1/0 ×3 alone**, at the same
+prompt-order guard. One broad Classic/reminders run hit the earlier
+`P940 6.13 all-axes/mouse-turn` control assertion; that assertion passed in all
+three isolated Classic replays before the later prompt snapshot failed. The
+single earlier-control occurrence is preserved as unresolved window flakiness,
+not promoted to a passing result. Repetitions are under
+`.scratch/p988/reminder-retries/`; the control is in
+`.scratch/p988/base-training-control/` and its adjacent log/result JSON.
+
+One full training pass timed out in Modern Command View (`mission: 5`) at
+goal `4.3`: three probes existed, but the three layer ships were dead and the
+observer never advanced. The exact case then passed **1/0/0 ×3 alone**, with the renderer-id
+assertion enabled; host load during follow-ups was roughly 18–30. This is
+recorded as a window flake under the lane's isolated-replay rule. No earlier
+matching signature or original-baseline reproduction was established, so it
+is not claimed as a confirmed pre-existing defect. No guard or timeout changed.
+The fresh-window `Assigned_lesson` case for mission 5 / lesson 5 in the
+later excluded interrupted run also stalled
+at `4.3`; that exact case passed **1/0/0 ×3 alone**. A control using the
+original dispatch proof/assemblies and complete unchanged Content tree passed
+lesson 5, so the stall remains unconfirmed on the original baseline. An
+incomplete-content preliminary control is excluded as a fixture error, not
+classified as a product regression. Raw evidence:
+`.scratch/p988/{m5-retries,m5-prefix-retries}/`, the complete training TRXs,
+and `.scratch/p988/base-command-view-control.log`.
+
+The mission-5/lesson-4 fresh prefix also timed out at the same goal in a full
+training pass. Its exact isolated cases were **1/0/0, 1/0/0, 0/1/0** (3m13s,
+3m07s, 20m00s). The last replay again had three probes and dead layer ships.
+**This case remains OPEN**, not cleared by the passing full-course and
+lesson-5 replays. Three controls using original dispatch proof/assemblies,
+complete matching Content, identical lesson-4 arguments and the same software
+renderer all passed. The stall is therefore **not confirmed on the original
+baseline**. No probe/AI/lesson condition or timeout was altered by P988.
+Raw: `.scratch/p988/m5-lesson4-retries/` and
+`.scratch/p988/base-lesson4-controls/`; control outcomes are in
+`.scratch/p988/base-lesson4-controls-result.json`.
+The final Game binary subsequently passed the exact lesson-4 prefix **3/0/0**
+in separate real-window replays, and its audited replacement training pass
+also passed that prefix. The replacement's full Modern Command View course
+timed out at `4.3`; its exact full-course final-binary replays then passed
+**3/0/0**. Under the lane's isolated-replay rule this is a load-sensitive
+window observation; the earlier mixed result is retained, and no causal fix
+or original-baseline reproduction is claimed. Final receipts:
+`.scratch/p988/final-lesson4-controls-result.json` and
+`.scratch/p988/final-course5-controls-result.json`, with adjacent window logs.
+
+**Claude review (2026-11-10): cause found, not P988.** Goal 4.3 is
+`GetCommandCondition(stealth fighter, Attack)` (`Mission5.cs:343`, native
+mission5.cpp:535-573), not the scout-destroyed goal. The p912 proof issues the
+attack order early, during goal 4.1's `tm_5_15` voice line. If the stealth
+fighter kills the scout before goal 4.3 starts, the attack command is already
+cleared when 4.3 begins checking, and the order cannot be repeated against a
+dead target, so the goal waits until the 20-minute timeout. Stalled replay:
+kill `run.log:1067` before goal 4.2 starts (`:1086`). Passing replays: kill
+after 4.2 starts (for example `:1057` after `:1009`). The margin is about 1 s of
+combat speed. Paired review runs (both trees in parallel, same host load):
+P988 tree 2/3, clean 6659cb91 base 3/3. The mechanism is in the proof driver's
+order timing against sim combat, not in any HUD/skin code. Candidate fix
+(separate task): issue the attack order only after goal 4.3 starts, as a
+player following the prompt would. The M2 reminder guard (`M2 9.2: native
+prompts missing or out of order`) failed **0/3 on both trees** in the same
+paired runs; it is the existing P945/P974 family above, not P988.
+Separately, a narrow filter of the visuals/HUD/training-integration classes
+(`Tier=Fast` and VisualFlags, P979, P982, HdrFoundation, SimPalette, P757,
+TrainingIntegration, ModernHudSettingsInput, P804) fails
+`P910TrainingIntegrationTests.Every_exit_restores_preferences_keymap_and_overlay(style: Modern, route: "window-close")`
+**6/6 on master 97a1c19d** (restored keymap `FireWeapon` 119 vs 120). This is an
+ordering/shared-keymap dependency in that subset, not P988; the full MonoGame
+`Tier=Fast` project passes 5,129/0 on the merged P988 branch.
+Three valid training groups completed **1,245 passed / 9 failed / 6 skipped**
+out of 1,260 executions. Each Core group is 126/0/0. MonoGame groups are
+**290/2/2**, **288/4/2**, and **289/3/2**. The final group uses thirteen
+disjoint partitions; both discovery and the executed case-name multiset match
+the serial 294-case run exactly. All mandatory Nanite windows complete.
+The original interrupted qualification group is excluded after a controller
+error while replacing its outer timeout; it has no final MonoGame TRX.
+No condition was relaxed, and the full training gate remains **FAIL**.
+Raw valid groups: `.scratch/p988/{training-pass-2,training-pass-3,training-replacement}/`.
+
 ## P987 qualification — recorded bot decisions, 2026-11-09 UTC
 
 The single Fast invocation completed **13,862 cases in 609.9 s**: **13,858

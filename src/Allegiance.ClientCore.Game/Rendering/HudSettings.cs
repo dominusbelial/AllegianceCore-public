@@ -13,7 +13,24 @@ public sealed class HudSettings
 {
     /// <summary>Canonical skin id. The persisted value; <see cref="Style"/>
     /// remains a temporary adapter for existing renderer branches.</summary>
-    public string Skin { get; set; } = HudSkinIds.Modern;
+    private string _skin = HudSkinIds.Modern;
+    public string Skin
+    {
+        get => _skin;
+        set
+        {
+            if (_skin == value) return;
+            // Once graphics are bound, legacy Style/Skin assignments use the
+            // same frame boundary as input/options. Unbound settings retain
+            // their ordinary migration/editing behaviour.
+            if (RequestSkinSelection is { } request) request(value);
+            else _skin = value;
+        }
+    }
+
+    [JsonIgnore]
+    internal Action<string>? RequestSkinSelection { get; set; }
+    internal void ActivateSkin(string id) => _skin = id;
 
     /// <summary>Legacy adapter: maps <see cref="Skin"/> to the two existing
     /// renderer instances. Unknown skin ids resolve to Modern.</summary>

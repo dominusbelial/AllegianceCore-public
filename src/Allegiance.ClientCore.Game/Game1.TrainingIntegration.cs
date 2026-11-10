@@ -20,6 +20,9 @@ public sealed partial class Game1
     private void SaveTrainingPreferences()
     {
         if (_trainingPreferences is not null) return;
+        // A profile/proof may select its skin and begin a lesson in the same
+        // Update. Settle that queued selection before taking the restore point.
+        CommitHudSkinChange();
         var map = KeyBindingStore.Instance.Map;
         _trainingPreferences = new(_hudSettings.Skin, map.ToJson(), map.ActionFilter,
             _cameraMode, _radarMode, _consolePanes, MaxElapsedTime);
@@ -54,7 +57,12 @@ public sealed partial class Game1
         if (_trainingPreferences is { } saved)
         {
             MaxElapsedTime = saved.FrameCap;
-            _hudSettings.Skin = HudSkinResolver.Catalog.Resolve(saved.Skin).Id;
+            if (_hudSkins is not null)
+            {
+                _hudSkins.Request(saved.Skin);
+                CommitHudSkinChange(); // also restore the persisted pre-lesson choice
+            }
+            else _hudSettings.Skin = HudSkinResolver.Catalog.Resolve(saved.Skin).Id;
             map.ResetToDefaults();
             map.ApplyJson(saved.Keymap);
             map.ActionFilter = saved.Filter;
