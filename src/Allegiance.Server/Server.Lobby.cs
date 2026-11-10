@@ -1082,6 +1082,11 @@ public sealed partial class Server
                 _nextTeammateRefreshTick.Remove(conn);
                 _lastStatusSector.Remove(conn);
                 _lastStatusTick.Remove(conn);
+                // P991 — the peer's live ship is replaced by a fresh one in a
+                // fresh mission, so its gate copies about the old ship are retired
+                // world state (the fresh mission's copies are re-committed by the
+                // first tick's detection sweep).
+                DropShipStatusContent(live.Ship.Id);
                 _lastClusterInfoTick.Remove(conn);
                 _teammateLoadoutCache.Remove(live.Ship.Id);
                 _shipDetected.Remove(live.Ship.Id);
@@ -1269,6 +1274,13 @@ public sealed partial class Server
             case 10: RemoveKeys(_lastTeammateStatusTick, k => ByRecipientOrShip(k.Item1, k.Item2)); break;
             case 11: _statusSweepRemovalVersion++; RemoveKeys(_crossSideShipStatusTick, k => ByRecipientOrShip(k.Item1, k.Item2)); break;
             case 12: RemoveKeys(_crossSideShipStatusSeen, k => IsOldSubject(k.ShipId)); break;
+            // P991 — the status change gate's per-(side, subject) copies of the
+            // retired world's ships (kept: the fresh mission's own ships, which
+            // the migration has already re-announced).
+            case 13:
+                foreach (var k in _lastStatusSentBySide.Keys.Where(k => IsOldSubject(k.ShipId)).ToList())
+                    _lastStatusSentBySide.Remove(k);
+                break;
             default:
                 // Every scanned collection is now clean. The remaining
                 // recipient/ship-keyed entries are O(1) removals and run in the
@@ -3934,6 +3946,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
 
         ship.SideId = newSideId;
+        // P991 — a real side change invalidates every status copy about this ship
+        // and, for a seated peer, the picture that peer holds (see
+        // OnShipSideChanged). Gate-off is a no-op, so today's wire is untouched.
+        if (oldSideId != newSideId) OnShipSideChanged(ship);
         // P866 — native CFSShip::SetSide marks the lobby dirty whenever the player
         // enters or leaves SIDE_TEAMLOBBY (fsship.cpp:1130-1136), which both the
         // RemovePlayerFromSide half (`... -> SIDE_TEAMLOBBY`) and this AddPlayerToSide
@@ -5492,6 +5508,16 @@ private void CompleteStartCountdown(Mission mission, double now)
         ConsoleLog.Write($"[shipstatus] peer {from} '{ConsoleText(req.CharacterName)}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
         _lastStatusSector[from] = live.Sector.Id;
         _lastStatusTick[from] = TickIndex;
+        // P991 — native's join-time "send the data on all known ships"
+        // (SendMissionInfo, fsmission.cpp:4303-4323), the dump that makes a
+        // per-side CHANGE gate safe: every ship this peer's side knows arrives
+        // once, here, and only changes follow. No-op while the gate is off, and
+        // skipped for a game-over rotation re-seat (announceToMission:false, not a
+        // resume): the migration already emptied every per-pair status latch, so
+        // the ordinary first-send path re-delivers the picture without an O(peers
+        // × ships) burst in the intermission.
+        if (announceToMission || resumed)
+            SendStatusDumpToJoiner(from, goalMission, shipId, live);
 
         // FM_S_GAIN_FLAG(156) join-sync (P201): the port of native
         // fsmission.cpp:740-762 ("tell them about the players who

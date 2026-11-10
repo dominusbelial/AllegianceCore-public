@@ -58,6 +58,11 @@ public sealed partial class Server
         foreach (var id in _teammateLoadoutCache.Keys.Where(id => !Keep(keep, id)).ToList())
             _teammateLoadoutCache.Remove(id);
 
+        // P991 — the status change gate's per-(side, subject) copies of the
+        // retired world's ships (native loses every CFShip with the same mission
+        // reset, fsmission.cpp:3490-3527; another mission's copies are kept).
+        DropRetiredStatusContent(keep);
+
         // HUD-17 own-side Detected baseline, likewise per ship (was server-wide).
         foreach (var id in _shipDetected.Keys.Where(id => !Keep(keep, id)).ToList())
             _shipDetected.Remove(id);
@@ -141,6 +146,7 @@ public sealed partial class Server
         TrimDict(_crossSideShipStatusSeen);
         TrimDict(_teammateLoadoutCache);
         TrimDict(_shipDetected);
+        TrimDict(_lastStatusSentBySide);   // P991 — one entry per (side, subject)
         TrimDict(_lastTurretUpdates);
     }
 }

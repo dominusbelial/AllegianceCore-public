@@ -132,39 +132,39 @@ public sealed partial class Server
         return packet;
     }
 
+    // P991 — both pooled writers now serialise the SAME ShipStatusContent value
+    // the change gate compares (OwnStatusContent / CrossSideStatusContent), so
+    // the fast path, the message path and the gate are one definition of the
+    // wire content. Byte-identical to the previous inline writes, including the
+    // HUD-17 own-side Detected bit and the cleared StateTime/pad bytes.
+    private void WriteStatusContent(PooledPosePacket packet, short shipId, in ShipStatusContent content)
+    {
+        var bytes = packet.Buffer;
+        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(4), shipId);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(8), content.HullId);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(10), content.SectorId);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(12), content.StationId);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(14), content.ParentId);
+        bytes[16] = content.Flags;
+        // bytes 17-19 stay the pad zeros SmallPacket cleared; StateTime (20-23)
+        // is 0 in every builder (the established port convention).
+    }
+
     private BroadcastPacket PackStatus(short id, LiveShip live)
     {
         if (!ReuseBroadcastBuffers) return PackBroadcast(Message(MakeOwnShipStatus(id, live)));
-        var ship = live.Ship;
+        var content = OwnStatusContent(live.Ship, live.Sector.Id, ShipDetection.IsDetectedByEnemy(live.Ship));
         var packet = SmallPacket(ShipStatusMessage.Fmid, ShipStatusMessage.FixedSize);
-        var bytes = packet.Buffer;
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(4), id);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(8), ship.ParentShip is null ? ship.HullType.HullId : (short)-1);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(10), live.Sector.Id);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(12), ship.StationId ?? (short)-1);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(14), ship.ParentShip?.Id ?? (short)-1);
-        byte state = ship.ParentShip is not null
-            ? ship.TurretId is null ? ShipStatusMessage.StateObserver : ShipStatusMessage.StateTurret
-            : ship.StationId is not null ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying;
-        // HUD-17 — the pooled fast path must produce byte-identical packets to
-        // the non-pooled MakeOwnShipStatus path above, so the own-side Detected
-        // bit comes from the same native rule (ShipDetection.IsDetectedByEnemy).
-        bytes[16] = (byte)(state | (ShipDetection.IsDetectedByEnemy(ship) ? 0x80 : 0));
+        WriteStatusContent(packet, id, content);
         return packet;
     }
 
     private BroadcastPacket PackCrossSideStatus(Ship ship, short sector, bool spotted)
     {
         if (!ReuseBroadcastBuffers) return PackBroadcast(Message(MakeCrossSideShipStatus(ship, sector, spotted)));
+        var content = CrossSideStatusContent(ship, sector, spotted);
         var packet = SmallPacket(ShipStatusMessage.Fmid, ShipStatusMessage.FixedSize);
-        var bytes = packet.Buffer;
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(4), ship.Id);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(8), ship.HullType.HullId);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(10), sector);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(12), ship.StationId ?? (short)-1);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(14), -1);
-        bytes[16] = (byte)((ship.StationId is null ? ShipStatusMessage.StateFlying : ShipStatusMessage.StateDocked)
-            | (spotted ? 0 : 0x40));
+        WriteStatusContent(packet, ship.Id, content);
         return packet;
     }
 

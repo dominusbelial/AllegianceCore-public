@@ -62,6 +62,10 @@ public sealed partial class Server
         // HUD-17 — the own-side Detected-bit baseline and its per-tick change set.
         _shipDetected.Clear();
         _shipDetectedChanged.Clear();
+        // P991 — the status change gate's per-(side, subject) copies and this
+        // tick's changed-subject set.
+        _lastStatusSentBySide.Clear();
+        _ownStatusChanged.Clear();
         _teammateLoadoutCache.Clear();
         RetireBroadcastProjectionCaches();
         _viewerPoseCadence.Clear();
@@ -364,6 +368,12 @@ public sealed partial class Server
     /// fixture assert that a refused edit left the snapshot untouched. Inert in
     /// production.</summary>
     internal MissionParamsMsg TestParamsOf(Mission mission) => ParamsOf(mission);
+
+    /// <summary>P991 test seam — run the per-tick ship-detection sweep (the step
+    /// that fills the change gate's per-subject "own-side copy changed" set) so a
+    /// fixture can drive the status builders directly, exactly as the sim pass
+    /// does before them. Inert in production.</summary>
+    internal void TestSweepShipDetection() => SweepShipDetection();
 
     /// <summary>P983 test seam — emit the diagnostic's report exactly as the
     /// profiler window does (console + CSV when a path is configured). Inert in

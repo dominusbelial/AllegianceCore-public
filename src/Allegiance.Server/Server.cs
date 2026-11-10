@@ -974,7 +974,7 @@ public sealed partial class Server : IDisposable
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
               int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick,
               int NextTeammateRefreshTick, int TeammatePositionSent,
-              int CrossSideShipStatusSeen, int ChatBudgets) ConnectionScopedCacheCounts()
+              int CrossSideShipStatusSeen, int ChatBudgets, int StatusGateBySide) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
@@ -982,7 +982,8 @@ public sealed partial class Server : IDisposable
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
             _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count,
             _nextTeammateRefreshTick.Count, _teammatePositionSent.Count,
-            _crossSideShipStatusSeen.Count, _chatBudgets.Count);
+            _crossSideShipStatusSeen.Count, _chatBudgets.Count,
+            _lastStatusSentBySide.Count);   // P991 — the SHIP_STATUS change gate's per-(side, subject) copies
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }

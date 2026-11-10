@@ -857,7 +857,16 @@ public sealed partial class Server
             long lastTick = _lastStatusTick.TryGetValue(kv.Key, out var t0) ? t0 : -1;
             bool sectorChanged = live.Sector.Id != sentSector;
             bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
-            if (sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id))
+            // P991 — with the change gate on, the three terms above collapse into
+            // native's single rule: send only when this side's copy of the status
+            // changed (`_ownStatusChanged`, committed once per subject per tick by
+            // SweepShipDetection). The sector change and the HUD-17 Detected-bit
+            // delta are both FIELDS of that content, so they fire through the
+            // comparison; the periodic refresh is gone (native has none).
+            bool statusDue = _broadcastShipStatusChangeGate
+                ? _ownStatusChanged.Contains(ship.Id)
+                : sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id);
+            if (statusDue)
             {
                 // HUD-17 — the third term is native's changed-status delta
                 // (FedSrv/FedSrv.CPP:3693-3700): the ship swept a new Detected
@@ -924,14 +933,23 @@ public sealed partial class Server
                 // the recipient's ConnectionId modulo the interval, so the
                 // ~P/interval recipients due per tick are spread (never the
                 // whole fleet at once).
-                if (!_nextTeammateRefreshTick.TryGetValue(kv.Key, out var rt))
+                // P991 — with the change gate on there is no periodic refresh at
+                // all (native has none: FedSrv.CPP:3690-3699 sends only on a
+                // content change), so the per-recipient phase machinery is not
+                // maintained; `recipientRefreshDue` stays false and every status
+                // send below is decided by the subject's content change.
+                bool recipientRefreshDue = false;
+                if (!_broadcastShipStatusChangeGate)
                 {
-                    rt = (long)tickIndex + (int)(kv.Key.Value % TeammateStatusRefreshTicks);
-                    _nextTeammateRefreshTick[kv.Key] = rt;
+                    if (!_nextTeammateRefreshTick.TryGetValue(kv.Key, out var rt))
+                    {
+                        rt = (long)tickIndex + (int)(kv.Key.Value % TeammateStatusRefreshTicks);
+                        _nextTeammateRefreshTick[kv.Key] = rt;
+                    }
+                    recipientRefreshDue = (long)tickIndex >= rt;
+                    if (recipientRefreshDue)
+                        _nextTeammateRefreshTick[kv.Key] = (long)tickIndex + TeammateStatusRefreshTicks;
                 }
-                bool recipientRefreshDue = (long)tickIndex >= rt;
-                if (recipientRefreshDue)
-                    _nextTeammateRefreshTick[kv.Key] = (long)tickIndex + TeammateStatusRefreshTicks;
 
                 // P317 — batch every dirty teammate SingleShipUpdate for this
                 // recipient into ONE FedPacket at the end of the walk (instead
@@ -1017,7 +1035,14 @@ public sealed partial class Server
                         // or on the pair's very first send (lastTeammateTick<0,
                         // a just-exported new mate, caught up immediately).
                         long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
-                        if (lastTeammateTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(teammateId))
+                        // P991 — gate ON: first send for this pair (never told, or
+                        // told before a reconnect/side switch cleared the latch),
+                        // then only on a content change of the subject's own-side
+                        // copy. Gate OFF: today's refresh + Detected-delta terms.
+                        bool teammateStatusDue = lastTeammateTick < 0 || (_broadcastShipStatusChangeGate
+                            ? _ownStatusChanged.Contains(teammateId)
+                            : recipientRefreshDue || _shipDetectedChanged.Contains(teammateId));
+                        if (teammateStatusDue)
                         {
                             // HUD-17 — a Detected-bit change re-sends the
                             // teammate status on the spot (native's per-frame
@@ -1183,7 +1208,10 @@ public sealed partial class Server
                         // the teammate refresh, so it rides the same per-recipient
                         // phase to never burst fleet-wide (first send still
                         // immediate via lastNpcTick<0).
-                        if (lastNpcTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id))
+                        bool npcStatusDue = lastNpcTick < 0 || (_broadcastShipStatusChangeGate
+                            ? _ownStatusChanged.Contains(npc.Id)
+                            : recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id));
+                        if (npcStatusDue)
                         {
                             SendPeer(kv.Key, PackBroadcast(Message(MakeNpcShipStatus(npc))));
                             ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1276,9 +1304,12 @@ public sealed partial class Server
         // = the recipient's ConnectionId modulo the interval, so the ~P/interval
         // recipients due per tick are spread — the synchronized O(P²) refresh
         // burst this staggers (see the serial builder's comment) never forms.
-        foreach (var gkv in peers)
-            if (!_nextTeammateRefreshTick.ContainsKey(gkv.Key))
-                _nextTeammateRefreshTick[gkv.Key] = (long)tickIndex + (int)(gkv.Key.Value % TeammateStatusRefreshTicks);
+        // P991 — with the change gate on there is no periodic refresh, so the
+        // phase table is not maintained at all (mirror of the serial builder).
+        if (!_broadcastShipStatusChangeGate)
+            foreach (var gkv in peers)
+                if (!_nextTeammateRefreshTick.ContainsKey(gkv.Key))
+                    _nextTeammateRefreshTick[gkv.Key] = (long)tickIndex + (int)(gkv.Key.Value % TeammateStatusRefreshTicks);
 
         // Per-(mission, side) same-side NPC grouping, built once (mirror of serial
         // :527-538). Shared read-only across workers.
@@ -1485,7 +1516,13 @@ public sealed partial class Server
         long lastTick = _lastStatusTick.TryGetValue(conn, out var t0) ? t0 : -1;
         bool sectorChanged = live.Sector.Id != sentSector;
         bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
-        if (sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id))
+        // P991 — same own-status decision as the serial builder (see the comment
+        // there); `_ownStatusChanged` is filled by the serial detection sweep, so
+        // this worker only READS it and serial/parallel stay byte-identical.
+        bool statusDue = _broadcastShipStatusChangeGate
+            ? _ownStatusChanged.Contains(ship.Id)
+            : sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id);
+        if (statusDue)
         {
             r.Packets.Add((PackStatus(ship.Id, live), 0, false));
             if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
@@ -1509,10 +1546,14 @@ public sealed partial class Server
             // The snapshot phase pre-initialises `_nextTeammateRefreshTick` for
             // every peer, so this worker only READS it; the advance is recorded
             // as a per-peer effect (NextTeammateRefreshTick) applied serially.
-            long rt = _nextTeammateRefreshTick.TryGetValue(conn, out var rv)
-                ? rv : (long)tickIndex + (int)(conn.Value % TeammateStatusRefreshTicks);
-            bool recipientRefreshDue = (long)tickIndex >= rt;
-            if (recipientRefreshDue) r.NextTeammateRefreshTick = (long)tickIndex + TeammateStatusRefreshTicks;
+            bool recipientRefreshDue = false;
+            if (!_broadcastShipStatusChangeGate)
+            {
+                long rt = _nextTeammateRefreshTick.TryGetValue(conn, out var rv)
+                    ? rv : (long)tickIndex + (int)(conn.Value % TeammateStatusRefreshTicks);
+                recipientRefreshDue = (long)tickIndex >= rt;
+                if (recipientRefreshDue) r.NextTeammateRefreshTick = (long)tickIndex + TeammateStatusRefreshTicks;
+            }
 
             List<BroadcastMessage>? posBatch = null;
             foreach (var tv in mates)
@@ -1546,7 +1587,10 @@ public sealed partial class Server
                 if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
                 {
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
-                    if (lastTeammateTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(teammateId))
+                    bool teammateStatusDue = lastTeammateTick < 0 || (_broadcastShipStatusChangeGate
+                        ? _ownStatusChanged.Contains(teammateId)
+                        : recipientRefreshDue || _shipDetectedChanged.Contains(teammateId));
+                    if (teammateStatusDue)
                     {
                         r.Packets.Add((PackStatus(teammateId, tv.Value), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
@@ -1642,7 +1686,10 @@ public sealed partial class Server
 
                     long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
                     // P604b — gate on the recipient's phase (mirror of serial).
-                    if (lastNpcTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id))
+                    bool npcStatusDue = lastNpcTick < 0 || (_broadcastShipStatusChangeGate
+                        ? _ownStatusChanged.Contains(npc.Id)
+                        : recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id));
+                    if (npcStatusDue)
                     {
                         r.Packets.Add((PackBroadcast(Message(MakeNpcShipStatus(npc))), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1685,42 +1732,11 @@ public sealed partial class Server
     /// on the wire by the same per-tick mechanism those paths already use — no
     /// new success-ack message is needed (the task's confirmed scoping win).</summary>
     private static ShipStatusMessage MakeOwnShipStatus(short shipId, LiveShip live)
-    {
-        var ship = live.Ship;
-        bool docked = ship.StationId is not null;
-        bool detected = ShipDetection.IsDetectedByEnemy(ship);
-        if (ship.ParentShip is { } parent)
-        {
-            // Boarded — riding inside the carrier's hull (occupancy only; the
-            // turret aim/fire binding is a later P109 task).
-            return new()
-            {
-                ShipId = shipId,
-                HullId = -1,                                      // NA — riding another hull (pss->SetHullID(NA), FedSrv.CPP:2454)
-                SectorId = live.Sector.Id,
-                StationId = docked ? ship.StationId!.Value : (short)-1,
-                ParentId = parent.Id,                             // the carrier (pss->SetParentID(carrier), FedSrv.CPP:2453)
-                State = ship.TurretId is null
-                    ? ShipStatusMessage.StateObserver            // c_ssObserver (igc.h:4393)
-                    : ShipStatusMessage.StateTurret,             // c_ssTurret   (igc.h:4395)
-                Unknown = false,
-                Detected = detected,                              // own side's copy (fsship.cpp:318/321-334)
-                StateTime = 0,
-            };
-        }
-        return new()
-        {
-            ShipId = shipId,
-            HullId = ship.HullType.HullId,
-            SectorId = live.Sector.Id,
-            StationId = docked ? ship.StationId!.Value : (short)-1,  // NA when flying free
-            ParentId = -1,                          // NA — no docked/turreted children (ShipStatusDocked sets ParentID=NA, fsship.cpp:376)
-            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssDocked/c_ssFlying (igc.h:4390,4394)
-            Unknown = false,                 // this port never hides a ship from its own side
-            Detected = detected,             // HUD-17: real own-side bit (fsship.cpp:237-335)
-            StateTime = 0,                   // sim clock unused (no dTime source here)
-        };
-    }
+        // P991 — the packed fields now come from the same content value the
+        // change gate compares (OwnStatusContent), so "what is sent" and "what
+        // was last sent" can never drift apart. Byte-identical to the previous
+        // inline object initialiser.
+        => StatusMessage(shipId, OwnStatusContent(live.Ship, live.Sector.Id, ShipDetection.IsDetectedByEnemy(live.Ship)));
 
     /// <summary>The teammate ExportShip PartData[] tail as it is right now,
     /// mount order — see <see cref="PartData"/>'s own doc comment for why this
@@ -1741,21 +1757,9 @@ public sealed partial class Server
     /// HUD-17: <c>Detected</c> is the same real own-side bit
     /// (<see cref="ShipDetection.IsDetectedByEnemy"/>).</summary>
     private static ShipStatusMessage MakeNpcShipStatus(Ship ship)
-    {
-        bool docked = ship.StationId is not null;
-        return new()
-        {
-            ShipId = ship.Id,
-            HullId = ship.HullType.HullId,
-            SectorId = ship.Sector?.Id ?? 0,
-            StationId = docked ? ship.StationId!.Value : (short)-1,   // NA when flying free
-            ParentId = -1,
-            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,
-            Unknown = false,
-            Detected = ShipDetection.IsDetectedByEnemy(ship),          // HUD-17: real own-side bit
-            StateTime = 0,
-        };
-    }
+        // P991 — same single source of truth as MakeOwnShipStatus (the P366
+        // path and the change gate share NpcStatusContent).
+        => StatusMessage(ship.Id, NpcStatusContent(ship, ShipDetection.IsDetectedByEnemy(ship)));
 
     /// <summary>P317 — the subject ship's current loadout snapshot, served from
     /// the per-ship cache and recomputed (via <see cref="SnapshotParts"/>) only
@@ -2024,6 +2028,11 @@ public sealed partial class Server
         // latch needs no equivalent here because the game-over rotation empties it
         // with the world it belonged to (RotateMissionAfterGameOver).
         _teammateLoadoutCache.Remove(ship.Id);
+        // P991 — the recycled-id hazard applies to the status gate's per-(side,
+        // subject) copies too: a fresh ship must not inherit the old holder's
+        // "this side already knows this status" entry, or its first status would
+        // be suppressed. One O(gate) drop, once per new ship.
+        DropShipStatusContent(ship.Id);
         AnnouncePlayerToMission(ship, isSide, characterName);
     }
 
@@ -2375,10 +2384,24 @@ public sealed partial class Server
     private void SweepShipDetection()
     {
         _shipDetectedChanged.Clear();
+        // P991 — the change gate's per-tick subject decision set. It is filled
+        // HERE (one entry per own-side ship, serial) and only read by the serial
+        // and parallel status builders, which is what keeps the two byte-equal.
+        if (_broadcastShipStatusChangeGate) _ownStatusChanged.Clear();
 
         // Peer ships: the own-ship and teammate status paths both source these.
         foreach (var kv in _peerShips)
-            if (IncludeShipBroadcastMission(kv.Value.Ship.Mission)) UpdateShipDetection(kv.Value.Ship);
+        {
+            if (!IncludeShipBroadcastMission(kv.Value.Ship.Mission)) continue;
+            bool detected = ShipDetection.IsDetectedByEnemy(kv.Value.Ship);
+            UpdateShipDetection(kv.Value.Ship, detected);
+            // P991 — one content compare per SUBJECT per tick (native's
+            // `if (*pss != *pssOld)`, FedSrv.CPP:3690-3699), keyed by the side
+            // that would be told. The status's sector is the LiveShip sector,
+            // exactly what PackStatus/MakeOwnShipStatus writes.
+            if (_broadcastShipStatusChangeGate)
+                TrackOwnStatusContent(kv.Value.Ship, kv.Value.Sector.Id, detected);
+        }
 
         // Same-side NPCs: the P366 path's population. Scanned exactly like
         // BroadcastShipStates' sameSideNpcBySide builder (in-flight missions
@@ -2397,7 +2420,12 @@ public sealed partial class Server
                 var models = sectors[si].Models;
                 for (int i = 0; i < models.Count; i++)
                     if (models[i] is Ship { IsNpc: true } npc)
-                        UpdateShipDetection(npc);
+                    {
+                        bool detected = ShipDetection.IsDetectedByEnemy(npc);
+                        UpdateShipDetection(npc, detected);
+                        if (_broadcastShipStatusChangeGate)
+                            TrackNpcStatusContent(npc, detected);
+                    }
             }
         }
     }
@@ -2408,9 +2436,9 @@ public sealed partial class Server
     /// <c>false</c> (the fresh native <c>ShipStatus</c> default and today's
     /// pre-first-sweep state), so a ship whose very first value is <c>false</c>
     /// is not treated as a spurious change.</summary>
-    private void UpdateShipDetection(Ship ship)
+    private void UpdateShipDetection(Ship ship, bool? detectedNow = null)
     {
-        bool detected = ShipDetection.IsDetectedByEnemy(ship);
+        bool detected = detectedNow ?? ShipDetection.IsDetectedByEnemy(ship);
         if (_shipDetected.TryGetValue(ship.Id, out var previous))
         {
             if (previous == detected) return;
@@ -2491,6 +2519,19 @@ public sealed partial class Server
                         var key = (sideId, ship.Id);
                         bool wasSeen = _crossSideShipStatusSeen.TryGetValue(key, out var w) && w;
 
+                        // P991 — change gate ON: the side's copy of this ship IS the
+                        // unit (native keeps one ShipStatus per (ship, side),
+                        // FedSrv/fsship.cpp:237-335, and compares it with the copy
+                        // last sent, FedSrv.CPP:3690-3699), so a content change is
+                        // sent to the whole side once — no per-recipient phase
+                        // refresh — and a peer that is behind only for itself (late
+                        // joiner, cleared latch) is repaired by the same bounded
+                        // phase rotation the flag-off catch-up uses.
+                        if (_broadcastShipStatusChangeGate)
+                        {
+                            StatusGateCrossSide(sweep, ship, sideId, conns, shipSector, nowSeen, wasSeen, m.Cookie);
+                            continue;
+                        }
                         var recipients = TestLegacyClashProjection ? conns
                             : sweep.Recipients(ship, sideId, ship.Id, TickIndex, force: nowSeen != wasSeen, scope: m.Cookie);
                         if (nowSeen != wasSeen)
@@ -2551,21 +2592,8 @@ public sealed partial class Server
     /// the seeing side's own copy never has it set (only the ship's OWN side
     /// copy is marked detected by ShipStatusSpotted, a different concern).</summary>
     private static ShipStatusMessage MakeCrossSideShipStatus(Ship ship, short shipSector, bool spotted)
-    {
-        bool docked = ship.StationId is not null;
-        return new()
-        {
-            ShipId = ship.Id,
-            HullId = ship.HullType.HullId,
-            SectorId = shipSector,                                  // the sector where the side's scanner net sees it (last-known)
-            StationId = docked ? ship.StationId!.Value : (short)-1, // NA when flying free
-            ParentId = -1,                                          // NA — ShipStatusSpotted sets ParentID=NA (fsship.cpp:257)
-            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssFlying (fsship.cpp:256)
-            Unknown = !spotted,                                     // hidden => SetUnknown (fsship.cpp:290)
-            Detected = false,                                       // the seeing side's copy is not marked detected
-            StateTime = 0,                                          // sim clock unused (established port convention)
-        };
-    }
+        // P991 — shared with the cross-side change gate (CrossSideStatusContent).
+        => StatusMessage(ship.Id, CrossSideStatusContent(ship, shipSector, spotted));
 
     /// <summary>P346 — the display name of a ship's owning peer, if it has one
     /// (searched by reference in <c>_peerShips</c>, the same ownership-resolution
