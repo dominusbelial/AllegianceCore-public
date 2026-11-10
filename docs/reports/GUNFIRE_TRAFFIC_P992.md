@@ -51,9 +51,9 @@ offline calculator plus one loopback fixture that measure the two lanes (see §5
   every bot firing ~21 % of the time. It is a *rate*, not an anomaly (§3.8).
 - **Cheapest real savings, measured, all behind default-off flags:** distance-culling the two per-shot
   lanes to the client's own 5 900 u projectile draw radius removes **38.0 %** of both lanes
-  (−14.3 % of rig egress); native-style batching + a compact record removes **58.1 %** of the two lanes
-  (−22.6 % of rig egress); the native model (fire state → client-side cosmetic sim) removes **100 %** of
-  both lanes (−37.6 % of rig egress) but needs a client weapon sim and reproduces native's fire-state
+  (≈ −10.6 % of rig egress); native-style batching + a compact record removes **58.1 %** of the two lanes
+  (≈ −16 % of rig egress); the native model (fire state → client-side cosmetic sim) removes **100 %** of
+  both lanes (≈ −32 % of rig egress incl. the dependency) but needs a client weapon sim and reproduces native's fire-state
   latency artifact. §4 recommends the first two as separate tasks and the native model as the strategic
   follow-up.
 
@@ -351,8 +351,8 @@ the population too. There is no superlinearity here: the gunfire cost is `shots 
 
 Both lanes are linear in the number of shooters (10× shooters ⇒ 10× bytes); the *share* saturates
 towards ~37 %/28 % because the heavy lane is fixed by the peer count. On the rig (all 400 bots able to
-shoot, ~21 % duty cycle) the two lanes are quoted at 37.6 % of egress — the same saturation, one step
-further.
+shoot, ~21 % duty cycle) the two lanes were inferred at 37.6 % of egress from one window; the run averages are ~28 % (b105 27 %,
+b106 29 %, §3.8 review correction), close to this fixture's 28.8 %.
 
 ### 3.6 The hit lane really is a hit-rate term
 
@@ -390,6 +390,15 @@ exact figure is one `[broadcast-budget] bytes=` line in the same window as the `
 rig's own telemetry already prints both). The per-shot cost in §3.3 is measured here and does not depend
 on which window it is applied to.
 
+> **Claude review correction (rig run averages, 2026-11-10).** The two P991 A/B batches give the run-averaged
+> shares the paragraph above had to infer: b105 (gate off) **90.1 MB per 5 s window, gunfire (`12`+`213`)
+> 24.2 MB = 27 %**; b106 (gate on) **72.0 MB, gunfire 20.6 MB = 29 %** (411 peers, 3-side showcase, two full
+> matches each, `profiler.broadcastBudget` on). So the 574 000-message window was a busy window but not a
+> 3× clash peak (33 MB of `12` against a 24 MB run-average for both lanes ≈ 1.4×), and gunfire is **~28 % of
+> rig egress on average, not 37.6 %**: `12` ≈ 21 %, `213` ≈ 7 %. The fixture's 28.8 % share matches that
+> closely. The "% of rig egress" column in §4.6 and the rig figures in §0/§4.7 are corrected to this basis
+> below (fixture columns unchanged).
+
 ### 3.9 How much of the audience can even draw the round (option (d)'s input)
 
 With the fixture's lines spread 150 u apart (a ~10 000 u battle line), only **149 940 / 241 668 =
@@ -423,7 +432,7 @@ calculator that produces them is the offline test (§5).
   gate, dispersion, muzzle offsets, per-weapon sounds, echo de-dup). Generalising that from "my ship" to
   "every tracked ship" is the task.
 - Saving: **`12` + `213` + the whole 3.64 MB dependency = 27.13 MB = 33.2 % of the fixture's egress
-  (rig: 37.6 % of egress, plus the dependency)**. If `213` is kept for the bots (§2.2), **−14.02 MB =
+  (rig: ~28 % of egress on the b105/b106 run averages, plus the dependency)**. If `213` is kept for the bots (§2.2), **−14.02 MB =
   −17.2 % of fixture egress (rig −28.0 %)**.
 - Cost/risk: a new client-side subsystem (per-ship weapon state, per-mount cadence, ammo/energy
   prediction, muzzle/pose source, its own hit test and spark); visual divergence from the server's actual
@@ -453,7 +462,7 @@ calculator that produces them is the offline test (§5).
   1-byte lifespan-override flag, pad) and 44 → 22 B (`213`); framed 58 → 28 B and 48 → 30 B per message.
 - Saving: `12` 14.02 → 6.77 MB (−51.7 %), `213` 9.47 → 5.92 MB (−37.5 %); together **−10.80 MB =
   −46.0 % of the two lanes = −13.2 % of fixture egress (rig −18.1 %)**. With batching too: `12` → 5.16 MB,
-  `213` → 4.67 MB, **−13.66 MB = −58.1 % of the lanes = −16.7 % of fixture egress (rig −22.6 %)**.
+  `213` → 4.67 MB, **−13.66 MB = −58.1 % of the lanes = −16.7 % of fixture egress (rig ≈ −16 %)**.
 - Cost/risk: quantisation of position/heading is *visual only* (the server keeps resolving hits on its
   own exact state — the port never derives damage from the wire), but the client's own-echo de-dup
   radius (150 u) and the spark normal must tolerate it; per-type lifespan overrides for blast weapons;
@@ -466,7 +475,7 @@ calculator that produces them is the offline test (§5).
 ### d. Interest culling (only recipients that can see/hear the shot)
 
 - Measured ceiling: 62.0 % of deliveries are inside the renderer's own 5 900 u radius (§3.9), so
-  **−38.0 % of `12` and `213` = −8.91 MB = −10.9 % of fixture egress (rig −14.3 %)**, and the same cull
+  **−38.0 % of `12` and `213` = −8.91 MB = −10.9 % of fixture egress (rig ≈ −10.6 %)**, and the same cull
   removes the `78`/`26`/`90` dependency for culled (viewer, shooter) pairs, so up to **−32.9 % of the
   stock gunfire cost** on the fixture.
 - Cost/risk: small server change in `Server.FireAudience.cs` (audience test by distance per viewer per
@@ -501,13 +510,13 @@ calculator that produces them is the offline test (§5).
 
 | Option | `12` bytes (% saved) | `213` bytes (% saved) | Total saved | % of fixture egress | % of rig egress | Cost | Risk |
 |---|---|---|---|---|---|---|---|
-| (a) native model (both lanes) | 0 (−100 %) | 0 (−100 %) | 27.13 MB | **33.2 %** | **37.6 %** | client cosmetic weapon sim + hit test for every visible ship | fire-state latency, short taps lost, visual divergence, client CPU |
-| (a) native model, keep `213` | 0 (−100 %) | 9.47 MB | 17.66 MB | 21.6 % | 28.0 % | client cosmetic weapon sim only | fire-state latency, visual divergence |
-| (b) batch | 12.41 MB (−11.4 %) | 8.22 MB (−13.2 %) | 2.85 MB | 3.5 % | 4.5 % | new encode/decode, tick accumulation | one-tick delay, echo-dup update |
-| (c) compact | 6.77 MB (−51.7 %) | 5.92 MB (−37.5 %) | 10.80 MB | 13.2 % | 18.1 % | new codec + quantised client decode | visual precision only |
-| (b)+(c) | 5.16 MB (−63.2 %) | 4.67 MB (−50.7 %) | 13.66 MB | **16.7 %** | **22.6 %** | as (b)+(c) | as (b)+(c) |
-| (d) cull at the renderer radius | 8.70 MB (−38.0 %) | 5.88 MB (−38.0 %) | 8.91 MB | 10.9 % | 14.3 % | a distance test in the audience | spectator/admin bypass, bots need `213` |
-| (d) on `12` + (b)+(c) on `213` | 8.70 MB (−38.0 %) | 4.67 MB (−50.7 %) | 10.12 MB | 12.4 % | 15.5 % | as (d)+(b)+(c) | as (d)+(b)+(c) |
+| (a) native model (both lanes) | 0 (−100 %) | 0 (−100 %) | 27.13 MB | **33.2 %** | **~32 %** (28 % + dependency) | client cosmetic weapon sim + hit test for every visible ship | fire-state latency, short taps lost, visual divergence, client CPU |
+| (a) native model, keep `213` | 0 (−100 %) | 9.47 MB | 17.66 MB | 21.6 % | ~24 % | client cosmetic weapon sim only | fire-state latency, visual divergence |
+| (b) batch | 12.41 MB (−11.4 %) | 8.22 MB (−13.2 %) | 2.85 MB | 3.5 % | ~3.4 % | new encode/decode, tick accumulation | one-tick delay, echo-dup update |
+| (c) compact | 6.77 MB (−51.7 %) | 5.92 MB (−37.5 %) | 10.80 MB | 13.2 % | ~13 % | new codec + quantised client decode | visual precision only |
+| (b)+(c) | 5.16 MB (−63.2 %) | 4.67 MB (−50.7 %) | 13.66 MB | **16.7 %** | **~16 %** | as (b)+(c) | as (b)+(c) |
+| (d) cull at the renderer radius | 8.70 MB (−38.0 %) | 5.88 MB (−38.0 %) | 8.91 MB | 10.9 % | ~10.6 % | a distance test in the audience | spectator/admin bypass, bots need `213` |
+| (d) on `12` + (b)+(c) on `213` | 8.70 MB (−38.0 %) | 4.67 MB (−50.7 %) | 10.12 MB | 12.4 % | ~12 % | as (d)+(b)+(c) | as (d)+(b)+(c) |
 | (e) `213` audience: shooter + victim's side only | — | est. −50 % (unmeasured) | ~4.7 MB | 5.8 % | 4.8 % | audience rule | **breaks bot hit credit/asset alerts** — needs a bot-side replacement |
 | any of (b)/(c)/(d) + (a) | — | — | superseded | — | — | — | (a) subsumes them |
 
@@ -518,7 +527,7 @@ calculator that produces them is the offline test (§5).
 `ProjectileVisibility.VisibilityRadius` (5 900 u) of the round's spawn point; always keep the shooter's
 own peer; always keep admin/spectator views. No wire change, no client change, no bot change (`12` is
 not a bot input). Expected **−38 % of the `12` lane in a spread fight (−6.5 % of fixture egress,
-−10.6 % of rig egress)**, 0 % in a packed knife-fight — the rig A/B decides whether real fights are
+≈ −8 % of rig egress on the run-averaged share)**, 0 % in a packed knife-fight — the rig A/B decides whether real fights are
 spread enough. Native parity: mechanism is port-only, but it matches the client's own draw rule exactly,
 so no drawn pixel changes; document it as "the relay follows the renderer's visibility", the same
 reasoning P697 used for the sector scope.
@@ -526,8 +535,8 @@ reasoning P697 used for the sector scope.
 **P994 — native-shaped batching + compact records for `12` and `213`** (`broadcast.gunfireBatch`, default
 **off**; one flag for the format, because it is one encoder/decoder pair). One var-item frame per
 (recipient, tick) carrying quantised records: `12` 58 → 20 B payload, `213` 48 → 22 B payload. Expected
-**−58.1 % of the two lanes = −16.7 % of fixture egress (−22.6 % of rig egress)**, with (b) alone as the
-conservative fallback if the compact record turns out to need more fields (−3.5 %/−4.5 %). No information
+**−58.1 % of the two lanes = −16.7 % of fixture egress (≈ −16 % of rig egress)**, with (b) alone as the
+conservative fallback if the compact record turns out to need more fields (−3.5 %/≈ −3.4 %). No information
 loss; quantisation is visual-only; validate the own-echo de-dup radius and the spark normal against the
 quantised values, and keep the decoder accepting the legacy sizes for one release. Ship it as an offline
 calculator + codec first (§5 shows the calculator and pins), then the wire flag.
@@ -576,7 +585,7 @@ Run each flag on/off on the rig baseline with `profiler.broadcastBudget` on, sam
 | `Offline_calculator_reproduces_the_measured_fixture_bytes` | Fast | the calculator's stock arm == the measured 14 016 744 + 9 469 440 B and 27 126 504 B stock |
 | `Option_table_matches_the_report` | Fast | every option's bytes and % (the §4.6 table), against the calculator |
 | `Rig_window_implies_the_shot_rate_and_the_frame_bytes` | Fast | 574 000/5 s → 844 shots/s, 2.11/bot/s, 33.29 MB of `12` bytes, the 56.6 MB ordered-lane / ~119 MB egress bracket |
-| `Option_savings_as_a_share_of_rig_egress` | Fast | rig-share savings: 4.5 / 18.1 / 22.6 / 14.3 / 37.6 % |
+| `Option_savings_as_a_share_of_rig_egress` | Fast | rig-share savings on the P990-quoted 37.6 % basis: 4.5 / 18.1 / 22.6 / 14.3 / 37.6 % (the review's run-averaged basis, ~28 %, gives ≈ 3.4 / 13 / 16 / 10.6 / 28 %; see the §3.8 correction) |
 | `Loopback_showcase_measures_gunfire_traffic_and_the_audience_radius` | Live (artwork) | fan-out identity, `bytes = msgs × frame size` for both ids, quiet-shape zero, the measured shape (shots/hits/near-fraction) the calculator uses, and stock == `12`+`213`+dependency within 1 % |
 | `Gunfire_fixture_measurement_from_environment` | Live (artwork) | the same harness for any other shape via `P992_*` env vars (how §3.4-3.6 were taken) |
 
