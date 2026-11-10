@@ -23,6 +23,7 @@ public sealed partial class Server
         var cadence = _viewerPoseCadence[peer];
         cadence.Begin(candidates, self, sector, admin, now, TickProfiler.Instance is not null,
             _interestClassifier ??= ClassifyInterest, tierServer: this);
+        if (_broadcastTelemetry is { } sweepTelemetry) sweepTelemetry.MarkSweep(peer, sweepTelemetry.SimNowMs);
         var selected = cadence.SelectTierCandidates(self, target, now, _tier1Hz, _tier2Hz,
             _config.UpdatesPerSecond, tick, _promotionEpsilonSq);
         bool seesTarget = target is not null && ShipPoseVisible(self, target, admin);
@@ -73,9 +74,9 @@ public sealed partial class Server
         if (_broadcastTelemetry is { } telemetry)
         {
             var ages = telemetry.Peer(peer);
-            if (seesTarget) ages.MarkPose(target!.Id, telemetry.SimNowMs);
-            foreach (ref readonly var candidate in selected) ages.MarkPose(candidate.Ship.Id, telemetry.SimNowMs);
-            if (appendParent) ages.MarkPose(parent!.Id, telemetry.SimNowMs);
+            if (seesTarget) ages.MarkPose(in target!, telemetry.SimNowMs);
+            foreach (ref readonly var candidate in selected) ages.MarkPose(in candidate.Ship, telemetry.SimNowMs);
+            if (appendParent) ages.MarkPose(in parent!, telemetry.SimNowMs);
         }
         cadence.PacketBytes += packetLength + FedPacket.CrcWidth;
         Interlocked.Add(ref ShipEncodingCounters.RelativePositions, count);

@@ -37,6 +37,8 @@ public sealed partial class Server
         var all = sector.GetShipUpdateCandidates();
         ViewerPoseCadence? cadence = trackCadence ? _viewerPoseCadence[peer.Key] : null;
         cadence?.Begin(all, self, sector, admin, now, TickProfiler.Instance is not null);
+        // P990 — one sweep stamp per peer per tick (outside the per-ship loop).
+        if (_broadcastTelemetry is { } sweepTelemetry) sweepTelemetry.MarkSweep(peer.Key, sweepTelemetry.SimNowMs);
         if (all.Count <= 2)
         {
             foreach (var ship in all)
@@ -129,10 +131,12 @@ public sealed partial class Server
             category: BroadcastCategory.HeavyShipUpdates, splitBytes: lightBytes?.Length ?? 0);
         // P983 — every heavy record just sent is this peer's newest pose for that
         // ship; stamp the simulation clock so the report can measure staleness.
+        // P990 — the stamp also keeps the subject's position at send time (one
+        // flat-table write per record, no dictionary probe).
         if (_broadcastTelemetry is { } telemetry)
         {
             var ages = telemetry.Peer(peer.Key);
-            foreach (var ship in heavy) ages.MarkPose(ship.Id, telemetry.SimNowMs);
+            ages.MarkPoses(heavy, telemetry.SimNowMs);
         }
         if (cadence is not null) cadence.PacketBytes += packetLength + FedPacket.CrcWidth;
         Interlocked.Add(ref ShipEncodingCounters.RelativePositions, heavy.Count);

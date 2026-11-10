@@ -3199,6 +3199,8 @@ public sealed partial class Server
             cadence?.Begin(_broadcastInterestTiersEnabled ? all.Where(peerSees).ToList() : all,
                 self, sector, adminSpectator || _broadcastInterestTiersEnabled, poseNow,
                 TickProfiler.Instance is not null, _broadcastInterestTiersEnabled ? ClassifyInterest : null);
+            // P990 — one sweep stamp per peer per tick (outside the per-ship loop).
+            if (_broadcastTelemetry is { } sweepTelemetry) sweepTelemetry.MarkSweep(kv.Key, sweepTelemetry.SimNowMs);
 
             // Fixed quotas — native's REAL, shipped values (the "w0dk4 Bandwidth
             // Patch", FedSrv.CPP:3844-3845). The disabled bandwidth-adaptive

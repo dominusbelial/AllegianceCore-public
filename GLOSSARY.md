@@ -309,6 +309,16 @@ list in **reverse**.
   `src/Allegiance.Server/Server.RankedPose.cs`, `src/Allegiance.Server/Server.Broadcast.cs`,
   `src/Allegiance.Server/Server.InterestTiers.cs`, `src/Allegiance.Server/Server.Callbacks.cs`;
   env `ALLEGIANCE_BROADCAST_TELEMETRY`. Report: `docs/reports/BROADCAST_TELEMETRY_P983.md`.
+- **Broadcast lane breakdown + stale-age reasons (P990)** — the same flag, opened up: `[bb-lane]` /
+  `[bb-other]` (ordered one-shot lane per wire *fmid*, read off each frame's own headers at the sink) /
+  `[bb-keyed]` (coalescing lane per coalesce-key family) / `[bb-age-why]` (why each pair older than 3 s or
+  never posed is stale: docked, dead, lifepod, parented, otherSector, viewerNotSwept, stationary,
+  starved, subjectUnknown, newPair, unserved), plus the `PoseStampTable` dense per-peer stamp table that
+  replaced P983's `Dictionary<short,double>`.
+  `src/Allegiance.Server/BroadcastTelemetry.cs` (`PoseStampTable`, lane rings, `RecordSendFrame`),
+  `src/Allegiance.Server/Server.BroadcastTelemetry.cs` (`StaleReason`, `ClassifyStale`, `AddLaneReport`,
+  `AddAgeReport`), `src/Allegiance.Server/Server.UpdateCadence.cs` (`TrackedShipIds`).
+  Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry

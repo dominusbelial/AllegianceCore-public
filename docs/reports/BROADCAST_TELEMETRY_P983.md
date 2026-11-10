@@ -9,6 +9,13 @@ applies: no code or close paraphrase was taken; only the "measure per type, sepa
 Status: complete, in the working tree, NOT committed. Flag default OFF. No change to what is sent, in which order, at
 what rate, or how it is budgeted.
 
+> **P990 extends this instrument** (`docs/reports/BROADCAST_SLICE_D_P990.md`): the block below is still
+> what it prints, with additions on the same flag — `[bb-lane]` / `[bb-other]` (the ordered one-shot lane
+> per wire fmid) / `[bb-keyed]` (the coalescing lane per key family) and two `[bb-age-why]` rows that
+> classify every stale / never-posed pair, plus `sweptAgoMs=` on `[bb-top]`. The pose-stamp structure behind
+> `[bb-age]` is no longer a `Dictionary<short,double>`: it is a dense table, which is why the §4 overhead
+> numbers here improved (~0.052 → ~0.030 ms/tick on the same workload). Still measurement-only.
+
 ## 1. What it measures
 
 One committed, off-by-default diagnostic behind `profiler.broadcastBudget` (a field of the existing P600 `profiler`
