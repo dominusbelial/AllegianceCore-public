@@ -390,6 +390,15 @@ bots/MCP read `ClientWorld`, whose `Apply(ShipStatusMessage)` upserts, so a stat
 teammate EXPORT is not lost; native citations re-grepped. Residual, documented: the "own ship re-sent on the first
 tick" repair applies to a fresh ship; a resumed peer gets its own status from the join burst only.
 
+**Review gate (after the fix, on this branch).** Solution build 0 warnings / 0 errors; `tools/build-tools.sh` all
+130 tool projects; P991 + P990 + P983 + BroadcastTelemetry + P603 cohort **57/57 × 3**; flag-off pin (101 ticks)
+identical on a clean `60390d68` worktree and here; Core.Tests `Tier=Fast` **6 255 passed / 5 failed / 0 skipped**
+(run alongside the tools build): 3 pass 3/3 alone, 2 are ledgered boundary flakes (P739 warp-bomb, LiveSideSelect
+auto-seat), none with the gate on. 2-side showcase with `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=1`
+(`P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`): **passed**,
+3 m 55 s, boot line confirms the gate on, 33 join dumps, match 1 shots 233 / hits 157 / kills 1 / pods 2, match 2
+shots 1 156 / hits 574 / kills 4 / pods 6, mining and research reached.
+
 ## Native intent
 
 Native's broadcast never re-sends knowledge a side already has. A ship's status is a per-(ship, side) record —
