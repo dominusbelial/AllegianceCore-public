@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -27,7 +28,49 @@ public sealed partial class Game1
     }
     private readonly HudSettings _hudSettings = HudSettings.Load(HudSettings.DefaultPath,
         File.Exists(IntroPreferences.FilePath) || File.Exists(UpscalingSettings.DefaultPath) || File.Exists(KeyBindingStore.ResolvePath()));
-    private HudRenderer ActiveHud => _hudSettings.Style == HudStyle.Modern ? _modernHudRenderer : _hudRenderer;
+    private HudSkinSwitcher? _hudSkins;
+    private IHudSkinRenderer ActiveHud => _hudSkins!.Active.Renderer;
+    private bool _hudSkinKeysRead;
+    private KeyboardState _hudSkinKeys;
+    private string? _hudSkinNotice;
+    private double _hudSkinNoticeUntil;
+
+    private void InitializeHudSkins()
+    {
+        var resources = new HudSkinResources(
+            model => _radarRenderer.Draw(model, GraphicsDevice.Viewport),
+            DrawHudShipTags, DrawEjectDeathOverlays, DrawCommandHud,
+            DrawChat, DrawCargoHud, DrawFlightPartsHud);
+        _hudSkins = new(_hudSettings,
+            new HudSkinRenderer(_hudRenderer, resources, _radarRenderer.SetRadarIcons),
+            new HudSkinRenderer(_modernHudRenderer, resources));
+        _hudSkins.Active.Renderer.SetRadarIcons(_radarIconTextures);
+    }
+
+    private void UpdateHudSkinInput(KeyboardState keys, bool focused)
+    {
+        if (_hudSkins is null) return;
+        var map = KeyBindingStore.Instance.Map;
+        // This port-only action has one rebindable chord and no aliases in
+        // either preset. Avoid IsDown's temporary alternate-binding list.
+        bool down = map.BindingOf("CycleHudSkin").Matches(keys);
+        bool blocked = !down || !focused || _chatActive || _qcMenuOpen || _graphicsSettingsVisible
+            || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _helpVisible
+            || _creditsVisible || _playerPingsVisible || _pilotProfile.Editing
+            || _teamNameEditing || _civPickerOpen || _settingsForm is not null
+            || _trainingQuitConfirm || _hangarQuitConfirm
+            || _state is not (ClientState.Flying or ClientState.ReadyCheck)
+            || !map.IsDownMostSpecific(keys, "CycleHudSkin");
+        _hudSkins.ObserveCycle(down, blocked);
+    }
+
+    private void CommitHudSkinChange()
+    {
+        if (_hudSkins?.ApplyPending() != true) return;
+        SaveHudSettingsQuietly(); // activation succeeded; now persist and announce
+        _hudSkinNotice = "SKIN: " + _hudSkins.Active.Definition.Name;
+        _hudSkinNoticeUntil = _nowSeconds + 2;
+    }
     private readonly UpscalingSettings _upscaling = UpscalingSettings.Load(UpscalingSettings.DefaultPath);
     private readonly DynamicResolutionController _resolutionController = new();
     private readonly FlightGcLatency _flightGc = new(Environment.GetEnvironmentVariable("ALLEGIANCE_CLIENT_GC_LOWLATENCY") == "1");
@@ -153,7 +196,7 @@ public sealed partial class Game1
             switch (_graphicsRow)
             {
                 case 9: ApplyEffectsDetail((Allegiance.ClientCore.State.EffectsDetail)(((int)_upscaling.Effects + direction + 3) % 3)); break;
-                case 6: _hudSettings.Style = _hudSettings.Style == HudStyle.Classic ? HudStyle.Modern : HudStyle.Classic; break;
+                case 6: _hudSkins!.Cycle(direction); changed = false; break; // save after activation
                 case 7: _hudSettings.Size = Math.Clamp(_hudSettings.Size + direction * .05f, .75f, 1.5f); break;
                 case 8: _hudSettings.ColorBlindSafe = !_hudSettings.ColorBlindSafe; break;
                 case 11: _hudSettings.RoundRadar = !_hudSettings.RoundRadar; break;
@@ -246,7 +289,7 @@ public sealed partial class Game1
                 $"Dynamic resolution: {(_upscaling.DynamicResolution ? "On" : "Off")}",
                 $"Target frame time: {_upscaling.TargetFrameMs:F1} ms",
                 $"HD textures: {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)",
-                $"HUD style: {_hudSettings.Style}",
+                $"HUD style: {_hudSkins!.Active.Definition.Name}",
                 $"HUD size: {_hudSettings.Size:P0}",
                 $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
                 $"Effects quality: {_upscaling.Effects}",

@@ -447,7 +447,13 @@ public sealed class P804ClientLeadTests
         Assert.Contains("const int segments = 60", radar);
         // Classic and Modern both route through it.
         var game = Src("Game1.Rendering.cs");
-        Assert.Contains("_radarRenderer.Draw(model, GraphicsDevice.Viewport)", game);
+        Assert.Contains("ActiveHud.Draw(model, new(GraphicsDevice.Viewport", game);
+        // P988 moves Classic's external pass behind the prebound adapter,
+        // retaining the same production radar and the original pass order.
+        var resources = Src("Game1.GpuBudget.cs");
+        Assert.Contains("model => _radarRenderer.Draw(model, GraphicsDevice.Viewport)", resources);
+        var adapter = Src(Path.Combine("Rendering", "Skins", "HudSkinRenderer.cs"));
+        Assert.Contains("if (_modern is null) _resources.Radar(model);", adapter);
         var modern = Src(Path.Combine("Rendering", "ModernHudRenderer.cs"));
         Assert.Contains("_radar.Draw(model, viewport, _settings.ColorBlindSafe)", modern);
     }

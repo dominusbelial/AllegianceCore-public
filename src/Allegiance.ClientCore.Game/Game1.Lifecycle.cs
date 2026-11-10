@@ -477,6 +477,7 @@ public sealed partial class Game1
         _radarIconTextures = Rendering.RadarIconTextures.Load(GraphicsDevice, _assets, _radarIconNames);
         _radarRenderer.SetRadarIcons(_radarIconTextures);
         _modernHudRenderer.SetRadarIcons(_radarIconTextures);
+        InitializeHudSkins();
         // P372 — the per-side in-world ship "team tags" (side-coloured chevron
         // above each visible ship's hull), same SpriteBatch plumbing.
         _shipTagRenderer = new Rendering.ShipSideTagRenderer(_spriteBatch, _whitePixel);

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework.Input;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
@@ -22,6 +23,10 @@ public sealed class ModernHudSettingsInputTests
         var modern = (ModernHudRenderer)RuntimeHelpers.GetUninitializedObject(typeof(ModernHudRenderer)); GC.SuppressFinalize(modern);
         var settings = new HudSettings { Style = HudStyle.Classic };
         Set("_hudSettings", settings); Set("_hudRenderer", classic); Set("_modernHudRenderer", modern);
+        var resources = new HudSkinResources(_ => { }, (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
+        var classicAdapter = new HudSkinRenderer(classic, resources);
+        var modernAdapter = new HudSkinRenderer(modern, resources);
+        Set("_hudSkins", new HudSkinSwitcher(settings, classicAdapter, modernAdapter));
         Set("_consolePressEdges", new ActionPressEdges()); Set("_mainMenuVisible", true); Set("_mainMenuCursor", 6);
         Set("_flightGc", new FlightGcLatency(false)); Set("_upscaling", new UpscalingSettings());
         Set("_resolutionController", new DynamicResolutionController());
@@ -36,14 +41,17 @@ public sealed class ModernHudSettingsInputTests
             Environment.SetEnvironmentVariable("ALLEGIANCE_GRAPHICS_SETTINGS", Path.Combine(directory, "graphics.json"));
             Call("UpdateMainMenu", new KeyboardState(Keys.Enter));
             Assert.True(Get<bool>("_graphicsSettingsVisible")); Assert.Equal(6, Get<int>("_graphicsRow"));
-            Assert.Same(classic, typeof(Game1).GetProperty("ActiveHud", fields)!.GetValue(game));
+            Assert.Same(classicAdapter, typeof(Game1).GetProperty("ActiveHud", fields)!.GetValue(game));
             Call("UpdateGraphicsSettings", new KeyboardState(Keys.Right));
+            Call("CommitHudSkinChange");
             Assert.Equal(HudStyle.Modern, settings.Style);
-            Assert.Same(modern, typeof(Game1).GetProperty("ActiveHud", fields)!.GetValue(game));
+            Assert.Same(modernAdapter, typeof(Game1).GetProperty("ActiveHud", fields)!.GetValue(game));
             Call("UpdateGraphicsSettings", new KeyboardState(Keys.Right));
+            Call("CommitHudSkinChange");
             Assert.Equal(HudStyle.Modern, settings.Style); // held key cannot toggle repeatedly
             Call("UpdateGraphicsSettings", new KeyboardState());
             Call("UpdateGraphicsSettings", new KeyboardState(Keys.Left));
+            Call("CommitHudSkinChange");
             Assert.Equal(HudStyle.Classic, settings.Style);
             Assert.Equal(HudStyle.Classic, HudSettings.Load(HudSettings.DefaultPath, true).Style);
         }

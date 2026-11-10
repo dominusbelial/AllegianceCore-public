@@ -1,0 +1,1136 @@
+{
+  "task": "P988",
+  "dispatchBase": "6659cb91765b",
+  "commitsMade": false,
+  "pushesMade": false,
+  "build": {
+    "passed": true,
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "passed": true,
+    "projects": 129,
+    "warnings": 0,
+    "errors": 0
+  },
+  "targeted": [
+    {
+      "path": ".scratch/p988/final-affected/final-1.trx",
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "total": 212,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-2.trx",
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "total": 212,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-3.trx",
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "total": 212,
+      "failures": []
+    }
+  ],
+  "renderSmoke": [
+    {
+      "path": ".scratch/p988/render-tests/render-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/render-tests/render-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/render-tests/render-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    }
+  ],
+  "actualGameSelection": [
+    {
+      "path": ".scratch/p988/final-affected/final-1.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Port)",
+      "outcome": "Passed",
+      "preset": "Port",
+      "bytes": 0,
+      "frames": 100000
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-1.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Native)",
+      "outcome": "Passed",
+      "preset": "Native",
+      "bytes": 0,
+      "frames": 100000
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-2.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Native)",
+      "outcome": "Passed",
+      "preset": "Native",
+      "bytes": 0,
+      "frames": 100000
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-2.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Port)",
+      "outcome": "Passed",
+      "preset": "Port",
+      "bytes": 0,
+      "frames": 100000
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-3.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Port)",
+      "outcome": "Passed",
+      "preset": "Port",
+      "bytes": 0,
+      "frames": 100000
+    },
+    {
+      "path": ".scratch/p988/final-affected/final-3.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.HudSkinSwitchingTests.Selection_and_dispatch_allocate_zero_bytes_per_frame(layout: Native)",
+      "outcome": "Passed",
+      "preset": "Native",
+      "bytes": 0,
+      "frames": 100000
+    }
+  ],
+  "transportRetries": [
+    {
+      "path": ".scratch/p988/retries/transport-1.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/transport-2.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/transport-3.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    }
+  ],
+  "fast": [
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.ClientCore.MonoGame.Tests-main.trx",
+      "passed": 5102,
+      "failed": 3,
+      "skipped": 3,
+      "total": 5108,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P897ClientTransportTests.Reconnect_reuses_initial_protocol_even_after_preference_changes(protocol: \"udp\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0027425",
+          "reason": "System.Net.Sockets.SocketException : Address already in use"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P897ClientTransportTests.Reconnect_reuses_initial_protocol_even_after_preference_changes(protocol: \"tcp\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0013832",
+          "reason": "System.Net.Sockets.SocketException : Address already in use"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P804ClientLeadTests.Round_border_is_drawn_for_both_styles",
+          "outcome": "Failed",
+          "duration": "00:00:00.0399648",
+          "reason": "Assert.Contains() Failure: Sub-string not found"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.ClientCore.Tests-main.trx",
+      "passed": 2353,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2353,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.ClientCore.Tests-quarantine.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.Core.Tests-main.trx",
+      "passed": 6204,
+      "failed": 3,
+      "skipped": 0,
+      "total": 6207,
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "outcome": "Failed",
+          "duration": "00:00:00.1278198",
+          "reason": "Assert.InRange() Failure: Value not in range"
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid",
+          "outcome": "Failed",
+          "duration": "00:00:01.9314031",
+          "reason": "non-miner must not move from spawn: travelled 169.868"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "outcome": "Failed",
+          "duration": "00:00:00.1217817",
+          "reason": "Assert.InRange() Failure: Value not in range"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.Core.Tests-quarantine.trx",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "total": 17,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.Lobby.Tests-main.trx",
+      "passed": 144,
+      "failed": 0,
+      "skipped": 0,
+      "total": 144,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/fast/fast/Allegiance.Update.Tests-main.trx",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "total": 55,
+      "failures": []
+    }
+  ],
+  "training": [
+    {
+      "path": ".scratch/p988/training-pass-2/1/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "passed": 290,
+      "failed": 2,
+      "skipped": 2,
+      "total": 294,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.5504944",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-23917fbaac8a40c9a9c46aa1e842a81f"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.0763507",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-661ef4bdc74d43788fc68c4f1ad975c0"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/training-pass-2/1/Allegiance.ClientCore.Tests/training.trx",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-pass-3/1/Allegiance.ClientCore.MonoGame.Tests/training.trx",
+      "passed": 288,
+      "failed": 4,
+      "skipped": 2,
+      "total": 294,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 4)",
+          "outcome": "Failed",
+          "duration": "00:20:00.4152075",
+          "reason": "Window failed: <worktree>/.scratch/p931/windows/m5-Modern-lesson=4-7d32d35fd01d40529404a9e3dce41d4b"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.1995671",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-c220dc0bcfe5458a9e3c6a47eade1c24"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Modern\", policy: null)",
+          "outcome": "Failed",
+          "duration": "00:20:00.4096790",
+          "reason": "Window failed: <worktree>/.scratch/p931/windows/m5-Modern-default-5baa81c6206143258b94de750a805ee2"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:04:58.5886238",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-03ae644f44664bdab275d41c95792640"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/training-pass-3/1/Allegiance.ClientCore.Tests/training.trx",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.Tests/training.trx",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/assigned-m3/training.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/assigned-m4/training.trx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "total": 9,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/assigned-m5/training.trx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "total": 5,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/assigned-m8/training.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/course-m2/training.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/course-m3/training.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "total": 2,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/course-m4/training.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/course-m5/training.trx",
+      "passed": 1,
+      "failed": 1,
+      "skipped": 0,
+      "total": 2,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Modern\", policy: null)",
+          "outcome": "Failed",
+          "duration": "00:20:00.4300520",
+          "reason": "Window failed: <worktree>/.scratch/p931/windows/m5-Modern-default-a2e6467b528b49cc88059296f5ae0274"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/course-m8/training.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/narration-classic/training.trx",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "total": 3,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.0226871",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-ce35680841b64594aae4e221776ef0bf"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/narration-modern/training.trx",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "total": 3,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.6235045",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-5f97c2aaa886407d808f19e7b9aaac21"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/other-training/training.trx",
+      "passed": 250,
+      "failed": 0,
+      "skipped": 0,
+      "total": 250,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/training-replacement/1/Allegiance.ClientCore.MonoGame.Tests/shards/remaining-window-branches/training.trx",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 2,
+      "total": 6,
+      "failures": []
+    }
+  ],
+  "trainingComplete": true,
+  "trainingPartitionAudit": {
+    "expected": 294,
+    "partitioned": 294,
+    "exactCoverage": true,
+    "partitions": {
+      "assigned-m4": 9,
+      "narration-classic": 3,
+      "narration-modern": 3,
+      "course-m4": 3,
+      "assigned-m3": 3,
+      "other-training": 250,
+      "course-m3": 2,
+      "assigned-m5": 5,
+      "course-m8": 3,
+      "course-m2": 2,
+      "course-m5": 2,
+      "assigned-m8": 3,
+      "remaining-window-branches": 6
+    },
+    "missing": [],
+    "extra": [],
+    "workers": 3,
+    "projectsSerial": true,
+    "p912Runtime": "Final Game binary, unchanged renderer-id-asserting proof entrypoint"
+  },
+  "excludedTraining": [
+    "training-initial-aborted: provisional legacy-setter issue",
+    "training/1: controller timeout-replacement error interrupted workers; no final MonoGame TRX; all results excluded"
+  ],
+  "trainingGameSha256": "5092d146301ff9d9a1080d39ff76660cb18fccb7b44c53a141b55e364a444f9b",
+  "finalGameSha256": "91289d2ea0fcbf5f996c5cba46010def2f06b653e22e71416bda9d204e764576",
+  "trainingBinaryDifference": "Two serial runs predate only the final shortcut polling allocation optimization. Replacement P912 windows use final Game binary; adapter/drawing/training/restoration code identical. Final 212 x3, full pixel matrix, switch/restart and 3 lesson-4 windows rerun afterwards.",
+  "reminderRetries": [
+    {
+      "path": ".scratch/p988/reminder-retries/classic-reminders-1.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.1259598",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-a0e5490332384d46b145d3ff1e297fd2"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/reminder-retries/classic-reminders-2.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:03.1946425",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-8de022b18eb54ee597068fe151f74439"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/reminder-retries/classic-reminders-3.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:08:55.1733912",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Classic-reminders-d24fc21514fe46efaa2eb40093f9965e"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/reminder-retries/modern-reminders-1.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:02.9954316",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-f7a00bfc9f364c24b1dca8bc5d18f8f7"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/reminder-retries/modern-reminders-2.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:09:03.2576797",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-12d3a50d929141bb8075be6ea519db38"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/reminder-retries/modern-reminders-3.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "duration": "00:08:57.0863618",
+          "reason": "Window failed: <worktree>/.scratch/p940/windows/m2-Modern-reminders-f90404c6b7f44475bacf6b5a74315a4a"
+        }
+      ]
+    }
+  ],
+  "commandViewRetries": [
+    {
+      "path": ".scratch/p988/m5-retries/m5-modern-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-retries/m5-modern-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-retries/m5-modern-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    }
+  ],
+  "commandViewPrefixRetries": [
+    {
+      "path": ".scratch/p988/m5-prefix-retries/m5-prefix-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-prefix-retries/m5-prefix-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-prefix-retries/m5-prefix-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    }
+  ],
+  "commandViewLesson4Retries": [
+    {
+      "path": ".scratch/p988/m5-lesson4-retries/m5-lesson4-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-lesson4-retries/m5-lesson4-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/m5-lesson4-retries/m5-lesson4-3.trx",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "total": 1,
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 4)",
+          "outcome": "Failed",
+          "duration": "00:20:00.4280465",
+          "reason": "Window failed: <worktree>/.scratch/p931/windows/m5-Modern-lesson=4-88d479e351484dd993356173742df9f5"
+        }
+      ]
+    }
+  ],
+  "baselineLesson4Controls": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    }
+  ],
+  "finalLesson4Controls": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    }
+  ],
+  "finalCommandViewCourseControls": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "skipped": 0,
+      "reason": null
+    }
+  ],
+  "baselineTrainingControl": {
+    "exitCode": -6,
+    "source": "Dispatch Program.cs and retained pre-adapter Allegiance assemblies"
+  },
+  "baselineCommandViewControl": {
+    "exitCode": 0,
+    "source": "Dispatch Program.cs and retained pre-adapter Allegiance assemblies"
+  },
+  "baselineControlContentComplete": true,
+  "otherRetries": [
+    {
+      "path": ".scratch/p988/retries/warp-bomb-1.trx",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "total": 3,
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "outcome": "Failed",
+          "duration": "00:00:00.5080854",
+          "reason": "Assert.InRange() Failure: Value not in range"
+        }
+      ]
+    },
+    {
+      "path": ".scratch/p988/retries/warp-bomb-2.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/warp-bomb-3.trx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/non-miner-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/non-miner-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/non-miner-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/warp-exit-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/warp-exit-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/warp-exit-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/slow-hull-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/slow-hull-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    },
+    {
+      "path": ".scratch/p988/retries/slow-hull-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "failures": []
+    }
+  ],
+  "neverParks": {
+    "base": [
+      {
+        "path": ".scratch/p988/base-parks/base-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 276.0,
+        "samples": 2755,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 0.0
+      },
+      {
+        "path": ".scratch/p988/base-parks/base-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 253.1,
+        "samples": 2527,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 1.002
+      },
+      {
+        "path": ".scratch/p988/base-parks/base-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 293.9,
+        "samples": 2933,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 1.109
+      },
+      {
+        "path": ".scratch/p988/base-parks/base-4.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 235.9,
+        "samples": 2351,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 0.403
+      },
+      {
+        "path": ".scratch/p988/base-parks/base-5.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 237.4,
+        "samples": 2365,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 2.024
+      }
+    ],
+    "changed": [
+      {
+        "path": ".scratch/p988/changed-parks/changed-1.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 268.8,
+        "samples": 2682,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 0.902
+      },
+      {
+        "path": ".scratch/p988/changed-parks/changed-2.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 143.4,
+        "samples": 1431,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 2.008
+      },
+      {
+        "path": ".scratch/p988/changed-parks/changed-3.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 300.7,
+        "samples": 3000,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 1.002
+      },
+      {
+        "path": ".scratch/p988/changed-parks/changed-4.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 258.6,
+        "samples": 2580,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 0.106
+      },
+      {
+        "path": ".scratch/p988/changed-parks/changed-5.trx",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "total": 1,
+        "failures": [],
+        "seconds": 178.1,
+        "samples": 1777,
+        "reached": 24,
+        "longestIdleWithTargetSeconds": 2.106
+      }
+    ]
+  },
+  "goldens": {
+    "untouchedAgainstP980": {
+      "compared": 1848,
+      "pixelDifferences": 1764,
+      "semanticDifferences": 42,
+      "animationOnlyDifferences": 0,
+      "corruptGoldens": 0,
+      "pass": false
+    },
+    "captureBeforeAfter": {
+      "compared": 1848,
+      "pixelDifferences": 0,
+      "semanticDifferences": 0,
+      "animationOnlyDifferences": 83,
+      "corruptGoldens": 0,
+      "manifestEqual": true,
+      "pass": true
+    },
+    "finalRenderAgainstDispatch": {
+      "compared": 1848,
+      "pixelDifferences": 0,
+      "semanticDifferences": 0,
+      "animationOnlyDifferences": 84,
+      "corruptGoldens": 0,
+      "pass": true
+    },
+    "afterAgainstP980": {
+      "compared": 1848,
+      "pixelDifferences": 1764,
+      "semanticDifferences": 42,
+      "animationOnlyDifferences": 0,
+      "corruptGoldens": 0,
+      "manifestEqual": false,
+      "pass": false
+    },
+    "oldGoldensModified": false,
+    "dispatchSelfTestPassed": true
+  },
+  "allocation": {
+    "framesPerRun": 100000,
+    "bytesPerFrame": 0,
+    "runsPerPreset": 3,
+    "presets": [
+      "Port",
+      "Native"
+    ],
+    "scope": "Actual Game1 input polling and ActiveHud getter through prebound delegates, warmed dispatch and preloaded switching; drawing sinks are no-ops; save/toast are event-time."
+  },
+  "runtime": {
+    "switchPassed": true,
+    "restartPassed": true
+  },
+  "screenshots": {
+    "bytes": 608814,
+    "files": [
+      {
+        "file": "01-classic-before.png",
+        "bytes": 109949,
+        "sha256": "12dbd33c5d31ab6a86a916cbd287fa4b4f9305fd7d79f678ccd0e63f010fa146",
+        "visuallyReviewed": true
+      },
+      {
+        "file": "02-modern-after.png",
+        "bytes": 100637,
+        "sha256": "dad7d14e956aa3951e125baaa804be3c57f246d4083a294f89ab2df6f72d24d1",
+        "visuallyReviewed": true
+      },
+      {
+        "file": "03-modern-panes-before.png",
+        "bytes": 128506,
+        "sha256": "afc1f8f5290a70861d138865f68c2c38fad83dcb60dcf91be21f28d200a79545",
+        "visuallyReviewed": true
+      },
+      {
+        "file": "04-classic-panes-after.png",
+        "bytes": 137316,
+        "sha256": "d639c5d2206248db2543e4b223556b4225178cf2880f8d664bcf38135d7798ed",
+        "visuallyReviewed": true
+      },
+      {
+        "file": "restart-classic.png",
+        "bytes": 132406,
+        "sha256": "5b37610a6bfe67a437c8522d6fa1c61934a456915d650d5789c520f566ea91ad",
+        "visuallyReviewed": true
+      }
+    ]
+  },
+  "notes": [
+    "Initial incomplete training run is excluded; final run asserts the actual bound renderer id.",
+    "P980 baseline driver is Intel Arc B50; this lane is llvmpipe. Existing drift reproduced with original binary 3 times.",
+    "One full Fast invocation; source guard corrected after its radar-location assertion, with final affected tests repeated 3 times."
+  ],
+  "trainingPassTotals": {
+    "training-pass-2": {
+      "passed": 416,
+      "failed": 2,
+      "skipped": 2,
+      "total": 420
+    },
+    "training-pass-3": {
+      "passed": 414,
+      "failed": 4,
+      "skipped": 2,
+      "total": 420
+    },
+    "training-replacement": {
+      "passed": 415,
+      "failed": 3,
+      "skipped": 2,
+      "total": 420
+    }
+  },
+  "trainingTotals": {
+    "passed": 1245,
+    "failed": 9,
+    "skipped": 6,
+    "total": 1260
+  },
+  "trainingExecutedCoverage": {
+    "serialCases": 294,
+    "partitionCases": 294,
+    "exactCaseMultiset": true,
+    "missing": [],
+    "extra": []
+  },
+  "allSpawnedRunsEnded": true,
+  "cleanup": {
+    "removedDisposableEntries": [
+      "tmp",
+      "hud-test-xdg",
+      "final-switch-proof",
+      "fast.lock",
+      "selection-final",
+      "proof-xdg",
+      "tests-xdg",
+      "fast-xdg",
+      "tests-final-xdg",
+      "reminder-retries-xdg",
+      "targeted",
+      "modern-reminder-retries-xdg",
+      "retries-xdg",
+      "switch-proof",
+      "tests-latest-xdg",
+      "golden-selftest",
+      "final-targeted",
+      "tests-iteration"
+    ],
+    "removedFileCount": 871,
+    "removedTemporaryAliases": [
+      "p800-proof-test",
+      "p902",
+      "p908",
+      "p931",
+      "p921",
+      "p904",
+      "p918",
+      "p940",
+      "p919"
+    ],
+    "preservedEvidenceRoot": ".scratch/p988",
+    "allOwnedManagedRunsEndedBeforeCleanup": true
+  },
+  "hygiene": {
+    "noAddedAbsoluteHomePaths": true,
+    "noAddedPersonalEmails": true,
+    "parityLfOnly": true,
+    "pngBytes": 608814,
+    "publicAssetsBytes": 641930,
+    "head": "6659cb91765b314d09926be220af983e58170282",
+    "indexUnchanged": true
+  }
+}

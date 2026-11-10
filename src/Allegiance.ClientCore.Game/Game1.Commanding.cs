@@ -438,7 +438,7 @@ public sealed partial class Game1
         return false;
     }
 
-    private void DrawCommandHud(Rendering.HudModel model)
+    private void DrawCommandHud(Rendering.HudModel model, bool classicSummary)
     {
         var lines = model.Context.CommandLines;
         if (!model.Visible) return;
@@ -470,7 +470,7 @@ public sealed partial class Game1
             float y = Rendering.ChatPaneLayout.BottomFromTop + 6;
             foreach (var line in lines)
             {
-                if (_hudSettings.Style == HudStyle.Modern) continue;
+                if (!classicSummary) continue;
                 var size = _hudSmall.MeasureString(line);
                 _spriteBatch.DrawString(_hudSmall, line, new Vector2((GraphicsDevice.Viewport.Width - size.X) / 2, y), Color.Cyan);
                 y += size.Y + 4;

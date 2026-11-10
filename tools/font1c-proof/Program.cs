@@ -230,7 +230,8 @@ sealed class Font1cProof(Game1 game, Mission mission, string output, int[] tickP
     /// show the art the black integer is drawn on.</summary>
     private void SaveStatusArt()
     {
-        var hud = typeof(Game1).GetProperty("ActiveHud", Hidden)?.GetValue(game);
+        // Native status art is shared; the Classic renderer owns its reference.
+        var hud = typeof(Game1).GetField("_hudRenderer", Hidden)?.GetValue(game);
         var status = hud is null ? null : typeof(HudRenderer).GetField("_status", Hidden)?.GetValue(hud);
         var tex = (status as StatusTextures)?.KillCounter;
         if (tex is null) { Console.WriteLine("[font1c] killcounterbmp not loaded"); return; }

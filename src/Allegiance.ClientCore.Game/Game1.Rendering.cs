@@ -1911,7 +1911,7 @@ public sealed partial class Game1
             var hudModel = _nativeHangarScreen
                 ? HudModelAdapter.Create(null, _cameraMode, hidden: true)
                 : DrawHud();
-            DrawCommandHud(hudModel);
+            ActiveHud.DrawCommand(hudModel);
 
             // P501 — semi-transparent touch sticks + buttons, above the HUD but
             // beneath the starmap/chat overlays. Skipped internally when no touch
@@ -1930,18 +1930,9 @@ public sealed partial class Game1
         if (!_directorActive && !_nativeHangarScreen)
             DrawStarmap(gameTime);
 
-        // P214 — real chat overlay (log + composing line) on top of the HUD.
-        if (!_directorActive && _hudSettings.Style == HudStyle.Classic)
-            DrawChat(hudModel);
-
-        // P626 — the in-flight cargo/inventory readout (selected part + hold
-        // occupancy), a small line under the chat log so the pilot sees what the
-        // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
-        if (!_directorActive && _hudSettings.Style == HudStyle.Classic)
-        {
-            DrawCargoHud(hudModel);
-            DrawFlightPartsHud(hudModel);
-        }
+        // Classic's chat/cargo/parts phase stays above the starmap. Modern
+        // already composes these groups in its main HUD pass.
+        if (!_directorActive) ActiveHud.DrawConsole(hudModel);
 
         // P759 — the runtime LOD slider overlay (native TK_ToggleLODSlider /
         // m_pwrapImageLOD). A compact horizontal bar, drawn only while toggled
@@ -3547,22 +3538,23 @@ public sealed partial class Game1
             // P949 — the one-time fresh-profile keys hint (null once dismissed).
             controlHint: _controlHint?.VisibleText,
             buffers: _hudSnapshotBuffers);
-        if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
+        ActiveHud.Draw(model, new(GraphicsDevice.Viewport, _hudTargetModelPreview, _hudSettings.SelectionBracketOn));
+        DrawTargetNoMatchFeedback();
+        if (model.Visible && _hudSkinNotice is not null && _nowSeconds < _hudSkinNoticeUntil)
+        {
+            _spriteBatch.Begin();
+            try { ActiveHud.DrawOverlayText(_hudSkinNotice, new(24, 24), Color.White); }
+            finally { _spriteBatch.End(); }
+        }
+        return model;
+    }
+
+    private void DrawHudShipTags(HudModel model, bool modern)
+    {
         if (model.FlightVisible && model.Context.Contacts.Count > 0)
-            _shipTagRenderer.Draw(_hudSettings.Style == HudStyle.Modern && _hudSettings.ColorBlindSafe
+            _shipTagRenderer.Draw(modern && _hudSettings.ColorBlindSafe
                 ? _drawShipTags.Select(t => t with { Colour = HudPalette.Side(t.Colour) }).ToArray()
                 : _drawShipTags);
-        // HUD-21 — feed this frame's target-model preview (or null fallback) to
-        // the active HUD renderer so DrawTargetPane composites it under the oval.
-        ActiveHud.TargetModelPreview = _hudTargetModelPreview;
-        // P805b — the selection-box gate is live on BOTH skins (P805 only passed it
-        // to the classic renderer at construction, so Modern's base gate stayed off
-        // and its bracket never drew).
-        ActiveHud.SelectionBracket = _hudSettings.SelectionBracketOn;
-        ActiveHud.Draw(model, GraphicsDevice.Viewport);
-        if (_hudSettings.Style == HudStyle.Classic) DrawEjectDeathOverlays(model);
-        DrawTargetNoMatchFeedback();
-        return model;
     }
 
     /// <summary>HUD-10 — build the chat snapshot with the native compose state
