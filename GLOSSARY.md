@@ -319,6 +319,19 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastTelemetry.cs` (`StaleReason`, `ClassifyStale`, `AddLaneReport`,
   `AddAgeReport`), `src/Allegiance.Server/Server.UpdateCadence.cs` (`TrackedShipIds`).
   Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
+- **SHIP_STATUS change gate (P991)** — default-off `broadcast.shipStatusChangeGate` that makes every
+  `FM_S_SHIP_STATUS(90)` send edge-triggered on the wire content, native's per-frame rule
+  (`FedSrv/FedSrv.CPP:3665-3719`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three
+  periodic refreshes (own ship 40 ticks, same-side teammates 100 ticks per recipient phase, cross-side seen
+  enemies 100 ticks per pair phase) and adding native's join-time per-ship dump
+  (`FedSrv/fsmission.cpp:4303-4323`). State is one content value per (side, subject) — native's
+  `m_rgShipStatus` shape — dropped at departure, park, migration, rotation and id reuse.
+  `src/Allegiance.Server/Server.ShipStatusGate.cs` (`ShipStatusContent`, `StatusGateCrossSide`,
+  `SendStatusDumpToJoiner`), the decision sites in `src/Allegiance.Server/Server.Broadcast.cs`
+  (`SweepShipDetection`, `BroadcastShipStates*`, `SweepCrossSideShipStatuses`) and the pooled encoders in
+  `src/Allegiance.Server/Server.BroadcastBuffers.cs`; env `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE`.
+  Flag off is byte-identical to the pre-P991 wire (pinned).
+  Report: `docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry

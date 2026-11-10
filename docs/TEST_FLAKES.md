@@ -8007,3 +8007,41 @@ Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and th
 Core.Tests `Tier=Fast` on `pi/p990` + master 724d1cdf: 6239 passed / 1 failed. The failure,
 `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange`, passed **3/3 alone**; it is the ledgered
 load/timing family above (P990 touches only telemetry behind `profiler.broadcastBudget`, default off).
+
+## P991 (SHIP_STATUS change gate) — Fast-tier and showcase triage
+
+Fast sweep on this tree (`tools/run-tests.sh --tier fast --no-build`): **13,947 tests, 625.5 s, FAIL** — 3 failures in
+`Allegiance.Core.Tests`, 1 in `Allegiance.ClientCore.Tests`, 4 slow-Fast offenders, host shared with other lanes
+(load average ≈ 9). The flag is **off by default**, so the swept code path is the pre-P991 wire; the only
+non-doc change on the flag-off path is that the status encoders now build from one shared value-struct.
+
+| Case | Sweep signature | Isolated re-runs |
+|---|---|---|
+| `ProbeCombatLiveTests.Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer` | 17.064 s (slow-Fast offender) and the destroy-broadcast receipt missing | **3/3 pass** (1 s each) — load-sensitive receipt family |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | 37.396 s (slow-Fast offender) and the ammo/damage receipt missing | **3/3 pass** (1 s each) — same receipt family |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 824 ms; the ledgered receipt/simulation-clock boundary (clean-base rate 2 pass / 3 fail) | **1 pass / 2 fail** alone — the long-ledgered auto-seat row above, no side-select/auto-seat code changed |
+| `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim(training: False, model: "native")` | 324 ms; aim/turn receipt | **3/3 pass** (4 cases each) — load flake |
+| slow-Fast: `P750NativeAsteroidTypesTests…` 11.173 s, `ArmedProbeLiveTests…` 37.396 s, `P777WarpExitWobbleTests…` 10.106 s, `ProbeCombatLiveTests…` 17.064 s | assertions passed in the isolated re-runs | the ledgered near-limit families |
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`), five
+sequential runs per arm on this tree (`ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=0` / `=1`), one isolated
+recheck per arm after the shared failure:
+
+| Arm | Runs (wall) | Outcome |
+|---|---|---|
+| flag OFF (base rate) | 326 s, **486 s FAIL**, 339 s, 144 s, 183 s + recheck 294 s | **5 pass / 1 fail**; park-limit violations 0 in every run |
+| flag ON | 199 s, **485 s FAIL**, 214 s, 387 s, 251 s + recheck 437 s | **5 pass / 1 fail**; park-limit violations 0 in every run |
+
+The one failure landed on the **same** run in **both** arms (8 m 04 s / 8 m 05 s): the arrival assertion at the end
+of the fixed 480 s observation window, i.e. the already-recorded P700 arrival-time flake ("20/30 reached at
+480.1 seconds", the row above), not a parking violation and not a difference between the arms. Both rechecks pass.
+The two-match 2-side showcase `P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`
+(30 bots, kills/pods/relaunch/mining/research) passes with the gate **ON** in 4 m 33 s.
+
+### P991 review sweep (Claude, Core.Tests `Tier=Fast`, run alongside `tools/build-tools.sh`)
+
+| Test | 3x alone | Classification |
+|---|---|---|
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 3/0, 1/2, 3/0 (theory cases) | Existing floating deadline-boundary family (entries above); timer code unchanged, gate off in this fixture. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). |
+| `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy`, `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 3/3 pass each | Load-only in a sweep that shared the host with the tools build; none touches SHIP_STATUS with the gate on (all default off, wire pinned byte-identical). |

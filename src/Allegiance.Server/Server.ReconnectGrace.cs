@@ -429,6 +429,7 @@ public sealed partial class Server
         foreach (var k in _crossSideShipStatusSeen.Keys.Where(k => k.ShipId == shipId).ToList())
             _crossSideShipStatusSeen.Remove(k);
         _shipDetected.Remove(shipId);
+        DropShipStatusContent(shipId);   // P991 — the gate's per-(side, subject) copies
     }
 
     /// <summary>P813c — the windowed telemetry line the rig recipe reads

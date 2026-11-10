@@ -180,6 +180,12 @@ public sealed partial class Server
         // explicit false/0 still selects the original serial byte-for-byte path.
         ResolveBroadcastParallelBuild();
 
+        // P991 — resolve broadcast.shipStatusChangeGate (default OFF) from config
+        // + ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE (env wins) and print it,
+        // so every rig run is labelled. OFF = today's three periodic SHIP_STATUS
+        // refreshes, byte-for-byte.
+        ResolveShipStatusChangeGate();
+
         // P605 — resolve the transport's send-draining mode (pool default since
         // P887, thread-per-peer via an explicit override) from transport.mode
         // config + the ALLEGIANCE_TRANSPORT_MODE env var, print it at boot, and
@@ -2300,6 +2306,11 @@ public sealed partial class Server
                      .Where(kv => kv.Key.ShipId == departedShipId)
                      .Select(kv => kv.Key).ToList())
             _crossSideShipStatusSeen.Remove(k);
+        // P991 — the change gate's per-(side, subject) copies about the departing
+        // ship. The recipient dimension needs nothing extra: every per-pair status
+        // latch this peer owns is freed just above, and the gate's own copy of the
+        // subject is the (side, ship) entry dropped here.
+        DropShipStatusContent(departedShipId);
         // HUD-17 — free the departing ship's own-side Detected baseline (keyed by
         // subject ship id, so a departing peer's ship entry would otherwise leak
         // across connection churn / mission rotation id reuse).

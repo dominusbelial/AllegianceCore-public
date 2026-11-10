@@ -361,6 +361,15 @@ them. HTTPS protects endpoint receipts and introduction secrets. Internet joins
 require direct UDP and have no TCP/relay fallback. No public STUN dependency,
 UPnP or NAT-PMP traffic is introduced.
 
+P991's `SHIP_STATUS(90)` change gate is default off. Set
+`broadcast.shipStatusChangeGate` in the mounted server JSON, or
+`ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=1` before starting Compose, to send
+a ship's status to a side only when it differs from the copy that side already
+has (native's rule, `FedSrv/FedSrv.CPP:3665-3719`) instead of the port's three
+periodic refreshes. The environment override accepts `0`/`1` or `false`/`true`;
+empty preserves JSON. Off is byte-identical to the pre-P991 wire. See
+[the P991 measurements](../docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md).
+
 P968's publisher experiment is default off. Set `broadcast.pendingStreamIndex`
 in the mounted server JSON, or `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX=1`
 before starting Compose, to index the pending snapshot's `(peer, key)` streams

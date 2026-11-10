@@ -856,6 +856,28 @@ public sealed class BroadcastConfig
     /// ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX overrides (0/1 or false/true).</summary>
     public bool PendingStreamIndex { get; set; }
 
+    /// <summary>
+    /// P991 — send <c>FM_S_SHIP_STATUS(90)</c> the way native does: only when the
+    /// status a side would be told differs from the copy it was told last, per
+    /// (side, ship) — native <c>SendShipUpdates</c>, every other frame, per side,
+    /// per ship, <c>if (*pss != *pssOld)</c> then send to the side group and copy
+    /// into the old status (<c>FedSrv/FedSrv.CPP:3665-3719</c>); a joining or
+    /// reconnecting peer gets the full per-ship dump native sends in
+    /// <c>CFSMission::SendMissionInfo</c> (<c>FedSrv/fsmission.cpp:4303-4323</c>).
+    /// <para>Default <b>false</b>: the port's three periodic refreshes stay on and
+    /// the wire is byte-identical to the pre-P991 build (own ship
+    /// <c>StatusRefreshTicks</c>=40, same-side teammates
+    /// <c>TeammateStatusRefreshTicks</c>=100 per recipient phase, cross-side seen
+    /// enemies <c>CrossSideStatusRefreshTicks</c>=100 per pair phase). With the
+    /// gate on they are replaced by the content comparison for the serial and the
+    /// parallel (<c>broadcast.parallelBuild</c>) builders alike, which stay
+    /// byte-for-byte equal to each other. <c>ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE</c>
+    /// overrides (0/1 or false/true, env wins). Measured on the rig by Claude
+    /// (P991's A/B list); nothing else about what is sent changes.
+    /// </para>
+    /// </summary>
+    public bool ShipStatusChangeGate { get; set; }
+
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>
     public bool InterestTiers { get; set; }
