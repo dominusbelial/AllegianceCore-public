@@ -154,7 +154,12 @@ internal sealed partial class BotManager
     /// (<c>Settings.MaxWing</c>) the side can grow to from its spare fighters.
     /// Pure so the growth cap is unit-testable.</summary>
     internal static int FinaleWingTarget(int required, int reserved, int cap)
-        => Math.Clamp(Math.Max(required, reserved), 1, Math.Max(1, cap));
+    {
+        int target = Math.Clamp(Math.Max(required, reserved), 1, Math.Max(1, cap));
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "WingTarget", new { required, reserved, cap }, new { target });
+        return target;
+    }
 
     /// <summary>P959 — grow the reserved wing from the side's spare combat hulls
     /// when the corrected requirement cannot be met by the configured wing. Every
@@ -638,13 +643,19 @@ internal sealed partial class BotManager
     internal static string? FinaleCommitReason(int assembled, int required, double? stagingSince, double now,
         double? deadlineAt = null, double window = FinaleWaveWindowSeconds, double lead = ResearchTactics.StrikeGoLeadSeconds)
     {
-        if (assembled <= 0 || stagingSince is not { } since) return null;
-        if (assembled >= required) return "massed";
-        if (deadlineAt is { } deadline && double.IsFinite(deadline)
-            && now + lead + window + FinaleWaveTailSeconds >= deadline
-            && assembled >= Math.Min(required, FinaleMinimumStrike))
-            return "deadline-forced";
-        return null;
+        string? reason = null;
+        if (assembled > 0 && stagingSince is not null)
+        {
+            if (assembled >= required) reason = "massed";
+            else if (deadlineAt is { } deadline && double.IsFinite(deadline)
+                && now + lead + window + FinaleWaveTailSeconds >= deadline
+                && assembled >= Math.Min(required, FinaleMinimumStrike))
+                reason = "deadline-forced";
+        }
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "CommitReason",
+                new { assembled, required, stagingSince, now, deadlineAt, window, lead }, new { reason });
+        return reason;
     }
 
     /// <summary>P801 follow-up — may a finale bomber use the ordinary cloak policy?

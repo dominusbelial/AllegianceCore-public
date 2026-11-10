@@ -459,7 +459,18 @@ internal static class TechLoadoutSelector
             options.Add(selected with { Reason = $"role=Support; negative-power lead gun; cheapest legal nonobsolete human hull; techBits={techs.PopCount}; stable ID ties; hull={h.HullId} '{h.Name}'; cost={selected.Price}; "
                 + string.Join(", ", parts.Select(p => $"{Part(core, p.PartId).EquipmentType}@{p.MountId}={p.PartId} '{Part(core, p.PartId).Name}' x{p.Amount}")) });
         }
-        return options.OrderBy(o => o.Price).ThenBy(o => o.HullId).FirstOrDefault();
+        var result = options.OrderBy(o => o.Price).ThenBy(o => o.HullId).FirstOrDefault();
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Loadout", "SelectSupport",
+                new { civId = civ, techMask = techs.ToBytes(), dockTypeId = dockType, budget },
+                new
+                {
+                    hullId = result?.HullId, hullName = result?.HullName, price = result?.Price,
+                    partCount = result?.Parts.Count,
+                    parts = result?.Parts.Select(p => new { p.PartId, p.Amount, p.MountId }).ToArray(),
+                    reason = result?.Reason,
+                });
+        return result;
     }
 
     internal static double HullScore(DataHullTypeIGC h, Showcase.HullRole role) => role switch
@@ -778,7 +789,7 @@ internal static class TechLoadoutSelector
             {
                 civId,
                 role,
-                techBits = techs.PopCount,
+                techMask = techs.ToBytes(),
                 dockTypeId,
                 targetStationTypeId = target?.StationTypeId,
                 budget,
