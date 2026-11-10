@@ -1,0 +1,41 @@
+{
+ "host": "Intel Arc Pro B50 (Mesa 26.0.8), offscreen SDL, 960x540/1080p/4K windows",
+ "source": "[p643] summary lines, ALLEGIANCE_CLIENT_PERF=1, replay data/benchmarks/battle.alr, HD sky, bloom on, 6 s windows",
+ "1080p": {
+  "off": {
+   "gpu_ms": 0.47
+  },
+  "hdr_neutral": {
+   "gpu_ms": 0.49
+  },
+  "simPalette": {
+   "gpu_ms": 0.44
+  },
+  "draws": {
+   "off": 337,
+   "hdr": 335,
+   "sim": 335
+  },
+  "frame_wall_p50_ms": 1.71
+ },
+ "4k_fsr_quality": {
+  "render_resolution": "2560x1440 -> 3840x2160",
+  "off": {
+   "gpu_ms": 1.4
+  },
+  "hdr_neutral": {
+   "gpu_ms": 2.2
+  },
+  "simPalette": {
+   "gpu_ms": 2.21
+  },
+  "draws": {
+   "off": 336,
+   "hdr": 338,
+   "sim": 338
+  },
+  "frame_wall_p50_ms": 1.76
+ },
+ "added_pass_count": 0,
+ "note": "simPalette differs from hdr-neutral only in uniform values (curve, exposure, saturation, bright-pass threshold, bright-pass scale); the frame runs the same passes and targets, so its delta over HDR neutral is inside the +-0.05 ms sampling noise."
+}

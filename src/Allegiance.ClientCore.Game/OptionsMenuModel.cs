@@ -136,7 +136,12 @@ public sealed class OptionsMenuModel
         float MouseSensitivity = Flight.MouseFlightController.DefaultMouseSensitivity,
         // P979 — the EFFECTIVE visual flags (profile `visuals` group + the
         // --visuals launch override). Null renders the table defaults (all OFF).
-        VisualOptions? Visuals = null);
+        VisualOptions? Visuals = null,
+        // P989 — whether the float HDR scene path really exists on this device
+        // (flag on AND the RGBA16F target + output transform proven). Null = not
+        // known yet (e.g. the intro menu before a flight session), which shows the
+        // row's dependency in its description but claims nothing about activity.
+        bool? HdrSceneActive = null);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -266,8 +271,16 @@ public sealed class OptionsMenuModel
             }
             else
             {
+                // P989 — a flag that DEPENDS on another one (sim palette / ACES need
+                // the HDR scene path) says so on its row once the device has decided:
+                // "inactive" is the truthful state when the dependency is off or fell
+                // back to 8-bit, and the enhancement really does nothing then.
+                string note = definition.RequiresKey is { } requires
+                    && state.HdrSceneActive == false
+                        ? " (inactive: needs " + (VisualFlags.Find(requires)?.Label ?? requires) + ")"
+                        : "";
                 rows.Add((new Row(
-                    $"{definition.Label}: {VisualOptions.DescribeValue(definition, state.Visuals)} - {definition.Description}",
+                    $"{definition.Label}: {VisualOptions.DescribeValue(definition, state.Visuals)} - {definition.Description}{note}",
                     OptionsCommand.ToggleVisualFlag, definition.Hotkey), definition.Key));
             }
         }

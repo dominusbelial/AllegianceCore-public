@@ -25,6 +25,14 @@ public sealed class FsrPostProcessor : IDisposable
         && _easu.Parameters["InputSize"] is not null && _easu.Parameters["SceneTexture"] is not null
         && _rcas.Parameters["InputSize"] is not null && _rcas.Parameters["SceneTexture"] is not null
         && _rcas.Parameters["Sharpness"] is not null;
+
+    /// <summary>P989 — the folded output-transform passes exist (RCAS + the
+    /// Tonemap.fx equations in one pass, so the 4K path can skip the extra float
+    /// target). Probed before the renderer folds; false keeps the normal path.</summary>
+    public bool FoldReady => _rcas?.Techniques["Fsr"]?.Passes["RcasNeutralGraded"] is not null
+        && _rcas.Techniques["Fsr"]?.Passes["RcasAcesGraded"] is not null
+        && _rcas.Parameters["Exposure"] is not null && _rcas.Parameters["Saturation"] is not null
+        && _rcas.Parameters["Threshold"] is not null && _rcas.Parameters["Slope"] is not null;
     public FsrPostProcessor(GraphicsDevice gd, ShaderAssetCache shaders)
     {
         _gd = gd; _quad = new(gd);
@@ -54,23 +62,42 @@ public sealed class FsrPostProcessor : IDisposable
     /// before. HDR path (<paramref name="hdr" />): RCAS writes the float
     /// <see cref="HdrUpscaled" /> target, and the caller runs the single output
     /// transform from it (no premature display encode).</summary>
-    public void Render(Texture2D source, RenderTarget2D? destination, float sharpness, bool hdr = false)
+    public void Render(Texture2D source, RenderTarget2D? destination, float sharpness, bool hdr = false,
+        HdrGrade? foldGrade = null)
     {
         if (!Ready || _upscaled is null) throw new InvalidOperationException("FSR effects/targets unavailable");
         Run(_easu!, "Easu", source, _upscaled, sharpness);
-        Run(_rcas!, "Rcas", _upscaled, hdr ? _hdrOut : destination, sharpness);
+        if (foldGrade is { } grade)
+        {
+            // P989 fold: EASU → RCAS + the ONE output transform, straight into the
+            // display target. Only used when proven pixel-equivalent (§6.5).
+            Run(_rcas!, grade.Curve == HdrCurve.Aces ? "RcasAcesGraded" : "RcasNeutralGraded",
+                _upscaled, destination, sharpness, grade);
+        }
+        else
+        {
+            Run(_rcas!, "Rcas", _upscaled, hdr ? _hdrOut : destination, sharpness);
+        }
         _gd.Textures[0] = null;
         _gd.BlendState = BlendState.Opaque;
         _gd.DepthStencilState = DepthStencilState.Default;
         _gd.RasterizerState = RasterizerState.CullCounterClockwise;
     }
-    private void Run(Effect effect, string pass, Texture2D input, RenderTarget2D? output, float sharpness)
+    private void Run(Effect effect, string pass, Texture2D input, RenderTarget2D? output, float sharpness,
+        HdrGrade? grade = null)
     {
         _gd.Textures[0] = null;
         _gd.SetRenderTarget(output);
         effect.Parameters["InputSize"].SetValue(new Vector2(input.Width, input.Height));
         effect.Parameters["SceneTexture"].SetValue(input);
         effect.Parameters["Sharpness"]?.SetValue(Math.Clamp(sharpness, 0, 1));
+        if (grade is { } g)
+        {
+            effect.Parameters["Exposure"]?.SetValue(g.Exposure);
+            effect.Parameters["Saturation"]?.SetValue(g.Saturation);
+            effect.Parameters["Threshold"]?.SetValue(HdrOutput.NeutralThreshold);
+            effect.Parameters["Slope"]?.SetValue(HdrOutput.NeutralSlope);
+        }
         effect.Techniques["Fsr"].Passes[pass].Apply();
         _gd.BlendState = BlendState.Opaque; _gd.DepthStencilState = DepthStencilState.None;
         _gd.RasterizerState = RasterizerState.CullNone; _gd.SamplerStates[0] = SamplerState.PointClamp;

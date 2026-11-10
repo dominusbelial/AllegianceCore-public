@@ -154,6 +154,34 @@ public static class HdrOutput
         => new(Encode(linear.X), Encode(linear.Y), Encode(linear.Z));
 
     /// <summary>
+    /// Encode a LINEAR light value into the float scene target's stored domain
+    /// (display-encoded sRGB) WITHOUT the display clamp, because that target
+    /// carries headroom: 1.2 linear is ~1.083 stored. P989 uses it to express the
+    /// sim palette's bloom threshold, which P978 states in linear light, in the
+    /// domain the bright pass actually reads.
+    /// </summary>
+    public static float ToStored(float linear)
+    {
+        if (!(linear > 0f)) return 0f;
+        return linear <= 0.0031308f ? linear * 12.92f
+                                    : 1.055f * MathF.Pow(linear, 1f / 2.4f) - 0.055f;
+    }
+
+    /// <summary>
+    /// Rec.709 luma-preserving saturation on LINEAR RGB (1 = unchanged), the
+    /// "world" half of the P989 sim grade. Mirrors <c>Saturate</c> in
+    /// <c>Shaders/Tonemap.fx</c>. Unity is an exact no-op.
+    /// </summary>
+    public static Vector3 Saturate(Vector3 linear, float saturation)
+    {
+        if (saturation == 1f) return linear;
+        float luma = 0.2126f * linear.X + 0.7152f * linear.Y + 0.0722f * linear.Z;
+        return new Vector3(luma + (linear.X - luma) * saturation,
+                           luma + (linear.Y - luma) * saturation,
+                           luma + (linear.Z - luma) * saturation);
+    }
+
+    /// <summary>
     /// The neutral curve: the hue-preserving peak shoulder the PBR shader used to
     /// apply in gamma space, now applied ONCE to the whole scene, then clamped into
     /// the display range. Below the onset it is the identity, which is what keeps
@@ -195,10 +223,16 @@ public static class HdrOutput
     /// The display value the single output transform produces for a stored
     /// (display-encoded, may exceed 1) scene sample — the C# mirror the tests use
     /// to prove there is exactly one tone map on the HDR path.
+    /// <para>P989: <paramref name="saturation"/> is the sim palette's world grade
+    /// (1 = untouched). It applies to the FILMIC path, in linear light between the
+    /// exposure and the fit, which is where <c>PS_Aces</c> applies it. The neutral
+    /// curve is P984's comparison pass-through and takes no saturation, so the
+    /// default grade stays bit-exact.</para>
     /// </summary>
-    public static Vector3 Output(Vector3 stored, HdrCurve curve, float exposure = DefaultExposure)
+    public static Vector3 Output(Vector3 stored, HdrCurve curve, float exposure = DefaultExposure,
+        float saturation = 1f)
         => curve == HdrCurve.Aces
-            ? Encode(Aces(Decode(stored) * exposure))
+            ? Encode(Aces(Saturate(Decode(stored) * exposure, saturation)))
             : Neutral(stored, exposure);
 
     /// <summary>One log line describing the resolved pipeline (startup + tests).</summary>

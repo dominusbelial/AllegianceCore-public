@@ -583,6 +583,9 @@ public sealed partial class Game1
                 // the float target + output transform really exist (VfxPostProcessor
                 // falls back to the native 8-bit path otherwise).
                 bool hdr = HdrScene;
+                // P989 — resolve the grade (curve/exposure/saturation + the bloom
+                // threshold/contribution) BEFORE the passes below read it.
+                SyncHdrGrade();
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
                 bool sceneTarget = fsr || bloom || hdr;
                 var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
@@ -1875,7 +1878,7 @@ public sealed partial class Game1
                     _fsr!.Render(upscaleSource!, hdr ? null : finalTarget, _upscaling.Sharpness, hdr);
                     if (hdr) upscaleSource = _fsr!.HdrUpscaled;
                 }
-                if (outputTransform) _post!.Output!.Render(upscaleSource!, finalTarget, _hdrCurve);
+                if (outputTransform) _post!.Output!.Render(upscaleSource!, finalTarget, _grade);
                 _frameTelemetry?.EndPost();
                 _gpuTimer?.Stop();
 
