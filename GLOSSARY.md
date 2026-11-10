@@ -319,7 +319,7 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastTelemetry.cs` (`StaleReason`, `ClassifyStale`, `AddLaneReport`,
   `AddAgeReport`), `src/Allegiance.Server/Server.UpdateCadence.cs` (`TrackedShipIds`).
   Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
-- **SHIP_STATUS change gate (P991)** — default-off `broadcast.shipStatusChangeGate` that makes every
+- **SHIP_STATUS change gate (P991)** — `broadcast.shipStatusChangeGate` (default on since 2026-11-10, rig A/B b105/b106) that makes every
   `FM_S_SHIP_STATUS(90)` send edge-triggered on the wire content, native's per-frame rule
   (`FedSrv/FedSrv.CPP:3665-3719`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three
   periodic refreshes (own ship 40 ticks, same-side teammates 100 ticks per recipient phase, cross-side seen

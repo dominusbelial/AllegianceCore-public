@@ -531,17 +531,22 @@ public class MiningTests
         // ledgered "Expected -1 / Actual 1051" failure).
         PumpUntil(server, () => live.StationId is null && bot.ShipStatuses.Any(s => s.ShipId == shipId
             && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 4000);
-        bot.ResetShipStatuses();
-        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == shipId
-            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
+        // (b) P991: with the change gate ON (default) the own status is sent on
+        // the launch edge and not refreshed while unchanged, so instead of
+        // clearing and waiting for a refresh, pump a while longer and check
+        // every own status from the first post-launch flying one onward.
+        PumpUntil(server, () => false, 200);
 
-        // Normal SHIP_STATUS still flows (the periodic 40-tick refresh), flying/free.
+        // Normal SHIP_STATUS still flows (the launch edge), flying/free.
         // P382: the port now spawns one docked initial miner per side at its home
         // station at boot (a docked NPC's SHIP_STATUS legitimately reaches peers),
         // so scope the "ordinary flight unaffected" assertion to the player's own
         // ship — the original no-regression intent — rather than every status the
         // bot happens to hear (which now includes the docked initial miners).
-        var ownStatuses = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
+        var allOwn = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
+        int firstFlying = allOwn.FindIndex(s => s.State == ShipStatusMessage.StateFlying && s.StationId == -1);
+        Assert.True(firstFlying >= 0, "no post-launch flying status");
+        var ownStatuses = allOwn.Skip(firstFlying).ToList();
         Assert.NotEmpty(ownStatuses);
         Assert.All(ownStatuses,
             s => { Assert.Equal(ShipStatusMessage.StateFlying, s.State); Assert.Equal(-1, s.StationId); });

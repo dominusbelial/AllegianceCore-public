@@ -359,16 +359,21 @@ public class DockDockingTests
         // diag: 7/24 alone), the ledgered "Expected -1 / Actual 1051" failure.
         PumpUntil(server, () => probe.StationId is null && bot.ShipStatuses.Any(s => s.ShipId == shipId
             && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying), 4000);
-        bot.ResetShipStatuses();
-        PumpUntil(server,
-            () => bot.ShipStatuses.Count(s => s.ShipId == shipId
-                && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying) >= 3, 4000);
+        // (b) P991: with the change gate ON (default) the own status is sent on
+        // the launch edge and not re-sent while unchanged, so "at least 3 flying
+        // frames" only measured the old 40-tick refresh. Instead fly on for 200
+        // ticks (10 s, five old refresh periods) without clearing, then require
+        // that every own status from the first post-launch flying one onward is
+        // still flying/undocked — a spurious dock edge would appear here — and
+        // that the server never docked the ship.
+        PumpUntil(server, () => false, 200);
         // P382: the port now spawns one docked initial miner per side at its home
         // station at boot, so a peer also hears those docked NPCs' SHIP_STATUSs —
         // scope the "ordinary flight unaffected" check to the player's own ship.
-        var postLaunch = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
-        Assert.True(postLaunch.Count(s => s.StationId == -1 && s.State == ShipStatusMessage.StateFlying) >= 3,
-            $"expected at least 3 post-launch flying SHIP_STATUS(90) frames, saw {postLaunch.Count} own status(es)");
+        var allOwn = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
+        int firstFlying = allOwn.FindIndex(s => s.StationId == -1 && s.State == ShipStatusMessage.StateFlying);
+        Assert.True(firstFlying >= 0, $"no post-launch flying SHIP_STATUS(90), saw {allOwn.Count} own status(es)");
+        var postLaunch = allOwn.Skip(firstFlying).ToList();
         Assert.All(postLaunch,
             s => { Assert.Equal(-1, s.StationId); Assert.Equal(ShipStatusMessage.StateFlying, s.State); });
         Assert.Null(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);

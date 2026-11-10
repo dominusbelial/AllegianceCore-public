@@ -63,7 +63,8 @@ internal readonly struct ShipStatusContent : IEquatable<ShipStatusContent>
 public sealed partial class Server
 {
     /// <summary>
-    /// P991 — <c>broadcast.shipStatusChangeGate</c>, default OFF. When on, every
+    /// P991 — <c>broadcast.shipStatusChangeGate</c>, default ON since 2026-11-10 (rig A/B
+    /// b105/b106). When on, every
     /// <c>FM_S_SHIP_STATUS(90)</c> send becomes edge-triggered on the wire
     /// content: a side is told a ship's status only when that status differs
     /// from the copy last sent to that side — native's per-frame rule
@@ -102,16 +103,17 @@ public sealed partial class Server
     /// <summary>P991 — resolve <c>broadcast.shipStatusChangeGate</c> from config +
     /// <c>ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE</c> (env wins, strict
     /// grammar, same shape as the other <c>broadcast.*</c> switches) and print
-    /// the active value so a rig A/B is always labelled. Default OFF: the
-    /// periodic refreshes and every wire byte stay exactly as they are today.</summary>
+    /// the active value so a rig A/B is always labelled. Default ON since
+    /// 2026-11-10 (rig A/B b105/b106); OFF keeps the periodic refreshes and the
+    /// pre-P991 wire byte-for-byte.</summary>
     private void ResolveShipStatusChangeGate()
     {
         _broadcastShipStatusChangeGate = ResolveShipStatusChangeGateFlag(
-            _config.Broadcast?.ShipStatusChangeGate ?? false,
+            _config.Broadcast?.ShipStatusChangeGate ?? true,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE"));
         Console.WriteLine(_broadcastShipStatusChangeGate
             ? "[boot] broadcast.shipStatusChangeGate = true — SHIP_STATUS(90) is sent only when the side's copy changes (native FedSrv.CPP:3665-3719); the three periodic refreshes are off; a joining/reconnecting peer gets a full status dump"
-            : "[boot] broadcast.shipStatusChangeGate = false — periodic SHIP_STATUS(90) refreshes (own/teammate/cross-side) unchanged (today's wire)");
+            : "[boot] broadcast.shipStatusChangeGate = false — periodic SHIP_STATUS(90) refreshes (own/teammate/cross-side) unchanged (pre-P991 wire)");
     }
 
     internal static bool ResolveShipStatusChangeGateFlag(bool configured, string? environment)
@@ -360,6 +362,10 @@ public sealed partial class Server
     /// <summary>P991 — the gate's live entry counts, for the memory-bound tests
     /// (one entry per (side, subject) the server has told, plus this tick's
     /// changed-subject set). Inert in production.</summary>
+    /// <summary>P991 — the RESOLVED gate value (config + env), for tests that
+    /// assert on whichever status path is live.</summary>
+    internal bool ShipStatusChangeGateEnabled => _broadcastShipStatusChangeGate;
+
     internal (int BySide, int ChangedThisTick) StatusGateCounts()
         => (_lastStatusSentBySide.Count, _ownStatusChanged.Count);
 

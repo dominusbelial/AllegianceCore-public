@@ -111,7 +111,11 @@ public sealed class TeammateStatusStaggerTests
         Require.Artwork();
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;   // isolate the same-side PEER teammate refresh from the P366 NPC-status refresh
-        server.Boot(Config());
+        // (a) P991: pins the pre-P991 periodic teammate refresh (P604b stagger)
+        // itself, which only exists with the change gate OFF.
+        var cfg = Config();
+        (cfg.Broadcast ??= new()).ShipStatusChangeGate = false;
+        server.Boot(cfg);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
         const int peerCount = 6;
         var peers = BuildWorld(server, Core().HullTypes.Values.First(), peerCount);
@@ -144,7 +148,11 @@ public sealed class TeammateStatusStaggerTests
         Require.Artwork();
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;   // isolate from the P366 NPC-status refresh (would inflate the pair count)
-        server.Boot(Config());
+        // (a) P991: pins the pre-P991 periodic teammate refresh (P604b stagger)
+        // itself, which only exists with the change gate OFF.
+        var cfg = Config();
+        (cfg.Broadcast ??= new()).ShipStatusChangeGate = false;
+        server.Boot(cfg);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;
         const int peerCount = 4;
         var peers = BuildWorld(server, Core().HullTypes.Values.First(), peerCount);
