@@ -321,7 +321,7 @@ list in **reverse**.
   Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
 - **SHIP_STATUS change gate (P991)** — default-off `broadcast.shipStatusChangeGate` that makes every
   `FM_S_SHIP_STATUS(90)` send edge-triggered on the wire content, native's per-frame rule
-  (`FedSrv/FedSrv.CPP:3667-3704`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three
+  (`FedSrv/FedSrv.CPP:3665-3719`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three
   periodic refreshes (own ship 40 ticks, same-side teammates 100 ticks per recipient phase, cross-side seen
   enemies 100 ticks per pair phase) and adding native's join-time per-ship dump
   (`FedSrv/fsmission.cpp:4303-4323`). State is one content value per (side, subject) — native's

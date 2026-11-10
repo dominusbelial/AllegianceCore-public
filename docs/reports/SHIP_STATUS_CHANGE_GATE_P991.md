@@ -17,7 +17,7 @@ native's per-ship status dump.
 - **The native rule.** Native sends a ship's status to a side **only when it changed**: `SendShipUpdates` runs
   every other frame, walks every side × every ship, compares the side's `ShipStatus` with the copy it last sent
   (`if (*pss != *pssOld)`) and on a difference sends to the side group and copies the new value into the old one
-  (`FedSrv/FedSrv.CPP:3667-3704`). The complete picture reaches a player once, at join, from
+  (`FedSrv/FedSrv.CPP:3665-3719`). The complete picture reaches a player once, at join, from
   `CFSMission::SendMissionInfo` ("send the data on all known ships", one `SHIP_STATUS` per ship of the mission
   whose side id is `>= 0`, carrying the joining side's copy — `FedSrv/fsmission.cpp:4303-4323`).
 - **What the port did instead.** The same edges plus three periodic **refreshes** the flag now replaces: own ship
@@ -50,10 +50,10 @@ native's per-ship status dump.
 
 | Native rule | Where | What the port does |
 |---|---|---|
-| Ship updates go out on **odd frames only** (`nFrame % 2 == 0 → return`) | `FedSrv/FedSrv.CPP:3667-3670` | The port's cadence is per tick; P991 does not change cadence, it changes *which* statuses are built. |
+| Ship updates go out on **odd frames only** (`nFrame % 2 == 0 → return`) | `FedSrv/FedSrv.CPP:3665-3666` | The port's cadence is per tick; P991 does not change cadence, it changes *which* statuses are built. |
 | Per **side**, per **ship** in the mission, skip lobby ships (`GetSide()->GetObjectID() >= 0`) | `FedSrv/FedSrv.CPP:3676-3689` | Per (mission, side) grouping already exists in `BroadcastShipStates`; the gate uses the same population. |
 | **Send only when the side's copy changed**: `ShipStatus* pss = pfsShip->GetShipStatus(sid); ShipStatus* pssOld = pfsShip->GetOldShipStatus(sid); if (*pss != *pssOld) { … pfmShipStatus->status = *pssOld = *pss; }` | `FedSrv/FedSrv.CPP:3690-3699` | `ShipStatusContent` equality per (side, subject), committed once per subject per tick (`Server.ShipStatusGate.cs`). |
-| The send is addressed to the **side group**, `FM_GUARANTEED, FM_FLUSH` | `FedSrv/FedSrv.CPP:3700-3702` | A changed copy is sent to every recipient of that side (`StatusGateCrossSide` → whole audience; own-side paths already walk per recipient). |
+| The send is addressed to the **side group**, `FM_GUARANTEED, FM_FLUSH` | `FedSrv/FedSrv.CPP:3719` | A changed copy is sent to every recipient of that side (`StatusGateCrossSide` → whole audience; own-side paths already walk per recipient). |
 | One `ShipStatus` **per (ship, side)**, updated by events — `ShipStatusSpotted` (state/sector/hull/parent + the own side's `Detected` bit), `ShipStatusHidden` (unknown bit + `Detected` recompute), `ShipStatusDocked` (station/sector/state), `ShipStatusHullChange`, `ShipStatusStart/Launched/Exit/Restart` | `FedSrv/fsship.cpp:237-291`, `:293-340`, `:349-384`, `:405-435`, `:437-470`, `:471-521` | These are exactly the fields of `ShipStatusContent`, which is why every one of them fires through the comparison (see §3). `StateTime` is the one native field the port pins at 0 (`ShipStatus.cs:86,107`; "sim clock unused"), so it never forces a re-send. |
 | A joining player gets the full picture in `CFSMission::SendMissionInfo`: "send the data on all known ships", every ship of the mission with a real side, the joining side's copy, *"We know something about the ship, even if it is obsolete info"* | `FedSrv/fsmission.cpp:4303-4323` (function at `:4108`; called at `:736` for a player, `:2031` for a whole side) | `Server.SendStatusDumpToJoiner` — see §2.2. |
 | `SendMissionInfo` also runs for a whole side (`pfsPlayer == NULL` → the side group) | `FedSrv/fsmission.cpp:4106-4114`, `:2031` | Out of scope here (P991 dumps per joiner); noted for a later side-broadcast task. |
@@ -105,7 +105,7 @@ Resolved and printed at boot in `Server.Lifecycle.cs:182-187` via `ResolveShipSt
 
 ```
 [boot] broadcast.shipStatusChangeGate = false — periodic SHIP_STATUS(90) refreshes (own/teammate/cross-side) unchanged (today's wire)
-[boot] broadcast.shipStatusChangeGate = true — SHIP_STATUS(90) is sent only when the side's copy changes (native FedSrv.CPP:3667-3704); the three periodic refreshes are off; a joining/reconnecting peer gets a full status dump
+[boot] broadcast.shipStatusChangeGate = true — SHIP_STATUS(90) is sent only when the side's copy changes (native FedSrv.CPP:3665-3719); the three periodic refreshes are off; a joining/reconnecting peer gets a full status dump
 ```
 
 Also wired into `docker-compose.yml` + `docker/README.md` (the other experimental `broadcast.*`/`sim.*` switches
@@ -121,16 +121,16 @@ are listed there), and `docker compose config` validates.
   sector for a peer ship, the ship's own sector for an NPC) or **currently sees** (`SeenBySide(joinSide)`, the
   cross-side spotted copy).
 - **Unseen enemies are skipped on purpose**: native's per-side copy for a side that never saw a ship holds only
-  defaults (`ShipStatusStart` writes the ship's own side's copy, `FedSrv/fsship.cpp:423-435`), so there is nothing
+  defaults (`ShipStatusStart` writes the ship's own side's copy, `FedSrv/fsship.cpp:437-447`), so there is nothing
   to tell — and sending this port's last-known hull/sector would hand the side information it never had.
 - **Own ship**: already sent by the join burst immediately above, so it is not in the dump and, deliberately,
   **not recorded** in the gate — the first broadcast tick re-sends it (one 24-byte frame per join). That is the
   port's repair for a consumer that subscribes to its transport after the burst (the native managed strategies
   attach post-assignment, `StrategyBase.cs:90` — the reason `StatusRefreshTicks` existed); after it the
   incremental path has a delivered, current copy to compare against.
-- **State**: every dumped entry is recorded as delivered — the per-side copy and the per-(recipient, subject)
-  latch of the owning path — so nothing repeats until the content changes. Packets are chunked at
-  `FedPacket.MaxMessagesPerPacket`.
+- **State**: every dumped entry is recorded as delivered **to the joiner only** — the per-(recipient, subject)
+  latch of the owning path — so nothing repeats to it until the content changes. The side's committed copy is
+  **not** written (Claude's review fix, see §10). Packets are chunked at `FedPacket.MaxMessagesPerPacket`.
 - **Rotation re-seats** (`announceToMission: false`, not a resume) skip the dump: the migration latch sweep has
   already emptied the pair latches, so the ordinary first-send path re-delivers the picture without an
   O(peers × ships) burst inside the intermission.
@@ -365,13 +365,35 @@ no IL2026/IL3050, 17 505 936-byte binary) and are reproducible with the two comm
 
 ---
 
+## 10. Claude's review
+
+**Defect fixed — the join dump rewrote the sides' committed copies.** `SendStatusDumpToJoiner` stored every dumped
+status in `_lastStatusSentBySide[(shipSide, id)]`. For a seen enemy that key is the ENEMY's own-side copy, so the
+cross-side content (`Detected=false`) overwrote the own-side copy (`Detected=true` while seen); the next sweep saw a
+"change" and re-sent that enemy's status to its whole side. Every join therefore cost O(seen enemies × enemy side)
+redundant frames; at the rig's 400-bot start that is the O(P²)-per-join burst this flag exists to remove. Writing the
+right key would not have been correct either: re-stamping `SentTick` makes every other peer of the seeing side look
+"behind" to the cross-side repair, and an own-side copy newer than the last sweep would hide a change from the
+teammates. Fix: the dump records only the joiner's per-pair latches; the per-tick sweep alone maintains the committed
+copies. The live tests never saw it because the late-joiner unit test seeds the joiner without running the dump; a
+new seam (`TestSendStatusDumpToJoiner`) and test
+`Flag_on_join_dump_reaches_only_the_joiner_and_leaves_every_side_copy_alone` reproduce it (before the fix: 9 re-sent
+frames to the 3 enemy peers; after: 0).
+
+**Checked and correct.** Flag-off decision terms are the old ones verbatim, serial and parallel; the sweep and both
+builders run in the same step sequence in both broadcast orders, so a committed change always reaches its builder
+(a builder step that throws loses that tick's change, exactly as native updates `pssOld` at send time); the
+bots/MCP read `ClientWorld`, whose `Apply(ShipStatusMessage)` upserts, so a status that arrives before the
+teammate EXPORT is not lost; native citations re-grepped. Residual, documented: the "own ship re-sent on the first
+tick" repair applies to a fresh ship; a resumed peer gets its own status from the join burst only.
+
 ## Native intent
 
 Native's broadcast never re-sends knowledge a side already has. A ship's status is a per-(ship, side) record —
 `CFSShip::m_rgShipStatus` (`FedSrv/fsship.cpp:237-335`) — maintained by discrete events (spotted, hidden, docked,
 launched, hull change, restart, exit), and `SendShipUpdates` walks every side and every ship **every other frame**
 and emits a `SHIP_STATUS` only when that record differs from the copy the side was last sent
-(`FedSrv/FedSrv.CPP:3667-3704`), addressed to the whole side. The complete picture reaches a player exactly once,
+(`FedSrv/FedSrv.CPP:3665-3719`), addressed to the whole side. The complete picture reaches a player exactly once,
 at join, from `CFSMission::SendMissionInfo`'s "send the data on all known ships"
 (`FedSrv/fsmission.cpp:4303-4323`). There is no periodic status refresh anywhere in native. P991 makes the port
 follow that rule behind a default-off flag, keeps every event edge through the comparison (they are fields of the

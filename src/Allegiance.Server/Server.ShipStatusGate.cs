@@ -67,7 +67,7 @@ public sealed partial class Server
     /// <c>FM_S_SHIP_STATUS(90)</c> send becomes edge-triggered on the wire
     /// content: a side is told a ship's status only when that status differs
     /// from the copy last sent to that side — native's per-frame rule
-    /// (<c>FedSrv/FedSrv.CPP:3667-3704</c>: every other frame, per side, per
+    /// (<c>FedSrv/FedSrv.CPP:3665-3719</c>: every other frame, per side, per
     /// ship, <c>if (*pss != *pssOld)</c>, then send to the side group and copy
     /// into the old status). OFF keeps today's three periodic refreshes
     /// (<c>StatusRefreshTicks</c>, <c>TeammateStatusRefreshTicks</c>,
@@ -110,7 +110,7 @@ public sealed partial class Server
             _config.Broadcast?.ShipStatusChangeGate ?? false,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE"));
         Console.WriteLine(_broadcastShipStatusChangeGate
-            ? "[boot] broadcast.shipStatusChangeGate = true — SHIP_STATUS(90) is sent only when the side's copy changes (native FedSrv.CPP:3667-3704); the three periodic refreshes are off; a joining/reconnecting peer gets a full status dump"
+            ? "[boot] broadcast.shipStatusChangeGate = true — SHIP_STATUS(90) is sent only when the side's copy changes (native FedSrv.CPP:3665-3719); the three periodic refreshes are off; a joining/reconnecting peer gets a full status dump"
             : "[boot] broadcast.shipStatusChangeGate = false — periodic SHIP_STATUS(90) refreshes (own/teammate/cross-side) unchanged (today's wire)");
     }
 
@@ -258,7 +258,7 @@ public sealed partial class Server
     /// keeps the verbose diagnostic identical to the flag-off path;</item>
     /// <item>a still-visible ship whose copy changed (sector, hull, dock state)
     /// goes to the WHOLE side at once — native sends to
-    /// <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c> (<c>FedSrv.CPP:3700-3702</c>);</item>
+    /// <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c> (<c>FedSrv.CPP:3719</c>);</item>
     /// <item>a peer whose own latch is older than the committed copy (late joiner,
     /// reconnect, side switch) gets one — bounded by the same phase rotation
     /// (<see cref="CrossSideSweepCache.Recipients"/>) the flag-off catch-up uses,
@@ -372,7 +372,7 @@ public sealed partial class Server
     /// id is &gt;= 0, carrying THE JOINING SIDE'S copy — "We know something about
     /// the ship, even if it is obsolete info"). That dump is what makes the
     /// per-side change gate safe: the incremental per-frame send (native
-    /// <c>FedSrv.CPP:3667-3704</c>) only fires on a change, so the joiner's whole
+    /// <c>FedSrv.CPP:3665-3719</c>) only fires on a change, so the joiner's whole
     /// picture has to arrive once, at join.
     /// <para><b>Port shape.</b> The joiner's own ship's status is already sent by
     /// the join burst (<c>CompleteJoinAndLaunch</c>), so it is skipped here — and
@@ -387,13 +387,15 @@ public sealed partial class Server
     /// currently sees (<c>SeenBySide</c>, the cross-side spotted copy). An unseen
     /// enemy is SKIPPED: native's copy for a side that has never seen a ship holds
     /// only defaults (<c>ShipStatusStart</c> writes the ship's own side's copy,
-    /// <c>FedSrv/fsship.cpp:423-435</c>), so there is nothing to tell and sending
+    /// <c>FedSrv/fsship.cpp:437-447</c>), so there is nothing to tell and sending
     /// this port's last-known copy would leak hull/sector the side never had.
     /// </para>
-    /// <para><b>State.</b> Every shipped entry is recorded as delivered — the
-    /// per-side copy in <c>_lastStatusSentBySide</c> and the per-(recipient,
-    /// subject) latch of whichever path owns that ship (teammate / same-side NPC /
-    /// cross-side) — so nothing is re-sent until the content really changes.
+    /// <para><b>State.</b> Every shipped entry is recorded as delivered to THIS
+    /// peer only — the per-(recipient, subject) latch of whichever path owns that
+    /// ship (teammate / same-side NPC / cross-side) — so nothing is re-sent to it
+    /// until the content really changes. The side's committed copy
+    /// (<c>_lastStatusSentBySide</c>) is never written here: it is what the whole
+    /// side was last sent, and only the per-tick sweep maintains it.
     /// O(ships) once per join, never on the per-tick path.</para>
     /// </summary>
     private void SendStatusDumpToJoiner(ConnectionId to, Mission mission, short shipId, LiveShip live)
@@ -442,7 +444,16 @@ public sealed partial class Server
             {
                 continue;                                    // not known to the joiner's side — nothing to say
             }
-            _lastStatusSentBySide[(shipSide, ship.Id)] = (content, TickIndex);
+            // P991 review — the dump is per JOINER: it records only the joiner's
+            // per-pair latch above and never touches the side's committed copy.
+            // Writing `(shipSide, id)` here stored a seen enemy's CROSS-side copy
+            // under the enemy's OWN side key (Detected=false over the own copy's
+            // true), so the next sweep re-sent that enemy's status to its whole
+            // side on every join; and re-stamping any committed copy's SentTick
+            // makes every other peer of the side look "behind" to the cross-side
+            // repair. The committed copy is what the side was last sent, which
+            // the per-tick sweep alone maintains (pinned by
+            // Flag_on_join_dump_reaches_only_the_joiner_and_leaves_every_side_copy_alone).
             messages.Add(StatusMessage(ship.Id, content).Encode());
         }
         for (int i = 0; i < messages.Count; i += FedPacket.MaxMessagesPerPacket)

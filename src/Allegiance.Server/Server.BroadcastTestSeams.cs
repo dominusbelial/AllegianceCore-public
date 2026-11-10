@@ -375,6 +375,14 @@ public sealed partial class Server
     /// does before them. Inert in production.</summary>
     internal void TestSweepShipDetection() => SweepShipDetection();
 
+    /// <summary>P991 review test seam — run the join-time status dump for a seeded
+    /// peer exactly as <c>CompleteJoinAndLaunch</c> does. Inert in production.</summary>
+    internal void TestSendStatusDumpToJoiner(ConnectionId to)
+    {
+        var live = _peerShips[to];
+        SendStatusDumpToJoiner(to, live.Ship.Mission!, live.Ship.Id, live);
+    }
+
     /// <summary>P983 test seam — emit the diagnostic's report exactly as the
     /// profiler window does (console + CSV when a path is configured). Inert in
     /// production.</summary>

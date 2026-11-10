@@ -861,7 +861,7 @@ public sealed class BroadcastConfig
     /// status a side would be told differs from the copy it was told last, per
     /// (side, ship) — native <c>SendShipUpdates</c>, every other frame, per side,
     /// per ship, <c>if (*pss != *pssOld)</c> then send to the side group and copy
-    /// into the old status (<c>FedSrv/FedSrv.CPP:3667-3704</c>); a joining or
+    /// into the old status (<c>FedSrv/FedSrv.CPP:3665-3719</c>); a joining or
     /// reconnecting peer gets the full per-ship dump native sends in
     /// <c>CFSMission::SendMissionInfo</c> (<c>FedSrv/fsmission.cpp:4303-4323</c>).
     /// <para>Default <b>false</b>: the port's three periodic refreshes stay on and

@@ -365,7 +365,7 @@ P991's `SHIP_STATUS(90)` change gate is default off. Set
 `broadcast.shipStatusChangeGate` in the mounted server JSON, or
 `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=1` before starting Compose, to send
 a ship's status to a side only when it differs from the copy that side already
-has (native's rule, `FedSrv/FedSrv.CPP:3667-3704`) instead of the port's three
+has (native's rule, `FedSrv/FedSrv.CPP:3665-3719`) instead of the port's three
 periodic refreshes. The environment override accepts `0`/`1` or `false`/`true`;
 empty preserves JSON. Off is byte-identical to the pre-P991 wire. See
 [the P991 measurements](../docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md).

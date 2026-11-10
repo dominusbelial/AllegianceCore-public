@@ -12,7 +12,7 @@ namespace Allegiance.Core.Tests;
 /// <summary>
 /// P991 — <c>broadcast.shipStatusChangeGate</c>: every <c>FM_S_SHIP_STATUS(90)</c>
 /// send becomes native's per-side change gate
-/// (<c>FedSrv/FedSrv.CPP:3667-3704</c>: every other frame, per side, per ship,
+/// (<c>FedSrv/FedSrv.CPP:3665-3719</c>: every other frame, per side, per ship,
 /// <c>if (*pss != *pssOld)</c> → send to the side group, then copy into the old
 /// status), with native's join-time per-ship dump
 /// (<c>FedSrv/fsmission.cpp:4303-4323</c>) replacing the port's three periodic
@@ -415,6 +415,47 @@ public sealed class P991ShipStatusChangeGateTests
         foreach (var id in SideOf(f, 1)) Assert.Contains(id, learned);      // the seen enemies
         // And nothing was repeated on the way there.
         Assert.All(f.Statuses.Where(s => s.Peer == conn.Value).GroupBy(s => s.ShipId), g => Assert.Single(g));
+    }
+
+    /// <summary>
+    /// P991 review — the join dump tells the JOINER and nobody else. It must not
+    /// rewrite any side's committed copy: writing the cross-side copy of a seen
+    /// enemy under the ENEMY's side key clobbered that side's own-side copy
+    /// (Detected=true vs the cross copy's false), so the next sweep re-sent the
+    /// enemy's status to its whole side on every join; and re-stamping a committed
+    /// copy marks every other peer of the side as "behind". After the dump,
+    /// existing peers of both sides receive nothing.
+    /// </summary>
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void Flag_on_join_dump_reaches_only_the_joiner_and_leaves_every_side_copy_alone()
+    {
+        Require.Artwork();
+        using var f = Boot(gate: true);
+        foreach (var (_, ship, _) in f.Peers)
+            if (ship.SideId == 1) ship.SideVisibility.SetSideVisibility(0, true);   // side 0 sees side 1 → side 1 is Detected
+        f.Run(3);                                          // every copy committed and delivered
+
+        var joiner = new Ship(20901, f.Peers[0].Ship.HullType, new Vector3(9100, 0, 0), Vector3.Zero, Orientation.Identity)
+            { SideId = 0 };
+        f.Server.TestMission!.PlaceShip(joiner, f.Home);
+        joiner.SideVisibility.SetSideVisibility(0, true);
+        var conn = new ConnectionId(998);
+        f.Server.TestSeedPeers(f.Peers.Append((conn, joiner, f.Home)).ToList());
+
+        int before = f.Statuses.Count;
+        f.Run(3, beforeTick: i => { if (i == 0) f.Server.TestSendStatusDumpToJoiner(conn); });
+        var after = f.Statuses.Skip(before).ToList();
+
+        // The joiner learned every seen enemy (from the dump, before any catch-up).
+        var toJoiner = after.Where(s => s.Peer == conn.Value).Select(s => s.ShipId).ToHashSet();
+        foreach (var id in SideOf(f, 1)) Assert.Contains(id, toJoiner);
+        // Existing peers: only the joiner's own ship is news to them (a new teammate
+        // for side 0; side 1 does not see it). Nothing about the existing ships.
+        var existing = f.Peers.Select(p => p.Conn.Value).ToHashSet();
+        var leaked = after.Where(s => existing.Contains(s.Peer) && s.ShipId != joiner.Id).ToList();
+        Assert.True(leaked.Count == 0,
+            "existing peers re-sent: " + string.Join(", ", leaked.Select(s => $"peer {s.Peer} <- ship {s.ShipId} @{s.Tick}")));
     }
 
     // ── 5. the state is bounded ──────────────────────────────────────────────
