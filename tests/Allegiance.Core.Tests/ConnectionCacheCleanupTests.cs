@@ -68,6 +68,7 @@ public class ConnectionCacheCleanupTests
             && c.CrossSideExportSent == 0
             && c.LastTeammateStatusTick == 0
             && c.NextTeammateRefreshTick == 0
+            && c.StatusGateBySide == 0   // P991 gate (default ON): per-(side, subject) copies must drain with the subjects
             && c.ChatBudgets == 0;
     }
 
@@ -112,8 +113,16 @@ public class ConnectionCacheCleanupTests
                 // collections.
                 Assert.True(before.LastStatusSector >= 1 && before.LastStatusTick >= 1,
                     $"cycle {cycle}: status caches never populated ({before})");
-                Assert.True(before.NextTeammateRefreshTick >= 1,
-                    $"cycle {cycle}: per-recipient teammate-refresh phase never populated ({before})");
+                // (b) P991: with the change gate ON (the default) the periodic
+                // teammate refresh — and its per-recipient phase cache — is off by
+                // design; the connection-scoped state it replaces is the gate's
+                // per-(side, subject) copy, so assert THAT grew (and drains below).
+                if (server.ShipStatusChangeGateEnabled)
+                    Assert.True(before.StatusGateBySide >= 1,
+                        $"cycle {cycle}: SHIP_STATUS gate copies never populated ({before})");
+                else
+                    Assert.True(before.NextTeammateRefreshTick >= 1,
+                        $"cycle {cycle}: per-recipient teammate-refresh phase never populated ({before})");
                 Assert.True(before.TeammateExportSent >= 1 && before.PlayerInfoSent >= 1,
                     $"cycle {cycle}: teammate caches never populated ({before})");
                 Assert.True(before.TeammateLoadoutVersionSent >= 1 || before.TeammateLoadoutCache >= 1,

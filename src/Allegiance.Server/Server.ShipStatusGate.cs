@@ -362,6 +362,10 @@ public sealed partial class Server
     /// <summary>P991 — the gate's live entry counts, for the memory-bound tests
     /// (one entry per (side, subject) the server has told, plus this tick's
     /// changed-subject set). Inert in production.</summary>
+    /// <summary>P991 — the RESOLVED gate value (config + env), for tests that
+    /// assert on whichever status path is live.</summary>
+    internal bool ShipStatusChangeGateEnabled => _broadcastShipStatusChangeGate;
+
     internal (int BySide, int ChangedThisTick) StatusGateCounts()
         => (_lastStatusSentBySide.Count, _ownStatusChanged.Count);
 
