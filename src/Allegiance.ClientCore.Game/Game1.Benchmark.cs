@@ -107,6 +107,9 @@ public sealed partial class Game1
     private bool _benchmarkApplied, _benchOwnsTelemetry;
     private bool _benchOwnPrediction, _benchRemotePrediction;
     private bool _benchExitAfterDraw, _benchMouseDown, _benchWasApplied, _benchOriginalDynamic;
+    /// <summary>P989 — the deterministic replay-frame capture has already written its
+    /// PNG this run (the same frame is captured once per process).</summary>
+    private bool _benchFrameShotDone;
     private float _benchmarkEffectsDensity = 1, _benchmarkViewDistance = 6000;
     private Rectangle _benchApplyButton;
     public bool BenchmarkFailed { get; private set; }

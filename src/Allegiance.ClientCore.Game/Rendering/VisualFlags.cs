@@ -37,6 +37,10 @@ public enum VisualFlagKind
 /// <param name="MaxValue">Numeric clamp ceiling.</param>
 /// <param name="Step">Numeric step used by the options page's raise/lower rows.</param>
 /// <param name="Hotkey">Menu hotkey for a toggle row ('\0' = none).</param>
+/// <param name="RequiresKey">P989 — another flag this one DEPENDS on. The flag
+/// itself is always parsed/persisted; when its dependency resolves off (or the
+/// device refused it) the enhancement is a no-op at its use site and the
+/// options row says so. Table data, so no per-flag plumbing.</param>
 public sealed record VisualFlag(
     string Key,
     string Label,
@@ -47,7 +51,8 @@ public sealed record VisualFlag(
     float MinValue = 0f,
     float MaxValue = 0f,
     float Step = 0f,
-    char Hotkey = '\0');
+    char Hotkey = '\0',
+    string? RequiresKey = null);
 
 /// <summary>
 /// P979 — the table of visual-enhancement flags. Keep it a TABLE: every future
@@ -85,6 +90,15 @@ public static class VisualFlags
     /// the single output transform (comparison switch; only meaningful when
     /// <see cref="HdrPipelineKey"/> is on).</summary>
     public const string HdrAcesKey = "space.hdrAces";
+
+    /// <summary>P989 — the FS2-Open-flavoured "sim" colour grade: the filmic
+    /// (ACES-approximate) curve at exposure 0.9 with world saturation 0.85 and a
+    /// restrained bloom (threshold 1.2 linear, contribution 0.08). It DRIVES the
+    /// existing single output transform — no new pass — and is a no-op unless
+    /// <see cref="HdrPipelineKey"/> really produced the float scene target.
+    /// Starting values are <c>docs/reports/FS2OPEN_STUDY_P978.md</c> §5.3; they
+    /// are OUR scene's tuning, not SCP's content-unit constants.</summary>
+    public const string SimPaletteKey = "space.simPalette";
 
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
@@ -128,7 +142,18 @@ public static class VisualFlags
             "ACES output curve",
             "compare the filmic curve with neutral",
             VisualFlagKind.Toggle,
-            Hotkey: 'A'),
+            Hotkey: 'A',
+            RequiresKey: HdrPipelineKey),
+        // P989 — the sim grade rides the SAME output transform (and the same
+        // bloom pass) the HDR foundation built, so it is a toggle, not a new
+        // renderer. 'P' is the one free Visuals-page hotkey left.
+        new VisualFlag(
+            SimPaletteKey,
+            "Sim palette",
+            "filmic world grade, restrained bloom",
+            VisualFlagKind.Toggle,
+            Hotkey: 'P',
+            RequiresKey: HdrPipelineKey),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -172,6 +197,10 @@ public sealed class VisualOptions
 
     /// <summary>P984 — the output transform uses ACES instead of neutral.</summary>
     public bool HdrAces => IsOn(VisualFlags.HdrAcesKey);
+
+    /// <summary>P989 — the sim colour grade is requested (no-op unless the HDR
+    /// pipeline really produced the float scene target: <see cref="SimPalette"/>).</summary>
+    public bool SimPalette => IsOn(VisualFlags.SimPaletteKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)

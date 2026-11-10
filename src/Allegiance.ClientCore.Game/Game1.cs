@@ -417,8 +417,31 @@ public sealed partial class Game1 : Game
     private bool _bloomEnabled;   // Bloom setting (default Off; --bloom on)
     private bool _softEnabled;    // soft particles (default On in Enhanced; --soft off)
     /// <summary>P984 — the output curve of the single HDR output transform,
-    /// resolved from <c>visuals.space.hdrAces</c> at startup (neutral by default).</summary>
+    /// resolved from <c>visuals.space.hdrAces</c> at startup (neutral by default).
+    /// P989 — kept in sync with <see cref="_grade"/>; the grade is what the render
+    /// path reads (curve + exposure + world saturation + bloom knobs).</summary>
     private Rendering.HdrCurve _hdrCurve = Rendering.HdrCurve.Neutral;
+    /// <summary>P989 — the look this frame's output transform and bloom use. It is
+    /// P984's picture unless <c>visuals.space.simPalette</c> is on AND the float HDR
+    /// scene path really exists (<see cref="Rendering.SimPalette.Applies"/>), so the
+    /// dependency is resolved once, in <see cref="SyncHdrGrade"/>.</summary>
+    private Rendering.HdrGrade _grade = Rendering.HdrGrade.Native(Rendering.HdrCurve.Neutral);
+    /// <summary>P989 — resolve this frame's grade from the live flags + the proven
+    /// HDR path, and hand the bloom knobs to the existing bloom processor. Called
+    /// once per rendered frame in flight and in the showcase, so an options-page
+    /// toggle applies on the next frame.
+    /// </summary>
+    private void SyncHdrGrade()
+    {
+        bool hdr = HdrScene;
+        _grade = Rendering.SimPalette.Grade(_visuals.SimPalette, hdr, _visuals.HdrAces);
+        _hdrCurve = _grade.Curve;
+        if (_post?.Bloom is { } bloom)
+        {
+            bloom.BrightPassThreshold = _grade.BloomThreshold;
+            bloom.BloomScale = _grade.BloomContribution;
+        }
+    }
     /// <summary>P984 — the HDR scene path is live THIS frame: the flag asked for it
     /// and the float scene target + output transform both exist. Everything
     /// downstream reads this one property (never the raw flag), so a backend that
