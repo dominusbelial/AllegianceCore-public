@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.Training;
 using Allegiance.ClientCore.Session;
 using Allegiance.SinglePlayer;
@@ -215,6 +216,14 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
         if (File.Exists(Path.Combine(output, "cancel"))) throw new OperationCanceledException("Window proof cancelled by its owner.");
         if (_watch.Elapsed.TotalSeconds > 1200) throw new TimeoutException($"M{missionId} stalled at {_lastGoal}");
         if (!_seeded) { Get<HudSettings>("_hudSettings").Style = style; _seeded = true; }
+        else
+        {
+            // P988: named test styles must select the actual bound renderer,
+            // not merely change a preference while another skin draws.
+            var active = (IHudSkinRenderer)typeof(Game1).GetProperty("ActiveHud", Hidden)!.GetValue(game)!;
+            Check(active.Id == (style == HudStyle.Classic ? HudSkinIds.Classic : HudSkinIds.Modern),
+                "Requested training skin is not the active renderer.");
+        }
         if (Get<TrainingSession?>("_trainingSession") is { Started: true } session
             && Get<TrainingHost?>("_embeddedHost") is { } host)
         {

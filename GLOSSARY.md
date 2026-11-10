@@ -765,6 +765,17 @@ list in **reverse**.
   `Style` as a renderer adapter, and saves only the canonical id. Report:
   `docs/reports/SKINS_1B_IDS_MIGRATION_P981.md`.
 
+- **Runtime HUD skin switching (P988)** — `src/Allegiance.ClientCore.Game/Rendering/Skins/IHudSkinRenderer.cs`
+  and `src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinRenderer.cs` adapt the unchanged Classic/Modern
+  drawing code; `src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinResources.cs` binds the existing frame
+  passes and `src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinSwitcher.cs` owns preloaded active/pending
+  references. Shift+F12 and graphics row 6 queue a switch; Game1 publishes it
+  after Update, then saves `Skin`. Bound legacy `Style`/`Skin` assignments
+  queue through the same owner without frame polling. Training restores the active and persisted
+  pre-lesson choice. Proof: `tools/p988-skin-switch-proof/`;
+  tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/HudSkinSwitchingTests.cs`;
+  report: `docs/reports/SKINS_1C_SWITCHING_P988.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

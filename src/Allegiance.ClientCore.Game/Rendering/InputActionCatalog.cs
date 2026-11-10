@@ -336,6 +336,9 @@ public static class InputActionCatalog
         // P836 — Modern-HUD density level cycle (port extension; native has no
         // HUD levels — Classic ignores it and keeps native '.' = TK_CycleRadar).
         // Plain '0' (D0) is free: it is only used as Ctrl+0 chords elsewhere.
+        // Port presentation action: native binds only Ctrl+F12 (clock reset);
+        // Shift+F12 is free in its table and both port presets inherit this chord.
+        new("CycleHudSkin", "CAMERA / VIEW", "Cycle HUD skin (Classic/Modern)", S(Keys.F12), null),
         new("CycleHudLevel", "CAMERA / VIEW", "Cycle Modern HUD level (Full/Tactical/Combat/Cinematic) [P836]", K(Keys.D0), null),
         // These TKs have no keyboard defaults in Artwork/defaultinputmap.mdl.
         new("ViewMissile", "CAMERA / VIEW", "Toggle missile view [TK_ViewMissile]", U(), null),
