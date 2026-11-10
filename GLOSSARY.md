@@ -332,6 +332,18 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastBuffers.cs`; env `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE`.
   Flag off is byte-identical to the pre-P991 wire (pinned).
   Report: `docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md`.
+- **Gunfire traffic study (P992)** — why the port relays every shot and hit and what a change would save:
+  `PROJECTILE_INSTANCE(12)` is one 58-byte frame per shot per peer in the shooter's sector (native has no such
+  server→client message: its clients fire from the `stateM` fire bits their ship updates carry), `PROJECTILE_HULL_HIT(213)`
+  is one 48-byte frame per landed round to the same audience, and the fire relay also drags a
+  `SINGLE_SHIP_UPDATE(78)` 0.5 s pose refresh plus a first-sight `EXPORT(26)`/`SHIP_STATUS(90)` — 112 B per shot per
+  recipient, 33 % of egress on a rig-shaped fixture. Send sites `src/Allegiance.Server/Server.Combat.cs`
+  (`BroadcastProjectileInstance`, `BroadcastProjectileHullHit`), audience `src/Allegiance.Server/Server.FireAudience.cs`
+  (`BroadcastShipEmission`, `EnsureEmissionPose`), consumers `src/Allegiance.ClientCore/State/ClientWorld.cs` +
+  `src/Allegiance.ClientCore.Game/Game1.Rendering.cs` / `Rendering/HullHitSparkParticles.cs` (the 5 900 u
+  `ProjectileVisibility` radius) and `tools/allegiance-mcp/BotManager.cs` (own-hit credit from 213). Offline
+  calculator + loopback fixture: `tests/Allegiance.Core.Tests/P992GunfireTrafficTests.cs`.
+  Report: `docs/reports/GUNFIRE_TRAFFIC_P992.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry
