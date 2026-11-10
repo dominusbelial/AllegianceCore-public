@@ -282,7 +282,7 @@ New (both files in `tests/Allegiance.Core.Tests/`, `[Collection("LiveNetwork")]`
 
 | # | Test | Tier |
 |---|---|---|
-| 1 | `P991FlagOffWirePinTests.Flag_off_wire_is_byte_identical_to_the_pinned_base_commit_transcript` — 24 peers, 2 sides, an NPC, a probe/mine, 40 replayed ticks of the whole broadcast suffix; SHA-256 over every captured frame (tick, recipient, coalesce key, guaranteed, length, bytes) + frame and byte totals | Fast |
+| 1 | `P991FlagOffWirePinTests.Flag_off_wire_is_byte_identical_to_the_pinned_base_commit_transcript` — 24 peers, 2 sides, an NPC, a probe/mine, 101 replayed ticks (every refresh fires; review-extended from 40) of the whole broadcast suffix; SHA-256 over every captured frame (tick, recipient, coalesce key, guaranteed, length, bytes) + frame and byte totals | Fast |
 | 2 | `P991FlagOffWirePinTests.Flag_off_serial_and_parallel_builds_emit_the_same_bytes` — P603's byte identity re-pinned around the shared content encoders | Fast |
 | 3 | `Flag_on_sends_a_stationary_teammate_npc_and_enemy_status_exactly_once` — 12 ticks, every (recipient, subject) pair exactly once on tick 0, per-recipient population counted | Fast |
 | 4 | `Flag_off_still_refreshes_the_same_stationary_world` — the two arms really differ on the wire | Fast |
@@ -296,9 +296,12 @@ New (both files in `tests/Allegiance.Core.Tests/`, `[Collection("LiveNetwork")]`
 | 12 | `Flag_grammar_is_the_same_as_the_other_broadcast_switches` (7 cases) + `Invalid_environment_is_rejected` | Fast |
 
 The flag-off pin (#1) was generated on **the base commit's build** of the same file (the file uses only seams that
-exist there) and then on this tree: both produce frame count `7459`, byte total `459922` and digest
+exist there) and then on this tree: (40-tick version) both produced frame count `7459`, byte total `459922` and digest
 `AB03 2045 3760 ABDC C600 5B79 9F06 AC88 9320 35F8 2DCC 7575 FAD6 0CF2 23EB AE25`. That is the "pin it"
 requirement: the flag-off wire is not merely argued to be unchanged, it is the base commit's bytes.
+Claude's review extended the replay to 101 ticks (the 40-tick tape never reached the own-ship refresh at tick 40)
+and re-ran it on a clean `60390d68` worktree and on this branch: both produce `18131` frames, `1125908` bytes,
+digest `C0A5 50F3 0458 9ED1 2761 004E 4650 7248 2B50 82EB 2FD5 809A D3B4 B0D8 3146 F7BF`, serial = parallel.
 
 Test counts, gate and the showcase runs: **§9** — new tests **19/19 × 3 runs**, 0 skipped; fast suite
 13,947 tests with four non-task failures, each isolated and accounted for.

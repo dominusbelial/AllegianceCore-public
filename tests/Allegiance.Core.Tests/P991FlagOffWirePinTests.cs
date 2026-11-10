@@ -18,7 +18,10 @@ namespace Allegiance.Core.Tests;
 /// <para><b>How the pin was made.</b> This file uses only seams that exist in the
 /// pre-P991 tree (no P991 test seam), so the identical scenario was replayed on
 /// the base commit and on this tree; the digest below is the BASE build's value
-/// and both runs agree. It double-pins the two flag-off invariants: the serial
+/// and both runs agree. Claude's review stretched the replay from 40 to 101 ticks
+/// so all three periodic refreshes fire inside it (own ship every 40 ticks: 40 and
+/// 80; teammate and cross-side every 100 ticks, every phase slot) and re-pinned
+/// the digest from a clean base-commit (60390d68) worktree. It double-pins the two flag-off invariants: the serial
 /// and the parallel builder hash to the same value (P603's byte-identity, re-pinned
 /// around the shared status-content encoders P991 introduced).</para>
 /// </summary>
@@ -28,9 +31,9 @@ public sealed class P991FlagOffWirePinTests
     // Base-commit digest of the scenario below (SHA-256 over every captured
     // frame: tick, recipient, coalesce key, guaranteed, length, bytes), plus the
     // frame/byte totals. A change here means the flag-off wire changed.
-    private const string OffDigest = "AB0320453760ABDCC6005B799F06AC88932035F82DCC7575FAD60CF223EBAE25";
-    private const int OffFrames = 7459;
-    private const int OffBytes = 459922;
+    private const string OffDigest = "C0A550F304589ED12761004E465072482B5082EB2FD5809AD3B4B0D83146F7BF";
+    private const int OffFrames = 18131;
+    private const int OffBytes = 1125908;
 
     private sealed record Frame(uint Tick, uint Peer, int Key, bool Guaranteed, byte[] Bytes);
 
@@ -62,7 +65,7 @@ public sealed class P991FlagOffWirePinTests
             for (short side = 0; side < 2; side++) asteroid.SideVisibility.SetSideVisibility(side, true);
 
         var random = new Random(991);
-        var tape = Enumerable.Range(0, 40).Select(tick => peers.Select((p, i) => new
+        var tape = Enumerable.Range(0, 101).Select(tick => peers.Select((p, i) => new
         {
             Position = new Vector3(i * 13 + tick * (i % 3 + 1), (i % 7) * 100, tick * 2),
             Yaw = (float)random.NextDouble(),
