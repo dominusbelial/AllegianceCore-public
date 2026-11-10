@@ -8037,3 +8037,11 @@ of the fixed 480 s observation window, i.e. the already-recorded P700 arrival-ti
 480.1 seconds", the row above), not a parking violation and not a difference between the arms. Both rechecks pass.
 The two-match 2-side showcase `P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch`
 (30 bots, kills/pods/relaunch/mining/research) passes with the gate **ON** in 4 m 33 s.
+
+### P991 review sweep (Claude, Core.Tests `Tier=Fast`, run alongside `tools/build-tools.sh`)
+
+| Test | 3x alone | Classification |
+|---|---|---|
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 3/0, 1/2, 3/0 (theory cases) | Existing floating deadline-boundary family (entries above); timer code unchanged, gate off in this fixture. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). |
+| `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy`, `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 3/3 pass each | Load-only in a sweep that shared the host with the tools build; none touches SHIP_STATUS with the gate on (all default off, wire pinned byte-identical). |
