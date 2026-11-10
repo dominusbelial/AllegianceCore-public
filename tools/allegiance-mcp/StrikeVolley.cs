@@ -207,6 +207,17 @@ internal static class StrikeVolley
         IReadOnlyList<Loadout?> loadouts, int hullsAvailable, double window = VolleyWindowSeconds,
         double survivalMargin = 0, int losses = 0, int defenders = 0, double landingShare = 1)
     {
+        var requirement = ComputeCore(station, loadouts, hullsAvailable, window, survivalMargin, losses, defenders, landingShare);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "VolleyRequirement",
+                new { station, loadouts, hullsAvailable, window, survivalMargin, losses, defenders, landingShare }, requirement);
+        return requirement;
+    }
+
+    private static Requirement ComputeCore(StationProfile station,
+        IReadOnlyList<Loadout?> loadouts, int hullsAvailable, double window,
+        double survivalMargin, int losses, int defenders, double landingShare)
+    {
         // A mount only counts when the core's matrix says it damages BOTH the
         // station's shield and (after the shield is down) its armor — the same
         // gate ResearchSiegeNeedsResupply uses for a sustainable station weapon.
@@ -357,9 +368,11 @@ internal static class StrikeVolley
     /// attacks alone. Pure so the finale staging rule is unit-testable.</summary>
     internal static bool ShouldRelease(double now, double? goTime, bool inCommittedWave, bool alreadyReleased)
     {
-        if (alreadyReleased) return true;
-        if (!inCommittedWave || goTime is not { } go) return false;
-        return now >= go;
+        bool release = alreadyReleased || inCommittedWave && goTime is { } go && now >= go;
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "ShouldRelease",
+                new { now, goTime, inCommittedWave, alreadyReleased }, new { release });
+        return release;
     }
 
     /// <summary>Convenience for the caller: the station a real core type describes.</summary>

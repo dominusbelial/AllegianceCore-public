@@ -107,8 +107,14 @@ internal sealed class ResearchTactics
     /// either kind present to meet the requirement on their own.</summary>
     internal static bool StagingReady(int atRally, int visibleRequired, int wolvesReady, int wolvesAssigned,
         int required, double waitedSeconds)
-        => (atRally >= visibleRequired && wolvesReady == wolvesAssigned)
-           || (atRally + wolvesReady >= required && waitedSeconds >= LoneWolfGraceSeconds);
+    {
+        bool ready = (atRally >= visibleRequired && wolvesReady == wolvesAssigned)
+            || (atRally + wolvesReady >= required && waitedSeconds >= LoneWolfGraceSeconds);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchTactics", "StagingReady",
+                new { atRally, visibleRequired, wolvesReady, wolvesAssigned, required, waitedSeconds }, new { ready });
+        return ready;
+    }
 
     /// <summary>P801 — how long an aborted station is skipped before the wave
     /// considers it again.</summary>
@@ -742,7 +748,7 @@ internal sealed class ResearchTactics
     /// 3. then by distance from the strike group's centroid, then id.
     /// SC9 re-runs this at every wave boundary; SC7's "commit, don't flick" keeps
     /// the pick stable while a wave is in flight.</summary>
-    private static Target? PickStrikeStation(Target[] enemyStations, Pilot[] strikePilots,
+    internal static Target? PickStrikeStation(Target[] enemyStations, Pilot[] strikePilots,
         double time = double.NegativeInfinity, IReadOnlyDictionary<short, double>? abandoned = null)
     {
         if (enemyStations.Length == 0) return null;
@@ -764,12 +770,24 @@ internal sealed class ResearchTactics
                 local.Average(p => p.Position.Y), local.Average(p => p.Position.Z));
             return (s.Position - centroid).LengthSquared();
         }
-        return enemyStations
+        var picked = enemyStations
             .OrderBy(s => s.Garrison ? 1 : 0)
             .ThenByDescending(s => s.Damaged)
             .ThenBy(Distance)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchTactics", "StrikeStation",
+                new
+                {
+                    time, abandoned,
+                    stations = enemyStations.Select(s => new { s.Id, s.Damaged, s.Garrison, s.Sector,
+                        position = new[] { s.Position.X, s.Position.Y, s.Position.Z } }).ToArray(),
+                    pilots = strikePilots.Select(p => new { p.Id, p.Sector,
+                        position = new[] { p.Position.X, p.Position.Y, p.Position.Z } }).ToArray(),
+                },
+                new { targetId = picked?.Id });
+        return picked;
     }
 
     /// <summary>SC7 — pick the strike wave's rally point: the aleph (warp) that
@@ -778,16 +796,30 @@ internal sealed class ResearchTactics
     /// fall back to any aleph into the target sector; finally to a friendly
     /// station in a sector bordering the target. Null only when no border warp or
     /// friendly station exists — the wave attacks directly in that case.</summary>
-    private static Target? ChooseRally(Target[] friendlyStations, Target[] targets, short strikeSector)
+    internal static Target? ChooseRally(Target[] friendlyStations, Target[] targets, short strikeSector)
     {
         var alephs = targets.Where(t => t.Type == IgcObjectType.Warp && t.DestinationSector == strikeSector).ToArray();
         var controlled = alephs.Where(a => friendlyStations.Any(f => f.Sector == a.Sector)).OrderBy(a => a.Id).FirstOrDefault();
-        if (controlled is not null) return controlled;
-        // No aleph from a sector we hold: prefer one whose sector has no observed
-        // enemy station, so the group doesn't hold in enemy space. (A friendly
-        // station is not used as a rally: goto a friendly station means docking.)
-        var enemySectors = targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Station)
-            .Select(t => t.Sector).ToHashSet();
-        return alephs.OrderBy(a => enemySectors.Contains(a.Sector) ? 1 : 0).ThenBy(a => a.Id).FirstOrDefault();
+        Target? rally;
+        if (controlled is not null) rally = controlled;
+        else
+        {
+            // No aleph from a sector we hold: prefer one whose sector has no observed
+            // enemy station, so the group doesn't hold in enemy space. (A friendly
+            // station is not used as a rally: goto a friendly station means docking.)
+            var enemySectors = targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Station)
+                .Select(t => t.Sector).ToHashSet();
+            rally = alephs.OrderBy(a => enemySectors.Contains(a.Sector) ? 1 : 0).ThenBy(a => a.Id).FirstOrDefault();
+        }
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchTactics", "Rally",
+                new
+                {
+                    strikeSector,
+                    friendlyStations = friendlyStations.Select(t => new { t.Id, t.Type, t.Sector, t.Friendly }).ToArray(),
+                    targets = targets.Select(t => new { t.Id, t.Type, t.Sector, t.DestinationSector, t.Friendly }).ToArray(),
+                },
+                new { targetId = rally?.Id, targetType = rally?.Type, sector = rally?.Sector });
+        return rally;
     }
 }

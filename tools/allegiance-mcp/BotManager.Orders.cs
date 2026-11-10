@@ -33,10 +33,21 @@ internal sealed partial class BotManager
     internal static short? PickCommanderDefenseTarget(IEnumerable<(short Id, Vector3 Position)> enemies, Vector3 charge, short? current)
     {
         var visible = enemies.ToArray();
+        short? selected = null;
         foreach (var enemy in visible)
-            if (enemy.Id == current && (enemy.Position - charge).LengthSquared() <= 3500 * 3500) return enemy.Id;
-        return visible.Where(e => (e.Position - charge).LengthSquared() <= 1500 * 1500)
+            if (enemy.Id == current && (enemy.Position - charge).LengthSquared() <= 3500 * 3500)
+            { selected = enemy.Id; break; }
+        selected ??= visible.Where(e => (e.Position - charge).LengthSquared() <= 1500 * 1500)
             .OrderBy(e => (e.Position - charge).LengthSquared()).Select(e => (short?)e.Id).FirstOrDefault();
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Command", "DefenseTarget",
+                new
+                {
+                    charge = new[] { charge.X, charge.Y, charge.Z }, current,
+                    enemies = visible.Select(e => new { e.Id, position = new[] { e.Position.X, e.Position.Y, e.Position.Z } }).ToArray(),
+                },
+                new { selected });
+        return selected;
     }
 
     // Native accepted orders own the destination before autonomous orders:

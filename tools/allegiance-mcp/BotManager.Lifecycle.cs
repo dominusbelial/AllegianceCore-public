@@ -249,6 +249,9 @@ internal sealed partial class BotManager
         }
     }
 
+    /// <summary>Pure reset classification shared by respawn and game-over rotation.</summary>
+    internal static bool ReinforcementLife(bool wasPod, bool missionChanged) => wasPod && !missionChanged;
+
     private bool RefreshLife(ActiveBot bot, ConnectionSession cs, double now)
     {
         lock (cs.Gate)
@@ -260,7 +263,19 @@ internal sealed partial class BotManager
                  (bot.LifeCookie is { } cookie && world.Mission is { } mission && cookie != mission.Cookie));
             if (bot.ShipId != ship || missionChanged)
             {
-                bool reinforcement = bot.IsPod && !missionChanged;
+                bool reinforcement = ReinforcementLife(bot.IsPod, missionChanged);
+                if (BotDecisionRecorder.IsEnabled)
+                    BotDecisionRecorder.Record("Lifecycle", "MissionRefresh",
+                        new
+                        {
+                            shipChanged = bot.ShipId != ship,
+                            sessionChanged = bot.LifeSession != cs,
+                            generationChanged = bot.LifeGeneration != world.MissionGeneration,
+                            cookieChanged = bot.LifeCookie is { } oldCookie && world.Mission is { } currentMission && oldCookie != currentMission.Cookie,
+                            missionChanged,
+                            wasPod = bot.IsPod,
+                        },
+                        new { reset = true, reinforcement });
                 if (missionChanged)
                 {
                     RestoreFinaleForNextMission(bot, now, world.GameOverResult);
@@ -447,7 +462,12 @@ internal sealed partial class BotManager
     public long DecisionOverruns => _cadence.OverrunCount;
 
     internal static short? ResolveScenarioTarget(Showcase.HullRole role, short? rendezvous, short enemyHome)
-        => rendezvous is null or < 0 ? null : ResolveRoleTarget(role, rendezvous.Value, enemyHome);
+    {
+        short? target = rendezvous is null or < 0 ? null : ResolveRoleTarget(role, rendezvous.Value, enemyHome);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Command", "ScenarioTarget", new { role, rendezvous, enemyHome }, new { target });
+        return target;
+    }
 
     private static short ActualHullId(ActiveBot bot)
     {

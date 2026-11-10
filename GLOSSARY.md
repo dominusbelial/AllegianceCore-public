@@ -1531,6 +1531,15 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.Tests/GoldenCorpus/BotDecisions/*.json`.
   Regenerate with `UPDATE_CORPUS=1`. Report:
   `docs/reports/BOT_DECISION_CORPUS_P986.md`.
+- **Recorded bot decision corpus (P987)** — real seeded 2-side/3-side input
+  snapshots, deduped/sampled to `GoldenCorpus/BotDecisions/recorded.json` and
+  replayed by `tools/allegiance-mcp/BotDecisionReplay.cs` through the same pure
+  decision cores. Recording fixture/test:
+  `tests/Allegiance.ClientCore.Tests/P987DecisionRecordingLiveTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P987RecordedBotDecisionCorpusTests.cs`;
+  re-record with `tools/p987-bot-decision-corpus/record.sh`. Full inventory,
+  uncovered reasons, drift proofs and overhead:
+  `docs/reports/BOT_DECISION_CORPUS_SLICE2_P987.md`.
 - **Ordered miner / Piglet routines (P905)** — explicit `spawn_bot` behaviors
   `miner`, `docker`, `deathmatch`, `chatter` in
   `tools/allegiance-mcp/BotManager.Routines.cs`, with typed state and timers in
