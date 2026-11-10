@@ -94,11 +94,12 @@ public static class VisualFlags
     public const string HdrAcesKey = "space.hdrAces";
 
     /// <summary>P989 — the FS2-Open-flavoured "sim" colour grade: the filmic
-    /// (ACES-approximate) curve at exposure 0.9 with world saturation 0.85 and a
+    /// (ACES-approximate) curve at exposure 0.9 with world saturation 0.75 and a
     /// restrained bloom (threshold 1.2 linear, contribution 0.08). It DRIVES the
     /// existing single output transform — no new pass — and is a no-op unless
     /// <see cref="HdrPipelineKey"/> really produced the float scene target.
-    /// Starting values are <c>docs/reports/FS2OPEN_STUDY_P978.md</c> §5.3; they
+    /// Starting values are <c>docs/reports/FS2OPEN_STUDY_P978.md</c> §5.3 (saturation
+    /// tuned 0.85 -> 0.75, see <see cref="SimPalette.Saturation"/>); they
     /// are OUR scene's tuning, not SCP's content-unit constants.</summary>
     public const string SimPaletteKey = "space.simPalette";
 
