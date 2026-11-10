@@ -1066,6 +1066,7 @@ public sealed partial class Game1 : Game
     // P757 — BoardFailureRevision observed when the teleport pane last acted;
     // a later BOARD_NACK releases the pending teleport (EndLockDown equivalent).
     private long _teleportBoardFailure;
+    private long _teleportAckSeen;   // TELEPORT_ACK revision when the pending teleport was sent
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
     // P519 — latches for the tab/cycle/back/enter keys of the reworked docked shop.
     private bool _dockTabWasDown, _dockQWasDown, _dockEWasDown, _dockBWasDown, _dockEnterWasDown;

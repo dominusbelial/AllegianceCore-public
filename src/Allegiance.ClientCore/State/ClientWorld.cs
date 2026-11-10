@@ -4964,6 +4964,10 @@ public sealed partial class ClientWorld
     /// refusal is surfaced as a system line.</summary>
     private void Apply(TeleportAck m)
     {
+        // Native ends the teleport lockdown on EVERY ack, accepted or denied
+        // (appmsg.cpp:1856-1866 EndLockDown(lockdownTeleporting)); the client
+        // releases its pending-teleport latch on this revision.
+        TeleportAckRevision++;
         if (m.StationId == -1)
         {
             PostSystemLine("Teleport failed - unable to relocate to that station.");
@@ -4971,6 +4975,11 @@ public sealed partial class ClientWorld
         }
         RecordSoundEvent(ClientSoundEventKind.TeleportArrived, m.StationId);
     }
+
+    /// <summary>Monotonic observation of TELEPORT_ACK (accepted or denied): the
+    /// end of a pending station teleport, native's <c>EndLockDown(lockdownTeleporting)</c>
+    /// (appmsg.cpp:1856-1866).</summary>
+    public long TeleportAckRevision { get; private set; }
 
     /// <summary>Monotonic observation of BOARD_NACK, used to end pending
     /// docked disembark/launch sequences (native appmsg.cpp:1899-1911).</summary>
