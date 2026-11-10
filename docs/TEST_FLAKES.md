@@ -7823,6 +7823,36 @@ with test durations **243.3 / 235.9 / 194.8 / 181.8 / 162.2 s**. Each reached
 exercise visual flags, so no bot improvement is attributed to P982. Receipts:
 `.scratch/p982/serial-showcase/` and `docs/reports/P982_assets/showcase.json`.
 
+## P990 (broadcast lane/age telemetry) — Fast-tier triage
+
+Fast sweep on this tree (`tools/run-tests.sh --tier fast --no-build`): **13,898 tests, 598.3 s, FAIL** — 4 case
+failures (3 in `Allegiance.Core.Tests`, 1 in `Allegiance.ClientCore.Tests`) plus 6 executions over the calibrated 10 s
+limit. P990 touches only the default-off `profiler.broadcastBudget` diagnostic (its report rows and its own
+bookkeeping data structure); no send site's payload, order, cadence or budget changed, and the P983 wire-identity and
+zero-allocation pins still pass, so none of these is on the P990 path.
+
+| Case | Sweep signature | Three isolated executions |
+|---|---|---|
+| `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` | Fast sweep missed `KILL_SHIP` inside its observation budget | **pass / pass / pass** (in the batch with the P739/LiveSideSelect filters, 2 s total) — the ledgered receipt timeout |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | one-ULP upper bound `7.0000000000000009 > 7` | **pass / pass / pass** — the ledgered floating deadline-boundary family |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `31.x` outside the fixture's [28, 31] window | **pass / fail / pass** — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38 s (also a slow-Fast offender) | **pass / fail (38 s) / pass** — the long-ledgered OPEN partial-tip receipt family (clean-base rate 1 pass / 2 fail, same 38 s signature) |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, 10.264 s), `P814GunnerTests.P814b_…` (10.104 s), `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (11.313 s), `P942ResearchOrderingTests.Generated_research_never_waits_…` (10.029 s), `P750NativeAsteroidTypesTests.Research_showcase_rocks_…` (13.438 s) | slow-Fast executions, assertions passed | the same ledgered near-limit families the P989/P987 cohorts carry (isolated runs below 10 s in those cohorts) |
+
+Second Fast invocation on the final tree (after the last cosmetic `PoseStampTable` simplification, `--no-build`):
+**13,898 tests, 573.8 s, FAIL** — 3 failures, 4 slow-Fast offenders, host load 1.2-5.4 (quiet).
+
+| Case | Sweep signature | Three isolated executions |
+|---|---|---|
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | `Assert.Contains` on an empty decoded NotStarted list (`MissionRotationLiveTests.cs:181`) | **pass / pass / pass** (with the `LiveCombatWireTests` filter below) — the ledgered ~12 % receipt-order intermittent (stage precedes client decode), unchanged rotation/transport code |
+| `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | receipt order (`no shooter ship` family) | **pass / pass / pass** — ledgered receipt-order family |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38.302 s | **pass / fail (38 s) / pass** in the earlier isolated cohort — ledgered OPEN partial-tip family |
+| slow-Fast: `P750NativeAsteroidTypesTests…` 11.727 s, `P777WarpExitWobbleTests…` 10.685 s, `P942ResearchOrderingTests…` 10.348 s, `MissileLockLiveTests…` 38.302 s | assertions passed | the same ledgered near-limit families |
+
+Showcase never-parks on the final tree: **5/5 pass** (durations 3 m 11 s, 2 m 20 s, 2 m 40 s, 2 m 27 s, 6 m 03 s);
+the P990 change cannot reach it (the diagnostic is off by default in that fixture and only its own null-checked
+bookkeeping changed).
+
 ## P989 (sim palette) — Fast-tier triage
 
 Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and three executions exceeded the calibrated

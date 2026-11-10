@@ -167,6 +167,11 @@ internal sealed class ViewerPoseCadence
     /// as visible, so the update-age diagnostic can ignore a stamp left by a ship
     /// that has since left the viewer's sector.</summary>
     internal bool Contains(short shipId) => _stamps.ContainsKey(shipId);
+
+    /// <summary>P990 — the ids this viewer currently tracks as visible (the age
+    /// report walks them to name the pairs it has no pose stamp for). Report
+    /// cadence only; the set is bounded by the viewer's visible ships.</summary>
+    internal IEnumerable<short> TrackedShipIds() => _stamps.Keys;
     // P813a — bounded per-window delivery telemetry (merged into the
     // [update-age] report and cleared there, like PacketBytes).
     internal long Promotions;

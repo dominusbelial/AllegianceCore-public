@@ -273,7 +273,9 @@ public sealed partial class Server
         Interlocked.Increment(ref _egressPacketsOffered);
         // P983 — count exactly the bytes handed to the transport, with the
         // delivery's category (null field = the off path: no counter work).
-        _broadcastTelemetry?.RecordSend(peer, key, category, memory.Length, splitBytes);
+        // P990 — the frame's own headers are read here on the ordered lane, so
+        // the per-fmid breakdown needs no tag from any send site.
+        _broadcastTelemetry?.RecordSendFrame(peer, key, category, memory.Span, splitBytes);
         if (key == 0) _host.Send(peer, memory.Span);
         else if (guaranteed) _host.SendGuaranteedCoalescing(peer, memory.Span, key);
         else _host.SendCoalescing(peer, memory.Span, key);
@@ -295,7 +297,7 @@ public sealed partial class Server
         Interlocked.Increment(ref _egressPacketsOffered);
         _testSendCapture?.Invoke(peer, bytes);
         TestPublicationCapture?.Invoke(peer, bytes, key, guaranteed);
-        _broadcastTelemetry?.RecordSend(peer, key, category, bytes.Length, splitBytes);
+        _broadcastTelemetry?.RecordSendFrame(peer, key, category, bytes, splitBytes);
         if (key == 0) _host.Send(peer, bytes);
         else
         {
