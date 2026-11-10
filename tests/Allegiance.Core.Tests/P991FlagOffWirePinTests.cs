@@ -43,6 +43,7 @@ public sealed class P991FlagOffWirePinTests
         var config = UpdateCadenceTests.Config();
         config.Broadcast!.ImmutableSnapshot = true;
         config.Broadcast.ParallelBuild = parallel;
+        config.Broadcast.ShipStatusChangeGate = false;   // pin the pre-P991 wire explicitly (the default is ON since 2026-11-10)
         config.Broadcast.MaxDegreeOfParallelism = 4;
         double now = 0;
         server.TestUpdateCadenceClock = () => now;

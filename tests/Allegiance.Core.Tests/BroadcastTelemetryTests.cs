@@ -219,7 +219,15 @@ public sealed class BroadcastTelemetryFixtureTests
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(Config());
+        var config = Config();
+        // P991 default ON (2026-11-10): with the change gate the number of
+        // SHIP_STATUS sends differs from call to call (edges, not a fixed
+        // refresh), so consecutive Measure() calls send different packets and
+        // the off/on byte comparison would measure the gate, not the
+        // telemetry. Pin the refresh path here; the telemetry's own send-path
+        // hooks are identical for both.
+        config.Broadcast!.ShipStatusChangeGate = false;
+        server.Boot(config);
         var peers = UpdateCadenceTests.Seed(server, ships: 24, viewers: 4);
         server.TestMission!.Stage = MissionStage.Started;
         Assert.Null(server.BroadcastBudgetTelemetry);

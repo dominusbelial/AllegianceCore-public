@@ -864,8 +864,10 @@ public sealed class BroadcastConfig
     /// into the old status (<c>FedSrv/FedSrv.CPP:3665-3719</c>); a joining or
     /// reconnecting peer gets the full per-ship dump native sends in
     /// <c>CFSMission::SendMissionInfo</c> (<c>FedSrv/fsmission.cpp:4303-4323</c>).
-    /// <para>Default <b>false</b>: the port's three periodic refreshes stay on and
-    /// the wire is byte-identical to the pre-P991 build (own ship
+    /// <para>Default <b>true</b> since 2026-11-10 (Domingo, after the rig A/B
+    /// b105/b106 at 400 bots: SHIP_STATUS bytes −87 %, ≈3 % of egress, update ages,
+    /// starvation and bot outcomes unchanged). <c>false</c> keeps the port's three
+    /// periodic refreshes and the wire byte-identical to the pre-P991 build (own ship
     /// <c>StatusRefreshTicks</c>=40, same-side teammates
     /// <c>TeammateStatusRefreshTicks</c>=100 per recipient phase, cross-side seen
     /// enemies <c>CrossSideStatusRefreshTicks</c>=100 per pair phase). With the
@@ -876,7 +878,7 @@ public sealed class BroadcastConfig
     /// (P991's A/B list); nothing else about what is sent changes.
     /// </para>
     /// </summary>
-    public bool ShipStatusChangeGate { get; set; }
+    public bool ShipStatusChangeGate { get; set; } = true;
 
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>

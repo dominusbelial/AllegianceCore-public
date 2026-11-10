@@ -638,6 +638,19 @@ public sealed class P991ShipStatusChangeGateTests
 
     // ── 8. the gate's own state is freed when peers leave ────────────────────
 
+    /// <summary>Default ON since 2026-11-10 (Domingo, after the 400-bot rig A/B
+    /// b105/b106: SHIP_STATUS bytes −87 %, ages/starvation/bot outcomes unchanged).
+    /// A config without the key, and a config without a broadcast section, both
+    /// resolve to the native change gate; only an explicit false restores the
+    /// pre-P991 periodic refreshes.</summary>
+    [Fact]
+    public void Default_is_the_native_change_gate()
+    {
+        Assert.True(new global::Allegiance.Server.BroadcastConfig().ShipStatusChangeGate);
+        Assert.True(Srv.ResolveShipStatusChangeGateFlag(new global::Allegiance.Server.BroadcastConfig().ShipStatusChangeGate, null));
+        Assert.False(Srv.ResolveShipStatusChangeGateFlag(true, "0"));
+    }
+
     /// <summary>
     /// "Last-sent state must be dropped when either side leaves": real loopback
     /// clients seat, the gate fills, clients disconnect, and the per-(side,
