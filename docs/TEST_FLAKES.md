@@ -109,6 +109,29 @@ or original-baseline reproduction is claimed. Final receipts:
 `.scratch/p988/final-lesson4-controls-result.json` and
 `.scratch/p988/final-course5-controls-result.json`, with adjacent window logs.
 
+**Claude review (2026-11-10): cause found, not P988.** Goal 4.3 is
+`GetCommandCondition(stealth fighter, Attack)` (`Mission5.cs:343`, native
+mission5.cpp:535-573), not the scout-destroyed goal. The p912 proof issues the
+attack order early, during goal 4.1's `tm_5_15` voice line. If the stealth
+fighter kills the scout before goal 4.3 starts, the attack command is already
+cleared when 4.3 begins checking, and the order cannot be repeated against a
+dead target, so the goal waits until the 20-minute timeout. Stalled replay:
+kill `run.log:1067` before goal 4.2 starts (`:1086`). Passing replays: kill
+after 4.2 starts (for example `:1057` after `:1009`). The margin is about 1 s of
+combat speed. Paired review runs (both trees in parallel, same host load):
+P988 tree 2/3, clean 6659cb91 base 3/3. The mechanism is in the proof driver's
+order timing against sim combat, not in any HUD/skin code. Candidate fix
+(separate task): issue the attack order only after goal 4.3 starts, as a
+player following the prompt would. The M2 reminder guard (`M2 9.2: native
+prompts missing or out of order`) failed **0/3 on both trees** in the same
+paired runs; it is the existing P945/P974 family above, not P988.
+Separately, a narrow filter of the visuals/HUD/training-integration classes
+(`Tier=Fast` and VisualFlags, P979, P982, HdrFoundation, SimPalette, P757,
+TrainingIntegration, ModernHudSettingsInput, P804) fails
+`P910TrainingIntegrationTests.Every_exit_restores_preferences_keymap_and_overlay(style: Modern, route: "window-close")`
+**6/6 on master 97a1c19d** (restored keymap `FireWeapon` 119 vs 120). This is an
+ordering/shared-keymap dependency in that subset, not P988; the full MonoGame
+`Tier=Fast` project passes 5,129/0 on the merged P988 branch.
 Three valid training groups completed **1,245 passed / 9 failed / 6 skipped**
 out of 1,260 executions. Each Core group is 126/0/0. MonoGame groups are
 **290/2/2**, **288/4/2**, and **289/3/2**. The final group uses thirteen
