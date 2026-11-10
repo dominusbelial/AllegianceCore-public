@@ -45,6 +45,17 @@ public sealed partial class Game1
             _launchSent = false;
             Console.WriteLine("[monogame] teleport: board refused - pane released for reselection");
         }
+        // A station teleport keeps the ship docked (just at another station), so
+        // the fresh-dock path that normally clears the latch never runs: before
+        // this, a station-to-station teleport left launch/undock/shop/teleport
+        // dead until restart (Domingo 2026-11-09, "could not undock"). Native
+        // ends the lockdown on every TELEPORT_ACK (appmsg.cpp:1856-1866).
+        if (_launchSent && _session.World.TeleportAckRevision != _teleportAckSeen)
+        {
+            _teleportAckSeen = _session.World.TeleportAckRevision;
+            _launchSent = false;
+            Console.WriteLine("[monogame] teleport: ack received - hangar released");
+        }
     }
 
     /// <summary>
@@ -1106,6 +1117,7 @@ public sealed partial class Game1
         _teleportActive = false;
         _launchSent = true;   // suppress the unattended-dock auto-launch after an intentional action
         _teleportBoardFailure = _session.World.BoardFailureRevision;   // P757: a nack releases this latch
+        _teleportAckSeen = _session.World.TeleportAckRevision;         // and so does the TELEPORT_ACK
     }
 
     /// <summary>

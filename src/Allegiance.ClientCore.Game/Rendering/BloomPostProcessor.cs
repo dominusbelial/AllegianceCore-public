@@ -25,11 +25,24 @@ public sealed class BloomPostProcessor : IDisposable
     public const int Downsample = 2;
 
     /// <summary>Bright-pass threshold on linear-ish luminance (0..1). Above this
-    /// luminance a pixel blooms; below it is killed by the soft knee.</summary>
-    public const float Threshold = 0.80f;
+    /// luminance a pixel blooms; below it is killed by the soft knee. This is the
+    /// P547 default; P989's sim palette raises it (in the scene target's stored
+    /// domain) through <see cref="BrightPassThreshold"/>.</summary>
+    public const float DefaultThreshold = 0.80f;
 
-    /// <summary>Bloom intensity scale (multiplies the bright-pass before blur).</summary>
-    public const float BloomScale = 1.0f;
+    /// <summary>Bright-pass threshold actually used this frame (P547 default
+    /// unless a grade sets another value).</summary>
+    public float BrightPassThreshold { get; set; } = DefaultThreshold;
+
+    /// <summary>Bloom intensity scale (multiplies the bright-pass before blur).
+    /// P989 — this is also the palette's glow "contribution": scaling the extracted
+    /// bright colour is exactly scaling the glow the composite adds, and it needs
+    /// NO shader change, so the default path's Bloom.fx bytecode and behaviour stay
+    /// P547's bit for bit. 1 = the P547 look; the sim palette uses 0.08.</summary>
+    public const float DefaultBloomScale = 1.0f;
+
+    /// <summary>Live bright-pass scale / glow contribution (default P547).</summary>
+    public float BloomScale { get; set; } = DefaultBloomScale;
     public bool Polished { get; set; }
 
     private readonly GraphicsDevice _gd;
@@ -137,7 +150,7 @@ public sealed class BloomPostProcessor : IDisposable
     {
         var pass = _effect.Techniques["Bloom"].Passes[passName];
         _pTexel.SetValue(texel);
-        _pThreshold.SetValue(Threshold);
+        _pThreshold.SetValue(BrightPassThreshold);
         _pScale.SetValue(BloomScale);
         _pDirection.SetValue(direction);
         _pTexture.SetValue(source);

@@ -456,6 +456,7 @@ public sealed partial class Game1
             _teleportActive = false;
             _launchSent = true;
             _teleportBoardFailure = world.BoardFailureRevision;
+            _teleportAckSeen = world.TeleportAckRevision;
             Console.WriteLine($"[monogame] starmap teleport: to station {friendlyStation} -> DOCKED(stationID)");
         }
     }

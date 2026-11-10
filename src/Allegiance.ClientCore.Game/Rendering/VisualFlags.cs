@@ -20,10 +20,12 @@ public enum VisualFlagKind
 /// <summary>
 /// P979 — ONE row of the visuals flag table. Adding a visual enhancement means
 /// adding a row here plus its use site; there is no per-flag plumbing.
-/// <para><b>Default OFF (Domingo, 2026-11-08).</b> Visual enhancements may
-/// depart from native's look because native's look is a 1999 artefact, so every
-/// flag starts OFF: the default path stays the native one, pinned by tests, and
-/// the enhancement is opt-in. A flag changes how things LOOK, never a game rule
+/// <para><b>Defaults (Domingo, 2026-11-08 / 2026-11-09).</b> Visual enhancements
+/// may depart from native's look because native's look is a 1999 artefact. A new
+/// flag starts OFF; once Domingo has played it and approved it as the new look it
+/// becomes default ON (2026-11-09: radial visibility, the four sim-space flags and
+/// the HDR scene, "the new default for the MonoGame client"). The native path
+/// always stays reachable by switching the flag off, pinned by tests. A flag changes how things LOOK, never a game rule
 /// or what the server lets the client know (fog/sensor rules are behaviour;
 /// drawing an object the client already has is visual).</para>
 /// </summary>
@@ -31,12 +33,16 @@ public enum VisualFlagKind
 /// <param name="Label">Short human label shown on the Visuals options page.</param>
 /// <param name="Description">The one-line description shown next to the label.</param>
 /// <param name="Kind">Toggle or numeric range.</param>
-/// <param name="DefaultOn">Toggle default; always OFF for the reasons above.</param>
+/// <param name="DefaultOn">Toggle default: OFF until approved as the new look (see above).</param>
 /// <param name="DefaultValue">Numeric default (world units).</param>
 /// <param name="MinValue">Numeric clamp floor.</param>
 /// <param name="MaxValue">Numeric clamp ceiling.</param>
 /// <param name="Step">Numeric step used by the options page's raise/lower rows.</param>
 /// <param name="Hotkey">Menu hotkey for a toggle row ('\0' = none).</param>
+/// <param name="RequiresKey">P989 — another flag this one DEPENDS on. The flag
+/// itself is always parsed/persisted; when its dependency resolves off (or the
+/// device refused it) the enhancement is a no-op at its use site and the
+/// options row says so. Table data, so no per-flag plumbing.</param>
 public sealed record VisualFlag(
     string Key,
     string Label,
@@ -47,7 +53,8 @@ public sealed record VisualFlag(
     float MinValue = 0f,
     float MaxValue = 0f,
     float Step = 0f,
-    char Hotkey = '\0');
+    char Hotkey = '\0',
+    string? RequiresKey = null);
 
 /// <summary>
 /// P979 — the table of visual-enhancement flags. Keep it a TABLE: every future
@@ -86,6 +93,16 @@ public static class VisualFlags
     /// <see cref="HdrPipelineKey"/> is on).</summary>
     public const string HdrAcesKey = "space.hdrAces";
 
+    /// <summary>P989 — the FS2-Open-flavoured "sim" colour grade: the filmic
+    /// (ACES-approximate) curve at exposure 0.9 with world saturation 0.75 and a
+    /// restrained bloom (threshold 1.2 linear, contribution 0.08). It DRIVES the
+    /// existing single output transform — no new pass — and is a no-op unless
+    /// <see cref="HdrPipelineKey"/> really produced the float scene target.
+    /// Starting values are <c>docs/reports/FS2OPEN_STUDY_P978.md</c> §5.3 (saturation
+    /// tuned 0.85 -> 0.75, see <see cref="SimPalette.Saturation"/>); they
+    /// are OUR scene's tuning, not SCP's content-unit constants.</summary>
+    public const string SimPaletteKey = "space.simPalette";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -94,6 +111,7 @@ public static class VisualFlags
             "Radial visibility",
             "true distance, no far-plane pop-in",
             VisualFlagKind.Toggle,
+            DefaultOn: true,
             Hotkey: 'R'),
         new VisualFlag(
             RemoteTimelineKey,
@@ -110,25 +128,37 @@ public static class VisualFlags
             MinValue: 1000f,
             MaxValue: 50000f,
             Step: 1000f),
-        new VisualFlag(SubtleDustKey, "Subtle dust", "faint shell; uses Debris level", VisualFlagKind.Toggle, Hotkey: 'S'),
-        new VisualFlag(SimStarsKey, "Sim stars", "sparse neutral stars at infinity", VisualFlagKind.Toggle, Hotkey: 'T'),
-        new VisualFlag(SimGlareKey, "Sim glare", "small sun and restrained central flare", VisualFlagKind.Toggle, Hotkey: 'G'),
-        new VisualFlag(StarStreaksKey, "Star streaks", "short star tails while the view turns", VisualFlagKind.Toggle, Hotkey: 'K'),
-        // P984 — the HDR foundation (default OFF: the 8-bit native path stays the
-        // default look). The ACES row is a comparison switch, so it is listed
+        new VisualFlag(SubtleDustKey, "Subtle dust", "faint shell; uses Debris level", VisualFlagKind.Toggle, DefaultOn: true, Hotkey: 'S'),
+        new VisualFlag(SimStarsKey, "Sim stars", "sparse neutral stars at infinity", VisualFlagKind.Toggle, DefaultOn: true, Hotkey: 'T'),
+        new VisualFlag(SimGlareKey, "Sim glare", "small sun and restrained central flare", VisualFlagKind.Toggle, DefaultOn: true, Hotkey: 'G'),
+        new VisualFlag(StarStreaksKey, "Star streaks", "short star tails while the view turns", VisualFlagKind.Toggle, DefaultOn: true, Hotkey: 'K'),
+        // P984 — the HDR foundation (default ON since 2026-11-09; switching it off
+        // restores the 8-bit native path). The ACES row is a comparison switch, so it is listed
         // right after the pipeline it belongs to.
         new VisualFlag(
             HdrPipelineKey,
             "HDR scene",
             "float scene target + one output transform",
             VisualFlagKind.Toggle,
+            DefaultOn: true,
             Hotkey: 'H'),
         new VisualFlag(
             HdrAcesKey,
             "ACES output curve",
             "compare the filmic curve with neutral",
             VisualFlagKind.Toggle,
-            Hotkey: 'A'),
+            Hotkey: 'A',
+            RequiresKey: HdrPipelineKey),
+        // P989 — the sim grade rides the SAME output transform (and the same
+        // bloom pass) the HDR foundation built, so it is a toggle, not a new
+        // renderer. 'P' is the one free Visuals-page hotkey left.
+        new VisualFlag(
+            SimPaletteKey,
+            "Sim palette",
+            "filmic world grade, restrained bloom",
+            VisualFlagKind.Toggle,
+            Hotkey: 'P',
+            RequiresKey: HdrPipelineKey),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -146,7 +176,7 @@ public static class VisualFlags
 /// group (flat <c>key: value</c> object in <c>player.json</c>), the
 /// <c>--visuals key=on,...</c> launch override, and the object the flight render
 /// reads every frame (so an options-page toggle applies at once).
-/// <para><b>Missing = default OFF, unknown keys ignored.</b> A profile without
+/// <para><b>Missing = the table default, unknown keys ignored.</b> A profile without
 /// the group, or one carrying keys this build does not know, resolves to the
 /// table defaults without an error. The launch override is the only place that
 /// reports an unknown key (a console warning), because a hand-typed typo silently
@@ -172,6 +202,10 @@ public sealed class VisualOptions
 
     /// <summary>P984 — the output transform uses ACES instead of neutral.</summary>
     public bool HdrAces => IsOn(VisualFlags.HdrAcesKey);
+
+    /// <summary>P989 — the sim colour grade is requested (no-op unless the HDR
+    /// pipeline really produced the float scene target: <see cref="SimPalette"/>).</summary>
+    public bool SimPalette => IsOn(VisualFlags.SimPaletteKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)

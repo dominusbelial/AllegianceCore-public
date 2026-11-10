@@ -241,7 +241,10 @@ public sealed partial class Game1
             MouseSensitivity: _mouseFlight.MouseSensitivity,
             // P979 — the EFFECTIVE visual flags (profile group + launch override);
             // the Visuals page labels read and edit this object.
-            Visuals: _visuals);
+            Visuals: _visuals,
+            // P989 — so a flag that depends on the HDR scene path can say it is
+            // inactive (null before a flight session created the post-processor).
+            HdrSceneActive: _post is null ? null : HdrScene);
     }
 
     /// <summary>

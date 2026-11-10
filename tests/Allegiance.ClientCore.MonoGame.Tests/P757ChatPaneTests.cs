@@ -412,4 +412,30 @@ public sealed class P757TeleportRecoveryTests
         Call(game, "ReleaseTeleportOnBoardRefusal");
         Assert.False(Get<bool>(game, "_launchSent"));
     }
+
+    /// <summary>Domingo 2026-11-09: after a station-to-station teleport the
+    /// player stayed docked and could not launch or undock — the latch set by
+    /// the teleport was only released by a fresh dock or a BOARD_NACK, and a
+    /// teleport keeps the ship docked. Native ends the teleport lockdown on
+    /// every TELEPORT_ACK, accepted or denied (appmsg.cpp:1856-1866).</summary>
+    [Theory]
+    [InlineData((short)43)]   // accepted: relocated to station 43
+    [InlineData((short)-1)]   // denied
+    public void Teleport_ack_releases_the_hangar_latch(short ackStation)
+    {
+        using var session = new ConnectionSession();
+        var game = Headless(session);
+        session.World.Apply(new EnterGame());
+        session.World.Apply(new ShipStatusMessage { ShipId = 10, SectorId = 1, StationId = 42, ParentId = -1, State = ShipStatusMessage.StateDocked });
+        Set(game, "_launchSent", true);
+        Set(game, "_teleportBoardFailure", session.World.BoardFailureRevision);
+        Set(game, "_teleportAckSeen", session.World.TeleportAckRevision);
+
+        Call(game, "ReleaseTeleportOnBoardRefusal");
+        Assert.True(Get<bool>(game, "_launchSent"));   // ack not yet arrived
+
+        session.World.Apply(new TeleportAck { StationId = ackStation });
+        Call(game, "ReleaseTeleportOnBoardRefusal");
+        Assert.False(Get<bool>(game, "_launchSent"));   // L / U / shop / T work again
+    }
 }

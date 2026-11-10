@@ -1,0 +1,134 @@
+{
+ "classic/baseline_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "34e8cc94f62adf0b6ae259a691038bf2b6f32c0eaf32b74bb81cd9dc4179fa2d"
+ },
+ "classic/chaos_13_Adv": {
+  "identical": false,
+  "changed_px": 115928,
+  "max_delta": 95,
+  "sha_base": "3e362d27a7234c9328b2b46c75b64d9358eef456e3c8cc316ba888090f9d7452"
+ },
+ "classic/cloaked_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "8f9e633c7423cf166bc98fec72f8868b64af699a094cd889df9d57c98029adae"
+ },
+ "classic/closeup_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "0281ea699373cb049fb4a2d990125cd24f5228df673be6c4428b16632eae162e"
+ },
+ "classic/damage_engine_explosion_13_Adv": {
+  "identical": false,
+  "changed_px": 101821,
+  "max_delta": 86,
+  "sha_base": "72dc1bcd99ee985d4b3e0e0f5bc3685f918339fa42e9153d111343dd8bffeb70"
+ },
+ "classic/flyby_approach_13_Adv": {
+  "identical": false,
+  "changed_px": 2,
+  "max_delta": 5,
+  "sha_base": "6252336225857f9bda802609d9b09e4c49b1e419b6081fc21587defe8d958b9e"
+ },
+ "classic/flyby_close_13_Adv": {
+  "identical": false,
+  "changed_px": 892,
+  "max_delta": 7,
+  "sha_base": "63234f28b318210905f863d4672093b005ff0667aae639df9ca4802a2f3c27ac"
+ },
+ "classic/flyby_recede_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "d9157081acd2b0a6c912721950e34fa633cb62597f67cf724da3b23ef0071e55"
+ },
+ "classic/guns_missiles_13_Adv": {
+  "identical": false,
+  "changed_px": 365527,
+  "max_delta": 99,
+  "sha_base": "78a714b5d2718c8f2d3be9b3864d608d810139c877b5a81f85de8426f076ae7c"
+ },
+ "classic/mines_guns_13_Adv": {
+  "identical": false,
+  "changed_px": 2295,
+  "max_delta": 106,
+  "sha_base": "2defc47853e9ab10e19d824f31e52fa7080e2737c6c4b0ff98d1ffd467ecd60a"
+ },
+ "classic/sideside_13_Adv": {
+  "identical": false,
+  "changed_px": 358920,
+  "max_delta": 169,
+  "sha_base": "edcb262b6690169fdb1db5cc1630eb39a3ae65fcb31e4655fa1937b296e4b0a8"
+ },
+ "modern/baseline_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "34e8cc94f62adf0b6ae259a691038bf2b6f32c0eaf32b74bb81cd9dc4179fa2d"
+ },
+ "modern/chaos_13_Adv": {
+  "identical": false,
+  "changed_px": 11375,
+  "max_delta": 96,
+  "sha_base": "56efc691ca3e8f72c59d1ea427c6cfc137f85aa51e5e28e05da839a2d01a9f7c"
+ },
+ "modern/cloaked_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "8f9e633c7423cf166bc98fec72f8868b64af699a094cd889df9d57c98029adae"
+ },
+ "modern/closeup_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "0281ea699373cb049fb4a2d990125cd24f5228df673be6c4428b16632eae162e"
+ },
+ "modern/damage_engine_explosion_13_Adv": {
+  "identical": false,
+  "changed_px": 3021,
+  "max_delta": 107,
+  "sha_base": "83955bd977d9d840feddadecca7d66192352cd259d4186384f088412f1b358b9"
+ },
+ "modern/flyby_approach_13_Adv": {
+  "identical": false,
+  "changed_px": 3,
+  "max_delta": 9,
+  "sha_base": "91778d2b5d149988b051402938db00eefc704514777150924c1c66ee3f9753a2"
+ },
+ "modern/flyby_close_13_Adv": {
+  "identical": false,
+  "changed_px": 770,
+  "max_delta": 6,
+  "sha_base": "6145bcd4e923861b575350b08d8a8dd006e45e957cec05dd3e98d405196bba4c"
+ },
+ "modern/flyby_recede_13_Adv": {
+  "identical": true,
+  "changed_px": 0,
+  "max_delta": 0,
+  "sha_base": "d9157081acd2b0a6c912721950e34fa633cb62597f67cf724da3b23ef0071e55"
+ },
+ "modern/guns_missiles_13_Adv": {
+  "identical": false,
+  "changed_px": 363208,
+  "max_delta": 80,
+  "sha_base": "2f44d22e19072eacac563a44c478b39a17d70cd0f3e459b6915f91522b2e2c6a"
+ },
+ "modern/mines_guns_13_Adv": {
+  "identical": false,
+  "changed_px": 2566,
+  "max_delta": 97,
+  "sha_base": "90bad1ec2558b6ebe38d301805045e7bf69a7fdd3a9ce65bb142c09d8ac4d850"
+ },
+ "modern/sideside_13_Adv": {
+  "identical": false,
+  "changed_px": 356769,
+  "max_delta": 186,
+  "sha_base": "b049f09bcbbd95856d451f33299a5ccb8ade65a697009f7ac53f0ece546333a3"
+ }
+}

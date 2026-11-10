@@ -926,6 +926,8 @@ public sealed partial class Game1
         // float scene target, bloom/FSR, then the one output transform before the
         // HUD, so a capture taken here matches the live pipeline.
         bool hdr = HdrScene;
+        // P989 — the showcase resolves the same grade as flight.
+        SyncHdrGrade();
         bool bloom = _inspectBloom && _post is { BloomReady: true };
         bool sceneTarget = fsr || bloom || hdr;
         var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
@@ -998,7 +1000,7 @@ public sealed partial class Game1
             _fsr!.Render(upscaleSource!, null, _upscaling.Sharpness, hdr);
             if (hdr) upscaleSource = _fsr!.HdrUpscaled;
         }
-        if (hdr) _post!.Output!.Render(upscaleSource!, null, _hdrCurve);
+        if (hdr) _post!.Output!.Render(upscaleSource!, null, _grade);
         _frameTelemetry?.EndPost();
         _gpuTimer?.Stop();
 

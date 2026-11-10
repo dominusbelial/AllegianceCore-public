@@ -28,6 +28,7 @@
 float Exposure = 1.0f;    // unity: no auto-exposure in this slice
 float Threshold = 0.8f;   // neutral shoulder onset (HD-6's TonemapThreshold)
 float Slope = 0.5f;       // neutral shoulder roll-off (HD-6's TonemapSlope)
+float Saturation = 1.0f;  // P989 world saturation applied by the filmic pass
 
 texture SceneTexture;
 sampler SceneSampler = sampler_state
@@ -74,6 +75,15 @@ float3 Aces(float3 x)
     return saturate((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14));
 }
 
+// P989 — Rec.709 luma-preserving saturation on LINEAR light (1 = unchanged).
+// This is the "world" half of the sim palette: the scene is desaturated a
+// touch while the HUD, drawn after this pass, keeps its exact colours.
+float3 ApplySaturation(float3 c, float s)
+{
+    float luma = dot(c, float3(0.2126, 0.7152, 0.0722));
+    return lerp(float3(luma, luma, luma), c, s);
+}
+
 // Neutral: identity below Threshold, hue-preserving shoulder above it (same
 // equation as NativePbr.fx's old ToneMap), then the display clamp.
 float4 PS_Neutral(in VS_OUT i) : COLOR0
@@ -90,10 +100,17 @@ float4 PS_Neutral(in VS_OUT i) : COLOR0
 }
 
 // Aces: decode -> filmic fit -> encode (one transfer pair, linear domain in
-// between). Exposure is applied in linear space, where it belongs.
+// between). Exposure and the optional world saturation are applied in linear
+// space, where they belong. Saturation 1 and Exposure 1 are exact no-ops, so
+// this pass is still exactly P984's comparison curve.
+// (P989 fix: exposure used to multiply the STORED display-encoded value before
+// the decode, i.e. in the wrong domain; with exposure at unity the two are the
+// same, which is why it never showed. The C# mirror in HdrOutput.Output always
+// multiplied after the decode, and now the shader does too.)
 float4 PS_Aces(in VS_OUT i) : COLOR0
 {
-    float3 lin = SrgbDecode(max(tex2D(SceneSampler, i.UV).rgb * Exposure, 0.0));
+    float3 lin = SrgbDecode(max(tex2D(SceneSampler, i.UV).rgb, 0.0)) * Exposure;
+    if (Saturation != 1.0) lin = ApplySaturation(lin, Saturation);
     return float4(SrgbEncode(Aces(lin)), 1);
 }
 

@@ -7822,3 +7822,15 @@ with test durations **243.3 / 235.9 / 194.8 / 181.8 / 162.2 s**. Each reached
 2.707 / 2.516 s**. Documented P979 base rate: 4/5. This headless fixture does not
 exercise visual flags, so no bot improvement is attributed to P982. Receipts:
 `.scratch/p982/serial-showcase/` and `docs/reports/P982_assets/showcase.json`.
+
+## P989 (sim palette) — Fast-tier triage
+
+Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and three executions exceeded the calibrated
+10 s limit; none of them touches the P989 change (a client-render flag that only retunes two existing post passes).
+`git diff 6659cb91 --name-only` contains no missile, lock/tip, warp, gunner or bot source.
+
+| Case | Sweep signature | Three serial isolated executions |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip in the client world (lock 1.000)`, 38.9 s (slow-Fast offender) | **fail / fail / fail**, 38.6 / 38.5 / 38.4 s — the long-ledgered OPEN partial-tip receipt family (P966/P982 rows above: clean-base rate 1 pass / 2 fail, same 38 s signature); not cleared by this task and not caused by it |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.496 s versus the 10 s limit | **pass / pass / pass**, 3 s each (isolated, after the sweep) |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 12.541 s versus the 10 s limit | **pass / pass / pass**, 11 s per class run (8 cases each), after the sweep |

@@ -1,0 +1,122 @@
+{
+ "black/classic/off-hdr": {
+  "changed_pct": 0.33,
+  "max_delta": 4,
+  "mean_abs_delta": 0.003
+ },
+ "black/classic/off-sim": {
+  "changed_pct": 7.25,
+  "max_delta": 38,
+  "mean_abs_delta": 0.734
+ },
+ "black/classic/hdr-sim": {
+  "changed_pct": 7.27,
+  "max_delta": 38,
+  "mean_abs_delta": 0.734
+ },
+ "black/classic/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 206,
+  "mean_abs_delta": 0.008
+ },
+ "black/modern/off-hdr": {
+  "changed_pct": 0.33,
+  "max_delta": 4,
+  "mean_abs_delta": 0.003
+ },
+ "black/modern/off-sim": {
+  "changed_pct": 7.29,
+  "max_delta": 36,
+  "mean_abs_delta": 0.705
+ },
+ "black/modern/hdr-sim": {
+  "changed_pct": 7.31,
+  "max_delta": 36,
+  "mean_abs_delta": 0.705
+ },
+ "black/modern/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 206,
+  "mean_abs_delta": 0.011
+ },
+ "native/classic/off-hdr": {
+  "changed_pct": 1.54,
+  "max_delta": 37,
+  "mean_abs_delta": 0.018
+ },
+ "native/classic/off-sim": {
+  "changed_pct": 53.77,
+  "max_delta": 60,
+  "mean_abs_delta": 5.417
+ },
+ "native/classic/hdr-sim": {
+  "changed_pct": 53.79,
+  "max_delta": 64,
+  "mean_abs_delta": 5.418
+ },
+ "native/classic/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 206,
+  "mean_abs_delta": 0.008
+ },
+ "native/modern/off-hdr": {
+  "changed_pct": 1.68,
+  "max_delta": 37,
+  "mean_abs_delta": 0.02
+ },
+ "native/modern/off-sim": {
+  "changed_pct": 53.97,
+  "max_delta": 39,
+  "mean_abs_delta": 5.38
+ },
+ "native/modern/hdr-sim": {
+  "changed_pct": 53.99,
+  "max_delta": 42,
+  "mean_abs_delta": 5.381
+ },
+ "native/modern/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 206,
+  "mean_abs_delta": 0.01
+ },
+ "hd/classic/off-hdr": {
+  "changed_pct": 7.12,
+  "max_delta": 41,
+  "mean_abs_delta": 0.072
+ },
+ "hd/classic/off-sim": {
+  "changed_pct": 72.49,
+  "max_delta": 61,
+  "mean_abs_delta": 6.794
+ },
+ "hd/classic/hdr-sim": {
+  "changed_pct": 72.49,
+  "max_delta": 68,
+  "mean_abs_delta": 6.789
+ },
+ "hd/classic/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 188,
+  "mean_abs_delta": 0.009
+ },
+ "hd/modern/off-hdr": {
+  "changed_pct": 6.97,
+  "max_delta": 41,
+  "mean_abs_delta": 0.07
+ },
+ "hd/modern/off-sim": {
+  "changed_pct": 72.81,
+  "max_delta": 40,
+  "mean_abs_delta": 6.674
+ },
+ "hd/modern/hdr-sim": {
+  "changed_pct": 72.81,
+  "max_delta": 44,
+  "mean_abs_delta": 6.67
+ },
+ "hd/modern/sim-simall": {
+  "changed_pct": 0.01,
+  "max_delta": 186,
+  "mean_abs_delta": 0.011
+ }
+}

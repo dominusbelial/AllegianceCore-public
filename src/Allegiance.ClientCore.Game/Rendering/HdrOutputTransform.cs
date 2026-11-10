@@ -22,11 +22,12 @@ public sealed class HdrOutputTransform : IDisposable
     private readonly GraphicsDevice _gd;
     private readonly Effect _effect;
     private readonly FullscreenQuad _quad;
-    private readonly EffectParameter? _pTexture, _pExposure, _pThreshold, _pSlope;
+    private readonly EffectParameter? _pTexture, _pExposure, _pThreshold, _pSlope, _pSaturation;
 
     /// <summary>The effect parameters this transform sets from code every pass
     /// (GL ignores shader defaults, exactly like the other post passes).</summary>
-    public static readonly string[] RequiredParameters = { "SceneTexture", "Exposure", "Threshold", "Slope" };
+    public static readonly string[] RequiredParameters =
+        { "SceneTexture", "Exposure", "Threshold", "Slope", "Saturation" };
 
     public HdrOutputTransform(GraphicsDevice gd, Effect effect)
     {
@@ -37,6 +38,7 @@ public sealed class HdrOutputTransform : IDisposable
         _pExposure = effect.Parameters["Exposure"];
         _pThreshold = effect.Parameters["Threshold"];
         _pSlope = effect.Parameters["Slope"];
+        _pSaturation = effect.Parameters["Saturation"];
     }
 
     /// <summary>The transform can run (both passes and every uniform present).</summary>
@@ -44,16 +46,16 @@ public sealed class HdrOutputTransform : IDisposable
         => _effect.Techniques["Output"]?.Passes["Neutral"] is not null
         && _effect.Techniques["Output"]?.Passes["Aces"] is not null
         && _pTexture is not null && _pExposure is not null
-        && _pThreshold is not null && _pSlope is not null;
+        && _pThreshold is not null && _pSlope is not null && _pSaturation is not null;
 
     /// <summary>
-    /// Apply the selected curve to <paramref name="source"/> (the float scene /
-    /// post / upscaled target) and write the display-referred result to
+    /// Apply <paramref name="grade"/> to <paramref name="source"/> (the float
+    /// scene / post / upscaled target) and write the display-referred result to
     /// <paramref name="destination"/> (the backbuffer or the capture target).
-    /// <paramref name="exposure"/> is applied in the curve's own domain; it is
-    /// unity in this slice (no auto-exposure).
+    /// The grade's exposure and world saturation are applied in the curve's own
+    /// domain; for the default grade both are identity (P984's picture).
     /// </summary>
-    public void Render(Texture2D source, RenderTarget2D? destination, HdrCurve curve, float exposure = HdrOutput.DefaultExposure)
+    public void Render(Texture2D source, RenderTarget2D? destination, HdrGrade grade)
     {
         if (!IsUsable) throw new InvalidOperationException("HDR output transform shader unavailable");
         // Never leave the previous pass's source bound while the scene target is
@@ -61,10 +63,11 @@ public sealed class HdrOutputTransform : IDisposable
         _gd.Textures[0] = null;
         _gd.SetRenderTarget(destination);
         _pTexture!.SetValue(source);
-        _pExposure!.SetValue(exposure);
+        _pExposure!.SetValue(grade.Exposure);
         _pThreshold!.SetValue(HdrOutput.NeutralThreshold);
         _pSlope!.SetValue(HdrOutput.NeutralSlope);
-        _effect.Techniques["Output"].Passes[curve == HdrCurve.Aces ? "Aces" : "Neutral"].Apply();
+        _pSaturation!.SetValue(grade.Saturation);
+        _effect.Techniques["Output"].Passes[grade.Curve == HdrCurve.Aces ? "Aces" : "Neutral"].Apply();
 
         _gd.BlendState = BlendState.Opaque;
         _gd.DepthStencilState = DepthStencilState.None;
@@ -79,6 +82,12 @@ public sealed class HdrOutputTransform : IDisposable
         _gd.DepthStencilState = DepthStencilState.Default;
         _gd.RasterizerState = RasterizerState.CullCounterClockwise;
     }
+
+    /// <summary>P984's signature, kept for callers/tools that only pick a curve
+    /// (and optionally an exposure): the default grade with that curve.</summary>
+    public void Render(Texture2D source, RenderTarget2D? destination, HdrCurve curve,
+        float exposure = HdrOutput.DefaultExposure)
+        => Render(source, destination, HdrGrade.Native(curve) with { Exposure = exposure });
 
     public void Dispose()
     {
