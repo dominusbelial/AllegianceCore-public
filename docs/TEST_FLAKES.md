@@ -8002,3 +8002,8 @@ Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and th
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip in the client world (lock 1.000)`, 38.9 s (slow-Fast offender) | **fail / fail / fail**, 38.6 / 38.5 / 38.4 s — the long-ledgered OPEN partial-tip receipt family (P966/P982 rows above: clean-base rate 1 pass / 2 fail, same 38 s signature); not cleared by this task and not caused by it |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.496 s versus the 10 s limit | **pass / pass / pass**, 3 s each (isolated, after the sweep) |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 12.541 s versus the 10 s limit | **pass / pass / pass**, 11 s per class run (8 cases each), after the sweep |
+
+### P990 review (Claude, 2026-11-10) — merged branch, Core Fast tier
+Core.Tests `Tier=Fast` on `pi/p990` + master 724d1cdf: 6239 passed / 1 failed. The failure,
+`WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange`, passed **3/3 alone**; it is the ledgered
+load/timing family above (P990 touches only telemetry behind `profiler.broadcastBudget`, default off).

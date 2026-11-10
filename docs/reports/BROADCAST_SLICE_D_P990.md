@@ -147,7 +147,7 @@ category bytes below, 59 409 926.)
 
 | Wire id | Our send site | Frames per peer per tick (fixture) | Native's send rule | Class |
 |---|---|---|---|---|
-| `SHIP_STATUS(90)` 58.2 % | own status `Server.Broadcast.cs:866`; same-side teammate status `:1026`; cross-side status `:2532` (`PackStatus`/`PackCrossSideStatus`) | 1.8 | native re-sends **every mission ship's** status to **each side's player group** (`FedSrv/fsmission.cpp:4303-4323`), so every peer gets one status per subject per frame; ours is *already* throttled (own 1/40 ticks, teammate 1/100, cross-side 1/100, edge-triggered on a Detected/visibility change) | native volume, port-throttled |
+| `SHIP_STATUS(90)` 58.2 % | own status `Server.Broadcast.cs:866`; same-side teammate status `:1026`; cross-side status `:2532` (`PackStatus`/`PackCrossSideStatus`) | 1.8 | native sends a ship's status to a side **only when it changed** (`FedSrv/FedSrv.CPP:3672-3702`: per side, `if (*pss != *pssOld)` then send and update the old copy); the all-ships dump in `FedSrv/fsmission.cpp:4303-4323` is `CFSMission::SendMissionInfo` (`:4108`), i.e. once at join. Ours adds a **periodic refresh** (own 1/40 ticks, teammate 1/100, cross-side 1/100) on top of the edge-triggered sends | edges native; **periodic refresh is port-only redundancy** (Claude review: corrected from "native volume, port-throttled") |
 | `EXPORT(26)` 27.9 % | teammate export `Server.Broadcast.cs:1000`, loadout re-export `:1134`, same-side NPC `:1176`; cross-side sweeps `:2156`, `Server.Combat.cs` | 0.36 (one-shot per pair) | native **never** exports an `OT_ship` to another client (grep `ExportObj(` in `FedSrv`: only statics/sides/stations); native creates a ship from `PLAYERINFO` (`clintlib/appmsg.cpp:2264`) | **port-only redundancy** |
 | `SHIP_WARNING_UPDATE(218)` 13.8 % | `Server.ShipWarnings.cs:17` — one frame per peer per tick, **unconditional** | 1.0 | native has no such message; HUD warning state is derived client-side | **port-only redundancy** (change-gate-able) |
 | `CLUSTER_WARNING_UPDATE(214)` 0.1 % | `BroadcastSectorThreats` (`Server.Broadcast.cs:3793`), change-driven | ~0.005 | native computes sector threat client-side; the port streams it because the renderer-only client has no static core | port-only extension, already change-gated |
@@ -256,7 +256,7 @@ load average 8-25 during these runs (other lanes), which is why the numbers are 
 | Arm | Workload | Before (P983 code) | After (P990) |
 |---|---|---|---|
 | P983 §4 gate (`Enabled_overhead_stays_under_one_percent_of_the_p95_tick`) | 144 peers × (8 keyed frames + 6 pose stamps) = 14 calls/peer | **0.0520 ms/tick**, 0.770 % of a 6.75 ms p95 (P983's own report: 0.043-0.048 ms) | **0.0290 / 0.0306 / 0.0319 ms/tick**, 0.500 / 0.535 / 0.541 % of a 5.7-5.9 ms p95 |
-| New mixed-lane gate (`Mixed_lane_overhead_stays_under_one_percent_of_the_p95_tick`) | 144 peers × (1 heavy + 24 ordered + 8 keyed frames + 16 stamps) = 49 calls/peer, the rig's real mix | 0.1765 / 0.1848 / 0.1962 ms/tick (P990 counters with the *dictionary* stamp path), 25-28 ns/call | **0.1470 / 0.1564 / 0.1582 ms/tick**, 20.8-22.4 ns/call, 2.5-2.7 % of a 5.9 ms p95 |
+| New mixed-lane gate (`Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick`) | 144 peers × (1 heavy + 24 ordered + 8 keyed frames + 16 stamps) = 49 calls/peer, the rig's real mix | 0.1765 / 0.1848 / 0.1962 ms/tick (P990 counters with the *dictionary* stamp path), 25-28 ns/call | **0.1470 / 0.1564 / 0.1582 ms/tick**, 20.8-22.4 ns/call, 2.5-2.7 % of a 5.9 ms p95 |
 | Rig-scale projection (`Rig_scale_projection_shows_what_the_diagnostic_adds_per_tick`) | 411 peers, 3 sectors, 136 visible/peer, 55 896 stamps, 2 937 frames/tick; OFF/ON blocks alternate | not measurable on this tree before the change (dictionary path) | **+0.30 / +0.45 / −0.17 ms per tick** (Δmean, median +0.30 ms = 2.9 %; ratio median 1.029; one run at −1.5 % = this host's noise floor) |
 | Report cost, warm | once per five-second window, on the sim thread | 9.8 ms at 411 peers (56 k stamps) / 3.5 ms at 144 peers | **3.1-3.4 ms** at 411 peers / **1.4 ms** at 144 peers |
 
@@ -361,6 +361,7 @@ currently entitled to know (its teammate's status, its own warning mask), and th
 
 Measured on the local fixtures / derived from the rig shares; each is a **separate task**, none is fixed here.
 
+0. **`SHIP_STATUS(90)` periodic refresh → native change-gate (added in Claude's review).** Native only re-sends a status when it differs from the copy last sent to that side (`FedSrv/FedSrv.CPP:3672-3702`). The port's teammate (1/100) and cross-side (1/100) refreshes are the O(P²) rows of §2.3: ≈1 700 frames/tick at 411 peers, the largest single piece of the rig's `other`. Change-gating them per (side, subject) keeps the edges and removes the steady-state refresh; check first which client/bot paths rely on the refresh as a repair for a missed edge (ordered lane, so a missed edge should not exist).
 1. **`SHIP_WARNING_UPDATE(218)`: send on change, not every tick.** `src/Allegiance.Server/Server.ShipWarnings.cs:17`
    sends one 18-byte frame (14 + CRC) to every peer every tick, unconditionally. Rig: 411 frames/tick ≈ 7.4 KB/tick ≈
    148 KB/s ≈ **0.74 MB per 5 s window = ~2 % of `other`** (7.4 kB/s per peer at 411 peers). Fixture: 100 % of
@@ -405,7 +406,7 @@ New tests (all in `tests/Allegiance.Core.Tests/P990BroadcastLaneTelemetryTests.c
 | 9 | `Fmid_names_read_as_messages_not_numbers` | Fast |
 | 10 | `Age_reasons_name_a_docked_lifepod_stationary_and_moving_subject` (loopback fixture) | Fast (artwork) |
 | 11 | `Loopback_showcase_breaks_the_ordered_and_keyed_lanes_down` (144 peers, 400 ticks) | Live |
-| 12 | `Mixed_lane_overhead_stays_under_one_percent_of_the_p95_tick` | Perf |
+| 12 | `Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick` | Perf |
 | 13 | `Rig_scale_projection_shows_what_the_diagnostic_adds_per_tick` (411 peers) | Perf |
 
 P983's own `BroadcastTelemetry*` tests (11 unit + 7 fixture, incl. the wire-identity and zero-allocation pins and

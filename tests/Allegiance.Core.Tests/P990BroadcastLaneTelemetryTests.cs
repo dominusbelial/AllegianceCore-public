@@ -442,7 +442,7 @@ public sealed class P990BroadcastLaneFixtureTests
     [SkippableFact]
     [Trait("Requires", "Artwork")]
     [Trait("Tier", "Perf")]
-    public void Mixed_lane_overhead_stays_under_one_percent_of_the_p95_tick()
+    public void Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick()
     {
         Require.Artwork();
         var (offBlocks, _) = MeasureTickBlocks();
