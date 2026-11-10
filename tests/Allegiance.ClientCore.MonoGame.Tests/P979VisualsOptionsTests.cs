@@ -47,7 +47,7 @@ public sealed class P979VisualsOptionsTests
     }
 
     [Fact]
-    public void Visuals_page_lists_every_flag_with_a_one_line_description_and_defaults_off()
+    public void Visuals_page_lists_every_flag_with_a_one_line_description_and_its_default()
     {
         var menu = OpenVisualsPage(State());
         var rows = menu.Rows(State());
@@ -55,7 +55,7 @@ public sealed class P979VisualsOptionsTests
         // then P984's two 3-D look toggles (space.hdrPipeline / space.hdrAces) and
         // P989's sim palette (space.simPalette).
         Assert.Equal(12, rows.Count);
-        Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Contains(rows, r => r.Label == "Raise View range to 11000 m");
@@ -140,7 +140,7 @@ public sealed class P979VisualsOptionsTests
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
         Assert.Equal(12, rows.Count);
-        Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, state));
