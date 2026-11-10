@@ -119,6 +119,32 @@ error while replacing its outer timeout; it has no final MonoGame TRX.
 No condition was relaxed, and the full training gate remains **FAIL**.
 Raw valid groups: `.scratch/p988/{training-pass-2,training-pass-3,training-replacement}/`.
 
+## P987 qualification — recorded bot decisions, 2026-11-09 UTC
+
+The single Fast invocation completed **13,862 cases in 609.9 s**: **13,858
+passed / 1 failed / 3 not executed** (the optional private Meshy pack). The
+failure and all three timing offenders passed **3/3 alone**. P987 changes only
+the MCP recorder and small pure bot-policy cores; no server timer, physics,
+turret or repair rule changed.
+
+| Sweep failure / timing family | Three isolated runs | Classification |
+|---|---|---|
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` (one-ULP upper bound) | **3/3 pass**, all five theory cases each time | Existing floating deadline-boundary family; timer code unchanged. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (10.856 s, assertion passed) | **3/3 pass**, about 3 s | Existing sweep-only timing family. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, 11.413 s, assertion passed) | **3/3 pass**, both civ cases each time | Existing sweep-only timing family; isolated method runs about 7 s. |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (12.244 s, assertion passed) | **3/3 pass**, about 10 s | Existing near-limit native-physics family. |
+
+The first recorder-off never-parks cohort was **5/5**. After a behaviour-neutral
+review cleanup (preserving defence mutation order, filtering ineligible factions
+before topology work, and removing a recorder-off closure), the required final
+cohort was **3/5** at load average about 24: three passes, one arrival-only
+18/30 failure whose 2.209 s parking bound still passed, and one support-idle
+failure. Three isolated retries for **each** failed run passed **6/6 total**;
+all six reached 24/30 with real hits and longest speed-below-one-with-target
+intervals of 1.215–3.523 s. The unchanged P985 baseline is 4/5 initial with 3/3
+retries, so this is retained as a load flake, not hidden as a 5/5 final cohort.
+Raw evidence: `~/allegiance-evidence/P987/`.
+
 ## P985 qualification — remote-ship visual timeline, 2026-11-09 UTC
 
 The required single Fast invocation completed **13,779 cases in 586.3 s**: **13,774
@@ -7911,3 +7937,15 @@ with test durations **243.3 / 235.9 / 194.8 / 181.8 / 162.2 s**. Each reached
 2.707 / 2.516 s**. Documented P979 base rate: 4/5. This headless fixture does not
 exercise visual flags, so no bot improvement is attributed to P982. Receipts:
 `.scratch/p982/serial-showcase/` and `docs/reports/P982_assets/showcase.json`.
+
+## P989 (sim palette) — Fast-tier triage
+
+Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and three executions exceeded the calibrated
+10 s limit; none of them touches the P989 change (a client-render flag that only retunes two existing post passes).
+`git diff 6659cb91 --name-only` contains no missile, lock/tip, warp, gunner or bot source.
+
+| Case | Sweep signature | Three serial isolated executions |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip in the client world (lock 1.000)`, 38.9 s (slow-Fast offender) | **fail / fail / fail**, 38.6 / 38.5 / 38.4 s — the long-ledgered OPEN partial-tip receipt family (P966/P982 rows above: clean-base rate 1 pass / 2 fail, same 38 s signature); not cleared by this task and not caused by it |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.496 s versus the 10 s limit | **pass / pass / pass**, 3 s each (isolated, after the sweep) |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 12.541 s versus the 10 s limit | **pass / pass / pass**, 11 s per class run (8 cases each), after the sweep |

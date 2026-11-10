@@ -226,8 +226,7 @@ internal sealed partial class ResearchCommander
                     if (work.Rock is { } rock && !world.Rocks.Any(r => r.Id == rock && (r.Available || r.Building))) Release(work);
                     if (work.Rock is null)
                     {
-                        var target = world.Rocks.FirstOrDefault(r => r.Available && (r.Capabilities & step.AsteroidClass!.Value) != 0
-                            && !_reservations.ContainsKey(r.Id));
+                        var target = PickConstructionRock(world.Rocks, step.AsteroidClass!.Value, _reservations.Keys);
                         if (target is not null) { work.Rock = target.Id; _reservations[target.Id] = Side; }
                     }
                     if (work.Rock is null) { allowed = false; status = "waiting for available compatible asteroid"; }
@@ -242,8 +241,8 @@ internal sealed partial class ResearchCommander
                             // Use the existing native goto/warp navigation before issuing BUILD.
                             if (rockSector < 0 || shipSector >= 0)
                             {
-                                commands.Add(new(rockSector >= 0 && rockSector != shipSector ? "goto" : "build",
-                                    constructor, Target: rockId));
+                                string kind = ConstructorOrderKind(rockSector, shipSector);
+                                commands.Add(new(kind, constructor, Target: rockId));
                                 work.LastOrder = world.Time;
                             }
                         }
@@ -254,7 +253,7 @@ internal sealed partial class ResearchCommander
                     || world.Time - work.LastDonation >= 5)) work.PendingWallet = null;
                 if (allowed && work.PendingWallet is null && funding.Money < bucket.Price && world.Wallet > 0)
                 {
-                    int amount = (int)Math.Min(world.Wallet, bucket.Price - funding.Money);
+                    int amount = DonationAmount(world.Wallet, bucket.Price, funding.Money);
                     commands.Add(new("donate", bucket.Id, amount));
                     work.LastDonation = world.Time; work.PendingWallet = world.Wallet; work.PendingFunding = funding.Money;
                 }
@@ -269,35 +268,40 @@ internal sealed partial class ResearchCommander
             progress = 1;
         }
         Publish(world, step, work, prefix + status, progress, eta, displayedStep);
-        RecordResearchCommand(world, step, status, commands);
         return commands;
     }
 
-    private void RecordResearchCommand(Snapshot world, ResearchStep? step, string status, List<Command> commands)
+    /// <summary>Pure construction-rock choice from the commander's observed snapshot.</summary>
+    internal static Rock? PickConstructionRock(IEnumerable<Rock> rocks, short asteroidClass,
+        IReadOnlyCollection<short> reserved)
     {
-        if (!BotDecisionRecorder.IsEnabled) return;
-        BotDecisionRecorder.Record("ResearchCommander", "TickPlan",
-            new
-            {
-                side = Side,
-                epoch = Epoch,
-                plan = _plan.Name,
-                stepIndex = _index,
-                stepAction = step?.Action,
-                stepId = step?.Id,
-                time = world.Time,
-                started = world.Started,
-                wallet = world.Wallet,
-                stationCount = world.Stations.Length,
-                developmentBits = world.Developments.PopCount,
-                completedTechCount = world.CompletedDevelopments.Count,
-            },
-            new
-            {
-                status,
-                commandCount = commands.Count,
-                commands = commands.Select(c => new { c.Kind, c.Id, c.Amount, c.Target, c.Text }).ToArray(),
-            });
+        var target = rocks.FirstOrDefault(r => r.Available && (r.Capabilities & asteroidClass) != 0
+            && !reserved.Contains(r.Id));
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchCommander", "ConstructionRock",
+                new { asteroidClass, reserved = reserved.Order().ToArray(), rocks = rocks.ToArray() },
+                new { rockId = target?.Id });
+        return target;
+    }
+
+    /// <summary>Pure constructor travel-vs-build order from observed sectors.</summary>
+    internal static string ConstructorOrderKind(short rockSector, short shipSector)
+    {
+        string kind = rockSector >= 0 && rockSector != shipSector ? "goto" : "build";
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchCommander", "ConstructorOrder",
+                new { rockSector, shipSector }, new { kind });
+        return kind;
+    }
+
+    /// <summary>Pure bounded bucket donation, shared by every research/build step.</summary>
+    internal static int DonationAmount(int wallet, long bucketPrice, long funded)
+    {
+        int amount = (int)Math.Min(wallet, bucketPrice - funded);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("ResearchCommander", "Donation",
+                new { wallet, bucketPrice, funded }, new { amount });
+        return amount;
     }
 
     private void Announce(List<Command> commands, string text)

@@ -81,10 +81,17 @@ internal sealed partial class BotManager
     /// has elapsed since the last rescue-probe drop.</summary>
     internal static bool ShouldDropMedevacProbe(bool ownStationInSector, int ownPodsInSector,
         int recentOwnEjects, bool ownRescueProbeNearby, double now, double lastRescueProbeAt, double loadTime)
-        => !ownStationInSector
-           && (ownPodsInSector >= MedevacMinOwnPods || recentOwnEjects >= MedevacMinRecentEjects)
-           && !ownRescueProbeNearby
-           && now - lastRescueProbeAt >= Math.Max(8, loadTime);
+    {
+        bool drop = !ownStationInSector
+            && (ownPodsInSector >= MedevacMinOwnPods || recentOwnEjects >= MedevacMinRecentEjects)
+            && !ownRescueProbeNearby
+            && now - lastRescueProbeAt >= Math.Max(8, loadTime);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Medevac", "DropGate",
+                new { ownStationInSector, ownPodsInSector, recentOwnEjects, ownRescueProbeNearby, now, lastRescueProbeAt, loadTime },
+                new { drop });
+        return drop;
+    }
 
     /// <summary>P779b-1 — the current roster as medevac candidates (the stable
     /// bot id, side, role, and whether that bot's civ was OBSERVED able to buy a

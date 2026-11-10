@@ -963,6 +963,22 @@ list in **reverse**.
   ACES curve for comparison. Default OFF; the OFF path is byte-identical to the
   native 8-bit pipeline (proven against a base-commit build). Proof:
   `tools/p984-hdr-proof`; report `docs/reports/HDR_FOUNDATION_P984.md`.
+
+- **Sim palette (`visuals.space.simPalette`, P989)** — the FS2-Open-flavoured "sim"
+  colour grade. It adds NO pass and NO target: it retunes the two things P984 already
+  runs — the single output transform (`Shaders/Tonemap.fx` `Aces` pass at exposure
+  0.9 with world saturation 0.75 applied in LINEAR light, no tint/lift) and the
+  existing bloom pass (bright-pass threshold 1.2 linear = `HdrOutput.ToStored(1.2)`
+  in the scene target's stored domain, glow contribution 0.08 = the pass's existing
+  `BloomScale`). The values come from `docs/reports/FS2OPEN_STUDY_P978.md` §5.3 and
+  were tuned on our captures. It **requires** `visuals.space.hdrPipeline`: without
+  the float scene target the grade is a no-op and the Visuals row says
+  "(inactive: needs HDR scene)" (`VisualFlag.RequiresKey`). Model:
+  `Rendering/SimPalette.cs` (`HdrGrade`, `SimPalette.Grade`); wiring
+  `Game1.cs` `SyncHdrGrade` + `Game1.Rendering.cs`, `Game1.Inspector.cs`; tests
+  `tests/Allegiance.ClientCore.MonoGame.Tests/SimPaletteTests.cs`; GPU proof
+  `tools/p989-palette-proof`; captures `docs/reports/P989_assets/`; report
+  `docs/reports/SIM_PALETTE_P989.md`.
 - **Modern HUD scale / text budget (P833, capped by P859)** — one scale for text,
   glyph art, gauge ring, target pane and own-status grid, derived from the desktop
   display density × the user `HudSettings.Size` (`Rendering/ModernHudScale.cs`:
@@ -1526,6 +1542,15 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.Tests/GoldenCorpus/BotDecisions/*.json`.
   Regenerate with `UPDATE_CORPUS=1`. Report:
   `docs/reports/BOT_DECISION_CORPUS_P986.md`.
+- **Recorded bot decision corpus (P987)** — real seeded 2-side/3-side input
+  snapshots, deduped/sampled to `GoldenCorpus/BotDecisions/recorded.json` and
+  replayed by `tools/allegiance-mcp/BotDecisionReplay.cs` through the same pure
+  decision cores. Recording fixture/test:
+  `tests/Allegiance.ClientCore.Tests/P987DecisionRecordingLiveTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P987RecordedBotDecisionCorpusTests.cs`;
+  re-record with `tools/p987-bot-decision-corpus/record.sh`. Full inventory,
+  uncovered reasons, drift proofs and overhead:
+  `docs/reports/BOT_DECISION_CORPUS_SLICE2_P987.md`.
 - **Ordered miner / Piglet routines (P905)** — explicit `spawn_bot` behaviors
   `miner`, `docker`, `deathmatch`, `chatter` in
   `tools/allegiance-mcp/BotManager.Routines.cs`, with typed state and timers in

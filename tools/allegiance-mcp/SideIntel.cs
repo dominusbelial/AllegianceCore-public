@@ -168,6 +168,16 @@ internal static class ExplorationPlanner
             c = a.From.CompareTo(b.From);
             return c != 0 ? c : a.To.CompareTo(b.To);
         });
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Exploration", "Frontiers",
+                new
+                {
+                    clusters = graph.Clusters, warps = graph.Warps, knownSectors = known.Order().ToArray(),
+                    warpKnowledge = warps.Values.OrderBy(w => w.WarpId).ToArray(), ownHome,
+                    doneLanes = doneLanes?.OrderBy(l => l.From).ThenBy(l => l.To).ToArray(),
+                    sweptSectors = sweptSectors?.Order().ToArray(),
+                },
+                new { lanes });
         return lanes;
     }
 
@@ -237,6 +247,13 @@ internal static class ExplorationPlanner
                 used.Add(swap.Key);
             }
             else result[id] = lane;
+        }
+        if (BotDecisionRecorder.IsEnabled)
+        {
+            var hopRows = scouts.SelectMany(s => lanes.Select(l => new { from = s.Sector, to = l.From, hops = hops(s.Sector, l.From) })).ToArray();
+            BotDecisionRecorder.Record("Exploration", "Assign",
+                new { lanes, scouts, current = current?.OrderBy(kv => kv.Key).ToArray(), hops = hopRows },
+                new { assignments = result.OrderBy(kv => kv.Key).Select(kv => new { scoutId = kv.Key, lane = kv.Value }).ToArray() });
         }
         return result;
     }
@@ -322,6 +339,10 @@ internal static class ExplorationPlanner
             if (scout.ScannerRange > bestScan || (scout.ScannerRange == bestScan && h < bestHops))
             { best = scout.Id; bestHops = h; bestScan = scout.ScannerRange; }
         }
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Exploration", "ReconScout",
+                new { scouts, target, hops = scouts.Select(s => new { sector = s.Sector, hops = hops(s.Sector, target) }).ToArray() },
+                new { selected = best });
         return best;
     }
 
@@ -416,8 +437,8 @@ internal static class ClashScoring
             .Where(s => s != ownHome)
             .ToHashSet();
         var picked = Best(resourced, false);
-        if (picked is not null) return picked;
-        if (!topologyFallback) return null;
+        if (picked is not null) { RecordChoice(graph, ownHome, enemyHome, known, rockList, ownList, enemyList, stationList, topologyFallback, picked); return picked; }
+        if (!topologyFallback) { RecordChoice(graph, ownHome, enemyHome, known, rockList, ownList, enemyList, stationList, topologyFallback, null); return null; }
         // P837 — nothing contested is known: commit both fleets to the BALANCED
         // meeting point between the two homes instead of a central KNOWN
         // sector. The topology and the home flags are global knowledge for every
@@ -428,15 +449,34 @@ internal static class ClashScoring
         {
             int hopsOwn = ExplorationPlanner.Hops(graph, ownHome, midpoint);
             int hopsEnemy = ExplorationPlanner.Hops(graph, enemyHome, midpoint);
-            return new ClashChoice(midpoint, 0.5,
+            var choice = new ClashChoice(midpoint, 0.5,
                 $"topology fallback: midpoint between the homes (hops own={hopsOwn} enemy={hopsEnemy}; no contested resource seen yet)",
                 Resource: 0, OwnMiners: 0, EnemyMiners: 0, EnemyStation: false, OwnHops: hopsOwn, EnemyHops: hopsEnemy);
+            RecordChoice(graph, ownHome, enemyHome, known, rockList, ownList, enemyList, stationList, topologyFallback, choice);
+            return choice;
         }
         // No enemy home known (a map without home flags): fall back to the most
         // central known sector (topology only — the map preview every side has).
         var central = known.Where(s => s != ownHome).ToHashSet();
         if (central.Count == 0) central = ExplorationPlanner.Reachable(graph, ownHome).Where(s => s != ownHome).ToHashSet();
-        return Best(central, true);
+        var centralChoice = Best(central, true);
+        RecordChoice(graph, ownHome, enemyHome, known, rockList, ownList, enemyList, stationList, topologyFallback, centralChoice);
+        return centralChoice;
+    }
+
+    private static void RecordChoice(ClusterGraph graph, short ownHome, short enemyHome,
+        IEnumerable<short> knownSectors, IEnumerable<RockSighting> rocks,
+        IEnumerable<MinerSighting> ownMiners, IEnumerable<MinerSighting> enemyMiners,
+        IEnumerable<StationSighting> enemyStations, bool topologyFallback, ClashChoice? choice)
+    {
+        if (!BotDecisionRecorder.IsEnabled) return;
+        BotDecisionRecorder.Record("Exploration", "Clash",
+            new
+            {
+                clusters = graph.Clusters, warps = graph.Warps, ownHome, enemyHome,
+                knownSectors = knownSectors.Order().ToArray(), rocks, ownMiners, enemyMiners, enemyStations, topologyFallback,
+            },
+            new { choice });
     }
 
     /// <summary>P837 — the sector where the two fleets must meet when neither side

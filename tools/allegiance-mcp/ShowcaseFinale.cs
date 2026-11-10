@@ -69,16 +69,27 @@ internal static class ShowcaseFinale
     internal static short[] TriggerSides(Settings settings, double elapsedSeconds,
         IReadOnlyList<Maturity> sides, int recentKills)
     {
+        short[] selected;
         if (!settings.Enabled || elapsedSeconds < settings.AfterMinutes * 60 || sides.Count < 2
             || sides.Any(s => s.CombatBots == 0 || s.RelaunchShare < settings.MinRelaunchShare)
-            || recentKills < settings.MinKillsLastFiveMinutes) return [];
-        return settings.Side switch
+            || recentKills < settings.MinKillsLastFiveMinutes) selected = [];
+        else selected = settings.Side switch
         {
             "all" => sides.Select(s => s.Side).Order().ToArray(),
             "both" => sides.Count == 2 ? sides.Select(s => s.Side).Order().ToArray() : [],
             var token when short.TryParse(token, out short id) => sides.Where(s => s.Side == id).Select(s => s.Side).ToArray(),
             _ => [sides.OrderByDescending(s => s.Kills).ThenBy(s => s.Side).First().Side],
         };
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "TriggerSides",
+                new
+                {
+                    afterMinutes = settings.AfterMinutes, sideSelection = settings.Side,
+                    minRelaunchShare = settings.MinRelaunchShare, minKillsLastFiveMinutes = settings.MinKillsLastFiveMinutes,
+                    elapsedSeconds, sides, recentKills,
+                },
+                new { selected });
+        return selected;
     }
 
     internal readonly record struct Damage(float Hull, float Shield)
@@ -128,12 +139,27 @@ internal static class ShowcaseFinale
     internal static short? EscortTarget(Vector3 escort, Vector3 bomber, IEnumerable<EscortEnemy> enemies,
         float radius, float leash)
     {
-        if ((escort - bomber).LengthSquared() > leash * leash) return null;
-        return enemies.Where(e => (e.Position - bomber).LengthSquared() <= leash * leash
-                && (e.AttackingBomber || ((e.Position - bomber).LengthSquared() <= radius * radius
-                    && Dot(e.Velocity, bomber - e.Position) > 0)))
-            .OrderByDescending(e => e.AttackingBomber).ThenBy(e => (e.Position - bomber).LengthSquared())
-            .ThenBy(e => e.Id).Select(e => (short?)e.Id).FirstOrDefault();
+        var observed = enemies;
+        short? target = null;
+        if ((escort - bomber).LengthSquared() <= leash * leash)
+            target = observed.Where(e => (e.Position - bomber).LengthSquared() <= leash * leash
+                    && (e.AttackingBomber || ((e.Position - bomber).LengthSquared() <= radius * radius
+                        && Dot(e.Velocity, bomber - e.Position) > 0)))
+                .OrderByDescending(e => e.AttackingBomber).ThenBy(e => (e.Position - bomber).LengthSquared())
+                .ThenBy(e => e.Id).Select(e => (short?)e.Id).FirstOrDefault();
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Finale", "EscortTarget",
+                new
+                {
+                    escort = new[] { escort.X, escort.Y, escort.Z }, bomber = new[] { bomber.X, bomber.Y, bomber.Z },
+                    enemies = observed.Select(e => new
+                    {
+                        e.Id, position = new[] { e.Position.X, e.Position.Y, e.Position.Z },
+                        velocity = new[] { e.Velocity.X, e.Velocity.Y, e.Velocity.Z }, e.AttackingBomber,
+                    }).ToArray(), radius, leash,
+                },
+                new { target });
+        return target;
     }
     private static float Dot(Vector3 a, Vector3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
 

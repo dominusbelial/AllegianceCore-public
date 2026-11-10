@@ -892,7 +892,9 @@ public sealed partial class Game1
             // and falls back to the native 8-bit path (one log line) otherwise.
             _post.SetHdr(_visuals.HdrPipeline);
             SyncHdrState();
-            _hdrCurve = _visuals.HdrAces ? Rendering.HdrCurve.Aces : Rendering.HdrCurve.Neutral;
+            // P989 — the grade is resolved from the live flags; the sim palette is a
+            // no-op unless the float scene target + output transform really exist.
+            SyncHdrGrade();
             if (_visuals.HdrPipeline)
                 Console.WriteLine("[monogame] P984: visuals.space.hdrPipeline "
                     + (HdrScene
@@ -900,6 +902,8 @@ public sealed partial class Game1
                         : $"UNAVAILABLE ({_post.HdrFallbackReason ?? "shader/target missing"}) - native 8-bit scene path")
                     + " | " + Rendering.HdrOutput.Describe(HdrScene, _hdrCurve, _bloomEnabled,
                         _upscaling.Upscaling == UpscalingMode.FSR1));
+            Console.WriteLine("[monogame] P989: visuals.space.simPalette "
+                + Rendering.SimPalette.Describe(_grade, _visuals.SimPalette, HdrScene));
         }
 
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);

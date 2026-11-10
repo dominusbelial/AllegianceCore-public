@@ -1,0 +1,50 @@
+{
+ "black/off": {
+  "mean_luma": 5.5,
+  "mean_chroma": 2.98
+ },
+ "black/hdr": {
+  "mean_luma": 5.5,
+  "mean_chroma": 2.98
+ },
+ "black/sim": {
+  "mean_luma": 5.02,
+  "mean_chroma": 2.55
+ },
+ "black/simall": {
+  "mean_luma": 5.01,
+  "mean_chroma": 2.55
+ },
+ "native/off": {
+  "mean_luma": 28.61,
+  "mean_chroma": 25.78
+ },
+ "native/hdr": {
+  "mean_luma": 28.61,
+  "mean_chroma": 25.77
+ },
+ "native/sim": {
+  "mean_luma": 25.53,
+  "mean_chroma": 23.75
+ },
+ "native/simall": {
+  "mean_luma": 25.53,
+  "mean_chroma": 23.75
+ },
+ "hd/off": {
+  "mean_luma": 40.73,
+  "mean_chroma": 29.31
+ },
+ "hd/hdr": {
+  "mean_luma": 40.72,
+  "mean_chroma": 29.3
+ },
+ "hd/sim": {
+  "mean_luma": 35.89,
+  "mean_chroma": 28.68
+ },
+ "hd/simall": {
+  "mean_luma": 35.88,
+  "mean_chroma": 28.68
+ }
+}

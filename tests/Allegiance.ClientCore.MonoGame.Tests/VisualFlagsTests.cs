@@ -14,10 +14,10 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public sealed class VisualFlagsTests
 {
     [Fact]
-    public void Every_flag_defaults_off_and_the_table_is_well_formed()
+    public void Defaults_follow_the_table_and_the_table_is_well_formed()
     {
         var options = new VisualOptions();
-        Assert.False(options.RadialVisibility);
+        Assert.True(options.RadialVisibility);
         Assert.False(options.RemoteTimeline);
         Assert.Equal(10000f, options.ViewRange);
         Assert.Contains(VisualFlags.Definitions, d => d.Key == VisualFlags.RadialVisibilityKey);
@@ -30,10 +30,25 @@ public sealed class VisualFlagsTests
             Assert.False(string.IsNullOrWhiteSpace(definition.Key));
             Assert.False(string.IsNullOrWhiteSpace(definition.Label));
             Assert.False(string.IsNullOrWhiteSpace(definition.Description));
-            if (definition.Kind == VisualFlagKind.Toggle) Assert.False(definition.DefaultOn);
-            else Assert.True(definition.MaxValue > definition.MinValue);
+            if (definition.Kind != VisualFlagKind.Toggle) Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=off remoteTimeline=off viewRange=10000 subtleDust=off simStars=off simGlare=off starStreaks=off space.hdrPipeline=off space.hdrAces=off", options.Describe());
+        Assert.Equal("radialVisibility=on remoteTimeline=off viewRange=10000 subtleDust=on simStars=on simGlare=on starStreaks=on space.hdrPipeline=on space.hdrAces=off space.simPalette=off", options.Describe());
+    }
+
+    /// <summary>Domingo 2026-11-09 ("those image settings look amazing, it should be
+    /// the new default for the MonoGame client"): the approved look is ON for a fresh
+    /// profile; remote smoothing and the ACES comparison curve stay opt-in.</summary>
+    [Fact]
+    public void Approved_look_is_the_default_and_the_rest_stay_opt_in()
+    {
+        string[] on = { VisualFlags.RadialVisibilityKey, VisualFlags.SubtleDustKey, VisualFlags.SimStarsKey,
+                        VisualFlags.SimGlareKey, VisualFlags.StarStreaksKey, VisualFlags.HdrPipelineKey };
+        foreach (var definition in VisualFlags.Definitions)
+            if (definition.Kind == VisualFlagKind.Toggle)
+                Assert.Equal(System.Array.IndexOf(on, definition.Key) >= 0, definition.DefaultOn);
+        var native = VisualOptions.Parse(string.Join(",", System.Linq.Enumerable.Select(on, k => k + "=off")), out var warnings);
+        Assert.Empty(warnings);
+        foreach (var key in on) Assert.False(native.IsOn(key));
     }
 
     [Fact]
@@ -73,7 +88,7 @@ public sealed class VisualFlagsTests
         var options = VisualOptions.Parse(spec, out var warnings);
         Assert.Empty(warnings);
         Assert.Equal(expected, options.RemoteTimeline);
-        Assert.False(options.RadialVisibility);
+        Assert.True(options.RadialVisibility);
         Assert.Equal(10000f, options.ViewRange);
     }
 
@@ -127,7 +142,7 @@ public sealed class VisualFlagsTests
     public void Missing_group_and_unknown_json_keys_are_ignored()
     {
         var missing = JsonSerializer.Deserialize<VisualOptions>("null") ?? new VisualOptions();
-        Assert.False(missing.RadialVisibility);
+        Assert.True(missing.RadialVisibility);
         Assert.Equal(10000f, missing.ViewRange);
 
         var json = JsonSerializer.Deserialize<VisualOptions>(
@@ -184,13 +199,13 @@ public sealed class VisualFlagsTests
             Assert.Null(prefs.Visuals);
             prefs.Save(path);
             // The group stays absent until the Visuals page is first used, so a
-            // legacy profile loads exactly the table defaults (every flag OFF).
+            // legacy profile loads exactly the table defaults (approved look ON, rest OFF).
             var loaded = IntroPreferences.Load(path);
             Assert.Null(loaded.Visuals);
-            Assert.False((loaded.Visuals ?? new VisualOptions()).RadialVisibility);
+            Assert.True((loaded.Visuals ?? new VisualOptions()).RadialVisibility);
             var resolved = VisualOptions.Resolve(loaded.Visuals, null, out var warnings);
             Assert.Empty(warnings);
-            Assert.False(resolved.RadialVisibility);
+            Assert.True(resolved.RadialVisibility);
             Assert.False(resolved.RemoteTimeline);
             Assert.Equal(10000f, resolved.ViewRange);
         }

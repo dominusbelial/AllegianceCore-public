@@ -278,6 +278,11 @@ public sealed partial class Game1
     }
     private void DrawGpuBudgetOverlay()
     {
+        // P989 — an evidence capture (ALLEGIANCE_BENCHMARK_FRAME, or the wall-clock
+        // ALLEGIANCE_CLIENT_PERF_CAPTURE) must be the real frame, not the benchmark's
+        // own telemetry overlay drawn over it.
+        if (_budgetCapture is not null) return;
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_FRAME") is { Length: > 0 }) return;
         if (!_graphicsSettingsVisible && _frameTelemetry is null) return;
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
@@ -352,6 +357,34 @@ public sealed partial class Game1
             GraphicsDevice.GetBackBufferData(pixels);
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(screenshot))!);
             File.WriteAllBytes(screenshot, Capture.CapturePngSaver.Encode(pixels, parameters.BackBufferWidth, parameters.BackBufferHeight));
+        }
+        // P989 — deterministic replay-frame capture for A/B evidence. A wall-clock
+        // capture (ALLEGIANCE_CLIENT_PERF_CAPTURE above) lands on a DIFFERENT replay
+        // frame per run, because the frame cost changes with the pipeline under test;
+        // the replay frame NUMBER is the only stable key, so this hook fires once at
+        // or just past ALLEGIANCE_BENCHMARK_FRAME and writes a VALID PNG. Inert unless
+        // both env vars are set (same class of hook as ALLEGIANCE_BENCHMARK_SCREENSHOT).
+        var frameShot = _benchReplay;
+        if (frameShot is not null && !_benchFrameShotDone
+            && int.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_FRAME"), out int wantFrame)
+            && Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_FRAME_PNG") is { Length: > 0 } frameShotPath)
+        {
+            if (frameShot.Frame >= wantFrame)
+            {
+                _benchFrameShotDone = true;
+                var shotParameters = GraphicsDevice.PresentationParameters;
+                var shotPixels = new Color[shotParameters.BackBufferWidth * shotParameters.BackBufferHeight];
+                GraphicsDevice.GetBackBufferData(shotPixels);
+                using var shotTexture = new Texture2D(GraphicsDevice, shotParameters.BackBufferWidth, shotParameters.BackBufferHeight);
+                shotTexture.SetData(shotPixels);
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(frameShotPath))!);
+                using (var shotFile = File.Create(frameShotPath))
+                    shotTexture.SaveAsPng(shotFile, shotTexture.Width, shotTexture.Height);
+                Console.WriteLine($"[capture] replay frame {frameShot.Frame} (wanted {wantFrame}) -> {frameShotPath}");
+                // The shot is the whole point of the run: stop here instead of playing
+                // the rest of the replay to its end.
+                Exit();
+            }
         }
         if (_budgetDuration > 0 && Stopwatch.GetElapsedTime(_budgetStart).TotalSeconds >= _budgetDuration)
         {

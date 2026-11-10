@@ -1081,7 +1081,23 @@ internal sealed partial class BotManager : IDisposable
     {
         if (sideHome is not { } home) return [];
         lock (Probe.Gate)
-            return RouteEnumeration(Probe.World.Warps, home, rendezvous, maxRoutes);
+        {
+            var routes = RouteEnumeration(Probe.World.Warps, home, rendezvous, maxRoutes);
+            if (BotDecisionRecorder.IsEnabled)
+                BotDecisionRecorder.Record("Route", "Enumeration",
+                    new
+                    {
+                        from = home, to = rendezvous, maxRoutes,
+                        warps = Probe.World.Warps.Values.OrderBy(w => w.WarpId).Select(w => new
+                        {
+                            w.WarpId, w.DestinationId, w.ClusterId,
+                            partnerClusterId = Probe.World.Warps.TryGetValue(w.DestinationId, out var partner)
+                                ? partner.ClusterId : (short)-1,
+                        }).ToArray(),
+                    },
+                    new { routes = routes.Select(r => r.ToArray()).ToArray() });
+            return routes;
+        }
     }
 
     /// <summary>P637 — a NON-rendezvous role's OWN target: a BOMBER's objective
@@ -1113,6 +1129,8 @@ internal sealed partial class BotManager : IDisposable
         int best = 0;
         for (int i = 1; i < counts.Length; i++)
             if (counts[i] < counts[best]) best = i;
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Route", "LeastLoaded", new { counts }, new { pick = best });
         return best;
     }
 
@@ -2676,12 +2694,17 @@ bool isThreat =
 
     /// <summary>[vz EnemyNextHop] The next cluster on the path after
     /// <paramref name="cur"/>; <c>cur</c> itself when it is the goal.</summary>
-    private static short CombatNextHop(ActiveBot bot, short cur)
+    internal static short NextHopInPath(IReadOnlyList<short> path, short cur)
     {
-        for (int i = 1; i < bot.Path.Count; i++)
-            if (bot.Path[i - 1] == cur) return bot.Path[i];
-        return cur;
+        short next = cur;
+        for (int i = 1; i < path.Count; i++)
+            if (path[i - 1] == cur) { next = path[i]; break; }
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Route", "NextHop", new { current = cur, path = path.ToArray() }, new { next });
+        return next;
     }
+
+    private static short CombatNextHop(ActiveBot bot, short cur) => NextHopInPath(bot.Path, cur);
 
     /// <summary>[vz AttachEnemyFlyTo] Face-and-thrust autopilot law (the same
     /// <c>Ship.SteerToward</c> law vizfight's FlyTo uses), reading the bot's pose
@@ -3613,6 +3636,17 @@ bool isThreat =
     /// unarmed pods"). When the bot relaunches into a fresh (non-pod) hull the
     /// pod state is cleared and combat resumes.
     /// </summary>
+    internal enum BotLifeTransition { Combat, EnterPod, PodFlying, PodDocked, PodAwaitingLaunch, Relaunch }
+
+    /// <summary>Smallest pure core of the pod/death/relaunch state machine.</summary>
+    internal static BotLifeTransition ClassifyLifeTransition(bool wasPod, bool podDocked, bool isPod, short stationId)
+    {
+        if (isPod) return !wasPod ? BotLifeTransition.EnterPod
+            : stationId >= 0 && !podDocked ? BotLifeTransition.PodDocked : BotLifeTransition.PodFlying;
+        if (wasPod && stationId >= 0) return BotLifeTransition.PodAwaitingLaunch;
+        return wasPod ? BotLifeTransition.Relaunch : BotLifeTransition.Combat;
+    }
+
     private static bool UpdatePodState(ActiveBot bot, ConnectionSession cs, double now)
     {
         HandleRelaunchAck(bot, cs);
@@ -3631,7 +3665,11 @@ bool isThreat =
             bot.PodOutcomeCursor = cs.World.Events.KillSequence;
         }
         bool isPod = Catalog.IsLifepodHull(hull);
-        if (isPod)
+        var transition = ClassifyLifeTransition(bot.IsPod, bot.PodDocked, isPod, stationId);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Lifecycle", "PodTransition",
+                new { wasPod = bot.IsPod, podDocked = bot.PodDocked, isPod, stationId }, new { transition });
+        if (transition is BotLifeTransition.EnterPod or BotLifeTransition.PodFlying or BotLifeTransition.PodDocked)
         {
             if (!bot.IsPod)
             {
@@ -3698,8 +3736,8 @@ bool isThreat =
             }
             return true;
         }
-        if (bot.IsPod && stationId >= 0) return true; // purchase ACK precedes launch SET_CLUSTER
-        if (bot.IsPod)
+        if (transition == BotLifeTransition.PodAwaitingLaunch) return true; // purchase ACK precedes launch SET_CLUSTER
+        if (transition == BotLifeTransition.Relaunch)
         {
             ResetNewLife(bot, now, reinforcement: true);
             Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — re-routing to target sector {bot.TargetSector} to rejoin the fight (P637: reinforcement skips staging, routes straight)");
@@ -4883,6 +4921,7 @@ bool isThreat =
     /// interrupting travel for visible attackers or an active base defence.</summary>
     private void DriveCombat(ActiveBot bot, double now, PreparedEngagement? prep)
     {
+        BotDecisionRecorder.BotTick();
         using var frameScope = new DecisionFrameScope(bot.Cs);
         var cs = bot.Cs!;
         if (!IsParticipating(bot) || !RefreshLife(bot, cs, now)) return;
@@ -6043,6 +6082,7 @@ bool isThreat =
         _loopCts.Cancel();
         if (_loopThread.IsAlive) _loopThread.Join(500);
         if (_researchThread?.IsAlive == true) _researchThread.Join(1500);
+        BotDecisionRecorder.WriteMetrics();
         // P796 — the end-of-run coverage table (bounded; nothing printed when
         // this manager never bought anything).
         if (WeaponCoverage.Global.HasData)

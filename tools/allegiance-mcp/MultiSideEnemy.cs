@@ -11,13 +11,28 @@ internal static class MultiSideEnemy
 {
     internal sealed record Candidate(short Side, bool Active, bool Allied, short[] Sectors, long Kills, int Stations);
 
+    internal readonly record struct RankedCandidate(short Side, bool Active, bool Allied,
+        long Kills, int Stations, int Hops);
+
+    /// <summary>Pure faction-ranking core; topology lookup is the only live input adapter.</summary>
+    internal static short? ChooseRanked(short own, IEnumerable<RankedCandidate> candidates) =>
+        candidates.Where(c => c.Side >= 0 && c.Side != own && c.Active && !c.Allied && c.Hops >= 0)
+            .OrderBy(c => c.Hops).ThenByDescending(c => c.Kills).ThenByDescending(c => c.Stations)
+            .ThenBy(c => c.Side).Select(c => (short?)c.Side).FirstOrDefault();
+
     internal static short? Choose(short own, short origin, ClusterGraph? graph, IEnumerable<Candidate> candidates)
-        => candidates.Where(c => c.Side >= 0 && c.Side != own && c.Active && !c.Allied)
-            .Select(c => (Candidate: c, Hops: c.Sectors.Select(s => graph is null ? (s == origin ? 0 : -1)
-                : ExplorationPlanner.Hops(graph, origin, s)).Where(h => h >= 0).DefaultIfEmpty(-1).Min()))
-            .Where(c => c.Hops >= 0).OrderBy(c => c.Hops)
-            .ThenByDescending(c => c.Candidate.Kills).ThenByDescending(c => c.Candidate.Stations)
-            .ThenBy(c => c.Candidate.Side).Select(c => (short?)c.Candidate.Side).FirstOrDefault();
+    {
+        var ranked = candidates.Where(c => c.Side >= 0 && c.Side != own && c.Active && !c.Allied).Select(c =>
+        {
+            int hops = c.Sectors.Select(s => graph is null ? (s == origin ? 0 : -1)
+                : ExplorationPlanner.Hops(graph, origin, s)).Where(h => h >= 0).DefaultIfEmpty(-1).Min();
+            return new RankedCandidate(c.Side, c.Active, c.Allied, c.Kills, c.Stations, hops);
+        });
+        short? selected = ChooseRanked(own, ranked);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("MultiSideEnemy", "Choose", new { own, origin, candidates = ranked.ToArray() }, new { selected });
+        return selected;
+    }
 
     internal static short? Choose(ClientWorld world, short own, IEnumerable<DataStationIGC>? observed = null)
     {

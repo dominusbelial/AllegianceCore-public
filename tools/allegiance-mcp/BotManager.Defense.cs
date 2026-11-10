@@ -43,6 +43,14 @@ internal sealed partial class BotManager
     internal static int DefenseBudgetFor(int population, int alreadyAssigned, int cap, double share) =>
         Math.Max(0, Math.Min(cap, (int)Math.Ceiling(population * share)) - alreadyAssigned);
 
+    /// <summary>The world-derived, immutable part of one defence assignment candidate.</summary>
+    internal readonly record struct DefenseAssignmentCandidate(short ShipId, int Hops, float Local);
+
+    /// <summary>Pure ranking core for the live defence assignment below.</summary>
+    internal static short[] RankDefenseAssignments(IEnumerable<DefenseAssignmentCandidate> candidates, int budget) =>
+        candidates.Where(c => c.Hops >= 0).OrderBy(c => c.Hops).ThenBy(c => c.Local).ThenBy(c => c.ShipId)
+            .Take(Math.Max(0, budget)).Select(c => c.ShipId).ToArray();
+
     private static bool IsDefenseFighter(ActiveBot bot) =>
         !(bot.Cs is { } cs && KillsGame(cs) && bot.FlagTask != FlagDuty.None)
         && (bot.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase)
@@ -142,20 +150,29 @@ internal sealed partial class BotManager
             int assigned = side.Count(b => b.DefenseSector is not null);
             int budget = DefenseBudgetFor(side.Length, assigned, DefenseConfig.Cap, DefenseConfig.Share);
             RecordDefenseBudget(key, side.Length, assigned, budget);
-            var ranked = side.Where(b => b.DefenseSector is null && IsDefenseFighter(b))
-                .Select(b => (Bot: b, Distance: DefenseDistance(b, key.Sector)))
-                .Where(b => b.Distance.Hops >= 0)
-                .OrderBy(b => b.Distance.Hops).ThenBy(b => b.Distance.Local).ThenBy(b => b.Bot.ShipId)
-                .Take(Math.Max(0, budget)).ToArray();
-            foreach (var (bot, _) in ranked)
+            var candidates = side.Where(b => b.DefenseSector is null && IsDefenseFighter(b))
+                .Select(b => (Bot: b, Distance: DefenseDistance(b, key.Sector))).ToArray();
+            short[] selected = RankDefenseAssignments(candidates.Select(c =>
+                new DefenseAssignmentCandidate(c.Bot.ShipId, c.Distance.Hops, c.Distance.Local)), budget);
+            if (BotDecisionRecorder.IsEnabled)
+                BotDecisionRecorder.Record("Defense", "Assignment",
+                    new
+                    {
+                        side = key.Side, sector = key.Sector, population = side.Length, alreadyAssigned = assigned,
+                        cap = DefenseConfig.Cap, share = DefenseConfig.Share,
+                        candidates = candidates.Select(c => new { shipId = c.Bot.ShipId, c.Distance.Hops, c.Distance.Local }).ToArray(),
+                    },
+                    new { budget, selected });
+            foreach (short shipId in selected)
             {
+                var bot = candidates.First(c => c.Bot.ShipId == shipId).Bot;
                 bot.DefenseSector = key.Sector;
                 bot.TargetId = null;
             }
             // A delayed world sync still gets a full minimum deployment. A zero
             // budget is final for this incident, including when another base used it.
-            incident.Assigned = ranked.Length > 0 || budget <= 0;
-            if (ranked.Length > 0) incident.Started = now;
+            incident.Assigned = selected.Length > 0 || budget <= 0;
+            if (selected.Length > 0) incident.Started = now;
         }
         // A mission change or side change must never carry an old detour into a new map.
         foreach (var bot in bots.Where(b => b.Cs is not null && b.DefenseSector is not null))

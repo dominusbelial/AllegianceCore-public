@@ -213,12 +213,12 @@ public sealed class HdrFoundationTests
     public void Hdr_flags_default_off_and_use_the_space_namespace()
     {
         var options = new VisualOptions();
-        Assert.False(options.HdrPipeline);
+        Assert.True(options.HdrPipeline);   // default ON since 2026-11-09
         Assert.False(options.HdrAces);
         Assert.Equal("space.hdrPipeline", VisualFlags.HdrPipelineKey);
         Assert.Equal("space.hdrAces", VisualFlags.HdrAcesKey);
         Assert.Equal(VisualFlagKind.Toggle, VisualFlags.Find(VisualFlags.HdrPipelineKey)!.Kind);
-        Assert.False(VisualFlags.Find(VisualFlags.HdrPipelineKey)!.DefaultOn);
+        Assert.True(VisualFlags.Find(VisualFlags.HdrPipelineKey)!.DefaultOn);
         Assert.False(VisualFlags.Find(VisualFlags.HdrAcesKey)!.DefaultOn);
         // No hotkey collision on the Visuals page (each row owns one letter).
         var hotkeys = VisualFlags.Definitions.Where(d => d.Hotkey != '\0').Select(d => d.Hotkey).ToList();
@@ -268,11 +268,11 @@ public sealed class HdrFoundationTests
     }
 
     [Fact]
-    public void A_profile_without_the_group_keeps_hdr_off()
+    public void A_profile_without_the_group_gets_hdr_on_and_neutral()
     {
         var resolved = VisualOptions.Resolve(null, null, out var warnings);
         Assert.Empty(warnings);
-        Assert.False(resolved.HdrPipeline);
+        Assert.True(resolved.HdrPipeline);   // default ON since 2026-11-09
         Assert.False(resolved.HdrAces);
     }
 
@@ -293,7 +293,7 @@ public sealed class HdrFoundationTests
         Assert.Null(menu.Activate(state));
         Assert.Equal(OptionsMenuModel.Page.Visuals, menu.Current);
         var rows = menu.Rows(state);
-        Assert.Contains(rows, r => r.Label.StartsWith("HDR scene: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("HDR scene: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("ACES output curve: off - "));
         int hdrRow = rows.ToList().FindIndex(r => r.Label.StartsWith("HDR scene: "));
         int acesRow = rows.ToList().FindIndex(r => r.Label.StartsWith("ACES output curve: "));

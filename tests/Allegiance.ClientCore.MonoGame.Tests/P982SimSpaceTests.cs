@@ -196,7 +196,9 @@ public sealed class P982SimSpaceTests
     [InlineData(VisualFlags.StarStreaksKey, 'K')]
     public void Each_flag_roundtrips_overrides_logs_and_has_a_live_menu_row(string key, char hotkey)
     {
-        var profile = new VisualOptions(); Assert.False(profile.IsOn(key));
+        var profile = new VisualOptions(); Assert.True(profile.IsOn(key)); // default ON since 2026-11-09
+        profile.SetToggle(key, false);
+        Assert.False(JsonSerializer.Deserialize<IntroPreferences>(JsonSerializer.Serialize(new IntroPreferences { Visuals = profile }))!.Visuals!.IsOn(key));
         profile.SetToggle(key, true);
         var restored = JsonSerializer.Deserialize<IntroPreferences>(JsonSerializer.Serialize(new IntroPreferences { Visuals = profile }));
         Assert.True(restored!.Visuals!.IsOn(key));

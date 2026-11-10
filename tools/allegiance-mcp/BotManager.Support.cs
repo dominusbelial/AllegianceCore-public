@@ -18,9 +18,14 @@ internal sealed partial class BotManager
                 CultureInfo.InvariantCulture, out var s) && double.IsFinite(s) ? Math.Clamp(s, 0, 1) : .10);
     }
 
-    internal static bool SupportSlot(int ordinal, int count, double share) => count > 0
-        && ordinal >= 0 && ordinal < count && share > 0
-        && (int)Math.Ceiling((ordinal + 1) * share) > (int)Math.Ceiling(ordinal * share);
+    internal static bool SupportSlot(int ordinal, int count, double share)
+    {
+        bool support = count > 0 && ordinal >= 0 && ordinal < count && share > 0
+            && (int)Math.Ceiling((ordinal + 1) * share) > (int)Math.Ceiling(ordinal * share);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Support", "Slot", new { ordinal, count, share }, new { support });
+        return support;
+    }
     private static bool IsSupport(ActiveBot bot) => bot.Role.Equals("support", StringComparison.OrdinalIgnoreCase);
 
     // ── P791 — the phase signal support pilots read ──────────────────────────
@@ -42,10 +47,24 @@ internal sealed partial class BotManager
         IReadOnlyList<(short Sector, int Count)> fighterRendezvous,
         IReadOnlyList<(short Sector, int Count)> fightersPresent)
     {
-        if (finaleTriggered && finaleSector is { } fs && fs >= 0) return new(SupportPhaseKind.Strike, fs);
-        if (strikeWaveActive && strikeWaveSector >= 0) return new(SupportPhaseKind.Strike, strikeWaveSector);
-        (short Sector, int Count)? best = Mode(fighterRendezvous) ?? Mode(fightersPresent);
-        return new(SupportPhaseKind.Opening, best is { } m && m.Sector >= 0 ? m.Sector : null);
+        SupportPhaseSignal phase;
+        if (finaleTriggered && finaleSector is { } fs && fs >= 0) phase = new(SupportPhaseKind.Strike, fs);
+        else if (strikeWaveActive && strikeWaveSector >= 0) phase = new(SupportPhaseKind.Strike, strikeWaveSector);
+        else
+        {
+            (short Sector, int Count)? best = Mode(fighterRendezvous) ?? Mode(fightersPresent);
+            phase = new(SupportPhaseKind.Opening, best is { } m && m.Sector >= 0 ? m.Sector : null);
+        }
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Support", "Phase",
+                new
+                {
+                    finaleTriggered, finaleSector, strikeWaveActive, strikeWaveSector,
+                    fighterRendezvous = fighterRendezvous.Select(c => new { c.Sector, c.Count }).ToArray(),
+                    fightersPresent = fightersPresent.Select(c => new { c.Sector, c.Count }).ToArray(),
+                },
+                new { kind = phase.Kind, anchorSector = phase.AnchorSector });
+        return phase;
     }
 
     private static (short Sector, int Count)? Mode(IReadOnlyList<(short Sector, int Count)> counts)
@@ -132,9 +151,14 @@ internal sealed partial class BotManager
     internal static (short? Sector, bool PhaseDriven) PickSupportDestination(
         short? damagedStationSector, SupportPhaseSignal phase, short? fallbackSector)
     {
-        if (damagedStationSector is { } station) return (station, false);
-        if (phase.AnchorSector is { } anchor) return (anchor, true);
-        return (fallbackSector, false);
+        var destination = damagedStationSector is { } station ? (station, false)
+            : phase.AnchorSector is { } anchor ? (anchor, true)
+            : (fallbackSector, false);
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Support", "Destination",
+                new { damagedStationSector, phase, fallbackSector },
+                new { sector = destination.Item1, phaseDriven = destination.Item2 });
+        return destination;
     }
 
     /// <summary>Pure hold decision for the CURRENTLY held repair target.
@@ -146,12 +170,17 @@ internal sealed partial class BotManager
         double maxAgeSeconds = MaxSnapshotAgeSeconds, double noImproveSeconds = NoImproveSeconds,
         double leashSeconds = RepairLeashSeconds)
     {
-        if (observedFraction >= 1f) return SupportHoldDecision.DroppedFull;   // native stop law: == 1.0 (shipIGC.cpp:2668-2671)
-        if (observedFraction <= 0f) return SupportHoldDecision.DroppedStale;  // dead or gone: not a completed repair
-        if (now - startedAt > leashSeconds) return SupportHoldDecision.DroppedLeash;
-        if (observedAgeSeconds > maxAgeSeconds) return SupportHoldDecision.DroppedStale;
-        if (now - lastImproveAt > noImproveSeconds) return SupportHoldDecision.DroppedNoImprove;
-        return SupportHoldDecision.Keep;
+        var decision = observedFraction >= 1f ? SupportHoldDecision.DroppedFull   // native stop law: == 1.0 (shipIGC.cpp:2668-2671)
+            : observedFraction <= 0f ? SupportHoldDecision.DroppedStale          // dead or gone: not a completed repair
+            : now - startedAt > leashSeconds ? SupportHoldDecision.DroppedLeash
+            : observedAgeSeconds > maxAgeSeconds ? SupportHoldDecision.DroppedStale
+            : now - lastImproveAt > noImproveSeconds ? SupportHoldDecision.DroppedNoImprove
+            : SupportHoldDecision.Keep;
+        if (BotDecisionRecorder.IsEnabled)
+            BotDecisionRecorder.Record("Support", "RepairHold",
+                new { now, startedAt, bestFraction, observedFraction, observedAgeSeconds, lastImproveAt, maxAgeSeconds, noImproveSeconds, leashSeconds },
+                new { decision });
+        return decision;
     }
 
 
