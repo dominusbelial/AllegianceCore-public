@@ -344,6 +344,20 @@ list in **reverse**.
   `ProjectileVisibility` radius) and `tools/allegiance-mcp/BotManager.cs` (own-hit credit from 213). Offline
   calculator + loopback fixture: `tests/Allegiance.Core.Tests/P992GunfireTrafficTests.cs`.
   Report: `docs/reports/GUNFIRE_TRAFFIC_P992.md`.
+- **Fire-audience distance cull (P993)** — default-off `broadcast.fireAudienceCull` that relays a
+  `PROJECTILE_INSTANCE(12)` (ship or probe round) only to viewers that can DRAW it: today's
+  `EmissionVisible` audience **and** the recipient's own ship within the client's own 5 900 u projectile
+  draw radius (`ProjectileDrawRadius.WorldUnits`, the one constant
+  `Allegiance.ClientCore.State.ProjectileVisibility.VisibilityRadius` also reads) plus a travel margin
+  `(|v_round| + ship.MovementSpeedLimit()) × projectileType.Lifespan` (a NECESSARY condition for a drawn
+  round, so no drawn pixel is lost; 0 % of the 12 lane culled in a packed fight, 31 % in a spread one).
+  The shooter's own peer (own-echo de-dup, bot own-round counter) and admin free-camera views are never
+  culled; `PROJECTILE_HULL_HIT(213)`'s audience is untouched (bots consume it). A culled (viewer, shooter)
+  pair skips the `EnsureEmissionPose` dependency for that round. `src/Allegiance.Server/Server.FireAudience.cs`
+  (`ResolveFireAudienceCull`, `EmissionCullOrigin`, `ProjectileDrawRangeKeeps`, `FireAudienceCullKeeps`,
+  `[fire-audience] … culled=`), `src/Allegiance.Core/Sim/ProjectileDrawRadius.cs`; env
+  `ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL`. Flag off is byte-identical to the pre-P993 wire (pinned).
+  Report: `docs/reports/FIRE_AUDIENCE_CULL_P993.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry

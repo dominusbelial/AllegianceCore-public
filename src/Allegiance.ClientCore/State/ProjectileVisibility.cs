@@ -16,8 +16,12 @@ public static class ProjectileVisibility
     /// <summary>Projectile visibility radius around the local ship — the "sector
     /// filter" analog for a wire (<c>PROJECTILE_INSTANCE</c>) that carries no
     /// cluster id (the same reasoning and value as the former
-    /// <c>Game1.ProjectileVisibilityRadiusSqr</c>, P231).</summary>
-    public const float VisibilityRadius = 5900f;
+    /// <c>Game1.ProjectileVisibilityRadiusSqr</c>, P231). P993 moved the NUMBER to
+    /// <see cref="Allegiance.Core.Sim.ProjectileDrawRadius.WorldUnits"/> so the
+    /// server's fire relay (which links Core, never the client) culls to exactly
+    /// this reach instead of keeping a second copy; this constant is that one
+    /// definition.</summary>
+    public const float VisibilityRadius = Allegiance.Core.Sim.ProjectileDrawRadius.WorldUnits;
     public const float VisibilityRadiusSqr = VisibilityRadius * VisibilityRadius;
 
     /// <summary>Near-camera cull gap (former <c>Game1.ProjectileNearCamClearance</c>,

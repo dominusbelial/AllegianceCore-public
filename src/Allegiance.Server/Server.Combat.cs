@@ -30,7 +30,7 @@ public sealed partial class Server
     {
         if (p.OriginProbe is Probe origin)
         {
-            BroadcastProbeEmission(origin, FedPacket.Pack(ProjectileInstance.FromProjectile(p, (uint)TickIndex).Encode()));
+            BroadcastProbeEmission(origin, FedPacket.Pack(ProjectileInstance.FromProjectile(p, (uint)TickIndex).Encode()), p);
             return;
         }
         if (p.Launcher is not Ship shooter)
@@ -51,7 +51,7 @@ public sealed partial class Server
         var msg = ProjectileInstance.FromProjectile(p, timeCreate);
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
-        int n = BroadcastShipEmission(shooter, p.OwnerSector, packet);
+        int n = BroadcastShipEmission(shooter, p.OwnerSector, packet, p);   // P993 audience arg (the frame above is unchanged)
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
                                                   $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
     }

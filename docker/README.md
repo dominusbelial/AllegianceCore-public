@@ -370,6 +370,18 @@ periodic refreshes. The environment override accepts `0`/`1` or `false`/`true`;
 empty preserves JSON. Off is byte-identical to the pre-P991 wire. See
 [the P991 measurements](../docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md).
 
+P993's distance cull of the `PROJECTILE_INSTANCE(12)` relay is default off. Set
+`broadcast.fireAudienceCull` in the mounted server JSON, or
+`ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL=1` before starting Compose, to relay a
+round only to viewers whose own ship is within the client's own 5 900 u
+projectile draw radius (`ProjectileDrawRadius`, shared with
+`ProjectileVisibility.VisibilityRadius`) plus the round's and the viewer's travel
+during the round's lifespan. The shooter's own peer and admin free-camera views
+are never culled, and `PROJECTILE_HULL_HIT(213)`'s audience is untouched (bots
+consume it). The environment override accepts `0`/`1` or `false`/`true`; empty
+preserves JSON. Off is byte-identical to the pre-P993 wire (pinned). See
+[the P993 measurements](../docs/reports/FIRE_AUDIENCE_CULL_P993.md).
+
 P968's publisher experiment is default off. Set `broadcast.pendingStreamIndex`
 in the mounted server JSON, or `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX=1`
 before starting Compose, to index the pending snapshot's `(peer, key)` streams
