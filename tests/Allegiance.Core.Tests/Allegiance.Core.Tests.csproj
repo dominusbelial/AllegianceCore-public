@@ -30,6 +30,8 @@
 
   <!-- P597 — shared skip-helpers for corpus-backed tests (see TestRequire.cs). -->
   <ItemGroup>
+    <!-- P999: offline-only scorer; production projects never reference this tool. -->
+    <Compile Include="../../tools/p999-civ-strategy/CivStrategyScorer.cs" Link="P999/CivStrategyScorer.cs" />
     <Compile Include="../../tools/p895-transport-proof/ImpairedUdpProxy.cs" Link="Transport/ImpairedUdpProxy.cs" />
     <Compile Include="../../tools/p895-transport-proof/PoseTiming.cs" Link="Transport/PoseTiming.cs" />
     <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />

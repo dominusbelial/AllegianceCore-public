@@ -1,0 +1,323 @@
+civ,hull,name,phase,window,selections
+18,127,Fighter/Bomber,refit,15-20m,67
+18,127,Fighter/Bomber,refit,20-25m,141
+18,127,Fighter/Bomber,refit,25-30m,67
+18,127,Fighter/Bomber,refit,30-35m,1256
+18,127,Fighter/Bomber,refit,35-40m,250
+18,127,Fighter/Bomber,refit,40-45m,30
+18,127,Fighter/Bomber,refit,boundary,80
+18,127,Fighter/Bomber,refit,unknown,10
+18,148,Stealth Bomber [NG],refit,35-40m,11
+18,148,Stealth Bomber [NG],refit,40-45m,30
+18,148,Stealth Bomber [NG],refit,45-50m,4
+18,148,Stealth Bomber [NG],refit,50-55m,6
+18,148,Stealth Bomber [NG],refit,55-60m,5
+18,148,Stealth Bomber [NG],refit,boundary,2
+18,204,Bomber,refit,0-5m,1
+18,204,Bomber,refit,10-15m,794
+18,204,Bomber,refit,15-20m,914
+18,204,Bomber,refit,20-25m,681
+18,204,Bomber,refit,25-30m,683
+18,204,Bomber,refit,30-35m,193
+18,204,Bomber,refit,35-40m,145
+18,204,Bomber,refit,40-45m,96
+18,204,Bomber,refit,45-50m,29
+18,204,Bomber,refit,5-10m,653
+18,204,Bomber,refit,boundary,222
+18,204,Bomber,refit,unknown,5
+18,210,Scout,initial,opening,2851
+18,210,Scout,refit,0-5m,5512
+18,210,Scout,refit,10-15m,2274
+18,210,Scout,refit,15-20m,2450
+18,210,Scout,refit,20-25m,2376
+18,210,Scout,refit,25-30m,2440
+18,210,Scout,refit,30-35m,810
+18,210,Scout,refit,35-40m,229
+18,210,Scout,refit,40-45m,151
+18,210,Scout,refit,45-50m,18
+18,210,Scout,refit,5-10m,1857
+18,210,Scout,refit,boundary,480
+18,210,Scout,refit,unknown,4
+18,211,Stealth Fighter,refit,30-35m,4
+18,211,Stealth Fighter,refit,35-40m,23
+18,211,Stealth Fighter,refit,40-45m,4
+18,212,Interceptor,refit,20-25m,27
+18,212,Interceptor,refit,25-30m,816
+18,212,Interceptor,refit,30-35m,4
+18,212,Interceptor,refit,boundary,23
+18,214,Enh Fighter,refit,10-15m,92
+18,214,Enh Fighter,refit,15-20m,787
+18,214,Enh Fighter,refit,20-25m,24
+18,214,Enh Fighter,refit,boundary,40
+18,215,Patroller,refit,0-5m,222
+18,215,Patroller,refit,10-15m,2144
+18,215,Patroller,refit,15-20m,1149
+18,215,Patroller,refit,20-25m,25
+18,215,Patroller,refit,25-30m,1
+18,215,Patroller,refit,35-40m,17
+18,215,Patroller,refit,40-45m,7
+18,215,Patroller,refit,45-50m,12
+18,215,Patroller,refit,5-10m,1908
+18,215,Patroller,refit,50-55m,6
+18,215,Patroller,refit,55-60m,10
+18,215,Patroller,refit,boundary,247
+18,220,Stealth Bomber,refit,35-40m,99
+18,220,Stealth Bomber,refit,40-45m,145
+18,220,Stealth Bomber,refit,45-50m,19
+18,220,Stealth Bomber,refit,50-55m,6
+18,220,Stealth Bomber,refit,55-60m,1
+18,220,Stealth Bomber,refit,boundary,28
+18,220,Stealth Bomber,refit,unknown,2
+18,251,Lxy Interceptor,refit,25-30m,60
+18,251,Lxy Interceptor,refit,30-35m,129
+18,251,Lxy Interceptor,refit,35-40m,46
+18,251,Lxy Interceptor,refit,40-45m,59
+18,251,Lxy Interceptor,refit,45-50m,23
+18,251,Lxy Interceptor,refit,50-55m,28
+18,251,Lxy Interceptor,refit,55-60m,16
+18,251,Lxy Interceptor,refit,boundary,46
+18,251,Lxy Interceptor,refit,unknown,1
+18,256,Lxy Stl Fighter,refit,35-40m,20
+18,256,Lxy Stl Fighter,refit,40-45m,58
+18,256,Lxy Stl Fighter,refit,45-50m,10
+18,256,Lxy Stl Fighter,refit,50-55m,9
+18,256,Lxy Stl Fighter,refit,55-60m,14
+18,256,Lxy Stl Fighter,refit,boundary,7
+18,258,Lxy Fighter,refit,15-20m,111
+18,258,Lxy Fighter,refit,20-25m,1111
+18,258,Lxy Fighter,refit,25-30m,741
+18,258,Lxy Fighter,refit,30-35m,145
+18,258,Lxy Fighter,refit,35-40m,22
+18,258,Lxy Fighter,refit,40-45m,65
+18,258,Lxy Fighter,refit,45-50m,27
+18,258,Lxy Fighter,refit,50-55m,27
+18,258,Lxy Fighter,refit,55-60m,19
+18,258,Lxy Fighter,refit,boundary,130
+18,281,Hvy Interceptor,refit,25-30m,66
+18,281,Hvy Interceptor,refit,30-35m,122
+18,281,Hvy Interceptor,refit,35-40m,53
+18,281,Hvy Interceptor,refit,40-45m,55
+18,281,Hvy Interceptor,refit,45-50m,22
+18,281,Hvy Interceptor,refit,50-55m,26
+18,281,Hvy Interceptor,refit,55-60m,21
+18,281,Hvy Interceptor,refit,boundary,36
+18,281,Hvy Interceptor,refit,unknown,1
+18,285,Adv Scout,refit,45-50m,13
+18,286,Adv Stl Fighter,refit,35-40m,17
+18,286,Adv Stl Fighter,refit,40-45m,32
+18,286,Adv Stl Fighter,refit,45-50m,6
+18,286,Adv Stl Fighter,refit,50-55m,5
+18,286,Adv Stl Fighter,refit,55-60m,4
+18,286,Adv Stl Fighter,refit,boundary,3
+18,288,Adv Fighter,refit,15-20m,83
+18,288,Adv Fighter,refit,20-25m,846
+18,288,Adv Fighter,refit,25-30m,461
+18,288,Adv Fighter,refit,30-35m,94
+18,288,Adv Fighter,refit,35-40m,13
+18,288,Adv Fighter,refit,40-45m,31
+18,288,Adv Fighter,refit,45-50m,21
+18,288,Adv Fighter,refit,50-55m,12
+18,288,Adv Fighter,refit,55-60m,9
+18,288,Adv Fighter,refit,boundary,82
+18,288,Adv Fighter,refit,unknown,2
+18,289,Hvy Bomber,refit,45-50m,50
+18,289,Hvy Bomber,refit,50-55m,70
+18,289,Hvy Bomber,refit,55-60m,55
+18,289,Hvy Bomber,refit,boundary,14
+18,289,Hvy Bomber,refit,unknown,9
+18,85,Hvy Scout,refit,45-50m,25
+18,85,Hvy Scout,refit,50-55m,32
+18,85,Hvy Scout,refit,55-60m,19
+18,85,Hvy Scout,refit,boundary,4
+18,92,Lxy Scout,refit,45-50m,32
+18,92,Lxy Scout,refit,50-55m,38
+18,92,Lxy Scout,refit,55-60m,26
+18,92,Lxy Scout,refit,boundary,2
+18,92,Lxy Scout,refit,unknown,1
+25,404,Bomber,refit,10-15m,43
+25,404,Bomber,refit,15-20m,31
+25,404,Bomber,refit,20-25m,35
+25,404,Bomber,refit,25-30m,27
+25,404,Bomber,refit,30-35m,7
+25,404,Bomber,refit,5-10m,7
+25,404,Bomber,refit,boundary,7
+25,410,Scout,initial,opening,96
+25,410,Scout,refit,0-5m,137
+25,410,Scout,refit,10-15m,99
+25,410,Scout,refit,15-20m,95
+25,410,Scout,refit,20-25m,63
+25,410,Scout,refit,25-30m,65
+25,410,Scout,refit,30-35m,13
+25,410,Scout,refit,35-40m,6
+25,410,Scout,refit,5-10m,97
+25,410,Scout,refit,boundary,16
+25,410,Scout,refit,unknown,1
+25,411,Stealth Fighter,refit,5-10m,4
+25,412,Interceptor,refit,15-20m,12
+25,412,Interceptor,refit,20-25m,39
+25,412,Interceptor,refit,25-30m,44
+25,412,Interceptor,refit,30-35m,6
+25,412,Interceptor,refit,boundary,6
+25,414,Enh Fighter,refit,10-15m,27
+25,414,Enh Fighter,refit,15-20m,54
+25,414,Enh Fighter,refit,20-25m,53
+25,414,Enh Fighter,refit,25-30m,45
+25,414,Enh Fighter,refit,30-35m,4
+25,414,Enh Fighter,refit,boundary,10
+25,415,Lt Interceptor,initial,opening,112
+25,415,Lt Interceptor,refit,0-5m,186
+25,415,Lt Interceptor,refit,10-15m,94
+25,415,Lt Interceptor,refit,15-20m,39
+25,415,Lt Interceptor,refit,20-25m,3
+25,415,Lt Interceptor,refit,25-30m,4
+25,415,Lt Interceptor,refit,30-35m,2
+25,415,Lt Interceptor,refit,5-10m,96
+25,415,Lt Interceptor,refit,boundary,5
+25,415,Lt Interceptor,refit,unknown,1
+25,420,Stealth Bomber,refit,15-20m,32
+25,420,Stealth Bomber,refit,20-25m,24
+25,420,Stealth Bomber,refit,25-30m,22
+25,420,Stealth Bomber,refit,30-35m,88
+25,420,Stealth Bomber,refit,35-40m,41
+25,420,Stealth Bomber,refit,40-45m,20
+25,420,Stealth Bomber,refit,45-50m,1
+25,420,Stealth Bomber,refit,boundary,40
+25,420,Stealth Bomber,refit,unknown,2
+25,485,Adv Scout,refit,35-40m,1
+25,485,Adv Scout,refit,40-45m,1
+25,486,Adv Stl Fighter,refit,10-15m,51
+25,486,Adv Stl Fighter,refit,15-20m,49
+25,486,Adv Stl Fighter,refit,20-25m,38
+25,486,Adv Stl Fighter,refit,25-30m,56
+25,486,Adv Stl Fighter,refit,30-35m,11
+25,486,Adv Stl Fighter,refit,35-40m,2
+25,486,Adv Stl Fighter,refit,40-45m,2
+25,486,Adv Stl Fighter,refit,5-10m,12
+25,486,Adv Stl Fighter,refit,boundary,10
+25,488,Adv Fighter,refit,40-45m,5
+25,489,Hvy Bomber,refit,35-40m,13
+25,489,Hvy Bomber,refit,40-45m,10
+25,489,Hvy Bomber,refit,boundary,6
+25,87,Hvy Scout,refit,30-35m,1
+25,87,Hvy Scout,refit,35-40m,3
+25,87,Hvy Scout,refit,40-45m,4
+4,187,Scout,initial,opening,1243
+4,187,Scout,refit,0-5m,2609
+4,187,Scout,refit,10-15m,2936
+4,187,Scout,refit,15-20m,2817
+4,187,Scout,refit,20-25m,2581
+4,187,Scout,refit,25-30m,2370
+4,187,Scout,refit,30-35m,707
+4,187,Scout,refit,35-40m,156
+4,187,Scout,refit,40-45m,65
+4,187,Scout,refit,45-50m,9
+4,187,Scout,refit,5-10m,2796
+4,187,Scout,refit,boundary,453
+4,187,Scout,refit,unknown,4
+4,190,Fighter,initial,opening,1608
+4,190,Fighter,refit,0-5m,3057
+4,190,Fighter,refit,10-15m,2617
+4,190,Fighter,refit,15-20m,1402
+4,190,Fighter,refit,20-25m,517
+4,190,Fighter,refit,25-30m,167
+4,190,Fighter,refit,30-35m,5
+4,190,Fighter,refit,35-40m,11
+4,190,Fighter,refit,5-10m,2393
+4,190,Fighter,refit,boundary,332
+4,190,Fighter,refit,unknown,1
+4,191,Enh Fighter,refit,10-15m,1
+4,191,Enh Fighter,refit,15-20m,948
+4,191,Enh Fighter,refit,20-25m,1512
+4,191,Enh Fighter,refit,25-30m,548
+4,191,Enh Fighter,refit,30-35m,31
+4,191,Enh Fighter,refit,boundary,80
+4,192,Adv Fighter,refit,20-25m,253
+4,192,Adv Fighter,refit,25-30m,1433
+4,192,Adv Fighter,refit,30-35m,286
+4,192,Adv Fighter,refit,35-40m,24
+4,192,Adv Fighter,refit,40-45m,11
+4,192,Adv Fighter,refit,boundary,119
+4,192,Adv Fighter,refit,unknown,2
+4,195,Bomber,refit,10-15m,961
+4,195,Bomber,refit,15-20m,992
+4,195,Bomber,refit,20-25m,756
+4,195,Bomber,refit,25-30m,703
+4,195,Bomber,refit,30-35m,1081
+4,195,Bomber,refit,35-40m,194
+4,195,Bomber,refit,40-45m,92
+4,195,Bomber,refit,45-50m,8
+4,195,Bomber,refit,5-10m,897
+4,195,Bomber,refit,boundary,312
+4,195,Bomber,refit,unknown,12
+4,198,Interceptor,refit,30-35m,25
+4,198,Interceptor,refit,35-40m,12
+4,198,Interceptor,refit,40-45m,4
+4,198,Interceptor,refit,boundary,5
+4,199,Hvy Interceptor,refit,35-40m,1
+4,199,Hvy Interceptor,refit,40-45m,6
+4,199,Hvy Interceptor,refit,45-50m,1
+4,199,Hvy Interceptor,refit,boundary,1
+4,200,Stealth Fighter,refit,45-50m,10
+4,200,Stealth Fighter,refit,boundary,1
+4,206,Stealth Bomber,refit,50-55m,1
+5,704,Bomber,refit,10-15m,559
+5,704,Bomber,refit,15-20m,770
+5,704,Bomber,refit,20-25m,622
+5,704,Bomber,refit,25-30m,539
+5,704,Bomber,refit,30-35m,1415
+5,704,Bomber,refit,35-40m,225
+5,704,Bomber,refit,40-45m,211
+5,704,Bomber,refit,45-50m,62
+5,704,Bomber,refit,5-10m,71
+5,704,Bomber,refit,50-55m,48
+5,704,Bomber,refit,55-60m,39
+5,704,Bomber,refit,boundary,277
+5,704,Bomber,refit,unknown,20
+5,710,Scout,initial,opening,1068
+5,710,Scout,refit,0-5m,1650
+5,710,Scout,refit,10-15m,1808
+5,710,Scout,refit,15-20m,1963
+5,710,Scout,refit,20-25m,2008
+5,710,Scout,refit,25-30m,1809
+5,710,Scout,refit,30-35m,561
+5,710,Scout,refit,35-40m,318
+5,710,Scout,refit,40-45m,335
+5,710,Scout,refit,45-50m,172
+5,710,Scout,refit,5-10m,1569
+5,710,Scout,refit,50-55m,143
+5,710,Scout,refit,55-60m,139
+5,710,Scout,refit,boundary,352
+5,710,Scout,refit,unknown,7
+5,712,Interceptor,refit,45-50m,15
+5,712,Interceptor,refit,50-55m,44
+5,712,Interceptor,refit,55-60m,36
+5,712,Interceptor,refit,boundary,7
+5,712,Interceptor,refit,unknown,1
+5,714,Enh Fighter,refit,15-20m,804
+5,714,Enh Fighter,refit,20-25m,1878
+5,714,Enh Fighter,refit,25-30m,1452
+5,714,Enh Fighter,refit,30-35m,8
+5,714,Enh Fighter,refit,boundary,170
+5,714,Enh Fighter,refit,unknown,5
+5,715,Fighter,initial,opening,1372
+5,715,Fighter,refit,0-5m,1922
+5,715,Fighter,refit,10-15m,1613
+5,715,Fighter,refit,15-20m,1042
+5,715,Fighter,refit,20-25m,11
+5,715,Fighter,refit,25-30m,16
+5,715,Fighter,refit,30-35m,22
+5,715,Fighter,refit,35-40m,7
+5,715,Fighter,refit,40-45m,10
+5,715,Fighter,refit,5-10m,1632
+5,715,Fighter,refit,boundary,157
+5,715,Fighter,refit,unknown,1
+5,781,Hvy Interceptor,refit,55-60m,10
+5,788,Adv Fighter,refit,25-30m,236
+5,788,Adv Fighter,refit,30-35m,326
+5,788,Adv Fighter,refit,35-40m,227
+5,788,Adv Fighter,refit,40-45m,226
+5,788,Adv Fighter,refit,45-50m,138
+5,788,Adv Fighter,refit,50-55m,72
+5,788,Adv Fighter,refit,55-60m,52
+5,788,Adv Fighter,refit,boundary,142
+5,788,Adv Fighter,refit,unknown,2

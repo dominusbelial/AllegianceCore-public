@@ -1778,6 +1778,15 @@ list in **reverse**.
   Paired civilization combat and full research closure proofs:
   `tests/Allegiance.ClientCore.Tests/P942ResearchCombatLiveTests.cs`;
   report: `docs/reports/P942_REPORT.md`.
+- **Civilization strategy research (P999, offline only)** — the pure core-driven
+  power-spike scorer in `tools/p999-civ-strategy/CivStrategyScorer.cs` ranks
+  legal prerequisite routes using hull/part compatibility, civilization attributes
+  and opponent defense classes; it has no server or MCP integration.
+  `tools/p999-civ-strategy/audit.py` audits saved batch summaries and worker
+  receipts; `tools/p999-civ-strategy/render.py` produces the core census and
+  plan comparison. Reachability, determinism and modded-core tests:
+  `tests/Allegiance.Core.Tests/P999CivStrategyTests.cs`. Evidence and proposed
+  default-off integration: `docs/reports/CIV_BALANCE_P999.md`.
 - **Prosperity commander (P832b)** — when MISSIONDEF enables team money,
   `tools/allegiance-mcp/ResearchCommander.Prosperity.cs` grows/replaces miners,
   banks half observed income and funds the economic-victory bucket above a
