@@ -1018,7 +1018,7 @@ public sealed partial class Game1
                 // P367 — clear the per-frame nav-strobe draw list up front; ship
                 // strobes are appended in the ship-effects pass below (drawn once).
                 _drawNavStrobes.Clear();
-                foreach (var (sPos, sOri, sSide, sRadius, sModel, sTex) in _drawStations)
+                foreach (var (sPos, sOri, sSide, sRadius, sModel, sTex, sTypeId) in _drawStations)
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
                     if (OutsideBenchmarkView(sXnaPos, cameraEye, sRadius)) continue;
@@ -1045,6 +1045,13 @@ public sealed partial class Game1
                     }
                     else
                     {
+                        string typeName = _shopCatalog is { StationTypes: not null } catalog && catalog.StationTypes.TryGetValue(sTypeId, out var type)
+                            ? type.Name : $"Unknown station type {sTypeId}";
+                        if (_stationFallbackWarnings.Take(sTypeId, typeName, sModel) is { } warning)
+                        {
+                            if (string.IsNullOrEmpty(sModel)) Console.WriteLine($"[monogame] {warning}");
+                            lock (_session.Gate) world.PostSystemLine(warning);
+                        }
                         var sWorld = sRot * Matrix.CreateScale(sRadius) * Matrix.CreateTranslation(sXnaPos - cameraEye);
                         var sTint = (world.MySideId ?? -1) == sSide
                             ? Rendering.StationRenderer.FriendlyColor
@@ -1055,19 +1062,14 @@ public sealed partial class Game1
 
                 }
 
-                // P294 — in-progress station constructions. Like stations/probes,
-                // ClientWorld.BuildingEffects is keyed by the target asteroid id
-                // and populated from every OT_buildingEffect regardless of
-                // sector, so the draw loop filters to the local player's OWN
-                // sector (be.ClusterId == mySector). A construction reuses the
-                // station mesh (BuildingEffectRenderer) — rendered translucent in
-                // native's building-effect violet and scaled by its progress
-                // fraction so it grows toward the finished station, reading
-                // unambiguously "under construction" rather than a finished base.
-                // Completed builds are pruned here (they vanish at
-                // BuildingEffect.BuildDuration); interruption removes them via
-                // BUILDINGEFFECT_DESTROYED(181) in ClientWorld. Drawn right after
-                // the opaque stations so the alpha blend lands over them.
+                // P997: native's two rotating build.mdl shells. Native lifetime
+                // (default): the effect table itself, so the shell keeps shrinking
+                // and fading around the new station until m_timeComplete
+                // (Igc/buildingeffectigc.h:160-183, 310-358; appmsg.cpp:1692-1718)
+                // and leaves on 181, an explosive rock death or reset. The
+                // visuals.constructionHandoff flag instead draws ClientWorld's
+                // presentation table, which retires the shell at the hand-off.
+                bool instantHandoff = _visuals.IsOn(Rendering.VisualFlags.ConstructionHandoffKey);
                 _drawBuilds.Clear();
                 lock (_session.Gate)
                 {
@@ -1075,19 +1077,18 @@ public sealed partial class Game1
                     world.PruneExpiredBuildingEffects(buildNow);
                     if (TrySceneSector(world, me, out short myBeSector))
                     {
-                        foreach (var (_, be) in world.BuildingEffects)
+                        foreach (var (_, be) in instantHandoff ? world.ConstructionVisuals : world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
                             var phase = be.Phase(buildNow);
-                            _drawBuilds.Add((PoseConverter.ToXna(phase.Position), phase.Radius, phase.InnerAlpha));
+                            _drawBuilds.Add(phase);
                         }
                     }
                 }
-                foreach (var (bPos, bRadius, bAlpha) in _drawBuilds)
+                foreach (var phase in _drawBuilds)
                 {
-                    if (OutsideRadialView(bPos, cameraEye, bRadius)) continue;   // P979
-                    var bWorld = Matrix.CreateScale(bRadius) * Matrix.CreateTranslation(bPos - cameraEye);
-                    _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha, _sectorLighting);
+                    if (OutsideRadialView(PoseConverter.ToXna(phase.Position), cameraEye, phase.Radius)) continue;
+                    _buildingEffectRenderer.Draw(phase, cameraEye, view, proj, (float)_nowSeconds);
                 }
 
                 // P231 + P465b — projectiles. Unlike asteroids/warps a projectile
@@ -2629,7 +2630,7 @@ public sealed partial class Game1
                 _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius, ResolveStationModel));
             }
         }
-        foreach (var (sPos, sOri, _, sRadius, sModel, _) in _drawStations)
+        foreach (var (sPos, sOri, _, sRadius, sModel, _, _) in _drawStations)
         {
             var sXnaPos = PoseConverter.ToXna(sPos);
             if (OutsideRadialView(sXnaPos, cameraEye, sRadius)) continue;   // P979 — depth matches colour

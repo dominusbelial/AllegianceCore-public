@@ -32,7 +32,7 @@ public sealed class VisualFlagsTests
             Assert.False(string.IsNullOrWhiteSpace(definition.Description));
             if (definition.Kind != VisualFlagKind.Toggle) Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=on remoteTimeline=off viewRange=10000 subtleDust=on simStars=on simGlare=on starStreaks=on space.hdrPipeline=on space.hdrAces=off space.simPalette=off", options.Describe());
+        Assert.Equal("radialVisibility=on remoteTimeline=off viewRange=10000 subtleDust=on simStars=on simGlare=on starStreaks=on space.hdrPipeline=on space.hdrAces=off space.simPalette=off constructionHandoff=off", options.Describe());
     }
 
     /// <summary>Domingo 2026-11-09 ("those image settings look amazing, it should be

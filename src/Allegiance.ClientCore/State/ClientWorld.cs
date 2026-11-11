@@ -535,6 +535,9 @@ public sealed partial class ClientWorld
     private Dictionary<short, ProbeEntity> _probes = new();
     private Dictionary<short, MineEntity> _mines = new();
     private Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
+    // P997: presentation is private to this view. MCP's shared construction
+    // reservations keep their native timed lifetime in _buildingEffects.
+    private readonly Dictionary<short, BuildingEffectEntity> _constructionVisuals = new();
     private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
 
@@ -1611,17 +1614,15 @@ public sealed partial class ClientWorld
     /// <see cref="MineEntity"/>).</summary>
     public IReadOnlyDictionary<short, MineEntity> Mines => _mines;
 
-    /// <summary>P294 — live in-progress station constructions keyed by the
-    /// target <c>AsteroidId</c>, from the creation
-    /// <c>FM_S_EXPORT(26)/OT_buildingEffect</c> broadcast and removed by
-    /// <c>FM_S_BUILDINGEFFECT_DESTROYED(181)</c> (interruption) or by
-    /// <see cref="PruneExpiredBuildingEffects"/> when the build completes
-    /// (native self-expires its cosmetic effect at <c>m_timeComplete</c>, so no
-    /// completion message exists). A building effect is transient — it appears
-    /// over the target asteroid and disappears — so it carries a local receipt
-    /// anchor and a <see cref="BuildingEffectEntity.ProgressFraction"/> reveal
-    /// (see <see cref="BuildingEffectEntity"/>).</summary>
+    /// <summary>Construction reservations from OT_buildingEffect, used by MCP.
+    /// Retains the original native timed lifetime through station conversion;
+    /// interruption and reset clear it. Rendering uses ConstructionVisuals.</summary>
     public IReadOnlyDictionary<short, BuildingEffectEntity> BuildingEffects => _buildingEffects;
+
+    /// <summary>P997: locally rendered build shells. Retired immediately at the
+    /// asteroid/station hand-off, interruption, sector exit or game over. Separate
+    /// from <see cref="BuildingEffects"/>, which MCP uses for rock reservations.</summary>
+    public IReadOnlyDictionary<short, BuildingEffectEntity> ConstructionVisuals => _constructionVisuals;
 
     /// <summary>P293 — live treasures keyed by TreasureId, from the creation
     /// <c>FM_S_TREASURE(28)</c> (the DROP_PART part-treasure and treasure-ack
@@ -2357,6 +2358,7 @@ public sealed partial class ClientWorld
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();
+        _constructionVisuals.Clear();
         _treasures.Clear();
         _commandBuoys.Clear();
         _importClock.Reset();
@@ -2880,6 +2882,15 @@ public sealed partial class ClientWorld
                 && !OtherBotObserves(ship.SectorId))
                 RetireSectorPose(ship);
         ClearSectorEffects();
+        // Initial geometry exports precede SET_CLUSTER. Recreate only the new
+        // sector's live shells from reservations whose asteroid still exists;
+        // this also makes returning during a build safe after clearing its view.
+        long constructionNow = (long)(NowSeconds() * 1000);
+        foreach (var (id, effect) in _buildingEffects)
+            if (!_waitingForRestart && effect.ClusterId == set.SectorId && _asteroids.TryGetValue(id, out var constructionRock)
+                && constructionRock.ClusterId == set.SectorId && !effect.Phase(constructionNow).Expired
+                && !_stations.Values.Any(station => StationReplacesEffect(station, effect)))
+                _constructionVisuals[id] = effect;
         ShipWarnings.Reset();
         _treasures.Clear();
         _commandBuoys.Clear();
@@ -3518,6 +3529,11 @@ public sealed partial class ClientWorld
     private void Apply(ExportStation export)
     {
         _stations[export.Station.StationId] = export.Station;
+        // P997 policy: a finished station owns the scene at its build position.
+        // Native keeps its shrinking tail (appmsg.cpp:1706-1712); reservations
+        // still do so, but the requested immediate visual hand-off does not.
+        foreach (var (id, effect) in _constructionVisuals.ToArray())
+            if (StationReplacesEffect(export.Station, effect)) _constructionVisuals.Remove(id);
         MarkSnapshotDirty();
     }
 
@@ -3786,18 +3802,13 @@ public sealed partial class ClientWorld
         me.Strength = Math.Clamp(s.Strength, 0f, 1f);
     }
 
-    /// <summary>P294 — <c>FM_S_EXPORT(26)/OT_buildingEffect</c>: a newly-started
-    /// station construction (a Builder committed to building at an asteroid)
-    /// enters the table keyed by its target <c>AsteroidId</c>. A building effect
-    /// is static over the asteroid (no per-tick stream), so this is its only
-    /// placement write; the converted original creation instant anchors
-    /// <see cref="BuildingEffectEntity.ProgressFraction"/> and the eventual
-    /// self-expiry (<c>buildingeffectigc.h:160-165</c> terminates the cosmetic
-    /// effect at <c>m_timeComplete</c>, so native sends nothing on completion).</summary>
+    /// <summary>Import the native envelope's original position, radii and clock
+    /// (Igc/buildingeffectigc.h:44-54,142-154). Keep the reservation and local
+    /// presentation views separate at the requested station hand-off.</summary>
     private void Apply(ExportBuildingEffect export)
     {
         var d = export.Effect;
-        _buildingEffects[d.AsteroidId] = new BuildingEffectEntity
+        var effect = new BuildingEffectEntity
         {
             AsteroidId = d.AsteroidId,
             ClusterId = d.ClusterId,
@@ -3810,14 +3821,27 @@ public sealed partial class ClientWorld
             StartServerSeconds = d.TimeStart / 1000.0,
             ClientTimeAt = _importClock.Ready ? ClientSimulationTimeAt : null,
         };
+        _buildingEffects[d.AsteroidId] = effect;
+        // Also handles a station identity arriving before a late effect export.
+        if (!_waitingForRestart && !_stations.Values.Any(station => StationReplacesEffect(station, effect)))
+            _constructionVisuals[d.AsteroidId] = effect;
+        else
+            _constructionVisuals.Remove(d.AsteroidId);
     }
+
+    private static bool StationReplacesEffect(DataStationIGC station, BuildingEffectEntity effect) =>
+        station.ClusterId == effect.ClusterId && station.Position is { Length: >= 3 } p
+        && (new Vector3(p[0], p[1], p[2]) - effect.PositionStop).LengthSquared() <= .0001f;
 
     /// <summary>P294 — <c>FM_S_BUILDINGEFFECT_DESTROYED(181)</c>: the build was
     /// interrupted (its Builder died mid-build, the server's
     /// <c>KillBuildingEffectEvent</c>), so the construction leaves the world
     /// table — which is what removes its visual from the scene.</summary>
-    private void Apply(BuildingEffectDestroyed destroyed) =>
+    private void Apply(BuildingEffectDestroyed destroyed)
+    {
         _buildingEffects.Remove(destroyed.AsteroidId);
+        _constructionVisuals.Remove(destroyed.AsteroidId);
+    }
 
     /// <summary>Remove building effects whose build has completed by the given
     /// local monotonic instant (elapsed ≥ <see cref="ConstructionPhase.Duration"/>
@@ -3831,6 +3855,9 @@ public sealed partial class ClientWorld
         foreach (var kv in _buildingEffects.ToArray())
             if (kv.Value.ProgressFraction(nowLocalMs) >= 1f)
                 _buildingEffects.Remove(kv.Key);
+        foreach (var kv in _constructionVisuals.ToArray())
+            if (kv.Value.Phase(nowLocalMs).Expired)
+                _constructionVisuals.Remove(kv.Key);
     }
 
     /// <summary>Retain TREASURE's original trajectory and predict its motion,
@@ -5270,6 +5297,7 @@ public sealed partial class ClientWorld
 
     private void ClearSectorEffects()
     {
+        _constructionVisuals.Clear();
         _projectiles.Clear();
         _projectileDrainCursor = 0;
         _missiles.Clear();
@@ -5466,6 +5494,7 @@ public sealed partial class ClientWorld
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();
+        _constructionVisuals.Clear();
         _treasures.Clear();
         _commandBuoys.Clear();
         _treasureClockSeeded = false;
@@ -5549,6 +5578,7 @@ public sealed partial class ClientWorld
     /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
+        _constructionVisuals.Clear();
         _lastBases = new();
         _waitingForRestart = true;
         InGame = false;

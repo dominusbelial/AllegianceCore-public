@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/p997-construction-proof/p997-construction-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p921-lod-proof/p921-lod-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p922-target-proof/p922-target-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p916-texture-proof/p916-texture-proof.csproj" ReferenceOutputAssembly="false" />

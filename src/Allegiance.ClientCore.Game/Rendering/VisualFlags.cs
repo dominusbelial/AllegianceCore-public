@@ -103,6 +103,13 @@ public static class VisualFlags
     /// are OUR scene's tuning, not SCP's content-unit constants.</summary>
     public const string SimPaletteKey = "space.simPalette";
 
+    /// <summary>P997 review — retire the construction shell the moment the finished
+    /// station (or the rock's retirement) arrives. OFF = native: the station is
+    /// created at the start of the shrink phase and the shell keeps shrinking and
+    /// fading around it until <c>m_timeComplete</c>
+    /// (<c>Igc/buildingeffectigc.h:160-183,310-358</c>, <c>clintlib/appmsg.cpp:1692-1718</c>).</summary>
+    public const string ConstructionHandoffKey = "constructionHandoff";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -159,6 +166,13 @@ public static class VisualFlags
             VisualFlagKind.Toggle,
             Hotkey: 'P',
             RequiresKey: HdrPipelineKey),
+        // P997 review — native keeps the 10 s shrink tail around the new station.
+        new VisualFlag(
+            ConstructionHandoffKey,
+            "Instant build hand-off",
+            "hide the build shell once the station exists",
+            VisualFlagKind.Toggle,
+            Hotkey: 'B'),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>

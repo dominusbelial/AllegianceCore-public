@@ -281,6 +281,23 @@ list in **reverse**.
 - **Station / construction** — bases and their build queue.
   `src/Allegiance.Core/Sim/Station.cs`, `ConstructionPhase.cs`,
   `BuildingEffect.cs`. *Native:* `stationigc.cpp`, `construction.cpp`.
+- **Construction shells and visual hand-off (P997)** —
+  `src/Allegiance.ClientCore.Game/Rendering/BuildingEffectRenderer.cs` draws
+  native `build.mdl` as two rotating textured spheres (violet additive outer,
+  complementary source-alpha inner), sampled by
+  `src/Allegiance.Core/Sim/ConstructionPhase.cs`.
+  `src/Allegiance.ClientCore/State/ClientWorld.cs` keeps per-view
+  `ConstructionVisuals` separate from MCP's shared `BuildingEffects`
+  reservations. By default the client draws `BuildingEffects`, so the shell keeps
+  native's shrink tail around the new station (`clintlib/appmsg.cpp:1706-1712`);
+  the opt-in `visuals.constructionHandoff` flag draws `ConstructionVisuals`,
+  which retire on station/asteroid hand-off. Missing station models produce a one-shot
+  local notice through `src/Allegiance.ClientCore.Game/Rendering/StationFallbackWarnings.cs`.
+  `src/Allegiance.ClientCore.Game/Rendering/NativeStationRenderer.cs` exposes
+  its production `DecodeModel` for artwork-only Fast CI; the GPU audit and
+  headless check live in `tests/Allegiance.ClientCore.MonoGame.Tests/P997ConstructionRenderTests.cs`.
+  Proof: `tools/p997-construction-proof/`; report:
+  `docs/reports/CONSTRUCTION_EFFECT_P997.md`.
 - **Docking / landing bays** — the native InGarage geometric tests.
   `src/Allegiance.Core/Sim/DockApproach.cs`,
   `src/Allegiance.Core/Collision/HullLandingBayCache.cs`. *Native:* `dock.cpp`.
