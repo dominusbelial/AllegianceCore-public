@@ -886,6 +886,26 @@ list in **reverse**.
   TCP/UDP oxygen and docking proofs:
   `tests/Allegiance.Core.Tests/P955PlayerPodLifetimeTests.cs`; report:
   `docs/reports/PLAYER_POD_GHOST_P955.md`.
+- **Lifepod oxygen clock and hangar restore (P996)** — the pod's oxygen deadline
+  (`m_timeToDie`) exists only while the pod is in space: `Ship.StationId` clears it on
+  every dock and a lifepod-hull launch re-arms a fresh one, so a pod respawned by a pod
+  death carries no clock from the previous life. While berthed in a pod hull the client
+  restores the player's last real loadout (native `RestoreLoadout`), so the hangar and
+  its Launch button use a real ship, never the pod. `src/Allegiance.Core/Sim/Ship.cs`
+  (`LifepodTimeToDie`, `ChangeHull`, `StationId`),
+  `src/Allegiance.Server/Server.ShipCommands.cs` (`ApplyLoadout`'s lifepod-hull gate),
+  `src/Allegiance.ClientCore/State/ClientWorld.cs` (`OwnSavedLoadout`),
+  `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs` (`RestoreSavedLoadout`).
+  *Native:* `Igc/shipIGC.cpp:360-363,1408`, `Igc/shipIGC.h:421-459,2473-2491`,
+  `clintlib/appmsg.cpp:2022-2027`, `clintlib/clintlib.h:1876-1886`. Parity
+  `docs/parity/sim-rules-matrix.csv` (SIM-0859/0860) and
+  `docs/parity/p977-eject-rescue.csv`; tests
+  `tests/Allegiance.Core.Tests/P996LifepodRespawnLiveTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P996LifepodSavedLoadoutTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P996BotsLifepodNoOxygenLoopLiveTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreLiveTests.cs`;
+  report `docs/reports/LIFEPOD_RESPAWN_P996.md`.
 - **Own small-hull effects (P915)** — `src/Allegiance.ClientCore.Game/Rendering/ShipEffectRules.cs`
   scales own external-view damage smoke from real hull length and camera distance,
   and gates afterburner trail/nozzle boost by the owner's mounted loadout (remote

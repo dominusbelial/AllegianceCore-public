@@ -8073,6 +8073,34 @@ The two-match 2-side showcase `P730ShowcaseLiveTests.Two_local_showcase_matches_
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 3/0, 1/2, 3/0 (theory cases) | Existing floating deadline-boundary family (entries above); timer code unchanged, gate off in this fixture. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). |
 | `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy`, `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 3/3 pass each | Load-only in a sweep that shared the host with the tools build; none touches SHIP_STATUS with the gate on (all default off, wire pinned byte-identical). |
+
+### P996 sweep (Core + ClientCore + MonoGame Fast tiers, one run each, shared host)
+
+`tools/run-tests.sh --tier fast --no-build` (13966 tests, 572.9 s, exit 1). Three main-lane failures, all
+non-task; each re-run alone 3×:
+
+| Test | Sweep signature | 3× alone | Classification |
+|---|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 38.4 s, and a SLOW FAST offender | **0 pass / 3 fail**, 38 s each — the ledgered partial-tip receipt (clean base 1 pass / 2 fail, P966 row) | Existing, no missile/lock/tip source on the P996 path |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 802 ms; `32.1000000000003` against the fixture's [28, 31] | **0 pass / 3 fail**, same 32.1 s one-second boundary (clean base 2 pass / 3 fail, P966/P991 rows) | Existing auto-seat receipt/simulation-clock boundary; no side-select/auto-seat source changed |
+| `P832aMissionRulesInventoryTests.Every_native_mission_body_handler_and_local_rule_helper_has_a_matrix_row` | "stale bodies: [CshipIGC::SetBaseHullType …, CshipIGC::PurchaseShipLoadout …]" | **task failure, fixed**: the two new parity rows were in the audited `FedSrv mission rules` family with prose `native_body` values; SIM-0859 moved to the `updates` family with its real body key and SIM-0860 moved to `p977-eject-rescue.csv`. Re-checked: `p832a-mission-rules-audit.py --check` clean, the test passes 1/1 | mine |
+
+SLOW FAST offenders of the same led families: `MissileLockLiveTests` (38.369 s) and
+`P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.055 s vs the 10.000 s limit). No P996 test was a
+timing offender, and no P996 test failed in the sweep.
+
+**P996 sweep 2** (`tools/run-tests.sh --tier fast --no-build`, same tree, after the parity-row fix: 13 966 tests,
+575.6 s, exit 1). Two main-lane failures, both already-ledgered load-sensitive families; each re-run 3× alone:
+
+| Test | Sweep signature | 3× alone | Classification |
+|---|---|---|---|
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | `Assert.Equal` 0 vs **1 264** allocated bytes | **3/3 pass** (11-14 ms each) | Ledgered allocation intermittency (two earlier entries, both 3/3 pass alone); no sound/mix code on the P996 path |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 s against the fixture's [28, 31] | **0/3** at 32.1 s (sweep 1 cohort) | Same long-ledgered auto-seat receipt/simulation-clock boundary as sweep 1 above |
+
+`MissileLockLiveTests` passed in this sweep (1 s); the only slow-Fast offender was
+`P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.477 s vs 10.000 s). No P996 test failed in either
+sweep.
+
 ## P994 — compact gunfire: single Fast sweep qualification
 
 The single Fast invocation completed **13,994 cases in 582.7 s**:

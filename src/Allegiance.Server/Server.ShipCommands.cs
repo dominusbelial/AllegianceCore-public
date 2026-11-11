@@ -2692,14 +2692,33 @@ public sealed partial class Server
         // whether or not the buyer is docked); the sellable rule needs a
         // station, so it still only runs when docked. A refused purchase leaves
         // the ship exactly as it was.
-        if (hullChanged && (hull.GroupId < 0 ||
+        //
+        // P996 — a LIFEPOD hull is the one GroupID<0 hull native lets a player
+        // buy and fly: PurchaseShipLoadout gates a changed hull ONLY on
+        // `m_station->CanBuy(pht)` (shipIGC.h:996-1000), i.e. the tech
+        // containment `requiredTechs ⊆ stationLocal|sideTechs`
+        // (stationIGC.h:383-391) — it never consults the group id the native
+        // hangar's hull LIST uses (load.cpp:1603-1606). The pod hulls carry a
+        // real RequiredTechs mask (PCore001 744/844 need their side's garrison
+        // pod tech), so a docked player may legitimately ask to launch as a pod.
+        // Native then re-hulls via SetBaseHullType (shipIGC.h:1019-1020), which
+        // re-arms m_timeToDie (shipIGC.cpp:1408) — a pod launched this way gets
+        // a FRESH deadline. The port matches that: the pod passes this gate
+        // (still subject to the same tech gate) and the launch re-arms the clock
+        // in Ship.StationId's undock arm. Every other GroupID<0 hull (drones,
+        // miners, constructors) stays refused.
+        bool lifepodHull = hull.HasCapability(DataHullTypeIGC.HabmLifepod);
+        bool droneHull = hull.GroupId < 0 && !lifepodHull;
+        if (hullChanged && (droneHull ||
             (!harnessIgnoreTech && stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))))
         {
-            Refuse(hull.GroupId < 0
+            Refuse(droneHull
                 ? $"hull {hull.HullId} ('{hull.Name}') is a drone-only hull (group {hull.GroupId}) — not player-buyable"
                 : $"hull {hull.HullId} ('{hull.Name}') not sellable at docked station (tech)");
             return;
         }
+        if (hullChanged && lifepodHull)
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested LIFEPOD hull {hull.HullId} ('{hull.Name}') — allowed (native PurchaseShipLoadout gates a changed hull on CanBuy only, shipIGC.h:996-1000; SetBaseHullType re-arms the oxygen deadline, shipIGC.cpp:1408); the launch gets a FRESH deadline");
 
         // P488 — successor upgrade (native m_station->GetSuccessor(pht),
         // shipIGC.h:1004). Once the requested hull passes the gate, a CHANGING
