@@ -187,6 +187,12 @@ public sealed partial class Server
         ResolveShipStatusChangeGate();
         ResolveGunfireBatch();
 
+        // P993 — resolve broadcast.fireAudienceCull (default OFF) from config +
+        // ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL (env wins) and print it, so
+        // every rig run is labelled. OFF = today's PROJECTILE_INSTANCE(12)
+        // audience and dependency, byte-for-byte.
+        ResolveFireAudienceCull();
+
         // P605 — resolve the transport's send-draining mode (pool default since
         // P887, thread-per-peer via an explicit override) from transport.mode
         // config + the ALLEGIANCE_TRANSPORT_MODE env var, print it at boot, and

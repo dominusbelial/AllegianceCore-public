@@ -8075,3 +8075,28 @@ Evidence: `.scratch/p994/{fast,qualifications,neverparks}/`; task report:
 zero skips and zero parking violations. Longest low-speed-with-target intervals
 were **3.306 s OFF / 3.009 s ON**, below the unchanged five-second limit. The
 per-run arrival, shot/hit/kill and wall-time receipts are in the task report.
+
+
+### P993 sweep (distance-cull the `PROJECTILE_INSTANCE(12)` relay; `broadcast.fireAudienceCull` default off)
+
+One full Fast tier (`tools/run-tests.sh --tier fast --no-build`, 13 969 tests, 569 s, load avg ~1) after
+`dotnet build AllegianceCore.slnx` 0/0 and `tools/build-tools.sh` (130/130). Three non-task failures + the
+`SLOW FAST` overruns, each re-run alone and each already ledgered above with the same signature:
+
+| Test | Sweep | 3× alone (this tree) | Control | Classification |
+|---|---|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s, `lock never reached full + partial tip (lock 1.000)`) | fail | **0 pass / 3 fail**, 38 s each | **pristine base commit (`git archive bdbf8423`, same test file): 0 pass / 2 fail, 38 s each** | the ledgered P933/P935/P966 partial-tip receipt family (clean-base 1/2 recorded above); no missile/lock/tip source on the P993 path and the flag is off in the sweep |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5,7)` | fail | **0/4 theory cases pass** on the widest run, values `5.0000000000000009` / `7.0000000000000009` against the inclusive `(delay−0.1, delay]` bound | base commit 4/4 pass in one run, the same one-ULP boundary is recorded in the entries above | the existing floating upper-bound family (P966/P977 rows: `5.0000000000000009 > 5`); no timer/Core code from P993 is on the deadline path |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.5 s vs `[28,31]`) | 3 runs alone: 32.15–32.60 s, the ledgered receipt/clock boundary | base commit: same failure (32.45 s) in one of two runs | the existing auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967/P977 entries); no side-select/auto-seat source changed |
+| `SLOW FAST` 38.149 s `MissileLock…`, 10.357 s `P777WarpExitWobbleTests…`, 10.012 s `P942ResearchOrderingTests…(civ 201)` | 3 executions over the calibrated 10 s limit | the missile-lock one is the ledgered family above; the P777/P942 near-limit rows are already ledgered (P750 cohort) | — | the shared sweep runner was the only load (other lanes idle); re-running the whole tier is the only way past the fixed 10 s limit — these are the ledgered near-limit families, all < 1 s alone |
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
+five sequential runs per arm on this tree, one isolated recheck for the failing arm (load avg 1.5–2.3):
+
+| Arm | Runs (wall) | Outcome |
+|---|---|---|
+| flag OFF (`broadcast.fireAudienceCull` default) | 273 s, 193 s, 254 s, 185 s, 199 s | **5 pass / 0 fail**; zero park-limit violations |
+| flag ON (`ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL=1`) | 485 s, 463 s, 184 s, 299 s, 356 s | **1 fail / 4 pass** in the sweep — the 8 m 04 s run is the already-recorded P700 arrival-time flake (the row above: "20/30 reached at 480.1 seconds", same 8 m 04 s signature as the P991 cohort, both arms there); recheck **pass 214 s**; zero park-limit violations in every run |
+
+No new flake family from P993: the flag changes only which (viewer, shooter) pairs receive `12` frames, and
+both arms log the same bot hits/kills, the same `[proj-diag]` shape and zero parks.
