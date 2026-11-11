@@ -30,7 +30,15 @@ public sealed partial class Server
     {
         if (p.OriginProbe is Probe origin)
         {
-            BroadcastProbeEmission(origin, FedPacket.Pack(ProjectileInstance.FromProjectile(p, (uint)TickIndex).Encode()));
+            byte[] probePacket;
+            if (_broadcastGunfireBatch)
+            {
+                _gunfireRecordLength = GunfireBatch.WriteProjectile(_gunfireRecord, p.ProjectileType.ProjectileTypeId,
+                    origin.Id, IgcObjectType.Probe, p.Position, p.Forward, p.Velocity, p.InitialLifespan);
+                probePacket = GunfireProjectileToken(p, origin.Id, IgcObjectType.Probe);
+            }
+            else probePacket = FedPacket.Pack(ProjectileInstance.FromProjectile(p, (uint)TickIndex).Encode());
+            BroadcastProbeEmission(origin, probePacket);
             return;
         }
         if (p.Launcher is not Ship shooter)
@@ -48,8 +56,14 @@ public sealed partial class Server
         // same as BroadcastShipStates stamps ServerShipUpdate.Time).
         uint timeCreate = (uint)TickIndex;
 
-        var msg = ProjectileInstance.FromProjectile(p, timeCreate);
-        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        byte[] packet;
+        if (_broadcastGunfireBatch)
+        {
+            _gunfireRecordLength = GunfireBatch.WriteProjectile(_gunfireRecord, p.ProjectileType.ProjectileTypeId,
+                shooter.Id, IgcObjectType.Ship, p.Position, p.Forward, p.Velocity, p.InitialLifespan);
+            packet = GunfireProjectileToken(p, shooter.Id, IgcObjectType.Ship);
+        }
+        else packet = FedPacket.Pack(new[] { ProjectileInstance.FromProjectile(p, timeCreate).Encode() });
 
         int n = BroadcastShipEmission(shooter, p.OwnerSector, packet);
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
@@ -81,6 +95,13 @@ public sealed partial class Server
         if (target.Sector is not { } sector) return;
         short targetId = target.Data.AsteroidId;
         float radius = target.Radius;
+        if (_broadcastGunfireBatch)
+        {
+            _gunfireRecordLength = GunfireBatch.WriteHit(_gunfireRecord, targetId, sector.Id, -1,
+                false, radius, worldImpact, worldNormal);
+            SendToSectorPeerSides(sector, GunfireHitToken(targetId, sector.Id, -1, false, radius, worldImpact, worldNormal));
+            return;
+        }
         var msg = new ProjectileHullHit
         {
             TargetId = targetId,
@@ -125,6 +146,17 @@ public sealed partial class Server
         if (origin is null && shooter?.SideId is null)
         {
             if (ConsoleLog.Verbose) ConsoleLog.Write($"[projectile-hit] shooter {shooter?.Id} has no side — no PROJECTILE_HULL_HIT broadcast");
+            return;
+        }
+
+        if (_broadcastGunfireBatch)
+        {
+            _gunfireRecordLength = GunfireBatch.WriteHit(_gunfireRecord, targetId, clusterId, shooter?.Id ?? -1,
+                absorbedByShield, targetRadius, worldImpact, worldNormal);
+            byte[] token = GunfireHitToken(targetId, clusterId, shooter?.Id ?? -1, absorbedByShield,
+                targetRadius, worldImpact, worldNormal);
+            if (origin is not null) BroadcastProbeEmission(origin, token);
+            else BroadcastShipEmission(shooter!, p.OwnerSector, token);
             return;
         }
 

@@ -209,6 +209,36 @@ public sealed partial class Server
     internal Action<ConnectionId, byte[], int, bool>? TestPublicationCapture;
     internal Action<ConnectionId, int, int, bool>? TestPublicationSizeCapture;
     internal Action<string, long>? TestProjectionAllocationCapture;
+    internal Action<string, long>? TestProjectionTimingCapture;
+    internal Action<int>? TestGunfireSharingCapture;
+    internal byte[] TestGunfireAudienceToken => _gunfireToken;
+    internal void TestSendGunfireBoundary(ConnectionId peer, IFedMessage message, bool deferred)
+    {
+        if (deferred) SendPeer(peer, PackBroadcast(Message(message)));
+        else SendPeer(peer, FedPacket.Pack(message.Encode()));
+    }
+
+    internal long TestGunfireAppendAllocatedBytes(ConnectionId peer, int count)
+    {
+        if (!_broadcastGunfireBatch || count > 1000) throw new ArgumentOutOfRangeException(nameof(count));
+        BeginGunfireTick();
+        for (int i = 0; i < count; i++) Append();
+        _gunfireBuilders[peer].Clear();
+        long start = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < count; i++) Append();
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - start;
+        CompleteGunfireTick();
+        FlushBroadcastSnapshots();
+        return allocated;
+
+        void Append()
+        {
+            _gunfireRecordLength = GunfireBatch.WriteHit(_gunfireRecord, 1, 2, 3, false, 35,
+                new(50000, 0, 300), new(0, 0, -1));
+            GunfireHitToken(1, 2, 3, false, 35, new(50000, 0, 300), new(0, 0, -1));
+            QueueGunfireRecord(peer);
+        }
+    }
     internal List<(ConnectionId Conn, Ship Ship, Sector Sector)> TestSnapshotPeers()
         => _peerShips.Select(p => (p.Key, p.Value.Ship, p.Value.Sector)).ToList();
     internal void TestSendSnapshotBarrier(uint marker)
@@ -234,6 +264,7 @@ public sealed partial class Server
         {
             if (surge is not null)
                 using (Allegiance.Core.Profiling.TickProfiler.Enter("step:surgeEvents")) surge();
+            CompleteGunfireTick();
             long allocationMark;
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:crossSideExportSweep")) SweepCrossSideExports();
@@ -263,7 +294,9 @@ public sealed partial class Server
             TestProjectionAllocationCapture?.Invoke("step:broadcastProbesUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             _objectSyncDirtySides.Clear();
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
+            long shipsUpdateStart = TestProjectionTimingCapture is null ? 0 : System.Diagnostics.Stopwatch.GetTimestamp();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipsUpdate")) BroadcastShipsUpdate(tick);
+            TestProjectionTimingCapture?.Invoke("step:broadcastShipsUpdate", System.Diagnostics.Stopwatch.GetTimestamp() - shipsUpdateStart);
             TestProjectionAllocationCapture?.Invoke("step:broadcastShipsUpdate", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastSectorThreats")) BroadcastSectorThreats();

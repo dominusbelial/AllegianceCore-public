@@ -8045,3 +8045,33 @@ The two-match 2-side showcase `P730ShowcaseLiveTests.Two_local_showcase_matches_
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 3/0, 1/2, 3/0 (theory cases) | Existing floating deadline-boundary family (entries above); timer code unchanged, gate off in this fixture. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). |
 | `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy`, `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 3/3 pass each | Load-only in a sweep that shared the host with the tools build; none touches SHIP_STATUS with the gate on (all default off, wire pinned byte-identical). |
+## P994 — compact gunfire: single Fast sweep qualification
+
+The single Fast invocation completed **13,994 cases in 582.7 s**:
+**13,985 passed / 6 failed / 3 optional private-pack skips**; nine infrastructure
+checks passed. Gunfire batching was default OFF during the sweep, with its
+legacy wire byte-pinned. The task-owned dispatch-registry count failure was a
+missed audit update (13/113 → 14/114 after adding fmid 221), not a flake; it is
+fixed, and the full three-test dispatch coverage class passed **3/0/0 ×3**.
+
+The remaining failures and timing offender were repeated in three fresh,
+isolated processes:
+
+| Case | Sweep signature | Isolated outcome |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Default profile restoration hits the sandbox's read-only home config | **pass / pass / pass**, with writable task-local `XDG_CONFIG_HOME`; existing sandbox fixture signature, no profile code changed |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 with no partial tip, 39.126 s | **fail / fail / fail**, 38.380 / 38.342 / 38.309 s; existing OPEN receipt family, no missile/lock code changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.55 sim seconds versus [28,31] bound | **fail / fail / fail**; existing OPEN auto-seat boundary family, no side-select code changed |
+| `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | travelled 83.531 units | **pass / pass / pass**, 2.383 / 2.313 / 2.300 s; existing load-sensitive idle-NPC family |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 8.04999924 versus upper bound 8 | **pass / pass / pass**, 0.610 / 0.561 / 0.638 s; existing stint-timing family, no scoring code changed |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Body passes; 10.408 s exceeds calibrated 10 s | **pass / pass / pass**, 9.131 / 9.186 / 9.170 s, all below the unchanged limit |
+
+The three skips are the optional private Meshy pack checks. All 45 new Core
+cases passed **45/0/0 ×3**; the MCP metric/attacker sampler and seeded live
+showcase passed **3/0/0 ×3**, including nonzero shots, hits and kills. Native
+artwork and source paths were supplied through the worktree's `local.env`.
+Evidence: `.scratch/p994/{fast,qualifications,neverparks}/`; task report:
+`docs/reports/GUNFIRE_BATCH_P994.md`. Never-parks completed **OFF 5/5 and ON 5/5**,
+zero skips and zero parking violations. Longest low-speed-with-target intervals
+were **3.306 s OFF / 3.009 s ON**, below the unchanged five-second limit. The
+per-run arrival, shot/hit/kill and wall-time receipts are in the task report.

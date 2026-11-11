@@ -2036,6 +2036,11 @@ public sealed class Bot : ITransportSite, IDisposable
                     case ProjectileInstance.Fmid:
                         if (RetainRawCombatUpdates) _projectileInstances.Add(ProjectileInstance.Decode(m));
                         break;
+                    case GunfireBatch.Fmid:
+                        if (RetainRawCombatUpdates)
+                            foreach (var record in GunfireBatch.Decode(m).Records)
+                                if (record is ProjectileInstance projectile) _projectileInstances.Add(projectile);
+                        break;
                     case FireMissile.Fmid:
                         _fireMissiles.Add(FireMissile.Decode(m));
                         break;

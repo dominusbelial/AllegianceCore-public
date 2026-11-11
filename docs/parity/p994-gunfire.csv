@@ -1,0 +1,4 @@
+area,native_item,native_cite,port_status,port_cite_or_reason,weight
+wire,Array framing and compact spatial values,Inc/Messages.h:890-900; Igc/igc.h:2198-2255,done,Port-only optional GUNFIRE_BATCH(221): src/Allegiance.Core/Wire/GunfireBatch.cs; docs/reports/GUNFIRE_BATCH_P994.md,1
+weapons,Creation lifespan includes target intercept override,Igc/weaponIGC.cpp:273-288,done,src/Allegiance.Core/Sim/Projectile.cs InitialLifespan; src/Allegiance.Server/Server.Combat.cs compact emission path (legacy OFF bytes retained),1
+wire,Sector transition retires the old view before later fire,clintlib/appmsg.cpp:1009-1087,done,src/Allegiance.Server/Server.GunfireBatch.cs ordering boundaries; tests/Allegiance.Core.Tests/P994GunfireBatchLiveTests.cs Sector_reseats_keep_pre_reset_effects_before_the_reset_in_both_send_paths,1

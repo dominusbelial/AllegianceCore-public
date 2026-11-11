@@ -370,6 +370,13 @@ periodic refreshes. The environment override accepts `0`/`1` or `false`/`true`;
 empty preserves JSON. Off is byte-identical to the pre-P991 wire. See
 [the P991 measurements](../docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md).
 
+P994's compact gunfire arrays are default off. Set `broadcast.gunfireBatch` in
+server JSON or `ALLEGIANCE_BROADCAST_GUNFIRE_BATCH=1` before Compose starts.
+Empty preserves JSON; `0`/`1` and `false`/`true` are accepted. New clients decode
+both legacy 12/213 and the port-only `GUNFIRE_BATCH(221)`; enable this only when
+all connected clients support 221. Audiences and authoritative damage stay the
+same. See [the P994 report](../docs/reports/GUNFIRE_BATCH_P994.md).
+
 P968's publisher experiment is default off. Set `broadcast.pendingStreamIndex`
 in the mounted server JSON, or `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX=1`
 before starting Compose, to index the pending snapshot's `(peer, key)` streams

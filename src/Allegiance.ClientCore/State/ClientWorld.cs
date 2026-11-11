@@ -2571,6 +2571,9 @@ public sealed partial class ClientWorld
             case ProjectileInstance projectile:
                 Apply(projectile);
                 break;
+            case GunfireBatch gunfire:
+                foreach (var record in gunfire.Records) Apply(record);
+                break;
             case FireMissile fireMissile:
                 Apply(fireMissile);
                 break;

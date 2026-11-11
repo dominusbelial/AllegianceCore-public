@@ -332,6 +332,15 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastBuffers.cs`; env `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE`.
   Flag off is byte-identical to the pre-P991 wire (pinned).
   Report: `docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md`.
+- **Compact gunfire batches (P994, default off)** — `broadcast.gunfireBatch` /
+  `ALLEGIANCE_BROADCAST_GUNFIRE_BATCH` replaces selected 12/213 deliveries with
+  ordered `GUNFIRE_BATCH(221)` records. Codec: `src/Allegiance.Core/Wire/GunfireBatch.cs`;
+  reusable recipient builders and shared encoding: `src/Allegiance.Server/Server.GunfireBatch.cs`.
+  Source pose dependencies and audiences remain in `src/Allegiance.Server/Server.FireAudience.cs`.
+  Both client paths expand to legacy message objects; exact IDs, spawn position
+  and lifespan preserve own-echo and bot attribution. Native array/compact-value
+  inspiration: `Inc/Messages.h:890-900`, `Igc/igc.h:2198-2255`.
+  Report: `docs/reports/GUNFIRE_BATCH_P994.md`.
 - **Gunfire traffic study (P992)** — why the port relays every shot and hit and what a change would save:
   `PROJECTILE_INSTANCE(12)` is one 58-byte frame per shot per peer in the shooter's sector (native has no such
   server→client message: its clients fire from the `stateM` fire bits their ship updates carry), `PROJECTILE_HULL_HIT(213)`

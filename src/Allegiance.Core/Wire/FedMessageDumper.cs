@@ -54,6 +54,7 @@ public static class FedMessageCatalog
         // side-select roster snapshot. Kept out of the native bijection above by
         // lying past 200; listed here only so packet dumps name it.
         [211]="SIDE_ROSTER",
+        [221]="GUNFIRE_BATCH",
         // P574 — port-local extension: the mine-strength thinning update (no
         // native counterpart; see Wire/MineStrength.cs). Listed only so packet
         // dumps name it; decoded by concrete type on the wire path.
@@ -63,7 +64,7 @@ public static class FedMessageCatalog
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +
     /// the assign→command→observe slice).</summary>
     private static readonly HashSet<ushort> Ported =
-        [1, 2, 4, 5, 7, 8, 24, 75, 76, 78, 94, 99, 100, 103, 178];   // + 8/75/76 (tech-tree, P189)
+        [1, 2, 4, 5, 7, 8, 24, 75, 76, 78, 94, 99, 100, 103, 178, 221];   // + 221 (P994)
 
     public static string Name(ushort id) => Names.TryGetValue(id, out var n) ? n : "(unknown)";
 
@@ -191,6 +192,7 @@ public static class FedMessageDumper
                 SideTechChange.Fmid => FormatSideTechChange(msg),
                 SideAttributeChange.Fmid => FormatSideAttributeChange(msg),
                 PingData.Fmid => FormatPingData(msg),
+                GunfireBatch.Fmid => FormatGunfireBatch(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -205,6 +207,14 @@ public static class FedMessageDumper
     }
 
     // ── per-message formatters (field readers reuse the shipped Decode) ────
+
+    private static string FormatGunfireBatch(byte[] msg)
+    {
+        var batch = GunfireBatch.Decode(msg);
+        return $"    tick={batch.Tick} records={batch.Records.Length} " +
+            $"projectiles={batch.Records.Count(r => r is ProjectileInstance)} " +
+            $"hits={batch.Records.Count(r => r is ProjectileHullHit)}";
+    }
 
     private static string FormatLogonRequest(byte[] msg)
     {

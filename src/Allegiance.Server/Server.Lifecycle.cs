@@ -185,6 +185,7 @@ public sealed partial class Server
         // so every rig run is labelled. OFF = today's three periodic SHIP_STATUS
         // refreshes, byte-for-byte.
         ResolveShipStatusChangeGate();
+        ResolveGunfireBatch();
 
         // P605 — resolve the transport's send-draining mode (pool default since
         // P887, thread-per-peer via an explicit override) from transport.mode
@@ -1034,6 +1035,8 @@ public sealed partial class Server
     private void SendPeer(ConnectionId target, byte[] packet, BroadcastCategory category)
     {
         if (_shutdown) return;
+        if (_broadcastGunfireBatch && ReferenceEquals(packet, _gunfireToken)) { QueueGunfireRecord(target); return; }
+        FlushGunfireBeforeBoundary(target, packet);
         if (_broadcastPublisher is null) PublishBytes(target, packet, 0, true, category);
         else QueueEncodedEvent(target, packet, 0, true, category);
     }

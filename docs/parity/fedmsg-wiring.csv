@@ -135,3 +135,4 @@ CHANGE_ALLIANCES,197,S,Server.Lobby,ConnectionSession (real client),P642: six al
 ASTEROID_MINED,198,S,Server.Combat,ConnectionSession (real client),updates asteroid live ore fraction (appmsg.cpp:1733),appmsg.cpp:1733,done
 HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,ConnectionSession (real client),Per-sector commander mark on full map/mini-map/HUD; receivedobjective on activation (P640),appmsg.cpp:1749,done
 CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done
+GUNFIRE_BATCH,221,S,Server.Combat + Server.GunfireBatch,ConnectionSession + Bot,"P994 optional ordered compact 12/213 records; expands through legacy world handlers; exact attribution and own-echo spawn coordinates",port-only; array/compact-value inspiration Inc/Messages.h:890-900 and Igc/igc.h:2198-2255,done
