@@ -1,5 +1,15 @@
 # P999 — Why Gigacorp wins, and a specification-driven bot strategy
 
+> **Claude review (2026-11-11).** Re-tallied all 56 finalized matches from the saved summaries: Gigacorp 34/56,
+> Phoenix 10/56, Omicron 10/48, Iron Coalition 2/8 — the report is right and the dispatch tally (31/52, 5 no-winner) was
+> Claude's parser error: it read only `side0–side2`, so the four-side b83–b86 matches lost their fourth side and its
+> wins were counted as "no winner". Spot-checked against PCore001: Gigacorp IncomeMoney/BonusMoney +0.25, GA[19] 1.25,
+> no development-time factor (1.0) vs Phoenix GA[24] 1.5 and Omicron 2.5; effective starting hulls (G Scout 200×0.85 = 170 HP,
+> 160×1.1 = 176 speed; P Fighter 270; O Fighter 300) match the tables. Port citations `Showcase.cs:135`,
+> `TechLoadoutSelector.cs:209-215/474-479`, `ResearchCommander.cs:263-270` verified. No `src/` change. The Codex
+> dispatcher committed the work as WIP `0092585b` (the handoff line "uncommitted" predates that). Merged master
+> (P998) — build 0/0, `P999CivStrategyTests` 15/0/0 ×3, `test_audit.py` OK ×3.
+
 Gigacorp wins **34/56 completed local matches (60.7%)**, including **25/40
 three-side matches (62.5%; 95% Wilson interval 47.0–75.8%)**. The 400-bot
 three-side subset is **20/26 (76.9%)**; the earlier 210-bot subset is only
