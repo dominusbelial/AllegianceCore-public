@@ -404,11 +404,23 @@ public sealed partial class ClientWorld
     /// parts are learned: a purchase ACK (<c>appmsg.cpp:3185</c> SaveLoadout), a
     /// <c>LOADOUT_CHANGE</c> for our ship (<c>appmsg.cpp:2029-2031</c>) and a
     /// real-id EXPORT. A lifepod hull (or an unresolved side) never records — the
-    /// pod's bare chassis must not become "the last loadout".</summary>
+    /// pod's bare chassis must not become "the last loadout".
+    /// <para>P998 — nor does a loadout with NO mounted parts. Native's own client
+    /// never takes its parts from a server <c>LOADOUT_CHANGE</c> at all ("Ignore
+    /// most part changes for ourselves", <c>appmsg.cpp:2028</c>); the cached
+    /// <c>m_loadouts</c> head is only refreshed by <c>SaveLoadout()</c> on a
+    /// purchase ACK (<c>appmsg.cpp:3185</c>). The port's renderer learns its own
+    /// parts from the wire instead, so a hull-only refresh — a stray DROP_PART of
+    /// the last mount, or one of the server's <c>LOADOUT_CHANGE</c> broadcasts
+    /// around a death — must not overwrite the ship the player actually flew with
+    /// "hull H, nothing". Native's <c>RestoreLoadout</c> replays the head entry as
+    /// it stands, so losing the parts here would leave the hangar launching a bare
+    /// hull. (A purchase ACK for a deliberately bare hull therefore keeps the
+    /// previous entry; stated deviation, it only affects a ship with no hardware.)</para></summary>
     private void RememberOwnLoadout(ShipEntity e)
     {
         if (MyShipId is not { } id || e.ShipId != id) return;
-        if (e.HullId < 0 || e.Loadout is null) return;
+        if (e.HullId < 0 || e.Loadout is not { Count: > 0 }) return;
         // Positive "not the pod": an unknown resolver leaves the previous saved
         // loadout untouched (never guess, never lose the real one).
         if (LifepodHullResolver(e.SideId) is not { } pod || pod == e.HullId) return;
@@ -3091,7 +3103,12 @@ public sealed partial class ClientWorld
         }
         else
         {
-            ent.Loadout = null;            // parts Terminate(); no ammo/fuel pools on the client, :190-201
+            // Native: `while (plink = plist->first()) plink->data()->Terminate();`
+            // then SetAmmo(0)/SetFuel(0) (appmsg.cpp:193-201) — every part dies with
+            // the ship, the cargo hold's negative-mount parts included (they are
+            // IpartIGCs in native's one part list, shipIGC.cpp:1516-1549).
+            ent.Loadout = null;
+            ent.Cargo = null;
         }
 
         // 2 — clear missiles targeting this ship (structural no-op, :203-213 —
@@ -5176,6 +5193,13 @@ public sealed partial class ClientWorld
         var ent = Upsert(m.ShipId);
         ent.ParentId = -1;                             // SetParentShip(NULL), :1952
         ent.BoardTurretId = -1;                        // HUD-20 — no longer boarded
+        // P998 — native's ENTER_LIFEPOD handler TERMINATES every part of the ship
+        // before the hull swap: `while (ppl = pparts->first()) ppl->data()->Terminate();`
+        // (appmsg.cpp:1973-1981), then `SetBaseHullType(lifepod)` (:1980). Without
+        // this the port's ClientWorld kept the dead ship's parts on the docked pod,
+        // which the hangar's CURRENT SHIP pane then listed (the P996 finding).
+        ent.Loadout = null;
+        ent.Cargo = null;
         if (LifepodHullResolver(ent.SideId) is { } lifepod)
             ent.HullId = lifepod;                      // SetBaseHullType(lifepod), :1963
         PostSystemLine("You have entered a lifepod.");
