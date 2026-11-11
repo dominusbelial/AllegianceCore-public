@@ -217,7 +217,7 @@ restored a real hull with parts (`proof-*.json` next to the PNGs).
 the launched hull (`15`).
 
 The four PNGs are **new media**: they need Domingo's review before the push (`ALLOW_MEDIA=1` for
-`scripts/publish-guard.sh`). Total asset size 1.5 MB (< the 2 MB per-task cap).
+`scripts/publish-guard.sh`). Total asset size 0.57 MB (Claude review: the two hangar captures were quantised to 256 colours, 677/654 KB → 175/176 KB).
 
 The "CURRENT SHIP hull: #33" pane listing the dead fighter's parts is the pre-existing §5 finding (the port does not
 terminate a killed ship's parts the way native's loot loop does); the restored *pending* loadout below it is the
@@ -287,3 +287,17 @@ plays it back through `ShopModel.RestoreSavedLoadout`, including native's succes
 `TryToBuyParts` fill for an upgraded hull and its free-default fallback. The result is the rig's loop replaced by
 native's outcome: a pod death leaves the player berthed, the hangar shows the ship he last flew, and launching it
 carries no oxygen clock at all.
+
+## Claude review (2026-11-11)
+
+* Native citations re-grepped (`shipIGC.cpp:1408`, `:360-363`; `shipIGC.h:989-1020`, `:457-459`; `appmsg.cpp:2022-2023`;
+  `clintlib.h:1815-1820`, `:1876-1886`): accurate.
+* Rebased on master d0734dfa (P993/P994): one append conflict in `docs/TEST_FLAKES.md` (both ledgers kept); build 0/0;
+  the P996 + lifepod/rescue/P279/P699/P977 set 3× alone on the merged tree: Core 96/0/0, ClientCore 9/0/0,
+  MonoGame 8/0/0 each run.
+* Hangar captures quantised (1.5 MB → 0.57 MB of assets).
+* Known small deviation, not changed: `ShopModel.RestoreSavedLoadout` checks the budget against the successor hull's
+  price and does not budget-check the cloned parts; native checks the saved hull's price (`clintlib.h:1815`) and clones
+  parts within the remaining budget. The server's funds gate still decides the purchase.
+* Follow-up (from §5): the port keeps the dead ship's parts on the pod (native terminates them in the kill loot loop,
+  `FedSrv.CPP:11691-11702`); visible as the pod's "CURRENT SHIP" list in the loadout capture.
