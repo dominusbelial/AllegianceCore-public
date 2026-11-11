@@ -1,0 +1,280 @@
+civ,equipment,part,name,phase,selections
+18,Afterburner,174,Hvy Booster,refit,2207
+18,Afterburner,175,Afterburner 2,refit,491
+18,Afterburner,187,Crs Booster,refit,2942
+18,Afterburner,188,Retro Booster,refit,2432
+18,Afterburner,208,Retro Booster,refit,45
+18,Afterburner,224,Afterburner 3,refit,1026
+18,Afterburner,26,Lt Booster 1,refit,5745
+18,Afterburner,27,Booster 2,refit,262
+18,Afterburner,28,Lt Booster 2,refit,203
+18,Afterburner,29,Booster 3,refit,1448
+18,ChaffLauncher,80,Counter 1,initial,2552
+18,ChaffLauncher,80,Counter 1,refit,4251
+18,ChaffLauncher,85,Counter 2,refit,30305
+18,ChaffLauncher,86,Counter 3,refit,889
+18,Cloak,34,Sig Cloak 3,refit,113
+18,Cloak,35,Hvy Cloak 2,refit,71
+18,Cloak,39,Sig Cloak 2,refit,6
+18,Cloak,41,Hvy Cloak 1,refit,384
+18,Dispenser,113,EMP Mine 1,refit,65
+18,Dispenser,114,EMP Mine 2,refit,134
+18,Dispenser,13,Mine Pack 1,refit,2214
+18,Dispenser,14,Mine Pack 2,refit,8465
+18,Dispenser,15,EWS Probe 2,refit,1169
+18,Dispenser,16,EWS Probe 3,refit,3034
+18,Dispenser,57,Prox Mine 3,refit,633
+18,Dispenser,58,Prox Mine 2,refit,657
+18,Dispenser,59,Prox Mine 1,initial,2046
+18,Dispenser,59,Prox Mine 1,refit,9465
+18,Dispenser,600,Teleport Probe 2,refit,63
+18,Dispenser,81,EWS Probe 1,initial,506
+18,Dispenser,81,EWS Probe 1,refit,2598
+18,Magazine,102,MRM Seek 3 QL,refit,28
+18,Magazine,103,MRM Quickfire 1,refit,115
+18,Magazine,104,MRM Quickfire 2,refit,4093
+18,Magazine,105,MRM Quickfire 3,refit,91
+18,Magazine,108,SRM Dumb 3 QL,refit,100
+18,Magazine,115,SRM Nerve Gas,refit,58
+18,Magazine,150,SRM Dumbfire 1,initial,1085
+18,Magazine,150,SRM Dumbfire 1,refit,4832
+18,Magazine,151,SRM Dumbfire 2,refit,2791
+18,Magazine,152,SRM Dumbfire 3,refit,8890
+18,Magazine,153,MRM Seeker 1,initial,1467
+18,Magazine,153,MRM Seeker 1,refit,1601
+18,Magazine,154,MRM Seeker 2,refit,4070
+18,Magazine,156,MRM Seeker 3,refit,93
+18,Magazine,157,SRM Anti-Base 1,refit,1321
+18,Magazine,158,SRM Anti-Base 2,refit,928
+18,Magazine,159,LRM Hunter 2,refit,3
+18,Magazine,20,LRM Killer 1,refit,7
+18,Magazine,30,LRM Killer 2,refit,117
+18,Magazine,31,LRM Hunter 3,refit,61
+18,Magazine,601,SRM Anti-Base 3,refit,4566
+18,Shield,21,Sm Shield 1,initial,2851
+18,Shield,21,Sm Shield 1,refit,12739
+18,Shield,40,Sm Shield 2,refit,3082
+18,Shield,42,Sm Shield 3,refit,16190
+18,Shield,43,Med Shield 2,refit,4368
+18,Shield,44,Med Shield 3,refit,246
+18,Weapon,111,EW Galv Blstr,refit,1650
+18,Weapon,121,PW Mini-Gun 2,refit,1082
+18,Weapon,122,PW Mini-Gun 3,refit,3088
+18,Weapon,130,PW AutoCan 1,refit,2456
+18,Weapon,131,PW AutoCan 2,refit,1088
+18,Weapon,132,PW AutoCan 3,refit,5684
+18,Weapon,190,ER Nanite 2,refit,2320
+18,Weapon,223,ER Nanite 3,refit,50
+18,Weapon,33,PW Gat Gun 1,initial,2551
+18,Weapon,33,PW Gat Gun 1,refit,10579
+18,Weapon,51,EW Utl Can 2,refit,12
+18,Weapon,52,EW Utl Can 3,refit,959
+18,Weapon,60,EW Sniper 1,refit,2
+18,Weapon,61,EW Sniper 2,refit,175
+18,Weapon,71,PW Gat Gun 2,refit,3727
+18,Weapon,72,PW Gat Gun 3,refit,29868
+18,Weapon,91,ER Nanite 1,initial,299
+18,Weapon,91,ER Nanite 1,refit,490
+18,Weapon,92,EW Disruptor 1,initial,1
+18,Weapon,92,EW Disruptor 1,refit,5494
+18,Weapon,93,EW Disruptor 2,refit,1597
+18,Weapon,94,EW Disruptor 3,refit,6828
+25,Afterburner,125,Afterburner 1,initial,112
+25,Afterburner,125,Afterburner 1,refit,234
+25,Afterburner,175,Afterburner 2,refit,95
+25,Afterburner,187,Crs Booster,refit,97
+25,Afterburner,188,Retro Booster,refit,126
+25,Afterburner,208,Retro Booster,refit,5
+25,Afterburner,23,Booster 1,refit,17
+25,Afterburner,26,Lt Booster 1,refit,215
+25,Afterburner,27,Booster 2,refit,72
+25,Afterburner,28,Lt Booster 2,refit,3
+25,Afterburner,29,Booster 3,refit,2
+25,ChaffLauncher,80,Counter 1,initial,184
+25,ChaffLauncher,80,Counter 1,refit,222
+25,ChaffLauncher,85,Counter 2,refit,1509
+25,ChaffLauncher,86,Counter 3,refit,141
+25,Cloak,35,Hvy Cloak 2,refit,77
+25,Cloak,38,Sig Cloak 1,refit,33
+25,Cloak,39,Sig Cloak 2,refit,19
+25,Cloak,41,Hvy Cloak 1,refit,376
+25,Dispenser,113,EMP Mine 1,refit,15
+25,Dispenser,13,Mine Pack 1,refit,266
+25,Dispenser,14,Mine Pack 2,refit,5
+25,Dispenser,15,EWS Probe 2,refit,9
+25,Dispenser,19,Rescue,refit,2
+25,Dispenser,58,Prox Mine 2,refit,3
+25,Dispenser,59,Prox Mine 1,initial,36
+25,Dispenser,59,Prox Mine 1,refit,225
+25,Dispenser,81,EWS Probe 1,initial,16
+25,Dispenser,81,EWS Probe 1,refit,76
+25,Magazine,103,MRM Quickfire 1,initial,8
+25,Magazine,103,MRM Quickfire 1,refit,12
+25,Magazine,104,MRM Quickfire 2,refit,184
+25,Magazine,105,MRM Quickfire 3,refit,2
+25,Magazine,107,SRM Dumb 2 QL,refit,2
+25,Magazine,108,SRM Dumb 3 QL,refit,1
+25,Magazine,150,SRM Dumbfire 1,initial,64
+25,Magazine,150,SRM Dumbfire 1,refit,237
+25,Magazine,151,SRM Dumbfire 2,refit,234
+25,Magazine,152,SRM Dumbfire 3,refit,1
+25,Magazine,153,MRM Seeker 1,refit,15
+25,Magazine,154,MRM Seeker 2,refit,69
+25,Magazine,155,LRM Hunter 1,refit,38
+25,Magazine,156,MRM Seeker 3,refit,7
+25,Magazine,157,SRM Anti-Base 1,refit,101
+25,Magazine,158,SRM Anti-Base 2,refit,355
+25,Magazine,159,LRM Hunter 2,refit,12
+25,Magazine,20,LRM Killer 1,refit,65
+25,Shield,21,Sm Shield 1,initial,96
+25,Shield,21,Sm Shield 1,refit,534
+25,Shield,40,Sm Shield 2,refit,758
+25,Shield,42,Sm Shield 3,refit,13
+25,Shield,43,Med Shield 2,refit,157
+25,Shield,44,Med Shield 3,refit,29
+25,Weapon,111,EW Galv Blstr,refit,1
+25,Weapon,120,PW Mini-Gun 1,initial,224
+25,Weapon,120,PW Mini-Gun 1,refit,902
+25,Weapon,121,PW Mini-Gun 2,refit,172
+25,Weapon,130,PW AutoCan 1,refit,170
+25,Weapon,131,PW AutoCan 2,refit,202
+25,Weapon,190,ER Nanite 2,refit,110
+25,Weapon,223,ER Nanite 3,refit,7
+25,Weapon,33,PW Gat Gun 1,initial,64
+25,Weapon,33,PW Gat Gun 1,refit,412
+25,Weapon,50,EW Utl Can 1,refit,474
+25,Weapon,51,EW Utl Can 2,refit,487
+25,Weapon,60,EW Sniper 1,refit,49
+25,Weapon,71,PW Gat Gun 2,refit,762
+25,Weapon,72,PW Gat Gun 3,refit,12
+25,Weapon,91,ER Nanite 1,initial,24
+25,Weapon,91,ER Nanite 1,refit,39
+25,Weapon,92,EW Disruptor 1,initial,8
+25,Weapon,92,EW Disruptor 1,refit,53
+25,Weapon,93,EW Disruptor 2,refit,169
+25,Weapon,94,EW Disruptor 3,refit,3
+4,Afterburner,174,Hvy Booster,refit,1417
+4,Afterburner,175,Afterburner 2,refit,38
+4,Afterburner,187,Crs Booster,refit,1748
+4,Afterburner,188,Retro Booster,refit,3434
+4,Afterburner,224,Afterburner 3,refit,16
+4,Afterburner,23,Booster 1,initial,1608
+4,Afterburner,23,Booster 1,refit,5055
+4,Afterburner,26,Lt Booster 1,refit,4696
+4,Afterburner,27,Booster 2,refit,1545
+4,Afterburner,29,Booster 3,refit,1290
+4,ChaffLauncher,80,Counter 1,initial,2552
+4,ChaffLauncher,80,Counter 1,refit,3597
+4,ChaffLauncher,85,Counter 2,refit,31991
+4,Cloak,39,Sig Cloak 2,refit,5
+4,Cloak,41,Hvy Cloak 1,refit,7
+4,Dispenser,113,EMP Mine 1,refit,11
+4,Dispenser,13,Mine Pack 1,refit,3413
+4,Dispenser,14,Mine Pack 2,refit,4801
+4,Dispenser,15,EWS Probe 2,refit,1634
+4,Dispenser,16,EWS Probe 3,refit,1399
+4,Dispenser,57,Prox Mine 3,refit,3
+4,Dispenser,58,Prox Mine 2,refit,26
+4,Dispenser,59,Prox Mine 1,initial,438
+4,Dispenser,59,Prox Mine 1,refit,3781
+4,Dispenser,81,EWS Probe 1,initial,506
+4,Dispenser,81,EWS Probe 1,refit,4528
+4,Magazine,103,MRM Quickfire 1,initial,891
+4,Magazine,103,MRM Quickfire 1,refit,2058
+4,Magazine,104,MRM Quickfire 2,refit,5165
+4,Magazine,150,SRM Dumbfire 1,initial,1207
+4,Magazine,150,SRM Dumbfire 1,refit,6894
+4,Magazine,151,SRM Dumbfire 2,refit,4617
+4,Magazine,152,SRM Dumbfire 3,refit,5587
+4,Magazine,153,MRM Seeker 1,initial,454
+4,Magazine,153,MRM Seeker 1,refit,36
+4,Magazine,154,MRM Seeker 2,refit,5156
+4,Magazine,157,SRM Anti-Base 1,refit,2413
+4,Magazine,158,SRM Anti-Base 2,refit,1768
+4,Magazine,159,LRM Hunter 2,refit,6
+4,Magazine,20,LRM Killer 1,refit,5
+4,Magazine,601,SRM Anti-Base 3,refit,1828
+4,Shield,21,Sm Shield 1,initial,2851
+4,Shield,21,Sm Shield 1,refit,19427
+4,Shield,40,Sm Shield 2,refit,5433
+4,Shield,42,Sm Shield 3,refit,8405
+4,Shield,43,Med Shield 2,refit,6008
+4,Weapon,111,EW Galv Blstr,refit,1771
+4,Weapon,121,PW Mini-Gun 2,refit,78
+4,Weapon,122,PW Mini-Gun 3,refit,41
+4,Weapon,130,PW AutoCan 1,refit,4460
+4,Weapon,131,PW AutoCan 2,refit,2274
+4,Weapon,132,PW AutoCan 3,refit,5282
+4,Weapon,190,ER Nanite 2,refit,3248
+4,Weapon,33,PW Gat Gun 1,initial,2451
+4,Weapon,33,PW Gat Gun 1,refit,17982
+4,Weapon,51,EW Utl Can 2,refit,9
+4,Weapon,52,EW Utl Can 3,refit,6
+4,Weapon,60,EW Sniper 1,refit,7
+4,Weapon,61,EW Sniper 2,refit,2
+4,Weapon,71,PW Gat Gun 2,refit,6762
+4,Weapon,72,PW Gat Gun 3,refit,18682
+4,Weapon,91,ER Nanite 1,initial,299
+4,Weapon,91,ER Nanite 1,refit,492
+4,Weapon,92,EW Disruptor 1,initial,1709
+4,Weapon,92,EW Disruptor 1,refit,10115
+4,Weapon,93,EW Disruptor 2,refit,3041
+4,Weapon,94,EW Disruptor 3,refit,4174
+5,Afterburner,125,Afterburner 1,refit,83
+5,Afterburner,174,Hvy Booster,refit,297
+5,Afterburner,175,Afterburner 2,refit,30
+5,Afterburner,187,Crs Booster,refit,1678
+5,Afterburner,188,Retro Booster,refit,2287
+5,Afterburner,23,Booster 1,initial,1372
+5,Afterburner,23,Booster 1,refit,3712
+5,Afterburner,26,Lt Booster 1,refit,4421
+5,Afterburner,27,Booster 2,refit,1720
+5,Afterburner,29,Booster 3,refit,343
+5,ChaffLauncher,80,Counter 1,initial,2185
+5,ChaffLauncher,80,Counter 1,refit,2997
+5,ChaffLauncher,85,Counter 2,refit,24426
+5,Dispenser,13,Mine Pack 1,refit,2597
+5,Dispenser,14,Mine Pack 2,refit,894
+5,Dispenser,15,EWS Probe 2,refit,831
+5,Dispenser,16,EWS Probe 3,refit,251
+5,Dispenser,58,Prox Mine 2,refit,22
+5,Dispenser,59,Prox Mine 1,initial,374
+5,Dispenser,59,Prox Mine 1,refit,8711
+5,Dispenser,81,EWS Probe 1,initial,439
+5,Dispenser,81,EWS Probe 1,refit,4349
+5,Magazine,103,MRM Quickfire 1,initial,469
+5,Magazine,103,MRM Quickfire 1,refit,1249
+5,Magazine,104,MRM Quickfire 2,refit,4073
+5,Magazine,150,SRM Dumbfire 1,initial,1193
+5,Magazine,150,SRM Dumbfire 1,refit,6564
+5,Magazine,151,SRM Dumbfire 2,refit,4353
+5,Magazine,152,SRM Dumbfire 3,refit,1263
+5,Magazine,153,MRM Seeker 1,initial,523
+5,Magazine,153,MRM Seeker 1,refit,902
+5,Magazine,154,MRM Seeker 2,refit,4048
+5,Magazine,155,LRM Hunter 1,refit,20
+5,Shield,21,Sm Shield 1,initial,2440
+5,Shield,21,Sm Shield 1,refit,18384
+5,Shield,40,Sm Shield 2,refit,4894
+5,Shield,42,Sm Shield 3,refit,1727
+5,Shield,43,Med Shield 2,refit,4858
+5,Weapon,111,EW Galv Blstr,refit,493
+5,Weapon,120,PW Mini-Gun 1,refit,172
+5,Weapon,121,PW Mini-Gun 2,refit,64
+5,Weapon,130,PW AutoCan 1,refit,4180
+5,Weapon,131,PW AutoCan 2,refit,4320
+5,Weapon,132,PW AutoCan 3,refit,1216
+5,Weapon,190,ER Nanite 2,refit,2163
+5,Weapon,212,PW A-B Hammer 1,refit,4918
+5,Weapon,213,PW A-B Hammer 2,refit,4344
+5,Weapon,214,PW A-B Hammer 3,refit,454
+5,Weapon,33,PW Gat Gun 1,initial,2047
+5,Weapon,33,PW Gat Gun 1,refit,14944
+5,Weapon,71,PW Gat Gun 2,refit,8286
+5,Weapon,72,PW Gat Gun 3,refit,2339
+5,Weapon,91,ER Nanite 1,initial,255
+5,Weapon,91,ER Nanite 1,refit,390
+5,Weapon,92,EW Disruptor 1,initial,1510
+5,Weapon,92,EW Disruptor 1,refit,9837
+5,Weapon,93,EW Disruptor 2,refit,3809
+5,Weapon,94,EW Disruptor 3,refit,653

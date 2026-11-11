@@ -1,0 +1,2812 @@
+batch,match,side,civ,step,total,lo,hi,kind,name
+76,1,0,18,2,168,21.0,23.0,station,Garrison
+76,1,1,4,2,186,21.0,23.0,station,Garrison
+76,1,2,5,2,147,21.0,23.0,station,Garrison
+76,1,0,18,15,168,216.0,216.0,tech,Patroller
+76,1,0,18,20,168,296.0,298.0,tech,Bomber
+76,1,0,18,21,168,304.0,319.0,station,Garrison (Str)
+76,1,1,4,15,186,304.0,319.0,tech,Bomber
+76,1,1,4,16,186,319.0,339.0,station,Garrison (Str)
+76,1,0,18,25,168,455.0,466.0,station,Outpost (Lt)
+76,1,2,5,15,147,507.0,519.0,tech,Bomber
+76,1,0,18,26,168,539.0,545.0,station,Supremacy
+76,1,2,5,16,147,547.0,553.0,station,Garrison (Str)
+76,1,0,18,30,168,599.0,605.0,tech,GA: Ship Hull 1
+76,1,2,5,17,147,621.0,632.0,station,Outpost
+76,1,0,18,33,168,640.0,644.0,tech,PW Gattling Gun 2
+76,1,1,4,17,186,648.0,652.0,station,Outpost
+76,1,0,18,34,168,659.0,664.0,tech,EW Disruptor 2
+76,1,1,4,18,186,743.0,743.0,station,Supremacy
+76,1,2,5,18,147,748.0,763.0,station,Shipyard
+76,1,0,18,43,168,788.0,794.0,tech,Enh Fighter
+76,1,0,18,45,168,812.0,818.0,tech,Upgrade Supremacy
+76,1,0,18,45,168,812.0,818.0,station,Supremacy (Adv)
+76,1,1,4,22,186,831.0,838.0,tech,GA: Ship Hull 1
+76,1,1,4,25,186,892.0,896.0,tech,PW Gattling Gun 2
+76,1,2,5,22,147,915.0,916.0,tech,Upgrade Medium Class
+76,1,1,4,26,186,925.0,926.0,tech,EW Disruptor 2
+76,1,2,5,23,147,1030.0,1039.0,station,Supremacy
+76,1,0,18,63,168,1087.0,1088.0,tech,Adv Fighter
+76,1,2,5,27,147,1185.0,1196.0,tech,GA: Ship Hull 1
+76,1,0,18,65,168,1209.0,1209.0,station,Expansion
+76,1,0,18,67,168,1239.0,1240.0,tech,GA: PW&EW Damage 1
+76,1,2,5,30,147,1300.0,1301.0,tech,PW Gattling Gun 2
+76,1,2,5,31,147,1341.0,1343.0,tech,EW Disruptor 2
+76,1,0,18,82,168,1452.0,1453.0,station,Expansion (Adv)
+76,1,1,4,35,186,1452.0,1453.0,tech,Enh Fighter
+76,1,1,4,35,186,1468.0,1477.0,tech,Upgrade Supremacy
+76,1,1,4,35,186,1468.0,1477.0,station,Supremacy (Adv)
+76,1,2,5,40,147,1674.0,1676.0,station,Shipyard (Dry)
+76,1,2,5,40,147,1712.0,1726.0,tech,Upgrade Supremacy
+76,1,2,5,40,147,1712.0,1726.0,station,Supremacy (Adv)
+76,1,0,18,100,168,1827.0,1830.0,station,Tactical
+76,1,0,18,115,168,2051.0,2052.0,station,Tactical (Adv)
+76,1,0,18,130,168,2493.0,2499.0,station,Shipyard
+76,2,0,4,1,186,2762.0,2780.0,station,Garrison
+76,2,1,5,1,147,2762.0,2780.0,station,Garrison
+76,2,2,18,1,168,2762.0,2780.0,station,Garrison
+76,2,2,18,15,168,3034.0,3035.0,tech,Patroller
+76,2,2,18,20,168,3104.0,3110.0,tech,Bomber
+76,2,0,4,15,186,3125.0,3126.0,tech,Bomber
+76,2,2,18,21,168,3125.0,3126.0,station,Garrison (Str)
+76,2,0,4,16,186,3150.0,3156.0,station,Garrison (Str)
+76,2,0,4,17,186,3256.0,3260.0,station,Outpost
+76,2,2,18,25,168,3277.0,3280.0,station,Outpost (Lt)
+76,2,1,5,15,147,3317.0,3318.0,tech,Bomber
+76,2,0,4,18,186,3355.0,3363.0,station,Supremacy
+76,2,1,5,16,147,3355.0,3363.0,station,Garrison (Str)
+76,2,2,18,26,168,3355.0,3363.0,station,Supremacy
+76,2,2,18,29,168,3409.0,3420.0,tech,GA: Ship Hull 1
+76,2,0,4,22,186,3448.0,3450.0,tech,GA: Ship Hull 1
+76,2,1,5,17,147,3469.0,3479.0,station,Outpost
+76,2,2,18,33,168,3469.0,3479.0,tech,PW Gattling Gun 2
+76,2,2,18,33,168,3479.0,3483.0,tech,EW Disruptor 2
+76,2,0,4,25,186,3517.0,3523.0,tech,PW Gattling Gun 2
+76,2,0,4,26,186,3540.0,3542.0,tech,EW Disruptor 2
+76,2,1,5,18,147,3589.0,3593.0,station,Shipyard
+76,2,2,18,43,168,3620.0,3623.0,tech,Enh Fighter
+76,2,2,18,43,168,3630.0,3639.0,tech,Upgrade Supremacy
+76,2,2,18,45,168,3639.0,3643.0,station,Supremacy (Adv)
+76,2,1,5,22,147,3743.0,3744.0,tech,Upgrade Medium Class
+76,2,0,4,35,186,3752.0,3764.0,tech,Enh Fighter
+76,2,0,4,35,186,3774.0,3774.0,tech,Upgrade Supremacy
+76,2,0,4,35,186,3774.0,3774.0,station,Supremacy (Adv)
+76,2,1,5,23,147,3834.0,3839.0,station,Supremacy
+76,2,2,18,63,168,3915.0,3917.0,tech,Adv Fighter
+76,2,1,5,27,147,3985.0,3991.0,tech,GA: Ship Hull 1
+76,2,2,18,65,168,4006.0,4009.0,station,Expansion
+76,2,2,18,67,168,4027.0,4039.0,tech,GA: PW&EW Damage 1
+76,2,1,5,30,147,4092.0,4100.0,tech,PW Gattling Gun 2
+76,2,1,5,31,147,4140.0,4140.0,tech,EW Disruptor 2
+76,2,2,18,82,168,4251.0,4252.0,station,Expansion (Adv)
+76,2,0,4,55,186,4454.0,4455.0,tech,Adv Fighter
+76,2,1,5,40,147,4475.0,4475.0,station,Shipyard (Dry)
+76,2,1,5,42,147,4514.0,4516.0,tech,Upgrade Supremacy
+76,2,1,5,42,147,4514.0,4516.0,station,Supremacy (Adv)
+76,2,0,4,57,186,4585.0,4588.0,station,Expansion
+76,2,2,18,100,168,4585.0,4588.0,station,Tactical
+76,2,0,4,59,186,4635.0,4638.0,tech,GA: PW&EW Damage 1
+76,2,2,18,115,168,4798.0,4801.0,station,Tactical (Adv)
+76,2,0,4,74,186,4945.0,4962.0,station,Expansion (Adv)
+76,2,2,18,130,168,5091.0,5098.0,station,Shipyard
+76,2,2,18,141,168,5255.0,5259.0,tech,Upgrade Medium Class
+76,2,0,4,92,186,5406.0,5414.0,station,Tactical
+77,1,0,18,2,168,21.0,23.0,station,Garrison
+77,1,1,4,2,186,21.0,23.0,station,Garrison
+77,1,2,5,2,147,21.0,23.0,station,Garrison
+77,1,0,18,15,168,211.0,218.0,tech,Patroller
+77,1,0,18,20,168,293.0,298.0,tech,Bomber
+77,1,0,18,21,168,317.0,318.0,station,Garrison (Str)
+77,1,1,4,15,186,317.0,318.0,tech,Bomber
+77,1,1,4,16,186,326.0,348.0,station,Garrison (Str)
+77,1,0,18,25,168,459.0,464.0,station,Outpost (Lt)
+77,1,1,4,17,186,468.0,479.0,station,Outpost
+77,1,2,5,15,147,505.0,513.0,tech,Bomber
+77,1,0,18,26,168,524.0,542.0,station,Supremacy
+77,1,2,5,16,147,546.0,552.0,station,Garrison (Str)
+77,1,1,4,18,186,575.0,583.0,station,Supremacy
+77,1,0,18,29,168,599.0,612.0,tech,GA: Ship Hull 1
+77,1,2,5,17,147,599.0,612.0,station,Outpost
+77,1,0,18,33,168,652.0,655.0,tech,PW Gattling Gun 2
+77,1,0,18,34,168,672.0,675.0,tech,EW Disruptor 2
+77,1,1,4,22,186,672.0,675.0,tech,GA: Ship Hull 1
+77,1,1,4,25,186,733.0,734.0,tech,PW Gattling Gun 2
+77,1,2,5,18,147,741.0,760.0,station,Shipyard
+77,1,1,4,26,186,763.0,764.0,tech,EW Disruptor 2
+77,1,0,18,43,168,799.0,807.0,tech,Enh Fighter
+77,1,0,18,45,168,825.0,833.0,tech,Upgrade Supremacy
+77,1,0,18,45,168,825.0,833.0,station,Supremacy (Adv)
+77,1,2,5,22,147,903.0,906.0,tech,Upgrade Medium Class
+77,1,2,5,22,147,1017.0,1022.0,station,Supremacy
+77,1,1,4,35,186,1129.0,1130.0,tech,Enh Fighter
+77,1,1,4,37,186,1149.0,1152.0,tech,Upgrade Supremacy
+77,1,1,4,37,186,1149.0,1152.0,station,Supremacy (Adv)
+77,1,2,5,27,147,1169.0,1173.0,tech,GA: Ship Hull 1
+77,1,0,18,63,168,1200.0,1202.0,tech,Adv Fighter
+77,1,2,5,30,147,1289.0,1300.0,tech,PW Gattling Gun 2
+77,1,0,18,65,168,1322.0,1324.0,station,Expansion
+77,1,2,5,31,147,1322.0,1324.0,tech,EW Disruptor 2
+77,1,0,18,67,168,1340.0,1355.0,tech,GA: PW&EW Damage 1
+77,1,0,18,82,168,1565.0,1566.0,station,Expansion (Adv)
+77,1,1,4,55,186,1565.0,1566.0,tech,Adv Fighter
+77,1,2,5,40,147,1661.0,1676.0,station,Shipyard (Dry)
+77,1,1,4,56,186,1677.0,1678.0,station,Expansion
+77,1,2,5,40,147,1689.0,1699.0,tech,Upgrade Supremacy
+77,1,2,5,42,147,1708.0,1708.0,station,Supremacy (Adv)
+77,1,1,4,59,186,1737.0,1739.0,tech,GA: PW&EW Damage 1
+77,1,0,18,100,168,1918.0,1921.0,station,Tactical
+77,1,1,4,74,186,2061.0,2074.0,station,Expansion (Adv)
+77,1,0,18,115,168,2442.0,2462.0,station,Tactical (Adv)
+77,1,1,4,92,186,2602.0,2622.0,station,Tactical
+77,1,2,5,66,147,2642.0,2660.0,station,Expansion
+77,2,0,4,1,186,2762.0,2780.0,station,Garrison
+77,2,1,5,1,147,2762.0,2780.0,station,Garrison
+77,2,2,18,1,168,2762.0,2780.0,station,Garrison
+77,2,2,18,15,168,3033.0,3036.0,tech,Patroller
+77,2,2,18,20,168,3105.0,3106.0,tech,Bomber
+77,2,0,4,15,186,3125.0,3126.0,tech,Bomber
+77,2,2,18,21,168,3125.0,3126.0,station,Garrison (Str)
+77,2,0,4,16,186,3145.0,3149.0,station,Garrison (Str)
+77,2,0,4,17,186,3267.0,3268.0,station,Outpost
+77,2,2,18,25,168,3276.0,3280.0,station,Outpost (Lt)
+77,2,1,5,15,147,3317.0,3320.0,tech,Bomber
+77,2,1,5,16,147,3351.0,3360.0,station,Garrison (Str)
+77,2,2,18,26,168,3365.0,3369.0,station,Supremacy
+77,2,0,4,18,186,3389.0,3390.0,station,Supremacy
+77,2,2,18,30,168,3430.0,3430.0,tech,GA: Ship Hull 1
+77,2,1,5,17,147,3470.0,3475.0,station,Outpost
+77,2,0,4,22,186,3475.0,3483.0,tech,GA: Ship Hull 1
+77,2,2,18,33,168,3475.0,3483.0,tech,PW Gattling Gun 2
+77,2,2,18,34,168,3491.0,3491.0,tech,EW Disruptor 2
+77,2,0,4,25,186,3536.0,3542.0,tech,PW Gattling Gun 2
+77,2,0,4,26,186,3570.0,3583.0,tech,EW Disruptor 2
+77,2,1,5,18,147,3601.0,3603.0,station,Shipyard
+77,2,2,18,43,168,3632.0,3633.0,tech,Enh Fighter
+77,2,2,18,45,168,3640.0,3643.0,tech,Upgrade Supremacy
+77,2,2,18,45,168,3640.0,3643.0,station,Supremacy (Adv)
+77,2,1,5,22,147,3753.0,3757.0,tech,Upgrade Medium Class
+77,2,0,4,35,186,3767.0,3782.0,tech,Enh Fighter
+77,2,0,4,37,186,3791.0,3800.0,tech,Upgrade Supremacy
+77,2,0,4,37,186,3791.0,3800.0,station,Supremacy (Adv)
+77,2,1,5,23,147,3844.0,3847.0,station,Supremacy
+77,2,2,18,63,168,3916.0,3916.0,tech,Adv Fighter
+77,2,1,5,27,147,3995.0,3999.0,tech,GA: Ship Hull 1
+77,2,2,18,65,168,4007.0,4009.0,station,Expansion
+77,2,2,18,67,168,4035.0,4038.0,tech,GA: PW&EW Damage 1
+77,2,1,5,30,147,4105.0,4109.0,tech,PW Gattling Gun 2
+77,2,1,5,31,147,4149.0,4160.0,tech,EW Disruptor 2
+77,2,0,4,55,186,4200.0,4201.0,tech,Adv Fighter
+77,2,2,18,82,168,4242.0,4253.0,station,Expansion (Adv)
+77,2,0,4,57,186,4322.0,4326.0,station,Expansion
+77,2,0,4,59,186,4363.0,4363.0,tech,GA: PW&EW Damage 1
+77,2,1,5,40,147,4484.0,4488.0,station,Shipyard (Dry)
+77,2,1,5,42,147,4525.0,4532.0,tech,Upgrade Supremacy
+77,2,1,5,42,147,4525.0,4532.0,station,Supremacy (Adv)
+77,2,2,18,100,168,4583.0,4601.0,station,Tactical
+77,2,0,4,74,186,4760.0,4820.0,station,Expansion (Adv)
+77,2,2,18,115,168,4760.0,4820.0,station,Tactical (Adv)
+77,2,2,18,130,168,5084.0,5120.0,station,Shipyard
+77,2,2,18,141,168,5240.0,5300.0,tech,Upgrade Medium Class
+77,2,0,4,92,186,5307.0,5360.0,station,Tactical
+78,1,0,18,2,168,22.0,24.0,station,Garrison
+78,1,1,4,2,186,22.0,24.0,station,Garrison
+78,1,2,5,2,147,22.0,24.0,station,Garrison
+78,1,0,18,15,168,215.0,216.0,tech,Patroller
+78,1,0,18,20,168,297.0,297.0,tech,Bomber
+78,1,0,18,21,168,307.0,307.0,station,Garrison (Str)
+78,1,1,4,15,186,317.0,318.0,tech,Bomber
+78,1,1,4,16,186,330.0,340.0,station,Garrison (Str)
+78,1,0,18,24,168,458.0,460.0,station,Outpost (Lt)
+78,1,1,4,17,186,460.0,476.0,station,Outpost
+78,1,2,5,15,147,508.0,519.0,tech,Bomber
+78,1,2,5,16,147,546.0,554.0,station,Garrison (Str)
+78,1,0,18,26,168,560.0,560.0,station,Supremacy
+78,1,1,4,18,186,601.0,603.0,station,Supremacy
+78,1,0,18,30,168,620.0,626.0,tech,GA: Ship Hull 1
+78,1,2,5,17,147,620.0,626.0,station,Outpost
+78,1,0,18,33,168,661.0,673.0,tech,PW Gattling Gun 2
+78,1,0,18,34,168,682.0,682.0,tech,EW Disruptor 2
+78,1,1,4,22,186,689.0,693.0,tech,GA: Ship Hull 1
+78,1,1,4,25,186,761.0,775.0,tech,PW Gattling Gun 2
+78,1,2,5,18,147,761.0,775.0,station,Shipyard
+78,1,0,18,43,168,824.0,824.0,tech,Enh Fighter
+78,1,0,18,45,168,834.0,835.0,tech,Upgrade Supremacy
+78,1,0,18,45,168,834.0,835.0,station,Supremacy (Adv)
+78,1,1,4,26,186,902.0,909.0,tech,EW Disruptor 2
+78,1,2,5,22,147,915.0,920.0,tech,Upgrade Medium Class
+78,1,2,5,23,147,1035.0,1039.0,station,Supremacy
+78,1,0,18,63,168,1106.0,1110.0,tech,Adv Fighter
+78,1,2,5,27,147,1183.0,1201.0,tech,GA: Ship Hull 1
+78,1,0,18,65,168,1221.0,1241.0,station,Expansion
+78,1,0,18,67,168,1261.0,1280.0,tech,GA: PW&EW Damage 1
+78,1,2,5,30,147,1281.0,1301.0,tech,PW Gattling Gun 2
+78,1,1,4,35,186,1321.0,1340.0,tech,Enh Fighter
+78,1,2,5,31,147,1340.0,1342.0,tech,EW Disruptor 2
+78,1,1,4,37,186,1342.0,1362.0,tech,Upgrade Supremacy
+78,1,1,4,37,186,1342.0,1362.0,station,Supremacy (Adv)
+78,1,0,18,82,168,1482.0,1502.0,station,Expansion (Adv)
+78,1,2,5,40,147,1682.0,1687.0,station,Shipyard (Dry)
+78,1,2,5,42,147,1702.0,1722.0,tech,Upgrade Supremacy
+78,1,2,5,42,147,1702.0,1722.0,station,Supremacy (Adv)
+78,1,1,4,55,186,1764.0,1766.0,tech,Adv Fighter
+78,1,0,18,99,168,1822.0,1837.0,station,Tactical
+78,1,1,4,56,186,1862.0,1876.0,station,Expansion
+78,1,1,4,58,186,2098.0,2102.0,tech,GA: PW&EW Damage 1
+78,1,2,5,65,147,2683.0,2703.0,station,Expansion
+78,2,0,4,2,186,2764.0,2781.0,station,Garrison
+78,2,1,5,2,147,2764.0,2781.0,station,Garrison
+78,2,2,18,2,168,2764.0,2781.0,station,Garrison
+78,2,2,18,15,168,3030.0,3033.0,tech,Patroller
+78,2,2,18,20,168,3111.0,3112.0,tech,Bomber
+78,2,2,18,21,168,3117.0,3123.0,station,Garrison (Str)
+78,2,0,4,15,186,3132.0,3134.0,tech,Bomber
+78,2,0,4,16,186,3150.0,3153.0,station,Garrison (Str)
+78,2,0,4,17,186,3263.0,3264.0,station,Outpost
+78,2,2,18,25,168,3283.0,3284.0,station,Outpost (Lt)
+78,2,1,5,15,147,3321.0,3324.0,tech,Bomber
+78,2,0,4,18,186,3364.0,3366.0,station,Supremacy
+78,2,1,5,16,147,3364.0,3366.0,station,Garrison (Str)
+78,2,2,18,26,168,3367.0,3381.0,station,Supremacy
+78,2,2,18,30,168,3433.0,3441.0,tech,GA: Ship Hull 1
+78,2,0,4,22,186,3455.0,3458.0,tech,GA: Ship Hull 1
+78,2,1,5,17,147,3475.0,3477.0,station,Outpost
+78,2,2,18,33,168,3484.0,3495.0,tech,PW Gattling Gun 2
+78,2,2,18,34,168,3496.0,3497.0,tech,EW Disruptor 2
+78,2,0,4,25,186,3526.0,3527.0,tech,PW Gattling Gun 2
+78,2,0,4,26,186,3547.0,3548.0,tech,EW Disruptor 2
+78,2,1,5,18,147,3598.0,3600.0,station,Shipyard
+78,2,2,18,43,168,3631.0,3639.0,tech,Enh Fighter
+78,2,2,18,45,168,3647.0,3661.0,tech,Upgrade Supremacy
+78,2,2,18,45,168,3647.0,3661.0,station,Supremacy (Adv)
+78,2,1,5,22,147,3739.0,3740.0,tech,Upgrade Medium Class
+78,2,0,4,35,186,3750.0,3751.0,tech,Enh Fighter
+78,2,0,4,37,186,3777.0,3782.0,tech,Upgrade Supremacy
+78,2,0,4,37,186,3777.0,3782.0,station,Supremacy (Adv)
+78,2,1,5,23,147,3841.0,3842.0,station,Supremacy
+78,2,2,18,63,168,3921.0,3925.0,tech,Adv Fighter
+78,2,1,5,26,147,3981.0,3985.0,tech,GA: Ship Hull 1
+78,2,2,18,65,168,4005.0,4025.0,station,Expansion
+78,2,2,18,67,168,4041.0,4045.0,tech,GA: PW&EW Damage 1
+78,2,1,5,30,147,4101.0,4105.0,tech,PW Gattling Gun 2
+78,2,1,5,31,147,4125.0,4145.0,tech,EW Disruptor 2
+78,2,0,4,55,186,4186.0,4206.0,tech,Adv Fighter
+78,2,2,18,81,168,4246.0,4266.0,station,Expansion (Adv)
+78,2,0,4,57,186,4346.0,4359.0,station,Expansion
+78,2,0,4,59,186,4386.0,4401.0,tech,GA: PW&EW Damage 1
+78,2,1,5,40,147,4466.0,4486.0,station,Shipyard (Dry)
+78,2,1,5,42,147,4506.0,4521.0,tech,Upgrade Supremacy
+78,2,1,5,42,147,4506.0,4521.0,station,Supremacy (Adv)
+78,2,2,18,100,168,4591.0,4601.0,station,Tactical
+78,2,0,4,74,186,4706.0,4726.0,station,Expansion (Adv)
+78,2,2,18,115,168,4806.0,4822.0,station,Tactical (Adv)
+78,2,2,18,130,168,5107.0,5122.0,station,Shipyard
+78,2,0,4,92,186,5182.0,5187.0,station,Tactical
+78,2,2,18,141,168,5287.0,5302.0,tech,Upgrade Medium Class
+78,2,1,5,66,147,5447.0,5467.0,station,Expansion
+79,1,0,18,2,168,21.0,23.0,station,Garrison
+79,1,1,4,2,186,21.0,23.0,station,Garrison
+79,1,2,5,2,147,21.0,23.0,station,Garrison
+79,1,0,18,15,168,234.0,235.0,tech,Patroller
+79,1,0,18,20,168,302.0,318.0,tech,Bomber
+79,1,0,18,21,168,323.0,330.0,station,Garrison (Str)
+79,1,1,4,15,186,323.0,330.0,tech,Bomber
+79,1,1,4,16,186,338.0,353.0,station,Garrison (Str)
+79,1,1,4,17,186,465.0,468.0,station,Outpost
+79,1,0,18,25,168,469.0,499.0,station,Outpost (Lt)
+79,1,2,5,15,147,505.0,559.0,tech,Bomber
+79,1,2,5,16,147,505.0,559.0,station,Garrison (Str)
+79,1,0,18,26,168,505.0,559.0,station,Supremacy
+79,1,1,4,18,186,579.0,600.0,station,Supremacy
+79,1,0,18,30,168,618.0,619.0,tech,GA: Ship Hull 1
+79,1,2,5,17,147,618.0,619.0,station,Outpost
+79,1,0,18,33,168,663.0,677.0,tech,PW Gattling Gun 2
+79,1,1,4,22,186,679.0,681.0,tech,GA: Ship Hull 1
+79,1,0,18,34,168,687.0,692.0,tech,EW Disruptor 2
+79,1,1,4,25,186,747.0,771.0,tech,PW Gattling Gun 2
+79,1,2,5,18,147,747.0,771.0,station,Shipyard
+79,1,1,4,26,186,747.0,771.0,tech,EW Disruptor 2
+79,1,0,18,43,168,820.0,822.0,tech,Enh Fighter
+79,1,0,18,45,168,840.0,842.0,tech,Upgrade Supremacy
+79,1,0,18,45,168,840.0,842.0,station,Supremacy (Adv)
+79,1,2,5,22,147,910.0,919.0,tech,Upgrade Medium Class
+79,1,1,4,35,186,972.0,976.0,tech,Enh Fighter
+79,1,1,4,37,186,1003.0,1004.0,tech,Upgrade Supremacy
+79,1,1,4,37,186,1003.0,1004.0,station,Supremacy (Adv)
+79,1,2,5,23,147,1062.0,1065.0,station,Supremacy
+79,1,0,18,63,168,1109.0,1122.0,tech,Adv Fighter
+79,1,2,5,26,147,1215.0,1216.0,tech,GA: Ship Hull 1
+79,1,0,18,65,168,1266.0,1277.0,station,Expansion
+79,1,0,18,67,168,1299.0,1307.0,tech,GA: PW&EW Damage 1
+79,1,2,5,29,147,1381.0,1396.0,tech,PW Gattling Gun 2
+79,1,2,5,31,147,1427.0,1428.0,tech,EW Disruptor 2
+79,1,0,18,82,168,1510.0,1519.0,station,Expansion (Adv)
+79,1,1,4,55,186,1601.0,1616.0,tech,Adv Fighter
+79,1,1,4,57,186,1703.0,1719.0,station,Expansion
+79,1,2,5,40,147,1771.0,1773.0,station,Shipyard (Dry)
+79,1,2,5,41,147,1798.0,1806.0,tech,Upgrade Supremacy
+79,1,2,5,41,147,1798.0,1806.0,station,Supremacy (Adv)
+79,1,1,4,58,186,1825.0,1880.0,tech,GA: PW&EW Damage 1
+79,1,0,18,100,168,1880.0,1940.0,station,Tactical
+79,1,0,18,115,168,2060.0,2120.0,station,Tactical (Adv)
+79,2,0,4,1,186,2522.0,2540.0,station,Garrison
+79,2,1,5,1,147,2522.0,2540.0,station,Garrison
+79,2,2,18,1,168,2522.0,2540.0,station,Garrison
+79,2,2,18,15,168,2790.0,2796.0,tech,Patroller
+79,2,2,18,20,168,2843.0,2863.0,tech,Bomber
+79,2,0,4,15,186,2873.0,2883.0,tech,Bomber
+79,2,2,18,21,168,2873.0,2883.0,station,Garrison (Str)
+79,2,0,4,16,186,2910.0,2923.0,station,Garrison (Str)
+79,2,0,4,17,186,3013.0,3016.0,station,Outpost
+79,2,2,18,25,168,3031.0,3036.0,station,Outpost (Lt)
+79,2,1,5,15,147,3073.0,3080.0,tech,Bomber
+79,2,0,4,17,186,3112.0,3121.0,station,Supremacy
+79,2,1,5,16,147,3112.0,3121.0,station,Garrison (Str)
+79,2,2,18,26,168,3112.0,3121.0,station,Supremacy
+79,2,2,18,30,168,3175.0,3179.0,tech,GA: Ship Hull 1
+79,2,0,4,21,186,3206.0,3206.0,tech,GA: Ship Hull 1
+79,2,1,5,17,147,3223.0,3231.0,station,Outpost
+79,2,2,18,33,168,3223.0,3231.0,tech,PW Gattling Gun 2
+79,2,2,18,34,168,3236.0,3237.0,tech,EW Disruptor 2
+79,2,0,4,25,186,3270.0,3283.0,tech,PW Gattling Gun 2
+79,2,0,4,25,186,3296.0,3297.0,tech,EW Disruptor 2
+79,2,1,5,17,147,3343.0,3353.0,station,Shipyard
+79,2,2,18,43,168,3377.0,3378.0,tech,Enh Fighter
+79,2,2,18,44,168,3387.0,3388.0,tech,Upgrade Supremacy
+79,2,2,18,44,168,3387.0,3388.0,station,Supremacy (Adv)
+79,2,1,5,22,147,3484.0,3500.0,tech,Upgrade Medium Class
+79,2,0,4,35,186,3504.0,3511.0,tech,Enh Fighter
+79,2,0,4,37,186,3524.0,3532.0,tech,Upgrade Supremacy
+79,2,0,4,37,186,3524.0,3532.0,station,Supremacy (Adv)
+79,2,1,5,23,147,3596.0,3601.0,station,Supremacy
+79,2,2,18,63,168,3671.0,3680.0,tech,Adv Fighter
+79,2,1,5,27,147,3742.0,3742.0,tech,GA: Ship Hull 1
+79,2,2,18,65,168,3757.0,3764.0,station,Expansion
+79,2,2,18,67,168,3784.0,3800.0,tech,GA: PW&EW Damage 1
+79,2,1,5,30,147,3862.0,3864.0,tech,PW Gattling Gun 2
+79,2,1,5,31,147,3893.0,3899.0,tech,EW Disruptor 2
+79,2,0,4,55,186,3944.0,3944.0,tech,Adv Fighter
+79,2,2,18,82,168,4005.0,4006.0,station,Expansion (Adv)
+79,2,0,4,57,186,4054.0,4059.0,station,Expansion
+79,2,0,4,59,186,4105.0,4121.0,tech,GA: PW&EW Damage 1
+79,2,1,5,40,147,4225.0,4240.0,station,Shipyard (Dry)
+79,2,1,5,42,147,4270.0,4281.0,tech,Upgrade Supremacy
+79,2,1,5,42,147,4270.0,4281.0,station,Supremacy (Adv)
+79,2,2,18,100,168,4328.0,4341.0,station,Tactical
+79,2,0,4,73,186,4405.0,4425.0,station,Expansion (Adv)
+79,2,2,18,115,168,4545.0,4565.0,station,Tactical (Adv)
+79,2,2,18,130,168,4821.0,4881.0,station,Shipyard
+79,2,2,18,141,168,5001.0,5061.0,tech,Upgrade Medium Class
+79,2,0,4,92,186,5121.0,5181.0,station,Tactical
+80,1,0,18,2,168,21.0,23.0,station,Garrison
+80,1,1,4,2,186,21.0,23.0,station,Garrison
+80,1,2,5,2,147,21.0,23.0,station,Garrison
+80,1,0,18,15,168,228.0,236.0,tech,Patroller
+80,1,0,18,20,168,311.0,319.0,tech,Bomber
+80,1,0,18,21,168,321.0,330.0,station,Garrison (Str)
+80,1,1,4,15,186,321.0,330.0,tech,Bomber
+80,1,1,4,16,186,345.0,348.0,station,Garrison (Str)
+80,1,0,18,25,168,476.0,492.0,station,Outpost (Lt)
+80,1,1,4,17,186,476.0,492.0,station,Outpost
+80,1,2,5,15,147,517.0,518.0,tech,Bomber
+80,1,2,5,16,147,548.0,548.0,station,Garrison (Str)
+80,1,0,18,26,168,574.0,579.0,station,Supremacy
+80,1,2,5,17,147,614.0,619.0,station,Outpost
+80,1,1,4,18,186,625.0,635.0,station,Supremacy
+80,1,0,18,30,168,635.0,640.0,tech,GA: Ship Hull 1
+80,1,0,18,33,168,679.0,681.0,tech,PW Gattling Gun 2
+80,1,0,18,34,168,699.0,700.0,tech,EW Disruptor 2
+80,1,1,4,22,186,720.0,723.0,tech,GA: Ship Hull 1
+80,1,2,5,18,147,760.0,772.0,station,Shipyard
+80,1,1,4,25,186,780.0,791.0,tech,PW Gattling Gun 2
+80,1,1,4,26,186,802.0,818.0,tech,EW Disruptor 2
+80,1,0,18,43,168,840.0,843.0,tech,Enh Fighter
+80,1,0,18,45,168,846.0,858.0,tech,Upgrade Supremacy
+80,1,0,18,45,168,846.0,858.0,station,Supremacy (Adv)
+80,1,2,5,22,147,901.0,902.0,tech,Upgrade Medium Class
+80,1,1,4,35,186,1009.0,1013.0,tech,Enh Fighter
+80,1,1,4,35,186,1033.0,1033.0,tech,Upgrade Supremacy
+80,1,1,4,35,186,1033.0,1033.0,station,Supremacy (Adv)
+80,1,2,5,23,147,1033.0,1033.0,station,Supremacy
+80,1,0,18,63,168,1132.0,1136.0,tech,Adv Fighter
+80,1,2,5,27,147,1181.0,1190.0,tech,GA: Ship Hull 1
+80,1,0,18,65,168,1253.0,1256.0,station,Expansion
+80,1,0,18,67,168,1279.0,1294.0,tech,GA: PW&EW Damage 1
+80,1,2,5,30,147,1294.0,1302.0,tech,PW Gattling Gun 2
+80,1,2,5,31,147,1324.0,1339.0,tech,EW Disruptor 2
+80,1,0,18,82,168,1495.0,1498.0,station,Expansion (Adv)
+80,1,2,5,40,147,1669.0,1670.0,station,Shipyard (Dry)
+80,1,1,4,55,186,1699.0,1702.0,tech,Adv Fighter
+80,1,2,5,42,147,1709.0,1710.0,tech,Upgrade Supremacy
+80,1,2,5,42,147,1709.0,1710.0,station,Supremacy (Adv)
+80,1,1,4,57,186,1826.0,1869.0,station,Expansion
+80,1,0,18,100,168,1826.0,1869.0,station,Tactical
+80,1,1,4,59,186,,,tech,GA: PW&EW Damage 1
+80,1,0,18,115,168,2060.0,2120.0,station,Tactical (Adv)
+80,1,1,4,74,186,2180.0,2240.0,station,Expansion (Adv)
+80,1,0,18,130,168,2360.0,2420.0,station,Shipyard
+80,1,0,18,141,168,2540.0,2600.0,tech,Upgrade Medium Class
+80,1,2,5,66,147,2660.0,2720.0,station,Expansion
+80,2,0,4,2,186,2763.0,2780.0,station,Garrison
+80,2,1,5,2,147,2763.0,2780.0,station,Garrison
+80,2,2,18,2,168,2763.0,2780.0,station,Garrison
+80,2,2,18,15,168,3020.0,3024.0,tech,Patroller
+80,2,2,18,20,168,3104.0,3105.0,tech,Bomber
+80,2,2,18,21,168,3112.0,3118.0,station,Garrison (Str)
+80,2,0,4,15,186,3124.0,3125.0,tech,Bomber
+80,2,0,4,16,186,3144.0,3159.0,station,Garrison (Str)
+80,2,0,4,17,186,3244.0,3251.0,station,Outpost
+80,2,2,18,25,168,3276.0,3284.0,station,Outpost (Lt)
+80,2,1,5,15,147,3311.0,3319.0,tech,Bomber
+80,2,1,5,16,147,3344.0,3348.0,station,Garrison (Str)
+80,2,0,4,18,186,3352.0,3364.0,station,Supremacy
+80,2,2,18,26,168,3364.0,3370.0,station,Supremacy
+80,2,2,18,30,168,3427.0,3429.0,tech,GA: Ship Hull 1
+80,2,0,4,22,186,3444.0,3459.0,tech,GA: Ship Hull 1
+80,2,1,5,17,147,3464.0,3474.0,station,Outpost
+80,2,2,18,33,168,3464.0,3474.0,tech,PW Gattling Gun 2
+80,2,2,18,34,168,3486.0,3491.0,tech,EW Disruptor 2
+80,2,0,4,25,186,3508.0,3509.0,tech,PW Gattling Gun 2
+80,2,0,4,26,186,3537.0,3544.0,tech,EW Disruptor 2
+80,2,1,5,18,147,3588.0,3593.0,station,Shipyard
+80,2,2,18,43,168,3618.0,3620.0,tech,Enh Fighter
+80,2,2,18,45,168,3637.0,3640.0,tech,Upgrade Supremacy
+80,2,2,18,45,168,3637.0,3640.0,station,Supremacy (Adv)
+80,2,0,4,35,186,3740.0,3742.0,tech,Enh Fighter
+80,2,1,5,22,147,3740.0,3742.0,tech,Upgrade Medium Class
+80,2,0,4,35,186,3759.0,3763.0,tech,Upgrade Supremacy
+80,2,0,4,35,186,3759.0,3763.0,station,Supremacy (Adv)
+80,2,1,5,23,147,3830.0,3840.0,station,Supremacy
+80,2,2,18,63,168,3913.0,3913.0,tech,Adv Fighter
+80,2,1,5,27,147,3980.0,3985.0,tech,GA: Ship Hull 1
+80,2,2,18,65,168,3985.0,4005.0,station,Expansion
+80,2,2,18,67,168,4027.0,4040.0,tech,GA: PW&EW Damage 1
+80,2,1,5,30,147,4090.0,4100.0,tech,PW Gattling Gun 2
+80,2,1,5,31,147,4125.0,4132.0,tech,EW Disruptor 2
+80,2,2,18,82,168,4245.0,4265.0,station,Expansion (Adv)
+80,2,0,4,55,186,4245.0,4265.0,tech,Adv Fighter
+80,2,0,4,57,186,4378.0,4386.0,station,Expansion
+80,2,0,4,59,186,4426.0,4434.0,tech,GA: PW&EW Damage 1
+80,2,1,5,40,147,4466.0,4472.0,station,Shipyard (Dry)
+80,2,1,5,42,147,4506.0,4515.0,tech,Upgrade Supremacy
+80,2,1,5,42,147,4506.0,4515.0,station,Supremacy (Adv)
+80,2,2,18,100,168,4566.0,4581.0,station,Tactical
+80,2,2,18,115,168,4786.0,4806.0,station,Tactical (Adv)
+80,2,0,4,74,186,4826.0,4846.0,station,Expansion (Adv)
+80,2,2,18,129,168,5087.0,5107.0,station,Shipyard
+80,2,2,18,141,168,5267.0,5287.0,tech,Upgrade Medium Class
+80,2,0,4,92,186,5307.0,5327.0,station,Tactical
+80,2,1,5,66,147,5447.0,5461.0,station,Expansion
+81,1,0,18,2,168,22.0,24.0,station,Garrison
+81,1,1,4,2,186,22.0,24.0,station,Garrison
+81,1,2,5,2,147,22.0,24.0,station,Garrison
+81,1,0,18,15,168,221.0,236.0,tech,Patroller
+81,1,0,18,20,168,309.0,320.0,tech,Bomber
+81,1,0,18,21,168,320.0,326.0,station,Garrison (Str)
+81,1,1,4,15,186,320.0,326.0,tech,Bomber
+81,1,1,4,16,186,340.0,353.0,station,Garrison (Str)
+81,1,0,18,25,168,472.0,479.0,station,Outpost (Lt)
+81,1,1,4,17,186,472.0,479.0,station,Outpost
+81,1,2,5,15,147,500.0,527.0,tech,Bomber
+81,1,2,5,16,147,540.0,552.0,station,Garrison (Str)
+81,1,0,18,26,168,553.0,560.0,station,Supremacy
+81,1,1,4,18,186,581.0,600.0,station,Supremacy
+81,1,0,18,30,168,608.0,620.0,tech,GA: Ship Hull 1
+81,1,2,5,17,147,608.0,620.0,station,Outpost
+81,1,0,18,33,168,654.0,660.0,tech,PW Gattling Gun 2
+81,1,0,18,34,168,679.0,680.0,tech,EW Disruptor 2
+81,1,1,4,22,186,679.0,680.0,tech,GA: Ship Hull 1
+81,1,1,4,25,186,734.0,740.0,tech,PW Gattling Gun 2
+81,1,2,5,18,147,749.0,761.0,station,Shipyard
+81,1,1,4,26,186,761.0,771.0,tech,EW Disruptor 2
+81,1,0,18,43,168,819.0,822.0,tech,Enh Fighter
+81,1,0,18,45,168,831.0,831.0,tech,Upgrade Supremacy
+81,1,0,18,45,168,831.0,831.0,station,Supremacy (Adv)
+81,1,2,5,22,147,900.0,903.0,tech,Upgrade Medium Class
+81,1,2,5,23,147,1019.0,1026.0,station,Supremacy
+81,1,0,18,63,168,1111.0,1124.0,tech,Adv Fighter
+81,1,2,5,27,147,1174.0,1179.0,tech,GA: Ship Hull 1
+81,1,0,18,65,168,1230.0,1237.0,station,Expansion
+81,1,0,18,66,168,1262.0,1267.0,tech,GA: PW&EW Damage 1
+81,1,2,5,30,147,1283.0,1286.0,tech,PW Gattling Gun 2
+81,1,2,5,31,147,1322.0,1334.0,tech,EW Disruptor 2
+81,1,0,18,82,168,1484.0,1489.0,station,Expansion (Adv)
+81,1,2,5,40,147,1670.0,1670.0,station,Shipyard (Dry)
+81,1,2,5,42,147,1699.0,1701.0,tech,Upgrade Supremacy
+81,1,2,5,42,147,1699.0,1701.0,station,Supremacy (Adv)
+81,1,1,4,35,186,1761.0,1776.0,tech,Enh Fighter
+81,1,1,4,37,186,1780.0,1821.0,tech,Upgrade Supremacy
+81,1,1,4,37,186,1780.0,1821.0,station,Supremacy (Adv)
+81,1,0,18,99,168,1827.0,1881.0,station,Tactical
+81,1,0,18,115,168,2335.0,2347.0,station,Tactical (Adv)
+81,2,0,4,2,186,2764.0,2781.0,station,Garrison
+81,2,1,5,2,147,2764.0,2781.0,station,Garrison
+81,2,2,18,2,168,2764.0,2781.0,station,Garrison
+81,2,2,18,15,168,3023.0,3023.0,tech,Patroller
+81,2,2,18,20,168,3104.0,3104.0,tech,Bomber
+81,2,2,18,21,168,3106.0,3119.0,station,Garrison (Str)
+81,2,0,4,15,186,3124.0,3126.0,tech,Bomber
+81,2,0,4,16,186,3144.0,3144.0,station,Garrison (Str)
+81,2,0,4,17,186,3244.0,3248.0,station,Outpost
+81,2,2,18,25,168,3269.0,3284.0,station,Outpost (Lt)
+81,2,1,5,15,147,3308.0,3321.0,tech,Bomber
+81,2,0,4,18,186,3356.0,3357.0,station,Supremacy
+81,2,1,5,16,147,3356.0,3357.0,station,Garrison (Str)
+81,2,2,18,26,168,3373.0,3381.0,station,Supremacy
+81,2,2,18,30,168,3424.0,3441.0,tech,GA: Ship Hull 1
+81,2,0,4,22,186,3444.0,3465.0,tech,GA: Ship Hull 1
+81,2,1,5,17,147,3467.0,3479.0,station,Outpost
+81,2,2,18,33,168,3485.0,3492.0,tech,PW Gattling Gun 2
+81,2,2,18,34,168,3494.0,3500.0,tech,EW Disruptor 2
+81,2,0,4,25,186,3517.0,3519.0,tech,PW Gattling Gun 2
+81,2,0,4,26,186,3537.0,3545.0,tech,EW Disruptor 2
+81,2,1,5,18,147,3585.0,3592.0,station,Shipyard
+81,2,2,18,43,168,3638.0,3641.0,tech,Enh Fighter
+81,2,2,18,45,168,3649.0,3660.0,tech,Upgrade Supremacy
+81,2,2,18,45,168,3649.0,3660.0,station,Supremacy (Adv)
+81,2,0,4,35,186,3738.0,3742.0,tech,Enh Fighter
+81,2,1,5,22,147,3738.0,3742.0,tech,Upgrade Medium Class
+81,2,0,4,35,186,3760.0,3762.0,tech,Upgrade Supremacy
+81,2,0,4,37,186,3765.0,3772.0,station,Supremacy (Adv)
+81,2,1,5,23,147,3831.0,3841.0,station,Supremacy
+81,2,2,18,63,168,3930.0,3945.0,tech,Adv Fighter
+81,2,1,5,27,147,3982.0,3985.0,tech,GA: Ship Hull 1
+81,2,2,18,65,168,4005.0,4025.0,station,Expansion
+81,2,2,18,66,168,4042.0,4045.0,tech,GA: PW&EW Damage 1
+81,2,1,5,30,147,4085.0,4102.0,tech,PW Gattling Gun 2
+81,2,1,5,31,147,4133.0,4136.0,tech,EW Disruptor 2
+81,2,0,4,55,186,4174.0,4177.0,tech,Adv Fighter
+81,2,2,18,82,168,4266.0,4267.0,station,Expansion (Adv)
+81,2,0,4,57,186,4286.0,4287.0,station,Expansion
+81,2,0,4,59,186,4327.0,4338.0,tech,GA: PW&EW Damage 1
+81,2,1,5,40,147,4466.0,4486.0,station,Shipyard (Dry)
+81,2,1,5,42,147,4506.0,4522.0,tech,Upgrade Supremacy
+81,2,1,5,42,147,4506.0,4522.0,station,Supremacy (Adv)
+81,2,2,18,100,168,4586.0,4606.0,station,Tactical
+81,2,0,4,74,186,4726.0,4747.0,station,Expansion (Adv)
+81,2,2,18,115,168,4807.0,4822.0,station,Tactical (Adv)
+81,2,2,18,130,168,5107.0,5122.0,station,Shipyard
+81,2,0,4,92,186,5207.0,5227.0,station,Tactical
+81,2,2,18,141,168,5267.0,5287.0,tech,Upgrade Medium Class
+81,2,1,5,66,147,,,station,Expansion
+82,1,0,18,2,168,22.0,24.0,station,Garrison
+82,1,1,4,2,186,22.0,24.0,station,Garrison
+82,1,2,5,2,147,22.0,24.0,station,Garrison
+82,1,0,18,15,168,233.0,240.0,tech,Patroller
+82,1,0,18,20,168,315.0,319.0,tech,Bomber
+82,1,0,18,21,168,326.0,327.0,station,Garrison (Str)
+82,1,1,4,15,186,326.0,327.0,tech,Bomber
+82,1,1,4,16,186,346.0,346.0,station,Garrison (Str)
+82,1,1,4,17,186,462.0,468.0,station,Outpost
+82,1,0,18,25,168,469.0,493.0,station,Outpost (Lt)
+82,1,2,5,15,147,517.0,521.0,tech,Bomber
+82,1,2,5,16,147,546.0,560.0,station,Garrison (Str)
+82,1,0,18,26,168,546.0,560.0,station,Supremacy
+82,1,1,4,18,186,571.0,580.0,station,Supremacy
+82,1,0,18,30,168,606.0,620.0,tech,GA: Ship Hull 1
+82,1,2,5,17,147,606.0,620.0,station,Outpost
+82,1,0,18,33,168,668.0,673.0,tech,PW Gattling Gun 2
+82,1,1,4,22,186,668.0,673.0,tech,GA: Ship Hull 1
+82,1,0,18,34,168,688.0,693.0,tech,EW Disruptor 2
+82,1,1,4,25,186,740.0,741.0,tech,PW Gattling Gun 2
+82,1,1,4,26,186,760.0,761.0,tech,EW Disruptor 2
+82,1,2,5,18,147,760.0,761.0,station,Shipyard
+82,1,0,18,43,168,821.0,822.0,tech,Enh Fighter
+82,1,0,18,45,168,841.0,844.0,tech,Upgrade Supremacy
+82,1,0,18,45,168,841.0,844.0,station,Supremacy (Adv)
+82,1,2,5,22,147,891.0,916.0,tech,Upgrade Medium Class
+82,1,2,5,23,147,1031.0,1034.0,station,Supremacy
+82,1,1,4,35,186,1075.0,1100.0,tech,Enh Fighter
+82,1,1,4,37,186,1100.0,1160.0,tech,Upgrade Supremacy
+82,1,1,4,37,186,1100.0,1160.0,station,Supremacy (Adv)
+82,1,0,18,63,168,1100.0,1160.0,tech,Adv Fighter
+82,1,2,5,27,147,1160.0,1207.0,tech,GA: Ship Hull 1
+82,1,0,18,65,168,1220.0,1280.0,station,Expansion
+82,1,0,18,67,168,1220.0,1280.0,tech,GA: PW&EW Damage 1
+82,1,2,5,30,147,1280.0,1340.0,tech,PW Gattling Gun 2
+82,1,2,5,31,147,1280.0,1340.0,tech,EW Disruptor 2
+82,1,0,18,82,168,1460.0,1520.0,station,Expansion (Adv)
+82,1,1,4,55,186,1460.0,1520.0,tech,Adv Fighter
+82,1,1,4,57,186,1580.0,1640.0,station,Expansion
+82,1,1,4,59,186,1640.0,1700.0,tech,GA: PW&EW Damage 1
+82,1,2,5,40,147,1640.0,1700.0,station,Shipyard (Dry)
+82,1,2,5,42,147,,,tech,Upgrade Supremacy
+82,1,2,5,42,147,,,station,Supremacy (Adv)
+82,1,0,18,100,168,1821.0,1881.0,station,Tactical
+82,1,1,4,74,186,1941.0,2001.0,station,Expansion (Adv)
+82,1,0,18,115,168,2061.0,2121.0,station,Tactical (Adv)
+82,1,0,18,130,168,2361.0,2421.0,station,Shipyard
+82,1,1,4,92,186,2481.0,2541.0,station,Tactical
+82,1,0,18,141,168,2481.0,2541.0,tech,Upgrade Medium Class
+82,1,2,5,66,147,2601.0,2661.0,station,Expansion
+82,1,2,5,68,147,2721.0,2781.0,tech,GA: PW&EW Damage 1
+82,1,1,4,107,186,2781.0,2841.0,station,Tactical (Adv)
+82,1,0,18,163,168,2901.0,2961.0,station,Refinery (Lt)
+82,1,0,18,164,168,2961.0,3021.0,station,Teleport (Lt)
+82,1,0,18,167,168,3081.0,3141.0,station,SpecMine (Ur)
+82,1,0,18,168,168,3141.0,3201.0,station,SpecMine (Ca)
+82,1,2,5,81,147,3141.0,3201.0,station,Expansion (Adv)
+82,1,1,4,122,186,3201.0,3261.0,station,[T]ransceiver
+82,1,0,18,168,168,3261.0,3321.0,station,SpecMine (Si)
+82,1,1,4,134,186,3501.0,3561.0,station,Shipyard
+82,2,0,4,2,186,3625.0,3645.0,station,Garrison
+82,2,1,5,1,147,3625.0,3645.0,station,Garrison
+82,2,2,18,2,168,3625.0,3645.0,station,Garrison
+82,2,2,18,15,168,3885.0,3903.0,tech,Patroller
+82,2,2,18,20,168,3965.0,3982.0,tech,Bomber
+82,2,0,4,15,186,3985.0,4005.0,tech,Bomber
+82,2,2,18,21,168,3985.0,4005.0,station,Garrison (Str)
+82,2,0,4,16,186,4005.0,4025.0,station,Garrison (Str)
+82,2,0,4,17,186,4110.0,4118.0,station,Outpost
+82,2,2,18,25,168,4143.0,4146.0,station,Outpost (Lt)
+82,2,1,5,15,147,4182.0,4186.0,tech,Bomber
+82,2,0,4,18,186,4223.0,4226.0,station,Supremacy
+82,2,1,5,16,147,4223.0,4226.0,station,Garrison (Str)
+82,2,2,18,26,168,4235.0,4236.0,station,Supremacy
+82,2,2,18,30,168,4292.0,4296.0,tech,GA: Ship Hull 1
+82,2,0,4,22,186,4315.0,4316.0,tech,GA: Ship Hull 1
+82,2,2,18,33,168,4335.0,4336.0,tech,PW Gattling Gun 2
+82,2,1,5,17,147,4346.0,4349.0,station,Outpost
+82,2,2,18,34,168,4356.0,4364.0,tech,EW Disruptor 2
+82,2,0,4,25,186,4386.0,4389.0,tech,PW Gattling Gun 2
+82,2,0,4,26,186,4406.0,4409.0,tech,EW Disruptor 2
+82,2,1,5,18,147,4466.0,4470.0,station,Shipyard
+82,2,2,18,43,168,4486.0,4490.0,tech,Enh Fighter
+82,2,2,18,45,168,4506.0,4522.0,tech,Upgrade Supremacy
+82,2,2,18,45,168,4506.0,4522.0,station,Supremacy (Adv)
+82,2,0,4,35,186,4608.0,4617.0,tech,Enh Fighter
+82,2,1,5,22,147,4617.0,4626.0,tech,Upgrade Medium Class
+82,2,0,4,37,186,4633.0,4642.0,tech,Upgrade Supremacy
+82,2,0,4,37,186,4633.0,4642.0,station,Supremacy (Adv)
+82,2,1,5,23,147,4686.0,4700.0,station,Supremacy
+82,2,2,18,63,168,4766.0,4786.0,tech,Adv Fighter
+82,2,1,5,27,147,4846.0,4866.0,tech,GA: Ship Hull 1
+82,2,2,18,65,168,4866.0,4882.0,station,Expansion
+82,2,2,18,67,168,4886.0,4906.0,tech,GA: PW&EW Damage 1
+82,2,1,5,30,147,4947.0,4967.0,tech,PW Gattling Gun 2
+82,2,1,5,31,147,5002.0,5007.0,tech,EW Disruptor 2
+82,2,0,4,55,186,5027.0,5047.0,tech,Adv Fighter
+82,2,2,18,82,168,5107.0,5122.0,station,Expansion (Adv)
+82,2,0,4,57,186,5147.0,5167.0,station,Expansion
+82,2,0,4,58,186,5187.0,5207.0,tech,GA: PW&EW Damage 1
+82,2,1,5,40,147,5327.0,5347.0,station,Shipyard (Dry)
+82,2,1,5,42,147,5367.0,5387.0,tech,Upgrade Supremacy
+82,2,1,5,42,147,5367.0,5387.0,station,Supremacy (Adv)
+82,2,2,18,100,168,5447.0,5467.0,station,Tactical
+82,2,0,4,74,186,5527.0,5542.0,station,Expansion (Adv)
+82,2,2,18,115,168,5668.0,5688.0,station,Tactical (Adv)
+82,2,2,18,130,168,5948.0,5962.0,station,Shipyard
+82,2,0,4,92,186,5988.0,6008.0,station,Tactical
+82,2,2,18,141,168,6128.0,6142.0,tech,Upgrade Medium Class
+82,2,0,4,107,186,6323.0,6329.0,station,Tactical (Adv)
+82,2,1,5,66,147,6323.0,6329.0,station,Expansion
+82,2,1,5,68,147,6389.0,6409.0,tech,GA: PW&EW Damage 1
+82,2,2,18,163,168,6489.0,6503.0,station,Refinery (Lt)
+82,2,2,18,164,168,6569.0,6589.0,station,Teleport (Lt)
+82,2,2,18,167,168,6669.0,6683.0,station,SpecMine (Ur)
+82,2,0,4,122,186,6709.0,6729.0,station,[T]ransceiver
+82,2,2,18,168,168,6749.0,6769.0,station,SpecMine (Ca)
+82,2,2,18,168,168,6829.0,6849.0,station,SpecMine (Si)
+82,2,1,5,81,147,6849.0,6863.0,station,Expansion (Adv)
+82,2,0,4,134,186,7050.0,7070.0,station,Shipyard
+83,1,0,18,2,168,21.0,23.0,station,Garrison
+83,1,1,4,2,186,21.0,23.0,station,Garrison
+83,1,2,5,2,147,21.0,23.0,station,Garrison
+83,1,3,25,2,157,21.0,23.0,station,Garrison
+83,1,0,18,15,168,235.0,235.0,tech,Patroller
+83,1,3,25,11,157,235.0,235.0,station,Teleport (Hvy)
+83,1,0,18,20,168,314.0,319.0,tech,Bomber
+83,1,0,18,21,168,319.0,327.0,station,Garrison (Str)
+83,1,1,4,15,186,319.0,327.0,tech,Bomber
+83,1,1,4,16,186,346.0,354.0,station,Garrison (Str)
+83,1,3,25,17,157,425.0,433.0,station,Tactical
+83,1,0,18,24,168,433.0,438.0,station,Outpost (Lt)
+83,1,1,4,17,186,433.0,438.0,station,Outpost
+83,1,3,25,19,157,457.0,459.0,station,Tactical (Adv)
+83,1,3,25,20,157,464.0,471.0,tech,Bomber
+83,1,2,5,15,147,518.0,519.0,tech,Bomber
+83,1,0,18,26,168,528.0,529.0,station,Supremacy
+83,1,2,5,16,147,547.0,559.0,station,Garrison (Str)
+83,1,1,4,18,186,562.0,574.0,station,Supremacy
+83,1,0,18,30,168,585.0,596.0,tech,GA: Ship Hull 1
+83,1,3,25,24,157,585.0,596.0,station,Outpost (Hvy)
+83,1,2,5,17,147,619.0,620.0,station,Outpost
+83,1,0,18,33,168,625.0,631.0,tech,PW Gattling Gun 2
+83,1,0,18,34,168,644.0,660.0,tech,EW Disruptor 2
+83,1,1,4,22,186,660.0,674.0,tech,GA: Ship Hull 1
+83,1,1,4,25,186,725.0,737.0,tech,PW Gattling Gun 2
+83,1,3,25,26,157,725.0,737.0,station,Supremacy
+83,1,1,4,26,186,740.0,752.0,tech,EW Disruptor 2
+83,1,2,5,18,147,740.0,752.0,station,Shipyard
+83,1,0,18,43,168,782.0,799.0,tech,Enh Fighter
+83,1,3,25,30,157,782.0,799.0,tech,GA: Ship Hull 1
+83,1,0,18,45,168,800.0,808.0,tech,Upgrade Supremacy
+83,1,0,18,45,168,800.0,808.0,station,Supremacy (Adv)
+83,1,3,25,33,157,840.0,847.0,tech,PW Gattling Gun 2
+83,1,3,25,34,157,848.0,856.0,tech,EW Disruptor 2
+83,1,2,5,22,147,902.0,905.0,tech,Upgrade Medium Class
+83,1,2,5,23,147,1020.0,1039.0,station,Supremacy
+83,1,1,4,35,186,1060.0,1080.0,tech,Enh Fighter
+83,1,0,18,63,168,1080.0,1095.0,tech,Adv Fighter
+83,1,1,4,37,186,1080.0,1095.0,tech,Upgrade Supremacy
+83,1,1,4,37,186,1080.0,1095.0,station,Supremacy (Adv)
+83,1,3,25,43,157,1080.0,1095.0,station,Expansion
+83,1,3,25,45,157,1120.0,1140.0,tech,GA: PW&EW Damage 1
+83,1,0,18,65,168,1160.0,1180.0,station,Expansion
+83,1,2,5,27,147,1185.0,1196.0,tech,GA: Ship Hull 1
+83,1,0,18,67,168,1200.0,1213.0,tech,GA: PW&EW Damage 1
+83,1,2,5,30,147,1296.0,1300.0,tech,PW Gattling Gun 2
+83,1,2,5,31,147,1331.0,1338.0,tech,EW Disruptor 2
+83,1,0,18,82,168,1505.0,1513.0,station,Expansion (Adv)
+83,1,3,25,71,157,1526.0,1538.0,station,Garrison (Str)
+83,1,3,25,72,157,1649.0,1653.0,station,Shipyard
+83,1,2,5,40,147,1670.0,1671.0,station,Shipyard (Dry)
+83,1,2,5,42,147,1709.0,1721.0,tech,Upgrade Supremacy
+83,1,2,5,42,147,1709.0,1721.0,station,Supremacy (Adv)
+83,1,3,25,82,157,1792.0,1792.0,tech,Upgrade Medium Class
+83,1,1,4,55,186,1841.0,1861.0,tech,Adv Fighter
+83,1,0,18,100,168,1861.0,1880.0,station,Tactical
+83,1,1,4,57,186,1981.0,2000.0,station,Expansion
+83,1,1,4,59,186,2021.0,2041.0,tech,GA: PW&EW Damage 1
+83,1,3,25,99,157,2041.0,2047.0,station,Shipyard (Dry)
+83,1,3,25,109,157,2182.0,2202.0,station,Expansion (Adv)
+83,1,3,25,127,157,2454.0,2480.0,tech,Upgrade Supremacy
+83,1,3,25,127,157,2454.0,2480.0,station,Supremacy (Adv)
+83,2,0,4,2,186,2762.0,2780.0,station,Garrison
+83,2,1,5,2,147,2762.0,2780.0,station,Garrison
+83,2,2,25,2,157,2762.0,2780.0,station,Garrison
+83,2,3,18,2,168,2762.0,2780.0,station,Garrison
+83,2,3,18,15,168,3023.0,3025.0,tech,Patroller
+83,2,2,25,11,157,3043.0,3063.0,station,Teleport (Hvy)
+83,2,3,18,20,168,3104.0,3111.0,tech,Bomber
+83,2,3,18,21,168,3111.0,3123.0,station,Garrison (Str)
+83,2,0,4,15,186,3124.0,3140.0,tech,Bomber
+83,2,0,4,16,186,3143.0,3146.0,station,Garrison (Str)
+83,2,0,4,17,186,3203.0,3223.0,station,Outpost
+83,2,2,25,17,157,3250.0,3260.0,station,Tactical
+83,2,3,18,25,168,3250.0,3260.0,station,Outpost (Lt)
+83,2,2,25,19,157,3276.0,3277.0,station,Tactical (Adv)
+83,2,2,25,20,157,3296.0,3297.0,tech,Bomber
+83,2,1,5,15,147,3303.0,3318.0,tech,Bomber
+83,2,0,4,18,186,3335.0,3339.0,station,Supremacy
+83,2,1,5,16,147,3345.0,3349.0,station,Garrison (Str)
+83,2,3,18,26,168,3345.0,3349.0,station,Supremacy
+83,2,3,18,30,168,3408.0,3409.0,tech,GA: Ship Hull 1
+83,2,0,4,22,186,3427.0,3428.0,tech,GA: Ship Hull 1
+83,2,3,18,33,168,3457.0,3461.0,tech,PW Gattling Gun 2
+83,2,1,5,17,147,3468.0,3483.0,station,Outpost
+83,2,3,18,34,168,3468.0,3483.0,tech,EW Disruptor 2
+83,2,2,25,24,157,3468.0,3483.0,station,Outpost (Hvy)
+83,2,0,4,25,186,3496.0,3500.0,tech,PW Gattling Gun 2
+83,2,0,4,26,186,3512.0,3522.0,tech,EW Disruptor 2
+83,2,1,5,18,147,3573.0,3580.0,station,Shipyard
+83,2,2,25,26,157,3593.0,3603.0,station,Supremacy
+83,2,3,18,43,168,3609.0,3615.0,tech,Enh Fighter
+83,2,3,18,45,168,3615.0,3620.0,tech,Upgrade Supremacy
+83,2,3,18,45,168,3615.0,3620.0,station,Supremacy (Adv)
+83,2,2,25,30,157,3657.0,3662.0,tech,GA: Ship Hull 1
+83,2,2,25,32,157,3701.0,3704.0,tech,PW Gattling Gun 2
+83,2,1,5,21,147,3721.0,3724.0,tech,Upgrade Medium Class
+83,2,0,4,35,186,3727.0,3734.0,tech,Enh Fighter
+83,2,0,4,37,186,3751.0,3752.0,tech,Upgrade Supremacy
+83,2,0,4,37,186,3751.0,3752.0,station,Supremacy (Adv)
+83,2,1,5,23,147,3831.0,3833.0,station,Supremacy
+83,2,3,18,63,168,3892.0,3895.0,tech,Adv Fighter
+83,2,1,5,27,147,3984.0,3985.0,tech,GA: Ship Hull 1
+83,2,3,18,65,168,4004.0,4008.0,station,Expansion
+83,2,3,18,67,168,4024.0,4041.0,tech,GA: PW&EW Damage 1
+83,2,1,5,30,147,4084.0,4101.0,tech,PW Gattling Gun 2
+83,2,1,5,31,147,4134.0,4139.0,tech,EW Disruptor 2
+83,2,0,4,55,186,4164.0,4171.0,tech,Adv Fighter
+83,2,2,25,34,157,4186.0,4187.0,tech,EW Disruptor 2
+83,2,3,18,82,168,4247.0,4248.0,station,Expansion (Adv)
+83,2,0,4,57,186,4264.0,4281.0,station,Expansion
+83,2,0,4,59,186,4317.0,4319.0,tech,GA: PW&EW Damage 1
+83,2,1,5,40,147,4469.0,4476.0,station,Shipyard (Dry)
+83,2,1,5,42,147,4505.0,4519.0,tech,Upgrade Supremacy
+83,2,1,5,42,147,4505.0,4519.0,station,Supremacy (Adv)
+83,2,3,18,100,168,4565.0,4571.0,station,Tactical
+83,2,0,4,74,186,4641.0,4645.0,station,Expansion (Adv)
+83,2,2,25,43,157,4645.0,4665.0,station,Expansion
+83,2,2,25,45,157,4665.0,4685.0,tech,GA: PW&EW Damage 1
+83,2,3,18,115,168,4778.0,4821.0,station,Tactical (Adv)
+83,2,2,25,71,157,5061.0,5121.0,station,Garrison (Str)
+83,2,3,18,130,168,5061.0,5121.0,station,Shipyard
+83,2,0,4,92,186,5061.0,5121.0,station,Tactical
+83,2,2,25,72,157,5181.0,5241.0,station,Shipyard
+83,2,3,18,141,168,5241.0,5301.0,tech,Upgrade Medium Class
+83,2,2,25,82,157,5301.0,5361.0,tech,Upgrade Medium Class
+84,1,0,18,2,168,21.0,23.0,station,Garrison
+84,1,1,4,2,186,21.0,23.0,station,Garrison
+84,1,2,5,2,147,21.0,23.0,station,Garrison
+84,1,3,25,2,157,21.0,23.0,station,Garrison
+84,1,0,18,15,168,229.0,239.0,tech,Patroller
+84,1,3,25,11,157,229.0,239.0,station,Teleport (Hvy)
+84,1,0,18,20,168,316.0,318.0,tech,Bomber
+84,1,0,18,21,168,322.0,327.0,station,Garrison (Str)
+84,1,1,4,15,186,322.0,327.0,tech,Bomber
+84,1,1,4,16,186,341.0,350.0,station,Garrison (Str)
+84,1,1,4,17,186,398.0,428.0,station,Outpost
+84,1,3,25,17,157,436.0,438.0,station,Tactical
+84,1,0,18,25,168,446.0,454.0,station,Outpost (Lt)
+84,1,3,25,19,157,454.0,468.0,station,Tactical (Adv)
+84,1,3,25,20,157,474.0,481.0,tech,Bomber
+84,1,1,4,18,186,513.0,521.0,station,Supremacy
+84,1,2,5,15,147,513.0,521.0,tech,Bomber
+84,1,0,18,26,168,534.0,539.0,station,Supremacy
+84,1,2,5,16,147,545.0,559.0,station,Garrison (Str)
+84,1,0,18,30,168,599.0,607.0,tech,GA: Ship Hull 1
+84,1,1,4,22,186,609.0,619.0,tech,GA: Ship Hull 1
+84,1,3,25,24,157,609.0,619.0,station,Outpost (Hvy)
+84,1,2,5,17,147,630.0,633.0,station,Outpost
+84,1,0,18,33,168,633.0,643.0,tech,PW Gattling Gun 2
+84,1,0,18,34,168,657.0,660.0,tech,EW Disruptor 2
+84,1,1,4,24,186,679.0,682.0,tech,PW Gattling Gun 2
+84,1,3,25,26,157,726.0,739.0,station,Supremacy
+84,1,2,5,18,147,740.0,758.0,station,Shipyard
+84,1,3,25,30,157,784.0,793.0,tech,GA: Ship Hull 1
+84,1,1,4,26,186,800.0,815.0,tech,EW Disruptor 2
+84,1,3,25,33,157,831.0,832.0,tech,PW Gattling Gun 2
+84,1,3,25,34,157,849.0,859.0,tech,EW Disruptor 2
+84,1,0,18,43,168,892.0,893.0,tech,Enh Fighter
+84,1,0,18,45,168,900.0,919.0,tech,Upgrade Supremacy
+84,1,0,18,45,168,900.0,919.0,station,Supremacy (Adv)
+84,1,2,5,22,147,900.0,919.0,tech,Upgrade Medium Class
+84,1,2,5,23,147,979.0,1025.0,station,Supremacy
+84,1,3,25,43,157,1086.0,1099.0,station,Expansion
+84,1,3,25,45,157,1099.0,1156.0,tech,GA: PW&EW Damage 1
+84,1,2,5,27,147,1160.0,1182.0,tech,GA: Ship Hull 1
+84,1,0,18,63,168,1182.0,1191.0,tech,Adv Fighter
+84,1,1,4,35,186,1205.0,1219.0,tech,Enh Fighter
+84,1,1,4,37,186,1245.0,1272.0,tech,Upgrade Supremacy
+84,1,1,4,37,186,1245.0,1272.0,station,Supremacy (Adv)
+84,1,0,18,65,168,1279.0,1290.0,station,Expansion
+84,1,2,5,30,147,1279.0,1290.0,tech,PW Gattling Gun 2
+84,1,0,18,67,168,1313.0,1320.0,tech,GA: PW&EW Damage 1
+84,1,2,5,31,147,1320.0,1333.0,tech,EW Disruptor 2
+84,1,3,25,71,157,1529.0,1539.0,station,Garrison (Str)
+84,1,3,25,72,157,1640.0,1648.0,station,Shipyard
+84,1,2,5,40,147,1657.0,1670.0,station,Shipyard (Dry)
+84,1,2,5,42,147,1700.0,1722.0,tech,Upgrade Supremacy
+84,1,2,5,42,147,1700.0,1722.0,station,Supremacy (Adv)
+84,1,0,18,82,168,1700.0,1722.0,station,Expansion (Adv)
+84,1,3,25,82,157,1788.0,1794.0,tech,Upgrade Medium Class
+84,1,3,25,99,157,2041.0,2060.0,station,Shipyard (Dry)
+84,2,0,4,2,186,2762.0,2780.0,station,Garrison
+84,2,1,5,2,147,2762.0,2780.0,station,Garrison
+84,2,2,25,2,157,2762.0,2780.0,station,Garrison
+84,2,3,18,2,168,2762.0,2780.0,station,Garrison
+84,2,3,18,15,168,3023.0,3025.0,tech,Patroller
+84,2,2,25,11,157,3058.0,3068.0,station,Teleport (Hvy)
+84,2,3,18,20,168,3087.0,3106.0,tech,Bomber
+84,2,3,18,21,168,3114.0,3120.0,station,Garrison (Str)
+84,2,0,4,15,186,3124.0,3138.0,tech,Bomber
+84,2,0,4,16,186,3143.0,3148.0,station,Garrison (Str)
+84,2,0,4,17,186,3224.0,3234.0,station,Outpost
+84,2,2,25,17,157,3253.0,3261.0,station,Tactical
+84,2,3,18,25,168,3263.0,3269.0,station,Outpost (Lt)
+84,2,2,25,19,157,3284.0,3289.0,station,Tactical (Adv)
+84,2,2,25,20,157,3294.0,3296.0,tech,Bomber
+84,2,1,5,15,147,3310.0,3317.0,tech,Bomber
+84,2,0,4,18,186,3346.0,3347.0,station,Supremacy
+84,2,1,5,16,147,3346.0,3347.0,station,Garrison (Str)
+84,2,3,18,26,168,3355.0,3358.0,station,Supremacy
+84,2,3,18,30,168,3410.0,3418.0,tech,GA: Ship Hull 1
+84,2,0,4,22,186,3436.0,3439.0,tech,GA: Ship Hull 1
+84,2,1,5,17,147,3457.0,3458.0,station,Outpost
+84,2,3,18,33,168,3468.0,3470.0,tech,PW Gattling Gun 2
+84,2,2,25,24,157,3477.0,3478.0,station,Outpost (Hvy)
+84,2,3,18,34,168,3477.0,3478.0,tech,EW Disruptor 2
+84,2,0,4,25,186,3503.0,3511.0,tech,PW Gattling Gun 2
+84,2,0,4,26,186,3527.0,3529.0,tech,EW Disruptor 2
+84,2,1,5,18,147,3569.0,3569.0,station,Shipyard
+84,2,2,25,26,157,3590.0,3600.0,station,Supremacy
+84,2,3,18,43,168,3612.0,3621.0,tech,Enh Fighter
+84,2,3,18,45,168,3628.0,3634.0,tech,Upgrade Supremacy
+84,2,3,18,45,168,3628.0,3634.0,station,Supremacy (Adv)
+84,2,2,25,30,157,3655.0,3662.0,tech,GA: Ship Hull 1
+84,2,2,25,33,157,3697.0,3711.0,tech,PW Gattling Gun 2
+84,2,1,5,22,147,3716.0,3728.0,tech,Upgrade Medium Class
+84,2,2,25,34,157,3716.0,3728.0,tech,EW Disruptor 2
+84,2,0,4,35,186,3728.0,3733.0,tech,Enh Fighter
+84,2,0,4,37,186,3759.0,3761.0,tech,Upgrade Supremacy
+84,2,0,4,37,186,3759.0,3761.0,station,Supremacy (Adv)
+84,2,1,5,23,147,3830.0,3832.0,station,Supremacy
+84,2,3,18,63,168,3895.0,3903.0,tech,Adv Fighter
+84,2,2,25,43,157,3932.0,3933.0,station,Expansion
+84,2,2,25,45,157,3953.0,3964.0,tech,GA: PW&EW Damage 1
+84,2,1,5,27,147,3981.0,3984.0,tech,GA: Ship Hull 1
+84,2,3,18,65,168,4002.0,4012.0,station,Expansion
+84,2,3,18,67,168,4027.0,4037.0,tech,GA: PW&EW Damage 1
+84,2,1,5,30,147,4089.0,4096.0,tech,PW Gattling Gun 2
+84,2,1,5,31,147,4134.0,4135.0,tech,EW Disruptor 2
+84,2,0,4,55,186,4165.0,4169.0,tech,Adv Fighter
+84,2,3,18,82,168,4245.0,4249.0,station,Expansion (Adv)
+84,2,0,4,57,186,4274.0,4280.0,station,Expansion
+84,2,0,4,59,186,4324.0,4327.0,tech,GA: PW&EW Damage 1
+84,2,1,5,40,147,4464.0,4470.0,station,Shipyard (Dry)
+84,2,2,25,70,157,4464.0,4470.0,station,Garrison (Str)
+84,2,1,5,42,147,4507.0,4517.0,tech,Upgrade Supremacy
+84,2,1,5,42,147,4507.0,4517.0,station,Supremacy (Adv)
+84,2,3,18,100,168,4564.0,4579.0,station,Tactical
+84,2,0,4,74,186,4581.0,4641.0,station,Expansion (Adv)
+84,2,2,25,72,157,4641.0,4701.0,station,Shipyard
+84,2,3,18,115,168,4761.0,4821.0,station,Tactical (Adv)
+84,2,2,25,82,157,4821.0,4881.0,tech,Upgrade Medium Class
+84,2,2,25,99,157,5061.0,5121.0,station,Shipyard (Dry)
+84,2,3,18,129,168,5061.0,5121.0,station,Shipyard
+84,2,0,4,92,186,5121.0,5181.0,station,Tactical
+84,2,2,25,109,157,5181.0,5241.0,station,Expansion (Adv)
+84,2,3,18,141,168,5241.0,5301.0,tech,Upgrade Medium Class
+84,2,0,4,107,186,5422.0,5461.0,station,Tactical (Adv)
+85,1,0,18,2,168,22.0,24.0,station,Garrison
+85,1,1,4,2,186,22.0,24.0,station,Garrison
+85,1,2,5,2,147,22.0,24.0,station,Garrison
+85,1,3,25,2,157,22.0,24.0,station,Garrison
+85,1,0,18,15,168,230.0,237.0,tech,Patroller
+85,1,3,25,11,157,230.0,237.0,station,Teleport (Hvy)
+85,1,0,18,20,168,314.0,317.0,tech,Bomber
+85,1,0,18,21,168,324.0,327.0,station,Garrison (Str)
+85,1,1,4,15,186,324.0,327.0,tech,Bomber
+85,1,1,4,16,186,345.0,349.0,station,Garrison (Str)
+85,1,1,4,17,186,405.0,440.0,station,Outpost
+85,1,3,25,17,157,405.0,440.0,station,Tactical
+85,1,0,18,25,168,440.0,459.0,station,Outpost (Lt)
+85,1,3,25,19,157,440.0,459.0,station,Tactical (Adv)
+85,1,3,25,20,157,477.0,496.0,tech,Bomber
+85,1,2,5,15,147,500.0,550.0,tech,Bomber
+85,1,0,18,26,168,500.0,550.0,station,Supremacy
+85,1,1,4,18,186,500.0,550.0,station,Supremacy
+85,1,2,5,16,147,500.0,550.0,station,Garrison (Str)
+85,1,0,18,30,168,595.0,620.0,tech,GA: Ship Hull 1
+85,1,3,25,24,157,595.0,620.0,station,Outpost (Hvy)
+85,1,2,5,17,147,627.0,632.0,station,Outpost
+85,1,0,18,33,168,637.0,643.0,tech,PW Gattling Gun 2
+85,1,1,4,22,186,637.0,643.0,tech,GA: Ship Hull 1
+85,1,0,18,34,168,653.0,666.0,tech,EW Disruptor 2
+85,1,1,4,25,186,680.0,712.0,tech,PW Gattling Gun 2
+85,1,1,4,26,186,722.0,731.0,tech,EW Disruptor 2
+85,1,2,5,18,147,741.0,753.0,station,Shipyard
+85,1,3,25,26,157,741.0,753.0,station,Supremacy
+85,1,0,18,43,168,801.0,805.0,tech,Enh Fighter
+85,1,0,18,45,168,805.0,813.0,tech,Upgrade Supremacy
+85,1,0,18,45,168,805.0,813.0,station,Supremacy (Adv)
+85,1,3,25,30,157,805.0,813.0,tech,GA: Ship Hull 1
+85,1,3,25,33,157,844.0,857.0,tech,PW Gattling Gun 2
+85,1,3,25,34,157,865.0,881.0,tech,EW Disruptor 2
+85,1,2,5,22,147,901.0,903.0,tech,Upgrade Medium Class
+85,1,1,4,35,186,921.0,941.0,tech,Enh Fighter
+85,1,1,4,37,186,952.0,955.0,tech,Upgrade Supremacy
+85,1,1,4,37,186,952.0,955.0,station,Supremacy (Adv)
+85,1,2,5,23,147,1021.0,1040.0,station,Supremacy
+85,1,0,18,63,168,1081.0,1098.0,tech,Adv Fighter
+85,1,3,25,43,157,1102.0,1107.0,station,Expansion
+85,1,3,25,45,157,1128.0,1141.0,tech,GA: PW&EW Damage 1
+85,1,2,5,27,147,1173.0,1176.0,tech,GA: Ship Hull 1
+85,1,0,18,65,168,1183.0,1185.0,station,Expansion
+85,1,2,5,30,147,1282.0,1287.0,tech,PW Gattling Gun 2
+85,1,0,18,67,168,1294.0,1296.0,tech,GA: PW&EW Damage 1
+85,1,2,5,31,147,1322.0,1340.0,tech,EW Disruptor 2
+85,1,1,4,55,186,1366.0,1376.0,tech,Adv Fighter
+85,1,1,4,57,186,1529.0,1529.0,station,Expansion
+85,1,3,25,71,157,1534.0,1542.0,station,Garrison (Str)
+85,1,1,4,59,186,1570.0,1580.0,tech,GA: PW&EW Damage 1
+85,1,0,18,82,168,1619.0,1622.0,station,Expansion (Adv)
+85,1,2,5,40,147,1659.0,1662.0,station,Shipyard (Dry)
+85,1,3,25,72,157,1659.0,1662.0,station,Shipyard
+85,1,2,5,42,147,1700.0,1701.0,tech,Upgrade Supremacy
+85,1,2,5,42,147,1700.0,1701.0,station,Supremacy (Adv)
+85,1,3,25,82,157,1782.0,1802.0,tech,Upgrade Medium Class
+85,1,3,25,99,157,2001.0,2061.0,station,Shipyard (Dry)
+85,1,1,4,74,186,2061.0,2121.0,station,Expansion (Adv)
+85,1,3,25,109,157,2181.0,2241.0,station,Expansion (Adv)
+85,1,0,18,100,168,2301.0,2361.0,station,Tactical
+85,1,3,25,127,157,2421.0,2481.0,tech,Upgrade Supremacy
+85,1,3,25,127,157,2421.0,2481.0,station,Supremacy (Adv)
+85,1,0,18,115,168,2481.0,2541.0,station,Tactical (Adv)
+85,1,1,4,92,186,2541.0,2601.0,station,Tactical
+85,1,2,5,66,147,2601.0,2661.0,station,Expansion
+85,2,0,4,2,186,2764.0,2781.0,station,Garrison
+85,2,1,5,2,147,2764.0,2781.0,station,Garrison
+85,2,2,25,2,157,2764.0,2781.0,station,Garrison
+85,2,3,18,2,168,2764.0,2781.0,station,Garrison
+85,2,3,18,15,168,3021.0,3026.0,tech,Patroller
+85,2,2,25,11,157,3054.0,3054.0,station,Teleport (Hvy)
+85,2,3,18,20,168,3101.0,3106.0,tech,Bomber
+85,2,3,18,21,168,3106.0,3115.0,station,Garrison (Str)
+85,2,0,4,15,186,3124.0,3127.0,tech,Bomber
+85,2,0,4,16,186,3141.0,3148.0,station,Garrison (Str)
+85,2,0,4,17,186,3215.0,3217.0,station,Outpost
+85,2,2,25,17,157,3254.0,3259.0,station,Tactical
+85,2,3,18,25,168,3254.0,3259.0,station,Outpost (Lt)
+85,2,2,25,19,157,3274.0,3276.0,station,Tactical (Adv)
+85,2,2,25,20,157,3296.0,3296.0,tech,Bomber
+85,2,1,5,15,147,3316.0,3321.0,tech,Bomber
+85,2,0,4,18,186,3336.0,3337.0,station,Supremacy
+85,2,3,18,26,168,3344.0,3349.0,station,Supremacy
+85,2,1,5,16,147,3356.0,3359.0,station,Garrison (Str)
+85,2,3,18,30,168,3405.0,3411.0,tech,GA: Ship Hull 1
+85,2,0,4,22,186,3424.0,3431.0,tech,GA: Ship Hull 1
+85,2,1,5,17,147,3457.0,3458.0,station,Outpost
+85,2,3,18,33,168,3457.0,3458.0,tech,PW Gattling Gun 2
+85,2,3,18,34,168,3468.0,3469.0,tech,EW Disruptor 2
+85,2,2,25,24,157,3475.0,3482.0,station,Outpost (Hvy)
+85,2,0,4,25,186,3495.0,3501.0,tech,PW Gattling Gun 2
+85,2,0,4,26,186,3512.0,3521.0,tech,EW Disruptor 2
+85,2,1,5,18,147,3558.0,3559.0,station,Shipyard
+85,2,2,25,26,157,3599.0,3600.0,station,Supremacy
+85,2,3,18,43,168,3608.0,3610.0,tech,Enh Fighter
+85,2,3,18,45,168,3619.0,3621.0,tech,Upgrade Supremacy
+85,2,3,18,45,168,3619.0,3621.0,station,Supremacy (Adv)
+85,2,2,25,30,157,3644.0,3661.0,tech,GA: Ship Hull 1
+85,2,2,25,33,157,3699.0,3701.0,tech,PW Gattling Gun 2
+85,2,1,5,22,147,3709.0,3712.0,tech,Upgrade Medium Class
+85,2,2,25,34,157,3720.0,3722.0,tech,EW Disruptor 2
+85,2,0,4,35,186,3730.0,3731.0,tech,Enh Fighter
+85,2,0,4,37,186,3748.0,3757.0,tech,Upgrade Supremacy
+85,2,0,4,37,186,3748.0,3757.0,station,Supremacy (Adv)
+85,2,1,5,23,147,3815.0,3824.0,station,Supremacy
+85,2,3,18,63,168,3885.0,3906.0,tech,Adv Fighter
+85,2,2,25,43,157,3922.0,3924.0,station,Expansion
+85,2,2,25,45,157,3946.0,3957.0,tech,GA: PW&EW Damage 1
+85,2,1,5,27,147,3972.0,3973.0,tech,GA: Ship Hull 1
+85,2,3,18,65,168,3993.0,3993.0,station,Expansion
+85,2,3,18,67,168,4023.0,4029.0,tech,GA: PW&EW Damage 1
+85,2,1,5,30,147,4079.0,4089.0,tech,PW Gattling Gun 2
+85,2,1,5,31,147,4124.0,4125.0,tech,EW Disruptor 2
+85,2,0,4,55,186,4154.0,4161.0,tech,Adv Fighter
+85,2,3,18,82,168,4224.0,4238.0,station,Expansion (Adv)
+85,2,0,4,57,186,4276.0,4277.0,station,Expansion
+85,2,0,4,59,186,4316.0,4317.0,tech,GA: PW&EW Damage 1
+85,2,2,25,71,157,4353.0,4363.0,station,Garrison (Str)
+85,2,1,5,40,147,4458.0,4461.0,station,Shipyard (Dry)
+85,2,2,25,72,157,4467.0,4470.0,station,Shipyard
+85,2,1,5,42,147,4490.0,4510.0,tech,Upgrade Supremacy
+85,2,1,5,42,147,4490.0,4510.0,station,Supremacy (Adv)
+85,2,3,18,100,168,4566.0,4578.0,station,Tactical
+85,2,2,25,82,157,4582.0,4642.0,tech,Upgrade Medium Class
+85,2,0,4,74,186,4582.0,4642.0,station,Expansion (Adv)
+85,2,3,18,115,168,4762.0,4822.0,station,Tactical (Adv)
+85,2,2,25,99,157,4846.0,4882.0,station,Shipyard (Dry)
+85,2,2,25,109,157,5002.0,5062.0,station,Expansion (Adv)
+85,2,3,18,130,168,5062.0,5122.0,station,Shipyard
+85,2,0,4,92,186,5062.0,5122.0,station,Tactical
+85,2,3,18,141,168,5242.0,5302.0,tech,Upgrade Medium Class
+85,2,2,25,127,157,5242.0,5302.0,tech,Upgrade Supremacy
+85,2,2,25,127,157,5242.0,5302.0,station,Supremacy (Adv)
+85,2,0,4,107,186,5422.0,5443.0,station,Tactical (Adv)
+85,2,1,5,66,147,,,station,Expansion
+86,1,0,18,2,168,21.0,23.0,station,Garrison
+86,1,1,4,2,186,21.0,23.0,station,Garrison
+86,1,2,5,2,147,21.0,23.0,station,Garrison
+86,1,3,25,2,157,21.0,23.0,station,Garrison
+86,1,0,18,15,168,223.0,237.0,tech,Patroller
+86,1,3,25,11,157,223.0,237.0,station,Teleport (Hvy)
+86,1,0,18,20,168,310.0,319.0,tech,Bomber
+86,1,0,18,21,168,319.0,379.0,station,Garrison (Str)
+86,1,1,4,15,186,319.0,379.0,tech,Bomber
+86,1,1,4,16,186,319.0,379.0,station,Garrison (Str)
+86,1,3,25,17,157,423.0,439.0,station,Tactical
+86,1,1,4,17,186,423.0,439.0,station,Outpost
+86,1,0,18,25,168,444.0,465.0,station,Outpost (Lt)
+86,1,3,25,19,157,444.0,465.0,station,Tactical (Adv)
+86,1,3,25,20,157,466.0,477.0,tech,Bomber
+86,1,2,5,14,147,499.0,532.0,tech,Bomber
+86,1,0,18,26,168,499.0,532.0,station,Supremacy
+86,1,1,4,18,186,536.0,552.0,station,Supremacy
+86,1,2,5,16,147,536.0,552.0,station,Garrison (Str)
+86,1,0,18,30,168,585.0,590.0,tech,GA: Ship Hull 1
+86,1,3,25,24,157,609.0,616.0,station,Outpost (Hvy)
+86,1,1,4,22,186,628.0,633.0,tech,GA: Ship Hull 1
+86,1,2,5,17,147,628.0,633.0,station,Outpost
+86,1,0,18,33,168,635.0,648.0,tech,PW Gattling Gun 2
+86,1,0,18,34,168,649.0,650.0,tech,EW Disruptor 2
+86,1,1,4,25,186,690.0,691.0,tech,PW Gattling Gun 2
+86,1,1,4,26,186,705.0,731.0,tech,EW Disruptor 2
+86,1,3,25,26,157,739.0,742.0,station,Supremacy
+86,1,2,5,18,147,761.0,774.0,station,Shipyard
+86,1,0,18,43,168,790.0,796.0,tech,Enh Fighter
+86,1,3,25,30,157,799.0,804.0,tech,GA: Ship Hull 1
+86,1,0,18,45,168,806.0,812.0,tech,Upgrade Supremacy
+86,1,0,18,45,168,806.0,812.0,station,Supremacy (Adv)
+86,1,3,25,33,157,851.0,859.0,tech,PW Gattling Gun 2
+86,1,3,25,34,157,859.0,863.0,tech,EW Disruptor 2
+86,1,2,5,22,147,893.0,918.0,tech,Upgrade Medium Class
+86,1,1,4,35,186,919.0,923.0,tech,Enh Fighter
+86,1,1,4,35,186,928.0,947.0,tech,Upgrade Supremacy
+86,1,1,4,35,186,928.0,947.0,station,Supremacy (Adv)
+86,1,2,5,23,147,1033.0,1034.0,station,Supremacy
+86,1,3,25,43,157,1104.0,1105.0,station,Expansion
+86,1,3,25,45,157,1105.0,1154.0,tech,GA: PW&EW Damage 1
+86,1,0,18,63,168,1159.0,1219.0,tech,Adv Fighter
+86,1,2,5,27,147,1159.0,1219.0,tech,GA: Ship Hull 1
+86,1,0,18,65,168,1219.0,1279.0,station,Expansion
+86,1,2,5,30,147,1279.0,1339.0,tech,PW Gattling Gun 2
+86,1,0,18,67,168,1279.0,1339.0,tech,GA: PW&EW Damage 1
+86,1,2,5,31,147,1279.0,1339.0,tech,EW Disruptor 2
+86,1,1,4,55,186,1399.0,1459.0,tech,Adv Fighter
+86,1,0,18,82,168,1459.0,1519.0,station,Expansion (Adv)
+86,1,3,25,71,157,1519.0,1579.0,station,Garrison (Str)
+86,1,1,4,57,186,1579.0,1639.0,station,Expansion
+86,1,1,4,59,186,1639.0,1699.0,tech,GA: PW&EW Damage 1
+86,1,3,25,72,157,1639.0,1699.0,station,Shipyard
+86,1,2,5,40,147,1639.0,1699.0,station,Shipyard (Dry)
+86,1,2,5,42,147,1699.0,1759.0,tech,Upgrade Supremacy
+86,1,2,5,42,147,1699.0,1759.0,station,Supremacy (Adv)
+86,1,3,25,82,157,1759.0,1819.0,tech,Upgrade Medium Class
+86,1,0,18,100,168,1879.0,1939.0,station,Tactical
+86,1,1,4,74,186,1939.0,1999.0,station,Expansion (Adv)
+86,1,3,25,99,157,1999.0,2059.0,station,Shipyard (Dry)
+86,1,0,18,115,168,2059.0,2119.0,station,Tactical (Adv)
+86,1,3,25,109,157,,,station,Expansion (Adv)
+86,1,0,18,130,168,2360.0,2420.0,station,Shipyard
+86,1,1,4,92,186,2420.0,2480.0,station,Tactical
+86,1,3,25,127,157,2420.0,2480.0,tech,Upgrade Supremacy
+86,1,3,25,127,157,2420.0,2480.0,station,Supremacy (Adv)
+86,1,0,18,141,168,2540.0,2600.0,tech,Upgrade Medium Class
+86,1,2,5,66,147,2600.0,2660.0,station,Expansion
+86,1,2,5,68,147,2720.0,2780.0,tech,GA: PW&EW Damage 1
+86,1,1,4,107,186,2720.0,2780.0,station,Tactical (Adv)
+86,1,0,18,163,168,2900.0,2960.0,station,Refinery (Lt)
+86,1,0,18,164,168,3020.0,3080.0,station,Teleport (Lt)
+86,1,0,18,167,168,3080.0,3140.0,station,SpecMine (Ur)
+86,1,1,4,122,186,3140.0,3200.0,station,[T]ransceiver
+86,1,2,5,81,147,3140.0,3200.0,station,Expansion (Adv)
+86,1,0,18,168,168,3140.0,3200.0,station,SpecMine (Ca)
+86,1,0,18,168,168,3260.0,3320.0,station,SpecMine (Si)
+86,1,1,4,134,186,3500.0,3560.0,station,Shipyard
+86,2,0,4,2,186,3624.0,3644.0,station,Garrison
+86,2,1,5,1,147,3624.0,3644.0,station,Garrison
+86,2,2,25,2,157,3624.0,3644.0,station,Garrison
+86,2,3,18,2,168,3624.0,3644.0,station,Garrison
+86,2,3,18,15,168,3889.0,3895.0,tech,Patroller
+86,2,2,25,11,157,3941.0,3947.0,station,Teleport (Hvy)
+86,2,3,18,20,168,3971.0,3981.0,tech,Bomber
+86,2,3,18,21,168,3981.0,3986.0,station,Garrison (Str)
+86,2,0,4,15,186,3990.0,3995.0,tech,Bomber
+86,2,0,4,16,186,4012.0,4018.0,station,Garrison (Str)
+86,2,0,4,17,186,4084.0,4086.0,station,Outpost
+86,2,3,18,25,168,4123.0,4125.0,station,Outpost (Lt)
+86,2,2,25,17,157,4126.0,4142.0,station,Tactical
+86,2,2,25,19,157,4148.0,4160.0,station,Tactical (Adv)
+86,2,2,25,20,157,4171.0,4179.0,tech,Bomber
+86,2,1,5,15,147,4179.0,4186.0,tech,Bomber
+86,2,0,4,18,186,4212.0,4215.0,station,Supremacy
+86,2,1,5,16,147,4223.0,4230.0,station,Garrison (Str)
+86,2,3,18,26,168,4223.0,4230.0,station,Supremacy
+86,2,3,18,30,168,4283.0,4287.0,tech,GA: Ship Hull 1
+86,2,0,4,22,186,4305.0,4307.0,tech,GA: Ship Hull 1
+86,2,1,5,17,147,4324.0,4331.0,station,Outpost
+86,2,3,18,33,168,4324.0,4331.0,tech,PW Gattling Gun 2
+86,2,3,18,34,168,4343.0,4355.0,tech,EW Disruptor 2
+86,2,2,25,24,157,4355.0,4363.0,station,Outpost (Hvy)
+86,2,0,4,25,186,4377.0,4378.0,tech,PW Gattling Gun 2
+86,2,0,4,26,186,4397.0,4397.0,tech,EW Disruptor 2
+86,2,1,5,18,147,4436.0,4444.0,station,Shipyard
+86,2,3,18,43,168,4476.0,4479.0,tech,Enh Fighter
+86,2,2,25,26,157,4492.0,4504.0,station,Supremacy
+86,2,3,18,45,168,4492.0,4504.0,tech,Upgrade Supremacy
+86,2,3,18,45,168,4492.0,4504.0,station,Supremacy (Adv)
+86,2,2,25,30,157,4558.0,4561.0,tech,GA: Ship Hull 1
+86,2,1,5,22,147,4587.0,4594.0,tech,Upgrade Medium Class
+86,2,0,4,35,186,4597.0,4600.0,tech,Enh Fighter
+86,2,2,25,33,157,4607.0,4611.0,tech,PW Gattling Gun 2
+86,2,0,4,37,186,4619.0,4627.0,tech,Upgrade Supremacy
+86,2,0,4,37,186,4619.0,4627.0,station,Supremacy (Adv)
+86,2,2,25,34,157,4619.0,4627.0,tech,EW Disruptor 2
+86,2,1,5,23,147,4693.0,4701.0,station,Supremacy
+86,2,3,18,63,168,4763.0,4773.0,tech,Adv Fighter
+86,2,2,25,43,157,4821.0,4838.0,station,Expansion
+86,2,1,5,27,147,4839.0,4871.0,tech,GA: Ship Hull 1
+86,2,2,25,45,157,4839.0,4871.0,tech,GA: PW&EW Damage 1
+86,2,3,18,65,168,4839.0,4871.0,station,Expansion
+86,2,3,18,66,168,4886.0,4941.0,tech,GA: PW&EW Damage 1
+86,2,1,5,30,147,4945.0,4971.0,tech,PW Gattling Gun 2
+86,2,1,5,31,147,4971.0,5001.0,tech,EW Disruptor 2
+86,2,0,4,55,186,5001.0,5061.0,tech,Adv Fighter
+86,2,3,18,82,168,5111.0,5121.0,station,Expansion (Adv)
+86,2,0,4,57,186,5121.0,5181.0,station,Expansion
+86,2,0,4,59,186,5194.0,5213.0,tech,GA: PW&EW Damage 1
+86,2,2,25,71,157,5241.0,5301.0,station,Garrison (Str)
+86,2,1,5,40,147,5303.0,5361.0,station,Shipyard (Dry)
+86,2,1,5,42,147,5361.0,5421.0,tech,Upgrade Supremacy
+86,2,1,5,42,147,5361.0,5421.0,station,Supremacy (Adv)
+86,2,2,25,72,157,5361.0,5421.0,station,Shipyard
+86,2,3,18,100,168,5421.0,5481.0,station,Tactical
+86,2,0,4,74,186,5481.0,5541.0,station,Expansion (Adv)
+86,2,2,25,82,157,5481.0,5541.0,tech,Upgrade Medium Class
+86,2,3,18,115,168,5601.0,5661.0,station,Tactical (Adv)
+86,2,2,25,99,157,5721.0,5781.0,station,Shipyard (Dry)
+86,2,2,25,109,157,5901.0,5961.0,station,Expansion (Adv)
+86,2,3,18,130,168,5961.0,6021.0,station,Shipyard
+86,2,0,4,92,186,5961.0,6021.0,station,Tactical
+86,2,3,18,141,168,6082.0,6142.0,tech,Upgrade Medium Class
+86,2,2,25,127,157,6142.0,6202.0,tech,Upgrade Supremacy
+86,2,2,25,127,157,6142.0,6202.0,station,Supremacy (Adv)
+86,2,0,4,107,186,6262.0,6322.0,station,Tactical (Adv)
+86,2,1,5,66,147,6262.0,6322.0,station,Expansion
+87,1,0,18,2,168,20.0,23.0,station,Garrison
+87,1,1,4,2,186,20.0,23.0,station,Garrison
+87,1,0,18,15,168,238.0,255.0,tech,Patroller
+87,1,0,18,20,168,325.0,326.0,tech,Bomber
+87,1,0,18,21,168,332.0,336.0,station,Garrison (Str)
+87,1,1,4,15,186,332.0,336.0,tech,Bomber
+87,1,1,4,16,186,363.0,368.0,station,Garrison (Str)
+87,1,0,18,25,168,477.0,478.0,station,Outpost (Lt)
+87,1,1,4,17,186,497.0,499.0,station,Outpost
+87,1,0,18,26,168,577.0,579.0,station,Supremacy
+87,1,1,4,18,186,577.0,579.0,station,Supremacy
+87,1,0,18,30,168,637.0,640.0,tech,GA: Ship Hull 1
+87,1,1,4,22,186,668.0,669.0,tech,GA: Ship Hull 1
+87,1,0,18,33,168,679.0,680.0,tech,PW Gattling Gun 2
+87,1,0,18,34,168,685.0,722.0,tech,EW Disruptor 2
+87,1,1,4,25,186,724.0,730.0,tech,PW Gattling Gun 2
+87,1,1,4,26,186,760.0,761.0,tech,EW Disruptor 2
+87,1,0,18,43,168,831.0,833.0,tech,Enh Fighter
+87,1,0,18,45,168,847.0,853.0,tech,Upgrade Supremacy
+87,1,0,18,45,168,847.0,853.0,station,Supremacy (Adv)
+87,1,1,4,35,186,956.0,963.0,tech,Enh Fighter
+87,1,1,4,37,186,983.0,983.0,tech,Upgrade Supremacy
+87,1,1,4,37,186,983.0,983.0,station,Supremacy (Adv)
+87,1,0,18,63,168,1121.0,1126.0,tech,Adv Fighter
+87,1,0,18,65,168,1222.0,1230.0,station,Expansion
+87,1,0,18,67,168,1255.0,1259.0,tech,GA: PW&EW Damage 1
+87,1,1,4,55,186,1397.0,1399.0,tech,Adv Fighter
+87,1,0,18,82,168,1468.0,1469.0,station,Expansion (Adv)
+87,1,1,4,57,186,1538.0,1540.0,station,Expansion
+87,1,1,4,59,186,1589.0,1593.0,tech,GA: PW&EW Damage 1
+87,1,0,18,100,168,1830.0,1833.0,station,Tactical
+87,1,1,4,74,186,1903.0,1905.0,station,Expansion (Adv)
+87,1,0,18,115,168,2033.0,2060.0,station,Tactical (Adv)
+87,1,0,18,130,168,2303.0,2360.0,station,Shipyard
+87,1,1,4,92,186,2360.0,2399.0,station,Tactical
+87,1,0,18,141,168,2483.0,2540.0,tech,Upgrade Medium Class
+87,1,1,4,107,186,2660.0,2720.0,station,Tactical (Adv)
+87,2,0,4,2,186,2863.0,2883.0,station,Garrison
+87,2,1,18,2,168,2863.0,2883.0,station,Garrison
+87,2,1,18,15,168,3115.0,3116.0,tech,Patroller
+87,2,1,18,20,168,3196.0,3196.0,tech,Bomber
+87,2,1,18,21,168,3205.0,3219.0,station,Garrison (Str)
+87,2,0,4,15,186,3205.0,3219.0,tech,Bomber
+87,2,0,4,16,186,3234.0,3242.0,station,Garrison (Str)
+87,2,1,18,25,168,3347.0,3349.0,station,Outpost (Lt)
+87,2,0,4,17,186,3378.0,3379.0,station,Outpost
+87,2,1,18,26,168,3423.0,3429.0,station,Supremacy
+87,2,0,4,18,186,3479.0,3484.0,station,Supremacy
+87,2,1,18,30,168,3484.0,3491.0,tech,GA: Ship Hull 1
+87,2,1,18,33,168,3527.0,3539.0,tech,PW Gattling Gun 2
+87,2,1,18,34,168,3549.0,3556.0,tech,EW Disruptor 2
+87,2,0,4,22,186,3570.0,3571.0,tech,GA: Ship Hull 1
+87,2,0,4,25,186,3630.0,3631.0,tech,PW Gattling Gun 2
+87,2,0,4,26,186,3661.0,3661.0,tech,EW Disruptor 2
+87,2,1,18,43,168,3681.0,3682.0,tech,Enh Fighter
+87,2,1,18,45,168,3700.0,3703.0,tech,Upgrade Supremacy
+87,2,1,18,45,168,3700.0,3703.0,station,Supremacy (Adv)
+87,2,0,4,35,186,3863.0,3864.0,tech,Enh Fighter
+87,2,0,4,37,186,3883.0,3887.0,tech,Upgrade Supremacy
+87,2,0,4,37,186,3883.0,3887.0,station,Supremacy (Adv)
+87,2,1,18,63,168,3972.0,3977.0,tech,Adv Fighter
+87,2,1,18,65,168,4063.0,4072.0,station,Expansion
+87,2,1,18,67,168,4094.0,4097.0,tech,GA: PW&EW Damage 1
+87,2,0,4,55,186,4296.0,4299.0,tech,Adv Fighter
+87,2,1,18,82,168,4301.0,4310.0,station,Expansion (Adv)
+87,2,0,4,57,186,4526.0,4535.0,station,Expansion
+87,2,0,4,59,186,4577.0,4581.0,tech,GA: PW&EW Damage 1
+87,2,1,18,100,168,4661.0,4668.0,station,Tactical
+87,2,1,18,115,168,4873.0,4874.0,station,Tactical (Adv)
+87,2,0,4,74,186,4892.0,4895.0,station,Expansion (Adv)
+87,2,1,18,130,168,5181.0,5190.0,station,Shipyard
+87,2,0,4,92,186,5324.0,5361.0,station,Tactical
+87,2,1,18,141,168,5324.0,5361.0,tech,Upgrade Medium Class
+87,2,0,4,107,186,5661.0,5721.0,station,Tactical (Adv)
+88,1,0,18,2,168,20.0,23.0,station,Garrison
+88,1,1,4,2,186,20.0,23.0,station,Garrison
+88,1,0,18,15,168,242.0,245.0,tech,Patroller
+88,1,0,18,20,168,325.0,327.0,tech,Bomber
+88,1,0,18,21,168,335.0,337.0,station,Garrison (Str)
+88,1,1,4,15,186,335.0,337.0,tech,Bomber
+88,1,1,4,16,186,360.0,369.0,station,Garrison (Str)
+88,1,0,18,25,168,467.0,470.0,station,Outpost (Lt)
+88,1,1,4,17,186,488.0,490.0,station,Outpost
+88,1,1,4,18,186,560.0,569.0,station,Supremacy
+88,1,0,18,26,168,575.0,583.0,station,Supremacy
+88,1,0,18,30,168,639.0,641.0,tech,GA: Ship Hull 1
+88,1,1,4,22,186,658.0,662.0,tech,GA: Ship Hull 1
+88,1,0,18,33,168,680.0,680.0,tech,PW Gattling Gun 2
+88,1,0,18,34,168,697.0,700.0,tech,EW Disruptor 2
+88,1,1,4,25,186,729.0,734.0,tech,PW Gattling Gun 2
+88,1,1,4,26,186,748.0,753.0,tech,EW Disruptor 2
+88,1,0,18,43,168,841.0,842.0,tech,Enh Fighter
+88,1,0,18,45,168,851.0,853.0,tech,Upgrade Supremacy
+88,1,0,18,45,168,851.0,853.0,station,Supremacy (Adv)
+88,1,1,4,34,186,952.0,958.0,tech,Enh Fighter
+88,1,1,4,37,186,979.0,988.0,tech,Upgrade Supremacy
+88,1,1,4,37,186,979.0,988.0,station,Supremacy (Adv)
+88,1,0,18,63,168,1134.0,1135.0,tech,Adv Fighter
+88,1,0,18,65,168,1208.0,1219.0,station,Expansion
+88,1,0,18,67,168,1244.0,1251.0,tech,GA: PW&EW Damage 1
+88,1,1,4,55,186,1388.0,1388.0,tech,Adv Fighter
+88,1,0,18,82,168,1468.0,1469.0,station,Expansion (Adv)
+88,1,1,4,57,186,1538.0,1542.0,station,Expansion
+88,1,1,4,59,186,1579.0,1584.0,tech,GA: PW&EW Damage 1
+88,1,0,18,100,168,1828.0,1837.0,station,Tactical
+88,1,1,4,74,186,1899.0,1940.0,station,Expansion (Adv)
+88,1,0,18,115,168,2000.0,2060.0,station,Tactical (Adv)
+88,1,0,18,130,168,2300.0,2360.0,station,Shipyard
+88,1,1,4,91,186,2360.0,2420.0,station,Tactical
+88,1,0,18,141,168,2480.0,2540.0,tech,Upgrade Medium Class
+88,1,1,4,107,186,2660.0,2720.0,station,Tactical (Adv)
+88,2,0,4,2,186,2840.0,2843.0,station,Garrison
+88,2,1,18,2,168,2840.0,2843.0,station,Garrison
+88,2,1,18,15,168,3094.0,3098.0,tech,Patroller
+88,2,1,18,20,168,3168.0,3178.0,tech,Bomber
+88,2,1,18,21,168,3186.0,3188.0,station,Garrison (Str)
+88,2,0,4,15,186,3196.0,3196.0,tech,Bomber
+88,2,0,4,16,186,3216.0,3217.0,station,Garrison (Str)
+88,2,1,18,25,168,3325.0,3328.0,station,Outpost (Lt)
+88,2,0,4,17,186,3355.0,3360.0,station,Outpost
+88,2,1,18,26,168,3394.0,3400.0,station,Supremacy
+88,2,0,4,18,186,3449.0,3456.0,station,Supremacy
+88,2,1,18,30,168,3458.0,3462.0,tech,GA: Ship Hull 1
+88,2,1,18,33,168,3497.0,3499.0,tech,PW Gattling Gun 2
+88,2,1,18,34,168,3519.0,3529.0,tech,EW Disruptor 2
+88,2,0,4,22,186,3539.0,3540.0,tech,GA: Ship Hull 1
+88,2,0,4,25,186,3609.0,3611.0,tech,PW Gattling Gun 2
+88,2,0,4,26,186,3629.0,3631.0,tech,EW Disruptor 2
+88,2,1,18,43,168,3646.0,3658.0,tech,Enh Fighter
+88,2,1,18,45,168,3667.0,3672.0,tech,Upgrade Supremacy
+88,2,1,18,45,168,3667.0,3672.0,station,Supremacy (Adv)
+88,2,0,4,35,186,3930.0,3939.0,tech,Enh Fighter
+88,2,1,18,63,168,3944.0,3944.0,tech,Adv Fighter
+88,2,0,4,37,186,3964.0,3966.0,tech,Upgrade Supremacy
+88,2,0,4,37,186,3964.0,3966.0,station,Supremacy (Adv)
+88,2,1,18,65,168,4035.0,4035.0,station,Expansion
+88,2,1,18,67,168,4064.0,4065.0,tech,GA: PW&EW Damage 1
+88,2,1,18,82,168,4274.0,4278.0,station,Expansion (Adv)
+88,2,0,4,55,186,4367.0,4369.0,tech,Adv Fighter
+88,2,0,4,57,186,4600.0,4601.0,station,Expansion
+88,2,1,18,100,168,4641.0,4644.0,station,Tactical
+88,2,0,4,59,186,4651.0,4656.0,tech,GA: PW&EW Damage 1
+88,2,1,18,115,168,4850.0,4864.0,station,Tactical (Adv)
+88,2,0,4,74,186,4948.0,5001.0,station,Expansion (Adv)
+88,2,1,18,130,168,5121.0,5181.0,station,Shipyard
+88,2,1,18,141,168,5301.0,5361.0,tech,Upgrade Medium Class
+88,2,0,4,92,186,5421.0,5481.0,station,Tactical
+88,2,1,18,163,168,5661.0,5703.0,station,Refinery (Lt)
+89,1,0,18,2,168,21.0,24.0,station,Garrison
+89,1,1,4,2,186,21.0,24.0,station,Garrison
+89,1,0,18,15,168,235.0,246.0,tech,Patroller
+89,1,0,18,20,168,325.0,328.0,tech,Bomber
+89,1,0,18,21,168,335.0,337.0,station,Garrison (Str)
+89,1,1,4,15,186,335.0,337.0,tech,Bomber
+89,1,1,4,16,186,366.0,368.0,station,Garrison (Str)
+89,1,0,18,25,168,465.0,473.0,station,Outpost (Lt)
+89,1,1,4,17,186,482.0,488.0,station,Outpost
+89,1,1,4,18,186,560.0,575.0,station,Supremacy
+89,1,0,18,26,168,577.0,579.0,station,Supremacy
+89,1,0,18,30,168,627.0,639.0,tech,GA: Ship Hull 1
+89,1,1,4,22,186,651.0,680.0,tech,GA: Ship Hull 1
+89,1,0,18,33,168,689.0,690.0,tech,PW Gattling Gun 2
+89,1,0,18,34,168,699.0,700.0,tech,EW Disruptor 2
+89,1,1,4,25,186,711.0,720.0,tech,PW Gattling Gun 2
+89,1,1,4,26,186,750.0,751.0,tech,EW Disruptor 2
+89,1,0,18,43,168,840.0,848.0,tech,Enh Fighter
+89,1,0,18,45,168,849.0,853.0,tech,Upgrade Supremacy
+89,1,0,18,45,168,849.0,853.0,station,Supremacy (Adv)
+89,1,1,4,35,186,931.0,952.0,tech,Enh Fighter
+89,1,1,4,37,186,967.0,979.0,tech,Upgrade Supremacy
+89,1,1,4,37,186,967.0,979.0,station,Supremacy (Adv)
+89,1,0,18,63,168,1130.0,1144.0,tech,Adv Fighter
+89,1,0,18,65,168,1234.0,1235.0,station,Expansion
+89,1,0,18,67,168,1259.0,1266.0,tech,GA: PW&EW Damage 1
+89,1,1,4,55,186,1385.0,1386.0,tech,Adv Fighter
+89,1,0,18,82,168,1487.0,1488.0,station,Expansion (Adv)
+89,1,1,4,57,186,1537.0,1538.0,station,Expansion
+89,1,1,4,59,186,1577.0,1578.0,tech,GA: PW&EW Damage 1
+89,1,0,18,100,168,1840.0,1867.0,station,Tactical
+89,1,1,4,74,186,1886.0,1908.0,station,Expansion (Adv)
+89,1,0,18,115,168,2061.0,2121.0,station,Tactical (Adv)
+89,1,0,18,130,168,2361.0,2421.0,station,Shipyard
+89,1,1,4,92,186,2361.0,2421.0,station,Tactical
+89,1,0,18,141,168,2481.0,2541.0,tech,Upgrade Medium Class
+89,1,1,4,107,186,2661.0,2721.0,station,Tactical (Adv)
+89,2,0,4,2,186,2864.0,2884.0,station,Garrison
+89,2,1,18,2,168,2864.0,2884.0,station,Garrison
+89,2,1,18,15,168,3133.0,3134.0,tech,Patroller
+89,2,1,18,20,168,3214.0,3215.0,tech,Bomber
+89,2,1,18,21,168,3220.0,3227.0,station,Garrison (Str)
+89,2,0,4,15,186,3227.0,3235.0,tech,Bomber
+89,2,0,4,16,186,3255.0,3256.0,station,Garrison (Str)
+89,2,1,18,25,168,3386.0,3387.0,station,Outpost (Lt)
+89,2,0,4,17,186,3396.0,3397.0,station,Outpost
+89,2,1,18,26,168,3455.0,3464.0,station,Supremacy
+89,2,0,4,18,186,3477.0,3494.0,station,Supremacy
+89,2,1,18,30,168,3517.0,3520.0,tech,GA: Ship Hull 1
+89,2,1,18,33,168,3551.0,3558.0,tech,PW Gattling Gun 2
+89,2,0,4,22,186,3575.0,3588.0,tech,GA: Ship Hull 1
+89,2,1,18,34,168,3575.0,3588.0,tech,EW Disruptor 2
+89,2,0,4,25,186,3648.0,3650.0,tech,PW Gattling Gun 2
+89,2,0,4,26,186,3666.0,3680.0,tech,EW Disruptor 2
+89,2,1,18,43,168,3706.0,3727.0,tech,Enh Fighter
+89,2,1,18,45,168,3730.0,3730.0,tech,Upgrade Supremacy
+89,2,1,18,45,168,3730.0,3730.0,station,Supremacy (Adv)
+89,2,0,4,35,186,3869.0,3872.0,tech,Enh Fighter
+89,2,0,4,37,186,3901.0,3903.0,tech,Upgrade Supremacy
+89,2,0,4,37,186,3901.0,3903.0,station,Supremacy (Adv)
+89,2,1,18,63,168,4001.0,4003.0,tech,Adv Fighter
+89,2,1,18,65,168,4093.0,4095.0,station,Expansion
+89,2,1,18,67,168,4123.0,4127.0,tech,GA: PW&EW Damage 1
+89,2,0,4,55,186,4302.0,4309.0,tech,Adv Fighter
+89,2,1,18,82,168,4335.0,4337.0,station,Expansion (Adv)
+89,2,0,4,57,186,4417.0,4418.0,station,Expansion
+89,2,0,4,59,186,4466.0,4471.0,tech,GA: PW&EW Damage 1
+89,2,1,18,100,168,4690.0,4691.0,station,Tactical
+89,2,0,4,74,186,4775.0,4785.0,station,Expansion (Adv)
+89,2,1,18,115,168,4882.0,4921.0,station,Tactical (Adv)
+89,2,1,18,130,168,5182.0,5242.0,station,Shipyard
+89,2,0,4,92,186,5242.0,5302.0,station,Tactical
+89,2,1,18,141,168,5362.0,5422.0,tech,Upgrade Medium Class
+89,2,0,4,107,186,5542.0,5602.0,station,Tactical (Adv)
+90,1,0,18,2,168,21.0,24.0,station,Garrison
+90,1,1,4,2,186,21.0,24.0,station,Garrison
+90,1,0,18,15,168,242.0,249.0,tech,Patroller
+90,1,0,18,20,168,325.0,327.0,tech,Bomber
+90,1,0,18,21,168,336.0,338.0,station,Garrison (Str)
+90,1,1,4,15,186,336.0,338.0,tech,Bomber
+90,1,1,4,16,186,365.0,368.0,station,Garrison (Str)
+90,1,0,18,25,168,467.0,473.0,station,Outpost (Lt)
+90,1,1,4,17,186,480.0,489.0,station,Outpost
+90,1,0,18,26,168,560.0,581.0,station,Supremacy
+90,1,1,4,18,186,560.0,581.0,station,Supremacy
+90,1,0,18,30,168,621.0,633.0,tech,GA: Ship Hull 1
+90,1,1,4,22,186,658.0,661.0,tech,GA: Ship Hull 1
+90,1,0,18,33,168,661.0,680.0,tech,PW Gattling Gun 2
+90,1,0,18,34,168,687.0,693.0,tech,EW Disruptor 2
+90,1,1,4,25,186,721.0,740.0,tech,PW Gattling Gun 2
+90,1,1,4,26,186,750.0,751.0,tech,EW Disruptor 2
+90,1,0,18,43,168,831.0,833.0,tech,Enh Fighter
+90,1,0,18,45,168,851.0,852.0,tech,Upgrade Supremacy
+90,1,0,18,45,168,851.0,852.0,station,Supremacy (Adv)
+90,1,1,4,35,186,950.0,961.0,tech,Enh Fighter
+90,1,1,4,37,186,968.0,975.0,tech,Upgrade Supremacy
+90,1,1,4,37,186,968.0,975.0,station,Supremacy (Adv)
+90,1,0,18,63,168,1121.0,1141.0,tech,Adv Fighter
+90,1,0,18,65,168,1215.0,1220.0,station,Expansion
+90,1,0,18,67,168,1241.0,1261.0,tech,GA: PW&EW Damage 1
+90,1,1,4,55,186,1382.0,1400.0,tech,Adv Fighter
+90,1,0,18,82,168,1462.0,1482.0,station,Expansion (Adv)
+90,1,1,4,57,186,1522.0,1542.0,station,Expansion
+90,1,1,4,59,186,1562.0,1580.0,tech,GA: PW&EW Damage 1
+90,1,0,18,100,168,1822.0,1842.0,station,Tactical
+90,1,1,4,74,186,1882.0,1902.0,station,Expansion (Adv)
+90,1,0,18,115,168,2043.0,2061.0,station,Tactical (Adv)
+90,1,0,18,130,168,2343.0,2361.0,station,Shipyard
+90,1,1,4,91,186,2363.0,2383.0,station,Tactical
+90,1,0,18,141,168,2503.0,2523.0,tech,Upgrade Medium Class
+90,1,1,4,107,186,2684.0,2704.0,station,Tactical (Adv)
+90,1,0,18,163,168,2901.0,2904.0,station,Refinery (Lt)
+90,1,0,18,164,168,2961.0,2964.0,station,Teleport (Lt)
+90,1,0,18,167,168,3064.0,3081.0,station,SpecMine (Ur)
+90,1,1,4,122,186,3084.0,3104.0,station,[T]ransceiver
+90,1,0,18,168,168,3124.0,3141.0,station,SpecMine (Ca)
+90,1,0,18,168,168,3204.0,3224.0,station,SpecMine (Si)
+90,1,1,4,134,186,3445.0,3465.0,station,Shipyard
+90,2,0,4,2,186,3625.0,3645.0,station,Garrison
+90,2,1,18,2,168,3625.0,3645.0,station,Garrison
+90,2,1,18,15,168,3891.0,3892.0,tech,Patroller
+90,2,1,18,20,168,3956.0,3981.0,tech,Bomber
+90,2,1,18,21,168,3981.0,3993.0,station,Garrison (Str)
+90,2,0,4,15,186,3981.0,3993.0,tech,Bomber
+90,2,0,4,16,186,4005.0,4017.0,station,Garrison (Str)
+90,2,1,18,25,168,4124.0,4125.0,station,Outpost (Lt)
+90,2,0,4,17,186,4162.0,4170.0,station,Outpost
+90,2,1,18,26,168,4204.0,4205.0,station,Supremacy
+90,2,0,4,18,186,4254.0,4257.0,station,Supremacy
+90,2,1,18,30,168,4259.0,4273.0,tech,GA: Ship Hull 1
+90,2,1,18,33,168,4296.0,4314.0,tech,PW Gattling Gun 2
+90,2,1,18,34,168,4324.0,4327.0,tech,EW Disruptor 2
+90,2,0,4,22,186,4345.0,4348.0,tech,GA: Ship Hull 1
+90,2,0,4,25,186,4417.0,4417.0,tech,PW Gattling Gun 2
+90,2,0,4,26,186,4437.0,4438.0,tech,EW Disruptor 2
+90,2,1,18,43,168,4455.0,4462.0,tech,Enh Fighter
+90,2,1,18,45,168,4476.0,4484.0,tech,Upgrade Supremacy
+90,2,1,18,45,168,4476.0,4484.0,station,Supremacy (Adv)
+90,2,0,4,35,186,4638.0,4640.0,tech,Enh Fighter
+90,2,0,4,37,186,4670.0,4676.0,tech,Upgrade Supremacy
+90,2,0,4,37,186,4670.0,4676.0,station,Supremacy (Adv)
+90,2,1,18,63,168,4746.0,4753.0,tech,Adv Fighter
+90,2,1,18,65,168,4841.0,4842.0,station,Expansion
+90,2,1,18,67,168,4871.0,4874.0,tech,GA: PW&EW Damage 1
+90,2,0,4,55,186,5070.0,5085.0,tech,Adv Fighter
+90,2,0,4,57,186,5185.0,5188.0,station,Expansion
+90,2,1,18,82,168,5185.0,5188.0,station,Expansion (Adv)
+90,2,0,4,59,186,5223.0,5242.0,tech,GA: PW&EW Damage 1
+90,2,0,4,74,186,5542.0,5602.0,station,Expansion (Adv)
+90,2,1,18,100,168,5662.0,5722.0,station,Tactical
+90,2,1,18,115,168,5842.0,5902.0,station,Tactical (Adv)
+90,2,0,4,92,186,6023.0,6065.0,station,Tactical
+90,2,1,18,130,168,6174.0,6202.0,station,Shipyard
+90,2,0,4,107,186,6322.0,6382.0,station,Tactical (Adv)
+90,2,1,18,141,168,6322.0,6382.0,tech,Upgrade Medium Class
+91,1,0,18,2,168,21.0,26.0,station,Garrison
+91,1,1,4,2,186,21.0,26.0,station,Garrison
+91,1,2,5,2,147,21.0,26.0,station,Garrison
+91,1,0,18,15,168,244.0,246.0,tech,Patroller
+91,1,0,18,20,168,324.0,343.0,tech,Bomber
+91,1,0,18,21,168,324.0,343.0,station,Garrison (Str)
+91,1,1,4,15,186,324.0,343.0,tech,Bomber
+91,1,1,4,15,186,357.0,361.0,station,Garrison (Str)
+91,1,0,18,25,168,488.0,492.0,station,Outpost (Lt)
+91,1,2,5,15,147,509.0,511.0,tech,Bomber
+91,1,2,5,16,147,549.0,550.0,station,Garrison (Str)
+91,1,0,18,26,168,590.0,591.0,station,Supremacy
+91,1,2,5,17,147,621.0,622.0,station,Outpost
+91,1,0,18,30,168,650.0,662.0,tech,GA: Ship Hull 1
+91,1,0,18,33,168,691.0,695.0,tech,PW Gattling Gun 2
+91,1,0,18,34,168,712.0,712.0,tech,EW Disruptor 2
+91,1,2,5,18,147,762.0,765.0,station,Shipyard
+91,1,0,18,43,168,853.0,855.0,tech,Enh Fighter
+91,1,0,18,45,168,862.0,865.0,tech,Upgrade Supremacy
+91,1,0,18,45,168,862.0,865.0,station,Supremacy (Adv)
+91,1,2,5,22,147,915.0,915.0,tech,Upgrade Medium Class
+91,1,2,5,23,147,1033.0,1039.0,station,Supremacy
+91,1,0,18,63,168,1147.0,1147.0,tech,Adv Fighter
+91,1,0,18,65,168,1268.0,1269.0,station,Expansion
+91,1,0,18,67,168,1286.0,1299.0,tech,GA: PW&EW Damage 1
+91,1,2,5,27,147,1315.0,1321.0,tech,GA: Ship Hull 1
+91,1,2,5,30,147,1424.0,1432.0,tech,PW Gattling Gun 2
+91,1,2,5,31,147,1464.0,1485.0,tech,EW Disruptor 2
+91,1,0,18,82,168,1501.0,1519.0,station,Expansion (Adv)
+91,1,2,5,40,147,1803.0,1805.0,station,Shipyard (Dry)
+91,1,2,5,42,147,1845.0,1851.0,tech,Upgrade Supremacy
+91,1,2,5,42,147,1845.0,1851.0,station,Supremacy (Adv)
+91,1,0,18,100,168,1864.0,1865.0,station,Tactical
+91,1,0,18,115,168,2076.0,2081.0,station,Tactical (Adv)
+91,1,0,18,130,168,2394.0,2404.0,station,Shipyard
+91,1,0,18,141,168,2561.0,2567.0,tech,Upgrade Medium Class
+91,1,0,18,163,168,2932.0,2937.0,station,Refinery (Lt)
+91,1,2,5,66,147,2944.0,2951.0,station,Expansion
+91,1,2,5,68,147,3015.0,3018.0,tech,GA: PW&EW Damage 1
+91,1,0,18,164,168,3027.0,3030.0,station,Teleport (Lt)
+91,1,0,18,167,168,3128.0,3129.0,station,SpecMine (Ur)
+91,1,0,18,168,168,3175.0,3200.0,station,SpecMine (Ca)
+91,1,0,18,168,168,3269.0,3271.0,station,SpecMine (Si)
+91,1,2,5,81,147,3468.0,3480.0,station,Expansion (Adv)
+91,2,0,4,2,186,3644.0,3659.0,station,Garrison
+91,2,1,5,2,147,3644.0,3659.0,station,Garrison
+91,2,2,18,2,168,3644.0,3659.0,station,Garrison
+91,2,2,18,15,168,3885.0,3904.0,tech,Patroller
+91,2,2,18,19,168,3967.0,3970.0,tech,Bomber
+91,2,0,4,14,186,3986.0,3991.0,tech,Bomber
+91,2,2,18,21,168,3986.0,3991.0,station,Garrison (Str)
+91,2,0,4,16,186,4019.0,4020.0,station,Garrison (Str)
+91,2,0,4,17,186,4121.0,4122.0,station,Outpost
+91,2,2,18,25,168,4151.0,4152.0,station,Outpost (Lt)
+91,2,1,5,15,147,4181.0,4184.0,tech,Bomber
+91,2,1,5,16,147,4223.0,4228.0,station,Garrison (Str)
+91,2,2,18,26,168,4223.0,4228.0,station,Supremacy
+91,2,0,4,18,186,4229.0,4235.0,station,Supremacy
+91,2,2,18,30,168,4282.0,4284.0,tech,GA: Ship Hull 1
+91,2,0,4,22,186,4323.0,4329.0,tech,GA: Ship Hull 1
+91,2,1,5,17,147,4333.0,4334.0,station,Outpost
+91,2,2,18,33,168,4333.0,4334.0,tech,PW Gattling Gun 2
+91,2,2,18,34,168,4343.0,4347.0,tech,EW Disruptor 2
+91,2,0,4,25,186,4394.0,4395.0,tech,PW Gattling Gun 2
+91,2,0,4,26,186,4415.0,4421.0,tech,EW Disruptor 2
+91,2,1,5,18,147,4455.0,4457.0,station,Shipyard
+91,2,2,18,43,168,4480.0,4490.0,tech,Enh Fighter
+91,2,2,18,45,168,4496.0,4500.0,tech,Upgrade Supremacy
+91,2,2,18,45,168,4496.0,4500.0,station,Supremacy (Adv)
+91,2,1,5,22,147,4607.0,4608.0,tech,Upgrade Medium Class
+91,2,0,4,35,186,4618.0,4619.0,tech,Enh Fighter
+91,2,0,4,37,186,4634.0,4640.0,tech,Upgrade Supremacy
+91,2,0,4,37,186,4634.0,4640.0,station,Supremacy (Adv)
+91,2,1,5,23,147,4688.0,4692.0,station,Supremacy
+91,2,2,18,63,168,4763.0,4770.0,tech,Adv Fighter
+91,2,1,5,27,147,4837.0,4844.0,tech,GA: Ship Hull 1
+91,2,2,18,65,168,4857.0,4864.0,station,Expansion
+91,2,2,18,67,168,4881.0,4893.0,tech,GA: PW&EW Damage 1
+91,2,1,5,30,147,4942.0,4960.0,tech,PW Gattling Gun 2
+91,2,1,5,31,147,4990.0,4997.0,tech,EW Disruptor 2
+91,2,0,4,54,186,5031.0,5045.0,tech,Adv Fighter
+91,2,2,18,82,168,5105.0,5107.0,station,Expansion (Adv)
+91,2,0,4,57,186,5165.0,5175.0,station,Expansion
+91,2,0,4,59,186,5206.0,5208.0,tech,GA: PW&EW Damage 1
+91,2,1,5,40,147,5327.0,5332.0,station,Shipyard (Dry)
+91,2,1,5,42,147,5367.0,5370.0,tech,Upgrade Supremacy
+91,2,1,5,42,147,5367.0,5370.0,station,Supremacy (Adv)
+91,2,2,18,100,168,5431.0,5453.0,station,Tactical
+91,2,0,4,74,186,5481.0,5541.0,station,Expansion (Adv)
+91,2,0,4,92,186,5977.0,6021.0,station,Tactical
+91,2,0,4,107,186,6261.0,6319.0,station,Tactical (Adv)
+91,2,1,5,66,147,6261.0,6319.0,station,Expansion
+92,1,0,18,2,168,21.0,26.0,station,Garrison
+92,1,1,4,2,186,21.0,26.0,station,Garrison
+92,1,2,5,2,147,21.0,26.0,station,Garrison
+92,1,0,18,15,168,244.0,249.0,tech,Patroller
+92,1,0,18,20,168,319.0,329.0,tech,Bomber
+92,1,0,18,21,168,329.0,338.0,station,Garrison (Str)
+92,1,1,4,15,186,329.0,338.0,tech,Bomber
+92,1,1,4,16,186,356.0,360.0,station,Garrison (Str)
+92,1,1,4,17,186,479.0,479.0,station,Outpost
+92,1,0,18,25,168,489.0,492.0,station,Outpost (Lt)
+92,1,2,5,15,147,499.0,513.0,tech,Bomber
+92,1,2,5,16,147,547.0,553.0,station,Garrison (Str)
+92,1,0,18,26,168,573.0,589.0,station,Supremacy
+92,1,1,4,18,186,619.0,623.0,station,Supremacy
+92,1,2,5,17,147,619.0,623.0,station,Outpost
+92,1,0,18,30,168,639.0,643.0,tech,GA: Ship Hull 1
+92,1,0,18,33,168,692.0,692.0,tech,PW Gattling Gun 2
+92,1,0,18,34,168,700.0,702.0,tech,EW Disruptor 2
+92,1,1,4,22,186,711.0,713.0,tech,GA: Ship Hull 1
+92,1,2,5,18,147,752.0,753.0,station,Shipyard
+92,1,1,4,25,186,781.0,784.0,tech,PW Gattling Gun 2
+92,1,1,4,26,186,799.0,804.0,tech,EW Disruptor 2
+92,1,0,18,43,168,843.0,844.0,tech,Enh Fighter
+92,1,0,18,45,168,860.0,864.0,tech,Upgrade Supremacy
+92,1,0,18,45,168,860.0,864.0,station,Supremacy (Adv)
+92,1,2,5,22,147,912.0,915.0,tech,Upgrade Medium Class
+92,1,2,5,23,147,1036.0,1037.0,station,Supremacy
+92,1,0,18,63,168,1147.0,1151.0,tech,Adv Fighter
+92,1,2,5,27,147,1188.0,1190.0,tech,GA: Ship Hull 1
+92,1,0,18,65,168,1264.0,1273.0,station,Expansion
+92,1,0,18,67,168,1297.0,1303.0,tech,GA: PW&EW Damage 1
+92,1,2,5,30,147,1297.0,1303.0,tech,PW Gattling Gun 2
+92,1,2,5,31,147,1339.0,1349.0,tech,EW Disruptor 2
+92,1,1,4,35,186,1381.0,1381.0,tech,Enh Fighter
+92,1,1,4,37,186,1401.0,1405.0,tech,Upgrade Supremacy
+92,1,1,4,37,186,1401.0,1405.0,station,Supremacy (Adv)
+92,1,0,18,82,168,1513.0,1513.0,station,Expansion (Adv)
+92,1,2,5,40,147,1685.0,1686.0,station,Shipyard (Dry)
+92,1,2,5,42,147,1724.0,1726.0,tech,Upgrade Supremacy
+92,1,2,5,42,147,1724.0,1726.0,station,Supremacy (Adv)
+92,1,0,18,100,168,1868.0,1878.0,station,Tactical
+92,1,0,18,115,168,2060.0,2106.0,station,Tactical (Adv)
+92,2,0,4,2,186,2771.0,2780.0,station,Garrison
+92,2,1,5,2,147,2771.0,2780.0,station,Garrison
+92,2,2,18,2,168,2771.0,2780.0,station,Garrison
+92,2,2,18,15,168,3029.0,3032.0,tech,Patroller
+92,2,2,18,20,168,3112.0,3113.0,tech,Bomber
+92,2,2,18,21,168,3121.0,3123.0,station,Garrison (Str)
+92,2,0,4,15,186,3130.0,3136.0,tech,Bomber
+92,2,0,4,16,186,3153.0,3153.0,station,Garrison (Str)
+92,2,0,4,17,186,3252.0,3255.0,station,Outpost
+92,2,2,18,25,168,3275.0,3282.0,station,Outpost (Lt)
+92,2,1,5,15,147,3324.0,3327.0,tech,Bomber
+92,2,1,5,16,147,3355.0,3357.0,station,Garrison (Str)
+92,2,0,4,18,186,3364.0,3366.0,station,Supremacy
+92,2,2,18,26,168,3364.0,3366.0,station,Supremacy
+92,2,2,18,30,168,3427.0,3427.0,tech,GA: Ship Hull 1
+92,2,0,4,22,186,3457.0,3458.0,tech,GA: Ship Hull 1
+92,2,1,5,17,147,3467.0,3467.0,station,Outpost
+92,2,2,18,33,168,3467.0,3467.0,tech,PW Gattling Gun 2
+92,2,2,18,34,168,3487.0,3488.0,tech,EW Disruptor 2
+92,2,0,4,25,186,3511.0,3521.0,tech,PW Gattling Gun 2
+92,2,0,4,26,186,3548.0,3549.0,tech,EW Disruptor 2
+92,2,1,5,18,147,3597.0,3599.0,station,Shipyard
+92,2,2,18,43,168,3629.0,3629.0,tech,Enh Fighter
+92,2,2,18,45,168,3639.0,3639.0,tech,Upgrade Supremacy
+92,2,2,18,45,168,3639.0,3639.0,station,Supremacy (Adv)
+92,2,1,5,22,147,3740.0,3746.0,tech,Upgrade Medium Class
+92,2,0,4,35,186,3750.0,3753.0,tech,Enh Fighter
+92,2,0,4,37,186,3771.0,3772.0,tech,Upgrade Supremacy
+92,2,0,4,37,186,3771.0,3772.0,station,Supremacy (Adv)
+92,2,1,5,23,147,3862.0,3863.0,station,Supremacy
+92,2,2,18,63,168,3913.0,3914.0,tech,Adv Fighter
+92,2,1,5,27,147,3999.0,4006.0,tech,GA: Ship Hull 1
+92,2,2,18,65,168,4010.0,4023.0,station,Expansion
+92,2,2,18,67,168,4045.0,4046.0,tech,GA: PW&EW Damage 1
+92,2,1,5,30,147,4126.0,4127.0,tech,PW Gattling Gun 2
+92,2,1,5,31,147,4157.0,4157.0,tech,EW Disruptor 2
+92,2,0,4,55,186,4187.0,4187.0,tech,Adv Fighter
+92,2,2,18,82,168,4254.0,4259.0,station,Expansion (Adv)
+92,2,0,4,57,186,4299.0,4300.0,station,Expansion
+92,2,0,4,59,186,4338.0,4341.0,tech,GA: PW&EW Damage 1
+92,2,1,5,40,147,4502.0,4502.0,station,Shipyard (Dry)
+92,2,1,5,42,147,4532.0,4533.0,tech,Upgrade Supremacy
+92,2,1,5,42,147,4532.0,4533.0,station,Supremacy (Adv)
+92,2,2,18,100,168,4591.0,4595.0,station,Tactical
+92,2,0,4,74,186,4641.0,4667.0,station,Expansion (Adv)
+92,2,2,18,115,168,4761.0,4821.0,station,Tactical (Adv)
+92,2,2,18,130,168,5121.0,5181.0,station,Shipyard
+92,2,0,4,92,186,5121.0,5181.0,station,Tactical
+92,2,2,18,141,168,5301.0,5361.0,tech,Upgrade Medium Class
+92,2,0,4,105,186,,,station,Tactical (Adv)
+93,1,0,18,2,168,22.0,26.0,station,Garrison
+93,1,1,4,2,186,22.0,26.0,station,Garrison
+93,1,2,5,2,147,22.0,26.0,station,Garrison
+93,1,0,18,15,168,243.0,246.0,tech,Patroller
+93,1,0,18,20,168,327.0,328.0,tech,Bomber
+93,1,0,18,21,168,337.0,338.0,station,Garrison (Str)
+93,1,1,4,15,186,337.0,338.0,tech,Bomber
+93,1,1,4,16,186,339.0,370.0,station,Garrison (Str)
+93,1,0,18,25,168,484.0,491.0,station,Outpost (Lt)
+93,1,2,5,15,147,500.0,535.0,tech,Bomber
+93,1,1,4,17,186,500.0,535.0,station,Outpost
+93,1,2,5,16,147,550.0,552.0,station,Garrison (Str)
+93,1,0,18,26,168,588.0,594.0,station,Supremacy
+93,1,2,5,17,147,621.0,622.0,station,Outpost
+93,1,0,18,30,168,651.0,654.0,tech,GA: Ship Hull 1
+93,1,1,4,18,186,672.0,672.0,station,Supremacy
+93,1,0,18,33,168,699.0,711.0,tech,PW Gattling Gun 2
+93,1,0,18,34,168,712.0,712.0,tech,EW Disruptor 2
+93,1,2,5,18,147,750.0,765.0,station,Shipyard
+93,1,0,18,43,168,852.0,855.0,tech,Enh Fighter
+93,1,0,18,45,168,862.0,870.0,tech,Upgrade Supremacy
+93,1,0,18,45,168,862.0,870.0,station,Supremacy (Adv)
+93,1,1,4,22,186,862.0,870.0,tech,GA: Ship Hull 1
+93,1,2,5,22,147,906.0,920.0,tech,Upgrade Medium Class
+93,1,2,5,23,147,1030.0,1040.0,station,Supremacy
+93,1,1,4,25,186,1112.0,1118.0,tech,PW Gattling Gun 2
+93,1,1,4,26,186,1137.0,1138.0,tech,EW Disruptor 2
+93,1,0,18,63,168,1146.0,1150.0,tech,Adv Fighter
+93,1,2,5,27,147,1181.0,1189.0,tech,GA: Ship Hull 1
+93,1,0,18,65,168,1259.0,1260.0,station,Expansion
+93,1,0,18,67,168,1284.0,1292.0,tech,GA: PW&EW Damage 1
+93,1,2,5,30,147,1299.0,1301.0,tech,PW Gattling Gun 2
+93,1,1,4,35,186,1340.0,1347.0,tech,Enh Fighter
+93,1,2,5,31,147,1340.0,1347.0,tech,EW Disruptor 2
+93,1,1,4,37,186,1368.0,1376.0,tech,Upgrade Supremacy
+93,1,1,4,37,186,1368.0,1376.0,station,Supremacy (Adv)
+93,1,0,18,82,168,1501.0,1509.0,station,Expansion (Adv)
+93,1,2,5,40,147,1673.0,1675.0,station,Shipyard (Dry)
+93,1,2,5,42,147,1713.0,1716.0,tech,Upgrade Supremacy
+93,1,2,5,42,147,1713.0,1716.0,station,Supremacy (Adv)
+93,1,1,4,55,186,1769.0,1802.0,tech,Adv Fighter
+93,1,0,18,100,168,1833.0,1880.0,station,Tactical
+93,1,1,4,57,186,1833.0,1880.0,station,Expansion
+93,1,1,4,59,186,,,tech,GA: PW&EW Damage 1
+93,1,0,18,115,168,2061.0,2121.0,station,Tactical (Adv)
+93,1,0,18,129,168,2361.0,2421.0,station,Shipyard
+93,1,0,18,141,168,2541.0,2601.0,tech,Upgrade Medium Class
+93,2,0,4,2,186,2771.0,2781.0,station,Garrison
+93,2,1,5,2,147,2771.0,2781.0,station,Garrison
+93,2,2,18,2,168,2771.0,2781.0,station,Garrison
+93,2,2,18,15,168,3031.0,3032.0,tech,Patroller
+93,2,2,18,20,168,3100.0,3108.0,tech,Bomber
+93,2,0,4,14,186,3122.0,3124.0,tech,Bomber
+93,2,2,18,21,168,3122.0,3124.0,station,Garrison (Str)
+93,2,0,4,16,186,3153.0,3154.0,station,Garrison (Str)
+93,2,0,4,17,186,3255.0,3256.0,station,Outpost
+93,2,2,18,25,168,3285.0,3286.0,station,Outpost (Lt)
+93,2,1,5,15,147,3316.0,3317.0,tech,Bomber
+93,2,0,4,18,186,3356.0,3357.0,station,Supremacy
+93,2,1,5,16,147,3356.0,3357.0,station,Garrison (Str)
+93,2,2,18,26,168,3365.0,3368.0,station,Supremacy
+93,2,2,18,30,168,3427.0,3429.0,tech,GA: Ship Hull 1
+93,2,0,4,22,186,3447.0,3448.0,tech,GA: Ship Hull 1
+93,2,1,5,17,147,3478.0,3479.0,station,Outpost
+93,2,2,18,33,168,3478.0,3479.0,tech,PW Gattling Gun 2
+93,2,2,18,34,168,3487.0,3492.0,tech,EW Disruptor 2
+93,2,0,4,25,186,3517.0,3519.0,tech,PW Gattling Gun 2
+93,2,0,4,26,186,3534.0,3540.0,tech,EW Disruptor 2
+93,2,1,5,18,147,3596.0,3600.0,station,Shipyard
+93,2,2,18,43,168,3629.0,3633.0,tech,Enh Fighter
+93,2,2,18,45,168,3640.0,3640.0,tech,Upgrade Supremacy
+93,2,2,18,45,168,3640.0,3640.0,station,Supremacy (Adv)
+93,2,0,4,34,186,3742.0,3742.0,tech,Enh Fighter
+93,2,1,5,22,147,3751.0,3753.0,tech,Upgrade Medium Class
+93,2,0,4,37,186,3771.0,3772.0,tech,Upgrade Supremacy
+93,2,0,4,37,186,3771.0,3772.0,station,Supremacy (Adv)
+93,2,1,5,23,147,3835.0,3851.0,station,Supremacy
+93,2,2,18,63,168,3912.0,3915.0,tech,Adv Fighter
+93,2,1,5,27,147,3994.0,3996.0,tech,GA: Ship Hull 1
+93,2,2,18,65,168,4004.0,4009.0,station,Expansion
+93,2,2,18,67,168,4033.0,4040.0,tech,GA: PW&EW Damage 1
+93,2,1,5,30,147,4106.0,4107.0,tech,PW Gattling Gun 2
+93,2,1,5,31,147,4147.0,4149.0,tech,EW Disruptor 2
+93,2,0,4,55,186,4178.0,4186.0,tech,Adv Fighter
+93,2,2,18,82,168,4246.0,4251.0,station,Expansion (Adv)
+93,2,0,4,57,186,4288.0,4290.0,station,Expansion
+93,2,0,4,59,186,4340.0,4342.0,tech,GA: PW&EW Damage 1
+93,2,1,5,40,147,4478.0,4483.0,station,Shipyard (Dry)
+93,2,1,5,42,147,4522.0,4528.0,tech,Upgrade Supremacy
+93,2,1,5,42,147,4522.0,4528.0,station,Supremacy (Adv)
+93,2,2,18,100,168,4582.0,4642.0,station,Tactical
+93,2,0,4,74,186,4642.0,4682.0,station,Expansion (Adv)
+93,2,2,18,115,168,4778.0,4819.0,station,Tactical (Adv)
+93,2,2,18,130,168,5063.0,5123.0,station,Shipyard
+93,2,0,4,92,186,5123.0,5183.0,station,Tactical
+93,2,2,18,141,168,5243.0,5303.0,tech,Upgrade Medium Class
+94,1,0,18,2,168,21.0,25.0,station,Garrison
+94,1,1,4,2,186,21.0,25.0,station,Garrison
+94,1,2,5,2,147,21.0,25.0,station,Garrison
+94,1,0,18,15,168,244.0,249.0,tech,Patroller
+94,1,0,18,20,168,327.0,327.0,tech,Bomber
+94,1,0,18,21,168,337.0,338.0,station,Garrison (Str)
+94,1,1,4,15,186,337.0,338.0,tech,Bomber
+94,1,1,4,16,186,356.0,358.0,station,Garrison (Str)
+94,1,0,18,25,168,483.0,498.0,station,Outpost (Lt)
+94,1,1,4,17,186,483.0,498.0,station,Outpost
+94,1,2,5,15,147,506.0,511.0,tech,Bomber
+94,1,2,5,16,147,550.0,553.0,station,Garrison (Str)
+94,1,0,18,26,168,570.0,578.0,station,Supremacy
+94,1,2,5,17,147,621.0,632.0,station,Outpost
+94,1,0,18,30,168,641.0,642.0,tech,GA: Ship Hull 1
+94,1,1,4,18,186,641.0,642.0,station,Supremacy
+94,1,0,18,33,168,682.0,683.0,tech,PW Gattling Gun 2
+94,1,0,18,34,168,702.0,703.0,tech,EW Disruptor 2
+94,1,1,4,22,186,733.0,734.0,tech,GA: Ship Hull 1
+94,1,2,5,18,147,763.0,767.0,station,Shipyard
+94,1,0,18,43,168,832.0,837.0,tech,Enh Fighter
+94,1,0,18,45,168,853.0,856.0,tech,Upgrade Supremacy
+94,1,0,18,45,168,853.0,856.0,station,Supremacy (Adv)
+94,1,1,4,25,186,895.0,896.0,tech,PW Gattling Gun 2
+94,1,2,5,22,147,915.0,916.0,tech,Upgrade Medium Class
+94,1,1,4,26,186,922.0,926.0,tech,EW Disruptor 2
+94,1,2,5,23,147,1036.0,1038.0,station,Supremacy
+94,1,0,18,63,168,1121.0,1130.0,tech,Adv Fighter
+94,1,2,5,27,147,1159.0,1205.0,tech,GA: Ship Hull 1
+94,1,0,18,65,168,1219.0,1279.0,station,Expansion
+94,1,1,4,35,186,1219.0,1279.0,tech,Enh Fighter
+94,1,0,18,67,168,1279.0,1339.0,tech,GA: PW&EW Damage 1
+94,1,1,4,37,186,1279.0,1339.0,tech,Upgrade Supremacy
+94,1,1,4,37,186,1279.0,1339.0,station,Supremacy (Adv)
+94,1,2,5,30,147,1279.0,1339.0,tech,PW Gattling Gun 2
+94,1,2,5,31,147,1339.0,1399.0,tech,EW Disruptor 2
+94,1,0,18,82,168,1459.0,1519.0,station,Expansion (Adv)
+94,1,2,5,40,147,1639.0,1699.0,station,Shipyard (Dry)
+94,1,1,4,55,186,1699.0,1759.0,tech,Adv Fighter
+94,1,2,5,42,147,1699.0,1759.0,tech,Upgrade Supremacy
+94,1,2,5,42,147,1699.0,1759.0,station,Supremacy (Adv)
+94,1,1,4,57,186,1759.0,1819.0,station,Expansion
+94,1,0,18,100,168,1819.0,1879.0,station,Tactical
+94,1,1,4,59,186,1819.0,1879.0,tech,GA: PW&EW Damage 1
+94,1,0,18,115,168,2060.0,2120.0,station,Tactical (Adv)
+94,1,1,4,74,186,2120.0,2180.0,station,Expansion (Adv)
+94,1,0,18,130,168,2360.0,2420.0,station,Shipyard
+94,1,0,18,141,168,2540.0,2600.0,tech,Upgrade Medium Class
+94,1,2,5,66,147,2660.0,2720.0,station,Expansion
+94,1,1,4,92,186,2660.0,2720.0,station,Tactical
+94,1,2,5,68,147,2720.0,2780.0,tech,GA: PW&EW Damage 1
+94,1,0,18,163,168,2900.0,2960.0,station,Refinery (Lt)
+94,1,1,4,107,186,2960.0,3020.0,station,Tactical (Adv)
+94,1,0,18,164,168,3020.0,3080.0,station,Teleport (Lt)
+94,1,0,18,167,168,3080.0,3140.0,station,SpecMine (Ur)
+94,1,2,5,81,147,3140.0,3200.0,station,Expansion (Adv)
+94,1,0,18,168,168,3200.0,3260.0,station,SpecMine (Ca)
+94,1,0,18,168,168,3260.0,3320.0,station,SpecMine (Si)
+94,1,1,4,122,186,3380.0,3440.0,station,[T]ransceiver
+94,2,0,4,2,186,3636.0,3644.0,station,Garrison
+94,2,1,5,2,147,3636.0,3644.0,station,Garrison
+94,2,2,18,2,168,3636.0,3644.0,station,Garrison
+94,2,2,18,15,168,3888.0,3896.0,tech,Patroller
+94,2,2,18,20,168,3974.0,3976.0,tech,Bomber
+94,2,2,18,21,168,3985.0,3986.0,station,Garrison (Str)
+94,2,0,4,15,186,3995.0,4000.0,tech,Bomber
+94,2,0,4,16,186,4014.0,4016.0,station,Garrison (Str)
+94,2,0,4,17,186,4127.0,4128.0,station,Outpost
+94,2,2,18,25,168,4148.0,4149.0,station,Outpost (Lt)
+94,2,1,5,15,147,4187.0,4189.0,tech,Bomber
+94,2,1,5,16,147,4217.0,4219.0,station,Garrison (Str)
+94,2,2,18,26,168,4225.0,4234.0,station,Supremacy
+94,2,0,4,18,186,4249.0,4250.0,station,Supremacy
+94,2,2,18,30,168,4285.0,4297.0,tech,GA: Ship Hull 1
+94,2,0,4,22,186,4340.0,4341.0,tech,GA: Ship Hull 1
+94,2,1,5,17,147,4340.0,4341.0,station,Outpost
+94,2,2,18,33,168,4340.0,4341.0,tech,PW Gattling Gun 2
+94,2,2,18,34,168,4350.0,4352.0,tech,EW Disruptor 2
+94,2,0,4,25,186,4411.0,4412.0,tech,PW Gattling Gun 2
+94,2,0,4,26,186,4431.0,4432.0,tech,EW Disruptor 2
+94,2,1,5,18,147,4461.0,4463.0,station,Shipyard
+94,2,2,18,43,168,4490.0,4493.0,tech,Enh Fighter
+94,2,2,18,45,168,4502.0,4512.0,tech,Upgrade Supremacy
+94,2,2,18,45,168,4502.0,4512.0,station,Supremacy (Adv)
+94,2,1,5,22,147,4614.0,4614.0,tech,Upgrade Medium Class
+94,2,0,4,35,186,4634.0,4638.0,tech,Enh Fighter
+94,2,0,4,37,186,4655.0,4655.0,tech,Upgrade Supremacy
+94,2,0,4,37,186,4655.0,4655.0,station,Supremacy (Adv)
+94,2,1,5,23,147,4704.0,4706.0,station,Supremacy
+94,2,2,18,63,168,4765.0,4811.0,tech,Adv Fighter
+94,2,1,5,27,147,4821.0,4881.0,tech,GA: Ship Hull 1
+94,2,2,18,65,168,4821.0,4881.0,station,Expansion
+94,2,2,18,67,168,4881.0,4941.0,tech,GA: PW&EW Damage 1
+94,2,1,5,30,147,4941.0,5001.0,tech,PW Gattling Gun 2
+94,2,1,5,31,147,5001.0,5061.0,tech,EW Disruptor 2
+94,2,0,4,55,186,5061.0,5121.0,tech,Adv Fighter
+94,2,2,18,82,168,5061.0,5121.0,station,Expansion (Adv)
+94,2,0,4,57,186,5181.0,5241.0,station,Expansion
+94,2,0,4,59,186,5181.0,5241.0,tech,GA: PW&EW Damage 1
+94,2,1,5,40,147,5301.0,5361.0,station,Shipyard (Dry)
+94,2,1,5,42,147,5361.0,5421.0,tech,Upgrade Supremacy
+94,2,1,5,42,147,5361.0,5421.0,station,Supremacy (Adv)
+94,2,2,18,100,168,5421.0,5481.0,station,Tactical
+94,2,0,4,74,186,5541.0,5593.0,station,Expansion (Adv)
+94,2,2,18,115,168,,,station,Tactical (Adv)
+94,2,2,18,129,168,5962.0,6022.0,station,Shipyard
+94,2,0,4,92,186,5962.0,6022.0,station,Tactical
+94,2,2,18,141,168,6142.0,6202.0,tech,Upgrade Medium Class
+94,2,1,5,66,147,6322.0,6382.0,station,Expansion
+94,2,0,4,107,186,6322.0,6382.0,station,Tactical (Adv)
+94,2,1,5,67,147,6382.0,6442.0,tech,GA: PW&EW Damage 1
+94,2,2,18,163,168,6502.0,6562.0,station,Refinery (Lt)
+94,2,2,18,164,168,6562.0,6622.0,station,Teleport (Lt)
+94,2,2,18,167,168,6682.0,6742.0,station,SpecMine (Ur)
+94,2,0,4,122,186,6682.0,6742.0,station,[T]ransceiver
+94,2,2,18,168,168,6742.0,6802.0,station,SpecMine (Ca)
+94,2,1,5,81,147,6802.0,6862.0,station,Expansion (Adv)
+94,2,2,18,168,168,6862.0,6922.0,station,SpecMine (Si)
+94,2,0,4,134,186,7042.0,7102.0,station,Shipyard
+103,1,0,18,2,168,21.0,26.0,station,Garrison
+103,1,1,4,2,186,21.0,26.0,station,Garrison
+103,1,2,5,2,147,21.0,26.0,station,Garrison
+103,1,0,18,15,168,245.0,247.0,tech,Patroller
+103,1,0,18,20,168,325.0,328.0,tech,Bomber
+103,1,0,18,21,168,337.0,345.0,station,Garrison (Str)
+103,1,1,4,15,186,337.0,345.0,tech,Bomber
+103,1,1,4,16,186,357.0,358.0,station,Garrison (Str)
+103,1,0,18,25,168,489.0,489.0,station,Outpost (Lt)
+103,1,1,4,17,186,489.0,489.0,station,Outpost
+103,1,2,5,15,147,507.0,509.0,tech,Bomber
+103,1,2,5,16,147,549.0,551.0,station,Garrison (Str)
+103,1,1,4,18,186,570.0,575.0,station,Supremacy
+103,1,0,18,26,168,578.0,584.0,station,Supremacy
+103,1,2,5,17,147,621.0,628.0,station,Outpost
+103,1,0,18,30,168,640.0,641.0,tech,GA: Ship Hull 1
+103,1,1,4,22,186,661.0,662.0,tech,GA: Ship Hull 1
+103,1,0,18,32,168,680.0,683.0,tech,PW Gattling Gun 2
+103,1,0,18,34,168,700.0,702.0,tech,EW Disruptor 2
+103,1,1,4,25,186,728.0,735.0,tech,PW Gattling Gun 2
+103,1,1,4,26,186,752.0,753.0,tech,EW Disruptor 2
+103,1,2,5,18,147,762.0,763.0,station,Shipyard
+103,1,0,18,43,168,842.0,846.0,tech,Enh Fighter
+103,1,0,18,45,168,854.0,855.0,tech,Upgrade Supremacy
+103,1,0,18,45,168,854.0,855.0,station,Supremacy (Adv)
+103,1,2,5,22,147,915.0,915.0,tech,Upgrade Medium Class
+103,1,1,4,35,186,949.0,979.0,tech,Enh Fighter
+103,1,1,4,37,186,982.0,1001.0,tech,Upgrade Supremacy
+103,1,1,4,37,186,982.0,1001.0,station,Supremacy (Adv)
+103,1,2,5,23,147,1034.0,1039.0,station,Supremacy
+103,1,2,5,27,147,1187.0,1193.0,tech,GA: Ship Hull 1
+103,1,0,18,63,168,1202.0,1215.0,tech,Adv Fighter
+103,1,2,5,30,147,1300.0,1300.0,tech,PW Gattling Gun 2
+103,1,0,18,65,168,1310.0,1313.0,station,Expansion
+103,1,0,18,67,168,1339.0,1341.0,tech,GA: PW&EW Damage 1
+103,1,2,5,31,147,1339.0,1341.0,tech,EW Disruptor 2
+103,1,1,4,55,186,1391.0,1396.0,tech,Adv Fighter
+103,1,1,4,57,186,1503.0,1503.0,station,Expansion
+103,1,0,18,82,168,1552.0,1555.0,station,Expansion (Adv)
+103,1,1,4,59,186,1552.0,1555.0,tech,GA: PW&EW Damage 1
+103,1,2,5,40,147,1673.0,1678.0,station,Shipyard (Dry)
+103,1,2,5,42,147,1713.0,1717.0,tech,Upgrade Supremacy
+103,1,2,5,42,147,1713.0,1717.0,station,Supremacy (Adv)
+103,1,1,4,74,186,1844.0,1874.0,station,Expansion (Adv)
+103,1,0,18,100,168,,,station,Tactical
+103,1,0,18,115,168,2180.0,2240.0,station,Tactical (Adv)
+103,1,1,4,92,186,2360.0,2420.0,station,Tactical
+103,1,0,18,130,168,2540.0,2600.0,station,Shipyard
+103,1,2,5,66,147,2660.0,2720.0,station,Expansion
+103,1,1,4,107,186,2660.0,2720.0,station,Tactical (Adv)
+103,2,0,4,1,186,2762.0,2780.0,station,Garrison
+103,2,1,5,1,147,2762.0,2780.0,station,Garrison
+103,2,2,18,1,168,2762.0,2780.0,station,Garrison
+103,2,2,18,15,168,3030.0,3033.0,tech,Patroller
+103,2,2,18,20,168,3098.0,3103.0,tech,Bomber
+103,2,0,4,15,186,3109.0,3123.0,tech,Bomber
+103,2,2,18,21,168,3109.0,3123.0,station,Garrison (Str)
+103,2,0,4,16,186,3143.0,3156.0,station,Garrison (Str)
+103,2,0,4,17,186,3263.0,3271.0,station,Outpost
+103,2,2,18,25,168,3272.0,3277.0,station,Outpost (Lt)
+103,2,1,5,15,147,3303.0,3315.0,tech,Bomber
+103,2,1,5,16,147,3355.0,3355.0,station,Garrison (Str)
+103,2,0,4,18,186,3364.0,3368.0,station,Supremacy
+103,2,2,18,26,168,3373.0,3375.0,station,Supremacy
+103,2,2,18,30,168,3428.0,3438.0,tech,GA: Ship Hull 1
+103,2,0,4,22,186,3455.0,3458.0,tech,GA: Ship Hull 1
+103,2,1,5,17,147,3465.0,3467.0,station,Outpost
+103,2,2,18,33,168,3487.0,3488.0,tech,PW Gattling Gun 2
+103,2,2,18,34,168,3497.0,3498.0,tech,EW Disruptor 2
+103,2,0,4,25,186,3526.0,3528.0,tech,PW Gattling Gun 2
+103,2,0,4,26,186,3547.0,3552.0,tech,EW Disruptor 2
+103,2,1,5,18,147,3588.0,3590.0,station,Shipyard
+103,2,2,18,43,168,3639.0,3639.0,tech,Enh Fighter
+103,2,2,18,45,168,3648.0,3649.0,tech,Upgrade Supremacy
+103,2,2,18,45,168,3648.0,3649.0,station,Supremacy (Adv)
+103,2,1,5,22,147,3740.0,3741.0,tech,Upgrade Medium Class
+103,2,0,4,35,186,3748.0,3751.0,tech,Enh Fighter
+103,2,0,4,37,186,3770.0,3771.0,tech,Upgrade Supremacy
+103,2,0,4,37,186,3770.0,3771.0,station,Supremacy (Adv)
+103,2,1,5,23,147,3830.0,3832.0,station,Supremacy
+103,2,2,18,63,168,3921.0,3924.0,tech,Adv Fighter
+103,2,1,5,27,147,3982.0,3984.0,tech,GA: Ship Hull 1
+103,2,2,18,65,168,4024.0,4025.0,station,Expansion
+103,2,2,18,67,168,4055.0,4055.0,tech,GA: PW&EW Damage 1
+103,2,1,5,30,147,4096.0,4096.0,tech,PW Gattling Gun 2
+103,2,1,5,31,147,4136.0,4138.0,tech,EW Disruptor 2
+103,2,0,4,55,186,4177.0,4178.0,tech,Adv Fighter
+103,2,2,18,82,168,4265.0,4270.0,station,Expansion (Adv)
+103,2,0,4,56,186,4286.0,4292.0,station,Expansion
+103,2,0,4,59,186,4338.0,4341.0,tech,GA: PW&EW Damage 1
+103,2,1,5,40,147,4471.0,4473.0,station,Shipyard (Dry)
+103,2,1,5,42,147,4510.0,4512.0,tech,Upgrade Supremacy
+103,2,1,5,42,147,4510.0,4512.0,station,Supremacy (Adv)
+103,2,2,18,100,168,4586.0,4610.0,station,Tactical
+103,2,0,4,74,186,4641.0,4701.0,station,Expansion (Adv)
+103,2,2,18,115,168,4761.0,4821.0,station,Tactical (Adv)
+103,2,2,18,130,168,5061.0,5121.0,station,Shipyard
+103,2,0,4,92,186,5121.0,5181.0,station,Tactical
+103,2,2,18,141,168,5241.0,5301.0,tech,Upgrade Medium Class
+103,2,0,4,105,186,,,station,Tactical (Adv)
+104,1,0,18,2,168,21.0,25.0,station,Garrison
+104,1,1,4,2,186,21.0,25.0,station,Garrison
+104,1,2,5,2,147,21.0,25.0,station,Garrison
+104,1,0,18,15,168,237.0,248.0,tech,Patroller
+104,1,0,18,20,168,326.0,327.0,tech,Bomber
+104,1,0,18,21,168,337.0,339.0,station,Garrison (Str)
+104,1,1,4,15,186,337.0,339.0,tech,Bomber
+104,1,1,4,16,186,366.0,369.0,station,Garrison (Str)
+104,1,0,18,25,168,485.0,491.0,station,Outpost (Lt)
+104,1,1,4,17,186,499.0,499.0,station,Outpost
+104,1,2,5,15,147,509.0,509.0,tech,Bomber
+104,1,2,5,16,147,548.0,550.0,station,Garrison (Str)
+104,1,0,18,26,168,577.0,581.0,station,Supremacy
+104,1,1,4,17,186,609.0,612.0,station,Supremacy
+104,1,2,5,17,147,609.0,612.0,station,Outpost
+104,1,0,18,30,168,640.0,641.0,tech,GA: Ship Hull 1
+104,1,0,18,33,168,691.0,692.0,tech,PW Gattling Gun 2
+104,1,0,18,34,168,698.0,702.0,tech,EW Disruptor 2
+104,1,2,5,18,147,752.0,752.0,station,Shipyard
+104,1,0,18,43,168,842.0,846.0,tech,Enh Fighter
+104,1,0,18,45,168,853.0,854.0,tech,Upgrade Supremacy
+104,1,0,18,45,168,853.0,854.0,station,Supremacy (Adv)
+104,1,1,4,22,186,873.0,874.0,tech,GA: Ship Hull 1
+104,1,2,5,22,147,902.0,905.0,tech,Upgrade Medium Class
+104,1,1,4,25,186,940.0,946.0,tech,PW Gattling Gun 2
+104,1,1,4,26,186,962.0,972.0,tech,EW Disruptor 2
+104,1,2,5,23,147,1013.0,1019.0,station,Supremacy
+104,1,0,18,63,168,1137.0,1137.0,tech,Adv Fighter
+104,1,2,5,27,147,1157.0,1158.0,tech,GA: Ship Hull 1
+104,1,0,18,65,168,1257.0,1266.0,station,Expansion
+104,1,2,5,30,147,1278.0,1279.0,tech,PW Gattling Gun 2
+104,1,0,18,67,168,1289.0,1292.0,tech,GA: PW&EW Damage 1
+104,1,2,5,31,147,1308.0,1310.0,tech,EW Disruptor 2
+104,1,0,18,80,168,1499.0,1502.0,station,Expansion (Adv)
+104,1,2,5,40,147,1653.0,1655.0,station,Shipyard (Dry)
+104,1,2,5,42,147,1684.0,1697.0,tech,Upgrade Supremacy
+104,1,2,5,42,147,1684.0,1697.0,station,Supremacy (Adv)
+104,1,0,18,100,168,1866.0,1866.0,station,Tactical
+104,1,0,18,115,168,2078.0,2079.0,station,Tactical (Adv)
+104,1,0,18,130,168,2400.0,2420.0,station,Shipyard
+104,1,0,18,141,168,2705.0,2714.0,tech,Upgrade Medium Class
+104,1,2,5,65,147,2780.0,2803.0,station,Expansion
+104,1,2,5,68,147,2897.0,2899.0,tech,GA: PW&EW Damage 1
+104,1,0,18,163,168,3099.0,3115.0,station,Refinery (Lt)
+104,1,0,18,164,168,3190.0,3200.0,station,Teleport (Lt)
+104,1,0,18,167,168,3290.0,3318.0,station,SpecMine (Ur)
+104,1,0,18,167,168,3430.0,3436.0,station,SpecMine (Ca)
+104,1,2,5,81,147,3514.0,3517.0,station,Expansion (Adv)
+104,2,0,4,2,186,3636.0,3644.0,station,Garrison
+104,2,1,5,2,147,3636.0,3644.0,station,Garrison
+104,2,2,18,2,168,3636.0,3644.0,station,Garrison
+104,2,2,18,15,168,3900.0,3903.0,tech,Patroller
+104,2,2,18,20,168,3969.0,3973.0,tech,Bomber
+104,2,0,4,15,186,3991.0,3993.0,tech,Bomber
+104,2,2,18,21,168,3991.0,3993.0,station,Garrison (Str)
+104,2,0,4,16,186,4022.0,4023.0,station,Garrison (Str)
+104,2,0,4,17,186,4123.0,4124.0,station,Outpost
+104,2,2,18,25,168,4144.0,4144.0,station,Outpost (Lt)
+104,2,1,5,15,147,4185.0,4185.0,tech,Bomber
+104,2,1,5,16,147,4225.0,4226.0,station,Garrison (Str)
+104,2,0,4,18,186,4235.0,4236.0,station,Supremacy
+104,2,2,18,26,168,4235.0,4236.0,station,Supremacy
+104,2,2,18,29,168,4296.0,4297.0,tech,GA: Ship Hull 1
+104,2,0,4,22,186,4327.0,4327.0,tech,GA: Ship Hull 1
+104,2,1,5,17,147,4342.0,4361.0,station,Outpost
+104,2,2,18,33,168,4342.0,4361.0,tech,PW Gattling Gun 2
+104,2,2,18,34,168,4367.0,4368.0,tech,EW Disruptor 2
+104,2,0,4,25,186,4397.0,4399.0,tech,PW Gattling Gun 2
+104,2,0,4,26,186,4408.0,4421.0,tech,EW Disruptor 2
+104,2,1,5,18,147,4468.0,4470.0,station,Shipyard
+104,2,2,18,43,168,4499.0,4500.0,tech,Enh Fighter
+104,2,2,18,45,168,4516.0,4521.0,tech,Upgrade Supremacy
+104,2,2,18,45,168,4516.0,4521.0,station,Supremacy (Adv)
+104,2,1,5,22,147,4609.0,4618.0,tech,Upgrade Medium Class
+104,2,0,4,35,186,4620.0,4621.0,tech,Enh Fighter
+104,2,0,4,37,186,4641.0,4642.0,tech,Upgrade Supremacy
+104,2,0,4,37,186,4641.0,4642.0,station,Supremacy (Adv)
+104,2,1,5,23,147,4701.0,4707.0,station,Supremacy
+104,2,2,18,63,168,4793.0,4794.0,tech,Adv Fighter
+104,2,1,5,27,147,4854.0,4855.0,tech,GA: Ship Hull 1
+104,2,2,18,65,168,4884.0,4892.0,station,Expansion
+104,2,2,18,67,168,4914.0,4916.0,tech,GA: PW&EW Damage 1
+104,2,1,5,30,147,4966.0,4974.0,tech,PW Gattling Gun 2
+104,2,1,5,31,147,5006.0,5010.0,tech,EW Disruptor 2
+104,2,0,4,55,186,5056.0,5057.0,tech,Adv Fighter
+104,2,2,18,82,168,5128.0,5129.0,station,Expansion (Adv)
+104,2,0,4,57,186,5169.0,5169.0,station,Expansion
+104,2,0,4,59,186,5218.0,5222.0,tech,GA: PW&EW Damage 1
+104,2,1,5,40,147,5340.0,5344.0,station,Shipyard (Dry)
+104,2,1,5,42,147,5382.0,5383.0,tech,Upgrade Supremacy
+104,2,1,5,42,147,5382.0,5383.0,station,Supremacy (Adv)
+104,2,2,18,99,168,5452.0,5481.0,station,Tactical
+104,2,0,4,74,186,5481.0,5541.0,station,Expansion (Adv)
+104,2,2,18,115,168,5661.0,5721.0,station,Tactical (Adv)
+104,2,2,18,130,168,5961.0,6021.0,station,Shipyard
+104,2,0,4,92,186,5961.0,6021.0,station,Tactical
+104,2,2,18,141,168,6141.0,6201.0,tech,Upgrade Medium Class
+104,2,0,4,105,186,,,station,Tactical (Adv)
+104,2,1,5,65,147,,,station,Expansion
+105,1,0,18,2,168,21.0,25.0,station,Garrison
+105,1,1,4,2,186,21.0,25.0,station,Garrison
+105,1,2,5,2,147,21.0,25.0,station,Garrison
+105,1,0,18,15,168,245.0,247.0,tech,Patroller
+105,1,0,18,20,168,326.0,328.0,tech,Bomber
+105,1,0,18,21,168,335.0,339.0,station,Garrison (Str)
+105,1,1,4,15,186,335.0,339.0,tech,Bomber
+105,1,1,4,16,186,359.0,368.0,station,Garrison (Str)
+105,1,0,18,25,168,487.0,489.0,station,Outpost (Lt)
+105,1,2,5,15,147,519.0,521.0,tech,Bomber
+105,1,2,5,15,147,559.0,562.0,station,Garrison (Str)
+105,1,0,18,26,168,588.0,590.0,station,Supremacy
+105,1,1,4,17,186,588.0,590.0,station,Outpost
+105,1,2,5,17,147,641.0,642.0,station,Outpost
+105,1,0,18,29,168,651.0,651.0,tech,GA: Ship Hull 1
+105,1,1,4,18,186,691.0,692.0,station,Supremacy
+105,1,0,18,33,168,695.0,703.0,tech,PW Gattling Gun 2
+105,1,0,18,34,168,721.0,723.0,tech,EW Disruptor 2
+105,1,2,5,18,147,783.0,783.0,station,Shipyard
+105,1,1,4,22,186,793.0,794.0,tech,GA: Ship Hull 1
+105,1,1,4,24,186,845.0,856.0,tech,PW Gattling Gun 2
+105,1,0,18,43,168,862.0,864.0,tech,Enh Fighter
+105,1,0,18,45,168,883.0,892.0,tech,Upgrade Supremacy
+105,1,0,18,45,168,883.0,892.0,station,Supremacy (Adv)
+105,1,1,4,26,186,883.0,892.0,tech,EW Disruptor 2
+105,1,2,5,22,147,927.0,936.0,tech,Upgrade Medium Class
+105,1,2,5,23,147,1067.0,1067.0,station,Supremacy
+105,1,0,18,63,168,1158.0,1159.0,tech,Adv Fighter
+105,1,2,5,27,147,1219.0,1219.0,tech,GA: Ship Hull 1
+105,1,0,18,65,168,1290.0,1291.0,station,Expansion
+105,1,0,18,67,168,1319.0,1320.0,tech,GA: PW&EW Damage 1
+105,1,2,5,30,147,1330.0,1336.0,tech,PW Gattling Gun 2
+105,1,2,5,30,147,1361.0,1361.0,tech,EW Disruptor 2
+105,1,1,4,35,186,1462.0,1463.0,tech,Enh Fighter
+105,1,1,4,37,186,1491.0,1493.0,tech,Upgrade Supremacy
+105,1,1,4,37,186,1491.0,1493.0,station,Supremacy (Adv)
+105,1,0,18,82,168,1541.0,1544.0,station,Expansion (Adv)
+105,1,2,5,40,147,1725.0,1726.0,station,Shipyard (Dry)
+105,1,2,5,42,147,1754.0,1760.0,tech,Upgrade Supremacy
+105,1,2,5,42,147,1754.0,1760.0,station,Supremacy (Adv)
+105,1,0,18,100,168,1880.0,1909.0,station,Tactical
+105,1,0,18,115,168,2120.0,2180.0,station,Tactical (Adv)
+105,1,1,4,55,186,2360.0,2420.0,tech,Adv Fighter
+105,1,0,18,130,168,2420.0,2480.0,station,Shipyard
+105,1,1,4,57,186,2480.0,2540.0,station,Expansion
+105,1,1,4,59,186,2540.0,2600.0,tech,GA: PW&EW Damage 1
+105,1,0,18,141,168,2600.0,2660.0,tech,Upgrade Medium Class
+105,1,2,5,65,147,2660.0,2720.0,station,Expansion
+105,2,0,4,1,186,2762.0,2769.0,station,Garrison
+105,2,1,5,1,147,2762.0,2769.0,station,Garrison
+105,2,2,18,1,168,2762.0,2769.0,station,Garrison
+105,2,2,18,15,168,3031.0,3031.0,tech,Patroller
+105,2,2,18,20,168,3102.0,3102.0,tech,Bomber
+105,2,0,4,15,186,3121.0,3123.0,tech,Bomber
+105,2,2,18,21,168,3121.0,3123.0,station,Garrison (Str)
+105,2,0,4,16,186,3152.0,3154.0,station,Garrison (Str)
+105,2,0,4,17,186,3264.0,3264.0,station,Outpost
+105,2,2,18,25,168,3274.0,3274.0,station,Outpost (Lt)
+105,2,1,5,15,147,3312.0,3319.0,tech,Bomber
+105,2,1,5,16,147,3355.0,3356.0,station,Garrison (Str)
+105,2,2,18,26,168,3355.0,3356.0,station,Supremacy
+105,2,0,4,18,186,3365.0,3366.0,station,Supremacy
+105,2,2,18,30,168,3416.0,3417.0,tech,GA: Ship Hull 1
+105,2,0,4,22,186,3456.0,3457.0,tech,GA: Ship Hull 1
+105,2,1,5,17,147,3467.0,3467.0,station,Outpost
+105,2,2,18,33,168,3467.0,3467.0,tech,PW Gattling Gun 2
+105,2,2,18,34,168,3476.0,3477.0,tech,EW Disruptor 2
+105,2,0,4,25,186,3528.0,3530.0,tech,PW Gattling Gun 2
+105,2,0,4,26,186,3548.0,3548.0,tech,EW Disruptor 2
+105,2,1,5,18,147,3597.0,3600.0,station,Shipyard
+105,2,2,18,43,168,3612.0,3620.0,tech,Enh Fighter
+105,2,2,18,45,168,3629.0,3630.0,tech,Upgrade Supremacy
+105,2,2,18,45,168,3629.0,3630.0,station,Supremacy (Adv)
+105,2,0,4,35,186,3751.0,3753.0,tech,Enh Fighter
+105,2,1,5,22,147,3751.0,3753.0,tech,Upgrade Medium Class
+105,2,0,4,37,186,3769.0,3772.0,tech,Upgrade Supremacy
+105,2,0,4,37,186,3769.0,3772.0,station,Supremacy (Adv)
+105,2,1,5,23,147,3832.0,3833.0,station,Supremacy
+105,2,2,18,63,168,3903.0,3904.0,tech,Adv Fighter
+105,2,1,5,27,147,3981.0,3985.0,tech,GA: Ship Hull 1
+105,2,2,18,65,168,3994.0,3995.0,station,Expansion
+105,2,2,18,67,168,4025.0,4025.0,tech,GA: PW&EW Damage 1
+105,2,1,5,30,147,4093.0,4101.0,tech,PW Gattling Gun 2
+105,2,1,5,31,147,4136.0,4138.0,tech,EW Disruptor 2
+105,2,0,4,55,186,4187.0,4189.0,tech,Adv Fighter
+105,2,2,18,82,168,4228.0,4241.0,station,Expansion (Adv)
+105,2,0,4,57,186,4291.0,4307.0,station,Expansion
+105,2,0,4,59,186,4339.0,4339.0,tech,GA: PW&EW Damage 1
+105,2,1,5,40,147,4467.0,4472.0,station,Shipyard (Dry)
+105,2,1,5,42,147,4511.0,4513.0,tech,Upgrade Supremacy
+105,2,1,5,42,147,4511.0,4513.0,station,Supremacy (Adv)
+105,2,2,18,100,168,4581.0,4602.0,station,Tactical
+105,2,0,4,74,186,4641.0,4701.0,station,Expansion (Adv)
+105,2,2,18,115,168,4761.0,4821.0,station,Tactical (Adv)
+105,2,2,18,130,168,5061.0,5121.0,station,Shipyard
+105,2,0,4,92,186,5121.0,5181.0,station,Tactical
+105,2,2,18,141,168,,,tech,Upgrade Medium Class
+105,2,0,4,105,186,,,station,Tactical (Adv)
+105,2,1,5,65,147,,,station,Expansion
+106,1,0,18,2,168,22.0,27.0,station,Garrison
+106,1,1,4,2,186,22.0,27.0,station,Garrison
+106,1,2,5,2,147,22.0,27.0,station,Garrison
+106,1,0,18,15,168,245.0,246.0,tech,Patroller
+106,1,0,18,20,168,321.0,326.0,tech,Bomber
+106,1,0,18,21,168,336.0,340.0,station,Garrison (Str)
+106,1,1,4,15,186,336.0,340.0,tech,Bomber
+106,1,1,4,16,186,360.0,373.0,station,Garrison (Str)
+106,1,0,18,25,168,487.0,492.0,station,Outpost (Lt)
+106,1,1,4,17,186,487.0,492.0,station,Outpost
+106,1,2,5,15,147,504.0,515.0,tech,Bomber
+106,1,2,5,16,147,549.0,550.0,station,Garrison (Str)
+106,1,0,18,26,168,579.0,580.0,station,Supremacy
+106,1,1,4,18,186,589.0,592.0,station,Supremacy
+106,1,2,5,17,147,620.0,621.0,station,Outpost
+106,1,0,18,30,168,640.0,641.0,tech,GA: Ship Hull 1
+106,1,0,18,33,168,681.0,681.0,tech,PW Gattling Gun 2
+106,1,1,4,22,186,681.0,681.0,tech,GA: Ship Hull 1
+106,1,0,18,34,168,698.0,703.0,tech,EW Disruptor 2
+106,1,1,4,25,186,750.0,753.0,tech,PW Gattling Gun 2
+106,1,2,5,18,147,761.0,762.0,station,Shipyard
+106,1,1,4,26,186,771.0,773.0,tech,EW Disruptor 2
+106,1,0,18,43,168,843.0,844.0,tech,Enh Fighter
+106,1,0,18,45,168,853.0,853.0,tech,Upgrade Supremacy
+106,1,0,18,45,168,853.0,853.0,station,Supremacy (Adv)
+106,1,2,5,22,147,910.0,916.0,tech,Upgrade Medium Class
+106,1,2,5,23,147,1025.0,1028.0,station,Supremacy
+106,1,0,18,63,168,1136.0,1137.0,tech,Adv Fighter
+106,1,2,5,27,147,1174.0,1178.0,tech,GA: Ship Hull 1
+106,1,0,18,65,168,1257.0,1259.0,station,Expansion
+106,1,0,18,67,168,1289.0,1289.0,tech,GA: PW&EW Damage 1
+106,1,2,5,30,147,1289.0,1289.0,tech,PW Gattling Gun 2
+106,1,2,5,31,147,1328.0,1331.0,tech,EW Disruptor 2
+106,1,0,18,81,168,1500.0,1504.0,station,Expansion (Adv)
+106,1,2,5,40,147,1821.0,1834.0,station,Shipyard (Dry)
+106,1,2,5,41,147,1854.0,1857.0,tech,Upgrade Supremacy
+106,1,2,5,41,147,1854.0,1857.0,station,Supremacy (Adv)
+106,1,0,18,100,168,1859.0,1869.0,station,Tactical
+106,1,0,18,115,168,2063.0,2079.0,station,Tactical (Adv)
+106,1,0,18,130,168,2373.0,2395.0,station,Shipyard
+106,1,0,18,141,168,2549.0,2558.0,tech,Upgrade Medium Class
+106,1,0,18,163,168,2926.0,2927.0,station,Refinery (Lt)
+106,1,0,18,163,168,2998.0,3021.0,station,Teleport (Lt)
+106,1,2,5,66,147,3059.0,3071.0,station,Expansion
+106,1,0,18,166,168,3147.0,3160.0,station,SpecMine (Ur)
+106,1,2,5,67,147,3293.0,3318.0,tech,GA: PW&EW Damage 1
+106,1,0,18,168,168,3581.0,3595.0,station,SpecMine (Ca)
+106,2,0,4,2,186,3644.0,3645.0,station,Garrison
+106,2,1,5,2,147,3644.0,3645.0,station,Garrison
+106,2,2,18,2,168,3644.0,3645.0,station,Garrison
+106,2,2,18,15,168,3908.0,3909.0,tech,Patroller
+106,2,2,18,20,168,3976.0,3981.0,tech,Bomber
+106,2,0,4,15,186,3997.0,4001.0,tech,Bomber
+106,2,2,18,21,168,3997.0,4001.0,station,Garrison (Str)
+106,2,0,4,16,186,4031.0,4031.0,station,Garrison (Str)
+106,2,0,4,17,186,4131.0,4133.0,station,Outpost
+106,2,2,18,25,168,4152.0,4154.0,station,Outpost (Lt)
+106,2,1,5,15,147,4193.0,4198.0,tech,Bomber
+106,2,1,5,16,147,4233.0,4235.0,station,Garrison (Str)
+106,2,0,4,18,186,4244.0,4244.0,station,Supremacy
+106,2,2,18,26,168,4244.0,4244.0,station,Supremacy
+106,2,2,18,30,168,4302.0,4306.0,tech,GA: Ship Hull 1
+106,2,0,4,22,186,4334.0,4337.0,tech,GA: Ship Hull 1
+106,2,1,5,17,147,4345.0,4346.0,station,Outpost
+106,2,2,18,33,168,4355.0,4356.0,tech,PW Gattling Gun 2
+106,2,2,18,34,168,4365.0,4366.0,tech,EW Disruptor 2
+106,2,0,4,25,186,4405.0,4407.0,tech,PW Gattling Gun 2
+106,2,0,4,26,186,4425.0,4426.0,tech,EW Disruptor 2
+106,2,1,5,18,147,4476.0,4479.0,station,Shipyard
+106,2,2,18,43,168,4499.0,4508.0,tech,Enh Fighter
+106,2,2,18,45,168,4527.0,4533.0,tech,Upgrade Supremacy
+106,2,2,18,45,168,4527.0,4533.0,station,Supremacy (Adv)
+106,2,0,4,35,186,4624.0,4630.0,tech,Enh Fighter
+106,2,1,5,22,147,4624.0,4630.0,tech,Upgrade Medium Class
+106,2,0,4,37,186,4658.0,4666.0,tech,Upgrade Supremacy
+106,2,0,4,37,186,4658.0,4666.0,station,Supremacy (Adv)
+106,2,1,5,23,147,4718.0,4725.0,station,Supremacy
+106,2,2,18,63,168,4801.0,4802.0,tech,Adv Fighter
+106,2,1,5,27,147,4867.0,4874.0,tech,GA: Ship Hull 1
+106,2,2,18,65,168,4892.0,4893.0,station,Expansion
+106,2,2,18,67,168,4922.0,4930.0,tech,GA: PW&EW Damage 1
+106,2,1,5,30,147,4984.0,4985.0,tech,PW Gattling Gun 2
+106,2,1,5,31,147,5022.0,5025.0,tech,EW Disruptor 2
+106,2,0,4,55,186,5065.0,5066.0,tech,Adv Fighter
+106,2,2,18,82,168,5146.0,5147.0,station,Expansion (Adv)
+106,2,0,4,57,186,5176.0,5177.0,station,Expansion
+106,2,0,4,59,186,5227.0,5232.0,tech,GA: PW&EW Damage 1
+106,2,1,5,40,147,5354.0,5361.0,station,Shipyard (Dry)
+106,2,1,5,42,147,5400.0,5401.0,tech,Upgrade Supremacy
+106,2,1,5,42,147,5400.0,5401.0,station,Supremacy (Adv)
+106,2,2,18,100,168,5482.0,5542.0,station,Tactical
+106,2,0,4,74,186,5542.0,5602.0,station,Expansion (Adv)
+106,2,2,18,115,168,5662.0,5722.0,station,Tactical (Adv)
+106,2,0,4,92,186,5962.0,6022.0,station,Tactical
+106,2,2,18,130,168,5962.0,6022.0,station,Shipyard
+106,2,2,18,141,168,6142.0,6202.0,tech,Upgrade Medium Class
+108,1,0,18,2,168,21.0,25.0,station,Garrison
+108,1,1,4,2,186,21.0,25.0,station,Garrison
+108,1,2,5,2,147,21.0,25.0,station,Garrison
+108,1,0,18,15,168,244.0,246.0,tech,Patroller
+108,1,0,18,20,168,319.0,335.0,tech,Bomber
+108,1,0,18,21,168,335.0,338.0,station,Garrison (Str)
+108,1,1,4,15,186,335.0,338.0,tech,Bomber
+108,1,1,4,16,186,364.0,377.0,station,Garrison (Str)
+108,1,0,18,25,168,479.0,491.0,station,Outpost (Lt)
+108,1,1,4,17,186,499.0,503.0,station,Outpost
+108,1,2,5,15,147,507.0,510.0,tech,Bomber
+108,1,2,5,16,147,549.0,555.0,station,Garrison (Str)
+108,1,0,18,26,168,588.0,595.0,station,Supremacy
+108,1,1,4,18,186,599.0,601.0,station,Supremacy
+108,1,2,5,17,147,619.0,622.0,station,Outpost
+108,1,0,18,30,168,644.0,655.0,tech,GA: Ship Hull 1
+108,1,0,18,33,168,690.0,695.0,tech,PW Gattling Gun 2
+108,1,1,4,22,186,690.0,695.0,tech,GA: Ship Hull 1
+108,1,0,18,34,168,711.0,715.0,tech,EW Disruptor 2
+108,1,1,4,25,186,763.0,763.0,tech,PW Gattling Gun 2
+108,1,2,5,18,147,763.0,763.0,station,Shipyard
+108,1,1,4,26,186,783.0,784.0,tech,EW Disruptor 2
+108,1,0,18,43,168,854.0,855.0,tech,Enh Fighter
+108,1,0,18,45,168,864.0,865.0,tech,Upgrade Supremacy
+108,1,0,18,45,168,864.0,865.0,station,Supremacy (Adv)
+108,1,2,5,22,147,915.0,916.0,tech,Upgrade Medium Class
+108,1,2,5,23,147,1046.0,1048.0,station,Supremacy
+108,1,0,18,63,168,1158.0,1159.0,tech,Adv Fighter
+108,1,2,5,27,147,1204.0,1212.0,tech,GA: Ship Hull 1
+108,1,0,18,65,168,1279.0,1284.0,station,Expansion
+108,1,0,18,67,168,1310.0,1313.0,tech,GA: PW&EW Damage 1
+108,1,2,5,30,147,1318.0,1322.0,tech,PW Gattling Gun 2
+108,1,2,5,31,147,1361.0,1362.0,tech,EW Disruptor 2
+108,1,1,4,35,186,1523.0,1524.0,tech,Enh Fighter
+108,1,0,18,82,168,1528.0,1536.0,station,Expansion (Adv)
+108,1,1,4,37,186,1655.0,1657.0,tech,Upgrade Supremacy
+108,1,1,4,37,186,1655.0,1657.0,station,Supremacy (Adv)
+108,1,2,5,40,147,1706.0,1708.0,station,Shipyard (Dry)
+108,1,2,5,42,147,1737.0,1737.0,tech,Upgrade Supremacy
+108,1,2,5,42,147,1737.0,1737.0,station,Supremacy (Adv)
+108,1,0,18,100,168,1871.0,1880.0,station,Tactical
+108,1,0,18,115,168,2060.0,2120.0,station,Tactical (Adv)
+108,1,0,18,130,168,2360.0,2420.0,station,Shipyard
+108,1,1,4,55,186,2420.0,2480.0,tech,Adv Fighter
+108,1,1,4,57,186,2660.0,2720.0,station,Expansion
+108,1,0,18,141,168,2660.0,2720.0,tech,Upgrade Medium Class
+108,1,2,5,66,147,2660.0,2720.0,station,Expansion
+108,1,1,4,59,186,2660.0,2720.0,tech,GA: PW&EW Damage 1
+108,2,0,4,2,186,2774.0,2780.0,station,Garrison
+108,2,1,5,2,147,2774.0,2780.0,station,Garrison
+108,2,2,18,2,168,2774.0,2780.0,station,Garrison
+108,2,2,18,15,168,3032.0,3033.0,tech,Patroller
+108,2,2,18,20,168,3113.0,3117.0,tech,Bomber
+108,2,2,18,20,168,3123.0,3124.0,station,Garrison (Str)
+108,2,0,4,15,186,3128.0,3138.0,tech,Bomber
+108,2,0,4,16,186,3154.0,3155.0,station,Garrison (Str)
+108,2,0,4,16,186,3255.0,3256.0,station,Outpost
+108,2,2,18,25,168,3286.0,3287.0,station,Outpost (Lt)
+108,2,1,5,15,147,3324.0,3327.0,tech,Bomber
+108,2,0,4,18,186,3367.0,3368.0,station,Supremacy
+108,2,1,5,16,147,3367.0,3368.0,station,Garrison (Str)
+108,2,2,18,26,168,3376.0,3379.0,station,Supremacy
+108,2,2,18,30,168,3437.0,3440.0,tech,GA: Ship Hull 1
+108,2,0,4,22,186,3459.0,3459.0,tech,GA: Ship Hull 1
+108,2,1,5,17,147,3479.0,3480.0,station,Outpost
+108,2,2,18,33,168,3479.0,3480.0,tech,PW Gattling Gun 2
+108,2,2,18,34,168,3499.0,3500.0,tech,EW Disruptor 2
+108,2,0,4,25,186,3529.0,3531.0,tech,PW Gattling Gun 2
+108,2,0,4,26,186,3550.0,3554.0,tech,EW Disruptor 2
+108,2,1,5,18,147,3601.0,3603.0,station,Shipyard
+108,2,2,18,43,168,3628.0,3635.0,tech,Enh Fighter
+108,2,2,18,45,168,3652.0,3652.0,tech,Upgrade Supremacy
+108,2,2,18,45,168,3652.0,3652.0,station,Supremacy (Adv)
+108,2,0,4,35,186,3740.0,3753.0,tech,Enh Fighter
+108,2,1,5,22,147,3740.0,3753.0,tech,Upgrade Medium Class
+108,2,0,4,37,186,3773.0,3776.0,tech,Upgrade Supremacy
+108,2,0,4,37,186,3773.0,3776.0,station,Supremacy (Adv)
+108,2,1,5,23,147,3844.0,3845.0,station,Supremacy
+108,2,2,18,63,168,3921.0,3930.0,tech,Adv Fighter
+108,2,1,5,27,147,3988.0,4001.0,tech,GA: Ship Hull 1
+108,2,2,18,65,168,4027.0,4030.0,station,Expansion
+108,2,2,18,67,168,4058.0,4062.0,tech,GA: PW&EW Damage 1
+108,2,1,5,30,147,4108.0,4109.0,tech,PW Gattling Gun 2
+108,2,1,5,31,147,4148.0,4149.0,tech,EW Disruptor 2
+108,2,0,4,55,186,4189.0,4191.0,tech,Adv Fighter
+108,2,2,18,82,168,4269.0,4271.0,station,Expansion (Adv)
+108,2,0,4,57,186,4301.0,4301.0,station,Expansion
+108,2,0,4,59,186,4352.0,4353.0,tech,GA: PW&EW Damage 1
+108,2,1,5,40,147,4484.0,4486.0,station,Shipyard (Dry)
+108,2,1,5,42,147,4521.0,4527.0,tech,Upgrade Supremacy
+108,2,1,5,42,147,4521.0,4527.0,station,Supremacy (Adv)
+108,2,2,18,100,168,4589.0,4621.0,station,Tactical
+108,2,0,4,74,186,4641.0,4701.0,station,Expansion (Adv)
+108,2,2,18,115,168,4821.0,4881.0,station,Tactical (Adv)
+108,2,2,18,130,168,5121.0,5181.0,station,Shipyard
+108,2,0,4,92,186,5121.0,5181.0,station,Tactical
+108,2,2,18,141,168,5301.0,5361.0,tech,Upgrade Medium Class
+109,1,0,18,2,168,21.0,26.0,station,Garrison
+109,1,1,4,2,186,21.0,26.0,station,Garrison
+109,1,2,5,2,147,21.0,26.0,station,Garrison
+109,1,0,18,15,168,245.0,246.0,tech,Patroller
+109,1,0,18,20,168,319.0,339.0,tech,Bomber
+109,1,0,18,21,168,319.0,339.0,station,Garrison (Str)
+109,1,1,4,15,186,319.0,339.0,tech,Bomber
+109,1,1,4,16,186,365.0,368.0,station,Garrison (Str)
+109,1,0,18,25,168,488.0,489.0,station,Outpost (Lt)
+109,1,1,4,17,186,488.0,489.0,station,Outpost
+109,1,2,5,15,147,509.0,509.0,tech,Bomber
+109,1,2,5,16,147,532.0,551.0,station,Garrison (Str)
+109,1,0,18,26,168,589.0,591.0,station,Supremacy
+109,1,1,4,18,186,600.0,600.0,station,Supremacy
+109,1,2,5,17,147,619.0,636.0,station,Outpost
+109,1,0,18,30,168,659.0,668.0,tech,GA: Ship Hull 1
+109,1,1,4,22,186,691.0,694.0,tech,GA: Ship Hull 1
+109,1,0,18,33,168,695.0,704.0,tech,PW Gattling Gun 2
+109,1,0,18,34,168,720.0,737.0,tech,EW Disruptor 2
+109,1,1,4,25,186,748.0,784.0,tech,PW Gattling Gun 2
+109,1,2,5,18,147,748.0,784.0,station,Shipyard
+109,1,0,18,43,168,845.0,856.0,tech,Enh Fighter
+109,1,0,18,45,168,872.0,874.0,tech,Upgrade Supremacy
+109,1,0,18,45,168,872.0,874.0,station,Supremacy (Adv)
+109,1,2,5,22,147,912.0,916.0,tech,Upgrade Medium Class
+109,1,1,4,26,186,1033.0,1039.0,tech,EW Disruptor 2
+109,1,2,5,23,147,1044.0,1047.0,station,Supremacy
+109,1,0,18,63,168,1146.0,1147.0,tech,Adv Fighter
+109,1,2,5,27,147,1196.0,1199.0,tech,GA: Ship Hull 1
+109,1,1,4,35,186,1236.0,1245.0,tech,Enh Fighter
+109,1,1,4,37,186,1256.0,1259.0,tech,Upgrade Supremacy
+109,1,1,4,37,186,1256.0,1259.0,station,Supremacy (Adv)
+109,1,0,18,65,168,1268.0,1269.0,station,Expansion
+109,1,0,18,67,168,1297.0,1299.0,tech,GA: PW&EW Damage 1
+109,1,2,5,30,147,1307.0,1310.0,tech,PW Gattling Gun 2
+109,1,2,5,30,147,1339.0,1339.0,tech,EW Disruptor 2
+109,1,0,18,82,168,1520.0,1529.0,station,Expansion (Adv)
+109,1,2,5,40,147,1679.0,1687.0,station,Shipyard (Dry)
+109,1,2,5,42,147,1724.0,1725.0,tech,Upgrade Supremacy
+109,1,2,5,42,147,1724.0,1725.0,station,Supremacy (Adv)
+109,1,0,18,100,168,1876.0,1880.0,station,Tactical
+109,1,0,18,115,168,2060.0,2120.0,station,Tactical (Adv)
+109,1,1,4,55,186,2180.0,2240.0,tech,Adv Fighter
+109,1,1,4,57,186,2300.0,2360.0,station,Expansion
+109,1,0,18,130,168,2360.0,2420.0,station,Shipyard
+109,1,1,4,59,186,2360.0,2420.0,tech,GA: PW&EW Damage 1
+109,1,0,18,141,168,2540.0,2600.0,tech,Upgrade Medium Class
+109,1,2,5,66,147,2660.0,2720.0,station,Expansion
+109,1,1,4,72,186,2660.0,2720.0,station,Expansion (Adv)
+109,2,0,4,2,186,2770.0,2780.0,station,Garrison
+109,2,1,5,2,147,2770.0,2780.0,station,Garrison
+109,2,2,18,2,168,2770.0,2780.0,station,Garrison
+109,2,2,18,15,168,3023.0,3030.0,tech,Patroller
+109,2,2,18,20,168,3109.0,3111.0,tech,Bomber
+109,2,2,18,21,168,3121.0,3122.0,station,Garrison (Str)
+109,2,0,4,15,186,3126.0,3132.0,tech,Bomber
+109,2,0,4,16,186,3148.0,3151.0,station,Garrison (Str)
+109,2,0,4,17,186,3260.0,3263.0,station,Outpost
+109,2,2,18,25,168,3282.0,3284.0,station,Outpost (Lt)
+109,2,1,5,15,147,3324.0,3324.0,tech,Bomber
+109,2,1,5,16,147,3364.0,3365.0,station,Garrison (Str)
+109,2,0,4,18,186,3374.0,3375.0,station,Supremacy
+109,2,2,18,26,168,3384.0,3385.0,station,Supremacy
+109,2,2,18,30,168,3444.0,3445.0,tech,GA: Ship Hull 1
+109,2,0,4,22,186,3462.0,3467.0,tech,GA: Ship Hull 1
+109,2,1,5,17,147,3484.0,3486.0,station,Outpost
+109,2,2,18,33,168,3484.0,3486.0,tech,PW Gattling Gun 2
+109,2,2,18,34,168,3505.0,3510.0,tech,EW Disruptor 2
+109,2,0,4,25,186,3535.0,3537.0,tech,PW Gattling Gun 2
+109,2,0,4,26,186,3557.0,3558.0,tech,EW Disruptor 2
+109,2,1,5,18,147,3607.0,3608.0,station,Shipyard
+109,2,2,18,43,168,3636.0,3639.0,tech,Enh Fighter
+109,2,2,18,45,168,3656.0,3658.0,tech,Upgrade Supremacy
+109,2,2,18,45,168,3656.0,3658.0,station,Supremacy (Adv)
+109,2,0,4,35,186,3759.0,3760.0,tech,Enh Fighter
+109,2,1,5,22,147,3759.0,3760.0,tech,Upgrade Medium Class
+109,2,0,4,37,186,3789.0,3791.0,tech,Upgrade Supremacy
+109,2,0,4,37,186,3789.0,3791.0,station,Supremacy (Adv)
+109,2,1,5,23,147,3850.0,3851.0,station,Supremacy
+109,2,2,18,63,168,3931.0,3932.0,tech,Adv Fighter
+109,2,1,5,27,147,4002.0,4003.0,tech,GA: Ship Hull 1
+109,2,2,18,65,168,4032.0,4034.0,station,Expansion
+109,2,2,18,67,168,4062.0,4065.0,tech,GA: PW&EW Damage 1
+109,2,1,5,30,147,4113.0,4114.0,tech,PW Gattling Gun 2
+109,2,1,5,31,147,4144.0,4145.0,tech,EW Disruptor 2
+109,2,0,4,55,186,4193.0,4196.0,tech,Adv Fighter
+109,2,2,18,82,168,4275.0,4276.0,station,Expansion (Adv)
+109,2,0,4,57,186,4301.0,4329.0,station,Expansion
+109,2,0,4,59,186,4357.0,4358.0,tech,GA: PW&EW Damage 1
+109,2,1,5,40,147,4489.0,4493.0,station,Shipyard (Dry)
+109,2,1,5,42,147,4529.0,4530.0,tech,Upgrade Supremacy
+109,2,1,5,42,147,4529.0,4530.0,station,Supremacy (Adv)
+109,2,2,18,100,168,4586.0,4641.0,station,Tactical
+109,2,0,4,74,186,4641.0,4701.0,station,Expansion (Adv)
+109,2,2,18,115,168,4821.0,4881.0,station,Tactical (Adv)
+109,2,2,18,130,168,5121.0,5181.0,station,Shipyard
+109,2,0,4,92,186,5121.0,5181.0,station,Tactical
+109,2,2,18,141,168,5241.0,5301.0,tech,Upgrade Medium Class
+110,1,0,18,2,168,21.0,25.0,station,Garrison
+110,1,1,4,2,186,21.0,25.0,station,Garrison
+110,1,2,5,2,147,21.0,25.0,station,Garrison
+110,1,0,18,15,168,238.0,246.0,tech,Patroller
+110,1,0,18,20,168,323.0,329.0,tech,Bomber
+110,1,0,18,21,168,334.0,337.0,station,Garrison (Str)
+110,1,1,4,15,186,334.0,337.0,tech,Bomber
+110,1,1,4,16,186,366.0,367.0,station,Garrison (Str)
+110,1,0,18,25,168,488.0,490.0,station,Outpost (Lt)
+110,1,1,4,17,186,508.0,509.0,station,Outpost
+110,1,2,5,15,147,508.0,509.0,tech,Bomber
+110,1,2,5,16,147,550.0,550.0,station,Garrison (Str)
+110,1,0,18,26,168,580.0,581.0,station,Supremacy
+110,1,2,5,17,147,620.0,621.0,station,Outpost
+110,1,0,18,30,168,651.0,651.0,tech,GA: Ship Hull 1
+110,1,1,4,18,186,661.0,661.0,station,Supremacy
+110,1,0,18,33,168,691.0,692.0,tech,PW Gattling Gun 2
+110,1,0,18,34,168,712.0,714.0,tech,EW Disruptor 2
+110,1,1,4,22,186,763.0,764.0,tech,GA: Ship Hull 1
+110,1,2,5,18,147,773.0,774.0,station,Shipyard
+110,1,1,4,25,186,834.0,834.0,tech,PW Gattling Gun 2
+110,1,0,18,43,168,860.0,866.0,tech,Enh Fighter
+110,1,1,4,26,186,860.0,866.0,tech,EW Disruptor 2
+110,1,0,18,45,168,884.0,886.0,tech,Upgrade Supremacy
+110,1,0,18,45,168,884.0,886.0,station,Supremacy (Adv)
+110,1,2,5,22,147,934.0,936.0,tech,Upgrade Medium Class
+110,1,2,5,23,147,1057.0,1057.0,station,Supremacy
+110,1,0,18,63,168,1146.0,1159.0,tech,Adv Fighter
+110,1,2,5,27,147,1205.0,1210.0,tech,GA: Ship Hull 1
+110,1,1,4,35,186,1247.0,1257.0,tech,Enh Fighter
+110,1,1,4,37,186,1269.0,1271.0,tech,Upgrade Supremacy
+110,1,1,4,37,186,1269.0,1271.0,station,Supremacy (Adv)
+110,1,0,18,65,168,1279.0,1281.0,station,Expansion
+110,1,0,18,67,168,1320.0,1323.0,tech,GA: PW&EW Damage 1
+110,1,2,5,30,147,1320.0,1323.0,tech,PW Gattling Gun 2
+110,1,2,5,31,147,1359.0,1361.0,tech,EW Disruptor 2
+110,1,0,18,82,168,1542.0,1546.0,station,Expansion (Adv)
+110,1,2,5,40,147,1702.0,1707.0,station,Shipyard (Dry)
+110,1,2,5,42,147,1745.0,1746.0,tech,Upgrade Supremacy
+110,1,2,5,42,147,1745.0,1746.0,station,Supremacy (Adv)
+110,1,0,18,100,168,1879.0,1939.0,station,Tactical
+110,1,1,4,55,186,1879.0,1939.0,tech,Adv Fighter
+110,1,1,4,57,186,2059.0,2119.0,station,Expansion
+110,1,0,18,115,168,2059.0,2119.0,station,Tactical (Adv)
+110,1,1,4,59,186,2119.0,2179.0,tech,GA: PW&EW Damage 1
+110,1,0,18,129,168,2420.0,2480.0,station,Shipyard
+110,1,1,4,74,186,2420.0,2480.0,station,Expansion (Adv)
+110,1,0,18,141,168,2660.0,2720.0,tech,Upgrade Medium Class
+110,1,2,5,65,147,2660.0,2720.0,station,Expansion
+110,2,0,4,2,186,2763.0,2778.0,station,Garrison
+110,2,1,5,1,147,2763.0,2778.0,station,Garrison
+110,2,2,18,2,168,2763.0,2778.0,station,Garrison
+110,2,2,18,15,168,3042.0,3042.0,tech,Patroller
+110,2,2,18,20,168,3123.0,3124.0,tech,Bomber
+110,2,2,18,21,168,3133.0,3134.0,station,Garrison (Str)
+110,2,0,4,15,186,3143.0,3145.0,tech,Bomber
+110,2,0,4,16,186,3164.0,3165.0,station,Garrison (Str)
+110,2,0,4,17,186,3272.0,3278.0,station,Outpost
+110,2,2,18,25,168,3296.0,3297.0,station,Outpost (Lt)
+110,2,1,5,15,147,3336.0,3337.0,tech,Bomber
+110,2,1,5,16,147,3377.0,3377.0,station,Garrison (Str)
+110,2,2,18,26,168,3377.0,3377.0,station,Supremacy
+110,2,0,4,18,186,3386.0,3388.0,station,Supremacy
+110,2,2,18,30,168,3436.0,3440.0,tech,GA: Ship Hull 1
+110,2,0,4,22,186,3477.0,3483.0,tech,GA: Ship Hull 1
+110,2,2,18,33,168,3477.0,3483.0,tech,PW Gattling Gun 2
+110,2,1,5,17,147,3487.0,3493.0,station,Outpost
+110,2,2,18,34,168,3497.0,3499.0,tech,EW Disruptor 2
+110,2,0,4,25,186,3549.0,3552.0,tech,PW Gattling Gun 2
+110,2,0,4,26,186,3569.0,3570.0,tech,EW Disruptor 2
+110,2,1,5,18,147,3605.0,3611.0,station,Shipyard
+110,2,2,18,43,168,3638.0,3642.0,tech,Enh Fighter
+110,2,2,18,45,168,3646.0,3652.0,tech,Upgrade Supremacy
+110,2,2,18,45,168,3646.0,3652.0,station,Supremacy (Adv)
+110,2,1,5,22,147,3757.0,3763.0,tech,Upgrade Medium Class
+110,2,0,4,35,186,3772.0,3773.0,tech,Enh Fighter
+110,2,0,4,36,186,3791.0,3796.0,tech,Upgrade Supremacy
+110,2,0,4,36,186,3791.0,3796.0,station,Supremacy (Adv)
+110,2,1,5,23,147,3853.0,3855.0,station,Supremacy
+110,2,2,18,63,168,3934.0,3935.0,tech,Adv Fighter
+110,2,1,5,27,147,4004.0,4009.0,tech,GA: Ship Hull 1
+110,2,2,18,65,168,4026.0,4027.0,station,Expansion
+110,2,2,18,67,168,4056.0,4060.0,tech,GA: PW&EW Damage 1
+110,2,1,5,30,147,4117.0,4118.0,tech,PW Gattling Gun 2
+110,2,1,5,31,147,4154.0,4158.0,tech,EW Disruptor 2
+110,2,0,4,55,186,4208.0,4208.0,tech,Adv Fighter
+110,2,2,18,82,168,4269.0,4270.0,station,Expansion (Adv)
+110,2,0,4,57,186,4330.0,4330.0,station,Expansion
+110,2,0,4,59,186,4368.0,4372.0,tech,GA: PW&EW Damage 1
+110,2,1,5,40,147,4500.0,4503.0,station,Shipyard (Dry)
+110,2,1,5,42,147,4532.0,4559.0,tech,Upgrade Supremacy
+110,2,1,5,42,147,4532.0,4559.0,station,Supremacy (Adv)
+110,2,2,18,100,168,4613.0,4641.0,station,Tactical
+110,2,0,4,74,186,4641.0,4701.0,station,Expansion (Adv)
+110,2,2,18,115,168,4821.0,4881.0,station,Tactical (Adv)
+110,2,2,18,130,168,5121.0,5181.0,station,Shipyard
+110,2,0,4,92,186,5121.0,5181.0,station,Tactical
+110,2,2,18,141,168,5301.0,5361.0,tech,Upgrade Medium Class
+111,1,0,18,2,168,22.0,26.0,station,Garrison
+111,1,1,4,2,186,22.0,26.0,station,Garrison
+111,1,2,5,2,147,22.0,26.0,station,Garrison
+111,1,0,18,15,168,245.0,246.0,tech,Patroller
+111,1,0,18,20,168,325.0,331.0,tech,Bomber
+111,1,0,18,21,168,336.0,337.0,station,Garrison (Str)
+111,1,1,4,15,186,336.0,337.0,tech,Bomber
+111,1,1,4,16,186,367.0,368.0,station,Garrison (Str)
+111,1,0,18,25,168,488.0,494.0,station,Outpost (Lt)
+111,1,1,4,17,186,488.0,494.0,station,Outpost
+111,1,2,5,15,147,509.0,516.0,tech,Bomber
+111,1,2,5,16,147,549.0,550.0,station,Garrison (Str)
+111,1,1,4,18,186,568.0,571.0,station,Supremacy
+111,1,0,18,26,168,579.0,580.0,station,Supremacy
+111,1,2,5,17,147,630.0,630.0,station,Outpost
+111,1,0,18,30,168,640.0,640.0,tech,GA: Ship Hull 1
+111,1,1,4,22,186,660.0,662.0,tech,GA: Ship Hull 1
+111,1,0,18,33,168,690.0,702.0,tech,PW Gattling Gun 2
+111,1,0,18,33,168,690.0,702.0,tech,EW Disruptor 2
+111,1,1,4,25,186,730.0,731.0,tech,PW Gattling Gun 2
+111,1,1,4,26,186,751.0,756.0,tech,EW Disruptor 2
+111,1,2,5,18,147,773.0,782.0,station,Shipyard
+111,1,0,18,43,168,841.0,846.0,tech,Enh Fighter
+111,1,0,18,45,168,862.0,865.0,tech,Upgrade Supremacy
+111,1,0,18,45,168,862.0,865.0,station,Supremacy (Adv)
+111,1,2,5,22,147,931.0,935.0,tech,Upgrade Medium Class
+111,1,1,4,35,186,964.0,965.0,tech,Enh Fighter
+111,1,1,4,37,186,984.0,985.0,tech,Upgrade Supremacy
+111,1,1,4,37,186,984.0,985.0,station,Supremacy (Adv)
+111,1,2,5,23,147,1055.0,1055.0,station,Supremacy
+111,1,2,5,27,147,1207.0,1211.0,tech,GA: Ship Hull 1
+111,1,2,5,30,147,1319.0,1321.0,tech,PW Gattling Gun 2
+111,1,2,5,31,147,1359.0,1360.0,tech,EW Disruptor 2
+111,1,0,18,63,168,1392.0,1400.0,tech,Adv Fighter
+111,1,1,4,55,186,1392.0,1400.0,tech,Adv Fighter
+111,1,1,4,57,186,1495.0,1507.0,station,Expansion
+111,1,1,4,58,186,1542.0,1542.0,tech,GA: PW&EW Damage 1
+111,1,0,18,65,168,1560.0,1574.0,station,Expansion
+111,1,0,18,67,168,1587.0,1592.0,tech,GA: PW&EW Damage 1
+111,1,2,5,40,147,1702.0,1707.0,station,Shipyard (Dry)
+111,1,2,5,42,147,1731.0,1735.0,tech,Upgrade Supremacy
+111,1,2,5,42,147,1731.0,1735.0,station,Supremacy (Adv)
+111,1,0,18,82,168,1814.0,1816.0,station,Expansion (Adv)
+111,1,1,4,74,186,1823.0,1881.0,station,Expansion (Adv)
+111,1,0,18,100,168,2181.0,2241.0,station,Tactical
+111,1,1,4,92,186,2361.0,2421.0,station,Tactical
+111,1,0,18,115,168,2421.0,2481.0,station,Tactical (Adv)
+111,1,2,5,66,147,2661.0,2721.0,station,Expansion
+111,1,1,4,107,186,2661.0,2721.0,station,Tactical (Adv)
+111,1,0,18,129,168,,,station,Shipyard
+111,2,0,4,2,186,2774.0,2781.0,station,Garrison
+111,2,1,5,2,147,2774.0,2781.0,station,Garrison
+111,2,2,18,2,168,2774.0,2781.0,station,Garrison
+111,2,2,18,15,168,3039.0,3041.0,tech,Patroller
+111,2,2,18,20,168,3111.0,3111.0,tech,Bomber
+111,2,0,4,15,186,3131.0,3132.0,tech,Bomber
+111,2,2,18,21,168,3131.0,3132.0,station,Garrison (Str)
+111,2,0,4,16,186,3161.0,3164.0,station,Garrison (Str)
+111,2,0,4,17,186,3270.0,3274.0,station,Outpost
+111,2,2,18,25,168,3283.0,3284.0,station,Outpost (Lt)
+111,2,1,5,15,147,3334.0,3334.0,tech,Bomber
+111,2,1,5,16,147,3364.0,3365.0,station,Garrison (Str)
+111,2,2,18,26,168,3374.0,3375.0,station,Supremacy
+111,2,0,4,18,186,3384.0,3386.0,station,Supremacy
+111,2,2,18,30,168,3434.0,3435.0,tech,GA: Ship Hull 1
+111,2,0,4,22,186,3476.0,3477.0,tech,GA: Ship Hull 1
+111,2,1,5,16,147,3476.0,3477.0,station,Outpost
+111,2,2,18,33,168,3484.0,3486.0,tech,PW Gattling Gun 2
+111,2,2,18,34,168,3492.0,3496.0,tech,EW Disruptor 2
+111,2,0,4,25,186,3546.0,3549.0,tech,PW Gattling Gun 2
+111,2,0,4,26,186,3566.0,3573.0,tech,EW Disruptor 2
+111,2,1,5,18,147,3596.0,3597.0,station,Shipyard
+111,2,2,18,43,168,3635.0,3638.0,tech,Enh Fighter
+111,2,2,18,45,168,3647.0,3648.0,tech,Upgrade Supremacy
+111,2,2,18,45,168,3647.0,3648.0,station,Supremacy (Adv)
+111,2,1,5,22,147,3748.0,3750.0,tech,Upgrade Medium Class
+111,2,0,4,35,186,3779.0,3780.0,tech,Enh Fighter
+111,2,0,4,37,186,3800.0,3801.0,tech,Upgrade Supremacy
+111,2,0,4,37,186,3800.0,3801.0,station,Supremacy (Adv)
+111,2,1,5,23,147,3837.0,3841.0,station,Supremacy
+111,2,2,18,63,168,3932.0,3932.0,tech,Adv Fighter
+111,2,1,5,27,147,3992.0,3993.0,tech,GA: Ship Hull 1
+111,2,2,18,65,168,4033.0,4033.0,station,Expansion
+111,2,2,18,67,168,4063.0,4064.0,tech,GA: PW&EW Damage 1
+111,2,1,5,30,147,4103.0,4104.0,tech,PW Gattling Gun 2
+111,2,1,5,31,147,4143.0,4146.0,tech,EW Disruptor 2
+111,2,0,4,55,186,4215.0,4217.0,tech,Adv Fighter
+111,2,2,18,82,168,4276.0,4276.0,station,Expansion (Adv)
+111,2,0,4,57,186,4327.0,4327.0,station,Expansion
+111,2,0,4,59,186,4377.0,4379.0,tech,GA: PW&EW Damage 1
+111,2,1,5,40,147,4488.0,4490.0,station,Shipyard (Dry)
+111,2,1,5,42,147,4524.0,4532.0,tech,Upgrade Supremacy
+111,2,1,5,42,147,4524.0,4532.0,station,Supremacy (Adv)
+111,2,2,18,100,168,4609.0,4642.0,station,Tactical
+111,2,0,4,74,186,4654.0,4702.0,station,Expansion (Adv)
+111,2,2,18,115,168,4822.0,4882.0,station,Tactical (Adv)
+111,2,2,18,130,168,5122.0,5182.0,station,Shipyard
+111,2,0,4,92,186,5182.0,5242.0,station,Tactical
+111,2,2,18,141,168,5242.0,5302.0,tech,Upgrade Medium Class
+111,2,1,5,65,147,,,station,Expansion
+112,1,0,18,2,168,21.0,26.0,station,Garrison
+112,1,1,4,2,186,21.0,26.0,station,Garrison
+112,1,2,5,2,147,21.0,26.0,station,Garrison
+112,1,0,18,15,168,242.0,246.0,tech,Patroller
+112,1,0,18,20,168,319.0,332.0,tech,Bomber
+112,1,0,18,21,168,332.0,345.0,station,Garrison (Str)
+112,1,1,4,15,186,332.0,345.0,tech,Bomber
+112,1,1,4,16,186,345.0,359.0,station,Garrison (Str)
+112,1,0,18,24,168,478.0,479.0,station,Outpost (Lt)
+112,1,1,4,17,186,480.0,491.0,station,Outpost
+112,1,2,5,15,147,503.0,518.0,tech,Bomber
+112,1,2,5,16,147,547.0,552.0,station,Garrison (Str)
+112,1,0,18,26,168,559.0,574.0,station,Supremacy
+112,1,1,4,18,186,559.0,574.0,station,Supremacy
+112,1,2,5,17,147,619.0,625.0,station,Outpost
+112,1,0,18,30,168,628.0,632.0,tech,GA: Ship Hull 1
+112,1,1,4,22,186,659.0,663.0,tech,GA: Ship Hull 1
+112,1,0,18,33,168,679.0,687.0,tech,PW Gattling Gun 2
+112,1,0,18,34,168,702.0,702.0,tech,EW Disruptor 2
+112,1,1,4,25,186,731.0,734.0,tech,PW Gattling Gun 2
+112,1,1,4,26,186,752.0,755.0,tech,EW Disruptor 2
+112,1,2,5,18,147,761.0,766.0,station,Shipyard
+112,1,0,18,43,168,829.0,834.0,tech,Enh Fighter
+112,1,0,18,45,168,854.0,854.0,tech,Upgrade Supremacy
+112,1,0,18,45,168,854.0,854.0,station,Supremacy (Adv)
+112,1,2,5,22,147,913.0,914.0,tech,Upgrade Medium Class
+112,1,2,5,23,147,1025.0,1028.0,station,Supremacy
+112,1,0,18,63,168,1127.0,1127.0,tech,Adv Fighter
+112,1,2,5,27,147,1177.0,1180.0,tech,GA: Ship Hull 1
+112,1,0,18,65,168,1248.0,1249.0,station,Expansion
+112,1,0,18,67,168,1277.0,1279.0,tech,GA: PW&EW Damage 1
+112,1,2,5,30,147,1288.0,1293.0,tech,PW Gattling Gun 2
+112,1,2,5,31,147,1318.0,1331.0,tech,EW Disruptor 2
+112,1,0,18,82,168,1501.0,1501.0,station,Expansion (Adv)
+112,1,2,5,40,147,1649.0,1671.0,station,Shipyard (Dry)
+112,1,2,5,42,147,1700.0,1715.0,tech,Upgrade Supremacy
+112,1,2,5,42,147,1700.0,1715.0,station,Supremacy (Adv)
+112,1,0,18,100,168,1854.0,1859.0,station,Tactical
+112,1,0,18,115,168,2067.0,2068.0,station,Tactical (Adv)
+112,1,0,18,130,168,2378.0,2388.0,station,Shipyard
+112,1,0,18,141,168,2541.0,2555.0,tech,Upgrade Medium Class
+112,1,2,5,65,147,2780.0,2790.0,station,Expansion
+112,1,0,18,163,168,2906.0,2922.0,station,Refinery (Lt)
+112,1,0,18,164,168,3003.0,3010.0,station,Teleport (Lt)
+112,1,2,5,68,147,3020.0,3043.0,tech,GA: PW&EW Damage 1
+112,1,0,18,167,168,3093.0,3116.0,station,SpecMine (Ur)
+112,1,0,18,168,168,3178.0,3199.0,station,SpecMine (Ca)
+112,1,0,18,168,168,3260.0,3261.0,station,SpecMine (Si)
+112,2,0,4,1,186,3624.0,3637.0,station,Garrison
+112,2,1,5,1,147,3624.0,3637.0,station,Garrison
+112,2,2,18,1,168,3624.0,3637.0,station,Garrison
+112,2,2,18,15,168,3899.0,3900.0,tech,Patroller
+112,2,2,18,20,168,3980.0,3980.0,tech,Bomber
+112,2,2,18,21,168,3990.0,3990.0,station,Garrison (Str)
+112,2,0,4,15,186,3999.0,4001.0,tech,Bomber
+112,2,0,4,16,186,4020.0,4021.0,station,Garrison (Str)
+112,2,0,4,17,186,4131.0,4134.0,station,Outpost
+112,2,2,18,25,168,4151.0,4152.0,station,Outpost (Lt)
+112,2,1,5,15,147,4192.0,4193.0,tech,Bomber
+112,2,1,5,16,147,4223.0,4224.0,station,Garrison (Str)
+112,2,2,18,26,168,4223.0,4224.0,station,Supremacy
+112,2,0,4,18,186,4226.0,4233.0,station,Supremacy
+112,2,2,18,30,168,4283.0,4284.0,tech,GA: Ship Hull 1
+112,2,0,4,22,186,4323.0,4326.0,tech,GA: Ship Hull 1
+112,2,2,18,33,168,4334.0,4335.0,tech,PW Gattling Gun 2
+112,2,1,5,17,147,4343.0,4345.0,station,Outpost
+112,2,2,18,34,168,4343.0,4345.0,tech,EW Disruptor 2
+112,2,0,4,25,186,4395.0,4395.0,tech,PW Gattling Gun 2
+112,2,0,4,26,186,4415.0,4422.0,tech,EW Disruptor 2
+112,2,1,5,18,147,4475.0,4477.0,station,Shipyard
+112,2,2,18,43,168,4486.0,4487.0,tech,Enh Fighter
+112,2,2,18,45,168,4493.0,4497.0,tech,Upgrade Supremacy
+112,2,2,18,45,168,4493.0,4497.0,station,Supremacy (Adv)
+112,2,0,4,35,186,4628.0,4628.0,tech,Enh Fighter
+112,2,1,5,22,147,4628.0,4628.0,tech,Upgrade Medium Class
+112,2,0,4,37,186,4648.0,4654.0,tech,Upgrade Supremacy
+112,2,0,4,37,186,4648.0,4654.0,station,Supremacy (Adv)
+112,2,1,5,23,147,4717.0,4726.0,station,Supremacy
+112,2,2,18,63,168,4768.0,4771.0,tech,Adv Fighter
+112,2,2,18,65,168,4859.0,4863.0,station,Expansion
+112,2,1,5,27,147,4868.0,4872.0,tech,GA: Ship Hull 1
+112,2,2,18,67,168,4881.0,4898.0,tech,GA: PW&EW Damage 1
+112,2,1,5,30,147,4982.0,4984.0,tech,PW Gattling Gun 2
+112,2,1,5,31,147,5021.0,5025.0,tech,EW Disruptor 2
+112,2,0,4,55,186,5052.0,5055.0,tech,Adv Fighter
+112,2,2,18,82,168,5103.0,5106.0,station,Expansion (Adv)
+112,2,0,4,57,186,5174.0,5176.0,station,Expansion
+112,2,0,4,59,186,5215.0,5216.0,tech,GA: PW&EW Damage 1
+112,2,1,5,40,147,5357.0,5358.0,station,Shipyard (Dry)
+112,2,1,5,42,147,5398.0,5399.0,tech,Upgrade Supremacy
+112,2,1,5,42,147,5398.0,5399.0,station,Supremacy (Adv)
+112,2,2,18,100,168,5445.0,5452.0,station,Tactical
+112,2,0,4,74,186,5481.0,5541.0,station,Expansion (Adv)
+112,2,2,18,115,168,5602.0,5662.0,station,Tactical (Adv)
+112,2,2,18,130,168,5902.0,5962.0,station,Shipyard
+112,2,0,4,92,186,5962.0,6022.0,station,Tactical
+112,2,2,18,141,168,6082.0,6142.0,tech,Upgrade Medium Class

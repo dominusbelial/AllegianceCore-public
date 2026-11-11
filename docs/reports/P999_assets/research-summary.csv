@@ -1,0 +1,55 @@
+civ,kind,name,observed,timed,median,wallet_median
+18,snapshot,60,20,20,2.0,0.0
+18,snapshot,120,20,20,5.0,19862.0
+18,snapshot,180,20,20,9.0,37234.0
+18,snapshot,240,20,20,13.0,52106.0
+18,snapshot,300,20,20,17.0,64479.0
+18,snapshot,600,20,20,24.0,128090.0
+18,snapshot,900,20,20,43.0,186951.0
+18,snapshot,1200,20,20,60.0,256312.0
+18,snapshot,1800,20,20,93.0,369035.0
+18,snapshot,2700,20,20,130.0,543810.5
+18,tech,Patroller,20,20,244.25,
+18,tech,Bomber,20,20,325.75,
+18,station,Supremacy,20,20,579.25,
+18,station,Shipyard,15,14,2391.0,
+18,tech,Upgrade Supremacy,20,20,854.25,
+18,tech,PW Gattling Gun 2,20,20,682.75,
+18,tech,GA: Ship Hull 1,20,20,640.5,
+18,tech,GA: PW&EW Damage 1,20,20,1295.25,
+4,snapshot,60,20,20,2.0,0.0
+4,snapshot,120,20,20,4.0,15887.0
+4,snapshot,180,20,20,6.0,32785.0
+4,snapshot,240,20,20,9.0,39683.0
+4,snapshot,300,20,20,12.0,51581.0
+4,snapshot,600,20,20,15.0,118570.0
+4,snapshot,900,20,20,24.5,197110.0
+4,snapshot,1200,20,20,27.5,278798.0
+4,snapshot,1800,20,20,43.5,414026.0
+4,snapshot,2700,20,20,57.0,575122.0
+4,tech,Patroller,0,0,,
+4,tech,Bomber,20,20,334.5,
+4,station,Supremacy,19,19,600.0,
+4,station,Shipyard,1,1,3531.0,
+4,tech,Upgrade Supremacy,16,16,1289.5,
+4,tech,PW Gattling Gun 2,19,19,766.0,
+4,tech,GA: Ship Hull 1,19,19,692.5,
+4,tech,GA: PW&EW Damage 1,13,11,1852.5,
+5,snapshot,60,20,20,1.0,2823.0
+5,snapshot,120,20,20,3.0,19720.0
+5,snapshot,180,20,20,5.0,36663.0
+5,snapshot,240,20,20,6.0,56061.0
+5,snapshot,300,20,20,8.0,67958.0
+5,snapshot,600,20,20,15.0,129992.0
+5,snapshot,900,20,20,18.0,199571.0
+5,snapshot,1200,20,20,23.0,291011.0
+5,snapshot,1800,20,20,38.0,416742.0
+5,snapshot,2700,20,20,59.0,672853.5
+5,tech,Patroller,0,0,,
+5,tech,Bomber,20,20,510.25,
+5,station,Supremacy,20,20,1036.25,
+5,station,Shipyard,20,20,762.75,
+5,tech,Upgrade Supremacy,20,19,1724.5,
+5,tech,PW Gattling Gun 2,20,20,1300.25,
+5,tech,GA: Ship Hull 1,20,20,1189.5,
+5,tech,GA: PW&EW Damage 1,6,6,2957.25,
