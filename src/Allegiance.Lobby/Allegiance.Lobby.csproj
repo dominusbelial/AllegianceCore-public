@@ -13,6 +13,8 @@
     <!-- Steam middleware permits older AngleSharp; pin the patched parser (GHSA-pgww-w46g-26qg). -->
     <PackageReference Include="AngleSharp" Version="1.5.0" />
     <PackageReference Include="Fido2" Version="4.0.1" />
+    <!-- Fido2 4.0.1 pulls System.Formats.Cbor 9.0.0 (GHSA-vmv3-wvjp-wqpj, NU1902 as error); pin the patched 9.0.24. -->
+    <PackageReference Include="System.Formats.Cbor" Version="9.0.24" NoWarn="NU1510" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="AspNet.Security.OAuth.GitHub" Version="10.0.0" />

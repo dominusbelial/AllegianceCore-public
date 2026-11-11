@@ -112,7 +112,7 @@ public sealed partial class Server
 
     private void ResolveGunfireBatch()
     {
-        _broadcastGunfireBatch = ResolveGunfireBatchFlag(_config.Broadcast?.GunfireBatch ?? false,
+        _broadcastGunfireBatch = ResolveGunfireBatchFlag(_config.Broadcast?.GunfireBatch ?? true,
             Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_GUNFIRE_BATCH"));
         Console.WriteLine($"[boot] broadcast.gunfireBatch = {_broadcastGunfireBatch.ToString().ToLowerInvariant()}");
     }

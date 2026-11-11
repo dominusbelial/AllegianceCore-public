@@ -349,7 +349,7 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastBuffers.cs`; env `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE`.
   Flag off is byte-identical to the pre-P991 wire (pinned).
   Report: `docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md`.
-- **Compact gunfire batches (P994, default off)** — `broadcast.gunfireBatch` /
+- **Compact gunfire batches (P994, default ON since rig A/B b108–b111, 2026-11-11)** — `broadcast.gunfireBatch` /
   `ALLEGIANCE_BROADCAST_GUNFIRE_BATCH` replaces selected 12/213 deliveries with
   ordered `GUNFIRE_BATCH(221)` records. Codec: `src/Allegiance.Core/Wire/GunfireBatch.cs`;
   reusable recipient builders and shared encoding: `src/Allegiance.Server/Server.GunfireBatch.cs`.

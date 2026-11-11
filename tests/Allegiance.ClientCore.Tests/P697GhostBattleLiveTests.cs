@@ -22,7 +22,8 @@ public sealed class P697GhostBattleLiveTests
         Port = 0, UpdatesPerSecond = 20,
         SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
         Broadcast = new() { ShipUpdateModel = native ? "native" : "port", MinUpdateHz = floor,
-            InterestTiers = tiers, ImmutableSnapshot = tiers, EncodeOnce = tiers, ParallelBuild = tiers },
+            InterestTiers = tiers, ImmutableSnapshot = tiers, EncodeOnce = tiers, ParallelBuild = tiers,
+            GunfireBatch = false },   // pins P697's per-message 12/213 ordering (batching default ON since b108/b109)
         Games = [new() { Name = "P697", Map = "XXV_simple.igc", Teams = 2,
             CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
     };

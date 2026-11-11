@@ -50,7 +50,7 @@ public sealed class P993FlagOffWirePinTests
         Broadcast = new() { MinUpdateHz = 2, ShipUpdateModel = "native", ParallelBuild = parallel, MaxDegreeOfParallelism = 4,
             // Pinned on the pre-74d07f5a base (SHIP_STATUS refreshes): keep that wire so the
             // transcript isolates P993 (status gate default ON since 2026-11-10).
-            ShipStatusChangeGate = false },
+            ShipStatusChangeGate = false, GunfireBatch = false },
         Games = [new() { Name = "P993 pin", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3],
             SideNames = ["Alpha", "Bravo"] }],
     };

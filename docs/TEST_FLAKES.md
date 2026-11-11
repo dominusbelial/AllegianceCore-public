@@ -8128,3 +8128,11 @@ five sequential runs per arm on this tree, one isolated recheck for the failing 
 
 No new flake family from P993: the flag changes only which (viewer, shooter) pairs receive `12` frames, and
 both arms log the same bot hits/kills, the same `[proj-diag]` shape and zero parks.
+
+### 2026-11-11 — gunfire batch default ON (Claude), fast suite after the flip
+
+| Test | Result | Isolation |
+|---|---|---|
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.3 s against [28,31], also when co-run with `MissileBroadcastTests`/`P994GunfireBatchTests` | passes alone with batching on and off; server log seats at 30 s — the ledgered FltBot receipt/simulation-clock boundary under co-running load |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed, 38 s | already ledgered by P997 (fails alone on the clean base) |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`, `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | failed once in the sweep | 3/3 pass alone with batching default ON |

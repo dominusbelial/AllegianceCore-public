@@ -880,9 +880,11 @@ public sealed class BroadcastConfig
     /// </summary>
     public bool ShipStatusChangeGate { get; set; } = true;
 
-    /// <summary>P994: compact PROJECTILE_INSTANCE / PROJECTILE_HULL_HIT arrays,
-    /// default off. ALLEGIANCE_BROADCAST_GUNFIRE_BATCH overrides (0/1, false/true).</summary>
-    public bool GunfireBatch { get; set; }
+    /// <summary>P994: compact PROJECTILE_INSTANCE / PROJECTILE_HULL_HIT arrays as one
+    /// GUNFIRE_BATCH(221) per recipient per tick. Default ON since the rig A/B b108/b109
+    /// (2026-11-11: gunfire bytes −39 %, egress −13 %, messages −38 %, tick tail better).
+    /// ALLEGIANCE_BROADCAST_GUNFIRE_BATCH overrides (0/1, false/true).</summary>
+    public bool GunfireBatch { get; set; } = true;
 
     /// <summary>
     /// P993 — distance-cull the <c>PROJECTILE_INSTANCE(12)</c> relay

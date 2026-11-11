@@ -18,9 +18,10 @@ public sealed class P994GunfireBatchTests
     };
 
     [Fact]
-    public void Flag_defaults_off_environment_wins_and_rejects_typos()
+    public void Flag_defaults_on_environment_wins_and_rejects_typos()
     {
-        Assert.False(new BroadcastConfig().GunfireBatch);
+        // Default ON since the rig A/B b108/b109 (2026-11-11).
+        Assert.True(new BroadcastConfig().GunfireBatch);
         Assert.False(Server.Server.ResolveGunfireBatchFlag(false, null));
         Assert.True(Server.Server.ResolveGunfireBatchFlag(false, " true "));
         Assert.False(Server.Server.ResolveGunfireBatchFlag(true, "0"));
