@@ -309,7 +309,10 @@ public sealed class P992GunfireTrafficTests
     {
         ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
         Profiler = new() { Enabled = false, BroadcastBudget = true },
-        Broadcast = new() { MinUpdateHz = 2, ShipUpdateModel = "native", ParallelBuild = true },
+        Broadcast = new() { MinUpdateHz = 2, ShipUpdateModel = "native", ParallelBuild = true,
+            // P992 measured the pre-gate wire (SHIP_STATUS refreshes on); the 13.4 % dependency
+            // share below is that report's number, so pin the gate off (default ON since 74d07f5a).
+            ShipStatusChangeGate = false },
         Games = [new() { Name = "P992", Map = "XXV_simple.igc", Teams = 2,
             CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
     };
