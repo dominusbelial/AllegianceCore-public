@@ -85,6 +85,11 @@ public sealed class NativeStationRenderer : IDisposable
         return _models.Count > models || _textures.Count > textures ? 1 : 0;
     }
 
+    /// <summary>The production model decoder, also usable without a graphics
+    /// device for artwork-enabled CI. MeshFor adds caching, logging and upload.</summary>
+    public static MdlFile DecodeModel(Assets.IAssetSource assets, string modelStem) =>
+        MdlFile.Parse(AssetSources.ReadAllBytes(assets, modelStem + ".mdl"));
+
     /// <summary>The compiled native geometry for a model stem (parsed + built once,
     /// cached), or null when the file is missing/undecodable (logged once → caller
     /// falls back to the procedural placeholder).</summary>
@@ -92,6 +97,7 @@ public sealed class NativeStationRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelStem)) return null;
         if (_models.TryGetValue(modelStem, out var g)) return g;
+        if (_missingModelLogged.Contains(modelStem)) return null;
         try
         {
             if (!_assets.Exists(modelStem + ".mdl"))
@@ -99,7 +105,7 @@ public sealed class NativeStationRenderer : IDisposable
                 LogMissingModel(modelStem, "not present");
                 return null;
             }
-            var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelStem + ".mdl"));
+            var file = DecodeModel(_assets, modelStem);
             _parsed[modelStem] = file;
             var geo = NativeStationGeometry.Build(_gd, file.Meshes, file.LodLevels);
             _models[modelStem] = geo;

@@ -289,8 +289,9 @@ public sealed partial class Game1 : Game
     /// detonation deadline), snapshotted under the session gate each frame for
     /// the destabilized-aleph draw pass (<see cref="Rendering.WarpBombVisual"/>).</summary>
     private readonly Dictionary<short, double> _warpBombRemaining = new();
-    private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> _drawStations = new();
-    private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
+    private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName, short TypeId)> _drawStations = new();
+    private readonly List<ConstructionPhase> _drawBuilds = new();
+    private readonly StationFallbackWarnings _stationFallbackWarnings = new();
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
     private readonly List<(short TypeId, SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();

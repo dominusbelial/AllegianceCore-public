@@ -3,31 +3,11 @@ using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.State;
 
-/// <summary>
-/// A live in-progress station construction in the client's world model — one
-/// per real building effect, keyed by <see cref="AsteroidId"/> (the target rock
-/// being transformed; native carries this as the export's
-/// <c>asteroidID</c>, <c>igc.h:2594</c>). Populated from the creation
-/// <c>FM_S_EXPORT(26)/OT_buildingEffect</c> broadcast
-/// (<see cref="Wire.ExportBuildingEffect"/>, P294) and removed by the server's
-/// <c>FM_S_BUILDINGEFFECT_DESTROYED(181)</c> (interruption) or by the same
-/// client-side self-expiry native uses (a build that completes transmits
-/// nothing — the client reconstructs the 4-phase animation from
-/// <see cref="Wire.DataBuildingEffectExport.TimeStart"/> and the fixed phase
-/// constants and terminates at <c>m_timeComplete</c>,
-/// <c>buildingeffectigc.h:160-165</c>).
-/// </summary>
-/// <remarks>
-/// Like a probe/mine (<see cref="ProbeEntity"/>/<see cref="MineEntity"/>), the
-/// building effect's placement is static — it sits over the target asteroid —
-/// but unlike them it is a <b>transient</b> object with a timed lifespan
-/// (<see cref="ConstructionPhase.Duration"/> seconds), so it carries a
-/// converted creation-time anchor
-/// and is pruned when it completes. <see cref="ProgressFraction"/> drives the
-/// "under construction" reveal (the renderer grows/scales it toward the
-/// finished station, mirroring native's grow/shrink phases without a periodic
-/// server push).
-/// </remarks>
+/// <summary>A timed construction reservation from OT_buildingEffect. Its four
+/// phase sample is shared with the simulation (Igc/buildingeffectigc.h:160-225).
+/// ClientWorld.ConstructionVisuals controls presentation lifetime independently:
+/// a station/asteroid hand-off removes the visual while MCP retains its original
+/// timed reservation semantics in ClientWorld.BuildingEffects.</summary>
 public sealed class BuildingEffectEntity
 {
     /// <summary>The target asteroid's ObjectID (<c>AsteroidID</c> = short, the

@@ -643,7 +643,7 @@ public sealed partial class Game1
         // procedural station mesh StationRenderer draws, rendered translucent +
         // progress-scaled so it reads as a build-in-progress (see
         // BuildingEffectRenderer).
-        _buildingEffectRenderer = new BuildingEffectRenderer(GraphicsDevice);
+        _buildingEffectRenderer = new BuildingEffectRenderer(GraphicsDevice, _assets);
 
         // P231 — the shared procedural projectile "bolt" mesh (the P218/P227
         // pattern). Generated once here (no content-pipeline asset) and drawn

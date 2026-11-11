@@ -4,6 +4,34 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P997 construction-effect gate qualification — 2026-11-11 UTC
+
+The single complete Fast sweep ran **14,044 cases: 14,035 passed, 6 failed,
+3 skipped** in 576.7 s (calibrated Fast limit 11.021 s). The three skips are
+existing optional private Meshy-pack tests; artwork is configured. Every new
+P997 case passed, including all 37 new tests repeated three times alone
+(**111 passed / 0 failed / 0 skipped**). Solution build: 0 warnings/errors;
+all 132 tool projects built. The additional headless artwork decoder case was added after the one sweep and
+is included in the final three-run focused cohort. No second Fast sweep was run.
+No physics, missile, profile, seating, mission
+rotation, bot decision or server production source changed.
+
+| Sweep failure or slow method | Three isolated repeats | Qualification |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail/fail/fail in original environment; **pass/pass/pass** with writable scratch `XDG_CONFIG_HOME` (0.070/0.070/0.058 s) | Existing sandbox obstruction restoring the read-only real user profile. No real profile or product/profile source was changed. |
+| `ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` | **pass/pass/pass**, 1.136/1.132/1.136 s | Existing named-sender seating-order race; sweep asserted that the sender had no teammate. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.374/38.319/38.393 s | Known missing partial-tip receipt despite lock 1.000. Persistent alone; remains open and also exceeds Fast's time limit. Not described as cleared or solely load-induced. |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | **pass/pass/pass**, 0.668/0.661/0.660 s | Sweep's existing docking-deviation intermittent: `maxLineDeviation=241.8` against a 200 bound. No dodge or movement source changed. |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | **pass/pass/pass**, 1.080/1.095/1.079 s | Existing independent-rollout intermittent: sweep drift 13.37 units at tick 147. |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | **pass/pass/pass**, 1.899/1.984/1.962 s | Known empty decoded stage-notification collection at line 181; rotation source unchanged. |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | **pass/pass/pass**, 3.199/3.122/3.149 s | Sweep passed at 12.756 s, over the calibrated limit; below it alone. |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | **2/0/0 each repeat**, longest case 3.992/4.018/4.045 s | Sweep's civ-25 case passed at 12.583 s; both civilization cases pass below the limit alone. No training/Nanite source changed. |
+
+The Fast sweep remains **qualified FAIL**, not a green full-suite result.
+Raw receipt files: `.scratch/p997/fast/`, `.scratch/p997/isolated/`.
+Construction effect report: [P997](reports/CONSTRUCTION_EFFECT_P997.md).
+The final showcase comparison passed **5/5 base and 5/5 changed**, no skips or parking failures; detailed observations are in the report.
+
 ## P988 golden qualification — existing P980 baseline drift, 2026-11-09 UTC
 
 Before the P988 adapter was built into the proof tool, the untouched HUD-2
