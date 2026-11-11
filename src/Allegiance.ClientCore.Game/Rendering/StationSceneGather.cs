@@ -27,12 +27,12 @@ public static class StationSceneGather
     /// never be added twice in one frame (a stale/duplicate entry is what rendered
     /// the second mis-tinted station), guaranteeing each station is drawn exactly once.
     /// </summary>
-    public static List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> ColourPass(
+    public static List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName, short TypeId)> ColourPass(
         IEnumerable<KeyValuePair<short, DataStationIGC>> stations, short mySector,
         Func<DataStationIGC, float> radiusOf, Func<DataStationIGC, (string?, string?)> modelOf)
     {
         var seen = new HashSet<short>();
-        var result = new List<(SimVec, Orientation, short, float, string?, string?)>();
+        var result = new List<(SimVec, Orientation, short, float, string?, string?, short)>();
         foreach (var kv in stations)
         {
             var st = kv.Value;
@@ -43,7 +43,7 @@ public static class StationSceneGather
             var o = new Orientation();
             o.Set(Vec(st.Forward), Vec(st.Up));
             var (modelStem, textureName) = modelOf(st);
-            result.Add((Vec(st.Position), o, st.SideId, radiusOf(st), modelStem, textureName));
+            result.Add((Vec(st.Position), o, st.SideId, radiusOf(st), modelStem, textureName, st.StationTypeId));
         }
         return result;
     }

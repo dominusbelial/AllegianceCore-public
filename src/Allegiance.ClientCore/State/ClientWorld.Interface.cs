@@ -82,7 +82,12 @@ public sealed partial class ClientWorld
     // the building effect alive, an explosive termination removes it with the rock.
     private void Apply(AsteroidDestroyed message)
     {
-        if (!InGame || !_asteroids.TryGetValue(message.AsteroidId, out var rock)
+        if (!InGame) return;
+        // P997's immediate visual hand-off, including a retirement for a rock
+        // not present in this view's cache. Keep the MCP reservation semantics.
+        if (_constructionVisuals.TryGetValue(message.AsteroidId, out var effect)
+            && effect.ClusterId == message.ClusterId) _constructionVisuals.Remove(message.AsteroidId);
+        if (!_asteroids.TryGetValue(message.AsteroidId, out var rock)
             || rock.ClusterId != message.ClusterId) return;
         if (message.ExplodeF)
         {
@@ -168,7 +173,7 @@ public sealed partial class ClientWorld
         _asteroids.Clear(); _asteroidLive.Clear(); _stationLive.Clear();
         _probes.Clear(); _mines.Clear(); _missiles.Clear(); _projectiles.Clear();
         _ownProjectileCount = 0; _projectileDrainCursor = 0;
-        _treasures.Clear(); _buildingEffects.Clear(); _chaff.Clear();
+        _treasures.Clear(); _buildingEffects.Clear(); _constructionVisuals.Clear(); _chaff.Clear();
         _explosions.Clear(); _hullHits.Clear(); _pendingBallots.Clear();
         _newContactCues.Clear(); _highlightedClusters.Clear();
         _clusterWarningBySectorId.Clear(); _clusterWarningCues.Clear();

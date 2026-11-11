@@ -1,137 +1,125 @@
+using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.Core;
+using Allegiance.Core.Sim;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Allegiance.Core.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
-/// <summary>
-/// Draws the in-progress "station under construction" visual — the same
-/// procedural <see cref="StationMeshFactory"/> hub+ring mesh <see cref="StationRenderer"/>
-/// uses, but deliberately <b>not</b> identical to a finished station: it is
-/// rendered semi-transparent under alpha blending, in native's hardcoded
-/// building-effect violet, and (via the caller's world matrix) scaled by a
-/// progress fraction so it visibly <i>grows</i> toward the finished station.
-/// This is P294's visual for <c>FM_S_EXPORT(26)/OT_buildingEffect</c>.
-/// </summary>
-/// <remarks>
-/// <para><b>Reuses the station geometry, not a new shape.</b> The construction
-/// is the target station being built, so the same procedural mesh that
-/// <see cref="StationRenderer"/> draws for the finished base is the honest
-/// under-construction stand-in — the task's explicit direction (no new
-/// geometry). The mesh is generated once and shared; only the draw state
-/// differs from <see cref="StationRenderer"/> (translucent blend + distinct
-/// tint + progress scale).</para>
-/// <para><b>Look:</b> the tint is native's own building-effect colour
-/// <c>Color(50/255, 28/255, 146/255)</c> (<c>src/Igc/buildingeffectigc.h:93</c> —
-/// <c>LoadEffect</c> deliberately hardcodes it, ignoring the side colour via the
-/// commented-out <c>//*pcolor</c>), and <c>Alpha</c> is driven by the caller's
-/// <c>alpha</c> parameter (the reveal). Rendering swaps
-/// <see cref="GraphicsDevice.BlendState"/> to <see cref="BlendState.AlphaBlend"/>
-/// around the draw (restoring <see cref="BlendState.Opaque"/> after), exactly the
-/// translucent-over-opaque ordering the scene needs; the caller draws this after
-/// the opaque asteroids/stations so the blend lands correctly.</para>
-/// </remarks>
+/// <summary>Two rotating, textured build shells, independent of station geometry.
+/// Native effect/efgeo.cpp:99-227; Igc/buildingeffectigc.h:93,160-225.</summary>
 public sealed class BuildingEffectRenderer : IDisposable
 {
-    private readonly VertexBuffer _vertices;
-    private readonly IndexBuffer _indices;
-    private readonly int _triangleCount;
+    // Native uses the HSB complement, preserving saturation and brightness.
+    public static readonly Vector3 OuterColor = new(50f / 255, 28f / 255, 146f / 255);
+    public static readonly Vector3 InnerColor = new(124f / 255, 146f / 255, 28f / 255);
+    public const float ShellRatio = 1.1f;
     private readonly BasicEffect _effect;
+    private readonly List<(VertexBuffer Vertices, IndexBuffer Indices, int Triangles, Texture2D? Texture)> _parts = [];
+    private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The under-construction tint — native's hardcoded building-effect
-    /// violet <c>Color(50/255, 28/255, 146/255)</c> (<c>buildingeffectigc.h:93</c>),
-    /// deliberately distinct from <see cref="StationRenderer.FriendlyColor"/>/<see cref="StationRenderer.EnemyColor"/>
-    /// so a construction never reads as a finished base.</summary>
-    public static readonly Color ConstructionColor =
-        new(50f / 255f, 28f / 255f, 146f / 255f);
-
-    /// <summary>Alpha floor at progress 0 (still faintly visible from the very
-    /// start) and ceiling at progress 1 (still translucent — never identical to
-    /// the opaque finished station).</summary>
-    public const float MinAlpha = 0.35f;
-    public const float MaxAlpha = 0.72f;
-
-    /// <param name="gd">The graphics device the buffers are created on (no
-    /// content-pipeline asset — the station mesh is generated, not loaded).</param>
-    /// <param name="mesh">The shared mesh from <see cref="StationMeshFactory"/>.
-    /// Null to build the default procedural station (same default as
-    /// <see cref="StationRenderer"/>).</param>
-    public BuildingEffectRenderer(GraphicsDevice gd, StationMesh? mesh = null)
+    public BuildingEffectRenderer(GraphicsDevice gd, IAssetSource assets)
     {
-        mesh ??= StationMeshFactory.Generate();
-
-        var verts = new VertexPositionNormalTexture[mesh.VertexCount];
-        for (int i = 0; i < mesh.VertexCount; i++)
+        _effect = new BasicEffect(gd) { LightingEnabled = false };
+        try
         {
-            verts[i] = new VertexPositionNormalTexture(
-                new Vector3(mesh.Positions[i * 3], mesh.Positions[i * 3 + 1], mesh.Positions[i * 3 + 2]),
-                new Vector3(mesh.Normals[i * 3], mesh.Normals[i * 3 + 1], mesh.Normals[i * 3 + 2]),
-                new Vector2(mesh.Uvs[i * 2], mesh.Uvs[i * 2 + 1]));
+            // Load the same dedicated geometry and texture namespace as native.
+            // Keep its authored unit sphere, UVs and winding (no station scale/flip).
+            var model = MdlFile.Parse(AssetSources.ReadAllBytes(assets, "build.mdl"));
+            foreach (var mesh in model.Meshes)
+            {
+                Texture2D? texture = null;
+                if (mesh.TextureStem is { Length: > 0 } stem && !_textures.TryGetValue(stem, out texture))
+                    _textures[stem] = texture = NativeStationTexture.Load(gd, assets, stem);
+                var data = new VertexPositionNormalTexture[mesh.VertexCount];
+                for (int i = 0; i < data.Length; i++)
+                    data[i] = new(new(mesh.Positions[i * 3], mesh.Positions[i * 3 + 1], mesh.Positions[i * 3 + 2]),
+                        new(mesh.Normals[i * 3], mesh.Normals[i * 3 + 1], mesh.Normals[i * 3 + 2]),
+                        new(mesh.TexCoords[i * 2], mesh.TexCoords[i * 2 + 1]));
+                var vertices = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), data.Length, BufferUsage.WriteOnly);
+                vertices.SetData(data);
+                var indices = new IndexBuffer(gd, IndexElementSize.SixteenBits, mesh.Indices.Length, BufferUsage.WriteOnly);
+                indices.SetData(mesh.Indices);
+                _parts.Add((vertices, indices, mesh.TriangleCount, texture));
+            }
+            if (_parts.Count == 0) throw new InvalidDataException("build.mdl has no shell geometry");
         }
-
-        _vertices = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), mesh.VertexCount, BufferUsage.WriteOnly);
-        _vertices.SetData(verts);
-
-        _indices = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, mesh.Indices.Length, BufferUsage.WriteOnly);
-        _indices.SetData(mesh.Indices);
-
-        _triangleCount = mesh.TriangleCount;
-
-        _effect = new BasicEffect(gd)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException)
         {
-            AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f),
-            TextureEnabled = false,
-        };
+            foreach (var part in _parts) { part.Vertices.Dispose(); part.Indices.Dispose(); }
+            _parts.Clear();
+            foreach (var texture in _textures.Values) texture.Dispose();
+            _textures.Clear();
+            // Missing private artwork must never bring back the station placeholder.
+            Console.WriteLine($"[monogame] native construction effect unavailable ({ex.Message})");
+        }
     }
 
-    /// <summary>
-    /// Draw the construction at the given world transform (the caller bakes the
-    /// progress-scaled radius into <paramref name="world"/>, exactly as Game1
-    /// does for stations) under the provided view/projection pair, blended at
-    /// <paramref name="alpha"/> (the reveal, typically from
-    /// <see cref="State.BuildingEffectEntity.ProgressFraction"/> mapped into
-    /// <see cref="MinAlpha"/>..<see cref="MaxAlpha"/>). P530 —
-    /// <paramref name="lighting"/> is the current sector's native bidirectional
-    /// lighting; when supplied the shared <see cref="SectorLightingEffect"/>
-    /// replaces the stock rig (key + blue back-light + 0.25 ambient, specular
-    /// zero, third light off). When null the legacy stock rig is kept
-    /// (back-compat / non-scene callers). <see cref="BlendState.AlphaBlend"/>
-    /// is applied for this draw and restored to <see cref="BlendState.Opaque"/>
-    /// after.
-    /// </summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection, float alpha, SectorLighting? lighting = null)
+    /// <summary>Native column-vector rotations expressed in MonoGame row order.
+    /// Rotation uses window time, not time since the individual build started.
+    /// effect/efgeo.cpp:209-226.</summary>
+    public static Matrix InnerRotation(float time) => Matrix.CreateRotationY(.5f * MathF.PI * time)
+        * Matrix.CreateRotationZ(time / MathF.PI);
+    public static Matrix OuterRotation(float time) => Matrix.CreateRotationY(MathF.PI * time)
+        * Matrix.CreateRotationX(time);
+
+    public static (Vector3 InnerRgb, float InnerAlpha, Vector3 OuterRgb, float OuterAlpha) ColorsFor(ConstructionPhase phase) =>
+        (InnerColor * phase.InnerIntensity, phase.InnerAlpha, OuterColor * phase.OuterIntensity, 1);
+
+    public void Draw(ConstructionPhase phase, Vector3 cameraEye, Matrix view, Matrix projection, float time)
     {
+        if (phase.Expired || _parts.Count == 0) return;
         var gd = _effect.GraphicsDevice;
+        var blend = gd.BlendState;
+        var depth = gd.DepthStencilState;
+        var raster = gd.RasterizerState;
+        var sampler = gd.SamplerStates[0];
+        try
+        {
+            gd.DepthStencilState = DepthStencilState.DepthRead;
+            gd.RasterizerState = RasterizerState.CullCounterClockwise;
+            gd.SamplerStates[0] = SamplerState.LinearWrap;
+            _effect.View = view; _effect.Projection = projection;
+            var position = phase.Position;
+            var translation = Matrix.CreateTranslation(new Vector3(position.X, position.Y, position.Z) - cameraEye);
+            var colors = ColorsFor(phase);
+            DrawShell(InnerRotation(time) * Matrix.CreateScale(phase.Radius / ShellRatio) * translation,
+                colors.InnerRgb, colors.InnerAlpha, BlendState.NonPremultiplied);
+            // Native Color * intensity scales RGB but keeps alpha unchanged
+            // (zlib/color.h:101-110); outer fade is intensity, not alpha.
+            DrawShell(OuterRotation(time) * Matrix.CreateScale(phase.Radius) * translation,
+                colors.OuterRgb, colors.OuterAlpha, BlendState.Additive);
+        }
+        finally
+        {
+            gd.BlendState = blend; gd.DepthStencilState = depth;
+            gd.RasterizerState = raster; gd.SamplerStates[0] = sampler;
+        }
+    }
 
-        _effect.DiffuseColor = ConstructionColor.ToVector3();
-        _effect.Alpha = alpha;
+    private void DrawShell(Matrix world, Vector3 color, float alpha, BlendState blend)
+    {
+        if (alpha <= 0) return;
+        var gd = _effect.GraphicsDevice;
+        gd.BlendState = blend;
         _effect.World = world;
-        _effect.View = view;
-        _effect.Projection = projection;
-        if (lighting is { } lp)
-            SectorLightingEffect.Apply(_effect, lp);
-        else
-            _effect.EnableDefaultLighting();
-        _effect.CurrentTechnique.Passes[0].Apply();
-
-        // P530 — explicit render state for the building-effect pass: pin
-        // depth/rasterizer/sampler (P529 discipline) and alpha-blend for the
-        // translucent construction, restoring Opaque after so the opaque passes
-        // that follow aren't affected.
-        gd.DepthStencilState = DepthStencilState.Default;
-        gd.RasterizerState = RasterizerState.CullCounterClockwise;
-        gd.SamplerStates[0] = SamplerState.LinearClamp;
-        gd.BlendState = BlendState.AlphaBlend;
-        gd.SetVertexBuffer(_vertices);
-        gd.Indices = _indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
-        gd.BlendState = BlendState.Opaque;
+        // BasicEffect premultiplies RGB by Alpha; native's blend uses straight
+        // alpha (engine/RasterD3D9.cpp:295-312), so compensate before upload.
+        _effect.DiffuseColor = color / alpha;
+        _effect.Alpha = alpha;
+        foreach (var part in _parts)
+        {
+            _effect.Texture = part.Texture; _effect.TextureEnabled = part.Texture is not null;
+            _effect.CurrentTechnique.Passes[0].Apply();
+            gd.SetVertexBuffer(part.Vertices); gd.Indices = part.Indices;
+            gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, part.Triangles);
+        }
     }
 
     public void Dispose()
     {
-        _vertices.Dispose();
-        _indices.Dispose();
+        foreach (var part in _parts) { part.Vertices.Dispose(); part.Indices.Dispose(); }
+        foreach (var texture in _textures.Values) texture.Dispose();
         _effect.Dispose();
     }
 }

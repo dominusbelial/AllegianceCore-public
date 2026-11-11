@@ -14,6 +14,7 @@ public sealed partial class ClientWorld
         _probes.Clear();
         _mines.Clear();
         _missiles.Clear();
+        _constructionVisuals.Clear();
         _stations.Clear();
         _stationLive.Clear();
         _warps.Clear();
