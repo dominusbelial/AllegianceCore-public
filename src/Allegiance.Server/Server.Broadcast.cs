@@ -152,6 +152,10 @@ public sealed partial class Server
             // the loop from the rotation; cost is one tiny array per tick.
             foreach (var m in _missions.ToArray()) m.Update(now);
         });
+        // P994: seal the simulation's effects before rotation/reset and the
+        // ordinary pose suffix. Source dependencies were queued by the existing
+        // audience helpers; key-zero batches retain the tick's reliable FIFO.
+        if (_broadcastGunfireBatch) Step("broadcastGunfire", CompleteGunfireTick);
         // P590 — the proactive pod-pickup assignment pass. Each tick, every
         // flying friendly pod that no rescue-capable ship is already diving for
         // gets an idle same-side rescue-capable diverter assigned (PickupTarget),

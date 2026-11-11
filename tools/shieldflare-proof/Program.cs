@@ -414,7 +414,10 @@ sealed class ProofRunner : Game
             if (MathF.Abs(dist - shipRadius) > 1e-2f * shipRadius) badPlace++;   // apex at mesh radius
             // The cap dome points opposite the outward hit normal (native
             // Matrix(orient,0,m_radiusMesh): cap +Z → orient backward).
-            if (Xna.Vector3.Dot(ToXna(apex - f.Center), ToXna(normal)) > -0.999f * shipRadius * shipRadius) badPlace++;
+            // normal is unit length, so the dot product has units of radius,
+            // not radius squared. The former comparison rejected every real
+            // hull larger than one unit, including the unchanged legacy codec.
+            if (Xna.Vector3.Dot(ToXna(apex - f.Center), ToXna(normal)) > -0.999f * shipRadius) badPlace++;
         }
         Console.WriteLine($"[shieldflare] PROOF 2 (placement): {live.Count} flares; " +
                           (badPlace == 0 ? "cap on the shield opposite its hit at native size — PASS" : $"{badPlace} mis-placed — FAIL"));

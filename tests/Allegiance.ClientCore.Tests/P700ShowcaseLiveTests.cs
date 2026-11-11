@@ -20,13 +20,30 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
     public void P924_swapped_showcase_never_parks_with_target_for_five_seconds()
         => Run(true);
 
-    private void Run(bool swapHomes)
+    [SkippableFact]
+    public void P994_seeded_batched_showcase_still_hits_and_kills()
+        => Run(false, gunfireBatch: true, seed: 994, requireKills: true);
+
+    private void Run(bool swapHomes, bool? gunfireBatch = null, int? seed = null, bool requireKills = false)
     {
         Require.Artwork();
         using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
         var config = P660NextMatchLiveTests.Config(false);
+        if (gunfireBatch is { } batch)
+        {
+            config.Broadcast ??= new();
+            config.Broadcast.GunfireBatch = batch;
+            config.Broadcast.ShipStatusChangeGate = true;
+            config.Broadcast.ImmutableSnapshot = true;
+            config.Broadcast.EncodeOnce = true;
+            config.Broadcast.ParallelBuild = true;
+            config.Broadcast.ShipUpdateModel = "native";
+            config.Broadcast.MinUpdateHz = 2;
+        }
         config.Games[0].HomeSwap = swapHomes ? "on" : "off";
         server.Boot(config);
+        if (seed is { } value)
+            foreach (var mission in server.Missions) mission.Random = new Random(value);
         using var stop = new CancellationTokenSource();
         var ticker = new Thread(() =>
         {
@@ -38,6 +55,11 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
             using var manager = new BotManager("127.0.0.1", server.BoundPort);
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
                 """{"preset":"showcase","size_scale":1,"staging":true,"finale_after_minutes":0}""")!;
+            if (seed is { } loadoutSeed)
+            {
+                args["loadout_seed"] = JsonSerializer.SerializeToElement(loadoutSeed);
+                output.WriteLine($"P994 mission RNG/loadout seed={loadoutSeed}");
+            }
             var result = McpTools.Handle("spawn_scenario", args, manager);
             Assert.False(result.IsError ?? false, JsonSerializer.Serialize(result));
             var watch = Stopwatch.StartNew();
@@ -91,7 +113,8 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
                 }
                 samples++;
                 if (!double.IsNaN(firstCombat) && now - firstCombat >= 45 && reached.Count >= 24
-                    && manager.GetCombatSummary().ShipHits > 0) break;
+                    && manager.GetCombatSummary().ShipHits > 0
+                    && (!requireKills || manager.GetCombatSummary().Kills > 0)) break;
                 Thread.Sleep(100);
             }
             var combat = manager.GetCombatSummary();
@@ -111,6 +134,7 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
             Assert.InRange(idleMetric.GetProperty("sampleAgeSeconds").GetDouble(), 0, 2);
             Assert.True(reached.Count >= 24, "Most showcase ships must reach their objectives");
             Assert.True(combat.ShotsFired > 0 && combat.ShipHits > 0, "Must observe real battle gunfire and damage");
+            if (requireKills) Assert.True(combat.Kills > 0, "Batched gunfire must still produce real showcase kills");
             Assert.Equal(0, server.SimPassStageFailures);
         }
         finally { stop.Cancel(); Assert.True(ticker.Join(5000)); }

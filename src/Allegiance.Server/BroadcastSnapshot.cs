@@ -22,6 +22,7 @@ internal sealed class BroadcastMessage
         else _bytes = message.Encode();
     }
     internal BroadcastMessage(byte[] bytes) => _bytes = bytes;
+    internal ushort Fmid => _message?.GetFmid() ?? FedMessageHeader.Read(_bytes!).Fmid;
     internal byte[] Encode()
     {
         lock (this) return _bytes ??= _message!.Encode();
@@ -34,6 +35,13 @@ internal class BroadcastPacket
     private byte[]? _bytes;
     internal BroadcastPacket(BroadcastMessage[] messages) => _messages = messages;
     internal BroadcastPacket(byte[] bytes) => _bytes = bytes;
+    internal bool HasGunfireBoundary()
+    {
+        if (_messages is null) return Server.HasGunfireOrderingBoundary(_bytes!);
+        foreach (var message in _messages)
+            if (Server.IsGunfireOrderingBoundary(message.Fmid)) return true;
+        return false;
+    }
     internal byte[] Encode()
     {
         lock (this)

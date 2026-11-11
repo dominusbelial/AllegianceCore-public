@@ -39,7 +39,8 @@ public sealed class Projectile : Model, IOrdnance
         // intercept a target (native CweaponIGC::FireWeapon rewrites
         // dataProjectile.lifespan with the target-intercept time for blast
         // weapons, weaponIGC.cpp:273-288) — the P109 turret-gunner aim slice.
-        _timeExpire = now + (lifespanOverride ?? projectileType.Lifespan);
+        InitialLifespan = lifespanOverride ?? projectileType.Lifespan;
+        _timeExpire = now + InitialLifespan;
         InitClock(now);
     }
 
@@ -56,6 +57,10 @@ public sealed class Projectile : Model, IOrdnance
 
     /// <summary>The absolute time (mission-seconds) at which this projectile expires and removes itself.</summary>
     public double TimeExpire => _timeExpire;
+
+    /// <summary>Creation lifespan including native weapon interception / energy
+    /// modifiers (Igc/weaponIGC.cpp:273-288). Carried exactly by P994's codec.</summary>
+    public float InitialLifespan { get; }
 
     /// <summary>The sector this projectile lives in — the sector that owns it and that it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;

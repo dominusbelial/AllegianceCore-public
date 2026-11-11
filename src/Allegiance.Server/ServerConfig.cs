@@ -880,6 +880,10 @@ public sealed class BroadcastConfig
     /// </summary>
     public bool ShipStatusChangeGate { get; set; } = true;
 
+    /// <summary>P994: compact PROJECTILE_INSTANCE / PROJECTILE_HULL_HIT arrays,
+    /// default off. ALLEGIANCE_BROADCAST_GUNFIRE_BATCH overrides (0/1, false/true).</summary>
+    public bool GunfireBatch { get; set; }
+
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>
     public bool InterestTiers { get; set; }
