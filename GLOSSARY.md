@@ -288,9 +288,10 @@ list in **reverse**.
   `src/Allegiance.Core/Sim/ConstructionPhase.cs`.
   `src/Allegiance.ClientCore/State/ClientWorld.cs` keeps per-view
   `ConstructionVisuals` separate from MCP's shared `BuildingEffects`
-  reservations: P997 requests immediate visual retirement on station/asteroid
-  hand-off, while native deliberately retains its shrink tail
-  (`clintlib/appmsg.cpp:1706-1712`). Missing station models produce a one-shot
+  reservations. By default the client draws `BuildingEffects`, so the shell keeps
+  native's shrink tail around the new station (`clintlib/appmsg.cpp:1706-1712`);
+  the opt-in `visuals.constructionHandoff` flag draws `ConstructionVisuals`,
+  which retire on station/asteroid hand-off. Missing station models produce a one-shot
   local notice through `src/Allegiance.ClientCore.Game/Rendering/StationFallbackWarnings.cs`.
   `src/Allegiance.ClientCore.Game/Rendering/NativeStationRenderer.cs` exposes
   its production `DecodeModel` for artwork-only Fast CI; the GPU audit and

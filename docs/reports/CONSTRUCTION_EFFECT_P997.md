@@ -1,5 +1,15 @@
 # P997 — Construction effect and station hand-off
 
+> **Claude review (2026-11-11):** the brief asked for the shell to vanish at the hand-off "whatever native's trigger is";
+> Codex correctly found native keeps it (station created at shrink start, shell shrinks/fades around it until
+> `m_timeComplete`, `Igc/buildingeffectigc.h:160-183,310-358`, `clintlib/appmsg.cpp:1692-1718`) but shipped the immediate
+> hand-off as the default. Behaviour parity rules: the **default now draws `ClientWorld.BuildingEffects`** (native
+> lifetime: shrink tail to 40 s, 181, explosive rock death, reset), and the immediate hand-off is the opt-in
+> `visuals.constructionHandoff` flag (default **off**, Visuals page hotkey `B`), drawing `ConstructionVisuals`. The
+> sighting's defect was the non-native placeholder mesh (an opaque hub+torus), not the tail itself: native shows a
+> fading textured shell there for up to 10 s. `EFX-0004` is `implemented` again. Pinned by
+> `P997ConstructionRenderTests.Instant_handoff_is_an_opt_in_visual_flag_and_native_tail_is_the_default`.
+
 Status: complete. Required implementation, captures and checks finished; the full Fast sweep remains qualified by the existing failures documented below. Base: `d0734dfa`, branch `codex/p997`. No commits, pushes or rig runs.
 
 Domingo's 2026-11-10 client video showed a dark violet torus surrounding an orange asteroid with a completed native outpost and green-framed bay. The construction renderer reused P289's hub-and-ring station placeholder; its timer-only visual lifetime allowed the placeholder to overlap a completed station.

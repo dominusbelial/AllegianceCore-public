@@ -1062,8 +1062,14 @@ public sealed partial class Game1
 
                 }
 
-                // P997: native's two rotating build.mdl shells, gathered from
-                // the presentation lifetime rather than MCP's reservation table.
+                // P997: native's two rotating build.mdl shells. Native lifetime
+                // (default): the effect table itself, so the shell keeps shrinking
+                // and fading around the new station until m_timeComplete
+                // (Igc/buildingeffectigc.h:160-183, 310-358; appmsg.cpp:1692-1718)
+                // and leaves on 181, an explosive rock death or reset. The
+                // visuals.constructionHandoff flag instead draws ClientWorld's
+                // presentation table, which retires the shell at the hand-off.
+                bool instantHandoff = _visuals.IsOn(Rendering.VisualFlags.ConstructionHandoffKey);
                 _drawBuilds.Clear();
                 lock (_session.Gate)
                 {
@@ -1071,7 +1077,7 @@ public sealed partial class Game1
                     world.PruneExpiredBuildingEffects(buildNow);
                     if (TrySceneSector(world, me, out short myBeSector))
                     {
-                        foreach (var (_, be) in world.ConstructionVisuals)
+                        foreach (var (_, be) in instantHandoff ? world.ConstructionVisuals : world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
                             var phase = be.Phase(buildNow);

@@ -26,6 +26,21 @@ public sealed class P997ConstructionRenderTests
         Assert.Single(world.Events.Chats);
     }
 
+    /// <summary>P997 review — native keeps the shrinking shell around the new
+    /// station until m_timeComplete (Igc/buildingeffectigc.h:160-183,310-358); the
+    /// instant hand-off is a visuals.* departure and starts OFF.</summary>
+    [Fact]
+    public void Instant_handoff_is_an_opt_in_visual_flag_and_native_tail_is_the_default()
+    {
+        var definition = VisualFlags.Find(VisualFlags.ConstructionHandoffKey);
+        Assert.NotNull(definition);
+        Assert.Equal(VisualFlagKind.Toggle, definition!.Kind);
+        Assert.False(definition.DefaultOn);
+        Assert.False(new VisualOptions().IsOn(VisualFlags.ConstructionHandoffKey));
+        Assert.True(VisualOptions.Parse("constructionHandoff=on", out var warnings).IsOn(VisualFlags.ConstructionHandoffKey));
+        Assert.Empty(warnings);
+    }
+
     [Fact]
     public void Shell_colour_is_native_violet_and_its_HSB_complement()
     {
