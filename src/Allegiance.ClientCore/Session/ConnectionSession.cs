@@ -1926,6 +1926,9 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
                     // transient ProjectileEntity to render as a bolt/streak.
                     _world.Apply(ProjectileInstance.Decode(m));
                     break;
+                case GunfireBatch.Fmid:
+                    _world.Apply(GunfireBatch.Decode(m));
+                    break;
                 case FireMissile.Fmid:
                     // P234 — a real missile launch; the world hydrates the
                     // id-keyed MissileEntity (identity + type + spawn pose).

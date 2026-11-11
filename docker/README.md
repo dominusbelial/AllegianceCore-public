@@ -361,14 +361,34 @@ them. HTTPS protects endpoint receipts and introduction secrets. Internet joins
 require direct UDP and have no TCP/relay fallback. No public STUN dependency,
 UPnP or NAT-PMP traffic is introduced.
 
-P991's `SHIP_STATUS(90)` change gate is default off. Set
-`broadcast.shipStatusChangeGate` in the mounted server JSON, or
-`ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=1` before starting Compose, to send
-a ship's status to a side only when it differs from the copy that side already
-has (native's rule, `FedSrv/FedSrv.CPP:3665-3719`) instead of the port's three
-periodic refreshes. The environment override accepts `0`/`1` or `false`/`true`;
+P991's `SHIP_STATUS(90)` change gate is on by default (since 2026-11-10, after a
+400-bot rig A/B: SHIP_STATUS bytes −87 %, about 3 % of egress): a ship's status
+is sent to a side only when it differs from the copy that side already has
+(native's rule, `FedSrv/FedSrv.CPP:3665-3719`) instead of the port's three
+periodic refreshes. Set `broadcast.shipStatusChangeGate` to `false` in the
+mounted server JSON, or `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE=0` before
+starting Compose, to get the old refreshes back. The environment override accepts `0`/`1` or `false`/`true`;
 empty preserves JSON. Off is byte-identical to the pre-P991 wire. See
 [the P991 measurements](../docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md).
+
+P994's compact gunfire arrays are default off. Set `broadcast.gunfireBatch` in
+server JSON or `ALLEGIANCE_BROADCAST_GUNFIRE_BATCH=1` before Compose starts.
+Empty preserves JSON; `0`/`1` and `false`/`true` are accepted. New clients decode
+both legacy 12/213 and the port-only `GUNFIRE_BATCH(221)`; enable this only when
+all connected clients support 221. Audiences and authoritative damage stay the
+same. See [the P994 report](../docs/reports/GUNFIRE_BATCH_P994.md).
+
+P993's distance cull of the `PROJECTILE_INSTANCE(12)` relay is default off. Set
+`broadcast.fireAudienceCull` in the mounted server JSON, or
+`ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL=1` before starting Compose, to relay a
+round only to viewers whose own ship is within the client's own 5 900 u
+projectile draw radius (`ProjectileDrawRadius`, shared with
+`ProjectileVisibility.VisibilityRadius`) plus the round's and the viewer's travel
+during the round's lifespan. The shooter's own peer and admin free-camera views
+are never culled, and `PROJECTILE_HULL_HIT(213)`'s audience is untouched (bots
+consume it). The environment override accepts `0`/`1` or `false`/`true`; empty
+preserves JSON. Off is byte-identical to the pre-P993 wire (pinned). See
+[the P993 measurements](../docs/reports/FIRE_AUDIENCE_CULL_P993.md).
 
 P968's publisher experiment is default off. Set `broadcast.pendingStreamIndex`
 in the mounted server JSON, or `ALLEGIANCE_BROADCAST_PENDING_STREAM_INDEX=1`

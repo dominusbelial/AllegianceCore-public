@@ -156,15 +156,18 @@ public sealed class Hud17DetectionLiveTests
         // ── BEFORE any enemy sees A: both copies carry false. ────────────────
         int settle = PumpUntil(server, () => !a.SeenBySide(side1), 200);
         Assert.True(settle < 200, "enemy must start out of sight");
-        PumpUntil(server, () => aBot.ShipStatuses.Count > 0, 200);
-        aBot.ResetShipStatuses();
-        bBot.ResetShipStatuses();
+        // (b) P991: with the change gate ON (default) a status is sent on its
+        // first delivery and on each edge, never re-sent while unchanged, so the
+        // "unseen" copy is the one each peer already holds — assert on it
+        // instead of clearing and waiting for a refresh that no longer exists.
         int quiet = PumpUntil(server, () =>
             aBot.ShipStatuses.Any(s => s.ShipId == a.Id) &&
             bBot.ShipStatuses.Any(s => s.ShipId == a.Id), 200);
         Assert.True(quiet < 200, "both peers must receive A's status while unseen");
-        Assert.All(aBot.ShipStatuses.Where(s => s.ShipId == a.Id), s => Assert.False(s.Detected));
-        Assert.All(bBot.ShipStatuses.Where(s => s.ShipId == a.Id), s => Assert.False(s.Detected));
+        Assert.False(aBot.ShipStatuses.Last(s => s.ShipId == a.Id).Detected);
+        Assert.False(bBot.ShipStatuses.Last(s => s.ShipId == a.Id).Detected);
+        aBot.ResetShipStatuses();
+        bBot.ResetShipStatuses();
 
         // ── SPOT: move the enemy ship onto A. Both copies flip within 20 ticks. ─
         float range = VisibilityMath.DetectionRadius(

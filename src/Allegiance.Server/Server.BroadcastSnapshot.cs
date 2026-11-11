@@ -150,6 +150,7 @@ public sealed partial class Server
 
     internal void BeginBroadcastSnapshot()
     {
+        BeginGunfireTick();
         if (!_broadcastSnapshotEnabled || _broadcastPublisher is null) return;
         if (_buildingBroadcastSnapshot is not null) throw new InvalidOperationException("Snapshot already being built");
         _sharedHeavy.Clear();
@@ -167,6 +168,7 @@ public sealed partial class Server
 
     internal void CompleteBroadcastSnapshot()
     {
+        CompleteGunfireTick();
         if (_buildingBroadcastSnapshot is not { } snapshot) return;
         using (TickProfiler.Enter("broadcast.snapshotPublish"))
         {
@@ -210,7 +212,11 @@ public sealed partial class Server
     }
 
     private void SendPeer(ConnectionId peer, BroadcastPacket packet, BroadcastCategory category = BroadcastCategory.Other)
-        => QueueBroadcast(peer, packet, 0, true, category);
+    {
+        if (HasPendingGunfire(peer) && packet.HasGunfireBoundary())
+            SendGunfireBuilder(peer, _gunfireBuilders[peer]);
+        QueueBroadcast(peer, packet, 0, true, category);
+    }
     private void SendPeerCoalescing(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed = false,
         BroadcastCategory category = BroadcastCategory.Other, int splitBytes = 0)
         => QueueBroadcast(peer, packet, key, guaranteed, category, splitBytes);

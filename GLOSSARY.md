@@ -319,7 +319,7 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastTelemetry.cs` (`StaleReason`, `ClassifyStale`, `AddLaneReport`,
   `AddAgeReport`), `src/Allegiance.Server/Server.UpdateCadence.cs` (`TrackedShipIds`).
   Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
-- **SHIP_STATUS change gate (P991)** — default-off `broadcast.shipStatusChangeGate` that makes every
+- **SHIP_STATUS change gate (P991)** — `broadcast.shipStatusChangeGate` (default on since 2026-11-10, rig A/B b105/b106) that makes every
   `FM_S_SHIP_STATUS(90)` send edge-triggered on the wire content, native's per-frame rule
   (`FedSrv/FedSrv.CPP:3665-3719`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three
   periodic refreshes (own ship 40 ticks, same-side teammates 100 ticks per recipient phase, cross-side seen
@@ -332,6 +332,15 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastBuffers.cs`; env `ALLEGIANCE_BROADCAST_SHIP_STATUS_CHANGE_GATE`.
   Flag off is byte-identical to the pre-P991 wire (pinned).
   Report: `docs/reports/SHIP_STATUS_CHANGE_GATE_P991.md`.
+- **Compact gunfire batches (P994, default off)** — `broadcast.gunfireBatch` /
+  `ALLEGIANCE_BROADCAST_GUNFIRE_BATCH` replaces selected 12/213 deliveries with
+  ordered `GUNFIRE_BATCH(221)` records. Codec: `src/Allegiance.Core/Wire/GunfireBatch.cs`;
+  reusable recipient builders and shared encoding: `src/Allegiance.Server/Server.GunfireBatch.cs`.
+  Source pose dependencies and audiences remain in `src/Allegiance.Server/Server.FireAudience.cs`.
+  Both client paths expand to legacy message objects; exact IDs, spawn position
+  and lifespan preserve own-echo and bot attribution. Native array/compact-value
+  inspiration: `Inc/Messages.h:890-900`, `Igc/igc.h:2198-2255`.
+  Report: `docs/reports/GUNFIRE_BATCH_P994.md`.
 - **Gunfire traffic study (P992)** — why the port relays every shot and hit and what a change would save:
   `PROJECTILE_INSTANCE(12)` is one 58-byte frame per shot per peer in the shooter's sector (native has no such
   server→client message: its clients fire from the `stateM` fire bits their ship updates carry), `PROJECTILE_HULL_HIT(213)`
@@ -344,6 +353,20 @@ list in **reverse**.
   `ProjectileVisibility` radius) and `tools/allegiance-mcp/BotManager.cs` (own-hit credit from 213). Offline
   calculator + loopback fixture: `tests/Allegiance.Core.Tests/P992GunfireTrafficTests.cs`.
   Report: `docs/reports/GUNFIRE_TRAFFIC_P992.md`.
+- **Fire-audience distance cull (P993)** — default-off `broadcast.fireAudienceCull` that relays a
+  `PROJECTILE_INSTANCE(12)` (ship or probe round) only to viewers that can DRAW it: today's
+  `EmissionVisible` audience **and** the recipient's own ship within the client's own 5 900 u projectile
+  draw radius (`ProjectileDrawRadius.WorldUnits`, the one constant
+  `Allegiance.ClientCore.State.ProjectileVisibility.VisibilityRadius` also reads) plus a travel margin
+  `(|v_round| + ship.MovementSpeedLimit()) × projectileType.Lifespan` (a NECESSARY condition for a drawn
+  round, so no drawn pixel is lost; 0 % of the 12 lane culled in a packed fight, 31 % in a spread one).
+  The shooter's own peer (own-echo de-dup, bot own-round counter) and admin free-camera views are never
+  culled; `PROJECTILE_HULL_HIT(213)`'s audience is untouched (bots consume it). A culled (viewer, shooter)
+  pair skips the `EnsureEmissionPose` dependency for that round. `src/Allegiance.Server/Server.FireAudience.cs`
+  (`ResolveFireAudienceCull`, `EmissionCullOrigin`, `ProjectileDrawRangeKeeps`, `FireAudienceCullKeeps`,
+  `[fire-audience] … culled=`), `src/Allegiance.Core/Sim/ProjectileDrawRadius.cs`; env
+  `ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL`. Flag off is byte-identical to the pre-P993 wire (pinned).
+  Report: `docs/reports/FIRE_AUDIENCE_CULL_P993.md`.
 - **Pool scheduling / UDP handoff metrics (P907)** — profiler-gated, process-wide
   `[thread-pool]` counters and a reusable once-per-second queue-delay probe in
   `src/Allegiance.Core/Profiling/ThreadPoolTelemetry.cs`; host UDP callback-entry

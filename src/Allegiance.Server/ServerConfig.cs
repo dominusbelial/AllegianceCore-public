@@ -864,8 +864,10 @@ public sealed class BroadcastConfig
     /// into the old status (<c>FedSrv/FedSrv.CPP:3665-3719</c>); a joining or
     /// reconnecting peer gets the full per-ship dump native sends in
     /// <c>CFSMission::SendMissionInfo</c> (<c>FedSrv/fsmission.cpp:4303-4323</c>).
-    /// <para>Default <b>false</b>: the port's three periodic refreshes stay on and
-    /// the wire is byte-identical to the pre-P991 build (own ship
+    /// <para>Default <b>true</b> since 2026-11-10 (Domingo, after the rig A/B
+    /// b105/b106 at 400 bots: SHIP_STATUS bytes −87 %, ≈3 % of egress, update ages,
+    /// starvation and bot outcomes unchanged). <c>false</c> keeps the port's three
+    /// periodic refreshes and the wire byte-identical to the pre-P991 build (own ship
     /// <c>StatusRefreshTicks</c>=40, same-side teammates
     /// <c>TeammateStatusRefreshTicks</c>=100 per recipient phase, cross-side seen
     /// enemies <c>CrossSideStatusRefreshTicks</c>=100 per pair phase). With the
@@ -876,7 +878,35 @@ public sealed class BroadcastConfig
     /// (P991's A/B list); nothing else about what is sent changes.
     /// </para>
     /// </summary>
-    public bool ShipStatusChangeGate { get; set; }
+    public bool ShipStatusChangeGate { get; set; } = true;
+
+    /// <summary>P994: compact PROJECTILE_INSTANCE / PROJECTILE_HULL_HIT arrays,
+    /// default off. ALLEGIANCE_BROADCAST_GUNFIRE_BATCH overrides (0/1, false/true).</summary>
+    public bool GunfireBatch { get; set; }
+
+    /// <summary>
+    /// P993 — distance-cull the <c>PROJECTILE_INSTANCE(12)</c> relay
+    /// (<c>BroadcastProjectileInstance</c> → <c>BroadcastShipEmission</c> /
+    /// <c>BroadcastProbeEmission</c>) to the renderer's own draw radius. When on, a
+    /// recipient gets a round only if today's audience test passes <b>and</b> the
+    /// recipient's own ship is within
+    /// <see cref="Allegiance.Core.Sim.ProjectileDrawRadius.WorldUnits"/> (5 900 u,
+    /// the client's <c>ProjectileVisibility.VisibilityRadius</c>) of the round's
+    /// spawn point, plus the round's and the viewer's own travel during the
+    /// round's lifespan (see <c>Server.FireAudience.ProjectileDrawRangeKeeps</c>
+    /// for the proof). A culled (viewer, shooter) pair also skips the
+    /// <c>EnsureEmissionPose</c> dependency (the first-sight
+    /// <c>EXPORT(26)</c>/<c>SHIP_STATUS(90)</c> and the 0.5 s
+    /// <c>SINGLE_SHIP_UPDATE(78)</c> refresh) for that round. The shooter's own
+    /// peer and admin free-camera views are never culled, and
+    /// <c>PROJECTILE_HULL_HIT(213)</c>'s audience is untouched (bots consume it).
+    /// <para>Default <b>false</b>: every <c>12</c> send site and the whole
+    /// dependency are byte-identical to the pre-P993 build.
+    /// <c>ALLEGIANCE_BROADCAST_FIRE_AUDIENCE_CULL</c> overrides (0/1 or
+    /// false/true, env wins). Measured on the rig by Claude (P993's A/B list);
+    /// see docs/reports/FIRE_AUDIENCE_CULL_P993.md.</para>
+    /// </summary>
+    public bool FireAudienceCull { get; set; }
 
     /// <summary>P677 — per-viewer interest rates. Opt-in; also enables the
     /// immutable snapshot and encode-once pipeline. ALLEGIANCE_BROADCAST_TIERS overrides.</summary>

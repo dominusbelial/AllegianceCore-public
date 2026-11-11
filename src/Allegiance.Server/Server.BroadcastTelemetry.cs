@@ -611,6 +611,7 @@ public sealed partial class Server
             217 => "VICTIMDAMAGED",
             218 => "SHIPWARNINGUPDATE",
             220 => "OWNSHIPCLOAKUPDATE",
+            221 => "GUNFIREBATCH",
             853 => "MINESTRENGTH",
             991 => "TIMESCALEUPDATE",
             992 => "RESEARCHBRIEFING",

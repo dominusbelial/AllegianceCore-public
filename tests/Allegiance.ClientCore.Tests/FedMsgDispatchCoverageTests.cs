@@ -90,6 +90,7 @@ public class FedMsgDispatchCoverageTests
         // derives the roster from PLAYERINFO(10) + KILL_SHIP(105) as native.
         (211, "SideRoster"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
+        (221, "GunfireBatch"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
     };
 
@@ -142,6 +143,7 @@ public class FedMsgDispatchCoverageTests
         {
             case 204: return MissileLockUpdate.From(5, -1, 0f, Vector3.Zero, "test");
             case 214: return ClusterWarningUpdate.From(1, 1, false, false);
+            case 221: return new GunfireBatch { Records = [new ProjectileHullHit()] };
         }
 
         var type = typeof(IFedMessage).Assembly.GetType("Allegiance.Core.Wire." + typeName)
@@ -278,13 +280,12 @@ public class FedMsgDispatchCoverageTests
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
         Assert.Equal(100, consumed.Count(f => supportedNativeServerSent.Contains(f)));
-        // 13 port-added consumed messages: P266's lead stream (210) retired in
-        // P804 (the client solves the lead itself), like P774's 209/219.
-        Assert.Equal(13, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+        // 14 port-added consumed messages: P994 adds GUNFIRE_BATCH(221).
+        // P266's lead stream (210) retired in P804, like P774's 209/219.
+        Assert.Equal(14, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
-        // Sanity: the executable counts match the audited numbers (113 after
-        // P820c added SET_TEAM_INFO(15)).
-        Assert.Equal(113, ExpectedConsumedServerSent.Length);
+        // Sanity: P820c's 113 entries plus P994's batch frame.
+        Assert.Equal(114, ExpectedConsumedServerSent.Length);
         Assert.Equal(3, KnownUnconsumedServerSent.Length);
         Assert.Equal(103, supportedNativeServerSent.Length);
     }

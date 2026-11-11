@@ -97,10 +97,12 @@ public class ShipStatusServerTests
         PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == probeShipId).Ship.StationId is null
             && bot.ShipStatuses.Any(s => s.ShipId == probeShipId
                 && s.State == ShipStatusMessage.StateFlying && s.StationId == -1), 800);
-        bot.ResetShipStatuses();
-        PumpUntil(server, () => bot.ShipStatuses.Any(s => s.ShipId == probeShipId), 800);
-        Assert.NotEmpty(bot.ShipStatuses);
-        var status = bot.ShipStatuses.First(s => s.ShipId == probeShipId);
+        // (b) P991: with the change gate ON (default) the launch edge is the
+        // status to check — no unchanged refresh follows it — so take the
+        // post-launch flying frame the pump above already waited for instead of
+        // clearing and waiting for another.
+        var status = bot.ShipStatuses.Last(s => s.ShipId == probeShipId
+            && s.State == ShipStatusMessage.StateFlying && s.StationId == -1);
         Assert.Equal(probeShipId, status.ShipId);
         Assert.Equal(bot.ShipAssignment!.SectorId, status.SectorId);
 
@@ -129,7 +131,12 @@ public class ShipStatusServerTests
     {
         Require.Artwork();
         using var server = new Srv();
-        server.Boot(Config());
+        // (a) P991: this pins the pre-P991 periodic own-ship refresh itself, so
+        // it runs with the change gate OFF (the gate-ON path is pinned by
+        // P991ShipStatusChangeGateTests: late joiners get the join dump instead).
+        var cfg = Config();
+        (cfg.Broadcast ??= new()).ShipStatusChangeGate = false;
+        server.Boot(cfg);
         using var bot = new FltBot();
 
         bot.Connect(server.BoundPort, "refresh_probe");
@@ -174,6 +181,8 @@ public class ShipStatusServerTests
             // Map every peer ship id -> its side, straight from the authoritative
             // server model (not assumed order).
             var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship.SideId);
+            var allSides = server.Missions.SelectMany(m => m.GetShips()).GroupBy(t => t.Id)
+                .ToDictionary(g => g.Key, g => g.First().SideId);
             Assert.True(ships.Count >= 3, $"expected >=3 peer ships, got {ships.Count}");
             foreach (var b in bots)
                 Assert.NotNull(ships[b.ShipAssignment!.Ship.ShipId]);
@@ -203,8 +212,12 @@ public class ShipStatusServerTests
 
                 // Every ship id this peer received is on ITS side (self + teammates),
                 // and every same-side ship is present.
+                // (b) P991: with the change gate ON (default) the native join dump
+                // (fsmission.cpp:4303-4323) also delivers same-side NPC ships (the
+                // P382 initial miners) at join, so resolve a received id's side
+                // from every mission ship, not just the peer ships.
                 foreach (var rid in receivedIds)
-                    Assert.Equal(mySide, ships[rid]);   // same-side only
+                    Assert.Equal(mySide, allSides.TryGetValue(rid, out var rs) ? rs : ships[rid]);   // same-side only
                 foreach (var t in server.Ships.Where(s => s.Ship.SideId == mySide))
                     Assert.Contains(t.Ship.Id, receivedIds);   // sees every teammate + self
 
@@ -317,6 +330,8 @@ public class ShipStatusServerTests
 
             // Authoritative side per ship id, straight from the server model.
             var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship.SideId);
+            var allSides = server.Missions.SelectMany(m => m.GetShips()).GroupBy(t => t.Id)
+                .ToDictionary(g => g.Key, g => g.First().SideId);
             short[] ids = bots.Select(b => b.ShipAssignment!.Ship.ShipId).ToArray();
             Assert.True(ids.All(i => ships.ContainsKey(i)), "all three bots seated");
 
