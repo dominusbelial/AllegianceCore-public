@@ -5274,7 +5274,69 @@ public sealed partial class Ship : Model, IShipIgc
     /// so a subsequently applied <c>BUY_LOADOUT</c> replaces rather than
     /// appends to the previous configuration — the native
     /// <c>ProcessShipLoadout</c> rebuilds the ship's mounts wholesale.</summary>
-    public void ClearLoadout()
+    public void ClearLoadout() => ClearParts(raiseLoadoutChange: true);
+
+    /// <summary>
+    /// P998 — terminate every part of a DYING root ship, the port of the
+    /// <c>p-&gt;Terminate()</c> half of native <c>KillShipEvent</c>'s loot loop
+    /// (<c>FedSrv/FedSrv.CPP:11686-11696</c>: "Dead ship ... create treasures for
+    /// all of its parts … p-&gt;Terminate();") plus the scalar resets of the hull
+    /// swap that immediately follows it (<c>CshipIGC::SetBaseHullType</c>,
+    /// <c>Igc/shipIGC.cpp:1428-1437</c>: <c>m_fOre = 0; m_fuel = 0; m_ammo = 0;
+    /// m_energy = 0;</c>).
+    /// <para><b>Why every part, cargo included.</b> Native's <c>m_parts</c> is one
+    /// list holding both the equipped mounts and the cargo hold (a cargo part is
+    /// an <c>IpartIGC</c> with a negative <c>Mount</c>,
+    /// <c>Igc/shipIGC.cpp:1516-1549</c>), so <c>Terminate()</c> empties the cargo
+    /// bay too. This port keeps cargo in its own <see cref="_cargo"/> array, so
+    /// the strip must clear both or the pod would still carry the dead ship's
+    /// packs.</para>
+    /// <para><b>Why no wire event.</b> Native's per-part <c>Terminate()</c> raises
+    /// <c>LoadoutChangeEvent(c_lcRemoved)</c>, which on the server side only
+    /// re-sends an area-effect weapon's target (<c>FedSrv/FedSrv.CPP:13530-13545</c>)
+    /// — the loadout itself reaches clients only on a cluster (re-)entry
+    /// (<c>CFSShip::SetCluster</c> → <c>QueueLoadoutChange</c>,
+    /// <c>FedSrv/fsship.cpp:511-542</c>) or from the clients' own EJECT /
+    /// ENTER_LIFEPOD handlers terminating their local parts
+    /// (<c>clintlib/appmsg.cpp:193-201</c>, <c>:1973-1981</c>). The hull swap that
+    /// always follows a death in this port raises its own whole-loadout
+    /// <c>LOADOUT_CHANGE</c> (P173) carrying the pod hull with zero parts, which
+    /// is the port's equivalent of that message path — so this strip deliberately
+    /// stays silent instead of publishing an intermediate "old hull, no parts"
+    /// snapshot that no native client would ever see.</para>
+    /// <para><b>Ordering.</b> The caller runs this AFTER the loot rolls
+    /// (<c>Server.Combat.DropKillShipLoot</c>, P411), so the 1-in-5 rolls still
+    /// see the intact loadout, ammo and fuel; the pools are zeroed here last so
+    /// the <see cref="SetFuel"/> zero-transition cannot auto-reload from a cargo
+    /// pack this same call just removed (native's final state is the same: its
+    /// <c>SetFuel(0.0f)</c> at <c>FedSrv.CPP:11727</c> runs before
+    /// <c>SetBaseHullType</c> zeroes the tank again at
+    /// <c>Igc/shipIGC.cpp:1429</c>).</para>
+    /// </summary>
+    public void TerminatePartsOnDeath()
+    {
+        ClearParts(raiseLoadoutChange: false);
+
+        // CshipIGC::SetBaseHullType's scalar resets (Igc/shipIGC.cpp:1428-1437).
+        // Ammo/fuel keep the P411 zeroing behaviour; ore and energy are the
+        // remaining pools the dying hull carried, and native drops all four on the
+        // same swap. (This port's ChangeHull deliberately leaves the pools alone —
+        // its contract is pinned to "swap only the hull record", and the purchase
+        // path re-seeds them instead — so the death path is where the native
+        // reset belongs.) SetFuel runs last, after the cargo clear, so its
+        // zero-transition reload finds no spare pack.
+        Ore = 0f;             // m_fOre = 0.0f, shipIGC.cpp:1428
+        Ammo = 0;             // m_ammo = 0, shipIGC.cpp:1430
+        Energy = 0f;          // m_energy = 0.0f, shipIGC.cpp:1437
+        SetFuel(0.0f);        // m_fuel = 0.0f, shipIGC.cpp:1429
+    }
+
+    /// <summary>The shared mechanics behind <see cref="ClearLoadout"/> and
+    /// <see cref="TerminatePartsOnDeath"/>: drop every realized weapon, every
+    /// equipped part, the whole cargo hold and any mounted shield's charge,
+    /// raising the P173 host seam only when
+    /// <paramref name="raiseLoadoutChange"/> asks for it.</summary>
+    private void ClearParts(bool raiseLoadoutChange)
     {
         _weapons.Clear();
         _parts.Clear();
@@ -5289,7 +5351,8 @@ public sealed partial class Ship : Model, IShipIgc
         // FM_S_LOADOUT_CHANGE(96). Exactly one Removed raise for the whole
         // clear (mirrors native ProcessShipLoadout triggering one
         // QueueLoadoutChange, not one event per part); NULL part.
-        RaiseLoadoutChange(null, LoadoutChange.Removed);
+        if (raiseLoadoutChange)
+            RaiseLoadoutChange(null, LoadoutChange.Removed);
     }
 
 

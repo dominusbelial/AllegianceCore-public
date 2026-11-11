@@ -898,7 +898,7 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs` (`RestoreSavedLoadout`).
   *Native:* `Igc/shipIGC.cpp:360-363,1408`, `Igc/shipIGC.h:421-459,2473-2491`,
   `clintlib/appmsg.cpp:2022-2027`, `clintlib/clintlib.h:1876-1886`. Parity
-  `docs/parity/sim-rules-matrix.csv` (SIM-0859/0860) and
+  `docs/parity/sim-rules-matrix.csv` (SIM-0859) and two eject/rescue rows in
   `docs/parity/p977-eject-rescue.csv`; tests
   `tests/Allegiance.Core.Tests/P996LifepodRespawnLiveTests.cs`,
   `tests/Allegiance.ClientCore.Tests/P996LifepodSavedLoadoutTests.cs`,
@@ -906,6 +906,26 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreTests.cs`,
   `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreLiveTests.cs`;
   report `docs/reports/LIFEPOD_RESPAWN_P996.md`.
+- **Dead-ship parts die with the ship (P998)** — native `KillShipEvent` rolls one
+  treasure per part and then `p->Terminate()`s every one of them (cargo included,
+  it is a part with a negative mount) before the eject/restart hull swap, which is
+  why `SetBaseHullType` asserts the part list is empty. Port:
+  `src/Allegiance.Core/Sim/Ship.cs` (`TerminatePartsOnDeath` — parts, realized
+  weapons, cargo, shield charge, then the `SetBaseHullType` ore/ammo/energy/fuel
+  resets; wire-silent), called for every ROOT death in
+  `src/Allegiance.Server/Server.Combat.cs` `BroadcastKillShip` right after the
+  P411 loot rolls; the client drops its local parts in
+  `src/Allegiance.ClientCore/State/ClientWorld.cs` `Apply(Eject)` /
+  `Apply(EnterLifepod)` and never lets a parts-less refresh replace
+  `OwnSavedLoadout` (P996 restore).
+  *Native:* `FedSrv/FedSrv.CPP:11686-11696,11698-11728,11942,12052`,
+  `Igc/shipIGC.cpp:1377,1428-1437,1516-1549`, `clintlib/appmsg.cpp:193-201,1973-1981`.
+  Parity `docs/parity/sim-rules-matrix.csv` (SIM-0860) and
+  `docs/parity/p977-eject-rescue.csv`; tests
+  `tests/Allegiance.Core.Tests/P998DeadShipPartsTests.cs`,
+  `tests/Allegiance.Core.Tests/P998DeadShipPartsLiveTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P998DeadShipPartsClientTests.cs`; screenshots
+  `tools/p998-ui-proof/`; report `docs/reports/DEAD_SHIP_PARTS_P998.md`.
 - **Own small-hull effects (P915)** — `src/Allegiance.ClientCore.Game/Rendering/ShipEffectRules.cs`
   scales own external-view damage smoke from real hull length and camera distance,
   and gates afterburner trail/nozzle boost by the owner's mounted loadout (remote

@@ -1803,8 +1803,22 @@ public sealed partial class Server
         // ejects or truly dies. A child/turret ship (parented) gets no independent
         // drop. The dying ship's full state (Parts/Ammo) is still intact here
         // (ReceiveDamage raises KillShipEvent before anything clears it).
+        //
+        // P998 — then the loadout DIES with it: native terminates every part
+        // (`p->Terminate()`, FedSrv.CPP:11695) in that same root-ship block, so
+        // the eject/restart hull swap that follows always sees a bare ship
+        // (`assert (m_parts.n() == 0)`, Igc/shipIGC.cpp:1377). The rolls above run
+        // first (byte-identical P411 behaviour), then the strip, then the hull
+        // swap — the native order. Before P998 the port rolled the loot and left
+        // the parts mounted, so an ejected lifepod flew (and could fire, shield,
+        // boost and reload from) the dead fighter's loadout.
         if (victim.ParentShip is null)
+        {
             DropKillShipLoot(victim, now);
+            victim.TerminatePartsOnDeath();   // parts + cargo terminate, ammo/fuel/ore/energy zero (shipIGC.cpp:1428-1437)
+            Console.WriteLine($"[loot] ship {victim.Id}: parts terminated (native p->Terminate(), FedSrv.CPP:11695) — "
+                + $"left {victim.Parts.Count} part(s), {victim.CargoHold.Count(c => c is not null)} cargo, ammo {victim.Ammo}, fuel {victim.Fuel:0.#}");
+        }
 
         // ── P107: the bKilled gate (FedSrv.CPP:11770-11785) ──
         // First, the owning peer — the port's IsPlayer() proxy (native
@@ -2223,11 +2237,20 @@ public sealed partial class Server
         // (1) PARTS — 1-in-5 per still-mounted part (FedSrv.CPP:11686-11696):
         //     `if (randomInt(0,4) == 0) CreateTreasure(..., p, p->GetPartType(), p1, 100.0f, 60.0f)`
         //     then `p->Terminate()` either way. Snapshot the list (native walks a
-        //     removal-safe first() loop); the dying ship's loadout is cleared by the
-        //     death/respawn path (ChangeHull to Lifepod / FinalizeDeadShip), so no
-        //     manual termination is needed here. dv=100.0f, lifespan=60.0f are the
+        //     removal-safe first() loop) so the removal a caller performs afterwards
+        //     cannot disturb the walk. dv=100.0f, lifespan=60.0f are the
         //     kill-ship call's arguments (FedSrv.CPP:11694) — passed through the
         //     reused CreateDropTreasure path unchanged.
+        //
+        //     P998 — the `p->Terminate()` half of native's loop now lives in
+        //     <see cref="Ship.TerminatePartsOnDeath"/>, called by the caller right
+        //     after this method returns (the whole-loadout strip, cargo included).
+        //     It is NOT done here because this method early-returns without a
+        //     sector/mission while native's root-ship terminate block always runs;
+        //     terminating every part AFTER the last roll changes no roll outcome.
+        //     (The pre-P998 comment claimed the death/respawn path cleared the
+        //     loadout — it did not: the pod carried the dead ship's parts on the
+        //     wire and in the hangar's CURRENT SHIP pane.)
         foreach (var part in victim.Parts.ToArray())
         {
             if (_rand.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
