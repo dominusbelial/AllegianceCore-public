@@ -8164,3 +8164,24 @@ both arms log the same bot hits/kills, the same `[proj-diag]` shape and zero par
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.3 s against [28,31], also when co-run with `MissileBroadcastTests`/`P994GunfireBatchTests` | passes alone with batching on and off; server log seats at 30 s — the ledgered FltBot receipt/simulation-clock boundary under co-running load |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed, 38 s | already ledgered by P997 (fails alone on the clean base) |
 | `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`, `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | failed once in the sweep | 3/3 pass alone with batching default ON |
+
+### 2026-11-11 — P998 dead-ship part strip, fast suite (`tools/test-tiers/runner.py --tier fast --no-build`)
+
+One full Fast tier on the P998 tree (14 072 tests, 571.3 s, load avg ~1.5–2 with other lanes active):
+14 066 passed, 4 failed, 3 `NotExecuted` (the private-Meshy-pack skips), 2 `SLOW FAST` executions over the
+calibrated 10 s limit. Every failure is already ledgered above with the same signature; each was re-run alone
+on this tree:
+
+| Test | Sweep | 3× alone (this tree) | Classification |
+|---|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (5 s, "B never saw A's death (IsDead never latched on B)") | fail | **3 pass / 0 fail**, ~1 s each | the long-ledgered asynchronous remote death-receipt intermittency (P892c/P896/P899/P903/P996 rows); the fixture kills immediately after seating and allows only a 2,500-tick window (`DeadLatchRespawnLiveTests.cs:432-440`), and P998 does not touch the death latch, KILL_SHIP or EXPORT paths |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | fail (`5.0000000000000009` vs the inclusive `(4.9, 5]` bound) | **2 runs 3/3 pass, 1 run 2/3** (same delay:5 one-ULP value) | the existing floating upper-bound family (P966/P977/P993 rows); no timer/constant code on the P998 path |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.4 s vs `[28,31]`) | **1 pass / 2 fail**, 32.15 / 32.20 s — the exact ledgered boundary | the existing auto-seat receipt/simulation-clock boundary (P945…P997 rows); no side-select/auto-seat code changed |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.2 s) | fail | **0 pass / 3 fail**, 38 s each | the ledgered persistent partial-tip receipt family (P933/P935/P966/P993/P997 rows: fails alone on the clean base too); it is also one of the two `SLOW FAST` executions (38.178 s), the other being the ledgered near-limit `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.566 s) |
+
+Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`) on this
+tree: **five sequential runs, 5 pass / 0 fail** (278 s, 176 s, 165 s, 188 s, 360 s), plus two instrumented
+re-runs logging `P700 local 15v15: 171.3s, reached=24/30, longest speed<1 with target=1.907s` and
+`261.4s, reached=24/30, longest=0.407s` — zero park-limit violations (limit 5 s), which is at or above the
+ledgered base rate. Extra Live check for the bots path P998 touches: `P996BotsLifepodNoOxygenLoopLiveTests`
+**pass** (seed 996, pods drifting 13, pod deaths 53, oxygen deaths 19, minimum launch→oxygen-death gap 14.55 s).
