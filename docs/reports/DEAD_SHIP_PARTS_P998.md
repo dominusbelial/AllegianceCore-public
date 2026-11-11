@@ -17,6 +17,13 @@ This closes the follow-up P996 recorded in `docs/reports/LIFEPOD_RESPAWN_P996.md
 pod (native terminates them in the kill loot loop, `FedSrv.CPP:11691-11702`);
 visible as the pod's 'CURRENT SHIP' list in the loadout capture").
 
+> **Claude review (2026-11-11):** verdict good. Native citations re-grepped (FedSrv.CPP 11634-11763 loot/terminate block,
+> shipIGC.cpp:1377 assert and :1428-1437 resets, appmsg.cpp:193-201 EJECT and :1973-1981 ENTER_LIFEPOD terminate loops);
+> one off-by-five fixed (native's "ignore own part changes" branch is appmsg.cpp:2023-2024, not :2028). Build 0/0; P998 +
+> P996 + P411 + lifepod/oxygen tests 3× alone: Core 52/0/0, ClientCore 10/0/0, MonoGame P996 5/0/0 each run. Screenshots
+> viewed: CURRENT SHIP is the bare pod (#33, no parts), PENDING is the restored Adv Fighter; both pod HUDs show no weapons.
+> Pre-existing, not P998: the loadout pane's hull-info panel overlaps the hull list at 1280×720 (the proof uses 1920×1080).
+
 ---
 
 ## 1. Native study (every line re-grepped in `~/Development/Allegiance/src`)
@@ -92,7 +99,7 @@ Whatever the player had is replayed later by the *client's* cached `m_loadouts`
 head (`RestoreLoadout`, `clintlib/clintlib.h:1876-1886`), which is saved on
 `BUY_LOADOUT_ACK` (`clintlib/appmsg.cpp:3185`) and never touched by the strip. The
 native client also *ignores* its own `LOADOUT_CHANGE` part list ("Ignore most part
-changes for ourselves", `appmsg.cpp:2028`).
+changes for ourselves", `appmsg.cpp:2023-2024`).
 
 ### 1.4 Non-player deaths and child ships
 
@@ -202,7 +209,7 @@ native.
   parts in the same loop, `appmsg.cpp:193-197`, `shipIGC.cpp:1516-1549`).
 * `RememberOwnLoadout` (`:400-425`) now refuses a loadout with **no mounted parts**:
   native's own client never takes parts from its own `LOADOUT_CHANGE`
-  (`appmsg.cpp:2028`) and only re-saves on a purchase ACK (`:3185`), so a
+  (`appmsg.cpp:2023-2024`) and only re-saves on a purchase ACK (`:3185`), so a
   parts-less refresh (a dropped last part, a strip notification) can never replace
   the P996 `m_loadouts` head the hangar restores (`clintlib.h:1876-1886`). Stated
   deviation: a purchase of a deliberately bare hull keeps the previous entry.

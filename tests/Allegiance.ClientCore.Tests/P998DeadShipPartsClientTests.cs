@@ -21,7 +21,7 @@ namespace Allegiance.ClientCore.Tests;
 /// <para>Also pinned here: the native <c>m_loadouts</c> head (P996's
 /// <see cref="ClientWorld.OwnSavedLoadout"/>) must NOT be overwritten by a
 /// hull-only refresh — native's own client ignores its own <c>LOADOUT_CHANGE</c>
-/// part list (<c>appmsg.cpp:2028</c>) and only re-saves on a purchase ACK
+/// part list (<c>appmsg.cpp:2023-2024</c>) and only re-saves on a purchase ACK
 /// (<c>appmsg.cpp:3185</c>), so the strip-triggered refresh that follows a death
 /// can never cost the player the ship the hangar will restore
 /// (<c>clintlib.h:1876-1886</c>).</para>
@@ -111,7 +111,7 @@ public class P998DeadShipPartsClientTests
     /// ⭐ The strip's own-ship <c>LOADOUT_CHANGE</c> (a hull-only refresh, e.g. the
     /// server's whole-loadout publish around a death) must not become "the last
     /// loadout": native's client never takes its parts from its own
-    /// <c>LOADOUT_CHANGE</c> (<c>appmsg.cpp:2028</c>) and re-saves only on a
+    /// <c>LOADOUT_CHANGE</c> (<c>appmsg.cpp:2023-2024</c>) and re-saves only on a
     /// purchase ACK (<c>appmsg.cpp:3185</c>), so the cached entry keeps the parts
     /// the hangar will restore (<c>clintlib.h:1876-1886</c>).
     /// </summary>

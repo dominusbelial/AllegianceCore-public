@@ -407,7 +407,7 @@ public sealed partial class ClientWorld
     /// pod's bare chassis must not become "the last loadout".
     /// <para>P998 — nor does a loadout with NO mounted parts. Native's own client
     /// never takes its parts from a server <c>LOADOUT_CHANGE</c> at all ("Ignore
-    /// most part changes for ourselves", <c>appmsg.cpp:2028</c>); the cached
+    /// most part changes for ourselves", <c>appmsg.cpp:2023-2024</c>); the cached
     /// <c>m_loadouts</c> head is only refreshed by <c>SaveLoadout()</c> on a
     /// purchase ACK (<c>appmsg.cpp:3185</c>). The port's renderer learns its own
     /// parts from the wire instead, so a hull-only refresh — a stray DROP_PART of
