@@ -366,6 +366,55 @@ public sealed partial class ClientWorld
     /// </summary>
     public Func<short, short?> LifepodHullResolver { get; set; } = _ => null;
 
+    /// <summary>P996 — the last REAL (non-lifepod) loadout the local player owned:
+    /// the head of native's cached loadout list (<c>m_loadouts</c>,
+    /// <c>clintlib.h:821</c>), which the native client saves on every
+    /// <c>FM_S_BUY_LOADOUT_ACK</c> (<c>appmsg.cpp:3185</c> <c>SaveLoadout()</c>) and
+    /// on closing the loadout screen (<c>load.cpp:557</c>). It is what
+    /// <c>RestoreLoadout(station)</c> replays when the player is docked in a
+    /// lifepod (<c>clintlib.h:1876-1886</c>): a berthed pod has a pod hull and no
+    /// parts, so the native hangar restores the ship the player actually flew
+    /// instead of offering the pod. The port records the same snapshot whenever a
+    /// real hull + its mounted parts reach the local ship.</summary>
+    public sealed record SavedLoadout(short HullId, IReadOnlyList<ExpandedPartData> Parts);
+
+    /// <summary>P996 — see <see cref="SavedLoadout"/>. Null until the local ship
+    /// has had a real (non-lifepod) loadout; a pod hull never overwrites it, so
+    /// the player's last ship survives the eject/death/restart cycle.</summary>
+    public SavedLoadout? OwnSavedLoadout { get; private set; }
+
+    /// <summary>P996 — the local ship is berthed at a station in its side's
+    /// lifepod hull: exactly native's <c>FMLC</c> gate
+    /// (<c>pship-&gt;GetBaseHullType()-&gt;HasCapability(c_habmLifepod) &amp;&amp;
+    /// pship-&gt;GetStation()</c>, <c>appmsg.cpp:2022-2023</c>) that triggers the
+    /// client-side <c>RestoreLoadout(station)</c>. Requires a positive lifepod
+    /// resolution (an absent resolver never claims "docked in a pod").</summary>
+    public bool OwnShipDockedInLifepod
+    {
+        get
+        {
+            if (MyShipId is not { } id || !_ships.TryGetValue(id, out var e)) return false;
+            if (e.StationId < 0 || e.HullId < 0) return false;
+            return LifepodHullResolver(e.SideId) is { } pod && pod == e.HullId;
+        }
+    }
+
+    /// <summary>P996 — record the local ship's real loadout as the native client's
+    /// cached loadout head. Called from every place the own ship's hull + mounted
+    /// parts are learned: a purchase ACK (<c>appmsg.cpp:3185</c> SaveLoadout), a
+    /// <c>LOADOUT_CHANGE</c> for our ship (<c>appmsg.cpp:2029-2031</c>) and a
+    /// real-id EXPORT. A lifepod hull (or an unresolved side) never records — the
+    /// pod's bare chassis must not become "the last loadout".</summary>
+    private void RememberOwnLoadout(ShipEntity e)
+    {
+        if (MyShipId is not { } id || e.ShipId != id) return;
+        if (e.HullId < 0 || e.Loadout is null) return;
+        // Positive "not the pod": an unknown resolver leaves the previous saved
+        // loadout untouched (never guess, never lose the real one).
+        if (LifepodHullResolver(e.SideId) is not { } pod || pod == e.HullId) return;
+        OwnSavedLoadout = new SavedLoadout(e.HullId, e.Loadout.ToArray());
+    }
+
     // ── P975 (P971-03) — one per-world container for every ship-keyed cache ──
     //
     // Before P975 the per-ship interpolation maps below were removed only on
@@ -2237,6 +2286,13 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         if (bumpMissionGeneration) MissionGeneration++;
         MyShipId = null;
+        // P996 — a fresh game/session starts with no cached loadout: native purges
+        // the list on FM_S_ENTER_GAME (`ClearLoadout()`, clintlib/appmsg.cpp:3040-3046;
+        // clintlib.h:1381-1385 `m_loadouts.purge()`), then reloads only the
+        // persisted custom-loadout file. The saved real hull is re-recorded by the
+        // next purchase ACK, so a pod death in the NEW game cannot restore the
+        // previous game's ship.
+        OwnSavedLoadout = null;
         OwnMissionDeparture = null;
         _mutedPilots.Clear();
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
@@ -3432,6 +3488,7 @@ public sealed partial class ClientWorld
         var exportedInventory = export.Parts
             .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted)).ToList();
         StoreInventory(e, exportedInventory);
+        if (e.IsMine) RememberOwnLoadout(e);   // P996 — a real-id EXPORT of our own ship carries its parts
         // P370 — an identity EXPORT re-establishes this ship in our view (e.g. a
         // cross-side ship we'd marked gone warped back into our sector, or we
         // re-gained visibility after the server re-sent it); clear the transient
@@ -4400,6 +4457,7 @@ public sealed partial class ClientWorld
         }
         e.Loadout = mounted;
         e.Cargo = cargo;
+        RememberOwnLoadout(e);   // P996 — native SaveLoadout() on every purchase ack (appmsg.cpp:3185)
     }
 
     /// <summary>
@@ -4455,6 +4513,7 @@ public sealed partial class ClientWorld
         }
         e.Loadout = mounted;
         e.Cargo = cargo;
+        RememberOwnLoadout(e);   // P996 — own-ship hull+parts refresh (native m_loadouts head)
 
         // Native re-seats boarded children (passenger loop, :2035-2079).
         foreach (var pd in m.Passengers)

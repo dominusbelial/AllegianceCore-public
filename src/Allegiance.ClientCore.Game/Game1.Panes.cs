@@ -175,6 +175,18 @@ public sealed partial class Game1
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
                     world.MyMoney);
+                // P996 — BERTHED IN A LIFEPOD: the ship's current hull is the pod,
+                // which the station does not offer, so without this the hangar
+                // shows/launches the pod (the P996 loop: BUY_LOADOUT(pod hull,
+                // fLaunch) → launch → instant stale-oxygen death). Native restores
+                // the player's last loadout instead: the LOADOUT_CHANGE handler's
+                // `pod hull && GetStation()` branch calls RestoreLoadout(station)
+                // (appmsg.cpp:2022-2023 → clintlib.h:1876-1886), which replays the
+                // head of the cached loadout list. Same model, same rule.
+                if (world.OwnShipDockedInLifepod && world.OwnSavedLoadout is { } saved
+                    && _shopModel.RestoreSavedLoadout(saved.HullId, saved.Parts))
+                    Console.WriteLine($"[monogame] docked in a lifepod: restored last loadout hull {_shopModel.EffectiveHullId} "
+                        + $"+ {_shopModel.ChosenParts.Count} part(s) (native RestoreLoadout, clintlib.h:1876-1886)");
                 // P755 — the loadout menu's own-deploy cues: part chosen / slot
                 // emptied → mountSound/unmountSound (load.cpp:1887/1889); a hull
                 // pick rebases the default loadout → mountSound (load.cpp:1480-1487).

@@ -122,6 +122,12 @@ public class LiveP378DebugModeTests
 
         short lifepodId = mission.Sides.First(s => s.Id == ship.SideId!.Value).Civilization.Lifepod;
         Assert.True(mission.Core.HullTypes.TryGetValue(lifepodId, out var lp), "lifepod hull in core");
+        // P996 — the pod clock only exists while the pod is in space: a BERTHED
+        // ship carries none (native SetStation takes the ship out of its cluster,
+        // shipIGC.h:441-457, so Update's expiry check cannot reach it). A fresh
+        // spawn is docked, so drop the dock latch first — the real eject/death/
+        // rescue hull-swap this test mirrors always happens in space.
+        ship.StationId = null;
         ship.ChangeHull(lp!);                                    // the real death/eject/rescue hull-swap
 
         Assert.NotNull(ship.LifepodTimeToDie);                    // timer armed by the swap

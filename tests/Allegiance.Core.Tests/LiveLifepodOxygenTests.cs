@@ -33,7 +33,9 @@ namespace Allegiance.Core.Tests;
 ///      respawns (ENTER_LIFEPOD + docked at a friendly station) — no re-eject;
 ///  (2) a pod that has been brought safe to a base (docked — exactly what
 ///      rescue does) does NOT self-destruct even well past its expired oxygen
-///      deadline — the scope-4 "rescue cancels the timer" via the docked gate.
+///      deadline — the scope-4 "rescue cancels the timer". Since P996 the dock
+///      CLEARS the deadline outright (native: a berthed ship is out of its
+///      cluster, shipIGC.h:457-459), so a stale clock can never survive a dock.
 /// The [Collection("LiveNetwork")] tag keeps these sequential with the rest.
 /// </summary>
 [Collection("LiveNetwork")]
@@ -254,10 +256,10 @@ public class LiveLifepodOxygenTests
     /// delete the pod object; the timer is therefore cancelled by the
     /// <c>StationId is null</c> gate in <see cref="Ship.OnUpdate"/>. Exercise
     /// the same gate via the death-respawn path: an already-lifepod ship dies
-    /// and becomes a <b>docked</b> Lifepod at a friendly station (timer re-armed
-    /// with the short override by the respawn's hull-swap), then we pump well
-    /// past that deadline and assert the docked pod does <b>not</b> self-
-    /// destruct — no second KILL_SHIP/ENTER_LIFEPOD, still docked. A rescued
+    /// and becomes a <b>docked</b> Lifepod at a friendly station (the respawn's
+    /// hull-swap arms the short override, and the dock latch clears it — P996),
+    /// then we pump well past that deadline and assert the docked pod does
+    /// <b>not</b> self-destruct — no second KILL_SHIP/ENTER_LIFEPOD, still docked. A rescued
     /// pod is in exactly this berthed state, so the cancellation holds for it
     /// too (this is the mechanism; the transport is identical).</summary>
     [Trait("Requires", "Artwork")]
@@ -306,7 +308,14 @@ public class LiveLifepodOxygenTests
         int a = PumpUntil(server, () => pod.Pods.Any(p => p.ShipId == podId), 4000);
         Assert.True(a < 4000, "initial lifepod death did not respawn");
         Assert.NotNull(podShip.StationId);                                   // docked at the base
-        Assert.True(podShip.LifepodTimeToDie is not null, "docked respawn still armed a (short) oxygen deadline");
+        // P996 — a BERTHED pod carries no oxygen clock at all. Native's SetStation
+        // takes the ship out of its cluster ("This also sets the ship's cluster to
+        // NULL", shipIGC.h:457, assert at :459), so Update's expiry check
+        // (shipIGC.cpp:361-363) and GetEndurance (shipIGC.h:2473-2491) can never
+        // reach it. The old port only *gated* the burn on StationId and left the
+        // deadline armed; that stale deadline then killed the pod's first relaunch
+        // (P996). Asserting the clear pins the fix at its source.
+        Assert.Null(podShip.LifepodTimeToDie);
         int initialKills = pod.Kills.Count(k => k.ShipId == podId);
         Assert.Equal(1, initialKills);                                       // the one real death so far
 

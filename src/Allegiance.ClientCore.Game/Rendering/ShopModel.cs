@@ -581,6 +581,162 @@ public sealed class ShopModel
 
     public ShopCatalog Catalog => _cat;
 
+    /// <summary>
+    /// P996 — the native client's <c>RestoreLoadout(station)</c> for a hangar
+    /// opened while the local ship is BERTHED IN A LIFEPOD
+    /// (<c>clintlib.h:1876-1886</c>). Native's handler chain is
+    /// <c>appmsg.cpp:2022-2023</c> (`pod hull &amp;&amp; GetStation()` →
+    /// <c>RestoreLoadout(station)</c>) → <c>RestoreLoadout(m_ship, pship, station,
+    /// m_ship-&gt;GetValue() + GetMoney())</c>, whose pod/no-matching-loadout branch
+    /// is `ReplaceLoadout(sink, pstation, NULL, budget, m_loadouts)`
+    /// (<c>clintlib.h:1631-1633</c>): take the head of the cached loadout list —
+    /// the ship the player last flew — upgrade the hull to
+    /// <c>pstation-&gt;GetSuccessor(hull)</c>, clone every part the new hull can mount
+    /// (<c>clintlib.h:1806-1848</c>), and — when the hull was upgraded — fill the
+    /// remaining slots with its default parts (<c>TryToBuyParts</c>,
+    /// <c>clintlib.h:1341-1368</c>). If the saved hull is unaffordable/unbuyable
+    /// native falls back to the first hull in core order that the station can buy
+    /// within budget, with its default loadout (<c>clintlib.h:1850-1868</c>).
+    /// <para>Native then SENDS that restored loadout to the server with
+    /// <c>BuyLoadout(pship, false)</c> (<c>clintlib.h:1883</c>), so the docked ship
+    /// really becomes the real hull — the port reaches the same end state because
+    /// the shop's Launch/Buy both send <see cref="EffectiveHullId"/> +
+    /// <see cref="ChosenParts"/> (<c>Game1.PurchaseHangarLoadout</c>), and the
+    /// server's own P488 successor upgrade then applies to hull and parts.</para>
+    /// The port's shop carries the mounted loadout only (cargo is the existing
+    /// shop gap, not a P996 decision); cargo parts are therefore not replayed.
+    /// </summary>
+    /// <param name="savedHullId">The last real hull the local player flew
+    /// (<see cref="Allegiance.ClientCore.State.ClientWorld.OwnSavedLoadout"/>).</param>
+    /// <param name="savedParts">That hull's mounted parts.</param>
+    /// <returns>True when a real (non-pod) hull is now the selection.</returns>
+    public bool RestoreSavedLoadout(short savedHullId, IReadOnlyList<ExpandedPartData> savedParts)
+    {
+        // Budget = m_ship->GetValue() + GetMoney() (clintlib.h:1880). A berthed pod
+        // is worth nothing (price 0), so the wallet is the budget; when the wallet
+        // is not known yet, stay permissive and let the server's funds gate decide
+        // (native never has that uncertainty — it always has GetMoney()).
+        long budget = MyMoney ?? long.MaxValue;
+
+        short? hullId = BuyableHullOrDefault(savedHullId);
+        if (hullId is { } candidate && HullPrice(candidate) <= budget)
+        {
+            SelectRestoredHull(candidate, savedParts, upgradedFrom: candidate != savedHullId);
+            return true;
+        }
+
+        // Native fallback (clintlib.h:1850-1868): the first hull in core order the
+        // station can buy within budget, then BuyDefaultLoadout.
+        foreach (var hull in BuyableHulls)
+        {
+            if (hull.Price > budget) continue;
+            SelectRestoredHull(hull.HullId, savedParts: null, upgradedFrom: true);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>P996 — apply one restored selection: the hull (if it differs from
+    /// the berthed pod) plus either the saved parts that fit it or, when there is
+    /// no saved list for that hull (fallback/default hull), its native default
+    /// loadout. Native's clone loop mounts only the saved parts
+    /// <c>phtSuccessor-&gt;CanMount(ppt, mount)</c> accepts
+    /// (<c>clintlib.h:1810-1812</c>) and then fills the remaining slots when the
+    /// hull was upgraded (<c>:1620-1624</c>).</summary>
+    private void SelectRestoredHull(short hullId, IReadOnlyList<ExpandedPartData>? savedParts, bool upgradedFrom)
+    {
+        ChosenHullId = hullId == CurrentHullId ? null : hullId;
+        HullCursor = IndexOfHull(hullId);
+        _chosenParts.Clear();
+        if (EffectiveHull is not { } eff)
+        {
+            NormalizeWeaponMounts();
+            return;
+        }
+        if (savedParts is null)
+        {
+            foreach (var p in DefaultLoadoutFor(eff)) _chosenParts.Add(p);
+        }
+        else
+        {
+            foreach (var p in savedParts)
+            {
+                if (LookupPart(p.PartId) is not { } part) continue;      // not offered here
+                if (!eff.CanMountPart(part)) continue;                   // native CanMount clone gate
+                _chosenParts.Add(p);
+            }
+            // Native TryToBuyParts runs only when the hull was upgraded
+            // (`if (pcl->pht != pht)`, clintlib.h:1620): keep the cloned parts and
+            // fill the slots the NEW hull leaves empty.
+            if (upgradedFrom) FillEmptySlotsWithDefaults(eff);
+        }
+        NormalizeWeaponMounts();
+        SlotCursor = 0;
+        BlockReason = null;
+    }
+
+    /// <summary>P996 — append <see cref="DefaultLoadoutFor"/> parts for every slot
+    /// the pending loadout still leaves empty (native <c>TryToBuyParts</c>,
+    /// <c>clintlib.h:1341-1368</c>: it only mounts where
+    /// <c>GetMountedPart(et, i) == NULL</c>).</summary>
+    private void FillEmptySlotsWithDefaults(in DataHullTypeIGC hull)
+    {
+        foreach (var d in DefaultLoadoutFor(hull))
+        {
+            if (LookupPart(d.PartId) is not { } part) continue;
+            bool occupied = _chosenParts.Any(p =>
+                LookupPart(p.PartId) is { } have &&
+                (part.EquipmentType == EquipmentType.Weapon
+                    ? have.EquipmentType == EquipmentType.Weapon && p.MountId == d.MountId
+                    : have.EquipmentType == part.EquipmentType && p.MountId == 0));
+            if (!occupied) _chosenParts.Add(d);
+        }
+    }
+
+    /// <summary>P996 — walk a saved hull's successor chain to the furthest hull the
+    /// docked station actually offers, native <c>pstation-&gt;GetSuccessor(pht)</c>
+    /// (<c>stationIGC.h:399-440</c>: <c>pSuccessor = pht</c>, then follow
+    /// <c>GetSuccessorHullType()</c> while <c>CanBuy(pNext)</c>). The catalogue's
+    /// <see cref="BuyableHulls"/> is already the CanBuy∧!IsObsolete set, so
+    /// membership is the CanBuy test. Null when neither the hull nor any successor
+    /// is offered.</summary>
+    private short? BuyableHullOrDefault(short rawHullId)
+    {
+        short? best = InHullCatalog(rawHullId) ? rawHullId : null;
+        short cur = rawHullId;
+        for (int guard = 0; guard < 64; guard++)
+        {
+            if (!TryCoreHull(cur, out var hull) || hull.SuccessorHullId < 0 || hull.SuccessorHullId == cur) break;
+            cur = hull.SuccessorHullId;
+            if (InHullCatalog(cur)) best = cur;
+        }
+        return best;
+    }
+
+    /// <summary>P996 — whether the docked station offers this hull (it is in the
+    /// already tech-filtered catalogue the shop shows).</summary>
+    private bool InHullCatalog(short hullId)
+    {
+        foreach (var h in _cat.Hulls) if (h.HullId == hullId) return true;
+        return false;
+    }
+
+    /// <summary>P996 — a hull's core record for successor-chain stepping (the shop's
+    /// filtered list cannot link an un-offered hull to its successor).</summary>
+    private bool TryCoreHull(short hullId, out DataHullTypeIGC hull)
+    {
+        if (_cat.Core?.HullTypes is { } hulls && hulls.TryGetValue(hullId, out hull)) return true;
+        hull = default;
+        return false;
+    }
+
+    private long HullPrice(short hullId)
+    {
+        if (TryCoreHull(hullId, out var hull)) return hull.Price;
+        foreach (var h in _cat.Hulls) if (h.HullId == hullId) return h.Price;
+        return 0;
+    }
+
     // Native load.cpp:1554-1565,1603-1606 refreshes offers on tech changes while the
     // player stays docked. Keep the pending loadout and navigation intact.
     public void RefreshOffers(ShopCatalog catalog, int? money)

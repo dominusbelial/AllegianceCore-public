@@ -254,9 +254,47 @@ public sealed partial class Ship : Model, IShipIgc
     /// hull-swap to a lifepod (<c>shipIGC.cpp:1407-1408</c>:
     /// <c>m_timeToDie = GetLastUpdate() + LifepodEndurance</c>) and checked in
     /// <c>Update</c> (<c>shipIGC.cpp:361-363</c>). Null when the ship is not
-    /// (currently) a lifepod hull. Consumed in <see cref="OnUpdate"/>; set in
-    /// <see cref="ChangeHull"/>.</summary>
+    /// (currently) a lifepod hull, or while the pod is berthed at a station.
+    /// <para>P996 — <b>the clock only exists while the pod is adrift in space.</b>
+    /// Native arms it in <c>SetBaseHullType</c> (<c>shipIGC.cpp:1408</c>) and
+    /// only ever reads it from <c>Update</c> (<c>:361-363</c>) and
+    /// <c>GetEndurance</c> (<c>shipIGC.h:2473-2491</c>), and a docked ship is not
+    /// in a cluster at all: <c>SetStation</c>'s <c>s-&gt;AddShip(this)</c> "also
+    /// sets the ship's cluster to NULL" (<c>shipIGC.h:441-459</c>: <c>s-&gt;AddShip(this)</c> at <c>:457</c>, with
+    /// <c>assert (GetCluster() == NULL)</c> at <c>:459</c>), so no Update ever
+    /// reaches a berthed pod and <c>GetEndurance</c>'s <c>GetCluster()</c> gate
+    /// reports "full". The port mirrors that with <see cref="StationId"/>: the
+    /// clock is CLEARED on every dock and re-armed (a fresh
+    /// <c>now + endurance</c>) only when a pod actually launches back into
+    /// space — so a deadline left over from a previous life can never kill a
+    /// ship. Consumed in <see cref="OnUpdate"/>; armed/cleared in
+    /// <see cref="ChangeHull"/>, <see cref="StationId"/> and
+    /// <see cref="OnUpdate"/>'s fire-once guard.</para></summary>
     public double? LifepodTimeToDie { get; private set; }
+
+    /// <summary>P996 — native <c>GetMyMission()-&gt;GetFloatConstant(c_fcidLifepodEndurance)</c>
+    /// (<c>shipIGC.cpp:1408</c>): the pod's oxygen endurance, read from the loaded
+    /// core's <c>FloatConstants[31]</c> (300 s for PCore001, <c>missionigc.cpp:2724/2775</c>)
+    /// unless the P279 <see cref="LifepodEnduranceOverrideSeconds"/> test seam
+    /// compresses it. Single source for every arm/read site.</summary>
+    private double LifepodEnduranceSeconds =>
+        LifepodEnduranceOverrideSeconds
+        ?? (Mission?.Core.Constants.FloatConstants is { } fc
+            && fc.Length > LifepodEnduranceConstantIndex
+            ? fc[LifepodEnduranceConstantIndex]
+            : DefaultLifepodEnduranceSeconds);
+
+    /// <summary>P996 — arm a FRESH oxygen deadline, the native
+    /// <c>m_timeToDie = GetLastUpdate() + LifepodEndurance</c>
+    /// (<c>shipIGC.cpp:1408</c>). Only called when the ship is (or is about to
+    /// be) a drifting pod in space, never while berthed.</summary>
+    private void ArmLifepodDeadline() =>
+        LifepodTimeToDie = (Mission?.LastUpdate ?? 0.0) + LifepodEnduranceSeconds;
+
+    /// <summary>P996 — no pod clock: the ship is berthed (native: not in a
+    /// cluster, so <c>Update</c> never runs — <c>shipIGC.h:441-459</c>) or is no
+    /// longer a lifepod hull.</summary>
+    private void ClearLifepodDeadline() => LifepodTimeToDie = null;
 
     /// <summary>P279 — test seam: overrides the oxygen-endurance seconds used
     /// when the hull becomes a Lifepod (default: the loaded core's baked
@@ -286,12 +324,7 @@ public sealed partial class Ship : Model, IShipIgc
             StationId is null &&
             LifepodTimeToDie is { } deadline)
         {
-            double endurance = LifepodEnduranceOverrideSeconds
-                ?? (Mission?.Core.Constants.FloatConstants is { } fc
-                    && fc.Length > LifepodEnduranceConstantIndex
-                    ? fc[LifepodEnduranceConstantIndex]
-                    : DefaultLifepodEnduranceSeconds);
-            double e = (deadline - now) / endurance;
+            double e = (deadline - now) / LifepodEnduranceSeconds;
             return Math.Clamp((float)e, 0f, 1f);
         }
         return 1.0f;
@@ -316,27 +349,20 @@ public sealed partial class Ship : Model, IShipIgc
         PendingTreasureOffer = null;
         StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
 
-        // P279 — arm/clear the drifting Lifepod's oxygen countdown. Native sets
-        // m_timeToDie = GetLastUpdate() + LifepodEndurance on ANY hull-swap to a
-        // lifepod (shipIGC.cpp:1407-1408) and clears it on the way off; the port
-        // mirrors both. Deadline anchors to the mission's current sim time (==
-        // now when this runs on the sim thread from the kill seam). Endurance is
-        // the loaded core's FloatConstants[c_fcidLifepodEndurance = 31]
-        // (300.0f for PCore001, missionigc.cpp:2724/2775), unless the P279 test
-        // seam overrides it.
-        if (hull.HasCapability(DataHullTypeIGC.HabmLifepod))
-        {
-            double endurance = LifepodEnduranceOverrideSeconds
-                ?? (Mission?.Core.Constants.FloatConstants is { } fc
-                    && fc.Length > LifepodEnduranceConstantIndex
-                    ? fc[LifepodEnduranceConstantIndex]
-                    : DefaultLifepodEnduranceSeconds);
-            LifepodTimeToDie = (Mission?.LastUpdate ?? 0.0) + endurance;
-        }
+        // P279/P996 — the drifting Lifepod's oxygen countdown. Native arms
+        // m_timeToDie = GetLastUpdate() + LifepodEndurance on a hull-swap to a
+        // lifepod (shipIGC.cpp:1408) and the clock is only ever consulted while
+        // the ship is in a cluster (Update, :361-363; GetEndurance,
+        // shipIGC.h:2473-2491). A berthed ship is not in a cluster —
+        // SetStation's AddShip "also sets the ship's cluster to NULL"
+        // (shipIGC.h:441-459) — so P996 arms ONLY for a ship that is already in
+        // space. The death-respawn hull-swap (FedSrv.CPP:12052) runs before
+        // SetStation (:12064), exactly as here: the swap arms, and the dock
+        // clears it. A non-lifepod hull has no clock at all.
+        if (hull.HasCapability(DataHullTypeIGC.HabmLifepod) && StationId is null)
+            ArmLifepodDeadline();
         else
-        {
-            LifepodTimeToDie = null;
-        }
+            ClearLifepodDeadline();
 
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) — the whole current loadout (native raises
@@ -1362,7 +1388,27 @@ public sealed partial class Ship : Model, IShipIgc
         get => _stationId;
         set
         {
+            bool dockChanged = _stationId != value;   // native SetStation's `if (pstationOld != s)` guard
             _stationId = value;
+            // P996 — the lifepod oxygen clock lives only in space. Docking is
+            // native SetStation, which ends with `s->AddShip(this)` — "This also
+            // sets the ship's cluster to NULL" (shipIGC.h:457; assert at :459) — so no Update (shipIGC.cpp:361-363) can ever burn a
+            // berthed pod, and GetEndurance reports full (shipIGC.h:2473-2491).
+            // CLEAR the deadline here instead of merely gating the burn: a
+            // deadline left over from the life that put the pod here used to
+            // survive the dock and kill the ship on its first launch of the same
+            // hull (P996). Launching back out re-arms a FRESH one below, so a
+            // pod that really does return to space gets its full endurance.
+            // Native's SetStation only acts on a real transition (shipIGC.h:423-425
+            // `if (pstationOld != s)`), so a repeated assignment is a no-op here too
+            // — the clock can never be re-armed by a redundant `StationId = null`.
+            if (dockChanged)
+            {
+                if (value is not null)
+                    ClearLifepodDeadline();
+                else if (HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+                    ArmLifepodDeadline();
+            }
             // Native SetStation completes the NPC's goto to this station
             // (Igc/shipIGC.h:459-478). The experimental typed-target order must
             // clear at docking, since an Enter waypoint does not finish in space.
@@ -9477,8 +9523,15 @@ public sealed partial class Ship : Model, IShipIgc
             Mission?.Site.KillShipEvent(now, this, null, 1.0f, Position, Vector3.Zero);
             // Fire-once guard: even if this death fails to relocate/dock the pod
             // (e.g. no friendly station anywhere — BroadcastKillShip's early
-            // return leaves it in the sector), never re-trigger every tick.
-            LifepodTimeToDie = double.PositiveInfinity;
+            // return leaves it in the sector), never re-trigger every tick. A
+            // death that DID respawn the player docked the pod synchronously
+            // (BroadcastKillShip → SetStation), which already cleared the clock
+            // (P996); leave it cleared rather than stamping a sentinel onto a
+            // berthed ship.
+            if (StationId is null)
+                LifepodTimeToDie = double.PositiveInfinity;
+            else
+                ClearLifepodDeadline();
             return;   // the pod is being destroyed/respawned this tick — stop
         }
 
