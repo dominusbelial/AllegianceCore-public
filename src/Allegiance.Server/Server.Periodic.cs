@@ -59,6 +59,7 @@ public sealed partial class Server
             DeclareGameOver(mission, result.Winner?.Id ?? GameOver.NA, reason);
         }
 
+        foreach (var mission in _missions) FlushCivStrategy(mission, now);
         CheckForNoShows(now);
     }
 

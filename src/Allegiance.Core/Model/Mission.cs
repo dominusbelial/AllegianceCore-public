@@ -1153,6 +1153,7 @@ public sealed partial class Mission : IMissionIgc
                                 + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
                     income = (long)(income * ShowcaseIncomeMultiplier); // P703 opt-in pacing extension
                     side.Money += income;                          // fsmission.cpp:2536
+                    if (Site.StrategyEconomyEnabled) Site.StrategyPaydayEvent(side, income);
                     Site.PaydayEvent(side, income);                // site seam → host payout
                 }
             }

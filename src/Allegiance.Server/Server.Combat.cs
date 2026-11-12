@@ -507,6 +507,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
     {
+        if (pship is Ship granted) RecordStrategyInventory(granted);
         if (pship is not Ship ship)
         {
             Console.WriteLine("[loadout] LoadoutChangeEvent with a non-Ship — ignored");
@@ -1027,6 +1028,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationDestroyed(Station station, Model? launcher)
     {
+        RecordStrategyStation(station, launcher);
         TrainingStationDeath?.Invoke(station, launcher);
         using var scope = TickProfiler.Enter("combat.stationEvents");
         short launcherId = -1;                     // NA

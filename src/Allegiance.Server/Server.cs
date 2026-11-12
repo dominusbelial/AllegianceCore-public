@@ -1257,6 +1257,7 @@ public sealed partial class Server : IDisposable
         // collections (it does ship.Sector = sector; sector.Add(ship) without
         // removing from any old sector) cannot occur.
         mission.PlaceShip(ship, sector);
+        RecordStrategyInventory(ship);
 
         MountCombatWeapon(ship);
         return (ship, sector);
@@ -1353,6 +1354,7 @@ public sealed partial class Server : IDisposable
         ship.SideId = sideId;                               // drones are side-owned in native
         ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;   // P378: consistent live-settings override
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
+        RecordStrategyInventory(ship);
         // P956 — native CreateDrone fills every new drone with its hull's preferred
         // part types before it is announced (Igc/common.cpp:2462-2480: for each
         // pht->GetPreferredPartTypes() entry mount it in every free socket it fits

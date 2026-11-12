@@ -2337,3 +2337,23 @@ list in **reverse**.
   and game-over civ tuples, tallying wins/losses/draws by civ and side position
   for any number of sides. The same proof tool's `--random-rotation` mode runs
   consecutive local showcase matches. Report: `docs/reports/P825_RANDOM_CIVS.md`.
+
+## 15. Civilization strategy observations (P1000)
+
+- **CivProfile / prerequisite graph** — immutable core/settings/civ snapshots,
+  per-station masks, all prerequisite providers, exact-replayed candidate routes,
+  hull/part/damage/economy specifications and accumulated GA in
+  `src/Allegiance.Core/Strategy/CivProfile.cs`. Cache uses weak core ownership and
+  a content identity including version and equipment subtype data.
+- **Portfolio choice** — public-opponent, crew/funding/time-aware power spikes
+  and deterministic primary/counter selection in
+  `src/Allegiance.Core/Strategy/CivPortfolio.cs`; observation-only server wiring
+  and bounded grant/damage/economy/station-loss receipts in
+  `src/Allegiance.Server/Server.CivStrategy.cs`. `bots.civStrategy` defaults off;
+  P1000 never replaces the existing commander/fleet/loadout policies.
+- **Receipt audit / comparison** — `tools/p999-civ-strategy/receipts.py` parses
+  match-stamped JSON windows; the tool's `--production` mode exports the loaded
+  profile choices and ordering witnesses. Tests:
+  `tests/Allegiance.Core.Tests/P1000CivProfileTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P1000CivStrategyLoopbackTests.cs`.
+  Report: `docs/reports/CIV_STRATEGY_PROFILE_P1000.md`.

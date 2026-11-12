@@ -62,3 +62,18 @@ input immutability, renamed/renumbered core records, disabled paths/research,
 development-time perturbation and opponent-defense sensitivity. The Python
 fixtures cover censored matches, draws, four-side rosters, duplicated results,
 unknown scores, normalization denominators and clock/rotation boundaries.
+
+P1000 production profile/scorer comparison (observation only):
+
+```sh
+dotnet run --project tools/p999-civ-strategy -- output PCore001.igc 1000 --production
+python3 tools/p999-civ-strategy/receipts.py server.log --out receipts.json
+python3 -m unittest discover -s tools/p999-civ-strategy -p test_receipts.py
+```
+
+`--production` writes `production.json` for every loaded civilization, including
+baseline and comparison ordering witnesses. It calls `Allegiance.Core.Strategy`;
+it does not apply a plan to a live mission. `receipts.py` succeeds on incomplete
+matches while keeping absent observations unknown; gaps/duplicates fail closed.
+Inputs from separate server lifetimes must remain separate files. The older
+`audit.py` retains its historical P999 worker/summary parser.

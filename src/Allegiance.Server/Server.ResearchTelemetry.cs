@@ -16,6 +16,9 @@ public sealed partial class Server
 
     private void RecordResearchCompletion(Mission mission, Side side, DataDevelopmentIGC development, double now)
     {
+        if (_config?.Bots.CivStrategy == true)
+            StrategyLog(new StrategyResearchReceipt("research", mission.Skills?.Match ?? 0, mission.Cookie, side.Id,
+                side.Civilization.CivilizationId, development.DevelopmentId, now), StrategyReceiptJsonContext.Default.StrategyResearchReceipt);
         var receipts = _researchReceipts.GetValue(mission, static _ => new ResearchReceipts());
         var prior = receipts.Sides.GetValueOrDefault(side.Id);
         receipts.Sides[side.Id] = (prior.Count + 1, prior.Count == 0 ? now : prior.First, now);

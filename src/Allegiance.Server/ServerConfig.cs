@@ -1239,6 +1239,7 @@ public sealed class ServerConfig
     /// </summary>
     public int? ExpectedPlayers { get; set; }
     public ShowcaseConfig Showcase { get; set; } = new();
+    public BotsConfig Bots { get; set; } = new();
 
     /// <summary>Resolve mode dependencies before binding sockets or changing global runtime state.
     /// Unlocked preserves existing settings, including P703's independently selected plans.</summary>

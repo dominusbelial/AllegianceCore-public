@@ -48,6 +48,9 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Weapon
 {
+    /// <summary>Observation-only core part identity, not serialized.</summary>
+    public short SourcePartId { get; set; } = -1;
+
     private readonly Ship _ship;
     private readonly DataPartTypeIGC.Weapon _type;
     private readonly DataProjectileTypeIGC _projectileType;
@@ -350,7 +353,7 @@ public sealed class Weapon
                             forward,
                             now,
                             _ship,                    // m_launcher (projectileIGC.cpp:25)
-                            lifespanOverride: shotLifespan);
+                            lifespanOverride: shotLifespan) { SourcePartId = SourcePartId };
                         sector.Add(projectile);
                         _ship.Mission?.Skills?.Record(_ship.SideId, Allegiance.Core.Model.ShowcaseSkill.Guns);
 

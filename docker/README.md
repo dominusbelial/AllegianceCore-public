@@ -397,3 +397,15 @@ and bypass freshness checks for ordered events. The environment override accepts
 `0`/`1` or `false`/`true`; empty preserves JSON. It applies only when immutable
 snapshots are enabled and does not change transport or broadcast scheduling.
 See [the P968 measurements](../docs/reports/PUBLISHER_STREAM_INDEX_P968.md).
+
+### Civilization strategy observations (P1000)
+
+Server JSON `"bots": { "civStrategy": true }` builds immutable profiles from the
+loaded core and logs a portfolio choice using the public opponent civilizations.
+Default: **false**. `ALLEGIANCE_BOTS_CIV_STRATEGY=1` / `true` / `on` enables it;
+`0` / `false` / `off` disables it, overriding JSON. Empty preserves JSON. Compose
+passes this variable through. The startup receipt states the effective value.
+P1000 only observes: research ordering, funding, fleet mix and loadouts continue
+through the existing code. `[civ-strategy]` JSON receipts describe choices at match
+start, research completion times, and bounded 60-simulation-second event windows
+plus a final window. `tools/p999-civ-strategy/receipts.py` reads these receipts.

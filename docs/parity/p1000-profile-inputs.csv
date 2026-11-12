@@ -1,0 +1,9 @@
+input,native_cite,production_consumer,evidence,scope
+starting_techs,Igc/missionigc.cpp:3869-3883,src/Allegiance.Core/Strategy/CivProfile.cs,P1000CivProfileTests.Settings_and_same_version_modded_core_have_distinct_cache_entries_and_no_identity_branch,Reads existing ResearchSettings; no new native rule
+station_local_purchase,Igc/stationIGC.h:383-391,src/Allegiance.Core/Strategy/CivPortfolio.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,Calls existing exact purchase and successor gates separately for each station
+mounts_and_cargo,Igc/hullTypeIGC.h:163-175;199-212; Igc/igc.h:845,src/Allegiance.Core/Strategy/CivProfile.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,Reads existing CanMountPart and five cargo slots
+frozen_development_buckets,Igc/bucketigc.cpp:70-73,src/Allegiance.Core/Strategy/CivProfile.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,ResearchTree owns cost and time scaling
+accumulated_GA,Igc/igc.h:935-945,src/Allegiance.Core/Strategy/CivProfile.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,Multiplicative snapshot; no mutation of side attributes
+mining_cycle,Igc/shipIGC.cpp:1985-1988;2211-2213,src/Allegiance.Core/Strategy/CivPortfolio.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,Loaded rate capacity and yield; travel distance is explicit modern planning assumption
+payday,FedSrv/fsmission.cpp:2535-2546,src/Allegiance.Core/Strategy/CivPortfolio.cs,P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes,Loaded base income times one plus civ fraction plus station income
+damage_class_flags,Igc/missionigc.h:149-155,src/Allegiance.Core/Strategy/CivProfile.cs; src/Allegiance.Core/Strategy/CivPortfolio.cs,P1000CivProfileTests.Native_damage_flags_preserve_matrix_effectiveness_in_modded_cores,No-debris and warning flags do not index extra damage rows

@@ -7,7 +7,7 @@ public enum HitKind : byte { None, Gun, Missile, Mine, Blast, Collision, OutOfBo
 
 /// <summary>The source of one hit: kind, the weapon's launcher name when the core
 /// has one (missiles and mines), the core damage type and the sim time.</summary>
-public readonly record struct HitSource(HitKind Kind, string? Name, byte DamageType, double Time)
+public readonly record struct HitSource(HitKind Kind, string? Name, byte DamageType, double Time, short SourceId = -1, HitKind WeaponKind = HitKind.None)
 {
     public string Describe() => Name is { Length: > 0 }
         ? $"{Kind.ToString().ToLowerInvariant()}:{Name}"

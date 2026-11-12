@@ -8185,3 +8185,58 @@ re-runs logging `P700 local 15v15: 171.3s, reached=24/30, longest speed<1 with t
 `261.4s, reached=24/30, longest=0.407s` — zero park-limit violations (limit 5 s), which is at or above the
 ledgered base rate. Extra Live check for the bots path P998 touches: `P996BotsLifepodNoOxygenLoopLiveTests`
 **pass** (seed 996, pods drifting 13, pod deaths 53, oxygen deaths 19, minimum launch→oxygen-death gap 14.55 s).
+
+
+### 2026-11-12 — P1000 observation-only civilization profiles
+
+The corrected full Fast sweep ran 14,116 cases in 541.1s: **14,090 passed,
+6 failed, 20 skipped**, plus four calibrated duration overruns (limit 11.554s).
+An earlier diagnostic sweep was 14,077/19/20; twelve task regressions were fixed
+before the final build and all final qualifications (unbooted-server config
+access and a strategy-receipt JSON default). Both runs remain in the task report.
+Every non-task failure or slow method from either sweep was then run **three
+times alone on each tree**, alternating a `git archive 67c950eb` base and this
+tree, with artwork and the new flag OFF. Each cell below lists all three runs as
+**Passed/Failed/Skipped**; theory methods include every parameter case.
+
+| Case | Base: passed/failed/skipped per run | Changed: passed/failed/skipped per run |
+|---|---|---|
+| `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | 4/0/0; 4/0/0; 3/1/0 | 3/1/0; 4/0/0; 3/1/0 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 0/1/0; 0/1/0 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 0/1/0; 0/1/0; 1/0/0 | 0/1/0; 1/0/0; 0/1/0 |
+| `MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 1/0/0; 0/1/0 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0; 2/0/0; 2/0/0 | 2/0/0; 2/0/0; 2/0/0 |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0; 3/0/0; 3/0/0 | 3/0/0; 3/0/0; 3/0/0 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 10/0/0; 10/0/0; 10/0/0 | 10/0/0; 10/0/0; 10/0/0 |
+
+Missile-lock reproduces the existing full-lock-without-partial-tip failure on
+both trees (38s each). Roster accumulated time exceeds the fixture's [4,8]s
+window intermittently on both (base failures 8.10s/8.35s; changed 8.30s/8.45s).
+Auto-seat similarly reproduces the existing [28,31]s receipt boundary on both;
+P660's reset countdown can arrive at 14.85–14.90s against [14.94,15.06]s on
+both. These are reproduced base failures, not new strategy-dependent behavior.
+
+The other sweep failures pass all isolated base/current runs: teammate population
+(side -2 before admission settles), mining-state receipt, live shield receipt,
+launcher mount's default ExpandedPartData before its acknowledgement, P877 mine
+loadout receipt timeout, remote death latch (2,500-tick window) and warp own-status
+receipt. They match the asynchronous receipt families already recorded above.
+The slow Nanite support, varied-loadout and P999 reachability methods pass every
+isolated parameter case. Their individual durations and all assertions are kept
+in task-local TRX evidence; they are not reclassified as failed assertions.
+The corrected sweep's four overruns were missile lock 38.132s, P877 mine 30.664s,
+varied-loadout civ 35 12.207s and P999 civ 5 16.603s.
+
+The Fast gate remains failed; isolation documents it and does not waive it.
+Autonomous never-parks base/OFF/ON qualification: **5/5 pass per arm**, fifteen
+original trials with no retries and zero parking-limit violations. Longest parked
+intervals: base 2.804s, OFF 2.005s, ON 4.007s, all below 5s. The randomized fixture
+is a base-rate check; the separately seeded P1000 replay pins exact wire bytes.
+Per-trial arrival/combat/time receipts are in the P1000 report.

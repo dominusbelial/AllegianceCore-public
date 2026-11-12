@@ -88,6 +88,8 @@ services:
       lobby:
         condition: service_healthy
     environment:
+      # P1000: default-off core-derived profiles and observation-only strategy receipts.
+      ALLEGIANCE_BOTS_CIV_STRATEGY: "${ALLEGIANCE_BOTS_CIV_STRATEGY:-}"
       # P895: optional UDP listener; TCP pool remains available and is the default.
       ALLEGIANCE_TRANSPORT_PROTOCOL: "${ALLEGIANCE_TRANSPORT_PROTOCOL:-}"
       ALLEGIANCE_TRANSPORT_UDP_PORT: "${ALLEGIANCE_TRANSPORT_UDP_PORT:-}"
