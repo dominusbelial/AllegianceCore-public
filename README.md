@@ -49,12 +49,15 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   pane with a live 3-D model preview, own-ship gauges, equipment pane, flight
   indicators, console text, chat, warnings and damage flash. Fonts and anchors
   follow the native layout. A **Modern HUD** skin offers scaling (75–150 %) and
-  a colour-blind safe palette.
+  a colour-blind safe palette; Shift+F12 switches skins in flight.
 - Command view, minimap and starmap, order/command icons, investment,
   loadout and teleport panes, quick chat, and native UI and simulation sounds.
-- **Visuals**: volumetric explosions, bloom and flash lighting, an effects
-  quality setting, and an optional HD sky pack. Native asteroid models, aleph exit wobble, the ripcord spark
-  ramp.
+- **Visuals**: an HDR space look by default — filmic colour grade, simulated
+  stars and glare, star streaks, subtle space dust and full 10 km visibility —
+  each switchable back to the native rendering in Options → Visuals
+  (`--visuals key=off`). Volumetric explosions, bloom and flash lighting, an
+  effects quality setting, and an optional HD sky pack. Native asteroid models,
+  the native construction shell, aleph exit wobble, the ripcord spark ramp.
 - Keyboard, mouse, joystick and gamepad, all rebindable (F6). F1 shows every key.
 - Crash-safe: a rolling log plus a crash log on every run, and missing
   optional art never takes the game down.
@@ -77,7 +80,10 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 
 - Headless bots fly real missions through `tools/allegiance-mcp`, an MCP
   server that spawns scenarios and full showcase matches.
-- A research commander picks tech and issues attack and repair orders. Bots
+- A research commander picks tech and issues attack and repair orders. An experimental, default-off
+  mode (`ALLEGIANCE_BOTS_CIV_STRATEGY=1`) plans research and fleets from each
+  civilization's own strengths; the 200v200 rig decides whether it becomes the
+  default. Bots
   run strike waves on the softest enemy station with defend escorts, plus
   cloak, nanite repair support, chaff/probes/mines, ammo trips and
   medevac/rescue-probe drops. Skirmish uses the same bots.
@@ -96,7 +102,7 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 
 - Every ported rule cites the original C++ `file:line`. The corpus-backed
   suite parses 210 real `.igc` maps exactly. The fast test tier alone runs
-  about 13,000 tests, and CI builds every tool project and the player bundles.
+  about 14,000 tests, and CI builds every tool project and the player bundles.
 
 See **[`docs/GUIDE.md`](docs/GUIDE.md)** for the full guide: prerequisites,
 getting the original art, building/running everything, client flags, testing,
@@ -104,8 +110,8 @@ architecture, and troubleshooting.
 
 ## Parity status
 
-How much of the original game's behaviour the port reproduces, as of 2026-11-08: **98.33 %
-weighted, 1,785 of 1,816 tracked rules** across all matrices. Each row of the
+How much of the original game's behaviour the port reproduces, as of 2026-11-12: **98.34 %
+weighted, 1,788 of 1,819 tracked rules** across all matrices. Each row of the
 [matrices](docs/parity/) cites the native source, and a row only earns credit with production code and
 a test. [`scripts/parity-scorecard.py`](scripts/parity-scorecard.py) validates them and produces these
 numbers, weighting rows by importance.
@@ -113,15 +119,15 @@ numbers, weighting rows by importance.
 | Area | Weighted | Rows complete |
 |---|---:|---:|
 | Core game systems (`parity-matrix.csv`) | 100.00 % | 671 / 671 |
-| Lobby | 98.72 % | 29 / 30 |
-| Simulation rules | 99.02 % | 798 / 806 |
+| Lobby | 98.75 % | 30 / 31 |
+| Simulation rules | 99.03 % | 800 / 808 |
 | Effects | 100.00 % | 8 / 8 |
 | Sound engine | 100.00 % | 22 / 22 |
 | Bots | 100.00 % | 21 / 21 |
 | AllSrv admin UI | 100.00 % | 16 / 16 |
 | Training missions | 92.79 % | 213 / 235 |
 | Model tools | 100.00 % | 7 / 7 |
-| **All matrices** | **98.33 %** | **1,785 / 1,816** |
+| **All matrices** | **98.34 %** | **1,788 / 1,819** |
 
 Work is ongoing, so these are not final. Eight simulation rows are partial: three (tick order,
 collision order and broadcast order) are implemented behind default-off flags and stay partial until a
@@ -146,7 +152,7 @@ works offline. See the included `README-PLAYERS.txt` for installation, unsigned
 SmartScreen/Gatekeeper steps and multiplayer configuration. F1 shows help; F6
 rebinds keys. Verify downloads against the release's `SHA256SUMS.txt`.
 
-The latest release is **v0.1.5** (2026-11-08); each release's notes list what changed. To join a
+The latest release is **v0.1.6** (2026-11-12); each release's notes list what changed. To join a
 web-listed game, install the client first, then use the lobby page's **Join** link. For local
 packaging and the release checklist, see
 [`packaging/README.md`](packaging/README.md).

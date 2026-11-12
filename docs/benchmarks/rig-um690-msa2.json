@@ -1,0 +1,38 @@
+{
+  "schema": 2,
+  "name": "rig-um690-msa2",
+  "machines": [
+    {
+      "name": "rig-um690-server",
+      "roles": ["server"],
+      "cpu": "AMD Ryzen 9 6900HX",
+      "performanceCores": 8,
+      "efficiencyCores": 0,
+      "threads": 16,
+      "ramGb": 64,
+      "link": "1GbE wired",
+      "runtime": "Native AOT, Docker (host network), server GC, performance governor",
+      "tickHz": 20
+    },
+    {
+      "name": "rig-msa2-bots",
+      "roles": ["bots"],
+      "cpu": "AMD Ryzen 9 9955HX (one 8-core CCD, LXC container)",
+      "performanceCores": 8,
+      "efficiencyCores": 0,
+      "threads": 16,
+      "ramGb": 16,
+      "link": "10GbE to a 2.5GbE LAN host",
+      "botProcesses": 1,
+      "workers": 8,
+      "bots": 400
+    }
+  ],
+  "scenario": {
+    "name": "showcase march, three sides",
+    "map": "generated",
+    "sizeScale": 13,
+    "mode": "research",
+    "connections": 411
+  }
+}

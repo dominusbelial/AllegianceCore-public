@@ -1,45 +1,57 @@
 AllegianceCore: portable bundles plus Windows setup and Linux AppImage.
 
-## New since v0.1.4
+## New since v0.1.5
 
-This release makes joining games easier and fixes the controls testers found hard to start with.
+This release brings a new look for space, HUD skins you can switch in flight, passwords for private
+games, and a set of fixes to ejecting, lifepods and connecting.
+
+**Look**
+- Space has a new default look: an HDR scene with a filmic colour grade, simulated stars and glare,
+  star streaks at speed, subtle space dust, and full-range visibility (objects stay visible out to
+  10 km instead of popping in). Asteroids in particular read as real rock now.
+- Every part of the new look can be switched off in **Options → Visuals** (or with `--visuals key=off`),
+  which restores the original rendering exactly.
+- Station construction looks like the original: the violet build shell grows around the rock,
+  turns solid and shrinks away as the station completes.
+- Flight cameras draw out to the original 10 km far plane.
+
+**HUD**
+- HUD skins: **Shift+F12** switches between the Classic and Modern HUD in flight; the choice is also
+  in Options and is remembered. Training missions restore the skin they need.
 
 **Joining games**
-- `allegiance://` join links: the lobby page has a Join column, and clicking a link opens the game and
-  asks before joining. The Windows installer and the Linux per-user installer register the link
-  handler; on macOS the app declares it.
-- An explicit `--lobby` address now always wins over the saved connect profile.
-- Intro screen: the arrow keys always move through the menu, the pilot-name field shows when it has
-  focus, and Find Server no longer swallows what you type into the password box.
+- Password-protected games: the server list shows which games need a password, the join screen asks
+  for it and lets you retry in place after a wrong password. Remembering passwords is opt-in and stored
+  only for your user account.
+- Connecting is more robust: one connection attempt at a time, a clear 15-second limit, and a cancel
+  that really cancels.
 
-**Controls**
-- New players can fly from the keyboard again: fresh profiles start on the Port layout (W/S/A/D thrust,
-  arrow keys pitch and yaw), with a one-time hint in flight. The original Allegiance default map, which
-  binds no steering keys, is one press away as the "Classic Allegiance" preset in the F6 controls screen.
-  Existing keymaps are not changed.
-- Mouse flight and free-look capture the mouse properly on Wayland and over remote desktop.
-- Mouse options are saved: invert Y and sensitivity (default matches the original). Holding a
-  sensitivity key repeats it and shows the new value on the HUD.
+**Gameplay fixes**
+- Ejecting heads for your own or an allied station, and rescue probes pick up any friendly pod, as in the
+  original.
+- Lifepods no longer die moments after launch because of an oxygen timer left over from a previous life,
+  and a pod no longer keeps the dead ship's shield, booster or cargo.
+- After a station teleport the hangar no longer gets stuck.
 
-**Screens**
-- The docked hangar uses the original hangar art: background, button strips, the launch animation,
-  hover captions and the turret badge.
-- Training slideshows show the original slide images.
+**Updates and stability**
+- Installing an update is now atomic: it is checked before anything is touched, and an interrupted
+  update is rolled back or finished on the next start.
+- Fresh installs report their version to the updater.
+- Malformed messages from a server are dropped instead of crashing the client.
 
-**Gameplay**
-- A lifepod is no longer destroyed when it bumps into a station, an asteroid or another ship right after
-  ejecting.
-- Drones launch with their hull's standard loadout, as in the original, and other pilots on the same side
-  see it.
+**Servers**
+- Less bandwidth in big battles: gunfire is batched into one message per player per tick (about 13 %
+  less server traffic in the 400-player test), and ship status messages are only sent when something
+  changed, as in the original (87 % fewer status bytes).
+- Hardening: repeated logon requests are rate-limited, maps load only from the artwork catalogue, and a
+  wrong reconnect token refuses only that client.
 
-**Bots and showcase games** (skirmish and showcase servers only)
-- Bot commanders research first on generated maps instead of queuing expensive buildings ahead of
-  research they could already buy.
-- Bots pick resources and lay mine fields again in showcase games, and the showcase game-over text
-  matches the original's.
+**For bot and server tinkerers (experimental, off by default)**
+- `ALLEGIANCE_BOTS_CIV_STRATEGY=1`: bots plan research and fleets from each civilization's own
+  strengths instead of one generic path. Not yet the default; it is being measured on the 200v200 rig.
 
 **Known limits**: the Android client is experimental and has no download. Behaviour parity with native
-Allegiance is about 97% of the tracked rules; the per-area scorecard is in `docs/parity/`.
+Allegiance is about 98 % of the tracked rules; the per-area scorecard is in `docs/parity/`.
 
 ## Downloads (all self-contained, with native artwork and the complete sky pack):
 
